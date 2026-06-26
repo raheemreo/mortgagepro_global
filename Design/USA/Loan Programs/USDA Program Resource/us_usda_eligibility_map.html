@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USDA Eligibility Map</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+    --grn:#15803D;--grn-dk:#166534;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 45%,#78350F 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🗺️';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:19px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+  .content{padding:14px 14px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;}
+
+  /* Search bar */
+  .search-bar{background:var(--card);border-radius:13px;padding:12px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);display:flex;align-items:center;gap:10px;margin-bottom:10px;transition:border-color .2s;}
+  .search-bar:focus-within{border-color:var(--grn);}
+  .search-bar input{flex:1;border:none;outline:none;font-size:14px;font-weight:600;color:var(--navy);font-family:'DM Sans',sans-serif;background:transparent;}
+  .search-bar input::placeholder{color:rgba(74,92,122,0.5);font-weight:400;}
+  .search-icon{font-size:16px;opacity:.6;}
+  .search-btn{background:var(--grn);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;}
+
+  /* Quick state buttons */
+  .state-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .chip{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--navy);cursor:pointer;transition:all .2s;}
+  .chip.active,.chip:hover{background:var(--grn);border-color:var(--grn);color:#fff;}
+
+  /* Result card */
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#15803D);border-radius:18px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;}
+  .result-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:28px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.1;margin:5px 0 4px;display:flex;align-items:center;gap:8px;}
+  .elig-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+  .elig-badge.eligible{background:rgba(21,128,61,0.3);color:#86EFAC;border:1px solid rgba(134,239,172,0.3);}
+  .elig-badge.ineligible{background:rgba(185,28,28,0.3);color:#FCA5A5;border:1px solid rgba(252,165,165,0.3);}
+  .rh-sub{font-size:9.5px;color:rgba(255,255,255,0.48);}
+
+  /* Map placeholder / visual */
+  .map-card{background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .map-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+  .map-title{font-size:13px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .map-legend{display:flex;gap:10px;}
+  .ml-item{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);}
+  .ml-dot{width:8px;height:8px;border-radius:2px;}
+  .map-visual{position:relative;height:200px;background:linear-gradient(180deg,#E8F4FD 0%,#D4EAD0 60%,#C8E6C9 100%);overflow:hidden;}
+  .map-usa{width:100%;height:100%;position:relative;}
+  /* Simplified USA map using SVG-like CSS shapes */
+  .map-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;}
+  .map-btn{background:var(--grn);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(21,128,61,0.35);}
+  .map-note{font-size:10px;color:var(--muted);}
+  .map-pin{position:absolute;font-size:24px;animation:bounce 2s infinite;}
+  @keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+
+  /* Stats grid */
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .stat-card{background:var(--card);border-radius:13px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);text-align:center;}
+  .stat-icon{font-size:22px;margin-bottom:5px;}
+  .stat-val{font-size:20px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+  .stat-sub{font-size:8.5px;color:var(--grn);font-weight:600;margin-top:2px;}
+
+  /* Progress bar chart */
+  .chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:13px;}
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+  .bar-label{font-size:10px;color:var(--muted);width:70px;flex-shrink:0;}
+  .bar-track{flex:1;height:8px;background:#EEF2F8;border-radius:4px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+  .bar-val{font-size:10px;font-weight:700;color:var(--navy);width:34px;text-align:right;flex-shrink:0;}
+
+  /* County lookup table */
+  .county-card{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .county-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+  .county-row:last-child{border-bottom:none;}
+  .county-name{font-size:11px;font-weight:700;color:var(--navy);}
+  .county-state{font-size:9px;color:var(--muted);}
+  .county-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;}
+  .county-badge.elig{background:#DCFCE7;color:var(--grn-dk);}
+  .county-badge.inel{background:#FEE2E2;color:var(--red);}
+  .county-badge.partial{background:#FEF3C7;color:#92400E;}
+
+  /* Info cards */
+  .info-card{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid #86EFAC;border-radius:15px;padding:13px 14px;margin-bottom:10px;}
+  .info-title{font-size:12px;font-weight:700;color:#14532D;font-family:'DM Serif Display',serif;margin-bottom:8px;}
+  .info-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(134,239,172,0.3);}
+  .info-row:last-child{border-bottom:none;}
+  .info-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+  .info-text{font-size:10px;color:#166534;line-height:1.5;}
+
+  /* Rural area visual breakdown */
+  .donut-wrap{display:flex;align-items:center;gap:14px;}
+  .donut-legend{flex:1;display:flex;flex-direction:column;gap:7px;}
+  .dl-row{display:flex;align-items:center;gap:7px;}
+  .dl-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;}
+  .dl-label{font-size:9.5px;color:var(--muted);flex:1;}
+  .dl-val{font-size:10.5px;font-weight:700;color:var(--navy);}
+
+  /* Toast */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* Bottom nav */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:18px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--grn);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .animate{animation:fadeUp .32s ease both .04s;}
+
+  /* Address input area */
+  .addr-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px;}
+  .inp-box{background:var(--card);border-radius:13px;padding:12px 13px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--grn);}
+  .inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:14px;font-weight:600;color:var(--navy);font-family:'DM Sans',sans-serif;background:transparent;}
+  .check-btn{width:100%;background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(21,128,61,0.32);font-family:'DM Serif Display',serif;margin-top:3px;}
+
+  .result-hidden{display:none;}
+  .result-visible{display:block;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_usda_loan_calc.html" class="icon-btn" style="text-decoration:none;">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🗺️</div>
+      <div class="hdr-title">USDA Eligibility Map</div>
+      <div class="hdr-sub">Rural · Suburban · Property Location Check</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Eligible Areas</div><div class="rs-v">97%</div><div class="rs-n">of US Land</div></div>
+    <div class="rs"><div class="rs-l">Population</div><div class="rs-v gold">19%</div><div class="rs-n">Eligible</div></div>
+    <div class="rs"><div class="rs-l">Max Pop.</div><div class="rs-v">35K</div><div class="rs-n">City limit</div></div>
+    <div class="rs"><div class="rs-l">Updated</div><div class="rs-v">2025</div><div class="rs-n">USDA RD</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec">Check Property Eligibility</div>
+
+  <div class="addr-grid">
+    <div class="inp-box">
+      <label>Street Address</label>
+      <input type="text" id="streetAddr" placeholder="123 Main St" oninput="resetResult()">
+    </div>
+    <div class="inp-box">
+      <label>City</label>
+      <input type="text" id="cityInput" placeholder="Springfield" oninput="resetResult()">
+    </div>
+    <div class="inp-box">
+      <label>State</label>
+      <select id="stateSelect" onchange="resetResult()">
+        <option value="">Select State</option>
+        <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option>
+        <option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option>
+        <option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option>
+        <option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option>
+        <option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option>
+        <option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option>
+        <option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option>
+        <option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option>
+        <option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option>
+        <option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option>
+        <option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option>
+        <option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option>
+        <option>Wisconsin</option><option>Wyoming</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>ZIP Code</label>
+      <input type="text" id="zipCode" placeholder="62701" maxlength="5" oninput="resetResult()">
+    </div>
+  </div>
+  <button class="check-btn" onclick="checkEligibility()">🗺️ Check USDA Eligibility</button>
+
+  <!-- Result -->
+  <div id="eligResult" class="result-hidden" style="margin-top:10px;">
+    <div class="result-hero animate">
+      <div class="rh-label">Property Eligibility Status</div>
+      <div class="rh-amount">
+        <span id="resultEmoji">✅</span>
+        <div>
+          <div id="resultTitle" style="font-size:22px;">Eligible</div>
+          <div class="rh-sub" id="resultSub">Qualifies for USDA Rural Housing Loan</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <span id="resultBadge" class="elig-badge eligible">✅ USDA Eligible</span>
+        <span class="elig-badge eligible" id="programBadge" style="background:rgba(217,119,6,0.25);color:#FCD34D;border-color:rgba(252,211,77,0.25);">502 Guaranteed</span>
+      </div>
+    </div>
+
+    <div class="stats-grid animate">
+      <div class="stat-card">
+        <div class="stat-icon">🏘️</div>
+        <div class="stat-val" id="popVal">8,240</div>
+        <div class="stat-label">Est. Population</div>
+        <div class="stat-sub">Under 35,000 ✅</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📍</div>
+        <div class="stat-val" id="classVal">Rural</div>
+        <div class="stat-label">Area Classification</div>
+        <div class="stat-sub" id="classSub">USDA Designated</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-val">$0</div>
+        <div class="stat-label">Down Payment</div>
+        <div class="stat-sub">100% Financing</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-val">30-Yr</div>
+        <div class="stat-label">Loan Term</div>
+        <div class="stat-sub">Fixed Rate Only</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Visual -->
+  <div class="sec">USDA Eligible Coverage</div>
+  <div class="map-card animate">
+    <div class="map-header">
+      <div class="map-title">🗺️ Rural Eligibility Overview</div>
+      <div class="map-legend">
+        <div class="ml-item"><div class="ml-dot" style="background:#86EFAC;"></div>Eligible</div>
+        <div class="ml-item"><div class="ml-dot" style="background:#FCA5A5;"></div>Ineligible</div>
+      </div>
+    </div>
+    <div class="map-visual">
+      <!-- Simplified US Map SVG -->
+      <svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+        <rect width="500" height="300" fill="#D4EAD0"/>
+        <!-- Continental US outline simplified -->
+        <path d="M60,60 L420,60 L440,80 L450,120 L440,160 L420,190 L380,210 L340,220 L300,225 L260,220 L220,215 L180,210 L140,200 L100,185 L70,160 L55,130 L55,90 Z" fill="#86EFAC" opacity="0.7" stroke="#15803D" stroke-width="2"/>
+        <!-- Major ineligible urban areas (red circles) -->
+        <circle cx="380" cy="140" r="18" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="380" y="144" text-anchor="middle" font-size="7" fill="#7F1D1D" font-weight="600">LA</text>
+        <circle cx="410" cy="85" r="14" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="410" y="89" text-anchor="middle" font-size="7" fill="#7F1D1D" font-weight="600">SF</text>
+        <circle cx="430" cy="115" r="10" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="430" y="119" text-anchor="middle" font-size="6" fill="#7F1D1D" font-weight="600">PHX</text>
+        <circle cx="340" cy="90" r="10" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="340" y="94" text-anchor="middle" font-size="6" fill="#7F1D1D" font-weight="600">DEN</text>
+        <circle cx="270" cy="100" r="12" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="270" y="104" text-anchor="middle" font-size="6" fill="#7F1D1D" font-weight="600">CHI</text>
+        <circle cx="360" cy="130" r="10" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="360" y="134" text-anchor="middle" font-size="5.5" fill="#7F1D1D" font-weight="600">DAL</text>
+        <circle cx="330" cy="160" r="10" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="330" y="164" text-anchor="middle" font-size="5.5" fill="#7F1D1D" font-weight="600">ATL</text>
+        <circle cx="220" cy="95" r="10" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="220" y="99" text-anchor="middle" font-size="5.5" fill="#7F1D1D" font-weight="600">DET</text>
+        <circle cx="170" cy="105" r="10" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="170" y="109" text-anchor="middle" font-size="5.5" fill="#7F1D1D" font-weight="600">NYC</text>
+        <circle cx="165" cy="120" r="8" fill="#FCA5A5" opacity="0.8" stroke="#B91C1C" stroke-width="1.5"/>
+        <text x="165" y="124" text-anchor="middle" font-size="5" fill="#7F1D1D" font-weight="600">PHI</text>
+        <!-- Rural eligible markers -->
+        <circle cx="200" cy="150" r="5" fill="#15803D" opacity="0.8"/>
+        <circle cx="240" cy="170" r="5" fill="#15803D" opacity="0.8"/>
+        <circle cx="150" cy="155" r="5" fill="#15803D" opacity="0.8"/>
+        <circle cx="300" cy="145" r="5" fill="#15803D" opacity="0.8"/>
+        <circle cx="280" cy="185" r="5" fill="#15803D" opacity="0.8"/>
+        <circle cx="120" cy="140" r="5" fill="#15803D" opacity="0.8"/>
+        <circle cx="380" cy="170" r="5" fill="#15803D" opacity="0.8"/>
+        <circle cx="100" cy="170" r="5" fill="#15803D" opacity="0.8"/>
+        <!-- Alaska & Hawaii insets -->
+        <rect x="70" y="220" width="80" height="55" rx="6" fill="#A7F3D0" stroke="#15803D" stroke-width="1" opacity="0.7"/>
+        <text x="110" y="252" text-anchor="middle" font-size="9" fill="#14532D" font-weight="700">ALASKA</text>
+        <text x="110" y="264" text-anchor="middle" font-size="7" fill="#166534">Mostly Eligible</text>
+        <rect x="165" y="235" width="55" height="35" rx="6" fill="#A7F3D0" stroke="#15803D" stroke-width="1" opacity="0.7"/>
+        <text x="192" y="256" text-anchor="middle" font-size="8" fill="#14532D" font-weight="700">HAWAII</text>
+        <text x="192" y="266" text-anchor="middle" font-size="6" fill="#166534">Rural areas</text>
+        <!-- Legend -->
+        <rect x="330" y="240" width="12" height="8" rx="2" fill="#86EFAC"/>
+        <text x="346" y="248" font-size="8" fill="#166534">97% land eligible</text>
+        <rect x="330" y="255" width="12" height="8" rx="2" fill="#FCA5A5"/>
+        <text x="346" y="263" font-size="8" fill="#B91C1C">Urban ineligible</text>
+        <!-- Source note -->
+        <text x="250" y="292" text-anchor="middle" font-size="7" fill="#4A5C7A" opacity="0.7">Source: USDA RD Eligibility Map · 2025 · eligibility.sc.egov.usda.gov</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Coverage stats -->
+  <div class="sec">National Coverage Statistics</div>
+  <div class="chart-card animate">
+    <div class="chart-title">📊 USDA Eligible Areas by Region (2025)</div>
+    <div class="bar-row">
+      <div class="bar-label">Midwest</div>
+      <div class="bar-track"><div class="bar-fill" style="width:89%;background:#15803D;"></div></div>
+      <div class="bar-val">89%</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">South</div>
+      <div class="bar-track"><div class="bar-fill" style="width:84%;background:#1B3F72;"></div></div>
+      <div class="bar-val">84%</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Mountain</div>
+      <div class="bar-track"><div class="bar-fill" style="width:95%;background:#D97706;"></div></div>
+      <div class="bar-val">95%</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Northeast</div>
+      <div class="bar-track"><div class="bar-fill" style="width:61%;background:#7C3AED;"></div></div>
+      <div class="bar-val">61%</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Pacific</div>
+      <div class="bar-track"><div class="bar-fill" style="width:72%;background:#0891B2;"></div></div>
+      <div class="bar-val">72%</div>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:8px;">% of land area designated USDA-eligible · Source: USDA RD 2025</div>
+  </div>
+
+  <!-- Donut: area breakdown -->
+  <div class="chart-card animate">
+    <div class="chart-title">🌾 US Land Classification (USDA View)</div>
+    <div class="donut-wrap">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#EEF2F8" stroke-width="14"/>
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#15803D" stroke-width="14"
+          stroke-dasharray="212 239" stroke-dashoffset="60" stroke-linecap="round"/>
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#D97706" stroke-width="14"
+          stroke-dasharray="18 239" stroke-dashoffset="-152" stroke-linecap="round"/>
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#B91C1C" stroke-width="14"
+          stroke-dasharray="8 239" stroke-dashoffset="-170" stroke-linecap="round"/>
+        <text x="50" y="47" text-anchor="middle" font-size="9" font-weight="700" fill="#0B1D3A">97%</text>
+        <text x="50" y="58" text-anchor="middle" font-size="7" fill="#4A5C7A">Eligible</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="dl-row"><div class="dl-dot" style="background:#15803D;"></div><div class="dl-label">Rural Eligible</div><div class="dl-val">89%</div></div>
+        <div class="dl-row"><div class="dl-dot" style="background:#D97706;"></div><div class="dl-label">Rural Suburb</div><div class="dl-val">8%</div></div>
+        <div class="dl-row"><div class="dl-dot" style="background:#B91C1C;"></div><div class="dl-label">Urban (Ineligible)</div><div class="dl-val">3%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popular eligible sample counties -->
+  <div class="sec">Sample Eligible Counties (2025)</div>
+  <div class="county-card animate">
+    <div class="county-row">
+      <div><div class="county-name">Boone County</div><div class="county-state">Missouri · Pop. 185K (rural areas)</div></div>
+      <span class="county-badge elig">Eligible</span>
+    </div>
+    <div class="county-row">
+      <div><div class="county-name">Comal County</div><div class="county-state">Texas · Pop. 168K (rural zones)</div></div>
+      <span class="county-badge partial">Partial</span>
+    </div>
+    <div class="county-row">
+      <div><div class="county-name">Tuscaloosa County</div><div class="county-state">Alabama · Rural fringe areas</div></div>
+      <span class="county-badge elig">Eligible</span>
+    </div>
+    <div class="county-row">
+      <div><div class="county-name">Flathead County</div><div class="county-state">Montana · Most of county</div></div>
+      <span class="county-badge elig">Eligible</span>
+    </div>
+    <div class="county-row">
+      <div><div class="county-name">King County</div><div class="county-state">Washington · Mostly ineligible</div></div>
+      <span class="county-badge inel">Ineligible</span>
+    </div>
+    <div class="county-row">
+      <div><div class="county-name">Chittenden County</div><div class="county-state">Vermont · Burlington area</div></div>
+      <span class="county-badge partial">Partial</span>
+    </div>
+  </div>
+
+  <!-- Eligibility rules -->
+  <div class="info-card animate">
+    <div class="info-title">📋 USDA Property Eligibility Rules (2025)</div>
+    <div class="info-row">
+      <div class="info-icon">🏙️</div>
+      <div class="info-text"><strong>Population Limit:</strong> Property must be in an area with a population under 35,000 (some exceptions for areas up to 50,000 if transitioning).</div>
+    </div>
+    <div class="info-row">
+      <div class="info-icon">🗺️</div>
+      <div class="info-text"><strong>Official Tool:</strong> Always verify at <strong>eligibility.sc.egov.usda.gov</strong> — the USDA updates boundaries periodically.</div>
+    </div>
+    <div class="info-row">
+      <div class="info-icon">🏡</div>
+      <div class="info-text"><strong>Property Types:</strong> Single-family homes, condos (USDA-approved), PUDs, and new construction all qualify if in eligible areas.</div>
+    </div>
+    <div class="info-row">
+      <div class="info-icon">⚠️</div>
+      <div class="info-text"><strong>Waiver Possible:</strong> Some areas exceeding limits may still qualify if they lack sufficient mortgage credit — request a waiver through your lender.</div>
+    </div>
+    <div class="info-row">
+      <div class="info-icon">📅</div>
+      <div class="info-text"><strong>2020 Census Data:</strong> USDA now uses 2020 Census figures. Some previously eligible areas may no longer qualify. Re-verify any prior checks.</div>
+    </div>
+  </div>
+
+  <!-- Quick state chips -->
+  <div class="sec">Popular USDA States</div>
+  <div class="state-chips">
+    <div class="chip active" onclick="selectState(this,'Texas')">Texas</div>
+    <div class="chip" onclick="selectState(this,'Ohio')">Ohio</div>
+    <div class="chip" onclick="selectState(this,'Georgia')">Georgia</div>
+    <div class="chip" onclick="selectState(this,'Tennessee')">Tennessee</div>
+    <div class="chip" onclick="selectState(this,'North Carolina')">NC</div>
+    <div class="chip" onclick="selectState(this,'Missouri')">Missouri</div>
+    <div class="chip" onclick="selectState(this,'Indiana')">Indiana</div>
+    <div class="chip" onclick="selectState(this,'Kentucky')">Kentucky</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🗺️</div><div class="ni-lb">Map</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">📋</div><div class="ni-lb">Limits</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// Simulated eligibility check based on ZIP prefix
+const eligibleZips = {
+  '626':'Rural IL','727':'Rural AR','395':'Rural MS','298':'Rural SC','373':'Rural TN',
+  '408':'Rural KY','738':'Rural OK','768':'Rural TX','488':'Rural MI','476':'Rural IN'
+};
+const ineligibleZips = {
+  '100':'New York NY','900':'Los Angeles CA','606':'Chicago IL','770':'Houston TX','852':'Phoenix AZ',
+  '941':'San Francisco CA','980':'Seattle WA','303':'Atlanta GA','021':'Boston MA','191':'Philadelphia PA'
+};
+
+function checkEligibility(){
+  const zip = document.getElementById('zipCode').value.trim();
+  const city = document.getElementById('cityInput').value.trim();
+  const state = document.getElementById('stateSelect').value;
+
+  if(!zip || zip.length < 5){
+    showToast('⚠️ Enter a valid 5-digit ZIP code');
+    return;
+  }
+
+  const prefix = zip.substring(0,3);
+  let status = 'eligible';
+  let pop = Math.floor(Math.random()*20000)+3000;
+  let areaClass = 'Rural';
+  let classSub = 'USDA Designated';
+
+  if(ineligibleZips[prefix]){
+    status = 'ineligible';
+    pop = Math.floor(Math.random()*900000)+200000;
+    areaClass = 'Urban';
+    classSub = 'Exceeds Limit';
+  } else if(Math.random() > 0.7){
+    status = 'partial';
+    pop = Math.floor(Math.random()*15000)+20000;
+    areaClass = 'Suburban';
+    classSub = 'Verify Exact Address';
+  }
+
+  const el = document.getElementById('eligResult');
+  el.className = 'result-visible';
+
+  const titleEl = document.getElementById('resultTitle');
+  const subEl = document.getElementById('resultSub');
+  const emojiEl = document.getElementById('resultEmoji');
+  const badgeEl = document.getElementById('resultBadge');
+  const progBadge = document.getElementById('programBadge');
+  const popEl = document.getElementById('popVal');
+  const classEl = document.getElementById('classVal');
+  const classSubEl = document.getElementById('classSub');
+
+  popEl.textContent = pop.toLocaleString();
+  classEl.textContent = areaClass;
+  classSubEl.textContent = classSub;
+
+  if(status === 'eligible'){
+    emojiEl.textContent = '✅';
+    titleEl.textContent = 'Eligible';
+    subEl.textContent = `${city||'This area'}, ${state||'USA'} qualifies for USDA Rural Housing`;
+    badgeEl.className = 'elig-badge eligible';
+    badgeEl.textContent = '✅ USDA Eligible';
+    progBadge.style.display = 'inline';
+  } else if(status === 'ineligible'){
+    emojiEl.textContent = '❌';
+    titleEl.textContent = 'Not Eligible';
+    subEl.textContent = `${city||'This area'} is classified as urban — USDA loans not available`;
+    badgeEl.className = 'elig-badge ineligible';
+    badgeEl.textContent = '❌ Not Eligible';
+    progBadge.style.display = 'none';
+  } else {
+    emojiEl.textContent = '⚠️';
+    titleEl.textContent = 'Verify Address';
+    subEl.textContent = `Some parts of ${city||'this area'} qualify — check exact property address`;
+    badgeEl.className = 'elig-badge';
+    badgeEl.style.background = 'rgba(217,119,6,0.3)';
+    badgeEl.style.color = '#FCD34D';
+    badgeEl.style.borderColor = 'rgba(252,211,77,0.3)';
+    badgeEl.textContent = '⚠️ Partial Area';
+    progBadge.style.display = 'none';
+  }
+
+  el.scrollIntoView({behavior:'smooth', block:'start'});
+  showToast('Eligibility check complete');
+}
+
+function resetResult(){
+  document.getElementById('eligResult').className = 'result-hidden';
+}
+
+function selectState(el, state){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('stateSelect').value = state;
+  showToast(`📍 Selected: ${state}`);
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+</script>
+</body>
+</html>

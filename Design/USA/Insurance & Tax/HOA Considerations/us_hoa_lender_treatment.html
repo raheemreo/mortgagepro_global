@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lender Treatment of HOA</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --gold:#D97706; --gold-lt:#FCD34D;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A; --border:rgba(27,63,114,0.09);
+    --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --vt:#6D28D9; --vt2:#4C1D95;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#4C1D95 55%,#6D28D9 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🏦';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* DTI Qualifier Card */
+  .calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .calc-card-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .calc-card-icon{width:42px;height:42px;border-radius:13px;background:linear-gradient(140deg,#6D28D9,#4C1D95);display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .calc-card-title{font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .calc-card-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+  .input-group{margin-bottom:14px;}
+  .input-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+  .input-row{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;}
+  .input-row:focus-within{border-color:var(--vt);background:#faf5ff;}
+  .input-prefix{padding:12px 11px;font-size:14px;font-weight:700;color:var(--muted);background:rgba(27,63,114,0.05);border-right:1px solid var(--border);}
+  .input-row input{flex:1;border:none;background:transparent;padding:12px;font-size:15px;font-weight:700;color:var(--navy);font-family:Georgia,serif;outline:none;}
+  .input-suffix{padding:12px 11px;font-size:11px;font-weight:700;color:var(--muted);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .calc-btn{background:linear-gradient(135deg,#6D28D9,#4C1D95);border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(109,40,217,0.40);font-family:Georgia,serif;transition:transform .12s;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;}
+  .calc-btn:active{transform:scale(.98);}
+
+  /* Result Hero */
+  .result-hero{border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .result-hero.pass{background:linear-gradient(148deg,#15803D,#166534);}
+  .result-hero.warn{background:linear-gradient(148deg,#D97706,#92400E);}
+  .result-hero.fail{background:linear-gradient(148deg,#B91C1C,#7F1D1D);}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.07);}
+  .rh-label{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.7px;}
+  .rh-val{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:6px 0 2px;}
+  .rh-sub{font-size:11px;color:rgba(255,255,255,0.75);}
+  .rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-item{background:rgba(255,255,255,0.12);border-radius:11px;padding:9px 8px;text-align:center;}
+  .rh-item-l{font-size:8.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.4px;}
+  .rh-item-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+
+  /* Loan Type Comparison */
+  .loan-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .loan-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1.5px solid var(--border);}
+  .loan-card.active{border-color:var(--vt);background:#faf5ff;}
+  .loan-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .loan-badge{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;background:linear-gradient(135deg,#6D28D9,#4C1D95);color:#fff;}
+  .loan-name{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .loan-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);}
+  .loan-row:last-child{border-bottom:none;}
+  .loan-key{font-size:9.5px;color:var(--muted);font-weight:700;}
+  .loan-val{font-size:10.5px;font-weight:800;color:var(--navy);}
+  .loan-val.ok{color:#15803D;} .loan-val.warn{color:#D97706;} .loan-val.bad{color:#B91C1C;}
+
+  /* DTI Bar */
+  .dti-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .dti-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .dti-bar-wrap{background:#EEF2F8;border-radius:100px;height:10px;overflow:hidden;margin-bottom:6px;}
+  .dti-bar{height:100%;border-radius:100px;transition:width .6s ease;}
+  .dti-bar-labels{display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted);font-weight:700;}
+  .dti-zones{display:flex;gap:6px;margin-top:10px;}
+  .dtz{flex:1;text-align:center;padding:7px 4px;border-radius:8px;}
+  .dtz.green{background:#F0FDF4;} .dtz.yellow{background:#FFFBEB;} .dtz.red{background:#FEF2F2;}
+  .dtz-l{font-size:8px;font-weight:700;color:var(--muted);}
+  .dtz-v{font-size:11px;font-weight:800;font-family:Georgia,serif;}
+  .dtz.green .dtz-v{color:#15803D;} .dtz.yellow .dtz-v{color:#D97706;} .dtz.red .dtz-v{color:#B91C1C;}
+
+  /* Chart card */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  canvas{width:100%!important;display:block;}
+
+  /* Info list */
+  .info-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .info-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:11px;}
+  .info-row{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);}
+  .info-row:last-child{border-bottom:none;}
+  .info-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .info-text{font-size:11px;font-weight:700;color:var(--navy);}
+  .info-sub{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.45;}
+
+  /* Red flags */
+  .red-flags{background:#FEF2F2;border:1px solid rgba(185,28,28,0.22);border-radius:16px;padding:14px;margin-bottom:12px;}
+  .rf-title{font-size:12px;font-weight:800;color:#B91C1C;font-family:Georgia,serif;margin-bottom:10px;}
+  .rf-item{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid rgba(185,28,28,0.10);}
+  .rf-item:last-child{border-bottom:none;}
+  .rf-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+  .rf-text{font-size:10.5px;font-weight:700;color:#7F1D1D;}
+  .rf-sub{font-size:9px;color:#B91C1C;margin-top:2px;}
+
+  .tip-box{background:linear-gradient(135deg,#F3E8FF,#EDE9FE);border:1px solid rgba(109,40,217,0.18);border-radius:14px;padding:13px 14px;margin-bottom:12px;}
+  .tip-title{font-size:11px;font-weight:800;color:#4C1D95;font-family:Georgia,serif;margin-bottom:5px;}
+  .tip-text{font-size:10px;color:#6D28D9;line-height:1.55;}
+
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+  .mini-stat{background:var(--card);border-radius:14px;padding:12px 10px;box-shadow:var(--sh);border:1px solid var(--border);text-align:center;}
+  .ms-icon{font-size:18px;margin-bottom:4px;}
+  .ms-label{font-size:8.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
+  .ms-val{font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .ms-sub{font-size:8.5px;color:var(--muted);}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--vt);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .fade-in{animation:fadeUp .35s ease both;}
+  .results-section{animation:fadeUp .35s ease both;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_hoa_fee_impact.html" class="icon-btn">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏦</div>
+      <div class="hdr-title">Lender Treatment</div>
+      <div class="hdr-sub">HOA in DTI · FHA · VA · Conventional</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Back-End Max</div><div class="rs-v gold">43%</div><div class="rs-n">Most Lenders</div></div>
+    <div class="rs"><div class="rs-l">FHA Max DTI</div><div class="rs-v">57%</div><div class="rs-n">w/ Exceptions</div></div>
+    <div class="rs"><div class="rs-l">VA Max DTI</div><div class="rs-v">41%</div><div class="rs-n">Guideline</div></div>
+    <div class="rs"><div class="rs-l">Conv. Ideal</div><div class="rs-v gold">36%</div><div class="rs-n">Back-End</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- DTI Qualifier -->
+  <div class="sec" style="margin-top:0">DTI Qualifier <span class="more" onclick="resetCalc()">Reset</span></div>
+  <div class="calc-card fade-in">
+    <div class="calc-card-header">
+      <div class="calc-card-icon">🏦</div>
+      <div>
+        <div class="calc-card-title">Lender DTI Checker</div>
+        <div class="calc-card-sub">Check approval likelihood across all loan types</div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="input-group">
+        <label class="input-label">Monthly P&I Payment</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="piPayment" value="2480" min="0"></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Monthly HOA Fee</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="hoaFee" value="350" min="0"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="input-group">
+        <label class="input-label">Property Tax /Mo</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="taxMo" value="412" min="0"></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Insurance /Mo</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="insMo" value="150" min="0"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="input-group">
+        <label class="input-label">Other Monthly Debts</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="otherDebts" value="500" min="0"></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Gross Income /Mo</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="grossIncome" value="8500" min="1000"></div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="checkDTI()">🏦 Check Lender Eligibility</button>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsSection" style="display:none">
+
+    <!-- Hero -->
+    <div class="result-hero" id="resultHero">
+      <div class="rh-label">Back-End DTI (with HOA)</div>
+      <div class="rh-val" id="backEndDTI">—</div>
+      <div class="rh-sub" id="heroSub">—</div>
+      <div class="rh-grid">
+        <div class="rh-item"><div class="rh-item-l">Front-End</div><div class="rh-item-v" id="frontEndDTI">—</div></div>
+        <div class="rh-item"><div class="rh-item-l">HOA Impact</div><div class="rh-item-v" id="hoaImpact">—</div></div>
+        <div class="rh-item"><div class="rh-item-l">Total Housing</div><div class="rh-item-v" id="totalHousing">—</div></div>
+      </div>
+    </div>
+
+    <!-- DTI Bar -->
+    <div class="dti-card results-section">
+      <div class="dti-title">Back-End DTI: <span id="dtiDisplay" style="color:var(--vt)">—</span></div>
+      <div class="dti-bar-wrap"><div class="dti-bar" id="dtiBar" style="width:0%"></div></div>
+      <div class="dti-bar-labels"><span>0%</span><span>28%</span><span>36%</span><span>43%</span><span>57%+</span></div>
+      <div class="dti-zones">
+        <div class="dtz green"><div class="dtz-l">Excellent</div><div class="dtz-v">≤36%</div></div>
+        <div class="dtz yellow"><div class="dtz-l">Acceptable</div><div class="dtz-v">37–43%</div></div>
+        <div class="dtz red"><div class="dtz-l">High Risk</div><div class="dtz-v">&gt;43%</div></div>
+      </div>
+      <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--navy);" id="dtiStatus"></div>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px;" id="dtiNote"></div>
+      </div>
+    </div>
+
+    <!-- Approval Chart -->
+    <div class="chart-card results-section">
+      <div class="chart-title">Approval Likelihood by Loan Type</div>
+      <canvas id="approvalChart" height="110"></canvas>
+    </div>
+
+  </div>
+
+  <!-- Loan Type Comparison -->
+  <div class="sec">Loan Type HOA Rules</div>
+  <div class="loan-grid fade-in">
+    <div class="loan-card">
+      <div class="loan-header"><span class="loan-badge">FHA</span></div>
+      <div class="loan-name" style="margin-bottom:8px;">FHA Loan</div>
+      <div class="loan-row"><div class="loan-key">HOA in DTI</div><div class="loan-val ok">Yes ✓</div></div>
+      <div class="loan-row"><div class="loan-key">Back-End Max</div><div class="loan-val">43–57%</div></div>
+      <div class="loan-row"><div class="loan-key">Front-End Max</div><div class="loan-val">31–40%</div></div>
+      <div class="loan-row"><div class="loan-key">Reserve Check</div><div class="loan-val warn">10%+ needed</div></div>
+      <div class="loan-row"><div class="loan-key">Delinquency</div><div class="loan-val bad">&lt;15%</div></div>
+    </div>
+    <div class="loan-card">
+      <div class="loan-header"><span class="loan-badge" style="background:linear-gradient(135deg,#1B3F72,#0B1D3A)">Conv</span></div>
+      <div class="loan-name" style="margin-bottom:8px;">Conventional</div>
+      <div class="loan-row"><div class="loan-key">HOA in DTI</div><div class="loan-val ok">Yes ✓</div></div>
+      <div class="loan-row"><div class="loan-key">Back-End Max</div><div class="loan-val">45–50%</div></div>
+      <div class="loan-row"><div class="loan-key">Front-End Max</div><div class="loan-val">28–36%</div></div>
+      <div class="loan-row"><div class="loan-key">Reserve Check</div><div class="loan-val ok">10%+ reserve</div></div>
+      <div class="loan-row"><div class="loan-key">Delinquency</div><div class="loan-val bad">&lt;15%</div></div>
+    </div>
+    <div class="loan-card">
+      <div class="loan-header"><span class="loan-badge" style="background:linear-gradient(135deg,#15803D,#166534)">VA</span></div>
+      <div class="loan-name" style="margin-bottom:8px;">VA Loan</div>
+      <div class="loan-row"><div class="loan-key">HOA in DTI</div><div class="loan-val ok">Yes ✓</div></div>
+      <div class="loan-row"><div class="loan-key">Back-End Max</div><div class="loan-val">41%+</div></div>
+      <div class="loan-row"><div class="loan-key">Residual Inc.</div><div class="loan-val warn">Required</div></div>
+      <div class="loan-row"><div class="loan-key">Reserve Check</div><div class="loan-val ok">Flexible</div></div>
+      <div class="loan-row"><div class="loan-key">Delinquency</div><div class="loan-val warn">Reviewed</div></div>
+    </div>
+    <div class="loan-card">
+      <div class="loan-header"><span class="loan-badge" style="background:linear-gradient(135deg,#D97706,#92400E)">USDA</span></div>
+      <div class="loan-name" style="margin-bottom:8px;">USDA Loan</div>
+      <div class="loan-row"><div class="loan-key">HOA in DTI</div><div class="loan-val ok">Yes ✓</div></div>
+      <div class="loan-row"><div class="loan-key">Back-End Max</div><div class="loan-val">41%</div></div>
+      <div class="loan-row"><div class="loan-key">Front-End Max</div><div class="loan-val">29%</div></div>
+      <div class="loan-row"><div class="loan-key">Eligible Areas</div><div class="loan-val warn">Rural only</div></div>
+      <div class="loan-row"><div class="loan-key">HOA Common</div><div class="loan-val bad">Rare</div></div>
+    </div>
+  </div>
+
+  <!-- HOA Condo Approval Factors -->
+  <div class="sec">Condo Project Approval</div>
+  <div class="info-card fade-in">
+    <div class="info-title">🏢 What Lenders Check About the HOA</div>
+    <div class="info-row">
+      <div class="info-icon" style="background:#DCFCE7">📊</div>
+      <div><div class="info-text">Owner-Occupancy Ratio</div><div class="info-sub">Fannie Mae & FHA require ≥50% owner-occupied units. Buildings with too many rentals may be ineligible for conventional financing.</div></div>
+    </div>
+    <div class="info-row">
+      <div class="info-icon" style="background:#FEE2E2">💸</div>
+      <div><div class="info-text">HOA Delinquency Rate</div><div class="info-sub">Max 15% of units can be 30+ days delinquent on HOA dues. Higher delinquency = HOA cash-flow risk = lender rejection.</div></div>
+    </div>
+    <div class="info-row">
+      <div class="info-icon" style="background:#FEF9C3">🔍</div>
+      <div><div class="info-text">Single-Entity Ownership</div><div class="info-sub">No single entity can own more than 10% (Fannie) or 25% (FHA) of units. Over-concentrated ownership is a red flag.</div></div>
+    </div>
+    <div class="info-row">
+      <div class="info-icon" style="background:#F3E8FF">⚖️</div>
+      <div><div class="info-text">Active Litigation</div><div class="info-sub">Any active lawsuit against the HOA (construction defects, insurance disputes) can make the building ineligible for Fannie Mae/FHA financing.</div></div>
+    </div>
+    <div class="info-row">
+      <div class="info-icon" style="background:#DBEAFE">🏦</div>
+      <div><div class="info-text">Reserve Fund Adequacy</div><div class="info-sub">Post-Surfside, FHA requires HOAs to maintain 10%+ of annual budget in reserves. Fannie Mae conducts project reviews on high-rise condos.</div></div>
+    </div>
+    <div class="info-row">
+      <div class="info-icon" style="background:#DCFCE7">🏗️</div>
+      <div><div class="info-text">Building Condition</div><div class="info-sub">Lenders (especially post-2021) increasingly scrutinize structural integrity reports, especially for buildings 20+ years old or 3+ stories.</div></div>
+    </div>
+  </div>
+
+  <!-- Red Flags -->
+  <div class="red-flags fade-in">
+    <div class="rf-title">🚩 Red Flags That Kill Financing</div>
+    <div class="rf-item">
+      <div class="rf-icon">🚨</div>
+      <div><div class="rf-text">HOA Delinquency &gt;15%</div><div class="rf-sub">Triggers automatic disqualification for Fannie Mae & FHA condo approval</div></div>
+    </div>
+    <div class="rf-item">
+      <div class="rf-icon">⚖️</div>
+      <div><div class="rf-text">Active HOA Litigation</div><div class="rf-sub">Even small lawsuits can cause "spot approval" refusals — affecting your specific unit</div></div>
+    </div>
+    <div class="rf-item">
+      <div class="rf-icon">📉</div>
+      <div><div class="rf-text">Pending Large Special Assessment</div><div class="rf-sub">Must be disclosed; may need to be paid in full at closing or reduce loan eligibility</div></div>
+    </div>
+    <div class="rf-item">
+      <div class="rf-icon">🏗️</div>
+      <div><div class="rf-text">Structural Safety Concerns</div><div class="rf-sub">Post-Surfside Florida law now requires milestone inspections; non-compliance = unlendable</div></div>
+    </div>
+    <div class="rf-item">
+      <div class="rf-icon">🔢</div>
+      <div><div class="rf-text">Single Owner &gt;10% of Units</div><div class="rf-sub">Investor concentration violates Fannie Mae project eligibility requirements</div></div>
+    </div>
+  </div>
+
+  <!-- Quick stats -->
+  <div class="sec">Key Numbers</div>
+  <div class="g3 fade-in">
+    <div class="mini-stat"><div class="ms-icon">🏦</div><div class="ms-label">Fannie DTI</div><div class="ms-val">45%</div><div class="ms-sub">Back-end max</div></div>
+    <div class="mini-stat"><div class="ms-icon">🏠</div><div class="ms-label">FHA DTI</div><div class="ms-val">57%</div><div class="ms-sub">w/ AUS approve</div></div>
+    <div class="mini-stat"><div class="ms-icon">🇺🇸</div><div class="ms-label">VA DTI</div><div class="ms-val">41%</div><div class="ms-sub">+ residual rule</div></div>
+  </div>
+  <div class="g3 fade-in">
+    <div class="mini-stat"><div class="ms-icon">📊</div><div class="ms-label">Owner-Occ.</div><div class="ms-val">50%</div><div class="ms-sub">FHA min</div></div>
+    <div class="mini-stat"><div class="ms-icon">💰</div><div class="ms-label">Reserves</div><div class="ms-val">10%</div><div class="ms-sub">Of annual budget</div></div>
+    <div class="mini-stat"><div class="ms-icon">⚠️</div><div class="ms-label">Deliq. Max</div><div class="ms-val">15%</div><div class="ms-sub">HOA units</div></div>
+  </div>
+
+  <div class="tip-box fade-in">
+    <div class="tip-title">💡 Pro Tip: HOA Questionnaire</div>
+    <div class="tip-text">Your lender will send an <strong>HOA Questionnaire</strong> to the association before closing. This captures: budget health, delinquency rate, pending litigation, owner-occupancy ratio, and reserve fund balance. Delays in HOA response are a common cause of closing delays — notify the HOA early in the process.</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+function fmtK(n){return '$'+Math.round(n/1000)+'K';}
+
+function resetCalc(){
+  document.getElementById('piPayment').value=2480;
+  document.getElementById('hoaFee').value=350;
+  document.getElementById('taxMo').value=412;
+  document.getElementById('insMo').value=150;
+  document.getElementById('otherDebts').value=500;
+  document.getElementById('grossIncome').value=8500;
+  document.getElementById('resultsSection').style.display='none';
+}
+
+function checkDTI(){
+  const pi = parseFloat(document.getElementById('piPayment').value)||2480;
+  const hoa = parseFloat(document.getElementById('hoaFee').value)||350;
+  const tax = parseFloat(document.getElementById('taxMo').value)||412;
+  const ins = parseFloat(document.getElementById('insMo').value)||150;
+  const debts = parseFloat(document.getElementById('otherDebts').value)||500;
+  const income = parseFloat(document.getElementById('grossIncome').value)||8500;
+
+  const housing = pi + hoa + tax + ins;
+  const total = housing + debts;
+  const frontEnd = (housing / income)*100;
+  const backEnd = (total / income)*100;
+  const hoaImpact = (hoa/income)*100;
+  const housingNoHoa = pi + tax + ins;
+
+  document.getElementById('resultsSection').style.display='block';
+  document.getElementById('backEndDTI').textContent = backEnd.toFixed(1)+'%';
+  document.getElementById('frontEndDTI').textContent = frontEnd.toFixed(1)+'%';
+  document.getElementById('hoaImpact').textContent = '+'+hoaImpact.toFixed(1)+'%';
+  document.getElementById('totalHousing').textContent = fmt(housing)+'/mo';
+  document.getElementById('dtiDisplay').textContent = backEnd.toFixed(1)+'%';
+
+  const hero = document.getElementById('resultHero');
+  const sub = document.getElementById('heroSub');
+  let heroClass;
+
+  if(backEnd <= 36){
+    heroClass='pass';
+    sub.textContent = '✅ Excellent — qualifies for all major loan programs';
+    document.getElementById('dtiStatus').textContent = '✅ Excellent DTI — strong approval across Conventional, FHA, VA, and USDA';
+    document.getElementById('dtiBar').style.background='#15803D';
+  } else if(backEnd <= 43){
+    heroClass='warn';
+    sub.textContent = '⚠️ Acceptable — may require compensating factors for some programs';
+    document.getElementById('dtiStatus').textContent = '⚠️ Acceptable range — qualifies for FHA & most Conventional; VA requires residual income check';
+    document.getElementById('dtiBar').style.background='linear-gradient(90deg,#15803D,#D97706)';
+  } else if(backEnd <= 50){
+    heroClass='warn';
+    sub.textContent = '⚠️ High — FHA with AUS approval possible; Conventional needs compensating factors';
+    document.getElementById('dtiStatus').textContent = '⚠️ High DTI — FHA with AUS approval possible up to 57%; Conventional needs strong reserves or high credit score';
+    document.getElementById('dtiBar').style.background='linear-gradient(90deg,#15803D,#D97706,#EA580C)';
+  } else {
+    heroClass='fail';
+    sub.textContent = '🚨 Exceeds most guidelines — approval unlikely without co-borrower or HOA reduction';
+    document.getElementById('dtiStatus').textContent = '🚨 Very High DTI — exceeds Fannie Mae/Freddie Mac limits. FHA AUS may allow up to 57% with exceptional credit & reserves.';
+    document.getElementById('dtiBar').style.background='linear-gradient(90deg,#15803D,#D97706,#B91C1C)';
+  }
+
+  document.getElementById('dtiNote').textContent = `HOA of ${fmt(hoa)}/mo adds ${hoaImpact.toFixed(1)} percentage points to your DTI. Without HOA, your back-end DTI would be ${((total-hoa)/income*100).toFixed(1)}%.`;
+
+  hero.className = `result-hero ${heroClass}`;
+
+  const barW = Math.min(backEnd/57*100, 100);
+  document.getElementById('dtiBar').style.width = barW+'%';
+
+  setTimeout(()=>{ drawApprovalChart(backEnd); },50);
+}
+
+function drawApprovalChart(dti){
+  const canvas = document.getElementById('approvalChart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth||350, H=110;
+  canvas.width=W; canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+
+  const programs=[
+    {name:'Conv. (Ideal)', max:36, color:'#1B3F72'},
+    {name:'Conv. (Max)',   max:50, color:'#6D28D9'},
+    {name:'FHA (Std)',     max:43, color:'#D97706'},
+    {name:'FHA (AUS)',     max:57, color:'#15803D'},
+    {name:'VA Loan',       max:41, color:'#B91C1C'},
+  ];
+  const barH=14, gap=6, startY=6;
+  const maxX=W-90;
+
+  programs.forEach((p,i)=>{
+    const y=startY+i*(barH+gap);
+    const bw=(p.max/60)*maxX;
+    // Background bar (max)
+    ctx.fillStyle='#EEF2F8';
+    if(ctx.roundRect) ctx.roundRect(80,y,maxX,barH,4); else ctx.rect(80,y,maxX,barH);
+    ctx.fill();
+    // Program bar
+    ctx.fillStyle=p.color;
+    if(ctx.roundRect) ctx.roundRect(80,y,bw,barH,4); else ctx.rect(80,y,bw,barH);
+    ctx.fill();
+    // Label
+    ctx.fillStyle='#0B1D3A'; ctx.font='bold 8.5px Helvetica Neue'; ctx.textAlign='right';
+    ctx.fillText(p.name, 76, y+barH/2+3);
+    // Max label
+    ctx.fillStyle='#fff'; ctx.font='bold 8px Georgia'; ctx.textAlign='left';
+    ctx.fillText(p.max+'%', 85, y+barH/2+3);
+    // User DTI marker
+    const dx=80+(dti/60)*maxX;
+    if(dx<=80+maxX){
+      ctx.beginPath(); ctx.moveTo(dx,y-2); ctx.lineTo(dx,y+barH+2);
+      ctx.strokeStyle= dti<=p.max ? '#fff' : '#FF0000';
+      ctx.lineWidth=1.5; ctx.stroke();
+    }
+    // Status dot
+    const pass = dti <= p.max;
+    ctx.beginPath(); ctx.arc(80+maxX+12, y+barH/2, 5, 0, 2*Math.PI);
+    ctx.fillStyle= pass ? '#15803D':'#B91C1C'; ctx.fill();
+  });
+}
+
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    this.beginPath();this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.quadraticCurveTo(x+w,y,x+w,y+r);
+    this.lineTo(x+w,y+h-r);this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);this.lineTo(x+r,y+h);
+    this.quadraticCurveTo(x,y+h,x,y+h-r);this.lineTo(x,y+r);this.quadraticCurveTo(x,y,x+r,y);this.closePath();
+  };
+}
+</script>
+</body>
+</html>

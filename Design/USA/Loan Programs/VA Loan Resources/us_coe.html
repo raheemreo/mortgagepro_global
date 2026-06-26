@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificate of Eligibility (COE)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+    --purple:#4C1D95;--purple-lt:#7C3AED;--green:#15803D;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#4C1D95 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+  .header::after{content:'📋';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:19px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+  .content{padding:14px 14px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;}
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px;}
+  .inp-box{background:var(--card);border-radius:13px;padding:12px 13px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--blue);}
+  .inp-box.full{grid-column:1/-1;}
+  .inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:14px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:8.5px;color:var(--muted);margin-top:3px;}
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#1B3F72);border-radius:18px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;}
+  .result-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:24px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.25;margin:5px 0 4px;}
+  .rh-amount span{font-size:13px;color:var(--gold-lt);display:block;margin-top:2px;}
+  .rh-sub{font-size:9.5px;color:rgba(255,255,255,0.48);}
+  .save-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:9px;padding:6px 11px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;transition:background .2s;z-index:2;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(76,29,149,0.40);border-color:rgba(124,58,237,0.60);}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .saved-section{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;display:none;}
+  .saved-section.has-saves{display:block;}
+  .saved-item{background:#F8FAFF;border-radius:10px;padding:10px 12px;margin-bottom:7px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .saved-item:last-child{margin-bottom:0;}
+  .si-info{flex:1;}
+  .si-title{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-del{font-size:14px;cursor:pointer;color:#B91C1C;padding:2px 5px;opacity:.6;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#1B3F72,#0B1D3A);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(27,63,114,0.32);font-family:'DM Serif Display',serif;margin-top:3px;}
+  /* Path cards (3 ways to apply) */
+  .path-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+  .path-card{background:var(--card);border-radius:14px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);display:flex;gap:11px;align-items:flex-start;position:relative;}
+  .path-card.best::before{content:'FASTEST';position:absolute;top:-7px;right:12px;background:var(--gold);color:#fff;font-size:7.5px;font-weight:700;letter-spacing:0.5px;padding:3px 7px;border-radius:6px;}
+  .path-ic{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .path-name{font-size:12.5px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .path-desc{font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+  .path-time{display:inline-block;margin-top:6px;font-size:8.5px;font-weight:700;color:var(--blue);background:rgba(27,63,114,0.08);padding:3px 8px;border-radius:7px;}
+  /* Bar chart - processing time */
+  .chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+  .hbar-row{margin-bottom:11px;}
+  .hbar-row:last-child{margin-bottom:0;}
+  .hbar-top{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .hbar-label{font-size:10px;font-weight:600;color:var(--navy);}
+  .hbar-val{font-size:9.5px;font-weight:700;color:var(--blue);}
+  .hbar-track{height:9px;background:#EEF2F8;border-radius:5px;overflow:hidden;}
+  .hbar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#1B3F72,#4C1D95);transition:width .6s;}
+  /* Document checklist */
+  .doc-card{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .doc-row{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .doc-row:last-child{border-bottom:none;}
+  .doc-check{width:18px;height:18px;border-radius:6px;border:1.5px solid var(--border);flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;transition:all .15s;}
+  .doc-check.checked{background:var(--green);border-color:var(--green);}
+  .doc-text{flex:1;}
+  .doc-name{font-size:11px;font-weight:700;color:var(--navy);}
+  .doc-note{font-size:9px;color:var(--muted);margin-top:2px;}
+  /* Entitlement code reference */
+  .ff-card{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:15px;padding:13px 14px;margin-bottom:10px;}
+  .ff-title{font-size:12px;font-weight:700;color:#1E3A5F;font-family:'DM Serif Display',serif;margin-bottom:9px;}
+  .ff-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(147,197,253,0.4);gap:8px;}
+  .ff-row:last-child{border-bottom:none;}
+  .ff-k{font-size:9.5px;color:#1E40AF;font-weight:600;}
+  .ff-v{font-size:9.5px;font-weight:700;color:#1D4ED8;text-align:right;}
+  .elig-card{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .elig-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;}
+  .elig-row:last-child{border-bottom:none;}
+  .elig-label{font-size:11px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .elig-val{font-size:10.5px;font-weight:700;color:#15803D;text-align:right;}
+  .elig-val.gold{color:var(--gold);}
+  .note-strip{background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.25);border-radius:12px;padding:10px 12px;font-size:9.5px;color:#92400E;line-height:1.5;margin-bottom:10px;}
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:18px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.path-grid,.chart-card,.doc-card,.ff-card,.elig-card{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📋</div>
+      <div class="hdr-title">Certificate of Eligibility</div>
+      <div class="hdr-sub">Your proof of VA loan benefit · COE</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Fastest Path</div><div class="rs-v gold">Minutes</div><div class="rs-n">Via Lender</div></div>
+    <div class="rs"><div class="rs-l">Online Portal</div><div class="rs-v">1–3 Days</div><div class="rs-n">VA.gov</div></div>
+    <div class="rs"><div class="rs-l">By Mail</div><div class="rs-v">~30 Days</div><div class="rs-n">Form 26-1880</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="note-strip">⚡ You don't always need to apply yourself — most VA-approved lenders pull your COE electronically in seconds using the VA's automated system (WebLGY).</div>
+
+  <div class="sec">Check Your Likely Entitlement</div>
+  <div class="input-grid">
+    <div class="inp-box full">
+      <label>Service Category</label>
+      <select id="svcCat" onchange="checkEligibility()">
+        <option value="active" selected>Veteran / Active Duty</option>
+        <option value="guard">National Guard / Reserve</option>
+        <option value="spouse">Surviving Spouse</option>
+        <option value="other">Other Qualifying Service</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>VA Loan Used Before?</label>
+      <select id="priorUse" onchange="checkEligibility()">
+        <option value="no" selected>No, First Time</option>
+        <option value="yes">Yes, Used Before</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>Disability Rating</label>
+      <select id="disability" onchange="checkEligibility()">
+        <option value="none" selected>0% / None</option>
+        <option value="lt10">1–9%</option>
+        <option value="gte10">10% or More</option>
+      </select>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="checkEligibility()">📋 Check My Likely Status</button>
+
+  <div class="sec">Result</div>
+  <div class="result-hero">
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+    <div class="rh-label">Likely Entitlement Status</div>
+    <div class="rh-amount" id="entStatus">Full Entitlement <span id="entSub">No loan limit · $0 down possible</span></div>
+    <div class="rh-sub" id="ffStatus">Funding fee: 2.15% (1st use, 0% down) — unless exempt</div>
+  </div>
+
+  <div class="saved-section" id="savedSection">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📂 Saved Checks</div>
+    <div id="savedList"></div>
+  </div>
+
+  <div class="sec">Three Ways to Get Your COE</div>
+  <div class="path-grid">
+    <div class="path-card best">
+      <div class="path-ic">🏦</div>
+      <div>
+        <div class="path-name">Ask Your Lender</div>
+        <div class="path-desc">Most VA-approved lenders retrieve your COE instantly through the VA's WebLGY system — often you do nothing yourself.</div>
+        <div class="path-time">⏱ Minutes</div>
+      </div>
+    </div>
+    <div class="path-card">
+      <div class="path-ic">💻</div>
+      <div>
+        <div class="path-name">Apply Online at VA.gov</div>
+        <div class="path-desc">Sign in with ID.me, Login.gov, DS Logon, or My HealtheVet to request, check, or print your COE yourself.</div>
+        <div class="path-time">⏱ Often same-day to 3 days</div>
+      </div>
+    </div>
+    <div class="path-card">
+      <div class="path-ic">✉️</div>
+      <div>
+        <div class="path-name">Mail VA Form 26-1880</div>
+        <div class="path-desc">Download "Request for a Certificate of Eligibility," complete it, and mail it with your service documents to your Regional Loan Center.</div>
+        <div class="path-time">⏱ ~30 days</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">⏱️ Typical Processing Time by Path</div>
+    <div class="hbar-row">
+      <div class="hbar-top"><div class="hbar-label">Lender (WebLGY)</div><div class="hbar-val">~5 min</div></div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:3%;"></div></div>
+    </div>
+    <div class="hbar-row">
+      <div class="hbar-top"><div class="hbar-label">VA.gov Online Portal</div><div class="hbar-val">1–3 days</div></div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:18%;"></div></div>
+    </div>
+    <div class="hbar-row">
+      <div class="hbar-top"><div class="hbar-label">Mail-In Form 26-1880</div><div class="hbar-val">~30 days</div></div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:100%;"></div></div>
+    </div>
+  </div>
+
+  <div class="sec">Documents You'll Likely Need</div>
+  <div class="doc-card" id="docCard">
+    <!-- populated by JS based on service category -->
+  </div>
+
+  <div class="sec">What's On Your COE</div>
+  <div class="elig-card">
+    <div class="elig-row"><div class="elig-label">Entitlement Amount</div><div class="elig-val">Basic + bonus entitlement</div></div>
+    <div class="elig-row"><div class="elig-label">Funding Fee Status</div><div class="elig-val gold">Exempt or payable</div></div>
+    <div class="elig-row"><div class="elig-label">Loan Type Eligible</div><div class="elig-val">Purchase · IRRRL · Cash-out</div></div>
+    <div class="elig-row"><div class="elig-label">Entitlement Code</div><div class="elig-val">e.g. 01–10 (lender reads this)</div></div>
+  </div>
+
+  <div class="sec">Entitlement Codes — Quick Reference</div>
+  <div class="ff-card">
+    <div class="ff-title">📋 Common COE Entitlement Codes</div>
+    <div class="ff-row"><div class="ff-k">01 – WWII Veteran</div><div class="ff-v">Legacy</div></div>
+    <div class="ff-row"><div class="ff-k">05 – Veteran (general)</div><div class="ff-v">Most common</div></div>
+    <div class="ff-row"><div class="ff-k">06 / 07 – Surviving Spouse</div><div class="ff-v">Fee exempt</div></div>
+    <div class="ff-row"><div class="ff-k">09 – Active Duty</div><div class="ff-v">Standard</div></div>
+    <div class="ff-row"><div class="ff-k">10 – Selected Reserves/Guard</div><div class="ff-v">+0.25% fee</div></div>
+  </div>
+
+  <div class="note-strip">💡 Common errors that delay a COE: misspelled name, wrong SSN, incorrect date of birth, or a service number entered in the SSN field. Your lender can often fix these directly in the VA's LGY portal.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let savedChecks = JSON.parse(localStorage.getItem('va_coe_saves') || '[]');
+
+const docSets = {
+  active: [
+    {name:'DD Form 214', note:'Certificate of Release or Discharge from Active Duty'},
+    {name:'Statement of Service (if currently serving)', note:'Signed by your commander, adjutant, or personnel officer'},
+    {name:'Social Security Number', note:'Used to verify service records electronically'}
+  ],
+  guard: [
+    {name:'NGB Form 22', note:'Report of Separation and Record of Service (Guard)'},
+    {name:'Points Statements', note:'Annual retirement points statements covering your full service'},
+    {name:'Statement of Service', note:'Required if currently on active status'}
+  ],
+  spouse: [
+    {name:'Veteran\'s DD Form 214', note:'Discharge papers of the deceased veteran'},
+    {name:'Marriage License', note:'To verify your relationship to the veteran'},
+    {name:'Death Certificate', note:'Confirms service-connected or qualifying death'},
+    {name:'VA Form 26-1817', note:'Request for Determination of Loan Guaranty Eligibility'}
+  ],
+  other: [
+    {name:'DD Form 214 or equivalent', note:'Discharge or separation record for your service type'},
+    {name:'Supporting Service Records', note:'Varies by category — lender can advise exactly what\'s needed'}
+  ]
+};
+
+function renderDocs(){
+  const cat = document.getElementById('svcCat').value;
+  const docs = docSets[cat];
+  document.getElementById('docCard').innerHTML = docs.map(d=>`
+    <div class="doc-row">
+      <div class="doc-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div>
+      <div class="doc-text"><div class="doc-name">${d.name}</div><div class="doc-note">${d.note}</div></div>
+    </div>`).join('');
+}
+
+function checkEligibility(){
+  const cat = document.getElementById('svcCat').value;
+  const prior = document.getElementById('priorUse').value;
+  const dis = document.getElementById('disability').value;
+
+  let title, sub, ffNote;
+
+  if (cat === 'spouse') {
+    title = 'Likely Eligible — Surviving Spouse';
+    sub = 'Full entitlement available · $0 down possible';
+    ffNote = 'Funding fee: Exempt ($0) for qualifying surviving spouses';
+  } else if (prior === 'no') {
+    title = 'Full Entitlement';
+    sub = 'No loan limit in 2026 · $0 down possible';
+    ffNote = dis === 'gte10'
+      ? 'Funding fee: Exempt ($0) — 10%+ service-connected disability'
+      : (cat === 'guard'
+          ? 'Funding fee: 2.40% (1st use, 0% down, Guard/Reserve)'
+          : 'Funding fee: 2.15% (1st use, 0% down, Active Duty)');
+  } else {
+    title = 'Partial Entitlement (Likely)';
+    sub = 'County limit ($832,750 baseline) may apply · Confirm via COE';
+    ffNote = dis === 'gte10'
+      ? 'Funding fee: Exempt ($0) — 10%+ service-connected disability'
+      : 'Funding fee: 3.30% (subsequent use, 0% down)';
+  }
+
+  document.getElementById('entStatus').innerHTML = title + ' <span id="entSub">'+sub+'</span>';
+  document.getElementById('ffStatus').textContent = ffNote;
+  renderDocs();
+}
+
+function saveCalc() {
+  const cat = document.getElementById('svcCat').options[document.getElementById('svcCat').selectedIndex].text;
+  const status = document.getElementById('entStatus').childNodes[0].textContent.trim();
+  const entry = { id:Date.now(), label:`COE Check – ${cat}`, payment:status, date:new Date().toLocaleDateString() };
+  savedChecks.unshift(entry);
+  if (savedChecks.length>5) savedChecks=savedChecks.slice(0,5);
+  localStorage.setItem('va_coe_saves',JSON.stringify(savedChecks));
+  renderSaved();
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');btn.textContent='✅ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},2000);
+  showToast('Eligibility check saved!');
+}
+function deleteSave(id){ savedChecks=savedChecks.filter(s=>s.id!==id); localStorage.setItem('va_coe_saves',JSON.stringify(savedChecks)); renderSaved(); }
+function renderSaved(){
+  const sec=document.getElementById('savedSection'); const list=document.getElementById('savedList');
+  if(!savedChecks.length){sec.classList.remove('has-saves');return;}
+  sec.classList.add('has-saves');
+  list.innerHTML=savedChecks.map(s=>`<div class="saved-item"><div class="si-info"><div class="si-title">${s.label}</div><div class="si-sub">${s.payment} · ${s.date}</div></div><div class="si-del" onclick="deleteSave(${s.id})">✕</div></div>`).join('');
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+checkEligibility();
+renderSaved();
+</script>
+</body>
+</html>

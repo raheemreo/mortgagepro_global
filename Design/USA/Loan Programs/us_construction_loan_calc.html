@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construction Loan Calculator</title>
+<style>
+  :root{--navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--crimson:#991B1B;--gold:#D97706;--gold-lt:#FCD34D;--bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;--border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#B91C1C 55%,#991B1B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🏗️';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;}
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .inp-box{background:var(--card);border-radius:14px;padding:13px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);}
+  .inp-box label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:9px;color:var(--muted);margin-top:3px;}
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:4px;}
+  .calc-btn{background:linear-gradient(135deg,#B91C1C,#991B1B);border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(185,28,28,0.35);font-family:Georgia,serif;transition:transform .1s;}
+  .calc-btn:active{transform:scale(0.98);}
+  .save-btn{background:var(--card);border:2px solid var(--red);border-radius:12px;padding:14px 16px;font-size:13px;font-weight:800;color:var(--red);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap;}
+  .save-btn:hover{background:var(--red);color:#fff;}
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#B91C1C;color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s ease;pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .saved-section{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .saved-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .saved-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .clear-btn{font-size:10px;font-weight:700;color:var(--red);background:none;border:none;cursor:pointer;}
+  .saved-item{background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+  .saved-item:last-child{margin-bottom:0;}
+  .si-label{font-size:10.5px;font-weight:800;color:var(--navy);}
+  .si-detail{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-val{font-size:14px;font-weight:800;color:var(--red);font-family:Georgia,serif;}
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#B91C1C);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:10px;}
+  .rh-label{font-size:9.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:34px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;margin:6px 0 4px;}
+  .rh-amount span{font-size:14px;color:var(--gold-lt);}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.50);}
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:14px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:20px;margin-bottom:6px;}
+  .bk-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:17px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .bk-sub{font-size:9px;color:var(--muted);}
+
+  /* Donut chart */
+  .chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .donut-wrap{display:flex;align-items:center;gap:16px;}
+  .donut-svg{width:100px;height:100px;flex-shrink:0;}
+  .donut-legend{flex:1;}
+  .dl-item{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+  .dl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .dl-label{font-size:10px;color:var(--muted);}
+  .dl-val{font-size:10px;font-weight:800;color:var(--navy);margin-left:auto;}
+
+  /* Interest Buildup Bar */
+  .buildup-chart{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+  .bu-row{display:flex;align-items:center;gap:8px;}
+  .bu-label{font-size:9.5px;font-weight:700;color:var(--muted);width:80px;flex-shrink:0;}
+  .bu-bar-bg{flex:1;height:22px;background:#EEF2F8;border-radius:6px;overflow:hidden;}
+  .bu-bar{height:100%;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;}
+  .bu-bar span{font-size:9px;font-weight:800;color:#fff;}
+
+  .draw-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .draw-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .draw-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .draw-phase{font-size:10px;font-weight:700;color:var(--navy);width:110px;flex-shrink:0;}
+  .draw-bar-bg{flex:1;height:8px;background:#EEF2F8;border-radius:4px;overflow:hidden;}
+  .draw-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,#B91C1C,#991B1B);}
+  .draw-pct{font-size:10px;font-weight:800;color:var(--red);width:32px;text-align:right;flex-shrink:0;}
+  .draw-amt{font-size:9px;color:var(--muted);width:55px;text-align:right;flex-shrink:0;}
+  .timeline-card{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border:1px solid #FCA5A5;border-radius:15px;padding:14px 15px;margin-bottom:10px;}
+  .tl-title{font-size:12.5px;font-weight:800;color:#7F1D1D;font-family:Georgia,serif;margin-bottom:10px;}
+  .tl-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(252,165,165,0.4);}
+  .tl-row:last-child{border-bottom:none;}
+  .tl-k{font-size:10px;color:#991B1B;font-weight:600;}
+  .tl-v{font-size:10px;font-weight:800;color:#B91C1C;}
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--red);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.breakdown-grid,.draw-card,.timeline-card,.chart-card,.ilist{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ Calculation saved!</div>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏗️</div>
+      <div class="hdr-title">Construction Loan Calc</div>
+      <div class="hdr-sub">Build-to-Perm · Draw Schedule · Interest-Only Phase</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Const. Rate</div><div class="rs-v">8.25%</div><div class="rs-n">Avg Jun 2025</div></div>
+    <div class="rs"><div class="rs-l">Perm Rate</div><div class="rs-v gold">6.82%</div><div class="rs-n">30-Yr fixed</div></div>
+    <div class="rs"><div class="rs-l">Min. Down</div><div class="rs-v">20%</div><div class="rs-n">Typical</div></div>
+    <div class="rs"><div class="rs-l">Build Time</div><div class="rs-v">6–18</div><div class="rs-n">months</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec" style="margin-top:0">Project Details <span class="more">Find Lenders →</span></div>
+  <div class="input-grid">
+    <div class="inp-box"><label>Land Cost ($)</label><input type="number" id="landCost" value="120000"><div class="inp-hint">Already owned = $0</div></div>
+    <div class="inp-box"><label>Build Cost ($)</label><input type="number" id="buildCost" value="380000"><div class="inp-hint">National avg ~$300/sqft</div></div>
+    <div class="inp-box"><label>Construction Rate (%)</label><input type="number" id="constRate" value="8.25" step="0.01"><div class="inp-hint">Interest-only phase</div></div>
+    <div class="inp-box"><label>Permanent Rate (%)</label><input type="number" id="permRate" value="6.82" step="0.01"><div class="inp-hint">30-Yr fixed after build</div></div>
+    <div class="inp-box"><label>Build Duration (mo)</label><input type="number" id="buildMonths" value="12" min="3" max="24"><div class="inp-hint">Typical: 6–18 months</div></div>
+    <div class="inp-box"><label>Down Payment (%)</label><input type="number" id="downPct" value="20" step="1"><div class="inp-hint">Of total project cost</div></div>
+  </div>
+  <div class="inp-box" style="margin-bottom:10px;">
+    <label>Contingency Reserve (%)</label>
+    <input type="number" id="contingency" value="10" step="1">
+    <div class="inp-hint">Industry standard: 10–15% of build cost</div>
+  </div>
+  <div class="btn-row">
+    <button class="calc-btn" onclick="calculate()">🏗️ Calculate Construction Loan</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+  </div>
+  <div id="savedSection" style="display:none;margin-top:14px;">
+    <div class="saved-section">
+      <div class="saved-header">
+        <div class="saved-title">🔖 Saved Calculations</div>
+        <button class="clear-btn" onclick="clearSaves()">Clear All</button>
+      </div>
+      <div id="savedList"></div>
+    </div>
+  </div>
+
+  <div class="sec">Cost & Payment Summary</div>
+  <div class="result-hero">
+    <div class="rh-label">Permanent Monthly Payment (After Build)</div>
+    <div class="rh-amount" id="permPayment">$3,348 <span>/mo P&I</span></div>
+    <div class="rh-sub" id="loanSummary">Total project: $500,000 · Down: $100,000 · Const. avg int-only: $2,063/mo</div>
+  </div>
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">🏗️</div><div class="bk-label">Total Project Cost</div><div class="bk-value" id="totalProject">$500,000</div><div class="bk-sub">Land + Build + Contingency</div></div>
+    <div class="bk-card"><div class="bk-icon">💵</div><div class="bk-label">Construction Loan</div><div class="bk-value" id="constLoan">$400,000</div><div class="bk-sub">After down payment</div></div>
+    <div class="bk-card"><div class="bk-icon">📅</div><div class="bk-label">Avg Interest-Only Pmt</div><div class="bk-value" id="avgIntOnly">$2,063</div><div class="bk-sub">During build phase</div></div>
+    <div class="bk-card"><div class="bk-icon">🔄</div><div class="bk-label">Total Const. Interest</div><div class="bk-value" id="totalConstInt">$12,375</div><div class="bk-sub">Paid during build</div></div>
+    <div class="bk-card"><div class="bk-icon">🏠</div><div class="bk-label">Perm. P&I Payment</div><div class="bk-value" id="permPI">$2,623</div><div class="bk-sub">30-yr @ perm rate</div></div>
+    <div class="bk-card"><div class="bk-icon">💰</div><div class="bk-label">Contingency Reserve</div><div class="bk-value" id="contAmt">$38,000</div><div class="bk-sub">Built into loan</div></div>
+  </div>
+
+  <!-- Project Cost Donut -->
+  <div class="sec">Project Cost Breakdown</div>
+  <div class="chart-card">
+    <div class="chart-title">🏗️ Where Your Money Goes</div>
+    <div class="donut-wrap">
+      <svg class="donut-svg" viewBox="0 0 100 100" id="donutSvg"></svg>
+      <div class="donut-legend" id="donutLegend"></div>
+    </div>
+  </div>
+
+  <!-- Interest Buildup -->
+  <div class="sec">Interest Phase Analysis</div>
+  <div class="chart-card">
+    <div class="chart-title">📈 Monthly Interest Paid During Build</div>
+    <div class="buildup-chart" id="buildupChart"></div>
+  </div>
+
+  <div class="sec">Typical Draw Schedule</div>
+  <div class="draw-card">
+    <div class="draw-title">🏗️ Draw Disbursement by Phase</div>
+    <div id="drawRows"></div>
+  </div>
+
+  <div class="sec">Construction Loan Timeline</div>
+  <div class="timeline-card">
+    <div class="tl-title">🗓️ Typical Construction-to-Perm Timeline</div>
+    <div class="tl-row"><div class="tl-k">Application & Approval</div><div class="tl-v">30–60 days</div></div>
+    <div class="tl-row"><div class="tl-k">Interest-Only Build Phase</div><div class="tl-v">6–18 months</div></div>
+    <div class="tl-row"><div class="tl-k">Draw Inspections</div><div class="tl-v">Per draw request</div></div>
+    <div class="tl-row"><div class="tl-k">Certificate of Occupancy</div><div class="tl-v">Upon build completion</div></div>
+    <div class="tl-row"><div class="tl-k">Modification to Perm Loan</div><div class="tl-v">One-time close</div></div>
+    <div class="tl-row"><div class="tl-k">First Perm Payment Due</div><div class="tl-v">30 days post-conversion</div></div>
+  </div>
+  <div class="sec">Construction Loan Resources</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🏗️</div><div><div class="in">One-Close vs. Two-Close</div><div class="is">One-close: single loan · Two-close: separate const. + mortgage</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📋</div><div><div class="in">Builder Requirements</div><div class="is">Licensed general contractor · Lender-approved builder</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Top Construction Lenders</div><div class="is">TD Bank · Flagstar · US Bank · Local community banks</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🔄</div><div><div class="in">FHA 203(k) Alternative</div><div class="is">Renovation + purchase or rehab financing option</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+let lastResult=null,saves=[];
+
+const DRAWS=[
+  {phase:'Foundation',pct:15},
+  {phase:'Framing',pct:25},
+  {phase:'Mechanical',pct:15},
+  {phase:'Drywall',pct:10},
+  {phase:'Trim / Finish',pct:25},
+  {phase:'Cert. of Occ.',pct:10},
+];
+
+function calculate(){
+  const land=parseFloat(document.getElementById('landCost').value)||0;
+  const build=parseFloat(document.getElementById('buildCost').value)||0;
+  const constRateAnn=parseFloat(document.getElementById('constRate').value)/100||0;
+  const permRateAnn=parseFloat(document.getElementById('permRate').value)/100||0;
+  const buildMonths=parseInt(document.getElementById('buildMonths').value)||12;
+  const downPct=parseFloat(document.getElementById('downPct').value)/100||0;
+  const contPct=parseFloat(document.getElementById('contingency').value)/100||0;
+  const contAmt=build*contPct;
+  const totalProject=land+build+contAmt;
+  const downAmt=totalProject*downPct;
+  const constLoan=totalProject-downAmt;
+  const avgBalance=constLoan*0.50;
+  const avgIntOnlyMo=(avgBalance*constRateAnn)/12;
+  const totalConstInt=avgIntOnlyMo*buildMonths;
+  const permMonths=360;
+  const pmr=permRateAnn/12;
+  const permPI=pmr===0?constLoan/permMonths:constLoan*(pmr*Math.pow(1+pmr,permMonths))/(Math.pow(1+pmr,permMonths)-1);
+
+  document.getElementById('permPayment').innerHTML='$'+Math.round(permPI).toLocaleString()+' <span>/mo P&I</span>';
+  document.getElementById('loanSummary').textContent=`Total project: $${Math.round(totalProject).toLocaleString()} · Down: $${Math.round(downAmt).toLocaleString()} · Const. avg int-only: $${Math.round(avgIntOnlyMo).toLocaleString()}/mo`;
+  document.getElementById('totalProject').textContent='$'+Math.round(totalProject).toLocaleString();
+  document.getElementById('constLoan').textContent='$'+Math.round(constLoan).toLocaleString();
+  document.getElementById('avgIntOnly').textContent='$'+Math.round(avgIntOnlyMo).toLocaleString();
+  document.getElementById('totalConstInt').textContent='$'+Math.round(totalConstInt).toLocaleString();
+  document.getElementById('permPI').textContent='$'+Math.round(permPI).toLocaleString();
+  document.getElementById('contAmt').textContent='$'+Math.round(contAmt).toLocaleString();
+
+  // Donut chart
+  const segments=[
+    {label:'Land',val:land,color:'#0B1D3A'},
+    {label:'Build Cost',val:build,color:'#B91C1C'},
+    {label:'Contingency',val:contAmt,color:'#D97706'},
+    {label:'Down Pmt',val:downAmt,color:'#15803D'},
+  ].filter(s=>s.val>0);
+  drawDonut(segments,totalProject);
+
+  // Interest buildup chart
+  const steps=[0.25,0.50,0.75,1.00];
+  const buData=steps.map(f=>({label:`${Math.round(f*100)}% drawn`,int:Math.round((constLoan*f*constRateAnn)/12)}));
+  const maxInt=Math.max(...buData.map(d=>d.int));
+  document.getElementById('buildupChart').innerHTML=buData.map(d=>`
+    <div class="bu-row">
+      <div class="bu-label">${d.label}</div>
+      <div class="bu-bar-bg"><div class="bu-bar" style="width:${(d.int/maxInt*100).toFixed(0)}%;background:linear-gradient(90deg,#B91C1C,#991B1B);">
+        <span>$${d.int.toLocaleString()}/mo</span></div></div>
+    </div>`).join('');
+
+  // Draw schedule with amounts
+  document.getElementById('drawRows').innerHTML=DRAWS.map(d=>`
+    <div class="draw-row">
+      <div class="draw-phase">${d.phase}</div>
+      <div class="draw-bar-bg"><div class="draw-bar" style="width:${d.pct}%"></div></div>
+      <div class="draw-pct">${d.pct}%</div>
+      <div class="draw-amt">$${Math.round(constLoan*d.pct/100).toLocaleString()}</div>
+    </div>`).join('');
+
+  lastResult={permPI:Math.round(permPI),avgIntOnly:Math.round(avgIntOnlyMo),totalProject:Math.round(totalProject),
+    label:`Build $${Math.round(build/1000)}K / Land $${Math.round(land/1000)}K`,ts:new Date().toLocaleTimeString()};
+}
+
+function drawDonut(segments,total){
+  const cx=50,cy=50,r=38,stroke=14;
+  let startAngle=-Math.PI/2;
+  let paths='';
+  segments.forEach(s=>{
+    const angle=(s.val/total)*2*Math.PI;
+    const x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);
+    const x2=cx+r*Math.cos(startAngle+angle),y2=cy+r*Math.sin(startAngle+angle);
+    const large=angle>Math.PI?1:0;
+    paths+=`<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${s.color}" stroke-width="${stroke}" stroke-linecap="round"/>`;
+    startAngle+=angle+0.03;
+  });
+  document.getElementById('donutSvg').innerHTML=paths+`<text x="50" y="47" text-anchor="middle" font-size="9" fill="#0B1D3A" font-weight="800">Total</text><text x="50" y="58" text-anchor="middle" font-size="8" fill="#4A5C7A">$${Math.round(total/1000)}K</text>`;
+  document.getElementById('donutLegend').innerHTML=segments.map(s=>`
+    <div class="dl-item">
+      <div class="dl-dot" style="background:${s.color}"></div>
+      <div class="dl-label">${s.label}</div>
+      <div class="dl-val">$${Math.round(s.val/1000)}K</div>
+    </div>`).join('');
+}
+
+function saveCalc(){if(!lastResult){calculate();}if(!lastResult)return;saves.unshift({...lastResult});if(saves.length>5)saves.pop();renderSaves();showToast();}
+function renderSaves(){
+  const sec=document.getElementById('savedSection');
+  if(saves.length===0){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('savedList').innerHTML=saves.map(s=>`
+    <div class="saved-item">
+      <div><div class="si-label">${s.label}</div><div class="si-detail">Total $${Math.round(s.totalProject/1000)}K · ${s.ts}</div></div>
+      <div class="si-val">$${s.permPI.toLocaleString()}/mo</div>
+    </div>`).join('');
+}
+function clearSaves(){saves=[];renderSaves();}
+function showToast(){const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+calculate();
+</script>
+</body>
+</html>

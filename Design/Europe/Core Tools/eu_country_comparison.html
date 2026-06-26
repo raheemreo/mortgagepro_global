@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europe – Country Comparison</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}.rs-val.red{color:#FF8A9A;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#003399;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* LOAN INPUTS */
+.calc-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.input-group label{font-size:10px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;}
+.input-group input,.input-group select{background:#F7F3FF;border:1.5px solid rgba(0,51,153,0.12);border-radius:10px;padding:9px 11px;font-size:14px;font-weight:700;color:#1A0040;outline:none;width:100%;}
+.input-group input:focus,.input-group select:focus{border-color:#003399;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#003399,#1A0040);border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:800;color:#FFCC00;cursor:pointer;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s;}
+.calc-btn:active{transform:scale(.97);}
+@keyframes pulseCmp{0%,100%{box-shadow:0 0 0 rgba(0,51,153,0);}50%{box-shadow:0 4px 22px rgba(0,51,153,0.45);}}
+.calc-btn.idle{animation:pulseCmp 2.4s ease-in-out infinite;}
+#results{display:none;}
+#results.show{display:block;}
+.empty-state{text-align:center;padding:30px 20px;color:#6B21A8;}
+.empty-state .es-icon{font-size:40px;margin-bottom:10px;}
+.empty-state .es-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.empty-state .es-sub{font-size:10.5px;color:#6B21A8;margin-top:4px;line-height:1.5;}
+
+/* Quick stats */
+.cmp-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.cmp-stat-box{background:#fff;border-radius:14px;padding:12px 9px;box-shadow:0 3px 12px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);text-align:center;}
+.cmp-stat-icon{font-size:17px;margin-bottom:4px;}
+.cmp-stat-lbl{font-size:8.5px;color:#6B21A8;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+.cmp-stat-val{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;margin-top:3px;}
+
+/* COMPARISON TABLE */
+.cmp-table{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.cmp-head{display:grid;grid-template-columns:28px 1fr 72px 72px 72px;gap:0;padding:10px 12px;background:#F7F3FF;border-bottom:1px solid rgba(0,51,153,0.08);}
+.cmp-head span{font-size:9px;font-weight:700;color:#6B21A8;text-transform:uppercase;}
+.cmp-row{display:grid;grid-template-columns:28px 1fr 72px 72px 72px;padding:11px 12px;border-bottom:1px solid rgba(0,51,153,0.05);cursor:pointer;transition:background 0.15s;align-items:center;}
+.cmp-row:hover{background:#F7F3FF;}
+.cmp-row:last-child{border-bottom:none;}
+.cmp-row.best{background:linear-gradient(90deg,rgba(0,51,153,0.05),transparent);}
+.cr-flag{font-size:16px;}
+.cr-name{font-size:11px;font-weight:800;color:#1A0040;}
+.cr-sub{font-size:9px;color:#6B21A8;}
+.cr-rate{font-size:12px;font-weight:800;font-family:Georgia,serif;}
+.cr-monthly{font-size:12px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.cr-total{font-size:11px;font-weight:600;color:#B45309;}
+.best-badge{display:inline-flex;background:#EEF2FF;color:#3730A3;font-size:8px;font-weight:700;padding:2px 5px;border-radius:6px;margin-top:2px;}
+
+/* CHART */
+.chart-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;margin-bottom:2px;}
+.chart-sub{font-size:10px;color:#6B21A8;margin-bottom:14px;}
+svg.bar-chart{width:100%;height:180px;}
+
+/* DETAIL COMPARISON */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.det-card{background:#fff;border-radius:14px;padding:11px 10px;box-shadow:0 3px 12px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);}
+.det-flag{font-size:18px;display:block;text-align:center;margin-bottom:6px;}
+.det-country{font-size:10px;font-weight:800;color:#1A0040;text-align:center;font-family:Georgia,serif;}
+.det-row{display:flex;justify-content:space-between;align-items:center;margin-top:5px;padding-top:4px;border-top:1px solid rgba(0,51,153,0.05);}
+.det-lbl{font-size:8px;color:#6B21A8;font-weight:600;}
+.det-val{font-size:9px;font-weight:800;color:#1A0040;}
+
+/* SAVE */
+.save-bar{background:#fff;border-radius:15px;padding:12px 15px;box-shadow:0 3px 14px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.save-bar .sb-txt{flex:1;}
+.save-bar .sb-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.save-bar .sb-sub{font-size:10px;color:#6B21A8;}
+.save-btn{background:linear-gradient(135deg,#003399,#1A0040);color:#FFCC00;border:none;border-radius:10px;padding:9px 15px;font-size:12px;font-weight:800;cursor:pointer;}
+
+/* SAVED COMPARISONS */
+.saved-comp-item{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 3px 12px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.sci-icon{width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.sci-info{flex:1;}
+.sci-title{font-size:11.5px;font-weight:800;color:#1A0040;}
+.sci-sub{font-size:9px;color:#6B21A8;margin-top:2px;}
+.sci-del{font-size:16px;color:rgba(26,0,64,0.2);cursor:pointer;padding:4px;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#003399;color:#FFCC00;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:999;transition:transform 0.3s;box-shadow:0 4px 20px rgba(0,51,153,0.3);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp 0.4s ease both;}
+.anim-2{animation:fadeUp 0.4s 0.08s ease both;}
+.anim-3{animation:fadeUp 0.4s 0.16s ease both;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🌍</span><div class="hdr-title">Country Comparison</div><div class="hdr-sub">Compare EU Mortgage Markets</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">🇩🇪 Germany</div><div class="rs-val grn">3.85%</div><div class="rs-note">10yr Fixed</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇫🇷 France</div><div class="rs-val">3.60%</div><div class="rs-note">20yr Fixed</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇪🇸 Spain</div><div class="rs-val red">4.10%</div><div class="rs-note">Variable</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">ECB</div><div class="rs-val gold">4.00%</div><div class="rs-note">Rate</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Set Loan Parameters</div>
+  <div class="calc-card anim">
+    <div class="input-row">
+      <div class="input-group">
+        <label>Property Value (€)</label>
+        <input type="number" id="propVal" value="420000" step="10000">
+      </div>
+      <div class="input-group">
+        <label>Deposit (%)</label>
+        <input type="number" id="deposit" value="20" min="5" max="50">
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Term (Years)</label>
+        <select id="term">
+          <option value="15">15 years</option>
+          <option value="20" selected>20 years</option>
+          <option value="25">25 years</option>
+          <option value="30">30 years</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Rate Type</label>
+        <select id="rateType">
+          <option value="fixed">Fixed</option>
+          <option value="variable">Variable</option>
+        </select>
+      </div>
+    </div>
+    <button class="calc-btn idle" id="cmpCalcBtn" onclick="compare()">🌍 Compare All Countries</button>
+  </div>
+
+  <div id="results">
+    <div class="sec-lbl anim-2">Quick Stats</div>
+    <div class="cmp-stats-row anim-2">
+      <div class="cmp-stat-box"><div class="cmp-stat-icon">🏆</div><div class="cmp-stat-lbl">Lowest Rate</div><div class="cmp-stat-val" id="statLowestRate">—</div></div>
+      <div class="cmp-stat-box"><div class="cmp-stat-icon">💰</div><div class="cmp-stat-lbl">Best Monthly</div><div class="cmp-stat-val" id="statBestMonthly">—</div></div>
+      <div class="cmp-stat-box"><div class="cmp-stat-icon">📊</div><div class="cmp-stat-lbl">Rate Spread</div><div class="cmp-stat-val" id="statRateSpread">—</div></div>
+    </div>
+    <div class="sec-lbl anim-2">Monthly Payment Comparison</div>
+    <div class="chart-card anim-2">
+      <div class="chart-title">Payment by Country</div>
+      <div class="chart-sub">Based on your loan parameters · 2025 market rates</div>
+      <svg class="bar-chart" id="barChart" viewBox="0 0 360 180"></svg>
+    </div>
+
+    <div class="sec-lbl anim-3">Side-by-Side Rankings</div>
+    <div class="cmp-table anim-3">
+      <div class="cmp-head">
+        <span></span><span>Country</span><span>Rate</span><span>Monthly</span><span>Total Int.</span>
+      </div>
+      <div id="tableBody"></div>
+    </div>
+
+    <div class="sec-lbl">Market Snapshot</div>
+    <div class="detail-grid" id="detailGrid"></div>
+
+    <div class="save-bar">
+      <div style="font-size:28px">💾</div>
+      <div class="sb-txt"><div class="sb-title">Save Comparison</div><div class="sb-sub">Store for later reference</div></div>
+      <button class="save-btn" onclick="saveComp()">Save ✓</button>
+    </div>
+
+    <div id="savedCompsWrap" style="display:none;">
+      <div class="sec-lbl">🔖 Saved Comparisons <span id="savedCompsCount" style="font-size:9px;font-weight:700;background:#EEF2FF;color:#3730A3;padding:2px 8px;border-radius:20px;text-transform:none;">0</span></div>
+      <div id="savedCompsList"></div>
+    </div>
+  </div>
+
+  <div class="empty-state" id="cmpEmptyState">
+    <div class="es-icon">🌍</div>
+    <div class="es-title">Set Your Loan Parameters Above</div>
+    <div class="es-sub">Fill in the property value and terms, then tap<br><strong>Compare All Countries</strong> to see rankings.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Comparison saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const COUNTRIES = [
+  {code:'DE',flag:'🇩🇪',name:'Germany',sub:'Baufinanzierung',fixed:3.85,variable:4.92,maxLTV:80,avgPrice:420000,propTax:3.5,notary:1.5,agent:3.57},
+  {code:'FR',flag:'🇫🇷',name:'France',sub:'Prêt Immobilier',fixed:3.60,variable:4.62,maxLTV:85,avgPrice:330000,propTax:0.5,notary:7.0,agent:5.0},
+  {code:'ES',flag:'🇪🇸',name:'Spain',sub:'Hipoteca',fixed:3.30,variable:4.92,maxLTV:80,avgPrice:280000,propTax:1.1,notary:0.5,agent:3.0},
+  {code:'IT',flag:'🇮🇹',name:'Italy',sub:'Mutuo',fixed:4.25,variable:5.42,maxLTV:80,avgPrice:210000,propTax:2.0,notary:1.0,agent:4.0},
+  {code:'NL',flag:'🇳🇱',name:'Netherlands',sub:'Hypotheek',fixed:3.75,variable:4.92,maxLTV:100,avgPrice:430000,propTax:0.0,notary:0.5,agent:1.5},
+  {code:'PT',flag:'🇵🇹',name:'Portugal',sub:'Crédito Habitação',fixed:4.30,variable:5.72,maxLTV:80,avgPrice:290000,propTax:0.3,notary:0.8,agent:5.0},
+];
+
+function monthlyPayment(P,rateAnnual,years){
+  const r=rateAnnual/100/12;
+  const n=years*12;
+  if(r===0)return P/n;
+  return P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+}
+function fmt(n){return new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);}
+
+let lastCompareResults=null;
+function compare(){
+  document.getElementById('cmpCalcBtn').classList.remove('idle');
+  const pv=parseFloat(document.getElementById('propVal').value);
+  const dep=parseFloat(document.getElementById('deposit').value)/100;
+  const term=parseInt(document.getElementById('term').value);
+  const type=document.getElementById('rateType').value;
+
+  if(!pv||pv<=0){showCmpToast('Enter a valid property value');return;}
+  if(isNaN(dep)||dep<0||dep>=1){showCmpToast('Enter a valid deposit percentage');return;}
+
+  const loan=pv*(1-dep);
+  const results=COUNTRIES.map(c=>{
+    const rate=type==='fixed'?c.fixed:c.variable;
+    const m=monthlyPayment(loan,rate,term);
+    const total=m*term*12;
+    const totalInt=total-loan;
+    return {...c,rate,monthly:m,totalInt,loan};
+  }).sort((a,b)=>a.monthly-b.monthly);
+
+  lastCompareResults={pv,dep,term,type,results};
+
+  // quick stats
+  const rates=results.map(r=>r.rate);
+  document.getElementById('statLowestRate').textContent=Math.min(...rates).toFixed(2)+'%';
+  document.getElementById('statBestMonthly').textContent=fmt(results[0].monthly);
+  document.getElementById('statRateSpread').textContent=(Math.max(...rates)-Math.min(...rates)).toFixed(2)+'%';
+
+  buildBarChart(results,term);
+  buildTable(results);
+  buildDetail(results.slice(0,6));
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('cmpEmptyState').style.display='none';
+  setTimeout(()=>{document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});},80);
+}
+
+function showCmpToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>{t.classList.remove('show');t.textContent='✅ Comparison saved!';},2200);
+}
+
+function buildBarChart(res,term){
+  const svg=document.getElementById('barChart');
+  const W=360,H=180,pl=8,pr=8,pt=10,pb=30;
+  const n=res.length;
+  const barW=(W-pl-pr)/(n*1.4);
+  const maxM=res[res.length-1].monthly*1.1;
+  const colors=['#003399','#4F46E5','#6D28D9','#0F766E','#B45309','#334155'];
+
+  let bars='',labels='',vals='';
+  res.forEach((r,i)=>{
+    const x=pl+i*(W-pl-pr)/n+(barW*0.2);
+    const barH=(r.monthly/maxM)*(H-pt-pb);
+    const y=pt+(H-pt-pb)-barH;
+    const col=i===0?'url(#goldGrad)':colors[i]||'#94a3b8';
+    bars+=`<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="6" fill="${col}" opacity="${i===0?1:0.7}"/>`;
+    labels+=`<text x="${x+barW/2}" y="${H-4}" text-anchor="middle" font-size="10" fill="#1A0040" font-weight="700">${r.flag}</text>`;
+    vals+=`<text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="9" fill="${i===0?'#003399':'#6B21A8'}" font-weight="800">${fmt(r.monthly).replace('€','€').replace('.','')}</text>`;
+  });
+
+  svg.innerHTML=`
+    <defs>
+      <linearGradient id="goldGrad" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="#FFCC00"/><stop offset="100%" stop-color="#B45309"/>
+      </linearGradient>
+    </defs>
+    ${bars}${vals}${labels}
+    <text x="${(W-pl-pr)/2/res.length+pl}" y="${H-4}" text-anchor="middle" font-size="8" fill="#003399" font-weight="800" dy="0">★Best</text>
+  `;
+}
+
+function buildTable(res){
+  let html='';
+  res.forEach((r,i)=>{
+    html+=`<div class="cmp-row ${i===0?'best':''}">
+      <span class="cr-flag">${r.flag}</span>
+      <div><div class="cr-name">${r.name}</div><div class="cr-sub">${r.sub}${i===0?'<br><span class="best-badge">★ Lowest</span>':''}</div></div>
+      <span class="cr-rate">${r.rate.toFixed(2)}%</span>
+      <span class="cr-monthly">${fmt(r.monthly)}</span>
+      <span class="cr-total">${fmt(r.totalInt)}</span>
+    </div>`;
+  });
+  document.getElementById('tableBody').innerHTML=html;
+}
+
+function buildDetail(res){
+  let html='';
+  res.forEach(r=>{
+    html+=`<div class="det-card">
+      <span class="det-flag">${r.flag}</span>
+      <div class="det-country">${r.name}</div>
+      <div class="det-row"><span class="det-lbl">Max LTV</span><span class="det-val">${r.maxLTV}%</span></div>
+      <div class="det-row"><span class="det-lbl">Prop Tax</span><span class="det-val">${r.propTax}%</span></div>
+      <div class="det-row"><span class="det-lbl">Notary</span><span class="det-val">${r.notary}%</span></div>
+      <div class="det-row"><span class="det-lbl">Avg Price</span><span class="det-val">${fmt(r.avgPrice)}</span></div>
+    </div>`;
+  });
+  document.getElementById('detailGrid').innerHTML=html;
+}
+
+let savedComps=[];
+function saveComp(){
+  if(!lastCompareResults){return;}
+  const d=lastCompareResults;
+  savedComps.unshift({
+    pv:d.pv,term:d.term,type:d.type,
+    best:d.results[0].name,bestFlag:d.results[0].flag,bestMonthly:fmt(d.results[0].monthly),
+    ts:new Date().toLocaleTimeString()
+  });
+  renderSavedComps();
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function renderSavedComps(){
+  const wrap=document.getElementById('savedCompsWrap');
+  const list=document.getElementById('savedCompsList');
+  if(!savedComps.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  document.getElementById('savedCompsCount').textContent=savedComps.length;
+  list.innerHTML=savedComps.map((s,i)=>`
+    <div class="saved-comp-item">
+      <div class="sci-icon">${s.bestFlag}</div>
+      <div class="sci-info">
+        <div class="sci-title">${fmt(s.pv)} · ${s.term}yr · ${s.type}</div>
+        <div class="sci-sub">Best: ${s.best} at ${s.bestMonthly}/mo · Saved ${s.ts}</div>
+      </div>
+      <div class="sci-del" onclick="deleteSavedComp(${i})">✕</div>
+    </div>`).join('');
+}
+function deleteSavedComp(i){savedComps.splice(i,1);renderSavedComps();}
+
+document.querySelectorAll('#propVal,#deposit,#term,#rateType').forEach(el=>{
+  el.addEventListener('input',()=>document.getElementById('cmpCalcBtn').classList.add('idle'));
+  el.addEventListener('change',()=>document.getElementById('cmpCalcBtn').classList.add('idle'));
+});
+
+// Results are revealed only after the user taps "Compare All Countries"
+</script>
+</body>
+</html>

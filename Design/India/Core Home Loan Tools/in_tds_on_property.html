@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TDS on Property – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00; --saffron2:#E05A00; --ochre:#F5A623; --ochre-lt:#FFDEA0;
+  --navy:#0B1F48; --chakra:#1A3A8F; --green:#046A38; --green2:#07543A;
+  --teal:#0D9488; --slate:#334155; --slate2:#1E293B;
+  --white:#FFFFFF; --bg:#FFF8F0; --card:#FFFFFF;
+  --muted:#7A5C3A; --border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09); --sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg); color:var(--navy);
+  max-width:420px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background-image:
+    radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+    radial-gradient(circle at 90% 80%,rgba(51,65,85,0.04) 0%,transparent 50%);
+  pointer-events:none; z-index:0;
+}
+.header{
+  background:linear-gradient(158deg,#334155 0%,#1E293B 40%,#FF6B00 82%,#E05A00 100%);
+  padding:46px 18px 0; position:relative; overflow:hidden;
+}
+.header::before{content:'📊'; position:absolute; right:8px; top:22px; font-size:90px; opacity:0.08; line-height:1;}
+.header::after{
+  content:''; position:absolute; bottom:0; left:0; width:100%; height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);
+}
+.hdr-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2;}
+.icon-btn{
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; color:#fff; cursor:pointer; text-decoration:none;
+}
+.hdr-center{text-align:center; position:relative; z-index:2;}
+.hdr-flag{font-size:28px; display:block;}
+.hdr-title{font-size:20px; font-weight:800; color:#fff; letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px; color:rgba(255,255,255,0.50); margin-top:1px; font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{
+  background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0; padding:11px 14px;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  position:relative; z-index:2; margin-top:4px;
+}
+.rs{text-align:center; position:relative;}
+.rs:not(:last-child)::after{content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px; color:rgba(255,255,255,0.46); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px; font-weight:800; color:#fff; line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px; color:rgba(255,255,255,0.36); margin-top:1px; font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px; position:relative; z-index:1;}
+.sec{
+  font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase;
+  letter-spacing:1px; margin:22px 0 11px; display:flex; align-items:center;
+  justify-content:space-between; font-family:'Trebuchet MS',sans-serif;
+}
+.sec .badge{font-size:9px; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:none; letter-spacing:0;}
+
+/* HERO */
+.hero{
+  background:linear-gradient(148deg,var(--slate),var(--slate2));
+  border-radius:22px; padding:20px; position:relative; overflow:hidden; box-shadow:var(--sh2);
+}
+.hero::before{content:''; position:absolute; top:-50px; right:-50px; width:180px; height:180px; border-radius:50%; background:rgba(255,107,0,0.12);}
+.hero::after{content:'📋'; position:absolute; right:14px; bottom:12px; font-size:54px; opacity:.12;}
+.h-tag{font-size:9px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:.8px; font-family:'Trebuchet MS',sans-serif;}
+.h-title{font-size:17px; font-weight:800; color:#fff; margin:4px 0 14px; line-height:1.25;}
+.h-title span{color:var(--ochre-lt);}
+.h-input-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+.h-field{background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); border-radius:11px; padding:10px 11px;}
+.h-field label{font-size:8.5px; color:rgba(255,255,255,0.48); display:block; margin-bottom:4px; font-family:'Trebuchet MS',sans-serif; text-transform:uppercase; letter-spacing:.4px;}
+.h-field input, .h-field select{
+  width:100%; background:transparent; border:none; outline:none;
+  font-size:14px; font-weight:800; color:#fff;
+  font-family:'Book Antiqua',Palatino,Georgia,serif;
+}
+.h-field select option{color:var(--navy); background:#fff;}
+.full-col{grid-column:1/-1;}
+.h-btn{
+  margin-top:13px; width:100%;
+  background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border:none; border-radius:13px; padding:13px;
+  font-size:14px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,107,0,0.42);
+  font-family:'Book Antiqua',Palatino,Georgia,serif; letter-spacing:.3px;
+}
+
+/* ALERT BANNERS */
+.alert-banner{
+  border-radius:16px; padding:13px 15px; margin-bottom:11px;
+  display:flex; align-items:flex-start; gap:11px;
+}
+.alert-banner.info{background:linear-gradient(135deg,#EFF6FF,#DBEAFE); border:1.5px solid #93C5FD;}
+.alert-banner.warn{background:linear-gradient(135deg,#FFF7ED,#FFEDD5); border:1.5px solid #FDBA74;}
+.alert-banner.danger{background:linear-gradient(135deg,#FEF2F2,#FEE2E2); border:1.5px solid #FCA5A5;}
+.alert-icon{font-size:22px; flex-shrink:0; margin-top:1px;}
+.alert-title{font-size:12.5px; font-weight:800; color:var(--navy);}
+.alert-sub{font-size:9.5px; color:var(--muted); margin-top:2px; font-family:'Trebuchet MS',sans-serif; line-height:1.4;}
+
+/* RESULT */
+.result-card{
+  background:linear-gradient(148deg,var(--slate),var(--slate2));
+  border-radius:22px; padding:20px; box-shadow:var(--sh2);
+  position:relative; overflow:hidden; display:none; margin-bottom:11px;
+}
+.result-card::after{content:'☸'; position:absolute; right:14px; bottom:12px; font-size:54px; color:rgba(255,255,255,0.06);}
+.rc-tag{font-size:9px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:.8px; font-family:'Trebuchet MS',sans-serif; margin-bottom:10px;}
+.rc-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+.rc-box{background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.16); border-radius:11px; padding:11px;}
+.rc-box label{font-size:8.5px; color:rgba(255,255,255,0.45); display:block; margin-bottom:3px; font-family:'Trebuchet MS',sans-serif;}
+.rc-box .v{font-size:16px; font-weight:800; color:#fff;}
+.rc-box .vs{font-size:9px; color:rgba(255,255,255,0.50); font-family:'Trebuchet MS',sans-serif; margin-top:2px;}
+.tds-highlight{
+  background:rgba(255,107,0,0.18); border:1.5px solid rgba(255,107,0,0.40);
+  border-radius:13px; padding:14px; margin-top:10px; text-align:center;
+}
+.th-lbl{font-size:9px; color:rgba(255,255,255,0.55); font-family:'Trebuchet MS',sans-serif;}
+.th-val{font-size:28px; font-weight:800; color:var(--ochre-lt); margin:4px 0;}
+.th-sub{font-size:9.5px; color:rgba(255,255,255,0.60); font-family:'Trebuchet MS',sans-serif;}
+
+/* TIMELINE */
+.timeline{display:flex; flex-direction:column; gap:0;}
+.tl-item{display:flex; gap:14px; position:relative; padding-bottom:18px;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-item:not(:last-child)::before{
+  content:''; position:absolute; left:19px; top:38px; width:2px;
+  bottom:0; background:var(--border);
+}
+.tl-num{
+  width:38px; height:38px; border-radius:12px;
+  background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:800; color:#fff; flex-shrink:0;
+  box-shadow:0 3px 10px rgba(255,107,0,0.30);
+}
+.tl-content{flex:1; padding-top:6px;}
+.tl-title{font-size:12.5px; font-weight:800; color:var(--navy);}
+.tl-sub{font-size:9.5px; color:var(--muted); margin-top:3px; font-family:'Trebuchet MS',sans-serif; line-height:1.45;}
+.tl-badge{
+  display:inline-flex; margin-top:5px; font-size:9px; font-weight:700;
+  padding:3px 9px; border-radius:20px; font-family:'Trebuchet MS',sans-serif;
+}
+
+/* FAQ / RATES TABLE */
+.rate-table{background:var(--card); border-radius:17px; box-shadow:var(--sh); border:1px solid var(--border); overflow:hidden; margin-bottom:11px;}
+.rt-header{background:linear-gradient(135deg,var(--slate),var(--slate2)); padding:12px 15px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;}
+.rt-header div{font-size:9px; font-weight:800; color:rgba(255,255,255,0.70); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif;}
+.rt-row{padding:11px 15px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; border-bottom:1px solid var(--border);}
+.rt-row:last-child{border-bottom:none;}
+.rt-row:nth-child(even){background:rgba(255,107,0,0.02);}
+.rt-cell{font-size:11px; font-weight:700; color:var(--navy);}
+.rt-cell.muted{font-size:10px; color:var(--muted); font-weight:600; font-family:'Trebuchet MS',sans-serif;}
+.rt-cell.rate{font-size:13px; font-weight:800; color:var(--saffron);}
+.rt-cell.exempt{color:var(--green); font-size:11px;}
+
+/* SAVE */
+.save-btn{
+  width:100%; background:linear-gradient(135deg,var(--slate),var(--slate2));
+  border:none; border-radius:13px; padding:13px;
+  font-size:14px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(51,65,85,0.30);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;
+  display:flex; align-items:center; justify-content:center; gap:8px; margin-top:4px;
+}
+.save-toast{display:none; text-align:center; margin-top:8px; font-size:11px; color:var(--green); font-weight:700; font-family:'Trebuchet MS',sans-serif;}
+
+.bnav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:420px; background:var(--card);
+  border-top:1px solid var(--border); display:flex;
+  padding:10px 0 20px; box-shadow:0 -4px 22px rgba(11,31,72,0.09); z-index:100;
+}
+.ni{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;}
+.ni-ic{font-size:19px; line-height:1;}
+.ni-lb{font-size:10px; font-weight:700; color:var(--muted); font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+.fu6{animation:fadeUp .38s ease both .29s;}
+.fu7{animation:fadeUp .38s ease both .34s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="screen_india.html">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">📊</div>
+      <div class="hdr-title">TDS on <span>Property</span></div>
+      <div class="hdr-sub">Section 194-IA · Buyer Obligation · Form 26QB · 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">TDS Rate</div>
+      <div class="rs-v saf">1%</div>
+      <div class="rs-n">Sec 194-IA</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Threshold</div>
+      <div class="rs-v">₹50L+</div>
+      <div class="rs-n">Property value</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Due Date</div>
+      <div class="rs-v">30 Days</div>
+      <div class="rs-n">From payment</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Form</div>
+      <div class="rs-v">26QB</div>
+      <div class="rs-n">Online NSDL</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ALERT -->
+  <div class="alert-banner info fu1">
+    <div class="alert-icon">ℹ️</div>
+    <div>
+      <div class="alert-title">Budget 2024: TDS on Rent Increased</div>
+      <div class="alert-sub">Section 194-IB TDS on rent raised from 5% to 10% w.e.f. Oct 1, 2024. Property purchase TDS (Sec 194-IA) remains 1% for transactions above ₹50 Lakh.</div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR -->
+  <div class="sec fu1" style="margin-top:0">TDS Calculator – Section 194-IA <span class="badge" style="background:#EFF6FF;color:#1D4ED8;">Buyer's Duty</span></div>
+  <div class="hero fu1">
+    <div class="h-tag">संपत्ति पर TDS – Property Transaction Tax Deduction</div>
+    <div class="h-title">Calculate TDS to be <span>deducted & deposited</span></div>
+    <div class="h-input-grid">
+      <div class="h-field">
+        <label>Sale Consideration (₹)</label>
+        <input type="number" id="saleAmt" value="7500000" placeholder="7500000">
+      </div>
+      <div class="h-field">
+        <label>Stamp Duty Value (₹)</label>
+        <input type="number" id="stampVal" value="8000000" placeholder="8000000">
+      </div>
+      <div class="h-field">
+        <label>Payment Mode</label>
+        <select id="payMode">
+          <option value="lump">Lump Sum</option>
+          <option value="installment">Installments</option>
+        </select>
+      </div>
+      <div class="h-field">
+        <label>Seller PAN Available?</label>
+        <select id="panAvail">
+          <option value="yes">Yes – 1% TDS</option>
+          <option value="no">No – 20% TDS (Higher)</option>
+        </select>
+      </div>
+      <div class="h-field full-col">
+        <label>Number of Sellers (Joint Sale)</label>
+        <input type="number" id="numSellers" value="1" min="1" max="4">
+      </div>
+    </div>
+    <button class="h-btn" onclick="calculateTDS()">📊 Calculate TDS Liability</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card fu2" id="resultCard">
+    <div class="rc-tag">☸ TDS Calculation Result – Section 194-IA</div>
+    <div class="rc-grid">
+      <div class="rc-box">
+        <label>TDS Base Amount</label>
+        <div class="v" id="r-base">₹75,00,000</div>
+        <div class="vs">Higher of consideration/stamp</div>
+      </div>
+      <div class="rc-box">
+        <label>TDS Rate</label>
+        <div class="v" id="r-rate">1%</div>
+        <div class="vs">Section 194-IA</div>
+      </div>
+      <div class="rc-box">
+        <label>TDS Per Seller</label>
+        <div class="v" id="r-per">₹37,500</div>
+        <div class="vs">If multiple sellers</div>
+      </div>
+      <div class="rc-box">
+        <label>Deposit Deadline</label>
+        <div class="v" id="r-due">30 Days</div>
+        <div class="vs">Via Form 26QB online</div>
+      </div>
+    </div>
+    <div class="tds-highlight">
+      <div class="th-lbl">Total TDS to Deduct & Deposit</div>
+      <div class="th-val" id="r-tds">₹75,000</div>
+      <div class="th-sub" id="r-tds-sub">Deposit on NSDL via Form 26QB within 30 days of payment</div>
+    </div>
+  </div>
+
+  <!-- RATES TABLE -->
+  <div class="sec fu3">TDS Rate Reference – Property Transactions 2025</div>
+  <div class="rate-table fu3">
+    <div class="rt-header">
+      <div>Transaction</div>
+      <div>Threshold</div>
+      <div>TDS Rate</div>
+    </div>
+    <div class="rt-row">
+      <div class="rt-cell">Property Purchase<br><span style="font-size:9px;color:var(--muted);">Sec 194-IA</span></div>
+      <div class="rt-cell muted">Above ₹50 Lakh</div>
+      <div class="rt-cell rate">1%</div>
+    </div>
+    <div class="rt-row">
+      <div class="rt-cell">Property Purchase<br><span style="font-size:9px;color:var(--muted);">No PAN (Sec 206AA)</span></div>
+      <div class="rt-cell muted">Above ₹50 Lakh</div>
+      <div class="rt-cell rate" style="color:#EF4444;">20%</div>
+    </div>
+    <div class="rt-row">
+      <div class="rt-cell">Rent Paid to Owner<br><span style="font-size:9px;color:var(--muted);">Sec 194-IB</span></div>
+      <div class="rt-cell muted">Above ₹50K/month</div>
+      <div class="rt-cell rate">10%</div>
+    </div>
+    <div class="rt-row">
+      <div class="rt-cell">NRI Property Sale<br><span style="font-size:9px;color:var(--muted);">Sec 195 LTCG</span></div>
+      <div class="rt-cell muted">Any amount</div>
+      <div class="rt-cell rate">12.5%</div>
+    </div>
+    <div class="rt-row">
+      <div class="rt-cell">NRI STCG<br><span style="font-size:9px;color:var(--muted);">Sec 195</span></div>
+      <div class="rt-cell muted">Any amount</div>
+      <div class="rt-cell rate">30%</div>
+    </div>
+    <div class="rt-row">
+      <div class="rt-cell">Agricultural Land<br><span style="font-size:9px;color:var(--muted);">Rural – Exempt</span></div>
+      <div class="rt-cell muted">Any amount</div>
+      <div class="rt-cell exempt">Nil / Exempt</div>
+    </div>
+  </div>
+
+  <!-- STEP-BY-STEP -->
+  <div class="sec fu4">How to Deposit TDS – Step by Step</div>
+  <div class="timeline fu4">
+    <div class="tl-item">
+      <div class="tl-num">1</div>
+      <div class="tl-content">
+        <div class="tl-title">Deduct TDS at the time of payment</div>
+        <div class="tl-sub">Buyer deducts 1% of the sale consideration (or stamp duty value, whichever is higher) before paying the seller. Applicable only if total consideration exceeds ₹50 Lakh.</div>
+        <span class="tl-badge" style="background:#EFF6FF;color:#1D4ED8;">Required by Law</span>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-num">2</div>
+      <div class="tl-content">
+        <div class="tl-title">File Form 26QB online on NSDL</div>
+        <div class="tl-sub">Go to tin.tin.nsdl.com → TDS on Property → Form 26QB. Enter buyer PAN, seller PAN, property details, and TDS amount. One Form 26QB per buyer-seller combination.</div>
+        <span class="tl-badge" style="background:#FFF7ED;color:#C2410C;">Within 30 Days of Payment</span>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-num">3</div>
+      <div class="tl-content">
+        <div class="tl-title">Pay TDS via challan 26QB</div>
+        <div class="tl-sub">Pay online via Net Banking / debit card through NSDL. Authorised bank challan generated. Keep acknowledgement number. Payment can also be done at authorised bank branches.</div>
+        <span class="tl-badge" style="background:#ECFDF5;color:#065F46;">Online Net Banking</span>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-num">4</div>
+      <div class="tl-content">
+        <div class="tl-title">Download Form 16B (TDS Certificate)</div>
+        <div class="tl-sub">After 10–15 days of TDS deposit, download Form 16B from TRACES portal (tdscpc.gov.in). Issue Form 16B to the seller within 15 days of quarterly TDS statement filing.</div>
+        <span class="tl-badge" style="background:#F5F3FF;color:#6D28D9;">TRACES Portal</span>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-num">5</div>
+      <div class="tl-content">
+        <div class="tl-title">Seller claims TDS credit in ITR</div>
+        <div class="tl-sub">Seller views TDS credit in Form 26AS / AIS. Claims TDS refund or reduces tax payable in Income Tax Return for that assessment year. TDS reflects in TRACES within 30 days.</div>
+        <span class="tl-badge" style="background:#ECFDF5;color:#065F46;">Seller Benefit</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PENALTY INFO -->
+  <div class="sec fu5">Penalties for Non-Compliance</div>
+  <div class="alert-banner danger fu5" style="margin-bottom:9px;">
+    <div class="alert-icon">⚠️</div>
+    <div>
+      <div class="alert-title">Interest for Late TDS Deposit – Sec 201(1A)</div>
+      <div class="alert-sub">1% per month from date TDS was deductible to actual deduction date, PLUS 1.5% per month from deduction to deposit date. Penalty under Sec 271C can be equal to TDS amount.</div>
+    </div>
+  </div>
+  <div class="alert-banner warn fu5">
+    <div class="alert-icon">📋</div>
+    <div>
+      <div class="alert-title">Prosecution Risk – Sec 276B</div>
+      <div class="alert-sub">If TDS deducted but not deposited, rigorous imprisonment of 3 months to 7 years and fine. File 26QB promptly to avoid notices. IT Department matches 26AS cross-data automatically.</div>
+    </div>
+  </div>
+
+  <!-- SAVE -->
+  <div class="sec fu6">Save This Calculation</div>
+  <div class="fu6">
+    <button class="save-btn" onclick="saveResult()">🔖 Save TDS Calculation</button>
+    <div class="save-toast" id="saveToast">✅ TDS calculation saved to your profile!</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmtL(v){
+  if(v>=10000000) return '₹'+(v/10000000).toFixed(2)+'Cr';
+  if(v>=100000) return '₹'+(v/100000).toFixed(2)+'L';
+  return '₹'+Math.round(v).toLocaleString('en-IN');
+}
+
+function calculateTDS(){
+  const sale = parseFloat(document.getElementById('saleAmt').value)||0;
+  const stamp = parseFloat(document.getElementById('stampVal').value)||0;
+  const pan = document.getElementById('panAvail').value;
+  const sellers = parseInt(document.getElementById('numSellers').value)||1;
+
+  if(sale < 5000000 && stamp < 5000000){
+    document.getElementById('r-base').textContent = fmtL(sale);
+    document.getElementById('r-rate').textContent = 'Nil';
+    document.getElementById('r-per').textContent = '₹0';
+    document.getElementById('r-tds').textContent = '₹0 – No TDS';
+    document.getElementById('r-tds-sub').textContent = 'Property value below ₹50L threshold – TDS not applicable under Sec 194-IA';
+    document.getElementById('r-due').textContent = 'N/A';
+    document.getElementById('resultCard').style.display='block';
+    return;
+  }
+
+  const base = Math.max(sale, stamp);
+  const rate = pan==='yes' ? 1 : 20;
+  const totalTDS = Math.round(base * rate / 100);
+  const perSeller = Math.round(totalTDS / sellers);
+
+  document.getElementById('r-base').textContent = fmtL(base);
+  document.getElementById('r-rate').textContent = rate+'%';
+  document.getElementById('r-per').textContent = fmtL(perSeller);
+  document.getElementById('r-tds').textContent = fmtL(totalTDS);
+  document.getElementById('r-due').textContent = '30 Days';
+  document.getElementById('r-tds-sub').textContent = pan==='no'
+    ? '⚠️ Higher TDS @ 20% due to missing PAN (Sec 206AA). Ensure seller provides PAN.'
+    : 'Deposit via Form 26QB on NSDL portal within 30 days of each payment/instalment.';
+
+  document.getElementById('resultCard').style.display='block';
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function saveResult(){
+  const tds = document.getElementById('r-tds').textContent;
+  const saved = JSON.parse(localStorage.getItem('tds_saves')||'[]');
+  saved.push({tds, date:new Date().toLocaleDateString('en-IN'), ts:Date.now()});
+  localStorage.setItem('tds_saves', JSON.stringify(saved));
+  const t = document.getElementById('saveToast');
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none', 3000);
+}
+
+// Auto-show result on load for demo
+window.addEventListener('DOMContentLoaded', calculateTDS);
+</script>
+</body>
+</html>

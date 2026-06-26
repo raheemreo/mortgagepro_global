@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LTV Calculator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'📊';position:absolute;right:12px;top:42px;font-size:72px;opacity:0.07;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}.rs-lbl{font-size:8.5px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.gold{color:#FFD700;}.rs-val.grn{color:#90EE90;}.rs-val.red{color:#FF8A9A;}
+.rs-div{width:1px;height:28px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:8.5px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;}
+.calc-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 8px 32px rgba(13,13,43,0.10);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.cc-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.cc-icon{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#4F46E5,#3730A3);display:flex;align-items:center;justify-content:center;font-size:19px;}
+.cc-title{font-size:15px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.cc-sub{font-size:10px;color:#5C5C8A;margin-top:1px;}
+.field{margin-bottom:12px;}
+.field label{font-size:10px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.field input{width:100%;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700;color:#0D0D2B;font-family:'Helvetica Neue',Arial,sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+.field input:focus{border-color:#4F46E5;box-shadow:0 0 0 3px rgba(79,70,229,0.09);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#4F46E5,#3730A3);border:none;border-radius:12px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(79,70,229,0.35);margin-top:4px;transition:transform .1s;}
+.calc-btn:active{transform:scale(0.98);}
+
+/* BIG LTV VISUAL */
+.ltv-result-card{background:linear-gradient(148deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(13,13,43,0.28);position:relative;overflow:hidden;margin-bottom:12px;}
+.ltv-result-card::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(79,70,229,0.15);}
+.ltv-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.ltv-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px;}
+.ltv-big{font-size:48px;font-weight:800;font-family:Georgia,serif;line-height:1;}
+.ltv-sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;}
+.save-btn{background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:10px;padding:8px 13px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.ltv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.lg-item{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 12px;}
+.lg-lbl{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+.lg-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.lg-val.gold{color:#FFD700;}.lg-val.grn{color:#90EE90;}.lg-val.red{color:#FF8A9A;}
+
+/* LTV VISUAL BAR */
+.ltv-visual-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.lv-title{font-size:12px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:14px;}
+.house-bar-wrap{position:relative;height:52px;background:#EEF2FF;border-radius:12px;overflow:hidden;margin-bottom:8px;}
+.hb-loan{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,#C8102E,#991B1B);border-radius:12px 0 0 12px;display:flex;align-items:center;justify-content:center;transition:width .6s cubic-bezier(.34,1.56,.64,1);}
+.hb-loan-lbl{color:#fff;font-size:11px;font-weight:800;white-space:nowrap;}
+.hb-equity{position:absolute;right:0;top:0;height:100%;display:flex;align-items:center;justify-content:center;}
+.hb-equity-lbl{color:#5C5C8A;font-size:11px;font-weight:700;}
+.hb-legend{display:flex;gap:16px;justify-content:center;}
+.hb-l{display:flex;align-items:center;gap:5px;font-size:10px;color:#5C5C8A;}
+.hb-dot{width:10px;height:10px;border-radius:3px;}
+
+/* RATE TIER CARD */
+.tier-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.tier-title{font-size:12px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:12px;}
+.tier-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;margin-bottom:5px;transition:background .2s;}
+.tier-row.active-tier{background:#EEF2FF;border:1px solid #A5B4FC;}
+.tier-ltv{font-size:11px;font-weight:800;color:#1a1a5e;width:64px;}
+.tier-rate{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;width:52px;}
+.tier-desc{font-size:10px;color:#5C5C8A;flex:1;}
+.tier-badge{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;}
+.tier-badge.best{background:#D1FAE5;color:#065F46;}
+.tier-badge.ok{background:#EEF2FF;color:#3730A3;}
+.tier-badge.high{background:#FEE2E2;color:#991B1B;}
+.tier-badge.current{background:#1a1a5e;color:#fff;}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0D0D2B;color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;white-space:nowrap;opacity:0;transition:opacity .25s,transform .25s;z-index:200;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.saved-item{background:#fff;border-radius:14px;padding:13px 14px;box-shadow:0 3px 14px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);cursor:pointer;margin-bottom:8px;}
+.si-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.si-name{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.si-date{font-size:9px;color:#5C5C8A;}
+.si-metrics{display:flex;gap:10px;flex-wrap:wrap;}
+.si-m{font-size:10px;color:#5C5C8A;}.si-m strong{font-weight:800;color:#0D0D2B;}
+.si-del{background:none;border:none;font-size:14px;cursor:pointer;opacity:0.4;}
+.empty-state{text-align:center;padding:32px 20px;color:#5C5C8A;}
+.empty-state .ei{font-size:36px;margin-bottom:8px;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;font-weight:800;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.calc-card{animation:fadeUp .3s ease both .05s;}
+.ltv-result-card{animation:fadeUp .3s ease both .12s;}
+.ltv-visual-card{animation:fadeUp .3s ease both .18s;}
+.tier-card{animation:fadeUp .3s ease both .24s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">📊</span><div class="hdr-title">LTV Calculator</div><div class="hdr-sub">Loan-to-Value · Rate Tiers · Equity · UK 2025</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">60% LTV</div><div class="rs-val grn">3.99%</div><div class="rs-note">Best rate</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">75% LTV</div><div class="rs-val">4.35%</div><div class="rs-note">Good</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">90% LTV</div><div class="rs-val gold">4.95%</div><div class="rs-note">Higher</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">95% LTV</div><div class="rs-val red">5.49%</div><div class="rs-note">Max tier</div></div>
+  </div>
+</div>
+
+<div id="mainView" class="content">
+  <div class="sec-lbl" style="margin-top:0">Property & Loan Details</div>
+  <div class="calc-card">
+    <div class="cc-hdr">
+      <div class="cc-icon">📊</div>
+      <div><div class="cc-title">LTV Calculator</div><div class="cc-sub">Loan-to-value · equity · rate tier · 2025</div></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Property Value (£)</label><input type="number" id="propVal" value="380000" oninput="calculate()"></div>
+      <div class="field"><label>Deposit / Equity (£)</label><input type="number" id="equity" value="76000" oninput="calculate()"></div>
+    </div>
+    <div class="field"><label>Outstanding Mortgage (£) — leave 0 for purchase</label><input type="number" id="outstanding" value="0" oninput="calculate()"></div>
+    <button class="calc-btn" onclick="calculate()">📊 Calculate LTV</button>
+  </div>
+
+  <div class="ltv-result-card">
+    <div class="ltv-top">
+      <div>
+        <div class="ltv-lbl">Loan-to-Value Ratio</div>
+        <div class="ltv-big" id="ltvBig" style="color:#90EE90;">80%</div>
+        <div class="ltv-sub" id="ltvSub">Standard residential · Good rate tier</div>
+      </div>
+      <button class="save-btn" onclick="saveCalc()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 13H3a1 1 0 01-1-1V3a1 1 0 011-1h7l3 3v8a1 1 0 01-1 1z"/><polyline points="9,1 9,5 4,5"/></svg>
+        Save
+      </button>
+    </div>
+    <div class="ltv-grid">
+      <div class="lg-item"><div class="lg-lbl">Loan Amount</div><div class="lg-val gold" id="loanAmt">£304,000</div></div>
+      <div class="lg-item"><div class="lg-lbl">Equity</div><div class="lg-val grn" id="equityAmt">£76,000</div></div>
+      <div class="lg-item"><div class="lg-lbl">Indicative Rate</div><div class="lg-val" id="indRate">4.35%</div></div>
+      <div class="lg-item"><div class="lg-lbl">Rate Tier</div><div class="lg-val" id="rateTier">80% LTV</div></div>
+    </div>
+  </div>
+
+  <!-- LTV VISUAL -->
+  <div class="ltv-visual-card">
+    <div class="lv-title">Loan vs Equity Split</div>
+    <div class="house-bar-wrap">
+      <div class="hb-loan" id="loanBar" style="width:80%"><span class="hb-loan-lbl" id="loanBarLbl">80% Loan</span></div>
+      <div class="hb-equity" id="equityBar" style="width:20%"><span class="hb-equity-lbl" id="equityBarLbl">20% Equity</span></div>
+    </div>
+    <div class="hb-legend">
+      <div class="hb-l"><div class="hb-dot" style="background:#C8102E"></div>Loan</div>
+      <div class="hb-l"><div class="hb-dot" style="background:#EEF2FF;border:1px solid #A5B4FC"></div>Equity</div>
+    </div>
+  </div>
+
+  <!-- RATE TIERS -->
+  <div class="tier-card">
+    <div class="tier-title">📈 UK Rate Tiers (2025 Best Buys)</div>
+    <div id="tierRows"></div>
+  </div>
+</div>
+
+<div id="savedView" class="content" style="display:none;">
+  <div class="sec-lbl" style="margin-top:0">Saved Calculations</div>
+  <div id="savedContainer"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="bnav">
+  <div class="ni" onclick="history.back()"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active" id="tab-calc"><div class="ni-ic">📊</div><div class="ni-lb">LTV</div></div>
+  <div class="ni" id="tab-saved" onclick="switchTab('saved')"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+const TIERS=[
+  {max:60,rate:3.99,label:'Up to 60%',badge:'best',badgeText:'Best Rate'},
+  {max:65,rate:4.05,label:'Up to 65%',badge:'best',badgeText:'Excellent'},
+  {max:75,rate:4.35,label:'Up to 75%',badge:'ok',badgeText:'Good'},
+  {max:80,rate:4.55,label:'Up to 80%',badge:'ok',badgeText:'Standard'},
+  {max:85,rate:4.75,label:'Up to 85%',badge:'ok',badgeText:'Fair'},
+  {max:90,rate:4.95,label:'Up to 90%',badge:'high',badgeText:'Higher'},
+  {max:95,rate:5.49,label:'Up to 95%',badge:'high',badgeText:'High'},
+];
+let lastResult=null;
+function fmt(n){return '£'+Math.round(Math.abs(n)).toLocaleString('en-GB');}
+
+function calculate(){
+  const propVal=parseFloat(document.getElementById('propVal').value)||380000;
+  const equity=parseFloat(document.getElementById('equity').value)||76000;
+  const outstanding=parseFloat(document.getElementById('outstanding').value)||0;
+  const loan=outstanding>0?outstanding:(propVal-equity);
+  const ltv=(loan/propVal)*100;
+  const equityAmt=propVal-loan;
+  const tier=TIERS.find(t=>ltv<=t.max)||TIERS[TIERS.length-1];
+  lastResult={propVal,equity,outstanding,loan,ltv,equityAmt,tier};
+
+  const ltvBig=document.getElementById('ltvBig');
+  ltvBig.textContent=ltv.toFixed(1)+'%';
+  ltvBig.style.color=ltv<=75?'#90EE90':ltv<=85?'#FFD700':'#FF8A9A';
+  document.getElementById('ltvSub').textContent=tier.label+' tier · '+tier.badgeText;
+  document.getElementById('loanAmt').textContent=fmt(loan);
+  document.getElementById('equityAmt').textContent=fmt(equityAmt);
+  document.getElementById('indRate').textContent=tier.rate.toFixed(2)+'%';
+  document.getElementById('rateTier').textContent=ltv.toFixed(0)+'% LTV';
+
+  // Bar
+  const ltvClamped=Math.min(ltv,100);
+  document.getElementById('loanBar').style.width=ltvClamped+'%';
+  document.getElementById('equityBar').style.width=(100-ltvClamped)+'%';
+  document.getElementById('loanBarLbl').textContent=ltvClamped.toFixed(0)+'% Loan';
+  document.getElementById('equityBarLbl').textContent=((100-ltvClamped).toFixed(0))+'%';
+
+  // Tier rows
+  document.getElementById('tierRows').innerHTML=TIERS.map(t=>`
+    <div class="tier-row ${Math.round(ltv)<=t.max && (TIERS.indexOf(t)===0||Math.round(ltv)>TIERS[TIERS.indexOf(t)-1]?.max)?'active-tier':''}">
+      <div class="tier-ltv">${t.label}</div>
+      <div class="tier-rate">${t.rate}%</div>
+      <div class="tier-desc">5-yr fixed indicative</div>
+      <div class="tier-badge ${t.badge}">${t.badge==='ok'&&t===tier?'✓ Your tier':t.badgeText}</div>
+    </div>`).join('');
+}
+
+function getSaved(){try{return JSON.parse(localStorage.getItem('ukLTVSaved')||'[]');}catch{return[];}}
+function setSaved(a){localStorage.setItem('ukLTVSaved',JSON.stringify(a));}
+function saveCalc(){
+  if(!lastResult)return;
+  const {propVal,equity,loan,ltv,tier}=lastResult;
+  const saved=getSaved();
+  const entry={id:Date.now(),date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+    label:fmt(propVal)+' · '+ltv.toFixed(1)+'% LTV',ltv:ltv.toFixed(1),rate:tier.rate,
+    inputs:{propVal,equity,outstanding:document.getElementById('outstanding').value||0}};
+  saved.unshift(entry);if(saved.length>20)saved.pop();setSaved(saved);showToast('✓ LTV saved');
+}
+function loadSaved(id){const e=getSaved().find(x=>x.id===id);if(!e)return;
+  document.getElementById('propVal').value=e.inputs.propVal;
+  document.getElementById('equity').value=e.inputs.equity;
+  document.getElementById('outstanding').value=e.inputs.outstanding||0;
+  calculate();switchTab('calc');showToast('Loaded: '+e.label);}
+function deleteSaved(id,ev){ev.stopPropagation();setSaved(getSaved().filter(s=>s.id!==id));renderSaved();showToast('Deleted');}
+function renderSaved(){const saved=getSaved();const c=document.getElementById('savedContainer');
+  if(!saved.length){c.innerHTML=`<div class="empty-state"><div class="ei">📊</div><div>No saved LTV calculations yet.</div></div>`;return;}
+  c.innerHTML=saved.map(s=>`<div class="saved-item" onclick="loadSaved(${s.id})">
+    <div class="si-top"><div><div class="si-name">${s.label}</div><div class="si-date">${s.date}</div></div><button class="si-del" onclick="deleteSaved(${s.id},event)">🗑</button></div>
+    <div class="si-metrics"><div class="si-m">LTV <strong>${s.ltv}%</strong></div><div class="si-m">Rate <strong>${s.rate}%</strong></div></div>
+  </div>`).join('');}
+function switchTab(t){document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  if(t==='saved'){document.getElementById('mainView').style.display='none';document.getElementById('savedView').style.display='';document.getElementById('tab-saved').classList.add('active');renderSaved();}
+  else{document.getElementById('mainView').style.display='';document.getElementById('savedView').style.display='none';document.getElementById('tab-calc').classList.add('active');}}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+calculate();
+</script>
+</body>
+</html>

@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compare All Banks – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-v.dn{color:#FCA5A5;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .more{font-size:11px;font-weight:600;color:var(--saffron);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* SEARCH / FILTER HERO */
+.search-hero{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:22px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+.search-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,107,0,0.14);}
+.search-hero::after{content:'🏦';position:absolute;right:14px;bottom:10px;font-size:52px;opacity:0.12;}
+.sh-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.sh-title{font-size:17px;font-weight:800;color:#fff;margin:4px 0 14px;line-height:1.25;}
+.sh-title span{color:var(--ochre-lt);}
+.sh-stats{display:flex;gap:8px;margin-bottom:14px;}
+.sh-stat{flex:1;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px 9px;text-align:center;}
+.sh-stat-val{font-size:15px;font-weight:800;color:#fff;}
+.sh-stat-lbl{font-size:8px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;margin-top:1px;}
+
+/* FILTER CHIPS */
+.filter-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-bottom:14px;}
+.filter-row::-webkit-scrollbar{display:none;}
+.filter-chip{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:10.5px;font-weight:700;font-family:'Trebuchet MS',sans-serif;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.10);color:rgba(255,255,255,0.75);cursor:pointer;white-space:nowrap;}
+.filter-chip.active{background:var(--saffron);border-color:var(--saffron);color:#fff;}
+
+/* LOAN PROFILE INPUTS */
+.profile-inputs{display:grid;grid-template-columns:1fr 1fr;gap:7px;position:relative;z-index:2;}
+.pi-field{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);border-radius:10px;padding:8px 10px;}
+.pi-lbl{font-size:8px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;margin-bottom:2px;}
+.pi-input{background:transparent;border:none;outline:none;font-size:14px;font-weight:800;color:#fff;width:100%;font-family:'Book Antiqua',Palatino,Georgia,serif;}
+.compare-btn{margin-top:12px;width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.2px;}
+
+/* BEST RATE BANNER */
+.best-banner{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;border-radius:17px;padding:14px 15px;display:flex;align-items:center;gap:11px;margin-bottom:11px;}
+.bb-icon{font-size:28px;}
+.bb-title{font-size:13px;font-weight:800;color:var(--green2);}
+.bb-sub{font-size:9.5px;color:var(--green);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.bb-rate{margin-left:auto;font-size:22px;font-weight:800;color:var(--green2);flex-shrink:0;}
+
+/* RATE BAR CHART */
+.rate-bars-card{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+.rb-card-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+.rate-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.rate-bar-row:last-child{margin-bottom:0;}
+.rb-bank{width:76px;font-size:10px;font-weight:800;color:var(--navy);flex-shrink:0;font-family:'Trebuchet MS',sans-serif;}
+.rb-bar-bg{flex:1;height:22px;background:rgba(255,107,0,0.06);border-radius:6px;overflow:hidden;position:relative;}
+.rb-bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-right:7px;justify-content:flex-end;}
+.rb-bar-fill.best{background:linear-gradient(90deg,rgba(4,106,56,0.15),var(--green));}
+.rb-bar-fill.good{background:linear-gradient(90deg,rgba(255,107,0,0.10),var(--saffron));}
+.rb-bar-fill.mid{background:linear-gradient(90deg,rgba(11,31,72,0.08),var(--chakra));}
+.rb-bar-fill.high{background:linear-gradient(90deg,rgba(220,38,38,0.08),#DC2626);}
+.rb-rate-lbl{font-size:10px;font-weight:800;color:#fff;}
+.rb-badge{font-size:8.5px;font-weight:700;font-family:'Trebuchet MS',sans-serif;padding:2px 7px;border-radius:20px;flex-shrink:0;}
+.rb-badge.best{background:#ECFDF5;color:#065F46;}
+.rb-badge.mid{background:#EFF6FF;color:#1D4ED8;}
+.rb-badge.high{background:#FEF2F2;color:#B91C1C;}
+
+/* FULL COMPARISON TABLE */
+.comp-table-card{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;overflow:hidden;}
+.ct-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.ct-hdr{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:4px;padding-bottom:8px;border-bottom:1.5px solid rgba(255,107,0,0.12);margin-bottom:2px;}
+.ct-hdr-cell{font-size:8px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-family:'Trebuchet MS',sans-serif;text-align:right;}
+.ct-hdr-cell:first-child{text-align:left;}
+.ct-row{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:4px;padding:9px 0;border-bottom:1px solid rgba(255,107,0,0.07);align-items:center;}
+.ct-row:last-child{border-bottom:none;padding-bottom:0;}
+.ct-bank-cell{display:flex;align-items:center;gap:7px;}
+.ct-icon{font-size:18px;}
+.ct-bank-name{font-size:11px;font-weight:800;color:var(--navy);}
+.ct-bank-type{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ct-cell{font-size:11px;font-weight:800;color:var(--navy);text-align:right;}
+.ct-cell.green{color:var(--green);}
+.ct-cell.red{color:#DC2626;}
+.ct-cell.muted{font-size:9.5px;color:var(--muted);}
+.ct-best-badge{display:inline-flex;background:#ECFDF5;color:#065F46;font-size:7.5px;font-weight:800;padding:2px 5px;border-radius:5px;font-family:'Trebuchet MS',sans-serif;margin-left:3px;vertical-align:middle;}
+
+/* EMI COMPARISON */
+.emi-card{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+.emi-card-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.emi-card-sub{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:14px;}
+.emi-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,107,0,0.07);}
+.emi-row:last-child{border-bottom:none;}
+.emi-left{display:flex;align-items:center;gap:8px;}
+.emi-rank{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;font-family:'Trebuchet MS',sans-serif;flex-shrink:0;}
+.emi-rank.r1{background:var(--green);color:#fff;}
+.emi-rank.r2{background:var(--saffron);color:#fff;}
+.emi-rank.r3{background:var(--chakra);color:#fff;}
+.emi-rank.rn{background:rgba(11,31,72,0.08);color:var(--navy);}
+.emi-bank-name{font-size:11.5px;font-weight:800;color:var(--navy);}
+.emi-rate{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.emi-right{text-align:right;}
+.emi-amount{font-size:14px;font-weight:800;color:var(--navy);}
+.emi-save{font-size:9px;font-weight:700;color:var(--green);font-family:'Trebuchet MS',sans-serif;}
+.emi-extra{font-size:9px;color:#DC2626;font-family:'Trebuchet MS',sans-serif;}
+
+/* DONUT CHART */
+.donut-card{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+.donut-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.donut-sub{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:14px;}
+.donut-wrap{display:flex;align-items:center;gap:16px;}
+.donut-svg-wrap{flex-shrink:0;}
+.donut-legend{flex:1;}
+.donut-legend-item{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
+.donut-legend-item:last-child{margin-bottom:0;}
+.dl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.dl-lbl{font-size:10.5px;font-weight:700;color:var(--navy);}
+.dl-val{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:1px;}
+
+/* NRI RATE SECTION */
+.nri-rate-card{background:linear-gradient(140deg,var(--navy),var(--chakra));border-radius:17px;padding:16px;box-shadow:var(--sh2);margin-bottom:11px;}
+.nri-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;}
+.nri-sub{font-size:9.5px;color:rgba(255,255,255,0.50);font-family:'Trebuchet MS',sans-serif;margin-bottom:12px;}
+.nri-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.08);}
+.nri-row:last-child{border-bottom:none;}
+.nri-bank{font-size:11px;font-weight:700;color:#fff;}
+.nri-rate{font-size:12px;font-weight:800;color:var(--ochre-lt);}
+
+/* TOAST */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 20px;border-radius:25px;font-size:12px;font-weight:700;font-family:'Trebuchet MS',sans-serif;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+/* BNAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+.fu6{animation:fadeUp .38s ease both .29s;}
+.fu7{animation:fadeUp .38s ease both .34s;}
+.fu8{animation:fadeUp .38s ease both .39s;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">📊 Comparison saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏦</div>
+      <div class="hdr-title">Compare <span>Home Loan Rates</span></div>
+      <div class="hdr-sub">30+ Banks · PSU · Private · HFC · NBFC · Jun 2026</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">Lowest Rate</div>
+      <div class="rs-v grn">7.10%</div>
+      <div class="rs-n">BoM / BoI</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">SBI Rate</div>
+      <div class="rs-v saf">7.25%</div>
+      <div class="rs-n">Floating</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Avg Private</div>
+      <div class="rs-v dn">7.90%</div>
+      <div class="rs-n">Banks</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Repo Rate</div>
+      <div class="rs-v">5.25%</div>
+      <div class="rs-n">RBI Jun'26</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- SEARCH HERO -->
+  <div class="sec fu1" style="margin-top:0;">Customise Your Search <span class="more">Advanced →</span></div>
+  <div class="search-hero fu1">
+    <div class="sh-tag">🇮🇳 India Home Loan Rate Comparison · Jun 9, 2026</div>
+    <div class="sh-title">Find the <span>Lowest Rate</span><br>for your Loan Profile</div>
+    <div class="sh-stats">
+      <div class="sh-stat"><div class="sh-stat-val">30+</div><div class="sh-stat-lbl">Banks</div></div>
+      <div class="sh-stat"><div class="sh-stat-val">7.10%</div><div class="sh-stat-lbl">From</div></div>
+      <div class="sh-stat"><div class="sh-stat-val">Live</div><div class="sh-stat-lbl">Jun 2026</div></div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-chip active" onclick="setFilter(this,'all')">All Banks</span>
+      <span class="filter-chip" onclick="setFilter(this,'psu')">PSU Banks</span>
+      <span class="filter-chip" onclick="setFilter(this,'private')">Private</span>
+      <span class="filter-chip" onclick="setFilter(this,'hfc')">HFC</span>
+      <span class="filter-chip" onclick="setFilter(this,'nbfc')">NBFC</span>
+      <span class="filter-chip" onclick="setFilter(this,'nri')">NRI Loans</span>
+    </div>
+    <div class="profile-inputs">
+      <div class="pi-field">
+        <div class="pi-lbl">Loan Amount (₹)</div>
+        <input class="pi-input" id="loanAmt" type="number" value="5000000" oninput="updateEMIs()">
+      </div>
+      <div class="pi-field">
+        <div class="pi-lbl">Tenure (Years)</div>
+        <input class="pi-input" id="tenure" type="number" value="20" oninput="updateEMIs()">
+      </div>
+      <div class="pi-field">
+        <div class="pi-lbl">CIBIL Score</div>
+        <select class="pi-input" id="cibil" onchange="updateEMIs()">
+          <option value="800+">800+ (Best)</option>
+          <option value="750-799">750–799</option>
+          <option value="700-749">700–749</option>
+          <option value="650-699">650–699</option>
+        </select>
+      </div>
+      <div class="pi-field">
+        <div class="pi-lbl">Borrower Type</div>
+        <select class="pi-input" id="btype">
+          <option>Salaried</option>
+          <option>Self-Employed</option>
+          <option>NRI</option>
+        </select>
+      </div>
+    </div>
+    <button class="compare-btn" onclick="doCompare()">☸ Compare All Banks Now</button>
+  </div>
+
+  <!-- BEST RATE BANNER -->
+  <div class="best-banner fu2">
+    <div class="bb-icon">🏆</div>
+    <div>
+      <div class="bb-title">Best Rate: Bank of Maharashtra</div>
+      <div class="bb-sub">PSU Bank · Floating · RLLR-linked · ≥750 CIBIL</div>
+    </div>
+    <div class="bb-rate">7.10%</div>
+  </div>
+
+  <!-- RATE BAR CHART -->
+  <div class="sec fu2">Rate Comparison Chart <span class="more">All 30+ →</span></div>
+  <div class="rate-bars-card fu2">
+    <div class="rb-card-title">Home Loan Rates — Top 10 Lenders (Jun 2026)</div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">Bank of Mah.</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill best" style="width:62%;"><span class="rb-rate-lbl">7.10%</span></div></div>
+      <div class="rb-badge best">Best</div>
+    </div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">Bank of India</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill best" style="width:62%;"><span class="rb-rate-lbl">7.10%</span></div></div>
+      <div class="rb-badge best">Best</div>
+    </div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">PNB</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill best" style="width:64%;"><span class="rb-rate-lbl">7.20%</span></div></div>
+      <div class="rb-badge mid">PSU</div>
+    </div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">SBI</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill good" style="width:65%;"><span class="rb-rate-lbl">7.25%</span></div></div>
+      <div class="rb-badge mid">PSU</div>
+    </div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">Bajaj HFL</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill good" style="width:66%;"><span class="rb-rate-lbl">7.35%</span></div></div>
+      <div class="rb-badge mid">NBFC</div>
+    </div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">LIC HFL</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill good" style="width:67%;"><span class="rb-rate-lbl">7.40%</span></div></div>
+      <div class="rb-badge mid">HFC</div>
+    </div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">ICICI Bank</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill good" style="width:68%;"><span class="rb-rate-lbl">7.45%</span></div></div>
+      <div class="rb-badge mid">Pvt.</div>
+    </div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">HDFC Bank</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill mid" style="width:72%;"><span class="rb-rate-lbl">7.90%</span></div></div>
+      <div class="rb-badge mid">Pvt.</div>
+    </div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">Kotak</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill mid" style="width:73%;"><span class="rb-rate-lbl">7.99%</span></div></div>
+      <div class="rb-badge mid">Pvt.</div>
+    </div>
+    <div class="rate-bar-row">
+      <div class="rb-bank">PNB Housing</div>
+      <div class="rb-bar-bg"><div class="rb-bar-fill high" style="width:78%;"><span class="rb-rate-lbl">8.50%</span></div></div>
+      <div class="rb-badge high">HFC</div>
+    </div>
+  </div>
+
+  <!-- FULL COMPARISON TABLE -->
+  <div class="sec fu3">Full Rate Table <span class="more">Download →</span></div>
+  <div class="comp-table-card fu3">
+    <div class="ct-title">All Major Banks — Jun 2026</div>
+    <div class="ct-hdr">
+      <div class="ct-hdr-cell">Bank</div>
+      <div class="ct-hdr-cell">Rate</div>
+      <div class="ct-hdr-cell">Max LTV</div>
+      <div class="ct-hdr-cell">Fee</div>
+    </div>
+
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🏛️</span><div><div class="ct-bank-name">Bank of Mah. <span class="ct-best-badge">★ Best</span></div><div class="ct-bank-type">PSU · Floating</div></div></div>
+      <div class="ct-cell green">7.10%</div>
+      <div class="ct-cell">90%</div>
+      <div class="ct-cell muted">Nil</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🏦</span><div><div class="ct-bank-name">Bank of India <span class="ct-best-badge">★ Best</span></div><div class="ct-bank-type">PSU · Floating</div></div></div>
+      <div class="ct-cell green">7.10%</div>
+      <div class="ct-cell">90%</div>
+      <div class="ct-cell muted">Nil</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🏛️</span><div><div class="ct-bank-name">PNB</div><div class="ct-bank-type">PSU · RLLR</div></div></div>
+      <div class="ct-cell green">7.20%</div>
+      <div class="ct-cell">90%</div>
+      <div class="ct-cell muted">0.35%</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🏦</span><div><div class="ct-bank-name">SBI</div><div class="ct-bank-type">PSU · RLLR</div></div></div>
+      <div class="ct-cell">7.25%</div>
+      <div class="ct-cell">90%</div>
+      <div class="ct-cell muted">0.35%</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🏦</span><div><div class="ct-bank-name">Union Bank</div><div class="ct-bank-type">PSU · Floating</div></div></div>
+      <div class="ct-cell">7.15%</div>
+      <div class="ct-cell">80%</div>
+      <div class="ct-cell muted">Nil</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🔶</span><div><div class="ct-bank-name">Bajaj HFL</div><div class="ct-bank-type">NBFC · Floating</div></div></div>
+      <div class="ct-cell">7.35%</div>
+      <div class="ct-cell">75%</div>
+      <div class="ct-cell muted">0.5%</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🏗️</span><div><div class="ct-bank-name">LIC HFL</div><div class="ct-bank-type">HFC · Float/Fix</div></div></div>
+      <div class="ct-cell">7.40%</div>
+      <div class="ct-cell">80%</div>
+      <div class="ct-cell muted">₹10,000</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🏢</span><div><div class="ct-bank-name">ICICI Bank</div><div class="ct-bank-type">Pvt · RLLR</div></div></div>
+      <div class="ct-cell">7.45%</div>
+      <div class="ct-cell">80%</div>
+      <div class="ct-cell muted">₹10,000</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🏛️</span><div><div class="ct-bank-name">HDFC Bank</div><div class="ct-bank-type">Pvt · RLLR</div></div></div>
+      <div class="ct-cell red">7.90%</div>
+      <div class="ct-cell">80%</div>
+      <div class="ct-cell muted">₹10,000</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">⚡</span><div><div class="ct-bank-name">Axis Bank</div><div class="ct-bank-type">Pvt · RLLR</div></div></div>
+      <div class="ct-cell red">7.90%</div>
+      <div class="ct-cell">80%</div>
+      <div class="ct-cell muted">₹10,000</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🏦</span><div><div class="ct-bank-name">Kotak</div><div class="ct-bank-type">Pvt · Float</div></div></div>
+      <div class="ct-cell red">7.99%</div>
+      <div class="ct-cell">80%</div>
+      <div class="ct-cell muted">0.5%</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-bank-cell"><span class="ct-icon">🌿</span><div><div class="ct-bank-name">PNB Housing</div><div class="ct-bank-type">HFC · Float</div></div></div>
+      <div class="ct-cell red">8.50%</div>
+      <div class="ct-cell">75%</div>
+      <div class="ct-cell muted">1.0%</div>
+    </div>
+  </div>
+
+  <!-- EMI COMPARISON -->
+  <div class="sec fu4">EMI Comparison <span class="more">Save →</span></div>
+  <div class="emi-card fu4">
+    <div class="emi-card-title">Monthly EMI — ₹50L for 20 Years</div>
+    <div class="emi-card-sub">Based on current floating rates · Jun 2026</div>
+    <div class="emi-row">
+      <div class="emi-left">
+        <div class="emi-rank r1">1</div>
+        <div><div class="emi-bank-name">Bank of Maharashtra</div><div class="emi-rate">7.10% Floating</div></div>
+      </div>
+      <div class="emi-right">
+        <div class="emi-amount" id="emi1">₹38,852</div>
+        <div class="emi-save">Best deal</div>
+      </div>
+    </div>
+    <div class="emi-row">
+      <div class="emi-left">
+        <div class="emi-rank r2">2</div>
+        <div><div class="emi-bank-name">SBI</div><div class="emi-rate">7.25% Floating</div></div>
+      </div>
+      <div class="emi-right">
+        <div class="emi-amount" id="emi2">₹39,302</div>
+        <div class="emi-extra">+₹450/mo vs Best</div>
+      </div>
+    </div>
+    <div class="emi-row">
+      <div class="emi-left">
+        <div class="emi-rank r3">3</div>
+        <div><div class="emi-bank-name">LIC HFL</div><div class="emi-rate">7.40% Float/Fix</div></div>
+      </div>
+      <div class="emi-right">
+        <div class="emi-amount" id="emi3">₹39,757</div>
+        <div class="emi-extra">+₹905/mo vs Best</div>
+      </div>
+    </div>
+    <div class="emi-row">
+      <div class="emi-left">
+        <div class="emi-rank rn">4</div>
+        <div><div class="emi-bank-name">ICICI Bank</div><div class="emi-rate">7.45% Floating</div></div>
+      </div>
+      <div class="emi-right">
+        <div class="emi-amount">₹39,909</div>
+        <div class="emi-extra">+₹1,057/mo</div>
+      </div>
+    </div>
+    <div class="emi-row">
+      <div class="emi-left">
+        <div class="emi-rank rn">5</div>
+        <div><div class="emi-bank-name">HDFC Bank</div><div class="emi-rate">7.90% Floating</div></div>
+      </div>
+      <div class="emi-right">
+        <div class="emi-amount">₹41,273</div>
+        <div class="emi-extra">+₹2,421/mo</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,107,0,0.05);border:1px solid rgba(255,107,0,0.12);border-radius:12px;padding:11px;margin-top:10px;">
+      <div style="font-size:11.5px;font-weight:800;color:var(--navy);">💡 Over 20 yrs: Choose BoM over HDFC → Save ₹5.81 Lakh</div>
+      <div style="font-size:9.5px;color:var(--muted);margin-top:3px;font-family:'Trebuchet MS',sans-serif;">Total interest difference across full tenure</div>
+    </div>
+    <button style="margin-top:12px;width:100%;background:rgba(255,107,0,0.08);border:1.5px solid rgba(255,107,0,0.20);border-radius:11px;padding:11px;font-size:12.5px;font-weight:800;color:var(--saffron);cursor:pointer;font-family:'Book Antiqua',Palatino,Georgia,serif;" onclick="saveComparison()">💾 Save This Comparison</button>
+  </div>
+
+  <!-- INTEREST SPLIT DONUT -->
+  <div class="sec fu5">Interest vs Principal Split <span class="more">Full →</span></div>
+  <div class="donut-card fu5">
+    <div class="donut-title">₹50L Loan · 7.25% · 20 Years (SBI)</div>
+    <div class="donut-sub">Total repayment breakdown</div>
+    <div class="donut-wrap">
+      <div class="donut-svg-wrap">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <!-- Background circle -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,107,0,0.08)" stroke-width="16"/>
+          <!-- Principal: ~₹50L out of ₹94.3L total → 53% -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="var(--green)" stroke-width="16"
+            stroke-dasharray="160 141" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+          <!-- Interest: ~₹44.3L → 47% -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="var(--saffron)" stroke-width="16"
+            stroke-dasharray="141 160" stroke-dashoffset="-160" transform="rotate(-90 60 60)"/>
+          <text x="60" y="56" text-anchor="middle" font-size="13" font-weight="800" fill="var(--navy)" font-family="Book Antiqua,Palatino,Georgia,serif">₹94.3L</text>
+          <text x="60" y="70" text-anchor="middle" font-size="8" fill="var(--muted)" font-family="Trebuchet MS,sans-serif">Total Pay</text>
+        </svg>
+      </div>
+      <div class="donut-legend">
+        <div class="donut-legend-item">
+          <div class="dl-dot" style="background:var(--green);"></div>
+          <div>
+            <div class="dl-lbl">Principal</div>
+            <div class="dl-val">₹50,00,000 (53%)</div>
+          </div>
+        </div>
+        <div class="donut-legend-item">
+          <div class="dl-dot" style="background:var(--saffron);"></div>
+          <div>
+            <div class="dl-lbl">Total Interest</div>
+            <div class="dl-val">₹44,32,500 (47%)</div>
+          </div>
+        </div>
+        <div class="donut-legend-item">
+          <div class="dl-dot" style="background:var(--chakra);"></div>
+          <div>
+            <div class="dl-lbl">Monthly EMI</div>
+            <div class="dl-val">₹39,302/month</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NRI RATES -->
+  <div class="sec fu6">NRI Home Loan Rates <span class="more">FEMA Guide →</span></div>
+  <div class="nri-rate-card fu6">
+    <div class="nri-title">NRI / PIO / OCI — Jun 2026</div>
+    <div class="nri-sub">Rates slightly higher; CIBIL/overseas income assessed · RLLR-linked</div>
+    <div class="nri-row"><span class="nri-bank">🏦 SBI NRI Home Loan</span><span class="nri-rate">7.65%</span></div>
+    <div class="nri-row"><span class="nri-bank">🏢 ICICI NRI Home Loan</span><span class="nri-rate">7.90%</span></div>
+    <div class="nri-row"><span class="nri-bank">🏛️ HDFC NRI Home Loan</span><span class="nri-rate">8.05%</span></div>
+    <div class="nri-row"><span class="nri-bank">⚡ Axis NRI Home Loan</span><span class="nri-rate">8.10%</span></div>
+    <div class="nri-row"><span class="nri-bank">🏗️ LIC HFL NRI Loan</span><span class="nri-rate">7.85%</span></div>
+    <div class="nri-row"><span class="nri-bank">🔶 Bajaj HFL NRI Loan</span><span class="nri-rate">8.00%</span></div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function setFilter(btn, type){
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function calcEMI(principal, rateAnnual, tenureYears){
+  const r = rateAnnual / 12 / 100;
+  const n = tenureYears * 12;
+  if(r === 0) return principal / n;
+  return principal * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1);
+}
+
+function formatINR(n){
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+function updateEMIs(){
+  const p = parseFloat(document.getElementById('loanAmt').value) || 5000000;
+  const t = parseFloat(document.getElementById('tenure').value) || 20;
+  document.getElementById('emi1').textContent = formatINR(calcEMI(p, 7.10, t));
+  document.getElementById('emi2').textContent = formatINR(calcEMI(p, 7.25, t));
+  document.getElementById('emi3').textContent = formatINR(calcEMI(p, 7.40, t));
+}
+
+function doCompare(){
+  updateEMIs();
+  showToast('📊 Comparison updated!');
+  document.querySelector('.emi-card').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function saveComparison(){
+  showToast('💾 Comparison saved!');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+updateEMIs();
+</script>
+</body>
+</html>

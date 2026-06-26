@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Extra Repayments – Australia</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+
+/* ── HEADER ── */
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;text-decoration:none;}
+.save-btn{height:36px;padding:0 14px;border-radius:10px;background:rgba(255,215,0,0.18);border:1px solid rgba(255,215,0,0.4);display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#FFD700;cursor:pointer;white-space:nowrap;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+
+/* ── CONTENT ── */
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+
+/* ── INPUT CARDS ── */
+.icard{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.icard-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field label{font-size:10px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.prefix-wrap{position:relative;}
+.prefix-wrap input{padding-left:26px !important;}
+.prefix-wrap .pfx{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;color:#92400E;}
+.suffix-wrap{position:relative;}
+.suffix-wrap input{padding-right:38px !important;}
+.suffix-wrap .sfx{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;color:#92400E;font-weight:600;}
+.field input,.field select{width:100%;background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.15);border-radius:10px;padding:11px 13px;font-size:14px;font-weight:700;color:#1A0A00;outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:#7C2D12;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── FREQUENCY TOGGLE ── */
+.freq-toggle{display:flex;background:#FFF8F0;border-radius:10px;padding:3px;gap:3px;border:1.5px solid rgba(124,45,18,0.15);}
+.freq-btn{flex:1;padding:8px 4px;border:none;border-radius:8px;font-size:11px;font-weight:700;color:#92400E;background:transparent;cursor:pointer;transition:all .2s;}
+.freq-btn.active{background:linear-gradient(135deg,#7C2D12,#002868);color:#fff;box-shadow:0 2px 8px rgba(124,45,18,0.3);}
+
+/* ── CALC BUTTON ── */
+.calc-btn{width:100%;background:linear-gradient(135deg,#7C2D12,#002868);border:none;border-radius:13px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(124,45,18,0.3);transition:opacity .2s;margin-top:4px;}
+.calc-btn:active{opacity:.85;}
+
+/* ── RESULT HERO ── */
+.result-hero{background:linear-gradient(145deg,#1A0A00,#7C2D12);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,10,0,0.28);margin-bottom:12px;}
+.result-hero::before{content:'📈';position:absolute;right:8px;top:6px;font-size:64px;opacity:0.08;}
+.rh-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.8px;}
+.rh-big{font-size:38px;font-weight:800;color:#FFD700;font-family:Georgia,serif;line-height:1;margin:4px 0 2px;}
+.rh-label{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:14px;}
+.rh-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rh-box{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 11px;}
+.rh-box label{font-size:9px;color:rgba(255,255,255,.5);display:block;margin-bottom:3px;}
+.rh-box .v{font-size:14px;font-weight:800;color:#fff;}
+.rh-box .v.grn{color:#BBF7D0;}.rh-box .v.gold{color:#FFD700;}.rh-box .v.red{color:#FF8A9A;}
+
+/* ── TIMELINE ── */
+.timeline-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.tc-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:16px;}
+.tl-bar-bg{height:12px;background:#FFF0E4;border-radius:6px;overflow:hidden;margin-bottom:6px;position:relative;}
+.tl-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#7C2D12,#002868);position:relative;transition:width .9s cubic-bezier(.4,0,.2,1);}
+.tl-bar-new{position:absolute;top:0;left:0;height:100%;border-radius:6px;background:linear-gradient(90deg,#16A34A,#15803D);transition:width .9s cubic-bezier(.4,0,.2,1);}
+.tl-labels{display:flex;justify-content:space-between;font-size:10px;color:#92400E;font-weight:600;margin-bottom:14px;}
+.tl-legend{display:flex;gap:16px;margin-bottom:12px;}
+.tl-leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#92400E;}
+.tl-leg-dot{width:8px;height:8px;border-radius:50%;}
+.tl-stats{display:flex;gap:8px;}
+.tl-stat{flex:1;background:#FFF8F0;border-radius:10px;padding:9px 8px;text-align:center;}
+.tl-stat label{font-size:9px;color:#92400E;display:block;margin-bottom:2px;}
+.tl-stat .v{font-size:15px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+.tl-stat .v.grn{color:#15803D;}
+
+/* ── INTEREST CHART ── */
+.chart-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.cc-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:10px;}
+.chart-legend{display:flex;gap:14px;margin-bottom:10px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#92400E;}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+
+/* ── MILESTONES ── */
+.milestones-card{background:linear-gradient(145deg,#002868,#1e3a8a);border-radius:18px;padding:16px;margin-bottom:12px;}
+.mc-title{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-bottom:12px;}
+.milestone-row{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.1);}
+.milestone-row:last-child{border-bottom:none;}
+.ms-icon{font-size:20px;width:32px;text-align:center;}
+.ms-label{font-size:12px;color:rgba(255,255,255,.75);flex:1;}
+.ms-val{font-size:13px;font-weight:700;color:#FFD700;}
+.ms-sub{font-size:9px;color:rgba(255,255,255,.45);margin-top:1px;}
+
+/* ── AMORTISATION PREVIEW ── */
+.amort-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.amort-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:12px;}
+.amort-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid rgba(124,45,18,0.07);}
+.amort-row:last-child{border-bottom:none;}
+.ar-yr{font-size:11px;font-weight:700;color:#92400E;width:36px;}
+.ar-bars{flex:1;margin:0 10px;}
+.ar-bar-p{height:5px;border-radius:3px;background:#002868;margin-bottom:2px;}
+.ar-bar-i{height:5px;border-radius:3px;background:#FCA5A5;}
+.ar-bar-ie{height:5px;border-radius:3px;background:#BBF7D0;margin-top:2px;}
+.ar-nums{text-align:right;font-size:10px;font-weight:700;color:#1A0A00;white-space:nowrap;}
+.ar-sub{font-size:9px;color:#16A34A;text-align:right;}
+.amort-legend{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+.al-item{display:flex;align-items:center;gap:4px;font-size:9px;color:#92400E;}
+.al-dot{width:7px;height:7px;border-radius:50%;}
+
+/* ── SAVE MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:420px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.modal-overlay.show .modal{transform:translateY(0);}
+.modal-title{font-size:17px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:4px;}
+.modal-sub{font-size:11px;color:#92400E;margin-bottom:16px;}
+.modal input{width:100%;background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.15);border-radius:10px;padding:12px 13px;font-size:14px;font-weight:600;color:#1A0A00;outline:none;margin-bottom:12px;}
+.modal-row{display:flex;gap:10px;}
+.modal-cancel{flex:1;background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.15);border-radius:11px;padding:13px;font-size:13px;font-weight:700;color:#7C2D12;cursor:pointer;}
+.modal-save{flex:2;background:linear-gradient(135deg,#7C2D12,#002868);border:none;border-radius:11px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1A0A00;color:#FFD700;font-size:12px;font-weight:700;padding:10px 18px;border-radius:20px;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.hidden{display:none;}
+
+/* ── NAV ── */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">🇦🇺</span>
+      <div class="hdr-title">Extra Repayments</div>
+      <div class="hdr-sub">Save Interest · Pay Off Early</div>
+    </div>
+    <div class="save-btn" onclick="openSave()">💾 Save</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Variable</div><div class="rs-val red">6.09%</div><div class="rs-note">↓ May 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">RBA Cash</div><div class="rs-val gold">4.10%</div><div class="rs-note">May 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">2-Yr Fixed</div><div class="rs-val">6.29%</div><div class="rs-note">Avg Big 4</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Avg Extra</div><div class="rs-val grn">$487</div><div class="rs-note">AUS avg/mo</div></div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- LOAN DETAILS -->
+  <div class="sec-lbl" style="margin-top:0;">Your Loan Details</div>
+  <div class="icard">
+    <div class="icard-title">🏠 Current Mortgage</div>
+    <div class="row2">
+      <div class="field">
+        <label>Loan Balance</label>
+        <div class="prefix-wrap"><span class="pfx">$</span><input type="number" id="loanBalance" value="480000" min="1" oninput="onInput()"></div>
+      </div>
+      <div class="field">
+        <label>Interest Rate</label>
+        <div class="suffix-wrap"><input type="number" id="interestRate" value="6.09" step="0.01" min="0.01" oninput="onInput()"><span class="sfx">% p.a.</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Remaining Term</label>
+        <div class="suffix-wrap"><input type="number" id="loanTerm" value="25" min="1" max="30" oninput="onInput()"><span class="sfx">years</span></div>
+      </div>
+      <div class="field">
+        <label>Repayment</label>
+        <select id="repaymentType" onchange="onInput()">
+          <option value="monthly">Monthly</option>
+          <option value="fortnightly">Fortnightly</option>
+          <option value="weekly">Weekly</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXTRA REPAYMENT -->
+  <div class="sec-lbl">Extra Repayment Amount</div>
+  <div class="icard">
+    <div class="icard-title">💸 Additional Payment</div>
+    <div class="field">
+      <label>Extra Amount Per Period</label>
+      <div class="prefix-wrap"><span class="pfx">$</span><input type="number" id="extraAmount" value="500" min="0" oninput="onInput()"></div>
+    </div>
+    <div class="field">
+      <label>Payment Frequency</label>
+      <div class="freq-toggle">
+        <button class="freq-btn" onclick="setFreq('weekly')">Weekly</button>
+        <button class="freq-btn active" onclick="setFreq('fortnightly')">Fortnightly</button>
+        <button class="freq-btn" onclick="setFreq('monthly')">Monthly</button>
+        <button class="freq-btn" onclick="setFreq('yearly')">Yearly</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Start From</label>
+        <select id="startFrom" onchange="onInput()">
+          <option value="0">Now</option>
+          <option value="12">Year 1</option>
+          <option value="24">Year 2</option>
+          <option value="36">Year 3</option>
+          <option value="60">Year 5</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Lump Sum (One-off)</label>
+        <div class="prefix-wrap"><span class="pfx">$</span><input type="number" id="lumpSum" value="0" min="0" oninput="onInput()"></div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">📈 Calculate Savings</button>
+  </div>
+
+  <!-- RESULTS (hidden until calc) -->
+  <div id="resultsSection" class="hidden">
+
+    <!-- HERO RESULT -->
+    <div class="sec-lbl">Your Savings Summary</div>
+    <div class="result-hero">
+      <div class="rh-tag">Total Interest Saved</div>
+      <div class="rh-big" id="r-interestSaved">$0</div>
+      <div class="rh-label">by making extra repayments</div>
+      <div class="rh-grid">
+        <div class="rh-box"><label>Time Saved</label><div class="v gold" id="r-timeSaved">0 yrs 0 mo</div></div>
+        <div class="rh-box"><label>New Payoff Date</label><div class="v grn" id="r-payoffDate">—</div></div>
+        <div class="rh-box"><label>Old Repayment</label><div class="v" id="r-oldPmt">$0/mo</div></div>
+        <div class="rh-box"><label>New Total/Period</label><div class="v gold" id="r-newPmt">$0/mo</div></div>
+      </div>
+    </div>
+
+    <!-- TIMELINE COMPARISON -->
+    <div class="timeline-card">
+      <div class="tc-title">⏱ Loan Term Comparison</div>
+      <div class="tl-legend">
+        <div class="tl-leg-item"><div class="tl-leg-dot" style="background:linear-gradient(90deg,#7C2D12,#002868);"></div>Original Term</div>
+        <div class="tl-leg-item"><div class="tl-leg-dot" style="background:linear-gradient(90deg,#16A34A,#15803D);"></div>With Extra Repayments</div>
+      </div>
+      <div class="tl-bar-bg">
+        <div class="tl-bar-fill" id="tl-originalBar" style="width:100%;"></div>
+      </div>
+      <div class="tl-labels">
+        <span>0</span>
+        <span id="tl-originalLabel">25 years</span>
+      </div>
+      <div class="tl-bar-bg">
+        <div class="tl-bar-new" id="tl-newBar" style="width:80%;"></div>
+      </div>
+      <div class="tl-labels">
+        <span>0</span>
+        <span id="tl-newLabel">21 years</span>
+      </div>
+      <div class="tl-stats">
+        <div class="tl-stat"><label>Original Term</label><div class="v" id="tls-orig">25 yrs</div></div>
+        <div class="tl-stat"><label>New Term</label><div class="v grn" id="tls-new">0 yrs</div></div>
+        <div class="tl-stat"><label>Extra/Month</label><div class="v grn" id="tls-extra">$0</div></div>
+      </div>
+    </div>
+
+    <!-- CUMULATIVE INTEREST CHART -->
+    <div class="chart-card">
+      <div class="cc-title">📊 Cumulative Interest Over Time</div>
+      <div class="chart-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#EF4444;"></div>Without Extra</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#16A34A;"></div>With Extra</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#FFD700;"></div>Savings Gap</div>
+      </div>
+      <svg id="interestChart" viewBox="0 0 360 170" style="width:100%;overflow:visible;"></svg>
+    </div>
+
+    <!-- MILESTONES -->
+    <div class="milestones-card">
+      <div class="mc-title">🎯 Key Milestones</div>
+      <div class="milestone-row">
+        <span class="ms-icon">🏁</span>
+        <div style="flex:1">
+          <div class="ms-label">Loan paid off</div>
+          <div class="ms-sub" id="ms-payoff-sub">Original: —</div>
+        </div>
+        <div style="text-align:right">
+          <div class="ms-val" id="ms-payoff">—</div>
+        </div>
+      </div>
+      <div class="milestone-row">
+        <span class="ms-icon">💰</span>
+        <div style="flex:1">
+          <div class="ms-label">Total interest without extra</div>
+          <div class="ms-sub">Standard repayments only</div>
+        </div>
+        <div><div class="ms-val red" style="color:#FF8A9A;" id="ms-totalInt">$0</div></div>
+      </div>
+      <div class="milestone-row">
+        <span class="ms-icon">✅</span>
+        <div style="flex:1">
+          <div class="ms-label">Total interest with extra</div>
+          <div class="ms-sub">Reduced by extra repayments</div>
+        </div>
+        <div><div class="ms-val" id="ms-newInt">$0</div></div>
+      </div>
+      <div class="milestone-row">
+        <span class="ms-icon">🎉</span>
+        <div style="flex:1">
+          <div class="ms-label">Total interest saved</div>
+          <div class="ms-sub">Money back in your pocket</div>
+        </div>
+        <div><div class="ms-val" id="ms-saved">$0</div></div>
+      </div>
+      <div class="milestone-row">
+        <span class="ms-icon">📅</span>
+        <div style="flex:1">
+          <div class="ms-label">Years cut from loan</div>
+          <div class="ms-sub">Time freed up earlier</div>
+        </div>
+        <div><div class="ms-val" id="ms-cut">0</div></div>
+      </div>
+    </div>
+
+    <!-- YEARLY AMORTISATION PREVIEW -->
+    <div class="amort-card">
+      <div class="amort-title">📋 Year-by-Year Balance Preview</div>
+      <div class="amort-legend">
+        <div class="al-item"><div class="al-dot" style="background:#002868;"></div>Principal (Standard)</div>
+        <div class="al-item"><div class="al-dot" style="background:#FCA5A5;"></div>Interest (Standard)</div>
+        <div class="al-item"><div class="al-dot" style="background:#BBF7D0;"></div>Interest Saving</div>
+      </div>
+      <div id="amortTable"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- SAVE MODAL -->
+<div class="modal-overlay" id="saveModal">
+  <div class="modal">
+    <div class="modal-title">💾 Save Calculation</div>
+    <div class="modal-sub">Name this extra repayments scenario</div>
+    <input type="text" id="saveName" placeholder="e.g. $500 extra/fortnight from Jul 2025">
+    <div class="modal-row">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" onclick="doSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Saved successfully!</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+/* ── STATE ── */
+let freqExtra = 'fortnightly';
+let lastResult = null;
+
+const fmt  = v => '$' + Math.round(v).toLocaleString('en-AU');
+const fmtK = v => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'k' : fmt(v);
+
+function setFreq(f) {
+  freqExtra = f;
+  document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  onInput();
+}
+
+function onInput() { /* live update disabled – button triggers */ }
+
+/* Monthly equivalent of extra payment */
+function extraPerMonth(amount, freq) {
+  switch(freq) {
+    case 'weekly':      return amount * 52 / 12;
+    case 'fortnightly': return amount * 26 / 12;
+    case 'monthly':     return amount;
+    case 'yearly':      return amount / 12;
+  }
+}
+
+function monthlyPmt(P, annualRate, years) {
+  const r = annualRate / 100 / 12;
+  const n = years * 12;
+  if (r === 0) return P / n;
+  return P * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+}
+
+function calculate() {
+  const P       = parseFloat(document.getElementById('loanBalance').value)   || 0;
+  const rate    = parseFloat(document.getElementById('interestRate').value)   || 0;
+  const termYr  = parseInt(document.getElementById('loanTerm').value)         || 0;
+  const extra   = parseFloat(document.getElementById('extraAmount').value)    || 0;
+  const lump    = parseFloat(document.getElementById('lumpSum').value)        || 0;
+  const startMo = parseInt(document.getElementById('startFrom').value)        || 0;
+
+  if (!P || !rate || !termYr) return;
+
+  const r  = rate / 100 / 12;
+  const n  = termYr * 12;
+  const stdPmt = monthlyPmt(P, rate, termYr);
+  const extraMo = extraPerMonth(extra, freqExtra);
+
+  /* Simulate standard */
+  let balStd = P, intStd = 0;
+  const stdYearly = [];
+  for (let m = 1; m <= n; m++) {
+    const i = balStd * r; intStd += i; balStd = Math.max(0, balStd - (stdPmt - i));
+    if (m % 12 === 0) stdYearly.push({ yr: m/12, bal: balStd, intPaid: intStd });
+  }
+
+  /* Simulate with extra + lump sum */
+  let balNew = P - lump, intNew = 0, newN = 0;
+  const newYearly = [];
+  let bal = Math.max(0, balNew);
+  for (let m = 1; m <= n + 120; m++) {
+    if (bal <= 0) break;
+    const i = bal * r; intNew += i;
+    const payment = stdPmt + (m > startMo ? extraMo : 0);
+    bal = Math.max(0, bal - (payment - i));
+    newN = m;
+    if (m % 12 === 0) newYearly.push({ yr: m/12, bal, intPaid: intNew });
+  }
+
+  const totalIntStd = intStd;
+  const totalIntNew = intNew;
+  const saved = totalIntStd - totalIntNew + lump * 0; // lump saves interest implicitly
+  const mthSaved = n - newN;
+  const yrsSaved = Math.floor(Math.abs(mthSaved) / 12);
+  const moSaved  = Math.abs(mthSaved) % 12;
+
+  const today = new Date();
+  const payoffOrig = new Date(today); payoffOrig.setMonth(payoffOrig.getMonth() + n);
+  const payoffNew  = new Date(today); payoffNew.setMonth(payoffNew.getMonth() + newN);
+  const payoffFmt = d => d.toLocaleDateString('en-AU', {month:'short', year:'numeric'});
+
+  // Frequencies label
+  const freqLabel = {weekly:'wk', fortnightly:'ftn', monthly:'mo', yearly:'yr'}[freqExtra];
+
+  lastResult = { P, rate, termYr, extra, freqExtra, lump, saved, yrsSaved, moSaved, totalIntStd, totalIntNew, newN, stdPmt, extraMo };
+
+  /* ── DOM UPDATES ── */
+  document.getElementById('resultsSection').classList.remove('hidden');
+  document.getElementById('r-interestSaved').textContent = fmt(saved);
+  document.getElementById('r-timeSaved').textContent = `${yrsSaved} yr${yrsSaved!==1?'s':''} ${moSaved} mo`;
+  document.getElementById('r-payoffDate').textContent = payoffFmt(payoffNew);
+  document.getElementById('r-oldPmt').textContent = fmt(stdPmt) + '/mo';
+  document.getElementById('r-newPmt').textContent = fmt(stdPmt + extraMo) + '/mo';
+
+  const origTermLabel = `${termYr} years`;
+  const newTermLabel  = (() => {
+    const y = Math.floor(newN/12), m = newN%12;
+    return m > 0 ? `${y} yr ${m} mo` : `${y} years`;
+  })();
+  const newPct = (newN / n) * 100;
+
+  document.getElementById('tl-originalLabel').textContent = origTermLabel;
+  document.getElementById('tl-newLabel').textContent      = newTermLabel;
+  document.getElementById('tl-newBar').style.width        = Math.min(newPct, 100) + '%';
+  document.getElementById('tls-orig').textContent  = origTermLabel;
+  document.getElementById('tls-new').textContent   = newTermLabel;
+  document.getElementById('tls-extra').textContent = fmt(extraMo) + '/mo';
+
+  document.getElementById('ms-payoff').textContent     = payoffFmt(payoffNew);
+  document.getElementById('ms-payoff-sub').textContent = 'Original: ' + payoffFmt(payoffOrig);
+  document.getElementById('ms-totalInt').textContent   = fmt(totalIntStd);
+  document.getElementById('ms-newInt').textContent     = fmt(totalIntNew);
+  document.getElementById('ms-saved').textContent      = fmt(saved);
+  document.getElementById('ms-cut').textContent        = `${yrsSaved} yr${yrsSaved!==1?'s':''} ${moSaved} mo`;
+
+  drawChart(stdYearly, newYearly, n/12);
+  buildAmortTable(P, rate, n, stdPmt, extraMo, startMo, stdYearly, newYearly);
+}
+
+function drawChart(stdY, newY, origYrs) {
+  const maxYrs = Math.ceil(origYrs);
+  const maxV = Math.max(...stdY.map(p => p.intPaid));
+  const W=360,H=150,pL=44,pB=22,pT=8,pR=8;
+  const cW=W-pL-pR, cH=H-pB-pT;
+  const px = y => pL + (y/maxYrs)*cW;
+  const py = v => pT + cH - (v/maxV)*cH;
+
+  const pathStd = stdY.map((p,i)=>(i===0?`M${px(p.yr)},${py(p.intPaid)}`:`L${px(p.yr)},${py(p.intPaid)}`)).join(' ');
+  const pathNew = newY.map((p,i)=>(i===0?`M${px(p.yr)},${py(p.intPaid)}`:`L${px(p.yr)},${py(p.intPaid)}`)).join(' ');
+  const fillStd = pathStd + ` L${px(stdY[stdY.length-1].yr)},${pT+cH} L${pL},${pT+cH} Z`;
+  const fillNew = pathNew + ` L${px(newY[newY.length-1].yr)},${pT+cH} L${pL},${pT+cH} Z`;
+
+  const yLabels = [0,.25,.5,.75,1].map(f=>{
+    const v=f*maxV; const yp=py(v);
+    return `<text x="${pL-4}" y="${yp+4}" text-anchor="end" font-size="8" fill="#92400E">${fmtK(v)}</text>
+            <line x1="${pL}" y1="${yp}" x2="${W-pR}" y2="${yp}" stroke="#FFF0E4" stroke-width="1"/>`;
+  }).join('');
+  const xLabels = [0, Math.round(maxYrs/2), maxYrs].map(y=>
+    `<text x="${px(y)}" y="${H-4}" text-anchor="middle" font-size="8" fill="#92400E">Yr ${y}</text>`
+  ).join('');
+
+  document.getElementById('interestChart').innerHTML = `
+    ${yLabels}${xLabels}
+    <path d="${fillStd}" fill="#EF4444" opacity="0.12"/>
+    <path d="${fillNew}" fill="#16A34A" opacity="0.14"/>
+    <path d="${pathStd}" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="${pathNew}" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linejoin="round"/>
+  `;
+}
+
+function buildAmortTable(P, rate, n, stdPmt, extraMo, startMo, stdY, newY) {
+  const maxStdBal = P;
+  const rows = [];
+  const yearsToShow = Math.min(Math.ceil(n/12), Math.ceil((newY.length > 0 ? newY[newY.length-1].yr : n/12)));
+
+  for (let yr = 0; yr < Math.min(yearsToShow, 10); yr++) {
+    const std = stdY[yr]  || { bal:0, intPaid:0 };
+    const nw  = newY[yr]  || { bal:0, intPaid:0 };
+    const stdPrev = yr > 0 ? stdY[yr-1].intPaid : 0;
+    const nwPrev  = yr > 0 ? newY[yr-1].intPaid : 0;
+    const intThisYrStd = std.intPaid - stdPrev;
+    const intThisYrNew = nw.intPaid  - nwPrev;
+    const saving = intThisYrStd - intThisYrNew;
+    const pctP = Math.min((1 - std.bal/P)*100, 100);
+    const pctI = Math.min((intThisYrStd/stdPmt/12)*100, 100);
+    const pctS = Math.min((saving / (intThisYrStd || 1))*100, 100);
+
+    rows.push(`
+      <div class="amort-row">
+        <div class="ar-yr">Yr ${yr+1}</div>
+        <div class="ar-bars">
+          <div class="ar-bar-p" style="width:${pctP.toFixed(0)}%"></div>
+          <div class="ar-bar-i" style="width:${Math.min(pctI,100).toFixed(0)}%"></div>
+          ${saving > 0 ? `<div class="ar-bar-ie" style="width:${pctS.toFixed(0)}%"></div>` : ''}
+        </div>
+        <div>
+          <div class="ar-nums">${fmt(std.bal)} bal</div>
+          ${saving > 0 ? `<div class="ar-sub">−${fmt(saving)} int</div>` : ''}
+        </div>
+      </div>`);
+  }
+  document.getElementById('amortTable').innerHTML = rows.join('');
+}
+
+function openSave() {
+  document.getElementById('saveModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('saveModal').classList.remove('show');
+}
+function doSave() {
+  const name = document.getElementById('saveName').value.trim() || 'Extra Repayment Calc';
+  const r = lastResult;
+  const item = {
+    name, date: new Date().toLocaleDateString('en-AU'),
+    balance: r?.P, rate: r?.rate, extra: r?.extra, freq: r?.freqExtra,
+    saved: r ? fmt(r.saved) : '—', timeSaved: r ? `${r.yrsSaved}y ${r.moSaved}m` : '—'
+  };
+  const list = JSON.parse(localStorage.getItem('au_extra_repay_saves') || '[]');
+  list.push(item);
+  localStorage.setItem('au_extra_repay_saves', JSON.stringify(list));
+  closeModal();
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+/* Auto-calculate on load */
+calculate();
+</script>
+</body>
+</html>

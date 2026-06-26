@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Healthy Homes Standards · NZ</title>
+<style>
+  :root {
+    --black:   #0A0F0D;
+    --forest:  #0D3B2E;
+    --fern:    #1A6B4A;
+    --silver:  #C0C8C1;
+    --teal:    #0D9488;
+    --sky:     #0EA5E9;
+    --red:     #C0392B;
+    --gold:    #D4A017;
+    --gold-lt: #F5D060;
+    --bg:      #EDF5F2;
+    --card:    #FFFFFF;
+    --muted:   #4A6358;
+    --border:  rgba(13,59,46,0.09);
+    --sh:      0 4px 20px rgba(10,15,13,0.09);
+    --sh2:     0 8px 36px rgba(10,15,13,0.18);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Palatino Linotype', Palatino, Georgia, serif;
+    background: var(--bg);
+    color: var(--black);
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(158deg, #0A0F0D 0%, #0D3B2E 45%, #1A6B4A 80%, #C0392B 100%);
+    padding: 46px 20px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; top: -50px; right: -50px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(245, 208, 96, 0.06);
+  }
+  .header::after {
+    content: '🏠';
+    position: absolute; right: 12px; top: 44px;
+    font-size: 78px; opacity: 0.09;
+  }
+  .hdr-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; position: relative; z-index: 2;
+  }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(255,255,255,0.11); border: 1px solid rgba(255,255,255,0.19);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #fff; cursor: pointer;
+    text-decoration: none;
+  }
+  .hdr-center { text-align: center; }
+  .hdr-flag   { font-size: 28px; display: block; }
+  .hdr-title  { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+  .hdr-sub    { font-size: 10px; color: rgba(255,255,255,0.50); margin-top: 1px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  /* Status Strip */
+  .rate-strip {
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 14px 14px 0 0; padding: 11px 14px;
+    display: grid; grid-template-columns: repeat(4,1fr);
+    position: relative; z-index: 2; margin-top: 4px;
+  }
+  .rs { text-align: center; position: relative; }
+  .rs:not(:last-child)::after {
+    content: ''; position: absolute; right: 0; top: 15%;
+    height: 70%; width: 1px; background: rgba(255,255,255,0.13);
+  }
+  .rs-l { font-size: 8.5px; color: rgba(255,255,255,0.46); text-transform: uppercase; letter-spacing: 0.4px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .rs-v { font-size: 13px; font-weight: 800; color: #fff; line-height: 1.15; }
+  .rs-v.gold { color: var(--gold-lt); }
+  .rs-v.ok   { color: #6EE7B7; }
+  .rs-v.warn { color: #FCA5A5; }
+  .rs-n { font-size: 8px; color: rgba(255,255,255,0.36); margin-top: 1px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  /* ── CONTENT ── */
+  .content { padding: 15px 15px 110px; }
+
+  .sec {
+    font-size: 10.5px; font-weight: 800; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin: 20px 0 10px; display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+  .sec .more { font-size: 11px; font-weight: 600; color: var(--fern); text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+  /* Hero compliance checker */
+  .hero {
+    background: linear-gradient(148deg, #0A0F0D, #0D3B2E);
+    border-radius: 20px; padding: 19px;
+    position: relative; overflow: hidden; box-shadow: var(--sh2);
+    animation: fadeUp .35s ease both .04s;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: rgba(26,107,74,0.22);
+  }
+  .h-tag  { font-size: 9.5px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.8px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .h-title { font-size: 17px; font-weight: 800; color: #fff; margin: 4px 0 13px; line-height: 1.25; }
+  .h-title span { color: var(--gold-lt); }
+
+  /* Compliance Score Donut */
+  .score-wrap {
+    display: flex; align-items: center; gap: 15px; margin-bottom: 14px;
+  }
+  .donut-svg { flex-shrink: 0; }
+  .score-info { flex: 1; }
+  .score-label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.6px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .score-val { font-size: 28px; font-weight: 800; color: var(--gold-lt); line-height: 1; margin: 3px 0; }
+  .score-status { font-size: 11px; font-weight: 700; color: #6EE7B7; }
+  .score-status.warn { color: #FCA5A5; }
+  .score-status.partial { color: var(--gold-lt); }
+
+  .h-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--fern), #0D3B2E);
+    border: none; border-radius: 12px; padding: 13px;
+    font-size: 13px; font-weight: 800; color: #fff; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(26,107,74,0.40); font-family: Palatino,'Palatino Linotype',Georgia,serif;
+    transition: opacity .15s;
+  }
+  .h-btn:active { opacity: .85; }
+  .h-btn.save-btn {
+    background: linear-gradient(135deg, var(--gold), #A07810);
+    box-shadow: 0 4px 16px rgba(212,160,23,0.38);
+    margin-top: 8px;
+  }
+
+  /* Checklist cards */
+  .std-card {
+    background: var(--card); border-radius: 16px; padding: 0;
+    box-shadow: var(--sh); border: 1px solid var(--border);
+    overflow: hidden; margin-bottom: 10px;
+  }
+  .std-head {
+    display: flex; align-items: center; gap: 11px;
+    padding: 14px 14px 12px; cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .std-head:active { background: var(--bg); }
+  .std-icon {
+    width: 40px; height: 40px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .std-icon.green  { background: #ECFDF5; }
+  .std-icon.orange { background: #FFF7ED; }
+  .std-icon.red-bg { background: #FEF2F2; }
+  .std-icon.blue   { background: #EFF6FF; }
+  .std-icon.teal   { background: #F0FDFA; }
+  .std-icon.gold   { background: #FEFCE8; }
+  .std-title { font-size: 13px; font-weight: 800; color: var(--black); flex: 1; }
+  .std-req   { font-size: 9px; color: var(--muted); margin-top: 2px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .std-badge {
+    display: inline-flex; padding: 4px 9px; border-radius: 20px;
+    font-size: 9px; font-weight: 800; font-family: 'Helvetica Neue', Arial, sans-serif;
+    flex-shrink: 0;
+  }
+  .badge-pass   { background: #ECFDF5; color: #065F46; }
+  .badge-fail   { background: #FEF2F2; color: #C0392B; }
+  .badge-check  { background: #FFF7ED; color: #C2410C; }
+  .badge-na     { background: #F1F5F9; color: #475569; }
+
+  .std-body { padding: 13px 14px; }
+  .std-row  { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .std-row:last-child { border-bottom: none; }
+  .chk {
+    width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0;
+    border: 2px solid #D1D5DB; background: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; transition: all .15s; margin-top: 1px;
+  }
+  .chk.checked { background: var(--fern); border-color: var(--fern); color: #fff; }
+  .chk.fail    { background: #FEF2F2; border-color: var(--red); color: var(--red); }
+  .row-info { flex: 1; }
+  .row-title { font-size: 12px; font-weight: 700; color: var(--black); }
+  .row-spec  { font-size: 9.5px; color: var(--muted); margin-top: 2px; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.4; }
+  .row-tag { font-size: 9px; font-weight: 700; }
+  .row-tag.comply  { color: var(--fern); }
+  .row-tag.non     { color: var(--red); }
+  .row-tag.pending { color: var(--gold); }
+
+  /* Penalty info box */
+  .penalty-box {
+    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+    border: 1px solid #F59E0B; border-radius: 14px;
+    padding: 14px 15px; margin-bottom: 10px; animation: fadeUp .35s ease both .10s;
+  }
+  .pb-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .pb-icon { font-size: 24px; }
+  .pb-title { font-size: 13px; font-weight: 800; color: #92400E; }
+  .pb-sub   { font-size: 10px; color: #B45309; font-family: 'Helvetica Neue', Arial, sans-serif; margin-top: 1px; }
+  .pb-row   { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(245,158,11,0.25); }
+  .pb-row:last-child { border-bottom: none; }
+  .pb-key   { font-size: 10.5px; font-weight: 700; color: #78350F; }
+  .pb-val   { font-size: 11px; font-weight: 800; color: #B45309; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  /* Timeline deadline */
+  .timeline {
+    background: var(--card); border-radius: 16px; padding: 15px 14px;
+    box-shadow: var(--sh); border: 1px solid var(--border); margin-bottom: 10px;
+    animation: fadeUp .35s ease both .13s;
+  }
+  .tl-title { font-size: 13px; font-weight: 800; color: var(--black); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .tl-title span { font-size: 10px; font-weight: 500; color: var(--fern); font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .tl-item { display: flex; gap: 12px; margin-bottom: 12px; }
+  .tl-item:last-child { margin-bottom: 0; }
+  .tl-dot-col { display: flex; flex-direction: column; align-items: center; }
+  .tl-dot {
+    width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tl-dot.done   { background: var(--fern); }
+  .tl-dot.active { background: var(--gold); box-shadow: 0 0 0 3px rgba(212,160,23,0.25); }
+  .tl-dot.future { background: #D1D5DB; }
+  .tl-line { flex: 1; width: 2px; background: var(--border); margin: 2px 0; }
+  .tl-content { flex: 1; padding-bottom: 2px; }
+  .tl-date { font-size: 9px; font-weight: 700; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.5px; }
+  .tl-event { font-size: 12px; font-weight: 700; color: var(--black); margin: 2px 0; }
+  .tl-note  { font-size: 9.5px; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  /* Stats bar chart */
+  .stats-card {
+    background: var(--card); border-radius: 16px; padding: 15px 14px;
+    box-shadow: var(--sh); border: 1px solid var(--border); margin-bottom: 10px;
+    animation: fadeUp .35s ease both .16s;
+  }
+  .stats-title { font-size: 13px; font-weight: 800; color: var(--black); margin-bottom: 14px; }
+  .stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .stat-row:last-child { margin-bottom: 0; }
+  .stat-lbl { font-size: 10px; font-weight: 700; color: var(--black); width: 90px; flex-shrink: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .bar-track { flex: 1; height: 9px; background: var(--bg); border-radius: 20px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 20px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+  .bar-fill.g { background: linear-gradient(90deg, var(--fern), var(--teal)); }
+  .bar-fill.o { background: linear-gradient(90deg, var(--gold), #F59E0B); }
+  .bar-fill.r { background: linear-gradient(90deg, var(--red), #E74C3C); }
+  .stat-pct { font-size: 10px; font-weight: 800; color: var(--muted); width: 32px; text-align: right; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  /* Summary score cards */
+  .score-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 10px; animation: fadeUp .35s ease both .20s; }
+  .sc-item {
+    background: var(--card); border-radius: 14px; padding: 12px 10px; text-align: center;
+    box-shadow: var(--sh); border: 1px solid var(--border);
+  }
+  .sc-val  { font-size: 20px; font-weight: 800; color: var(--fern); }
+  .sc-val.warn { color: var(--red); }
+  .sc-val.gold { color: var(--gold); }
+  .sc-lbl  { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; font-family: 'Helvetica Neue', Arial, sans-serif; margin-top: 3px; }
+
+  /* Property info row */
+  .prop-row {
+    display: flex; gap: 8px; margin-bottom: 10px;
+    animation: fadeUp .35s ease both .06s;
+  }
+  .prop-box {
+    flex: 1; background: var(--card); border-radius: 13px; padding: 11px 10px;
+    box-shadow: var(--sh); border: 1px solid var(--border); text-align: center;
+  }
+  .prop-box label { font-size: 8.5px; color: var(--muted); display: block; margin-bottom: 3px; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.4px; }
+  .prop-box input, .prop-box select {
+    width: 100%; border: none; outline: none; font-size: 12px; font-weight: 800;
+    color: var(--black); background: transparent; text-align: center;
+    font-family: 'Palatino Linotype', Palatino, Georgia, serif; cursor: pointer;
+  }
+  .prop-box select option { font-size: 13px; }
+
+  /* Saved results */
+  .saved-section { animation: fadeUp .35s ease both .24s; }
+  .saved-item {
+    background: var(--card); border-radius: 14px; padding: 12px 14px;
+    box-shadow: var(--sh); border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 11px; margin-bottom: 8px;
+  }
+  .saved-icon { font-size: 20px; flex-shrink: 0; }
+  .saved-title { font-size: 12px; font-weight: 800; color: var(--black); }
+  .saved-sub   { font-size: 9.5px; color: var(--muted); margin-top: 2px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .saved-score { margin-left: auto; font-size: 15px; font-weight: 800; color: var(--fern); }
+  .saved-score.warn { color: var(--red); }
+  .del-btn {
+    width: 26px; height: 26px; border-radius: 8px; background: #FEF2F2;
+    border: none; color: var(--red); font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--forest); color: #fff; padding: 11px 20px; border-radius: 30px;
+    font-size: 12px; font-weight: 700; opacity: 0; transition: all .3s; z-index: 200;
+    pointer-events: none; white-space: nowrap; font-family: 'Helvetica Neue', Arial, sans-serif;
+    box-shadow: var(--sh2);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Info list */
+  .ilist { display: flex; flex-direction: column; gap: 9px; animation: fadeUp .35s ease both .27s; }
+  .ic {
+    background: var(--card); border-radius: 14px; padding: 13px 14px;
+    box-shadow: var(--sh); border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .ii  { width: 38px; height: 38px; border-radius: 11px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .in  { font-size: 12.5px; font-weight: 800; color: var(--black); }
+  .is  { font-size: 9.5px; color: var(--muted); margin-top: 2px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .ich { font-size: 16px; color: rgba(10,15,13,0.18); margin-left: auto; }
+
+  /* Bottom Nav */
+  .bnav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 420px; background: var(--card);
+    border-top: 1px solid var(--border); display: flex;
+    padding: 10px 0 18px; box-shadow: 0 -4px 20px rgba(10,15,13,0.07); z-index: 100;
+  }
+  .ni  { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+  .ni-ic { font-size: 19px; }
+  .ni-lb { font-size: 10px; font-weight: 600; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .ni.active .ni-lb { color: var(--fern); }
+
+  /* Radar chart */
+  .radar-wrap {
+    background: var(--card); border-radius: 16px; padding: 15px 14px;
+    box-shadow: var(--sh); border: 1px solid var(--border); margin-bottom: 10px;
+    animation: fadeUp .35s ease both .17s; text-align: center;
+  }
+  .radar-title { font-size: 13px; font-weight: 800; color: var(--black); margin-bottom: 12px; text-align: left; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="hdr-top">
+    <a href="screen_newzealand.html" class="icon-btn" style="text-decoration:none">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇳🇿</div>
+      <div class="hdr-title">Healthy Homes Standards</div>
+      <div class="hdr-sub">MBIE · Residential Tenancies Act · Landlord Compliance</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Deadline</div><div class="rs-v gold">Jul 2025</div><div class="rs-n">All Rentals</div></div>
+    <div class="rs"><div class="rs-l">Fine Max</div><div class="rs-v warn">$7,200</div><div class="rs-n">Per breach</div></div>
+    <div class="rs"><div class="rs-l">Standards</div><div class="rs-v">5</div><div class="rs-n">Categories</div></div>
+    <div class="rs"><div class="rs-l">Authority</div><div class="rs-v gold">MBIE</div><div class="rs-n">Min. Business</div></div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Property Setup -->
+  <div class="sec" style="margin-top:0">Your Rental Property <span class="more">Change →</span></div>
+  <div class="prop-row">
+    <div class="prop-box">
+      <label>Property Type</label>
+      <select id="propType" onchange="recalc()">
+        <option>House</option>
+        <option>Apartment</option>
+        <option>Unit</option>
+        <option>Townhouse</option>
+      </select>
+    </div>
+    <div class="prop-box">
+      <label>Build Year</label>
+      <select id="buildYear" onchange="recalc()">
+        <option>Pre-1978</option>
+        <option>1978–1999</option>
+        <option>2000–2007</option>
+        <option>2008+</option>
+      </select>
+    </div>
+    <div class="prop-box">
+      <label>Region</label>
+      <select id="region" onchange="recalc()">
+        <option>Auckland</option>
+        <option>Wellington</option>
+        <option>Canterbury</option>
+        <option>Otago</option>
+        <option>Other</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Hero compliance checker -->
+  <div class="hero">
+    <div class="h-tag">Healthy Homes Standards · HHS 2019 (amended 2021)</div>
+    <div class="h-title">Rental <span>Compliance Checker</span><br>for NZ Landlords</div>
+    <div class="score-wrap">
+      <svg class="donut-svg" width="86" height="86" viewBox="0 0 86 86">
+        <circle cx="43" cy="43" r="36" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="10"/>
+        <circle id="donutArc" cx="43" cy="43" r="36" fill="none" stroke="#F5D060" stroke-width="10"
+          stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="68"
+          transform="rotate(-90 43 43)" style="transition:stroke-dashoffset .7s ease"/>
+        <text x="43" y="47" text-anchor="middle" fill="#fff" font-size="14" font-weight="800" font-family="Palatino">
+          <tspan id="donutPct">70%</tspan>
+        </text>
+      </svg>
+      <div class="score-info">
+        <div class="score-label">Compliance Score</div>
+        <div class="score-val" id="scoreVal">70%</div>
+        <div class="score-status partial" id="scoreStatus">⚠ Partially Compliant</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.45);margin-top:4px;font-family:'Helvetica Neue',Arial,sans-serif;">Tick items below to update</div>
+      </div>
+    </div>
+    <button class="h-btn" onclick="runCheck()">🏠 Run Full Compliance Check</button>
+    <button class="h-btn save-btn" onclick="saveResult()">💾 Save Compliance Report</button>
+  </div>
+
+  <!-- Summary Grid -->
+  <div class="sec">Compliance Summary <span class="more">5 Standards</span></div>
+  <div class="score-grid">
+    <div class="sc-item">
+      <div class="sc-val" id="passCount">3</div>
+      <div class="sc-lbl">Passing</div>
+    </div>
+    <div class="sc-item">
+      <div class="sc-val gold" id="partCount">1</div>
+      <div class="sc-lbl">In Progress</div>
+    </div>
+    <div class="sc-item">
+      <div class="sc-val warn" id="failCount">1</div>
+      <div class="sc-lbl">Non-Compliant</div>
+    </div>
+  </div>
+
+  <!-- Compliance Standards -->
+  <div class="sec">Five Standards Checklist <span class="more">MBIE Guide →</span></div>
+
+  <!-- 1. Heating -->
+  <div class="std-card" style="animation: fadeUp .35s ease both .08s;">
+    <div class="std-head" onclick="toggleCard('heating')">
+      <div class="std-icon green">🌡️</div>
+      <div style="flex:1">
+        <div class="std-title">Heating Standard</div>
+        <div class="std-req">Must heat main living room to min 18°C</div>
+      </div>
+      <span class="std-badge badge-check" id="badge-heating">CHECK</span>
+    </div>
+    <div class="std-body" id="body-heating" style="display:none">
+      <div class="std-row">
+        <div class="chk" id="chk-h1" onclick="toggleChk(this,'heating')">✓</div>
+        <div class="row-info">
+          <div class="row-title">Fixed heating device in main living area</div>
+          <div class="row-spec">Must be a fixed heater (heat pump, flued gas, wood pellet burner). Portable heaters do NOT comply. Must achieve 18°C at 0°C outside.</div>
+          <div class="row-tag comply">✓ Required for ALL rentals from 1 July 2021</div>
+        </div>
+      </div>
+      <div class="std-row">
+        <div class="chk checked" id="chk-h2" onclick="toggleChk(this,'heating')">✓</div>
+        <div class="row-info">
+          <div class="row-title">Minimum heating capacity met</div>
+          <div class="row-spec">Calculated via MBIE Heating Assessment Tool. Depends on room size, insulation rating, and climate zone. NZ has 3 climate zones.</div>
+          <div class="row-tag comply">✓ Use MBIE online calculator to confirm kW capacity</div>
+        </div>
+      </div>
+      <div class="std-row">
+        <div class="chk checked" id="chk-h3" onclick="toggleChk(this,'heating')">✓</div>
+        <div class="row-info">
+          <div class="row-title">Heater energy efficiency ≥ 1.0 kW input cap (where applicable)</div>
+          <div class="row-spec">Low-emission heaters only in Clean Air Zones (parts of Auckland, Christchurch, Dunedin, Rotorua). No open fires or pre-2005 solid fuel burners.</div>
+          <div class="row-tag pending">⚠ Check your council's clean air zone boundaries</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Insulation -->
+  <div class="std-card" style="animation: fadeUp .35s ease both .10s;">
+    <div class="std-head" onclick="toggleCard('insulation')">
+      <div class="std-icon blue">🧱</div>
+      <div style="flex:1">
+        <div class="std-title">Insulation Standard</div>
+        <div class="std-req">Ceiling & underfloor insulation where practicable</div>
+      </div>
+      <span class="std-badge badge-pass" id="badge-insulation">PASS</span>
+    </div>
+    <div class="std-body" id="body-insulation" style="display:none">
+      <div class="std-row">
+        <div class="chk checked" id="chk-i1" onclick="toggleChk(this,'insulation')">✓</div>
+        <div class="row-info">
+          <div class="row-title">Ceiling insulation installed</div>
+          <div class="row-spec">Min R-value: R2.9 (North Island), R3.3 (South Island). Must be installed in all accessible ceiling spaces. Existing compliant insulation (pre-2019) may be accepted if in reasonable condition.</div>
+          <div class="row-tag comply">✓ Compliant R-values confirmed</div>
+        </div>
+      </div>
+      <div class="std-row">
+        <div class="chk checked" id="chk-i2" onclick="toggleChk(this,'insulation')">✓</div>
+        <div class="row-info">
+          <div class="row-title">Underfloor insulation (if suspended floor)</div>
+          <div class="row-spec">Min R1.3 (all of NZ). Must be installed if underfloor space is accessible. Concrete slab floors are exempt. Rigid board or bulk insulation acceptable.</div>
+          <div class="row-tag comply">✓ Underfloor verified or slab foundation</div>
+        </div>
+      </div>
+      <div class="std-row">
+        <div class="chk checked" id="chk-i3" onclick="toggleChk(this,'insulation')">✓</div>
+        <div class="row-info">
+          <div class="row-title">Insulation statement in tenancy agreement</div>
+          <div class="row-spec">Landlords must include a statement about existing insulation (location, type, condition, R-value) in all new tenancy agreements from 1 July 2016.</div>
+          <div class="row-tag comply">✓ Tenancy agreement includes statement</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Ventilation -->
+  <div class="std-card" style="animation: fadeUp .35s ease both .12s;">
+    <div class="std-head" onclick="toggleCard('ventilation')">
+      <div class="std-icon teal">💨</div>
+      <div style="flex:1">
+        <div class="std-title">Ventilation Standard</div>
+        <div class="std-req">Openable windows + extractor fans</div>
+      </div>
+      <span class="std-badge badge-pass" id="badge-ventilation">PASS</span>
+    </div>
+    <div class="std-body" id="body-ventilation" style="display:none">
+      <div class="std-row">
+        <div class="chk checked" id="chk-v1" onclick="toggleChk(this,'ventilation')">✓</div>
+        <div class="row-info">
+          <div class="row-title">Openable windows in all habitable rooms</div>
+          <div class="row-spec">Openable area ≥ 5% of floor area. Includes bedrooms, living areas, dining rooms. Garages and storage rooms excluded. Windows must open directly to outside air.</div>
+          <div class="row-tag comply">✓ All habitable rooms have openable windows</div>
+        </div>
+      </div>
+      <div class="std-row">
+        <div class="chk checked" id="chk-v2" onclick="toggleChk(this,'ventilation')">✓</div>
+        <div class="row-info">
+          <div class="row-title">Extractor fans in kitchen & bathroom(s)</div>
+          <div class="row-spec">Kitchen: continuous fan OR rangehood venting outside. Bathroom/laundry: minimum 25L/s (bathrooms with windows may be exempt if window ≥ 1.5% of floor area).</div>
+          <div class="row-tag comply">✓ Extractor fans installed and venting externally</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Moisture & Drainage -->
+  <div class="std-card" style="animation: fadeUp .35s ease both .14s;">
+    <div class="std-head" onclick="toggleCard('moisture')">
+      <div class="std-icon orange">💧</div>
+      <div style="flex:1">
+        <div class="std-title">Moisture & Drainage Standard</div>
+        <div class="std-req">Efficient drainage + ground moisture barriers</div>
+      </div>
+      <span class="std-badge badge-fail" id="badge-moisture">FAIL</span>
+    </div>
+    <div class="std-body" id="body-moisture" style="display:none">
+      <div class="std-row">
+        <div class="chk fail" id="chk-m1" onclick="toggleChk(this,'moisture')">✗</div>
+        <div class="row-info">
+          <div class="row-title">Efficient drainage systems present</div>
+          <div class="row-spec">Gutters, downpipes, and drains must be in good working order. Paths and paving must direct water away from the building. No ponding near foundations.</div>
+          <div class="row-tag non">✗ Guttering requires repair — action needed</div>
+        </div>
+      </div>
+      <div class="std-row">
+        <div class="chk" id="chk-m2" onclick="toggleChk(this,'moisture')"></div>
+        <div class="row-info">
+          <div class="row-title">Ground moisture barrier (if suspended floor)</div>
+          <div class="row-spec">A polythene barrier (min 0.25mm) must cover ≥ 80% of the ground under the floor. Must overlap seams by 200mm. Slab foundations are exempt from this requirement.</div>
+          <div class="row-tag non">✗ Moisture barrier status unknown — inspection needed</div>
+        </div>
+      </div>
+      <div class="std-row">
+        <div class="chk" id="chk-m3" onclick="toggleChk(this,'moisture')"></div>
+        <div class="row-info">
+          <div class="row-title">No unreasonable moisture or dampness</div>
+          <div class="row-spec">Rental must be maintained free of damp. Landlord responsible for structural causes of moisture. Tenant responsible for lifestyle moisture (e.g., drying clothes indoors).</div>
+          <div class="row-tag pending">⚠ Inspect for signs of damp or mould</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Draught Stopping -->
+  <div class="std-card" style="animation: fadeUp .35s ease both .16s;">
+    <div class="std-head" onclick="toggleCard('draught')">
+      <div class="std-icon gold">🪟</div>
+      <div style="flex:1">
+        <div class="std-title">Draught Stopping Standard</div>
+        <div class="std-req">Seal unreasonable gaps in walls, ceilings & floors</div>
+      </div>
+      <span class="std-badge badge-pass" id="badge-draught">PASS</span>
+    </div>
+    <div class="std-body" id="body-draught" style="display:none">
+      <div class="std-row">
+        <div class="chk checked" id="chk-d1" onclick="toggleChk(this,'draught')">✓</div>
+        <div class="row-info">
+          <div class="row-title">No unreasonable gaps in building envelope</div>
+          <div class="row-spec">All gaps in walls, ceilings, floors, and around windows/doors that allow unreasonable draught must be stopped. Excludes intentional ventilation openings (fireplaces with open flues).</div>
+          <div class="row-tag comply">✓ No significant draught gaps identified</div>
+        </div>
+      </div>
+      <div class="std-row">
+        <div class="chk checked" id="chk-d2" onclick="toggleChk(this,'draught')">✓</div>
+        <div class="row-info">
+          <div class="row-title">Unused fireplace openings blocked</div>
+          <div class="row-spec">Unused chimneys or fireplace openings must be blocked or fitted with a draught excluder if they cause unreasonable draught. Functional fireplaces are exempt.</div>
+          <div class="row-tag comply">✓ No unused fireplaces or openings blocked</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Penalty Box -->
+  <div class="sec">Non-Compliance Penalties <span class="more">Tenancy Tribunal →</span></div>
+  <div class="penalty-box">
+    <div class="pb-top">
+      <div class="pb-icon">⚠️</div>
+      <div>
+        <div class="pb-title">Financial Penalties for Landlords</div>
+        <div class="pb-sub">Residential Tenancies Act 1986 · MBIE enforcement</div>
+      </div>
+    </div>
+    <div class="pb-row"><div class="pb-key">Max fine per breach</div><div class="pb-val">$7,200</div></div>
+    <div class="pb-row"><div class="pb-key">Exemplary damages (Tribunal)</div><div class="pb-val">Up to $50,000</div></div>
+    <div class="pb-row"><div class="pb-key">Tenant can apply for</div><div class="pb-val">Rent reduction</div></div>
+    <div class="pb-row"><div class="pb-key">Enforcement body</div><div class="pb-val">Tenancy Tribunal</div></div>
+    <div class="pb-row"><div class="pb-key">Compliance deadline (all rentals)</div><div class="pb-val">1 July 2025</div></div>
+    <div class="pb-row" style="border:none"><div class="pb-key">Annual compliance statement due</div><div class="pb-val">With tenancy renewal</div></div>
+  </div>
+
+  <!-- Compliance Timeline -->
+  <div class="sec">Compliance Timeline <span class="more">MBIE Dates →</span></div>
+  <div class="timeline">
+    <div class="tl-title">HHS Rollout Phases <span>NZ 2021–2025</span></div>
+    <div class="tl-item">
+      <div class="tl-dot-col">
+        <div class="tl-dot done"></div>
+        <div class="tl-line"></div>
+      </div>
+      <div class="tl-content">
+        <div class="tl-date">1 July 2021</div>
+        <div class="tl-event">Phase 1 — New & Renewed Tenancies</div>
+        <div class="tl-note">All 5 standards apply to new tenancies and renewals from this date.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot-col">
+        <div class="tl-dot done"></div>
+        <div class="tl-line"></div>
+      </div>
+      <div class="tl-content">
+        <div class="tl-date">1 July 2023</div>
+        <div class="tl-event">Phase 2 — Social Housing Providers</div>
+        <div class="tl-note">Kāinga Ora and registered Community Housing Providers must comply.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot-col">
+        <div class="tl-dot active"></div>
+        <div class="tl-line"></div>
+      </div>
+      <div class="tl-content">
+        <div class="tl-date">1 July 2025 ← YOU ARE HERE</div>
+        <div class="tl-event">Phase 3 — ALL Private Rentals</div>
+        <div class="tl-note">Every private rental in NZ must meet all 5 Healthy Homes Standards regardless of tenancy start date.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot-col">
+        <div class="tl-dot future"></div>
+      </div>
+      <div class="tl-content">
+        <div class="tl-date">Ongoing</div>
+        <div class="tl-event">MBIE Compliance Audits</div>
+        <div class="tl-note">MBIE may request compliance statements. Non-compliance can result in Tenancy Tribunal action.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NZ Compliance Stats -->
+  <div class="sec">NZ Rental Compliance Stats <span class="more">MBIE 2024 →</span></div>
+  <div class="stats-card">
+    <div class="stats-title">NZ Rental Stock Compliance by Standard (2024)</div>
+    <div class="stat-row">
+      <div class="stat-lbl">Insulation</div>
+      <div class="bar-track"><div class="bar-fill g" style="width:88%"></div></div>
+      <div class="stat-pct">88%</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-lbl">Ventilation</div>
+      <div class="bar-track"><div class="bar-fill g" style="width:79%"></div></div>
+      <div class="stat-pct">79%</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-lbl">Heating</div>
+      <div class="bar-track"><div class="bar-fill o" style="width:67%"></div></div>
+      <div class="stat-pct">67%</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-lbl">Draught Stop</div>
+      <div class="bar-track"><div class="bar-fill o" style="width:72%"></div></div>
+      <div class="stat-pct">72%</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-lbl">Moisture</div>
+      <div class="bar-track"><div class="bar-fill r" style="width:54%"></div></div>
+      <div class="stat-pct">54%</div>
+    </div>
+  </div>
+
+  <!-- Radar Chart -->
+  <div class="radar-wrap">
+    <div class="radar-title">Your Property · Compliance Radar</div>
+    <svg viewBox="0 0 260 240" width="100%" style="max-height:220px">
+      <!-- Grid -->
+      <g opacity="0.12" stroke="var(--forest)" fill="none">
+        <polygon points="130,30 220,95 186,190 74,190 40,95" stroke-width="1"/>
+        <polygon points="130,55 195,102 169,172 91,172 65,102" stroke-width="1"/>
+        <polygon points="130,80 170,109 152,155 108,155 90,109" stroke-width="1"/>
+      </g>
+      <!-- Axes -->
+      <g stroke="rgba(13,59,46,0.15)" stroke-width="1">
+        <line x1="130" y1="30" x2="130" y2="190"/>
+        <line x1="130" y1="95" x2="220" y2="95"/>
+        <line x1="130" y1="95" x2="186" y2="190"/>
+        <line x1="130" y1="95" x2="74" y2="190"/>
+        <line x1="130" y1="95" x2="40" y2="95"/>
+      </g>
+      <!-- Score polygon (Heating 67%, Insulation 100%, Ventilation 100%, Moisture 33%, Draught 100%) -->
+      <polygon id="radarPoly"
+        points="130,62 199,98 186,190 91,172 65,102"
+        fill="rgba(26,107,74,0.18)" stroke="var(--fern)" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- Dot markers -->
+      <circle cx="130" cy="62"  r="4.5" fill="var(--fern)"/>
+      <circle cx="199" cy="98"  r="4.5" fill="var(--fern)"/>
+      <circle cx="186" cy="190" r="4.5" fill="var(--red)"/>
+      <circle cx="91"  cy="172" r="4.5" fill="var(--gold)"/>
+      <circle cx="65"  cy="102" r="4.5" fill="var(--fern)"/>
+      <!-- Labels -->
+      <text x="130" y="22"  text-anchor="middle" fill="var(--muted)" font-size="9" font-family="'Helvetica Neue',Arial,sans-serif" font-weight="700">HEATING</text>
+      <text x="229" y="98"  text-anchor="start"  fill="var(--muted)" font-size="9" font-family="'Helvetica Neue',Arial,sans-serif" font-weight="700">INSULATION</text>
+      <text x="195" y="204" text-anchor="middle" fill="var(--red)"   font-size="9" font-family="'Helvetica Neue',Arial,sans-serif" font-weight="700">MOISTURE</text>
+      <text x="65"  y="204" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="'Helvetica Neue',Arial,sans-serif" font-weight="700">VENTILATION</text>
+      <text x="22"  y="98"  text-anchor="end"    fill="var(--muted)" font-size="9" font-family="'Helvetica Neue',Arial,sans-serif" font-weight="700">DRAUGHT</text>
+    </svg>
+    <div style="display:flex;justify-content:center;gap:16px;margin-top:4px">
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:var(--fern)"></div>Compliant</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:var(--gold)"></div>Partial</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:var(--red)"></div>Non-Compliant</div>
+    </div>
+  </div>
+
+  <!-- Saved Reports -->
+  <div class="sec">Saved Reports <span class="more" onclick="clearSaved()">Clear All</span></div>
+  <div class="saved-section">
+    <div id="savedList">
+      <div style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;font-family:'Helvetica Neue',Arial,sans-serif;">No saved reports yet. Run a check and tap 💾 Save.</div>
+    </div>
+  </div>
+
+  <!-- External Links -->
+  <div class="sec">Government Resources <span class="more">All Links →</span></div>
+  <div class="ilist">
+    <div class="ic" onclick="window.open('https://www.tenancy.govt.nz/healthy-homes','_blank')">
+      <div class="ii">🏛️</div>
+      <div><div class="in">Tenancy Services — Healthy Homes</div><div class="is">Official MBIE compliance guide & checklists</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic" onclick="window.open('https://www.tenancy.govt.nz/assets/Uploads/Healthy-Homes/healthy-homes-standards-compliance-guide.pdf','_blank')">
+      <div class="ii">📋</div>
+      <div><div class="in">HHS Compliance Guide (PDF)</div><div class="is">Full technical standards document — MBIE 2021</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic" onclick="window.open('https://www.tenancy.govt.nz/heating-assessment-tool','_blank')">
+      <div class="ii">🌡️</div>
+      <div><div class="in">MBIE Heating Assessment Tool</div><div class="is">Calculate required heating capacity for your property</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic" onclick="window.open('https://www.tenancy.govt.nz/disputes/tribunal','_blank')">
+      <div class="ii">⚖️</div>
+      <div><div class="in">Tenancy Tribunal</div><div class="is">Apply for orders, mediation, and hearings</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic" onclick="window.open('https://www.eeca.govt.nz/energy-ideas/for-your-home/','_blank')">
+      <div class="ii">♻️</div>
+      <div><div class="in">EECA — Energy Efficiency NZ</div><div class="is">Warmer Kiwi Homes insulation subsidy scheme</div></div>
+      <div class="ich">›</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🌿</div><div class="ni-lb">New Zealand</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+  // State of all checkboxes
+  const chkState = {
+    'chk-h1': false, 'chk-h2': true,  'chk-h3': true,
+    'chk-i1': true,  'chk-i2': true,  'chk-i3': true,
+    'chk-v1': true,  'chk-v2': true,
+    'chk-m1': false, 'chk-m2': false, 'chk-m3': false,
+    'chk-d1': true,  'chk-d2': true,
+  };
+
+  const sectionItems = {
+    heating:    ['chk-h1','chk-h2','chk-h3'],
+    insulation: ['chk-i1','chk-i2','chk-i3'],
+    ventilation:['chk-v1','chk-v2'],
+    moisture:   ['chk-m1','chk-m2','chk-m3'],
+    draught:    ['chk-d1','chk-d2'],
+  };
+
+  function toggleCard(sec) {
+    const body = document.getElementById('body-' + sec);
+    body.style.display = body.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function toggleChk(el, section) {
+    const id = el.id;
+    chkState[id] = !chkState[id];
+    if (chkState[id]) {
+      el.classList.add('checked'); el.classList.remove('fail'); el.textContent = '✓';
+    } else {
+      el.classList.remove('checked'); el.classList.add('fail'); el.textContent = '✗';
+    }
+    recalc();
+  }
+
+  function recalc() {
+    const totalItems = Object.keys(chkState).length;
+    const passed = Object.values(chkState).filter(Boolean).length;
+    const pct = Math.round((passed / totalItems) * 100);
+
+    // Update donut
+    const circ = 226;
+    const offset = circ - (circ * pct / 100);
+    document.getElementById('donutArc').style.strokeDashoffset = offset;
+    document.getElementById('donutPct').textContent = pct + '%';
+    document.getElementById('scoreVal').textContent = pct + '%';
+
+    const statusEl = document.getElementById('scoreStatus');
+    if (pct === 100) { statusEl.textContent = '✅ Fully Compliant'; statusEl.className = 'score-status'; }
+    else if (pct >= 60) { statusEl.textContent = '⚠ Partially Compliant'; statusEl.className = 'score-status partial'; }
+    else { statusEl.textContent = '✗ Non-Compliant'; statusEl.className = 'score-status warn'; }
+
+    // Per-section badges
+    let passC = 0, partC = 0, failC = 0;
+    Object.entries(sectionItems).forEach(([sec, items]) => {
+      const p = items.filter(i => chkState[i]).length;
+      const t = items.length;
+      const badge = document.getElementById('badge-' + sec);
+      if (p === t)       { badge.textContent = 'PASS'; badge.className = 'std-badge badge-pass'; passC++; }
+      else if (p === 0)  { badge.textContent = 'FAIL'; badge.className = 'std-badge badge-fail'; failC++; }
+      else               { badge.textContent = 'CHECK'; badge.className = 'std-badge badge-check'; partC++; }
+    });
+
+    document.getElementById('passCount').textContent = passC;
+    document.getElementById('partCount').textContent = partC;
+    document.getElementById('failCount').textContent = failC;
+  }
+
+  function runCheck() {
+    showToast('✅ Compliance check complete! Review each standard below.');
+    // Open all cards briefly to show
+    ['heating','insulation','ventilation','moisture','draught'].forEach(s => {
+      document.getElementById('body-' + s).style.display = 'block';
+    });
+    recalc();
+  }
+
+  function saveResult() {
+    const pct = document.getElementById('scoreVal').textContent;
+    const prop = document.getElementById('propType').value;
+    const region = document.getElementById('region').value;
+    const year = document.getElementById('buildYear').value;
+    const now = new Date().toLocaleDateString('en-NZ', {day:'numeric',month:'short',year:'numeric'});
+    const isPass = parseInt(pct) === 100;
+
+    const saved = JSON.parse(localStorage.getItem('hhs_reports') || '[]');
+    const item = { id: Date.now(), pct, prop, region, year, date: now };
+    saved.unshift(item);
+    if (saved.length > 5) saved.pop();
+    localStorage.setItem('hhs_reports', JSON.stringify(saved));
+
+    renderSaved();
+    showToast('💾 Report saved! ' + pct + ' compliance for ' + region + ' ' + prop);
+  }
+
+  function renderSaved() {
+    const saved = JSON.parse(localStorage.getItem('hhs_reports') || '[]');
+    const container = document.getElementById('savedList');
+    if (!saved.length) {
+      container.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;font-family:\'Helvetica Neue\',Arial,sans-serif;">No saved reports yet. Run a check and tap 💾 Save.</div>';
+      return;
+    }
+    container.innerHTML = saved.map(s => `
+      <div class="saved-item">
+        <div class="saved-icon">🏠</div>
+        <div>
+          <div class="saved-title">${s.prop} · ${s.region}</div>
+          <div class="saved-sub">${s.year} · Saved ${s.date}</div>
+        </div>
+        <div class="saved-score ${parseInt(s.pct) < 70 ? 'warn' : ''}">${s.pct}</div>
+        <button class="del-btn" onclick="deleteReport(${s.id})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function deleteReport(id) {
+    let saved = JSON.parse(localStorage.getItem('hhs_reports') || '[]');
+    saved = saved.filter(s => s.id !== id);
+    localStorage.setItem('hhs_reports', JSON.stringify(saved));
+    renderSaved();
+    showToast('🗑 Report removed');
+  }
+
+  function clearSaved() {
+    localStorage.removeItem('hhs_reports');
+    renderSaved();
+    showToast('🗑 All reports cleared');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // Init
+  renderSaved();
+  recalc();
+</script>
+</body>
+</html>

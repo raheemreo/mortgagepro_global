@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compare Banks & HFCs – MortgagePro India</title>
+<style>
+/* ═══════════════════════════════
+   TOKENS — Saffron · Ashoka · Deep Emerald
+═══════════════════════════════ */
+:root{
+  --saffron:  #FF6B00;
+  --saffron2: #E05A00;
+  --ochre:    #F5A623;
+  --ochre-lt: #FFDEA0;
+  --navy:     #0B1F48;
+  --chakra:   #1A3A8F;
+  --green:    #046A38;
+  --green2:   #07543A;
+  --teal:     #0D9488;
+  --white:    #FFFFFF;
+  --bg:       #FFF8F0;
+  --card:     #FFFFFF;
+  --muted:    #7A5C3A;
+  --border:   rgba(255,107,0,0.10);
+  --sh:       0 4px 20px rgba(11,31,72,0.09);
+  --sh2:      0 10px 40px rgba(11,31,72,0.18);
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{
+  font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg); color:var(--navy);
+  max-width:420px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background-image:
+    radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+    radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);
+  pointer-events:none; z-index:0;
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);
+  padding:46px 18px 0; position:relative; overflow:hidden;
+}
+.header::before{
+  content:'☸'; position:absolute; right:-10px; top:30px;
+  font-size:130px; color:rgba(255,255,255,0.06); line-height:1;
+}
+.header::after{
+  content:''; position:absolute; bottom:0; left:0; width:100%; height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);
+}
+.hdr-top{ display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2; }
+.icon-btn{
+  width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#fff;cursor:pointer;
+}
+.hdr-center{ text-align:center;position:relative;z-index:2; }
+.hdr-flag{ font-size:28px;display:block; }
+.hdr-title{ font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px; }
+.hdr-title span{ color:var(--ochre-lt); }
+.hdr-sub{ font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif; }
+.rate-strip{
+  background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0;padding:11px 14px;
+  display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;
+}
+.rs{ text-align:center;position:relative; }
+.rs:not(:last-child)::after{ content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13); }
+.rs-l{ font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif; }
+.rs-v{ font-size:15px;font-weight:800;color:#fff;line-height:1.15; }
+.rs-v.saf{ color:var(--ochre-lt); }
+.rs-v.grn{ color:#86EFAC; }
+.rs-n{ font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif; }
+
+/* CONTENT */
+.content{ padding:16px 15px 112px;position:relative;z-index:1; }
+.sec{
+  font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;
+  font-family:'Trebuchet MS',sans-serif;
+}
+.chip{
+  font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;
+  text-transform:none;letter-spacing:0;
+}
+.chip-g{ background:#ECFDF5;color:var(--green2); }
+.chip-s{ background:#FFF3E0;color:var(--saffron2); }
+.chip-b{ background:#EFF6FF;color:#1D4ED8; }
+
+/* ═══ LOAN SETUP CARD ═══ */
+.setup-card{
+  background:linear-gradient(148deg,var(--navy),var(--chakra));
+  border-radius:22px;padding:18px;position:relative;overflow:hidden;box-shadow:var(--sh2);
+}
+.setup-card::before{
+  content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;
+  border-radius:50%;background:rgba(255,107,0,0.16);
+}
+.setup-card::after{
+  content:'☸';position:absolute;right:14px;bottom:12px;font-size:54px;color:rgba(255,255,255,0.06);
+}
+.sc-tag{ font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif; }
+.sc-title{ font-size:17px;font-weight:800;color:#fff;margin:4px 0 14px;line-height:1.2; }
+.sc-title span{ color:var(--ochre-lt); }
+.field{ margin-bottom:11px; }
+.field label{ font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;font-family:'Trebuchet MS',sans-serif; }
+.field input,.field select{
+  width:100%;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18);
+  border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;color:#fff;
+  outline:none;font-family:'Book Antiqua',Palatino,Georgia,serif;appearance:none;
+}
+.field select option{ background:#0B1F48;color:#fff; }
+.field input::placeholder{ color:rgba(255,255,255,0.35); }
+.field-row{ display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+.cmp-btn{
+  margin-top:4px;width:100%;
+  background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border:none;border-radius:13px;padding:13px;
+  font-size:14px;font-weight:800;color:#fff;cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,107,0,0.42);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;
+  position:relative;z-index:2;transition:transform .15s;
+}
+.cmp-btn:active{ transform:scale(.97); }
+
+/* ═══ WINNER BANNER ═══ */
+.winner-banner{
+  background:linear-gradient(135deg,#ECFDF5,#D1FAE5);
+  border:1.5px solid #6EE7B7;border-radius:17px;
+  padding:14px 15px;display:flex;align-items:center;gap:12px;margin-bottom:11px;
+  display:none;
+}
+.wb-icon{ font-size:28px; }
+.wb-title{ font-size:13px;font-weight:800;color:var(--green2); }
+.wb-sub{ font-size:9.5px;color:var(--green);margin-top:2px;font-family:'Trebuchet MS',sans-serif; }
+.wb-badge{
+  margin-left:auto;background:var(--green);color:#fff;font-size:10px;
+  font-weight:800;padding:8px 12px;border-radius:9px;white-space:nowrap;
+  flex-shrink:0;font-family:'Trebuchet MS',sans-serif;
+}
+
+/* ═══ COMPARISON TABLE ═══ */
+.cmp-table-wrap{
+  background:var(--card);border-radius:18px;
+  box-shadow:var(--sh2);border:1px solid var(--border);
+  overflow:hidden;margin-bottom:11px;display:none;
+}
+.cmp-table-wrap.show{ display:block; }
+.cmp-header{
+  background:linear-gradient(135deg,var(--navy),var(--chakra));
+  padding:13px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.cmt-title{ font-size:13px;font-weight:800;color:#fff; }
+.save-btn{
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  color:#fff;font-size:10px;font-weight:800;padding:7px 14px;
+  border-radius:9px;border:none;cursor:pointer;font-family:'Trebuchet MS',sans-serif;
+  display:flex;align-items:center;gap:4px;
+}
+.save-btn.saved{ background:linear-gradient(135deg,#6EE7B7,#34D399);color:#065F46; }
+.cmp-body{ padding:14px; }
+
+/* COMPARISON ROWS */
+.cmp-row{
+  background:var(--card);border-radius:15px;padding:14px;
+  border:1.5px solid var(--border);margin-bottom:10px;
+  position:relative;overflow:hidden;transition:transform .15s;
+}
+.cmp-row:active{ transform:scale(.98); }
+.cmp-row.best{
+  border-color:rgba(4,106,56,0.35);
+  background:linear-gradient(135deg,rgba(4,106,56,0.04),rgba(7,84,58,0.02));
+}
+.cmp-row.best::before{
+  content:'🏆 Best Rate';position:absolute;top:10px;right:10px;
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  color:#fff;font-size:8.5px;font-weight:800;padding:3px 9px;border-radius:20px;
+  font-family:'Trebuchet MS',sans-serif;
+}
+.cmp-row-top{ display:flex;align-items:center;gap:11px;margin-bottom:10px; }
+.cr-icon{
+  width:42px;height:42px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  background:rgba(255,107,0,0.07);flex-shrink:0;
+}
+.cr-info{ flex:1; }
+.cr-name{ font-size:13.5px;font-weight:800;color:var(--navy); }
+.cr-type{ font-size:9px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif; }
+.cr-rate{ font-size:20px;font-weight:800;color:var(--saffron); }
+.cr-rate.best-rate{ color:var(--green); }
+
+/* STAT ROW */
+.stat-row{ display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px; }
+.stat-box{ text-align:center; }
+.stat-lbl{ font-size:7.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-family:'Trebuchet MS',sans-serif; }
+.stat-val{ font-size:11.5px;font-weight:800;color:var(--navy);margin-top:2px; }
+
+/* EMI BAR */
+.emi-bar-label{
+  display:flex;justify-content:space-between;
+  font-size:9px;font-family:'Trebuchet MS',sans-serif;color:var(--muted);margin-bottom:3px;
+}
+.emi-bar-wrap{ background:rgba(11,31,72,0.06);border-radius:99px;height:8px;overflow:hidden; }
+.emi-bar{ height:100%;border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1); }
+
+/* SCORE DOTS */
+.score-wrap{ display:flex;align-items:center;gap:6px;margin-top:8px; }
+.score-label{ font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;width:80px;flex-shrink:0; }
+.dots{ display:flex;gap:3px; }
+.dot{ width:9px;height:9px;border-radius:50%;background:rgba(11,31,72,0.10); }
+.dot.fill-s{ background:var(--saffron); }
+.dot.fill-g{ background:var(--green); }
+.dot.fill-b{ background:var(--chakra); }
+
+/* TAGS */
+.tag-row{ display:flex;gap:5px;flex-wrap:wrap;margin-top:8px; }
+.tag{ font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;font-family:'Trebuchet MS',sans-serif; }
+.tag-g{ background:#ECFDF5;color:#065F46; }
+.tag-s{ background:#FFF3E0;color:#E05A00; }
+.tag-b{ background:#EFF6FF;color:#1D4ED8; }
+.tag-o{ background:#FFF7ED;color:#C2410C; }
+.tag-m{ background:#F5F3FF;color:#6D28D9; }
+
+/* ═══ CHART SECTION ═══ */
+.chart-section{
+  background:var(--card);border-radius:18px;padding:16px;
+  box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;
+  display:none;
+}
+.chart-section.show{ display:block; }
+.cs-title{ font-size:13px;font-weight:800;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between; }
+.cs-title span{ font-size:9px;font-weight:600;color:var(--saffron);font-family:'Trebuchet MS',sans-serif; }
+
+/* BAR CHART */
+.bar-chart{ display:flex;flex-direction:column;gap:9px; }
+.bc-row{ display:flex;align-items:center;gap:8px; }
+.bc-name{ font-size:10px;font-weight:700;color:var(--navy);width:88px;flex-shrink:0;font-family:'Trebuchet MS',sans-serif; }
+.bc-bar-wrap{ flex:1;background:rgba(11,31,72,0.06);border-radius:99px;height:20px;overflow:hidden;position:relative; }
+.bc-bar{
+  height:100%;border-radius:99px;
+  display:flex;align-items:center;padding-left:8px;
+  font-size:9px;font-weight:800;color:#fff;
+  transition:width .8s cubic-bezier(.4,0,.2,1);
+  min-width:60px;
+}
+.bc-emi{ font-size:10px;font-weight:800;color:var(--navy);width:64px;text-align:right;font-family:'Trebuchet MS',sans-serif; }
+
+/* ═══ SUMMARY STATS ═══ */
+.summary-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:9px;
+  margin-bottom:11px;display:none;
+}
+.summary-grid.show{ display:grid; }
+.sg-box{
+  background:var(--card);border-radius:15px;padding:13px 14px;
+  box-shadow:var(--sh);border:1px solid var(--border);
+}
+.sg-box.saf{ border-color:rgba(255,107,0,0.25);background:rgba(255,107,0,0.04); }
+.sg-box.grn{ border-color:rgba(4,106,56,0.25);background:rgba(4,106,56,0.04); }
+.sg-lbl{ font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-family:'Trebuchet MS',sans-serif; }
+.sg-val{ font-size:18px;font-weight:800;color:var(--navy);margin-top:4px; }
+.sg-val.saf{ color:var(--saffron); }
+.sg-val.grn{ color:var(--green); }
+.sg-sub{ font-size:9px;color:var(--muted);margin-top:3px;font-family:'Trebuchet MS',sans-serif; }
+
+/* ═══ LENDER DETAIL CARDS ═══ */
+.lender-full{
+  background:var(--card);border-radius:17px;padding:14px 15px;
+  box-shadow:var(--sh);border:1px solid var(--border);
+  margin-bottom:9px;cursor:pointer;transition:transform .15s;
+}
+.lender-full:active{ transform:scale(.98); }
+.lf-top{ display:flex;align-items:center;gap:10px;margin-bottom:10px; }
+.lf-icon{ font-size:24px; }
+.lf-name{ font-size:13px;font-weight:800;color:var(--navy); }
+.lf-type{ font-size:9px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif; }
+.lf-rate{ font-size:19px;font-weight:800;color:var(--saffron);margin-left:auto; }
+.lf-row{ display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding-top:9px;border-top:1px solid var(--border); }
+.lf-item{ text-align:center; }
+.lf-lbl{ font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-family:'Trebuchet MS',sans-serif; }
+.lf-val{ font-size:12px;font-weight:800;color:var(--navy);margin-top:2px; }
+
+/* ═══ FILTER / SORT ═══ */
+.filter-bar{
+  display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;
+  padding-bottom:4px;margin-bottom:12px;
+}
+.filter-bar::-webkit-scrollbar{ display:none; }
+.fb-chip{
+  flex-shrink:0;padding:6px 13px;border-radius:20px;
+  font-size:10px;font-weight:700;cursor:pointer;
+  background:rgba(255,107,0,0.08);color:var(--saffron);
+  border:1px solid rgba(255,107,0,0.18);font-family:'Trebuchet MS',sans-serif;
+  transition:all .15s;
+}
+.fb-chip.active{ background:var(--saffron);color:#fff;border-color:var(--saffron); }
+
+/* SAVED LIST */
+.saved-item{
+  background:var(--card);border-radius:13px;padding:11px 13px;
+  box-shadow:var(--sh);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:7px;cursor:pointer;
+}
+.si-left{ display:flex;flex-direction:column;gap:2px; }
+.si-name{ font-size:11.5px;font-weight:800;color:var(--navy); }
+.si-meta{ font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif; }
+.si-right{ font-size:13px;font-weight:800;color:var(--saffron); }
+.si-del{ font-size:12px;margin-left:8px;cursor:pointer; }
+
+/* BOTTOM NAV */
+.bnav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:420px;background:var(--card);
+  border-top:1px solid var(--border);display:flex;
+  padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;
+}
+.ni{ flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer; }
+.ni-ic{ font-size:19px;line-height:1; }
+.ni-lb{ font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif; }
+.ni.active .ni-lb{ color:var(--saffron); }
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--navy);color:#fff;font-size:12px;font-weight:700;
+  padding:10px 20px;border-radius:99px;z-index:200;
+  font-family:'Trebuchet MS',sans-serif;box-shadow:var(--sh2);
+  opacity:0;transition:all .3s ease;white-space:nowrap;
+}
+.toast.show{ transform:translateX(-50%) translateY(0);opacity:1; }
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+.fu6{animation:fadeUp .38s ease both .29s;}
+@keyframes pop{0%{transform:scale(1);}50%{transform:scale(1.03);}100%{transform:scale(1);}}
+.pop{animation:pop .3s ease;}
+
+/* EXPAND PANEL */
+.expandable{display:none;}
+.expandable.open{display:block;}
+.expand-toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;padding-top:8px;margin-top:8px;
+  border-top:1px dashed rgba(255,107,0,0.18);
+  font-size:10px;font-weight:700;color:var(--saffron);
+  font-family:'Trebuchet MS',sans-serif;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════  HEADER  ══════ -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏦</div>
+      <div class="hdr-title">Banks & <span>HFCs Compare</span></div>
+      <div class="hdr-sub">Home Loan Rates · EMI · Processing Fee · Eligibility</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">Best Rate</div>
+      <div class="rs-v grn">8.50%</div>
+      <div class="rs-n">SBI</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Avg Rate</div>
+      <div class="rs-v saf">8.76%</div>
+      <div class="rs-n">Jun 2025</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Repo Rate</div>
+      <div class="rs-v">6.25%</div>
+      <div class="rs-n">RBI Jun'25</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Lenders</div>
+      <div class="rs-v">15+</div>
+      <div class="rs-n">Live Data</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════  CONTENT  ══════ -->
+<div class="content">
+
+  <!-- LOAN SETUP CALCULATOR -->
+  <div class="sec fu1" style="margin-top:0">Loan Setup <span class="chip chip-s">Compare EMIs</span></div>
+  <div class="setup-card fu1">
+    <div class="sc-tag">भारत · Home Loan EMI Comparison · All Lenders</div>
+    <div class="sc-title">Compare <span>EMI & Total Cost</span> across Lenders</div>
+
+    <div class="field-row">
+      <div class="field" style="margin-bottom:0">
+        <label>Loan Amount (₹)</label>
+        <input type="number" id="loanAmt" placeholder="e.g. 5000000" inputmode="numeric">
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Tenure (Years)</label>
+        <input type="number" id="loanTenure" placeholder="20" inputmode="numeric" min="1" max="30">
+      </div>
+    </div>
+    <div class="field" style="margin-top:11px">
+      <label>Loan Type</label>
+      <select id="loanType">
+        <option value="salaried">Salaried Employee</option>
+        <option value="selfemployed">Self-Employed</option>
+        <option value="nri">NRI Applicant</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>CIBIL Score Range</label>
+      <select id="cibilScore">
+        <option value="800">800+ (Excellent)</option>
+        <option value="750">750–799 (Very Good)</option>
+        <option value="700">700–749 (Good)</option>
+        <option value="650">650–699 (Average)</option>
+      </select>
+    </div>
+    <button class="cmp-btn" onclick="compareAll()">⚡ Compare All Banks & HFCs</button>
+  </div>
+
+  <!-- WINNER BANNER -->
+  <div class="winner-banner fu2" id="winnerBanner">
+    <div class="wb-icon">🏆</div>
+    <div>
+      <div class="wb-title" id="winnerTitle">SBI Home Loan — Best Rate</div>
+      <div class="wb-sub" id="winnerSub">Lowest EMI & total interest cost</div>
+    </div>
+    <div class="wb-badge" id="winnerRate">8.50%</div>
+  </div>
+
+  <!-- SUMMARY STATS -->
+  <div class="summary-grid fu2" id="summaryGrid">
+    <div class="sg-box saf">
+      <div class="sg-lbl">Lowest EMI</div>
+      <div class="sg-val saf" id="sg_lowest_emi">—</div>
+      <div class="sg-sub" id="sg_lowest_lender">—</div>
+    </div>
+    <div class="sg-box grn">
+      <div class="sg-lbl">Max Saving vs Avg</div>
+      <div class="sg-val grn" id="sg_saving">—</div>
+      <div class="sg-sub">Over full tenure</div>
+    </div>
+    <div class="sg-box">
+      <div class="sg-lbl">Highest EMI</div>
+      <div class="sg-val" id="sg_highest_emi">—</div>
+      <div class="sg-sub" id="sg_highest_lender">—</div>
+    </div>
+    <div class="sg-box">
+      <div class="sg-lbl">EMI Range</div>
+      <div class="sg-val" id="sg_range" style="font-size:13px">—</div>
+      <div class="sg-sub">Monthly difference</div>
+    </div>
+  </div>
+
+  <!-- VISUAL BAR CHART -->
+  <div class="chart-section fu3" id="chartSection">
+    <div class="cs-title">EMI Comparison — Monthly <span id="chartSubtitle">All Lenders</span></div>
+    <div class="bar-chart" id="emiBarChart"></div>
+  </div>
+
+  <!-- DETAILED COMPARISON TABLE -->
+  <div class="sec fu3" id="cmpSec" style="display:none">Detailed Comparison <span class="chip chip-b" id="cmpChip">—</span></div>
+  <div class="cmp-table-wrap fu3" id="cmpTable">
+    <div class="cmp-header">
+      <div class="cmt-title">🏦 Side-by-Side Breakdown</div>
+      <button class="save-btn" id="saveBtn" onclick="saveComparison()">💾 Save</button>
+    </div>
+    <div class="cmp-body" id="cmpRows"></div>
+  </div>
+
+  <!-- SAVED COMPARISONS -->
+  <div id="savedSec" style="display:none">
+    <div class="sec fu4">Saved Comparisons <span class="chip chip-g">My Records</span></div>
+    <div id="savedList" class="fu4"></div>
+  </div>
+
+  <!-- FILTER + SORT ALL LENDERS -->
+  <div class="sec fu4">All Lenders <span class="chip chip-s">2025 Rates</span></div>
+  <div class="filter-bar fu4">
+    <div class="fb-chip active" onclick="filterLenders('all',this)">All</div>
+    <div class="fb-chip" onclick="filterLenders('psu',this)">PSU Banks</div>
+    <div class="fb-chip" onclick="filterLenders('private',this)">Private Banks</div>
+    <div class="fb-chip" onclick="filterLenders('hfc',this)">HFCs</div>
+    <div class="fb-chip" onclick="filterLenders('nbfc',this)">NBFC</div>
+    <div class="fb-chip" onclick="filterLenders('low',this)">Lowest Rate</div>
+  </div>
+
+  <div id="lenderCards" class="fu5"></div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  REAL INDIA HOME LOAN LENDER DATA — June 2025
+// ══════════════════════════════════════════════
+const LENDERS = [
+  {
+    id:'sbi', icon:'🏦', name:'SBI Home Loan', shortName:'SBI',
+    type:'psu', typeLabel:'PSU Bank · Nationalised',
+    rate:{ salaried:8.50, selfemployed:8.60, nri:8.65 },
+    cibilAdj:{ 800:0, 750:0.05, 700:0.15, 650:0.40 },
+    processingFee:'₹10,000 (flat, waived on salary a/c)', maxLTV:90, maxTenure:30,
+    prepayment:'NIL for floating rate', foreclosure:'NIL floating', emiHoliday:'3 months available',
+    minIncome:'₹25,000/mo', maxAge:70,
+    features:['Lowest floating rate (EBR linked)','No prepayment penalty','Max 30 yr tenure','Balance transfer available','Overdraft facility (Maxgain)'],
+    tags:[['tag-g','Best Rate 8.50%'],['tag-b','Zero Prepayment'],['tag-g','Govt. Bank'],['tag-s','Maxgain OD']],
+    scoreProcess:5, scoreDigital:3, scoreSvc:4, scoreFlexibility:5,
+    special:'RBI EBR-linked floating. SBI Maxgain is a home loan with overdraft facility that helps save interest.',
+    notes:'SBI offers the lowest rate in India for home loans. EBR (External Benchmark Rate) linked to repo rate. Rates for salaried: 8.50%–9.65% depending on CIBIL.',
+    rbiLinked:true, avgRating:4.3
+  },
+  {
+    id:'hdfc', icon:'🏛️', name:'HDFC Bank', shortName:'HDFC',
+    type:'private', typeLabel:'Private Bank · Leading HFC Merged',
+    rate:{ salaried:8.70, selfemployed:8.80, nri:8.90 },
+    cibilAdj:{ 800:0, 750:0.05, 700:0.20, 650:0.50 },
+    processingFee:'0.5% of loan (min ₹3,000)', maxLTV:90, maxTenure:30,
+    prepayment:'NIL for individual floating', foreclosure:'NIL floating individual', emiHoliday:'Step-up EMI available',
+    minIncome:'₹30,000/mo', maxAge:70,
+    features:['Adjustable rate linked to MCLR','Step-up EMI option','Quick disbursal 3–4 days','Online application','Flexibility for NRI borrowers'],
+    tags:[['tag-s','8.70% Floating'],['tag-b','Step-up EMI'],['tag-g','Fast Disbursal'],['tag-m','NRI Friendly']],
+    scoreProcess:5, scoreDigital:5, scoreSvc:4, scoreFlexibility:4,
+    special:'HDFC Bank (post merger with HDFC Ltd) offers competitive floating rates with MCLR linkage.',
+    notes:'Post-merger with HDFC Ltd in 2023. Rate for salaried: 8.70%–9.65%. Higher for self-employed. Processing fee 0.5% (negotiable). Strong digital platform.',
+    rbiLinked:true, avgRating:4.4
+  },
+  {
+    id:'icici', icon:'🏢', name:'ICICI Bank', shortName:'ICICI',
+    type:'private', typeLabel:'Private Bank · Top 3',
+    rate:{ salaried:8.75, selfemployed:8.90, nri:9.00 },
+    cibilAdj:{ 800:0, 750:0.05, 700:0.20, 650:0.55 },
+    processingFee:'0.5%–1% of loan', maxLTV:90, maxTenure:30,
+    prepayment:'NIL individual floating', foreclosure:'NIL floating individual', emiHoliday:'Yes',
+    minIncome:'₹30,000/mo', maxAge:70,
+    features:['iHome smart tracking app','Flexible EMI options','Insta Home Loan for existing customers','Balance transfer','Co-applicant benefit'],
+    tags:[['tag-s','8.75% Floating'],['tag-b','iHome App'],['tag-g','Instant for Existing'],['tag-o','Co-applicant']],
+    scoreProcess:4, scoreDigital:5, scoreSvc:4, scoreFlexibility:4,
+    special:'ICICI iHome loan portal gives real-time tracking and instant eligibility for existing customers.',
+    notes:'Rate 8.75%–9.70% for salaried. Higher for SE. Balance transfer attractive. Strong digital offering. Processing fee 0.50%–1%.',
+    rbiLinked:true, avgRating:4.2
+  },
+  {
+    id:'axis', icon:'⚡', name:'Axis Bank', shortName:'Axis',
+    type:'private', typeLabel:'Private Bank',
+    rate:{ salaried:8.75, selfemployed:8.90, nri:9.00 },
+    cibilAdj:{ 800:0, 750:0.10, 700:0.25, 650:0.55 },
+    processingFee:'1% (min ₹10,000)', maxLTV:90, maxTenure:30,
+    prepayment:'NIL individual floating', foreclosure:'NIL individual', emiHoliday:'Yes',
+    minIncome:'₹30,000/mo', maxAge:70,
+    features:['EMI waiver offer (every 3 yrs)','QuickPay — digital process','Joint home loan benefit','Flexible repayment','Top-up loan available'],
+    tags:[['tag-s','8.75% Floating'],['tag-b','EMI Waiver'],['tag-g','Digital Process'],['tag-o','Top-up']],
+    scoreProcess:4, scoreDigital:5, scoreSvc:3, scoreFlexibility:4,
+    special:'Axis Bank "Shubh Aarambh" offers 12 EMI waivers over loan tenure (1 every 3 years).',
+    notes:'Rate 8.75%–9.65%. Shubh Aarambh scheme: 12 EMI waivers over loan life. Processing fee 1% negotiable. Strong in metro branches.',
+    rbiLinked:true, avgRating:4.1
+  },
+  {
+    id:'kotak', icon:'🔷', name:'Kotak Mahindra Bank', shortName:'Kotak',
+    type:'private', typeLabel:'Private Bank · New-Gen',
+    rate:{ salaried:8.75, selfemployed:8.90, nri:9.05 },
+    cibilAdj:{ 800:0, 750:0.10, 700:0.30, 650:0.60 },
+    processingFee:'0.5%–1%', maxLTV:90, maxTenure:25,
+    prepayment:'NIL floating individual', foreclosure:'NIL', emiHoliday:'EMI Holiday option',
+    minIncome:'₹30,000/mo', maxAge:60,
+    features:['One of fastest approvals','Digital-first experience','Attractive for NRI','NRE account-linked','Competitive rural rates'],
+    tags:[['tag-s','8.75% Floating'],['tag-b','Fast Approval'],['tag-m','NRI Linked']],
+    scoreProcess:4, scoreDigital:5, scoreSvc:4, scoreFlexibility:3,
+    special:'Kotak offers some of the fastest disbursals in private banking segment.',
+    notes:'Rate 8.75%–9.75%. Lower max tenure (25 yrs). Strong in digital and NRI segment. Processing fee 0.5%–1%.',
+    rbiLinked:true, avgRating:4.1
+  },
+  {
+    id:'bob', icon:'🏦', name:'Bank of Baroda', shortName:'BoB',
+    type:'psu', typeLabel:'PSU Bank · Nationalised',
+    rate:{ salaried:8.40, selfemployed:8.55, nri:8.60 },
+    cibilAdj:{ 800:0, 750:0.05, 700:0.15, 650:0.40 },
+    processingFee:'0.25%–0.50% (max ₹25,000)', maxLTV:90, maxTenure:30,
+    prepayment:'NIL floating', foreclosure:'NIL floating', emiHoliday:'Available',
+    minIncome:'₹20,000/mo', maxAge:70,
+    features:['Baroda Advantage Home Loan','Credit-linked subsidy CLSS','Low processing fee','Repo rate linked (RLLR)','Joint loan for women'],
+    tags:[['tag-g','8.40% – 2nd Lowest'],['tag-b','CLSS Subsidy'],['tag-g','Low Proc Fee'],['tag-s','Repo Linked']],
+    scoreProcess:4, scoreDigital:3, scoreSvc:4, scoreFlexibility:4,
+    special:'Bank of Baroda Repo Rate Linked Lending Rate (RLLR) offers one of the lowest rates for salaried.',
+    notes:'Rate 8.40%–9.25%. Among cheapest PSU banks after SBI. RLLR-linked product. Good for PMAY and CLSS applicants. Processing fee low.',
+    rbiLinked:true, avgRating:4.0
+  },
+  {
+    id:'lichfl', icon:'🏗️', name:'LIC Housing Finance', shortName:'LIC HFL',
+    type:'hfc', typeLabel:'HFC · LIC subsidiary',
+    rate:{ salaried:8.65, selfemployed:8.75, nri:8.85 },
+    cibilAdj:{ 800:0, 750:0.10, 700:0.25, 650:0.50 },
+    processingFee:'₹10,000–₹15,000 (flat)', maxLTV:90, maxTenure:30,
+    prepayment:'NIL for floating individual', foreclosure:'NIL individual floating', emiHoliday:'No',
+    minIncome:'₹25,000/mo', maxAge:70,
+    features:['LIC brand reliability','Good for LIC policyholder','Branch presence pan-India','Fixed rate option available','Home improvement loan'],
+    tags:[['tag-s','8.65% HFC Rate'],['tag-b','Fixed Available'],['tag-g','Pan-India Branches'],['tag-o','LIC Benefit']],
+    scoreProcess:3, scoreDigital:3, scoreSvc:4, scoreFlexibility:4,
+    special:'LIC HFL offers fixed rate option alongside floating — rare in the market.',
+    notes:'Rate 8.65%–9.50%. LIC policyholders may get slight benefit. One of the largest HFCs. Fixed rate: 8.65% for up to 3 years, then floating. Pan-India presence.',
+    rbiLinked:false, avgRating:4.0
+  },
+  {
+    id:'pnbhfl', icon:'🌿', name:'PNB Housing Finance', shortName:'PNB HFL',
+    type:'hfc', typeLabel:'HFC · PNB subsidiary',
+    rate:{ salaried:8.50, selfemployed:8.75, nri:9.00 },
+    cibilAdj:{ 800:0, 750:0.10, 700:0.30, 650:0.60 },
+    processingFee:'0.35% (min ₹2,500)', maxLTV:90, maxTenure:30,
+    prepayment:'NIL individual floating', foreclosure:'NIL', emiHoliday:'Available',
+    minIncome:'₹20,000/mo', maxAge:70,
+    features:['Flexible eligibility norms','Balance transfer with top-up','Good for Tier 2/3 cities','Roshni scheme for women','Rural housing'],
+    tags:[['tag-g','8.50% – Competitive'],['tag-b','Rural Housing'],['tag-m','Women Scheme'],['tag-o','Balance Transfer']],
+    scoreProcess:4, scoreDigital:3, scoreSvc:3, scoreFlexibility:4,
+    special:'PNB HFL Roshni scheme offers attractive rates for women borrowers in semi-urban areas.',
+    notes:'Rate 8.50%–10.50% (range wide, depends on profile). Low processing fee. Good for T2/T3 cities. Roshni for women and rural home buyers.',
+    rbiLinked:false, avgRating:3.9
+  },
+  {
+    id:'bajajhfl', icon:'🔶', name:'Bajaj Housing Finance', shortName:'Bajaj HFL',
+    type:'nbfc', typeLabel:'NBFC-HFC · Bajaj Group',
+    rate:{ salaried:8.50, selfemployed:8.70, nri:8.80 },
+    cibilAdj:{ 800:0, 750:0.05, 700:0.20, 650:0.55 },
+    processingFee:'Up to 4% of loan', maxLTV:90, maxTenure:32,
+    prepayment:'NIL for individual floating', foreclosure:'2% if fixed', emiHoliday:'Yes',
+    minIncome:'₹25,000/mo', maxAge:75,
+    features:['Max tenure 32 years','Quick digital approval (15 min)','Doorstep service','Flexible EMI','High LTV'],
+    tags:[['tag-s','8.50% NBFC'],['tag-b','32-yr Tenure'],['tag-g','15-min Approval'],['tag-o','High LTV 90%']],
+    scoreProcess:5, scoreDigital:5, scoreSvc:4, scoreFlexibility:5,
+    special:'Bajaj HFL offers longest tenure (32 yrs) and fastest digital approval in India.',
+    notes:'Rate 8.50%–15%. High processing fee up to 4%. Best for fast disbursal and longer tenure. Strong digital platform. NBFC — rates slightly less sensitive to RBI changes.',
+    rbiLinked:false, avgRating:4.3
+  },
+  {
+    id:'tata', icon:'🏰', name:'Tata Capital Housing', shortName:'Tata',
+    type:'nbfc', typeLabel:'NBFC-HFC · Tata Group',
+    rate:{ salaried:8.75, selfemployed:8.90, nri:9.10 },
+    cibilAdj:{ 800:0, 750:0.10, 700:0.25, 650:0.60 },
+    processingFee:'0.5%', maxLTV:90, maxTenure:30,
+    prepayment:'NIL individual floating', foreclosure:'NIL', emiHoliday:'Yes',
+    minIncome:'₹25,000/mo', maxAge:70,
+    features:['Tata brand trust','Good for professionals','NRI-friendly process','Transparent charges','Minimal documentation'],
+    tags:[['tag-b','Tata Trust'],['tag-s','8.75% Floating'],['tag-m','NRI Docs'],['tag-g','Transparent Fee']],
+    scoreProcess:4, scoreDigital:4, scoreSvc:4, scoreFlexibility:3,
+    special:'Tata Capital leverages Tata brand trust with clean, transparent fee structure.',
+    notes:'Rate 8.75%–12%. Tata brand preferred by many for trust. Process streamlined. NRI documentation clear. 0.5% processing fee.',
+    rbiLinked:false, avgRating:4.1
+  },
+  {
+    id:'canfin', icon:'🌾', name:'Can Fin Homes', shortName:'Can Fin',
+    type:'hfc', typeLabel:'HFC · Canara Bank subsidiary',
+    rate:{ salaried:8.50, selfemployed:8.65, nri:8.80 },
+    cibilAdj:{ 800:0, 750:0.10, 700:0.25, 650:0.50 },
+    processingFee:'0.50% (max ₹10,000)', maxLTV:90, maxTenure:30,
+    prepayment:'NIL floating individual', foreclosure:'NIL', emiHoliday:'No',
+    minIncome:'₹20,000/mo', maxAge:70,
+    features:['South India focused','Low processing fee','Affordable housing specialist','PMAY-eligible','Rural / semi-urban coverage'],
+    tags:[['tag-g','8.50% HFC'],['tag-b','Affordable Housing'],['tag-o','South India'],['tag-s','PMAY']],
+    scoreProcess:3, scoreDigital:3, scoreSvc:4, scoreFlexibility:3,
+    special:'Can Fin Homes specialises in affordable housing with PMAY and EWS/LIG focus.',
+    notes:'Rate 8.50%–10.25%. Strong in south India (Karnataka, TN, AP). Very good for PMAY/CLSS category. Low processing fee. Canara Bank subsidiary.',
+    rbiLinked:false, avgRating:3.9
+  },
+  {
+    id:'aavas', icon:'🌻', name:'Aavas Financiers', shortName:'Aavas',
+    type:'hfc', typeLabel:'HFC · Affordable Housing',
+    rate:{ salaried:9.75, selfemployed:10.50, nri:0 },
+    cibilAdj:{ 800:0, 750:0.25, 700:0.50, 650:1.00 },
+    processingFee:'1%–2%', maxLTV:90, maxTenure:20,
+    prepayment:'NIL individual', foreclosure:'NIL', emiHoliday:'No',
+    minIncome:'₹10,000/mo', maxAge:65,
+    features:['No formal income proof needed','Serve informal sector workers','Tribal and rural focus','Lower income acceptance','Small ticket loans'],
+    tags:[['tag-o','Informal Sector'],['tag-b','Rural Focus'],['tag-m','Low Income OK'],['tag-g','No Income Proof']],
+    scoreProcess:3, scoreDigital:2, scoreSvc:4, scoreFlexibility:5,
+    special:'Aavas serves India\'s bottom-of-pyramid — no formal income proof for daily wage workers.',
+    notes:'Rates higher (9.75%–14%) but serves borrowers with informal income. Perfect for self-employed without ITR, small farmers, rural borrowers. NRI not served.',
+    rbiLinked:false, avgRating:4.0
+  },
+  {
+    id:'union', icon:'🌐', name:'Union Bank of India', shortName:'Union',
+    type:'psu', typeLabel:'PSU Bank · Nationalised',
+    rate:{ salaried:8.35, selfemployed:8.50, nri:8.60 },
+    cibilAdj:{ 800:0, 750:0.05, 700:0.20, 650:0.45 },
+    processingFee:'0.50% (max ₹15,000)', maxLTV:90, maxTenure:30,
+    prepayment:'NIL floating', foreclosure:'NIL', emiHoliday:'Available',
+    minIncome:'₹20,000/mo', maxAge:70,
+    features:['Union Nari Shakti — women 0.05% off','RLLR linked','Repo rate transparent','PMAY CLSS eligible','Merger of Corp Bank, Andhra Bank'],
+    tags:[['tag-g','8.35% – Lowest PSU'],['tag-b','Women -0.05%'],['tag-s','CLSS PMAY'],['tag-o','Repo Linked']],
+    scoreProcess:4, scoreDigital:3, scoreSvc:3, scoreFlexibility:4,
+    special:'Union Bank "Nari Shakti" gives additional 0.05% concession to women borrowers.',
+    notes:'One of lowest rates 8.35%–9.10%. Strong in PMAY/affordable segment. Union Nari Shakti: 5 bps extra off for women. Processing 0.50% max ₹15,000.',
+    rbiLinked:true, avgRating:3.8
+  },
+  {
+    id:'iob', icon:'🏦', name:'Indian Overseas Bank', shortName:'IOB',
+    type:'psu', typeLabel:'PSU Bank · Tamil Nadu HQ',
+    rate:{ salaried:8.40, selfemployed:8.55, nri:8.75 },
+    cibilAdj:{ 800:0, 750:0.10, 700:0.25, 650:0.50 },
+    processingFee:'0.50% (max ₹20,000)', maxLTV:90, maxTenure:30,
+    prepayment:'NIL floating', foreclosure:'NIL', emiHoliday:'No',
+    minIncome:'₹20,000/mo', maxAge:70,
+    features:['Strong in South India','IOB Rainbow Home Loan for women','Good for Tamil Nadu properties','PMAY eligible','Competitive PSU rate'],
+    tags:[['tag-g','8.40% PSU'],['tag-b','Rainbow Women Scheme'],['tag-o','South India'],['tag-s','PMAY']],
+    scoreProcess:3, scoreDigital:2, scoreSvc:3, scoreFlexibility:3,
+    special:'IOB Rainbow Home Loan offers special rates and benefits for women property buyers.',
+    notes:'Rate 8.40%–9.35%. Good for south India, especially Tamil Nadu and Puducherry. IOB Rainbow for women: 0.10% off. Processing 0.5% max ₹20,000.',
+    rbiLinked:true, avgRating:3.7
+  },
+  {
+    id:'yes', icon:'🔵', name:'Yes Bank', shortName:'Yes Bank',
+    type:'private', typeLabel:'Private Bank · Revived',
+    rate:{ salaried:9.15, selfemployed:9.40, nri:9.50 },
+    cibilAdj:{ 800:0, 750:0.10, 700:0.30, 650:0.70 },
+    processingFee:'1%–2%', maxLTV:85, maxTenure:25,
+    prepayment:'NIL individual floating', foreclosure:'NIL', emiHoliday:'Yes',
+    minIncome:'₹40,000/mo', maxAge:65,
+    features:['Revived under SBI consortium','Higher min income requirement','Digital-only experience','Balance transfer from high rate loans','NRI loans'],
+    tags:[['tag-s','9.15% Private'],['tag-b','Digital-only'],['tag-m','Balance Transfer'],['tag-o','NRI']],
+    scoreProcess:3, scoreDigital:4, scoreSvc:3, scoreFlexibility:3,
+    special:'Yes Bank, now revived and stable, offers fully digital home loan process.',
+    notes:'Rate 9.15%–11%. Higher than peers post-revival. Fully digital process. Higher min income ₹40K/mo. Max LTV 85%. Processing fee 1%–2%.',
+    rbiLinked:true, avgRating:3.6
+  },
+];
+
+const BAR_COLORS = ['#FF6B00','#0B1F48','#046A38','#F5A623','#0D9488','#9333EA','#BE185D','#334155','#1D4ED8','#B45309','#065F46','#C2410C','#6D28D9','#E05A00','#0F766E'];
+
+let savedComparisons = [];
+try{ savedComparisons = JSON.parse(localStorage.getItem('bankCompare') || '[]'); }catch(e){}
+let currentComparison = null;
+
+function fmt(n){
+  if(n>=10000000) return '₹'+(n/10000000).toFixed(2)+' Cr';
+  if(n>=100000)   return '₹'+(n/100000).toFixed(2)+' L';
+  return '₹'+Math.round(n).toLocaleString('en-IN');
+}
+function fmtK(n){ return n>=1000?'₹'+(n/1000).toFixed(1)+'K':'₹'+Math.round(n); }
+
+function calcEMI(p, r, n){
+  const mr = r/(12*100);
+  if(mr===0) return p/n;
+  return p * mr * Math.pow(1+mr,n) / (Math.pow(1+mr,n)-1);
+}
+
+function compareAll(){
+  const loanAmt = parseFloat(document.getElementById('loanAmt').value);
+  const tenure  = parseFloat(document.getElementById('loanTenure').value) || 20;
+  const loanType = document.getElementById('loanType').value;
+  const cibil   = document.getElementById('cibilScore').value;
+
+  if(!loanAmt || loanAmt <= 0){ showToast('⚠️ Enter a valid loan amount'); return; }
+  if(tenure < 1 || tenure > 35){ showToast('⚠️ Tenure must be 1–35 years'); return; }
+
+  const months = tenure * 12;
+
+  // Build results, filtering out NRI-unavailable
+  const results = LENDERS
+    .filter(l => !(loanType==='nri' && l.rate.nri===0))
+    .map(l => {
+      const baseRate = l.rate[loanType] || l.rate.salaried;
+      const adj = l.cibilAdj[cibil] || 0;
+      const effectiveRate = baseRate + adj;
+      const emi = calcEMI(loanAmt, effectiveRate, months);
+      const totalPaid = emi * months;
+      const totalInterest = totalPaid - loanAmt;
+      return { ...l, effectiveRate, emi, totalPaid, totalInterest };
+    })
+    .sort((a,b)=>a.emi-b.emi);
+
+  const best = results[0], worst = results[results.length-1];
+  const saving = (worst.totalInterest - best.totalInterest);
+  const avgEMI = results.reduce((s,r)=>s+r.emi,0)/results.length;
+
+  // Winner banner
+  document.getElementById('winnerTitle').textContent = best.name + ' — Best Rate';
+  document.getElementById('winnerSub').textContent = `Saves ${fmt(saving)} vs ${worst.shortName} over ${tenure} yrs`;
+  document.getElementById('winnerRate').textContent = best.effectiveRate.toFixed(2)+'%';
+  document.getElementById('winnerBanner').style.display = 'flex';
+
+  // Summary stats
+  document.getElementById('sg_lowest_emi').textContent = fmtK(Math.round(best.emi));
+  document.getElementById('sg_lowest_lender').textContent = best.shortName + ' · ' + best.effectiveRate.toFixed(2)+'%';
+  document.getElementById('sg_highest_emi').textContent = fmtK(Math.round(worst.emi));
+  document.getElementById('sg_highest_lender').textContent = worst.shortName + ' · ' + worst.effectiveRate.toFixed(2)+'%';
+  document.getElementById('sg_saving').textContent = fmt(saving);
+  document.getElementById('sg_range').textContent = fmtK(Math.round(worst.emi-best.emi))+'/mo';
+  document.getElementById('summaryGrid').classList.add('show');
+
+  // Bar chart
+  renderBarChart(results);
+
+  // Comparison rows
+  renderComparisonRows(results, best.emi);
+
+  document.getElementById('cmpSec').style.display = 'flex';
+  document.getElementById('cmpChip').textContent = results.length + ' lenders · ₹'+fmt(loanAmt);
+  document.getElementById('cmpTable').classList.add('show');
+  document.getElementById('chartSection').classList.add('show');
+
+  currentComparison = { loanAmt, tenure, loanType, cibil, results: results.map(r=>({name:r.name, rate:r.effectiveRate.toFixed(2), emi:Math.round(r.emi)})), date: new Date().toLocaleDateString('en-IN') };
+
+  renderSaved();
+  document.getElementById('winnerBanner').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function renderBarChart(results){
+  const maxEMI = results[results.length-1].emi;
+  const container = document.getElementById('emiBarChart');
+  document.getElementById('chartSubtitle').textContent = results.length + ' lenders compared';
+  container.innerHTML = results.map((r,i)=>`
+    <div class="bc-row">
+      <div class="bc-name">${r.shortName}</div>
+      <div class="bc-bar-wrap">
+        <div class="bc-bar" style="background:${BAR_COLORS[i%BAR_COLORS.length]};width:${(r.emi/maxEMI*100).toFixed(1)}%">
+          ${r.effectiveRate.toFixed(2)}%
+        </div>
+      </div>
+      <div class="bc-emi">${fmtK(Math.round(r.emi))}</div>
+    </div>
+  `).join('');
+}
+
+function renderComparisonRows(results, bestEMI){
+  const container = document.getElementById('cmpRows');
+  container.innerHTML = results.map((r,i)=>{
+    const isBest = i===0;
+    const dots = (arr, cls, max=5) => arr.map((_,j)=>`<div class="dot ${j<_?cls:''}"></div>`).join('');
+
+    // Score dots arrays
+    const dpArr = Array.from({length:5},(_,j)=>j<r.scoreProcess?1:0);
+    const ddArr = Array.from({length:5},(_,j)=>j<r.scoreDigital?1:0);
+    const dsArr = Array.from({length:5},(_,j)=>j<r.scoreSvc?1:0);
+    const dfArr = Array.from({length:5},(_,j)=>j<r.scoreFlexibility?1:0);
+
+    const dotsHtml = (arr, cls) => arr.map((v,j)=>`<div class="dot ${v?cls:''}"></div>`).join('');
+
+    const tagsHtml = r.tags.reduce((acc,t,ti)=>{
+      if(ti%2===0) return acc+`<span class="tag ${t}">`;
+      return acc+t+'</span> ';
+    },'');
+
+    const featsHtml = r.features.slice(0,3).map(f=>`<li style="font-size:9.5px;color:var(--muted);margin-bottom:3px;font-family:'Trebuchet MS',sans-serif">✓ ${f}</li>`).join('');
+
+    return `
+    <div class="cmp-row ${isBest?'best':''}">
+      <div class="cmp-row-top">
+        <div class="cr-icon">${r.icon}</div>
+        <div class="cr-info">
+          <div class="cr-name">${r.name}</div>
+          <div class="cr-type">${r.typeLabel}</div>
+        </div>
+        <div class="cr-rate ${isBest?'best-rate':''}">${r.effectiveRate.toFixed(2)}%</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-lbl">Monthly EMI</div>
+          <div class="stat-val">${fmtK(Math.round(r.emi))}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Total Interest</div>
+          <div class="stat-val">${fmt(r.totalInterest)}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Total Paid</div>
+          <div class="stat-val">${fmt(r.totalPaid)}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Proc. Fee</div>
+          <div class="stat-val" style="font-size:9px">${r.processingFee.split(' ')[0]}</div>
+        </div>
+      </div>
+
+      <div class="emi-bar-label">
+        <span>EMI vs Best (${fmtK(Math.round(bestEMI))})</span>
+        <span>${r.emi===bestEMI?'🏆 Best':'+'+fmtK(Math.round(r.emi-bestEMI))}</span>
+      </div>
+      <div class="emi-bar-wrap">
+        <div class="emi-bar" style="width:${(r.emi/results[results.length-1].emi*100).toFixed(1)}%;background:${isBest?'linear-gradient(90deg,var(--green),var(--green2))':'linear-gradient(90deg,var(--saffron),var(--saffron2))'}"></div>
+      </div>
+
+      <div class="score-wrap">
+        <div class="score-label">Process Speed</div>
+        <div class="dots">${dotsHtml(dpArr,'fill-s')}</div>
+      </div>
+      <div class="score-wrap">
+        <div class="score-label">Digital Exp.</div>
+        <div class="dots">${dotsHtml(ddArr,'fill-b')}</div>
+      </div>
+      <div class="score-wrap">
+        <div class="score-label">Flexibility</div>
+        <div class="dots">${dotsHtml(dfArr,'fill-g')}</div>
+      </div>
+
+      <div class="tag-row">${tagsHtml}</div>
+
+      <div class="expand-toggle" onclick="toggleExpand(this)">
+        📋 Details & Features <span>▼</span>
+      </div>
+      <div class="expandable">
+        <ul style="margin-top:8px;padding-left:4px;list-style:none">${featsHtml}</ul>
+        <p style="font-size:9.5px;color:var(--muted);margin-top:8px;line-height:1.6;font-family:'Trebuchet MS',sans-serif">${r.notes}</p>
+        <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:9px;font-family:'Trebuchet MS',sans-serif">
+          <div><span style="color:var(--muted)">Max LTV:</span> <strong>${r.maxLTV}%</strong></div>
+          <div><span style="color:var(--muted)">Max Tenure:</span> <strong>${r.maxTenure} yrs</strong></div>
+          <div><span style="color:var(--muted)">Min Income:</span> <strong>${r.minIncome}</strong></div>
+          <div><span style="color:var(--muted)">Max Age:</span> <strong>${r.maxAge} yrs</strong></div>
+          <div><span style="color:var(--muted)">Prepayment:</span> <strong>${r.prepayment}</strong></div>
+          <div><span style="color:var(--muted)">Foreclosure:</span> <strong>${r.foreclosure}</strong></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleExpand(el){
+  const exp = el.nextElementSibling;
+  exp.classList.toggle('open');
+  el.querySelector('span').textContent = exp.classList.contains('open')?'▲':'▼';
+}
+
+function saveComparison(){
+  if(!currentComparison){ showToast('⚠️ Run comparison first'); return; }
+  savedComparisons.unshift(currentComparison);
+  if(savedComparisons.length > 8) savedComparisons.pop();
+  try{ localStorage.setItem('bankCompare', JSON.stringify(savedComparisons)); }catch(e){}
+  renderSaved();
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '✅ Saved!';
+  btn.classList.add('saved');
+  setTimeout(()=>{ btn.textContent='💾 Save'; btn.classList.remove('saved'); }, 2000);
+  showToast('✅ Comparison saved!');
+}
+
+function renderSaved(){
+  const sec  = document.getElementById('savedSec');
+  const list = document.getElementById('savedList');
+  if(!savedComparisons.length){ sec.style.display='none'; return; }
+  sec.style.display='block';
+  list.innerHTML = savedComparisons.map((c,i)=>`
+    <div class="saved-item">
+      <div class="si-left">
+        <div class="si-name">${fmt(c.loanAmt)} · ${c.tenure} yrs · ${c.loanType}</div>
+        <div class="si-meta">CIBIL ${c.cibil}+ · ${c.date} · ${c.results.length} lenders</div>
+      </div>
+      <div style="display:flex;align-items:center">
+        <div class="si-right">${c.results[0]?.name?.split(' ')[0]} ${c.results[0]?.rate}%</div>
+        <div class="si-del" onclick="delSaved(${i})" title="Delete">🗑️</div>
+      </div>
+    </div>`).join('');
+}
+
+function delSaved(i){
+  savedComparisons.splice(i,1);
+  try{ localStorage.setItem('bankCompare', JSON.stringify(savedComparisons)); }catch(e){}
+  renderSaved(); showToast('🗑️ Deleted');
+}
+
+// ══ FULL LENDER DIRECTORY CARDS ══
+function renderLenderCards(list){
+  const container = document.getElementById('lenderCards');
+  container.innerHTML = list.map((l,i)=>{
+    const isBest = l.rate.salaried === Math.min(...LENDERS.map(x=>x.rate.salaried));
+    const tagsHtml = l.tags.reduce((acc,t,ti)=>{
+      if(ti%2===0) return acc+`<span class="tag ${t}">`;
+      return acc+t+'</span> ';
+    },'');
+    return `
+    <div class="lender-full" onclick="selectLender('${l.id}')">
+      <div class="lf-top">
+        <span class="lf-icon">${l.icon}</span>
+        <div>
+          <div class="lf-name">${l.name}${isBest?' 🏆':''}</div>
+          <div class="lf-type">${l.typeLabel}</div>
+        </div>
+        <div class="lf-rate">${l.rate.salaried}%</div>
+      </div>
+      <div class="lf-row">
+        <div class="lf-item">
+          <div class="lf-lbl">Salaried</div>
+          <div class="lf-val">${l.rate.salaried}%</div>
+        </div>
+        <div class="lf-item">
+          <div class="lf-lbl">Self-Emp.</div>
+          <div class="lf-val">${l.rate.selfemployed}%</div>
+        </div>
+        <div class="lf-item">
+          <div class="lf-lbl">NRI</div>
+          <div class="lf-val">${l.rate.nri>0?l.rate.nri+'%':'N/A'}</div>
+        </div>
+      </div>
+      <div class="tag-row" style="margin-top:9px">${tagsHtml}</div>
+      <div class="expand-toggle" onclick="event.stopPropagation();toggleExpand(this)">
+        ℹ️ View Details <span>▼</span>
+      </div>
+      <div class="expandable">
+        <p style="font-size:9.5px;color:var(--muted);margin-top:8px;line-height:1.6;font-family:'Trebuchet MS',sans-serif">${l.notes}</p>
+        <p style="font-size:9px;background:rgba(255,107,0,0.06);padding:7px;border-radius:8px;margin-top:7px;color:var(--navy);font-family:'Trebuchet MS',sans-serif"><strong>Special:</strong> ${l.special}</p>
+        <div style="margin-top:7px;display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:9px;font-family:'Trebuchet MS',sans-serif">
+          <div><span style="color:var(--muted)">Processing:</span> <strong style="font-size:8.5px">${l.processingFee.split(' ').slice(0,2).join(' ')}</strong></div>
+          <div><span style="color:var(--muted)">Max LTV:</span> <strong>${l.maxLTV}%</strong></div>
+          <div><span style="color:var(--muted)">Prepayment:</span> <strong>${l.prepayment}</strong></div>
+          <div><span style="color:var(--muted)">Max Age:</span> <strong>${l.maxAge} yrs</strong></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterLenders(type, el){
+  document.querySelectorAll('.fb-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  let filtered = LENDERS;
+  if(type==='psu')     filtered = LENDERS.filter(l=>l.type==='psu');
+  if(type==='private') filtered = LENDERS.filter(l=>l.type==='private');
+  if(type==='hfc')     filtered = LENDERS.filter(l=>l.type==='hfc');
+  if(type==='nbfc')    filtered = LENDERS.filter(l=>l.type==='nbfc');
+  if(type==='low')     filtered = [...LENDERS].sort((a,b)=>a.rate.salaried-b.rate.salaried);
+  renderLenderCards(filtered);
+}
+
+function selectLender(id){
+  const l = LENDERS.find(x=>x.id===id);
+  showToast('📋 '+l.name+' · '+l.rate.salaried+'% — enter amount to compare');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// Init
+renderLenderCards(LENDERS);
+renderSaved();
+</script>
+</body>
+</html>

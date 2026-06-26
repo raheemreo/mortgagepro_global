@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balance Transfer – MortgagePro India</title>
+<style>
+:root{--saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;--navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;--teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;--muted:#7A5C3A;--border:rgba(255,107,0,0.10);--sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 100px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 11px;font-family:'Trebuchet MS',sans-serif;}
+.calc-card{background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.field-grp{margin-bottom:15px;}
+.field-label{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:6px;display:flex;justify-content:space-between;}
+.field-label span{font-size:13px;font-weight:800;color:var(--navy);}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--saffron) 50%,#F5E6D4 50%);outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--saffron);border:3px solid #fff;box-shadow:0 2px 8px rgba(255,107,0,0.4);}
+.divider{display:flex;align-items:center;gap:10px;margin:18px 0;}
+.divider-line{flex:1;height:1.5px;background:var(--border);}
+.divider-txt{font-size:11px;font-weight:800;color:var(--muted);font-family:'Trebuchet MS',sans-serif;background:var(--card);padding:0 8px;}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;margin-top:4px;}
+
+/* verdict card */
+.verdict-card{border-radius:22px;padding:22px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:14px;}
+.verdict-card.good{background:linear-gradient(148deg,var(--green),var(--green2));}
+.verdict-card.bad{background:linear-gradient(148deg,#9A3412,#7C2D12);}
+.verdict-card.neutral{background:linear-gradient(148deg,var(--navy),var(--chakra));}
+.v-label{font-size:9px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.v-saving{font-size:34px;font-weight:800;margin:4px 0 6px;color:#86EFAC;line-height:1;}
+.verdict-card.bad .v-saving{color:#FCA5A5;}
+.verdict-card.neutral .v-saving{color:var(--ochre-lt);}
+.v-verdict{font-size:11px;font-weight:700;color:rgba(255,255,255,0.8);font-family:'Trebuchet MS',sans-serif;margin-bottom:14px;}
+.v-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.v-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:10px 8px;text-align:center;}
+.v-box-lbl{font-size:7.5px;color:rgba(255,255,255,0.5);font-family:'Trebuchet MS',sans-serif;}
+.v-box-val{font-size:12px;font-weight:800;color:#fff;margin-top:3px;}
+.v-tag{display:inline-flex;padding:4px 10px;border-radius:20px;font-size:9px;font-weight:700;margin-top:12px;font-family:'Trebuchet MS',sans-serif;}
+.tag-ok{background:rgba(134,239,172,0.2);color:#86EFAC;}
+.tag-no{background:rgba(252,165,165,0.2);color:#FCA5A5;}
+
+/* bank table */
+.bank-table-wrap{background:var(--card);border-radius:22px;overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.bt-head{background:linear-gradient(90deg,var(--navy),var(--chakra));padding:12px 14px;display:grid;grid-template-columns:1fr 60px 70px 70px;gap:4px;}
+.bth{font-size:8.5px;font-weight:800;color:rgba(255,255,255,0.8);font-family:'Trebuchet MS',sans-serif;}
+.bth:not(:first-child){text-align:right;}
+.bt-row{padding:11px 14px;display:grid;grid-template-columns:1fr 60px 70px 70px;gap:4px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.bt-row:hover{background:rgba(255,107,0,0.03);}
+.bt-row:last-child{border-bottom:none;}
+.bt-row.best{background:rgba(4,106,56,0.04);}
+.btd{font-size:10.5px;font-weight:700;color:var(--navy);font-family:'Trebuchet MS',sans-serif;}
+.btd:not(:first-child){text-align:right;}
+.btd.green{color:var(--green);}
+.btd.saf{color:var(--saffron);}
+.best-badge{font-size:7.5px;background:var(--green);color:#fff;padding:2px 6px;border-radius:8px;margin-left:4px;font-family:'Trebuchet MS',sans-serif;}
+
+/* cost breakdown */
+.cost-wrap{background:var(--card);border-radius:22px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.cost-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.cost-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+.cost-item:last-child{border-bottom:none;}
+.cost-lbl{font-size:11px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.cost-val{font-size:12px;font-weight:800;color:var(--navy);}
+.cost-val.red{color:#DC2626;}
+
+.save-bar{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;border-radius:17px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.save-btn{background:var(--green);color:#fff;font-size:10px;font-weight:800;padding:9px 14px;border-radius:10px;border:none;cursor:pointer;font-family:'Trebuchet MS',sans-serif;white-space:nowrap;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .3s;z-index:200;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}.fu5{animation:fadeUp .38s ease both .24s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔁</div>
+      <div class="hdr-title">Balance <span>Transfer</span></div>
+      <div class="hdr-sub">Switch lender · Save interest · Lower EMI</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">SBI</div><div class="rs-v saf">8.50%</div><div class="rs-n">Lowest</div></div>
+    <div class="rs"><div class="rs-l">HDFC</div><div class="rs-v">8.70%</div><div class="rs-n">Private</div></div>
+    <div class="rs"><div class="rs-l">Bajaj</div><div class="rs-v">8.55%</div><div class="rs-n">NBFC</div></div>
+    <div class="rs"><div class="rs-l">LIC HFL</div><div class="rs-v saf">8.65%</div><div class="rs-n">HFC</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Current Loan (Existing Bank)</div>
+  <div class="calc-card fu1">
+    <div class="field-grp">
+      <div class="field-label">Outstanding Balance <span id="lbl-bal">₹40,00,000</span></div>
+      <input type="range" id="sl-bal" min="500000" max="10000000" step="100000" value="4000000" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Current Interest Rate <span id="lbl-crate">9.50%</span></div>
+      <input type="range" id="sl-crate" min="800" max="1400" step="5" value="950" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Remaining Tenure <span id="lbl-tenure">15 Years</span></div>
+      <input type="range" id="sl-tenure" min="1" max="30" step="1" value="15" oninput="update()">
+    </div>
+    <div class="divider"><div class="divider-line"></div><div class="divider-txt">NEW BANK OFFER</div><div class="divider-line"></div></div>
+    <div class="field-grp">
+      <div class="field-label">New Interest Rate <span id="lbl-nrate">8.50%</span></div>
+      <input type="range" id="sl-nrate" min="700" max="1300" step="5" value="850" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Processing Fee (%) <span id="lbl-fee">0.50%</span></div>
+      <input type="range" id="sl-fee" min="0" max="150" step="10" value="50" oninput="update()">
+    </div>
+    <button class="calc-btn" onclick="update()">☸ Analyse Balance Transfer</button>
+  </div>
+
+  <div class="verdict-card fu2" id="verdict-card">
+    <div class="v-label">Net Savings After Transfer Costs</div>
+    <div class="v-saving" id="v-saving">₹11.8 Lakh</div>
+    <div class="v-verdict" id="v-verdict">✅ Balance transfer is highly recommended</div>
+    <div class="v-grid">
+      <div class="v-box"><div class="v-box-lbl">EMI Saving</div><div class="v-box-val" id="v-emi-save">₹2,240/mo</div></div>
+      <div class="v-box"><div class="v-box-lbl">Breakeven</div><div class="v-box-val" id="v-breakeven">9 months</div></div>
+      <div class="v-box"><div class="v-box-lbl">Rate Drop</div><div class="v-box-val" id="v-rate-drop">1.00%</div></div>
+    </div>
+    <div class="v-tag tag-ok" id="v-tag">✅ Transfer Recommended</div>
+  </div>
+
+  <div class="cost-wrap fu3">
+    <div class="cost-title">💼 Transfer Cost Breakdown</div>
+    <div class="cost-item"><div class="cost-lbl">Processing Fee (new bank)</div><div class="cost-val red" id="c-proc">−₹20,000</div></div>
+    <div class="cost-item"><div class="cost-lbl">Legal / Technical Charges</div><div class="cost-val red">−₹8,500</div></div>
+    <div class="cost-item"><div class="cost-lbl">Stamp Duty (if any)</div><div class="cost-val red">−₹3,000</div></div>
+    <div class="cost-item"><div class="cost-lbl">MOD Charges (approx.)</div><div class="cost-val red">−₹4,000</div></div>
+    <div class="cost-item"><div class="cost-lbl" style="font-weight:800;color:var(--navy)">Total Transfer Cost</div><div class="cost-val red" id="c-total-cost">−₹35,500</div></div>
+    <div class="cost-item"><div class="cost-lbl" style="font-weight:800;color:var(--green)">Gross Interest Saved</div><div class="cost-val" style="color:var(--green)" id="c-gross">+₹12.2L</div></div>
+    <div class="cost-item"><div class="cost-lbl" style="font-weight:800;color:var(--navy)">Net Benefit</div><div class="cost-val" style="color:var(--green);font-size:14px" id="c-net">₹11.8L</div></div>
+  </div>
+
+  <div class="sec fu3">Best Transfer Options</div>
+  <div class="bank-table-wrap fu4">
+    <div class="bt-head">
+      <div class="bth">Bank</div>
+      <div class="bth">Rate</div>
+      <div class="bth">New EMI</div>
+      <div class="bth">Savings</div>
+    </div>
+    <div id="bank-rows"></div>
+  </div>
+
+  <div class="save-bar fu5">
+    <div style="font-size:24px">💾</div>
+    <div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--green2)">Save Transfer Analysis</div><div style="font-size:9.5px;color:var(--green);font-family:'Trebuchet MS',sans-serif">Save for bank negotiation reference</div></div>
+    <button class="save-btn" onclick="saveCalc()">Save</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Analysis Saved!</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const banks=[
+  {icon:'🏦',name:'SBI Home Loan',rate:8.50,fee:0.35},
+  {icon:'🔶',name:'Bajaj HFL',rate:8.55,fee:0.50},
+  {icon:'🏗️',name:'LIC HFL',rate:8.65,fee:0.25},
+  {icon:'🏛️',name:'HDFC Bank',rate:8.70,fee:0.50},
+  {icon:'💼',name:'ICICI Bank',rate:8.75,fee:0.50},
+  {icon:'⚡',name:'Axis Bank',rate:8.75,fee:0.50},
+];
+function fmt(n){if(n>=10000000)return '₹'+(n/10000000).toFixed(2)+' Cr';if(n>=100000)return '₹'+(n/100000).toFixed(1)+'L';return '₹'+Math.round(n).toLocaleString('en-IN');}
+function calcEMI(p,r,n){const mr=r/1200;return p*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1);}
+function update(){
+  const bal=+document.getElementById('sl-bal').value;
+  const crate=+document.getElementById('sl-crate').value/100;
+  const tenure=+document.getElementById('sl-tenure').value;
+  const nrate=+document.getElementById('sl-nrate').value/100;
+  const fee=+document.getElementById('sl-fee').value/100;
+  document.getElementById('lbl-bal').textContent=fmt(bal);
+  document.getElementById('lbl-crate').textContent=crate.toFixed(2)+'%';
+  document.getElementById('lbl-tenure').textContent=tenure+' Years';
+  document.getElementById('lbl-nrate').textContent=nrate.toFixed(2)+'%';
+  document.getElementById('lbl-fee').textContent=fee.toFixed(2)+'%';
+  const n=tenure*12;
+  const oldEmi=calcEMI(bal,crate,n);
+  const newEmi=calcEMI(bal,nrate,n);
+  const oldTotal=oldEmi*n;const newTotal=newEmi*n;
+  const grossSaved=oldTotal-newTotal;
+  const procFee=bal*fee;const otherCost=15500;
+  const totalCost=procFee+otherCost;
+  const netSaved=grossSaved-totalCost;
+  const emiSave=oldEmi-newEmi;
+  const breakeven=emiSave>0?Math.ceil(totalCost/emiSave):999;
+  const rateDrop=crate-nrate;
+  document.getElementById('v-saving').textContent=fmt(Math.max(0,netSaved));
+  document.getElementById('v-emi-save').textContent='₹'+Math.round(emiSave).toLocaleString('en-IN')+'/mo';
+  document.getElementById('v-breakeven').textContent=breakeven<120?breakeven+' mo':'N/A';
+  document.getElementById('v-rate-drop').textContent=rateDrop.toFixed(2)+'%';
+  document.getElementById('c-proc').textContent='−₹'+Math.round(procFee).toLocaleString('en-IN');
+  document.getElementById('c-total-cost').textContent='−₹'+Math.round(totalCost).toLocaleString('en-IN');
+  document.getElementById('c-gross').textContent='+'+fmt(grossSaved);
+  document.getElementById('c-net').textContent=fmt(netSaved);
+  const vc=document.getElementById('verdict-card');
+  if(netSaved>200000&&rateDrop>=0.5){vc.className='verdict-card fu2 good';document.getElementById('v-verdict').textContent='✅ Balance transfer is highly recommended';document.getElementById('v-tag').className='v-tag tag-ok';document.getElementById('v-tag').textContent='✅ Transfer Recommended';}
+  else if(netSaved>0){vc.className='verdict-card fu2 neutral';document.getElementById('v-verdict').textContent='⚠️ Marginal benefit – evaluate carefully';document.getElementById('v-tag').className='v-tag tag-ok';document.getElementById('v-tag').textContent='⚠️ Consider Transfer';}
+  else{vc.className='verdict-card fu2 bad';document.getElementById('v-verdict').textContent='❌ Transfer not beneficial – stay with current bank';document.getElementById('v-tag').className='v-tag tag-no';document.getElementById('v-tag').textContent='❌ Not Recommended';}
+  const bestRate=Math.min(...banks.map(b=>b.rate));
+  const rows=banks.map(b=>{
+    const bEmi=calcEMI(bal,b.rate,n);
+    const bTotal=bEmi*n;
+    const saved=oldTotal-bTotal-(bal*b.fee/100+otherCost);
+    const isBest=b.rate===bestRate;
+    return `<div class="bt-row ${isBest?'best':''}">
+      <div class="btd">${b.icon} ${b.name}${isBest?'<span class="best-badge">BEST</span>':''}</div>
+      <div class="btd saf">${b.rate}%</div>
+      <div class="btd">${'₹'+Math.round(bEmi).toLocaleString('en-IN')}</div>
+      <div class="btd ${saved>0?'green':'red'}">${saved>0?'+':'-'}${fmt(Math.abs(saved))}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('bank-rows').innerHTML=rows;
+}
+function saveCalc(){const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+update();
+</script>
+</body>
+</html>

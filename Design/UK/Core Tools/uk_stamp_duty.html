@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stamp Duty (SDLT) Calculator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'🏛️';position:absolute;right:12px;top:42px;font-size:72px;opacity:0.07;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:8.5px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.gold{color:#FFD700;}.rs-val.grn{color:#90EE90;}
+.rs-div{width:1px;height:28px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:8.5px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#1a1a5e;text-transform:none;letter-spacing:0;cursor:pointer;}
+.calc-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 8px 32px rgba(13,13,43,0.10);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.cc-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.cc-icon{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#4F46E5,#3730A3);display:flex;align-items:center;justify-content:center;font-size:19px;}
+.cc-title{font-size:15px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.cc-sub{font-size:10px;color:#5C5C8A;margin-top:1px;}
+.field{margin-bottom:12px;}
+.field label{font-size:10px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.field input,.field select{width:100%;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700;color:#0D0D2B;font-family:'Helvetica Neue',Arial,sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+.field input:focus{border-color:#4F46E5;box-shadow:0 0 0 3px rgba(79,70,229,0.09);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.toggle-group{display:flex;gap:6px;flex-wrap:wrap;}
+.tog-btn{flex:1;min-width:0;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:10px;padding:9px 4px;text-align:center;font-size:11px;font-weight:700;color:#5C5C8A;cursor:pointer;transition:all .2s;}
+.tog-btn.active{background:#1a1a5e;border-color:#1a1a5e;color:#fff;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#4F46E5,#3730A3);border:none;border-radius:12px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(79,70,229,0.35);margin-top:4px;transition:transform .1s;}
+.calc-btn:active{transform:scale(0.98);}
+
+/* RESULT */
+.result-card{background:linear-gradient(148deg,#1e1b4b,#312e81);border-radius:20px;padding:18px;box-shadow:0 8px 32px rgba(30,27,75,0.3);position:relative;overflow:hidden;margin-bottom:12px;}
+.result-card::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.rc-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.rc-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px;}
+.rc-big{font-size:40px;font-weight:800;color:#FFD700;font-family:Georgia,serif;line-height:1;}
+.rc-sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;}
+.save-btn{background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:10px;padding:8px 13px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.rg-item{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 12px;}
+.rg-lbl{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+.rg-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rg-val.gold{color:#FFD700;}.rg-val.grn{color:#90EE90;}
+
+/* BAND BREAKDOWN */
+.bands-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.bands-title{font-size:12px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:12px;}
+.band-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(26,26,94,0.06);}
+.band-row:last-child{border-bottom:none;}
+.band-range{font-size:10.5px;color:#5C5C8A;flex:1;}
+.band-rate{font-size:10.5px;font-weight:800;color:#1a1a5e;width:36px;}
+.band-bar-wrap{flex:2;height:10px;background:#EEF2FF;border-radius:5px;overflow:hidden;}
+.band-bar{height:100%;border-radius:5px;background:#4F46E5;transition:width .5s ease;}
+.band-tax{font-size:11px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;width:58px;text-align:right;}
+
+/* SAVINGS CARD */
+.savings-card{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1px solid #6EE7B7;border-radius:16px;padding:15px;margin-bottom:12px;}
+.sc-title{font-size:12px;font-weight:800;color:#065F46;font-family:Georgia,serif;margin-bottom:8px;}
+.sc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.sc-lbl{font-size:11px;color:#047857;}
+.sc-val{font-size:13px;font-weight:800;color:#065F46;font-family:Georgia,serif;}
+.sc-saving{font-size:16px;font-weight:800;color:#059669;font-family:Georgia,serif;}
+
+/* RATES TABLE */
+.rates-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.rates-title{font-size:12px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:10px;}
+.rate-tbl{width:100%;border-collapse:collapse;}
+.rate-tbl th{font-size:9.5px;font-weight:700;color:#5C5C8A;text-transform:uppercase;padding:6px 8px;background:#F5F5F8;text-align:left;}
+.rate-tbl td{font-size:11px;padding:8px 8px;border-bottom:1px solid rgba(26,26,94,0.06);color:#0D0D2B;}
+.rate-tbl tr:last-child td{border-bottom:none;}
+.rate-tbl td:last-child{font-weight:800;color:#4F46E5;}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0D0D2B;color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;white-space:nowrap;opacity:0;transition:opacity .25s,transform .25s;z-index:200;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.saved-item{background:#fff;border-radius:14px;padding:13px 14px;box-shadow:0 3px 14px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);cursor:pointer;margin-bottom:8px;}
+.si-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.si-name{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.si-date{font-size:9px;color:#5C5C8A;}
+.si-metrics{display:flex;gap:10px;flex-wrap:wrap;}
+.si-m{font-size:10px;color:#5C5C8A;}.si-m strong{font-weight:800;color:#0D0D2B;}
+.si-del{background:none;border:none;font-size:14px;cursor:pointer;opacity:0.4;}
+.empty-state{text-align:center;padding:32px 20px;color:#5C5C8A;}
+.empty-state .ei{font-size:36px;margin-bottom:8px;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;font-weight:800;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.calc-card{animation:fadeUp .3s ease both .05s;}
+.result-card{animation:fadeUp .3s ease both .12s;}
+.bands-card{animation:fadeUp .3s ease both .18s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏛️</span><div class="hdr-title">Stamp Duty (SDLT)</div><div class="hdr-sub">SDLT · FTB Relief · 2nd Home Surcharge · 2025</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">FTB Relief</div><div class="rs-val grn">£425k</div><div class="rs-note">Nil-rate up to</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Max Rate</div><div class="rs-val">12%</div><div class="rs-note">Over £1.5m</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">2nd Home</div><div class="rs-val gold">+3%</div><div class="rs-note">Surcharge</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Non-UK</div><div class="rs-val">+2%</div><div class="rs-note">Surcharge</div></div>
+  </div>
+</div>
+
+<div id="mainView" class="content">
+  <div class="sec-lbl" style="margin-top:0">Property Details</div>
+  <div class="calc-card">
+    <div class="cc-hdr">
+      <div class="cc-icon">🏛️</div>
+      <div><div class="cc-title">SDLT Calculator</div><div class="cc-sub">England & Northern Ireland · 2025/26 rates</div></div>
+    </div>
+    <div class="field"><label>Property Price (£)</label><input type="number" id="price" value="380000" oninput="calculate()"></div>
+    <div class="field"><label>Buyer Type</label>
+      <div class="toggle-group">
+        <div class="tog-btn active" id="bt-ftb" onclick="setBuyer('ftb')">First-Time Buyer</div>
+        <div class="tog-btn" id="bt-move" onclick="setBuyer('mover')">Moving Home</div>
+        <div class="tog-btn" id="bt-add" onclick="setBuyer('additional')">2nd Home</div>
+      </div>
+    </div>
+    <div class="field"><label>Residency</label>
+      <div class="toggle-group">
+        <div class="tog-btn active" id="res-uk" onclick="setRes('uk')">UK Resident</div>
+        <div class="tog-btn" id="res-non" onclick="setRes('non')">Non-UK Resident</div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🏛️ Calculate Stamp Duty</button>
+  </div>
+
+  <div class="result-card">
+    <div class="rc-top">
+      <div>
+        <div class="rc-lbl">Total SDLT Due</div>
+        <div class="rc-big" id="sdltTotal">£9,500</div>
+        <div class="rc-sub" id="sdltSub">Moving Home · Residential</div>
+      </div>
+      <button class="save-btn" onclick="saveCalc()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 13H3a1 1 0 01-1-1V3a1 1 0 011-1h7l3 3v8a1 1 0 01-1 1z"/><polyline points="9,1 9,5 4,5"/></svg>
+        Save
+      </button>
+    </div>
+    <div class="result-grid">
+      <div class="rg-item"><div class="rg-lbl">Effective Rate</div><div class="rg-val gold" id="effectiveRate">2.5%</div></div>
+      <div class="rg-item"><div class="rg-lbl">% of Property</div><div class="rg-val" id="pctOfProp">2.50%</div></div>
+      <div class="rg-item"><div class="rg-lbl">Without Relief</div><div class="rg-val" id="withoutRelief">£9,500</div></div>
+      <div class="rg-item"><div class="rg-lbl">You Save</div><div class="rg-val grn" id="saving">£0</div></div>
+    </div>
+  </div>
+
+  <!-- BAND BREAKDOWN -->
+  <div class="bands-card">
+    <div class="bands-title">📊 Tax Band Breakdown</div>
+    <div id="bandRows"></div>
+  </div>
+
+  <!-- FTB SAVINGS CARD (shown when relevant) -->
+  <div class="savings-card" id="savingsCard" style="display:none;">
+    <div class="sc-title">🎉 First-Time Buyer Relief Applied</div>
+    <div class="sc-row"><div class="sc-lbl">Standard SDLT (without relief)</div><div class="sc-val" id="sc-standard">—</div></div>
+    <div class="sc-row"><div class="sc-lbl">Your SDLT (with FTB relief)</div><div class="sc-val" id="sc-ftb">—</div></div>
+    <div class="sc-row" style="border-top:1px solid #6EE7B7;padding-top:8px;margin-top:4px;"><div class="sc-lbl" style="font-weight:800;color:#065F46;">Total saving</div><div class="sc-saving" id="sc-saving">—</div></div>
+  </div>
+
+  <!-- CURRENT RATES TABLE -->
+  <div class="rates-card">
+    <div class="rates-title">📋 2025/26 SDLT Rate Bands</div>
+    <table class="rate-tbl">
+      <tr><th>Band</th><th>Std Rate</th><th>FTB Rate</th><th>2nd Home</th></tr>
+      <tr><td>Up to £125,000</td><td>0%</td><td>0%</td><td>3%</td></tr>
+      <tr><td>£125,001–£250,000</td><td>2%</td><td>0%</td><td>5%</td></tr>
+      <tr><td>£250,001–£425,000</td><td>5%</td><td>0%</td><td>8%</td></tr>
+      <tr><td>£425,001–£925,000</td><td>5%</td><td>5%</td><td>8%</td></tr>
+      <tr><td>£925,001–£1.5m</td><td>10%</td><td>10%</td><td>13%</td></tr>
+      <tr><td>Over £1.5m</td><td>12%</td><td>12%</td><td>15%</td></tr>
+    </table>
+  </div>
+</div>
+
+<div id="savedView" class="content" style="display:none;">
+  <div class="sec-lbl" style="margin-top:0">Saved Calculations</div>
+  <div id="savedContainer"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni" onclick="history.back()"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active" id="tab-calc"><div class="ni-ic">🏛️</div><div class="ni-lb">SDLT</div></div>
+  <div class="ni" id="tab-saved" onclick="switchTab('saved')"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let buyerType='ftb', residency='uk', lastResult=null;
+function setBuyer(t){buyerType=t;['ftb','move','add'].forEach(x=>document.getElementById('bt-'+x).classList.remove('active'));document.getElementById('bt-'+({ftb:'ftb',mover:'move',additional:'add'}[t])).classList.add('active');calculate();}
+function setRes(r){residency=r;['uk','non'].forEach(x=>document.getElementById('res-'+x).classList.remove('active'));document.getElementById('res-'+r).classList.add('active');calculate();}
+function fmt(n){return '£'+Math.round(Math.abs(n)).toLocaleString('en-GB');}
+
+function calcSDLT(price, type, nonUk){
+  const surcharge = (type==='additional'?0.03:0) + (nonUk?0.02:0);
+  let bands, tax=0, breakdowns=[];
+
+  if(type==='ftb' && price<=625000){
+    // FTB: nil-rate up to £425k, then 5% on £425k–£625k
+    bands = [
+      {from:0,to:425000,rate:0,label:'Up to £425,000 (FTB relief)'},
+      {from:425000,to:625000,rate:0.05,label:'£425,001–£625,000'},
+    ];
+  } else {
+    bands = [
+      {from:0,to:125000,rate:0,label:'Up to £125,000'},
+      {from:125000,to:250000,rate:0.02,label:'£125,001–£250,000'},
+      {from:250000,to:925000,rate:0.05,label:'£250,001–£925,000'},
+      {from:925000,to:1500000,rate:0.10,label:'£925,001–£1.5m'},
+      {from:1500000,to:Infinity,rate:0.12,label:'Over £1.5m'},
+    ];
+  }
+
+  bands.forEach(b=>{
+    if(price>b.from){
+      const taxable = Math.min(price,b.to) - b.from;
+      const rate = b.rate + surcharge;
+      const bandTax = taxable * rate;
+      tax += bandTax;
+      breakdowns.push({label:b.label, rate:((b.rate+surcharge)*100).toFixed(0)+'%', taxable, tax:bandTax, maxTaxable:(b.to-b.from)});
+    }
+  });
+  return {tax, breakdowns};
+}
+
+function calculate(){
+  const price = parseFloat(document.getElementById('price').value)||380000;
+  const nonUk = residency==='non';
+  const {tax, breakdowns} = calcSDLT(price, buyerType, nonUk);
+  // standard (no relief) for comparison
+  const {tax:stdTax} = calcSDLT(price, 'mover', false);
+  const saving = buyerType==='ftb' ? Math.max(0,stdTax-tax) : 0;
+  const effective = (tax/price)*100;
+
+  lastResult={price,buyerType,residency,tax,stdTax,saving,effective};
+
+  document.getElementById('sdltTotal').textContent = fmt(tax);
+  document.getElementById('sdltSub').textContent = ({ftb:'First-Time Buyer',mover:'Moving Home',additional:'2nd Home / BTL'}[buyerType]) + (nonUk?' · Non-UK Resident':'');
+  document.getElementById('effectiveRate').textContent = effective.toFixed(2)+'%';
+  document.getElementById('pctOfProp').textContent = effective.toFixed(2)+'%';
+  document.getElementById('withoutRelief').textContent = fmt(stdTax);
+  document.getElementById('saving').textContent = fmt(saving);
+
+  // Band breakdown
+  const maxTax = Math.max(...breakdowns.map(b=>b.tax),1);
+  document.getElementById('bandRows').innerHTML = breakdowns.map(b=>`
+    <div class="band-row">
+      <div class="band-range">${b.label}</div>
+      <div class="band-rate">${b.rate}</div>
+      <div class="band-bar-wrap"><div class="band-bar" style="width:${(b.tax/maxTax)*100}%"></div></div>
+      <div class="band-tax">${fmt(b.tax)}</div>
+    </div>`).join('');
+
+  // FTB savings card
+  if(buyerType==='ftb' && price<=625000 && saving>0){
+    document.getElementById('savingsCard').style.display='';
+    document.getElementById('sc-standard').textContent=fmt(stdTax);
+    document.getElementById('sc-ftb').textContent=fmt(tax);
+    document.getElementById('sc-saving').textContent=fmt(saving);
+  } else {
+    document.getElementById('savingsCard').style.display='none';
+  }
+}
+
+function getSaved(){try{return JSON.parse(localStorage.getItem('ukSDLTSaved')||'[]');}catch{return[];}}
+function setSaved(a){localStorage.setItem('ukSDLTSaved',JSON.stringify(a));}
+
+function saveCalc(){
+  if(!lastResult)return;
+  const {price,buyerType,tax,effective}=lastResult;
+  const saved=getSaved();
+  const entry={id:Date.now(),date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+    label:fmt(price)+' · '+{ftb:'FTB',mover:'Mover',additional:'2nd Home'}[buyerType],
+    tax:Math.round(tax),effective:effective.toFixed(2),inputs:{price,buyerType,residency}};
+  saved.unshift(entry);if(saved.length>20)saved.pop();setSaved(saved);
+  showToast('✓ SDLT calculation saved');
+}
+
+function loadSaved(id){
+  const e=getSaved().find(x=>x.id===id);if(!e)return;
+  document.getElementById('price').value=e.inputs.price;
+  setBuyer(e.inputs.buyerType);setRes(e.inputs.residency||'uk');
+  switchTab('calc');showToast('Loaded: '+e.label);
+}
+function deleteSaved(id,ev){ev.stopPropagation();setSaved(getSaved().filter(s=>s.id!==id));renderSaved();showToast('Deleted');}
+function renderSaved(){
+  const saved=getSaved();const c=document.getElementById('savedContainer');
+  if(!saved.length){c.innerHTML=`<div class="empty-state"><div class="ei">🏛️</div><div>No saved SDLT calculations yet.</div></div>`;return;}
+  c.innerHTML=saved.map(s=>`<div class="saved-item" onclick="loadSaved(${s.id})">
+    <div class="si-top"><div><div class="si-name">${s.label}</div><div class="si-date">${s.date}</div></div><button class="si-del" onclick="deleteSaved(${s.id},event)">🗑</button></div>
+    <div class="si-metrics"><div class="si-m">SDLT <strong>${fmt(s.tax)}</strong></div><div class="si-m">Eff. Rate <strong>${s.effective}%</strong></div></div>
+  </div>`).join('');
+}
+function switchTab(t){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  if(t==='saved'){document.getElementById('mainView').style.display='none';document.getElementById('savedView').style.display='';document.getElementById('tab-saved').classList.add('active');renderSaved();}
+  else{document.getElementById('mainView').style.display='';document.getElementById('savedView').style.display='none';document.getElementById('tab-calc').classList.add('active');}
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+document.getElementById('price').addEventListener('input',calculate);
+calculate();
+</script>
+</body>
+</html>

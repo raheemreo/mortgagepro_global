@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top US Mortgage Lenders</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --white:#FFFFFF;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10);
+    --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --grn:#15803D; --tl:#0F766E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🦅';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+
+  /* RATE STRIP */
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.up::after{content:'↑';font-size:9px;color:#6EE7B7;}
+  .rs-v.dn::after{content:'↓';font-size:9px;color:#FCA5A5;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* CONTENT */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+  .up{color:#15803D;} .dn{color:#B91C1C;}
+
+  /* MARKET POSITION DONUT BANNER */
+  .hero-banner{background:linear-gradient(148deg,#0B1D3A,#1B3F72);border-radius:20px;padding:18px 18px 14px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:0;}
+  .hero-banner::before{content:'';position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(185,28,28,0.14);}
+  .hb-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+  .hb-title{font-size:17px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.2;margin-bottom:14px;}
+  .hb-title span{color:var(--gold-lt);}
+  .hb-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .hb-stat{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px;text-align:center;}
+  .hb-stat-v{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .hb-stat-l{font-size:8.5px;color:rgba(255,255,255,0.48);margin-top:2px;}
+
+  /* MARKET SHARE CHART */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+  .chart-title span{font-size:9.5px;color:var(--muted);font-weight:500;}
+  .bar-row{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+  .bar-row:last-child{margin-bottom:0;}
+  .bar-lender{font-size:10px;font-weight:700;color:var(--navy);width:58px;flex-shrink:0;}
+  .bar-track{flex:1;height:10px;border-radius:20px;background:#EDF2F7;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:20px;transition:width .6s ease;}
+  .bar-pct{font-size:10px;font-weight:800;color:var(--navy);width:32px;text-align:right;flex-shrink:0;}
+  .bar-vol{font-size:9px;color:var(--muted);width:42px;text-align:right;flex-shrink:0;}
+
+  /* LENDER CARDS */
+  .lender-card{background:var(--card);border-radius:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;}
+  .lc-header{display:flex;align-items:center;padding:14px 14px 11px;gap:12px;}
+  .lc-rank{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;font-family:Georgia,serif;flex-shrink:0;color:#fff;}
+  .rank-1{background:linear-gradient(135deg,#D97706,#B45309);}
+  .rank-2{background:linear-gradient(135deg,#64748B,#475569);}
+  .rank-3{background:linear-gradient(135deg,#B45309,#92400E);}
+  .rank-n{background:linear-gradient(135deg,#1B3F72,#0B1D3A);}
+  .lc-logo{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+  .lc-info{flex:1;}
+  .lc-name{font-size:13.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .lc-type{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .lc-badge{padding:3px 8px;border-radius:20px;font-size:8.5px;font-weight:700;}
+  .badge-online{background:#EFF6FF;color:#1D4ED8;}
+  .badge-bank{background:#F0FDF4;color:#15803D;}
+  .badge-credit{background:#FFF7ED;color:#C2410C;}
+  .badge-broker{background:#FAF5FF;color:#6D28D9;}
+  .lc-body{padding:0 14px 14px;}
+  .lc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px;}
+  .lc-metric{background:var(--bg);border-radius:9px;padding:8px 6px;text-align:center;}
+  .lc-metric-v{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .lc-metric-l{font-size:8.5px;color:var(--muted);margin-top:2px;}
+  .lc-pros{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+  .pro-tag{background:#F0FDF4;color:#15803D;font-size:8.5px;font-weight:700;padding:3px 8px;border-radius:20px;}
+  .con-tag{background:#FEF2F2;color:#B91C1C;font-size:8.5px;font-weight:700;padding:3px 8px;border-radius:20px;}
+  .lc-rates{display:flex;gap:7px;}
+  .lr-box{flex:1;border:1px solid var(--border);border-radius:9px;padding:8px;text-align:center;}
+  .lr-type{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .lr-rate{font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:2px 0;}
+  .lr-apr{font-size:8.5px;color:var(--muted);}
+  .lc-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--navy));border:none;border-radius:11px;padding:11px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;margin-top:10px;font-family:Georgia,serif;}
+  .lc-btn-rd{background:linear-gradient(135deg,#B91C1C,#991B1B);}
+
+  /* COMPARISON TABLE */
+  .comp-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .comp-row{display:grid;grid-template-columns:110px repeat(3,1fr);gap:4px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
+  .comp-row:last-child{border-bottom:none;}
+  .comp-row.head{background:var(--bg);border-radius:10px;padding:8px 6px;margin-bottom:6px;border:none;}
+  .comp-label{font-size:9.5px;color:var(--muted);font-weight:600;}
+  .comp-val{font-size:10px;font-weight:800;color:var(--navy);text-align:center;font-family:Georgia,serif;}
+  .comp-head-lbl{font-size:8.5px;font-weight:800;color:var(--navy);text-align:center;}
+  .comp-best{color:#15803D;}
+  .star{color:#D97706;}
+
+  /* INFO BANNER */
+  .info-banner{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:14px;padding:13px 14px;margin-bottom:10px;}
+  .ib-title{font-size:12px;font-weight:800;color:#92400E;font-family:Georgia,serif;margin-bottom:5px;}
+  .ib-text{font-size:9.5px;color:#B45309;line-height:1.5;}
+
+  /* BOTTOM NAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .hero-banner{animation:fadeUp .3s ease both .05s;}
+  .chart-card{animation:fadeUp .3s ease both .1s;}
+  .lender-card{animation:fadeUp .3s ease both .15s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇺🇸</div>
+      <div class="hdr-title">Top US Mortgage Lenders</div>
+      <div class="hdr-sub">2024 Originations · HMDA Data · Live Rates</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">30-Yr Fixed</div><div class="rs-v up">6.82%</div><div class="rs-n">Freddie Mac</div></div>
+    <div class="rs"><div class="rs-l">15-Yr Fixed</div><div class="rs-v">6.11%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">5/1 ARM</div><div class="rs-v dn">6.05%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">Fed Funds</div><div class="rs-v gold">5.25%</div><div class="rs-n">FOMC</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Market Overview <span class="more">2024 Data</span></div>
+  <div class="hero-banner">
+    <div class="hb-tag">US Mortgage Market · 2024</div>
+    <div class="hb-title">$1.7 Trillion Originated · <span>Top 10 Lenders</span> = 34% Market Share</div>
+    <div class="hb-stats">
+      <div class="hb-stat"><div class="hb-stat-v">$1.7T</div><div class="hb-stat-l">Total Market</div></div>
+      <div class="hb-stat"><div class="hb-stat-v">5,000+</div><div class="hb-stat-l">Active Lenders</div></div>
+      <div class="hb-stat"><div class="hb-stat-v">7.2M</div><div class="hb-stat-l">Loans Originated</div></div>
+    </div>
+  </div>
+
+  <!-- Market Share Bar Chart -->
+  <div class="sec">Market Share <span class="more">HMDA 2024</span></div>
+  <div class="chart-card">
+    <div class="chart-title">2024 Origination Volume <span>Source: HMDA / CFPB</span></div>
+    <div class="bar-row">
+      <div class="bar-lender">🚀 Rocket</div>
+      <div class="bar-track"><div class="bar-fill" style="width:85%;background:linear-gradient(90deg,#B91C1C,#991B1B);"></div></div>
+      <div class="bar-pct">6.8%</div>
+      <div class="bar-vol">$128B</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lender">🏛️ UWM</div>
+      <div class="bar-track"><div class="bar-fill" style="width:72%;background:linear-gradient(90deg,#1B3F72,#0B1D3A);"></div></div>
+      <div class="bar-pct">5.4%</div>
+      <div class="bar-vol">$102B</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lender">🏦 Chase</div>
+      <div class="bar-track"><div class="bar-fill" style="width:63%;background:linear-gradient(90deg,#0F766E,#0D9488);"></div></div>
+      <div class="bar-pct">4.7%</div>
+      <div class="bar-vol">$89B</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lender">🏢 Wells</div>
+      <div class="bar-track"><div class="bar-fill" style="width:52%;background:linear-gradient(90deg,#D97706,#B45309);"></div></div>
+      <div class="bar-pct">3.9%</div>
+      <div class="bar-vol">$74B</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lender">🌐 loanDepot</div>
+      <div class="bar-track"><div class="bar-fill" style="width:41%;background:linear-gradient(90deg,#6D28D9,#4C1D95);"></div></div>
+      <div class="bar-pct">3.1%</div>
+      <div class="bar-vol">$58B</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lender">🏠 Fairway</div>
+      <div class="bar-track"><div class="bar-fill" style="width:32%;background:linear-gradient(90deg,#15803D,#166534);"></div></div>
+      <div class="bar-pct">2.4%</div>
+      <div class="bar-vol">$45B</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lender">🌟 BofA</div>
+      <div class="bar-track"><div class="bar-fill" style="width:27%;background:linear-gradient(90deg,#334155,#1E293B);"></div></div>
+      <div class="bar-pct">2.0%</div>
+      <div class="bar-vol">$38B</div>
+    </div>
+  </div>
+
+  <!-- #1 Rocket Mortgage -->
+  <div class="sec">#1 Lender <span class="more">Updated Jun 2025</span></div>
+  <div class="lender-card">
+    <div class="lc-header">
+      <div class="lc-rank rank-1">1</div>
+      <div class="lc-logo" style="background:#FEF3C7;">🚀</div>
+      <div class="lc-info">
+        <div class="lc-name">Rocket Mortgage</div>
+        <div class="lc-type">Online / Detroit, MI · Est. 1985</div>
+      </div>
+      <div class="lc-badge badge-online">Online</div>
+    </div>
+    <div class="lc-body">
+      <div class="lc-grid">
+        <div class="lc-metric"><div class="lc-metric-v">$128B</div><div class="lc-metric-l">2024 Volume</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">4.8★</div><div class="lc-metric-l">J.D. Power</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">8 min</div><div class="lc-metric-l">Pre-Approval</div></div>
+      </div>
+      <div class="lc-rates">
+        <div class="lr-box"><div class="lr-type">30-Yr Fixed</div><div class="lr-rate">6.875%</div><div class="lr-apr">APR 7.02%</div></div>
+        <div class="lr-box"><div class="lr-type">15-Yr Fixed</div><div class="lr-rate">6.125%</div><div class="lr-apr">APR 6.31%</div></div>
+        <div class="lr-box"><div class="lr-type">FHA 30-Yr</div><div class="lr-rate">6.50%</div><div class="lr-apr">APR 7.45%</div></div>
+      </div>
+      <div class="lc-pros" style="margin-top:10px;">
+        <span class="pro-tag">✓ Fast Approval</span>
+        <span class="pro-tag">✓ All 50 States</span>
+        <span class="pro-tag">✓ Great App</span>
+        <span class="con-tag">✗ No In-Person</span>
+        <span class="con-tag">✗ High Fees</span>
+      </div>
+      <button class="lc-btn lc-btn-rd">Check Rocket Mortgage Rates →</button>
+    </div>
+  </div>
+
+  <!-- #2 UWM -->
+  <div class="lender-card">
+    <div class="lc-header">
+      <div class="lc-rank rank-2">2</div>
+      <div class="lc-logo" style="background:#EFF6FF;">🏛️</div>
+      <div class="lc-info">
+        <div class="lc-name">United Wholesale Mortgage</div>
+        <div class="lc-type">Wholesale / Pontiac, MI · Est. 1986</div>
+      </div>
+      <div class="lc-badge badge-broker">Wholesale</div>
+    </div>
+    <div class="lc-body">
+      <div class="lc-grid">
+        <div class="lc-metric"><div class="lc-metric-v">$102B</div><div class="lc-metric-l">2024 Volume</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">4.6★</div><div class="lc-metric-l">Broker Rating</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">Broker</div><div class="lc-metric-l">Access Only</div></div>
+      </div>
+      <div class="lc-rates">
+        <div class="lr-box"><div class="lr-type">30-Yr Fixed</div><div class="lr-rate">6.75%</div><div class="lr-apr">APR 6.89%</div></div>
+        <div class="lr-box"><div class="lr-type">15-Yr Fixed</div><div class="lr-rate">6.00%</div><div class="lr-apr">APR 6.18%</div></div>
+        <div class="lr-box"><div class="lr-type">VA 30-Yr</div><div class="lr-rate">6.25%</div><div class="lr-apr">APR 6.60%</div></div>
+      </div>
+      <div class="lc-pros" style="margin-top:10px;">
+        <span class="pro-tag">✓ Low Rates</span>
+        <span class="pro-tag">✓ Fast Close</span>
+        <span class="con-tag">✗ Broker Only</span>
+        <span class="con-tag">✗ Not Direct</span>
+      </div>
+      <button class="lc-btn">Find UWM Broker Near You →</button>
+    </div>
+  </div>
+
+  <!-- #3 JPMorgan Chase -->
+  <div class="lender-card">
+    <div class="lc-header">
+      <div class="lc-rank rank-3">3</div>
+      <div class="lc-logo" style="background:#F0FDF4;">🏦</div>
+      <div class="lc-info">
+        <div class="lc-name">JPMorgan Chase</div>
+        <div class="lc-type">Bank / New York, NY · Est. 1799</div>
+      </div>
+      <div class="lc-badge badge-bank">Big Bank</div>
+    </div>
+    <div class="lc-body">
+      <div class="lc-grid">
+        <div class="lc-metric"><div class="lc-metric-v">$89B</div><div class="lc-metric-l">2024 Volume</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">4.5★</div><div class="lc-metric-l">J.D. Power</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">4,900+</div><div class="lc-metric-l">Branches</div></div>
+      </div>
+      <div class="lc-rates">
+        <div class="lr-box"><div class="lr-type">30-Yr Fixed</div><div class="lr-rate">6.90%</div><div class="lr-apr">APR 7.05%</div></div>
+        <div class="lr-box"><div class="lr-type">15-Yr Fixed</div><div class="lr-rate">6.15%</div><div class="lr-apr">APR 6.34%</div></div>
+        <div class="lr-box"><div class="lr-type">Jumbo</div><div class="lr-rate">7.00%</div><div class="lr-apr">APR 7.12%</div></div>
+      </div>
+      <div class="lc-pros" style="margin-top:10px;">
+        <span class="pro-tag">✓ Existing Customers</span>
+        <span class="pro-tag">✓ Jumbo Loans</span>
+        <span class="con-tag">✗ Strict Criteria</span>
+        <span class="con-tag">✗ Slower Process</span>
+      </div>
+      <button class="lc-btn">Explore Chase Mortgage →</button>
+    </div>
+  </div>
+
+  <!-- #4 Wells Fargo -->
+  <div class="lender-card">
+    <div class="lc-header">
+      <div class="lc-rank rank-n">4</div>
+      <div class="lc-logo" style="background:#FFF7ED;">🐎</div>
+      <div class="lc-info">
+        <div class="lc-name">Wells Fargo</div>
+        <div class="lc-type">Bank / San Francisco, CA · Est. 1852</div>
+      </div>
+      <div class="lc-badge badge-bank">Big Bank</div>
+    </div>
+    <div class="lc-body">
+      <div class="lc-grid">
+        <div class="lc-metric"><div class="lc-metric-v">$74B</div><div class="lc-metric-l">2024 Volume</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">4.1★</div><div class="lc-metric-l">Customer Sat.</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">4,500+</div><div class="lc-metric-l">Branches</div></div>
+      </div>
+      <div class="lc-rates">
+        <div class="lr-box"><div class="lr-type">30-Yr Fixed</div><div class="lr-rate">6.95%</div><div class="lr-apr">APR 7.10%</div></div>
+        <div class="lr-box"><div class="lr-type">15-Yr Fixed</div><div class="lr-rate">6.20%</div><div class="lr-apr">APR 6.40%</div></div>
+        <div class="lr-box"><div class="lr-type">FHA</div><div class="lr-rate">6.625%</div><div class="lr-apr">APR 7.52%</div></div>
+      </div>
+      <div class="lc-pros" style="margin-top:10px;">
+        <span class="pro-tag">✓ Wide Branch Network</span>
+        <span class="pro-tag">✓ DPA Programs</span>
+        <span class="con-tag">✗ Past Scandals</span>
+      </div>
+      <button class="lc-btn">Explore Wells Fargo →</button>
+    </div>
+  </div>
+
+  <!-- #5 loanDepot -->
+  <div class="lender-card">
+    <div class="lc-header">
+      <div class="lc-rank rank-n">5</div>
+      <div class="lc-logo" style="background:#FAF5FF;">🌐</div>
+      <div class="lc-info">
+        <div class="lc-name">loanDepot</div>
+        <div class="lc-type">Non-Bank / Irvine, CA · Est. 2010</div>
+      </div>
+      <div class="lc-badge badge-online">Online+Branch</div>
+    </div>
+    <div class="lc-body">
+      <div class="lc-grid">
+        <div class="lc-metric"><div class="lc-metric-v">$58B</div><div class="lc-metric-l">2024 Volume</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">4.3★</div><div class="lc-metric-l">Trustpilot</div></div>
+        <div class="lc-metric"><div class="lc-metric-v">200+</div><div class="lc-metric-l">Locations</div></div>
+      </div>
+      <div class="lc-rates">
+        <div class="lr-box"><div class="lr-type">30-Yr Fixed</div><div class="lr-rate">6.85%</div><div class="lr-apr">APR 7.00%</div></div>
+        <div class="lr-box"><div class="lr-type">15-Yr Fixed</div><div class="lr-rate">6.10%</div><div class="lr-apr">APR 6.28%</div></div>
+        <div class="lr-box"><div class="lr-type">VA</div><div class="lr-rate">6.375%</div><div class="lr-apr">APR 6.71%</div></div>
+      </div>
+      <div class="lc-pros" style="margin-top:10px;">
+        <span class="pro-tag">✓ Lifetime Guarantee</span>
+        <span class="pro-tag">✓ VA Specialist</span>
+        <span class="con-tag">✗ Data Breach 2024</span>
+      </div>
+      <button class="lc-btn">Explore loanDepot →</button>
+    </div>
+  </div>
+
+  <!-- Quick Comparison Table -->
+  <div class="sec">Quick Comparison <span class="more">All Products</span></div>
+  <div class="comp-card">
+    <div class="comp-row head">
+      <div class="comp-label"></div>
+      <div class="comp-head-lbl">Rocket</div>
+      <div class="comp-head-lbl">Chase</div>
+      <div class="comp-head-lbl">UWM</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-label">30-Yr Rate</div>
+      <div class="comp-val">6.88%</div>
+      <div class="comp-val">6.90%</div>
+      <div class="comp-val comp-best">6.75%</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-label">Min. Down</div>
+      <div class="comp-val">3%</div>
+      <div class="comp-val">3%</div>
+      <div class="comp-val">3%</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-label">Min. Credit</div>
+      <div class="comp-val">620</div>
+      <div class="comp-val">620</div>
+      <div class="comp-val comp-best">580</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-label">Pre-Approval</div>
+      <div class="comp-val comp-best">8 min</div>
+      <div class="comp-val">1-3 days</div>
+      <div class="comp-val">Same day</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-label">Online App</div>
+      <div class="comp-val comp-best">★★★★★</div>
+      <div class="comp-val">★★★★</div>
+      <div class="comp-val">N/A</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-label">J.D. Power</div>
+      <div class="comp-val comp-best">4.8★</div>
+      <div class="comp-val">4.5★</div>
+      <div class="comp-val">4.6★</div>
+    </div>
+  </div>
+
+  <div class="info-banner" style="margin-top:10px;">
+    <div class="ib-title">⚠️ Rate Disclosure</div>
+    <div class="ib-text">Rates shown are estimated as of June 2025 for a 760 FICO score, 80% LTV, single-family primary residence. Your actual rate will vary. Always get multiple quotes. NMLS-registered lenders only. Data sourced from HMDA 2024 annual report.</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+</body>
+</html>

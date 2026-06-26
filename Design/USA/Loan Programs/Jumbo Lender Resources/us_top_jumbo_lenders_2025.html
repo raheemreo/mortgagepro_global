@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top Jumbo Lenders 2025</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);
+    --slate:#334155;--slate2:#1E293B;
+    --green:#15803D;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#334155 55%,#1E293B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🏦';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:'Playfair Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* CONTENT */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec-badge{font-size:9px;font-weight:700;color:var(--gold);background:#FEF3C7;border-radius:6px;padding:2px 8px;}
+
+  /* FILTER TABS */
+  .filter-tabs{display:flex;gap:7px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;}
+  .filter-tabs::-webkit-scrollbar{display:none;}
+  .ftab{padding:7px 14px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .2s;}
+  .ftab.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  /* MARKET OVERVIEW BANNER */
+  .market-banner{background:linear-gradient(135deg,#0B1D3A,#334155);border-radius:16px;padding:16px 15px;margin-bottom:12px;display:flex;gap:0;}
+  .mb-stat{flex:1;text-align:center;position:relative;}
+  .mb-stat:not(:last-child)::after{content:'';position:absolute;right:0;top:10%;height:80%;width:1px;background:rgba(255,255,255,0.14);}
+  .mb-l{font-size:8px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;}
+  .mb-v{font-size:18px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1;}
+  .mb-v.gold{color:var(--gold-lt);}
+  .mb-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:2px;}
+
+  /* LENDER CARD */
+  .lender-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;position:relative;overflow:hidden;}
+  .lender-card.top-pick::before{content:'TOP PICK';position:absolute;top:12px;right:-22px;background:var(--gold);color:#fff;font-size:8px;font-weight:800;padding:3px 30px;transform:rotate(35deg);letter-spacing:0.8px;}
+  .lc-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .lc-logo{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+  .lc-info{flex:1;}
+  .lc-name{font-size:15px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;line-height:1.1;}
+  .lc-type{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .lc-rating{display:flex;align-items:center;gap:4px;}
+  .stars{color:var(--gold);font-size:11px;}
+  .rating-num{font-size:11px;font-weight:700;color:var(--navy);}
+
+  /* RATE ROW */
+  .rate-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+  .rr-item{background:var(--bg);border-radius:10px;padding:8px 10px;text-align:center;}
+  .rr-l{font-size:8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px;}
+  .rr-v{font-size:14px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;}
+  .rr-v.rate-green{color:var(--green);}
+  .rr-v.rate-gold{color:var(--gold);}
+
+  /* FEATURE PILLS */
+  .feature-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  .pill{font-size:9px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--bg);color:var(--navy);border:1px solid var(--border);}
+  .pill.green{background:#F0FDF4;color:var(--green);border-color:#BBF7D0;}
+  .pill.gold{background:#FEF3C7;color:#92400E;border-color:#FDE68A;}
+  .pill.blue{background:#EFF6FF;color:var(--blue);border-color:#BFDBFE;}
+
+  /* METRICS BAR */
+  .metrics-bar{display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);}
+  .metric{text-align:center;}
+  .metric-l{font-size:8.5px;color:var(--muted);font-weight:600;}
+  .metric-v{font-size:12px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;margin-top:2px;}
+
+  /* ACTION BTN */
+  .action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+  .act-btn{padding:9px;border-radius:11px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;text-align:center;border:none;}
+  .act-btn.primary{background:linear-gradient(135deg,#334155,#1E293B);color:#fff;}
+  .act-btn.secondary{background:var(--bg);color:var(--navy);border:1.5px solid var(--border);}
+  .act-btn:active{transform:scale(0.97);}
+
+  /* RATE COMPARISON CHART */
+  .chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:4px;}
+  .chart-sub{font-size:9.5px;color:var(--muted);margin-bottom:14px;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .bar-label{font-size:10px;font-weight:700;color:var(--navy);width:90px;flex-shrink:0;}
+  .bar-track{flex:1;height:22px;background:var(--bg);border-radius:6px;overflow:hidden;position:relative;}
+  .bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;transition:width .8s ease;}
+  .bar-pct{font-size:10px;font-weight:800;color:#fff;white-space:nowrap;}
+  .bar-rate{font-size:10px;font-weight:700;color:var(--muted);margin-left:6px;}
+
+  /* MARKET STATS GRID */
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .stat-card{background:var(--card);border-radius:14px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .stat-icon{font-size:20px;margin-bottom:6px;}
+  .stat-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .stat-value{font-size:17px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;margin:3px 0;}
+  .stat-sub{font-size:9px;color:var(--muted);}
+  .stat-trend{font-size:9px;font-weight:700;color:var(--green);}
+  .stat-trend.down{color:var(--red);}
+
+  /* PRO TIP */
+  .pro-tip{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 14px;margin-bottom:10px;}
+  .pt-title{font-size:11px;font-weight:800;color:#92400E;font-family:'Playfair Display',serif;margin-bottom:5px;}
+  .pt-text{font-size:10px;color:#92400E;line-height:1.5;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;border-radius:12px;padding:10px 18px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* BOTTOM NAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .lender-card,.chart-card,.stat-card,.pro-tip,.market-banner{animation:fadeUp .35s ease both;}
+  .lender-card:nth-child(1){animation-delay:.05s;}
+  .lender-card:nth-child(2){animation-delay:.10s;}
+  .lender-card:nth-child(3){animation-delay:.15s;}
+  .lender-card:nth-child(4){animation-delay:.20s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏦</div>
+      <div class="hdr-title">Top Jumbo Lenders 2025</div>
+      <div class="hdr-sub">Best-in-class for Loans Above $766,550</div>
+    </div>
+    <div class="icon-btn" onclick="showToast('📌 Page bookmarked!')">🔖</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Jumbo 30-Yr</div><div class="rs-v">7.04%</div><div class="rs-n">Jun 2025 Avg</div></div>
+    <div class="rs"><div class="rs-l">Jumbo 15-Yr</div><div class="rs-v">6.62%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">Best Rate</div><div class="rs-v gold">6.74%</div><div class="rs-n">Chase 30-Yr</div></div>
+    <div class="rs"><div class="rs-l">Lenders</div><div class="rs-v">8</div><div class="rs-n">Reviewed</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- MARKET OVERVIEW -->
+  <div class="sec" style="margin-top:0">Market Overview</div>
+  <div class="market-banner">
+    <div class="mb-stat"><div class="mb-l">Jumbo Volume</div><div class="mb-v gold">$398B</div><div class="mb-n">2025 YTD</div></div>
+    <div class="mb-stat"><div class="mb-l">Avg Loan Size</div><div class="mb-v">$1.24M</div><div class="mb-n">National</div></div>
+    <div class="mb-stat"><div class="mb-l">Rate Spread</div><div class="mb-v">+0.30%</div><div class="mb-n">vs Conforming</div></div>
+  </div>
+
+  <!-- FILTER TABS -->
+  <div class="filter-tabs">
+    <div class="ftab active" onclick="filterLenders('all',this)">All Lenders</div>
+    <div class="ftab" onclick="filterLenders('bank',this)">Big Banks</div>
+    <div class="ftab" onclick="filterLenders('nonqm',this)">Non-QM</div>
+    <div class="ftab" onclick="filterLenders('online',this)">Online</div>
+    <div class="ftab" onclick="filterLenders('portfolio',this)">Portfolio</div>
+  </div>
+
+  <!-- RATE COMPARISON CHART -->
+  <div class="chart-card">
+    <div class="chart-title">📊 30-Yr Jumbo Rate Comparison</div>
+    <div class="chart-sub">June 2025 · Rates vary by credit score, LTV & loan size</div>
+    <div id="barChart">
+      <div class="bar-row"><div class="bar-label">Chase</div><div class="bar-track"><div class="bar-fill" style="width:92%;background:linear-gradient(90deg,#0B1D3A,#334155)"><span class="bar-pct">6.74%</span></div></div></div>
+      <div class="bar-row"><div class="bar-label">Wells Fargo</div><div class="bar-track"><div class="bar-fill" style="width:88%;background:linear-gradient(90deg,#1B3F72,#2563EB)"><span class="bar-pct">6.85%</span></div></div></div>
+      <div class="bar-row"><div class="bar-label">Bank of America</div><div class="bar-track"><div class="bar-fill" style="width:86%;background:linear-gradient(90deg,#334155,#475569)"><span class="bar-pct">6.91%</span></div></div></div>
+      <div class="bar-row"><div class="bar-label">Flagstar</div><div class="bar-track"><div class="bar-fill" style="width:84%;background:linear-gradient(90deg,#D97706,#B45309)"><span class="bar-pct">6.98%</span></div></div></div>
+      <div class="bar-row"><div class="bar-label">US Bank</div><div class="bar-track"><div class="bar-fill" style="width:81%;background:linear-gradient(90deg,#4A5C7A,#64748B)"><span class="bar-pct">7.04%</span></div></div></div>
+      <div class="bar-row"><div class="bar-label">PNC Bank</div><div class="bar-track"><div class="bar-fill" style="width:79%;background:linear-gradient(90deg,#64748B,#94A3B8)"><span class="bar-pct">7.09%</span></div></div></div>
+    </div>
+    <div style="font-size:8.5px;color:var(--muted);margin-top:8px;text-align:right;">*Rates for 760+ FICO, 20% down, $1M–$2M loan. Not a guarantee.</div>
+  </div>
+
+  <!-- MARKET STATS -->
+  <div class="sec">Key Market Stats <span class="sec-badge">2025 Data</span></div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-label">Approval Rate</div><div class="stat-value">68%</div><div class="stat-sub">Jumbo applicants 2025</div><div class="stat-trend">▲ 3% vs 2024</div></div>
+    <div class="stat-card"><div class="stat-icon">⏱️</div><div class="stat-label">Avg Close Time</div><div class="stat-value">38 days</div><div class="stat-sub">Jumbo avg vs 30 conv.</div><div class="stat-trend down">▼ 2 days faster</div></div>
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">Min Reserves</div><div class="stat-value">12 mo</div><div class="stat-sub">PITI in liquid assets</div><div class="stat-trend">Industry median</div></div>
+    <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-label">Min FICO</div><div class="stat-value">700+</div><div class="stat-sub">Most lenders require 720+</div><div class="stat-trend">720 for best rates</div></div>
+  </div>
+
+  <div class="sec">Top Lenders Ranked <span class="sec-badge">Editor's Picks</span></div>
+
+  <!-- LENDER 1: CHASE -->
+  <div class="lender-card top-pick" data-category="bank">
+    <div class="lc-header">
+      <div class="lc-logo" style="background:#EFF6FF;">🏦</div>
+      <div class="lc-info">
+        <div class="lc-name">JPMorgan Chase</div>
+        <div class="lc-type">National Bank · Portfolio Jumbo Lender</div>
+      </div>
+      <div>
+        <div class="lc-rating"><span class="stars">★★★★★</span><span class="rating-num">4.8</span></div>
+      </div>
+    </div>
+    <div class="rate-row">
+      <div class="rr-item"><div class="rr-l">30-Yr Rate</div><div class="rr-v rate-green">6.74%</div></div>
+      <div class="rr-item"><div class="rr-l">15-Yr Rate</div><div class="rr-v">6.31%</div></div>
+      <div class="rr-item"><div class="rr-l">Max Loan</div><div class="rr-v rate-gold">$9.5M</div></div>
+    </div>
+    <div class="feature-pills">
+      <div class="pill green">✓ Up to $9.5M</div>
+      <div class="pill green">✓ No PMI</div>
+      <div class="pill blue">Interest-Only Option</div>
+      <div class="pill gold">720+ FICO</div>
+      <div class="pill green">✓ 10% Down Avail.</div>
+      <div class="pill blue">5/1, 7/1, 10/1 ARM</div>
+    </div>
+    <div class="metrics-bar">
+      <div class="metric"><div class="metric-l">Min Down</div><div class="metric-v">10%</div></div>
+      <div class="metric"><div class="metric-l">Min FICO</div><div class="metric-v">720</div></div>
+      <div class="metric"><div class="metric-l">Max DTI</div><div class="metric-v">43%</div></div>
+      <div class="metric"><div class="metric-l">Reserves</div><div class="metric-v">12 Mo</div></div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn primary" onclick="showToast('🏦 Opening Chase Jumbo details...')">📋 View Details</button>
+      <button class="act-btn secondary" onclick="compareLender('Chase','6.74%')">⚖️ Compare</button>
+    </div>
+  </div>
+
+  <!-- LENDER 2: WELLS FARGO -->
+  <div class="lender-card" data-category="bank">
+    <div class="lc-header">
+      <div class="lc-logo" style="background:#FEF3C7;">🔴</div>
+      <div class="lc-info">
+        <div class="lc-name">Wells Fargo</div>
+        <div class="lc-type">National Bank · Jumbo & Super-Jumbo</div>
+      </div>
+      <div>
+        <div class="lc-rating"><span class="stars">★★★★☆</span><span class="rating-num">4.5</span></div>
+      </div>
+    </div>
+    <div class="rate-row">
+      <div class="rr-item"><div class="rr-l">30-Yr Rate</div><div class="rr-v rate-green">6.85%</div></div>
+      <div class="rr-item"><div class="rr-l">15-Yr Rate</div><div class="rr-v">6.42%</div></div>
+      <div class="rr-item"><div class="rr-l">Max Loan</div><div class="rr-v rate-gold">$5M</div></div>
+    </div>
+    <div class="feature-pills">
+      <div class="pill green">✓ Relationship Discount</div>
+      <div class="pill blue">ARM Programs</div>
+      <div class="pill gold">700+ FICO</div>
+      <div class="pill green">✓ Self-Employed OK</div>
+    </div>
+    <div class="metrics-bar">
+      <div class="metric"><div class="metric-l">Min Down</div><div class="metric-v">15%</div></div>
+      <div class="metric"><div class="metric-l">Min FICO</div><div class="metric-v">700</div></div>
+      <div class="metric"><div class="metric-l">Max DTI</div><div class="metric-v">43%</div></div>
+      <div class="metric"><div class="metric-l">Reserves</div><div class="metric-v">12 Mo</div></div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn primary" onclick="showToast('🔴 Opening Wells Fargo Jumbo details...')">📋 View Details</button>
+      <button class="act-btn secondary" onclick="compareLender('Wells Fargo','6.85%')">⚖️ Compare</button>
+    </div>
+  </div>
+
+  <!-- LENDER 3: BANK OF AMERICA -->
+  <div class="lender-card" data-category="bank">
+    <div class="lc-header">
+      <div class="lc-logo" style="background:#EFF6FF;">🏛️</div>
+      <div class="lc-info">
+        <div class="lc-name">Bank of America</div>
+        <div class="lc-type">National Bank · Preferred Rewards Discount</div>
+      </div>
+      <div>
+        <div class="lc-rating"><span class="stars">★★★★☆</span><span class="rating-num">4.4</span></div>
+      </div>
+    </div>
+    <div class="rate-row">
+      <div class="rr-item"><div class="rr-l">30-Yr Rate</div><div class="rr-v">6.91%</div></div>
+      <div class="rr-item"><div class="rr-l">15-Yr Rate</div><div class="rr-v">6.48%</div></div>
+      <div class="rr-item"><div class="rr-l">Max Loan</div><div class="rr-v rate-gold">$5M</div></div>
+    </div>
+    <div class="feature-pills">
+      <div class="pill green">✓ Rewards Rate Discount</div>
+      <div class="pill gold">720+ FICO</div>
+      <div class="pill blue">Digital Process</div>
+      <div class="pill green">✓ No Closing Cost Option</div>
+    </div>
+    <div class="metrics-bar">
+      <div class="metric"><div class="metric-l">Min Down</div><div class="metric-v">20%</div></div>
+      <div class="metric"><div class="metric-l">Min FICO</div><div class="metric-v">720</div></div>
+      <div class="metric"><div class="metric-l">Max DTI</div><div class="metric-v">45%</div></div>
+      <div class="metric"><div class="metric-l">Reserves</div><div class="metric-v">18 Mo</div></div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn primary" onclick="showToast('🏛️ Opening BofA Jumbo details...')">📋 View Details</button>
+      <button class="act-btn secondary" onclick="compareLender('Bank of America','6.91%')">⚖️ Compare</button>
+    </div>
+  </div>
+
+  <!-- LENDER 4: FLAGSTAR -->
+  <div class="lender-card" data-category="portfolio">
+    <div class="lc-header">
+      <div class="lc-logo" style="background:#F0FDF4;">🌟</div>
+      <div class="lc-info">
+        <div class="lc-name">Flagstar Bank</div>
+        <div class="lc-type">Portfolio Lender · Flexible Underwriting</div>
+      </div>
+      <div>
+        <div class="lc-rating"><span class="stars">★★★★☆</span><span class="rating-num">4.3</span></div>
+      </div>
+    </div>
+    <div class="rate-row">
+      <div class="rr-item"><div class="rr-l">30-Yr Rate</div><div class="rr-v">6.98%</div></div>
+      <div class="rr-item"><div class="rr-l">15-Yr Rate</div><div class="rr-v">6.55%</div></div>
+      <div class="rr-item"><div class="rr-l">Max Loan</div><div class="rr-v rate-gold">$3M</div></div>
+    </div>
+    <div class="feature-pills">
+      <div class="pill green">✓ Non-Warrantable Condo</div>
+      <div class="pill blue">Bank Statement Loans</div>
+      <div class="pill gold">680+ FICO</div>
+      <div class="pill green">✓ Flexible DTI</div>
+    </div>
+    <div class="metrics-bar">
+      <div class="metric"><div class="metric-l">Min Down</div><div class="metric-v">10%</div></div>
+      <div class="metric"><div class="metric-l">Min FICO</div><div class="metric-v">680</div></div>
+      <div class="metric"><div class="metric-l">Max DTI</div><div class="metric-v">50%</div></div>
+      <div class="metric"><div class="metric-l">Reserves</div><div class="metric-v">6 Mo</div></div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn primary" onclick="showToast('🌟 Opening Flagstar Jumbo details...')">📋 View Details</button>
+      <button class="act-btn secondary" onclick="compareLender('Flagstar','6.98%')">⚖️ Compare</button>
+    </div>
+  </div>
+
+  <!-- LENDER 5: US BANK -->
+  <div class="lender-card" data-category="bank">
+    <div class="lc-header">
+      <div class="lc-logo" style="background:#EFF6FF;">🦅</div>
+      <div class="lc-info">
+        <div class="lc-name">U.S. Bank</div>
+        <div class="lc-type">National Bank · Premium Mortgage</div>
+      </div>
+      <div>
+        <div class="lc-rating"><span class="stars">★★★★☆</span><span class="rating-num">4.2</span></div>
+      </div>
+    </div>
+    <div class="rate-row">
+      <div class="rr-item"><div class="rr-l">30-Yr Rate</div><div class="rr-v">7.04%</div></div>
+      <div class="rr-item"><div class="rr-l">15-Yr Rate</div><div class="rr-v">6.62%</div></div>
+      <div class="rr-item"><div class="rr-l">Max Loan</div><div class="rr-v rate-gold">$2.5M</div></div>
+    </div>
+    <div class="feature-pills">
+      <div class="pill green">✓ Smart Rate ARM</div>
+      <div class="pill gold">720+ FICO</div>
+      <div class="pill blue">Physician Loan</div>
+      <div class="pill green">✓ 10% Down (720+)</div>
+    </div>
+    <div class="metrics-bar">
+      <div class="metric"><div class="metric-l">Min Down</div><div class="metric-v">10%</div></div>
+      <div class="metric"><div class="metric-l">Min FICO</div><div class="metric-v">720</div></div>
+      <div class="metric"><div class="metric-l">Max DTI</div><div class="metric-v">43%</div></div>
+      <div class="metric"><div class="metric-l">Reserves</div><div class="metric-v">12 Mo</div></div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn primary" onclick="showToast('🦅 Opening US Bank Jumbo details...')">📋 View Details</button>
+      <button class="act-btn secondary" onclick="compareLender('US Bank','7.04%')">⚖️ Compare</button>
+    </div>
+  </div>
+
+  <!-- PRO TIP -->
+  <div class="pro-tip">
+    <div class="pt-title">💡 Expert Tip: Rate Shopping for Jumbo Loans</div>
+    <div class="pt-text">Jumbo rates are not published on Freddie Mac/Fannie Mae indices — each bank sets its own. Shopping at least 3 lenders can save $200–$600/month on a $1.5M loan. Always compare APR (not just rate) to account for points and fees. Relationship discounts of 0.125%–0.25% are common at banks where you hold ≥$250K in deposits.</div>
+  </div>
+
+</div>
+
+<!-- COMPARE TRAY -->
+<div id="compareTray" style="display:none;position:fixed;bottom:72px;left:50%;transform:translateX(-50%);width:calc(100% - 30px);max-width:390px;background:var(--navy);border-radius:14px;padding:12px 15px;z-index:150;box-shadow:var(--sh2);">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.5px;">Comparing</div>
+      <div id="compareList" style="font-size:12px;font-weight:700;color:#fff;margin-top:2px;"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="clearCompare()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:10px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;">Clear</button>
+      <button onclick="showToast('📊 Opening rate comparison...')" style="background:var(--gold);border:none;color:#fff;font-size:10px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;">Compare Now</button>
+    </div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// Filter lenders
+function filterLenders(cat, el){
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.lender-card').forEach(c=>{
+    if(cat==='all'||c.dataset.category===cat){c.style.display='block';}
+    else{c.style.display='none';}
+  });
+}
+
+// Compare system
+let compareList=[];
+function compareLender(name,rate){
+  if(compareList.find(c=>c.name===name)){showToast('Already added to compare!');return;}
+  if(compareList.length>=3){showToast('Max 3 lenders at a time');return;}
+  compareList.push({name,rate});
+  document.getElementById('compareList').textContent=compareList.map(c=>c.name+' ('+c.rate+')').join(' vs ');
+  document.getElementById('compareTray').style.display='block';
+  showToast('✅ '+name+' added to compare!');
+}
+function clearCompare(){compareList=[];document.getElementById('compareTray').style.display='none';}
+</script>
+</body>
+</html>

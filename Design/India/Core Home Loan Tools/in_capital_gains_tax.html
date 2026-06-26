@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capital Gains Tax – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00; --saffron2:#E05A00; --ochre:#F5A623; --ochre-lt:#FFDEA0;
+  --navy:#0B1F48; --chakra:#1A3A8F; --green:#046A38; --green2:#07543A;
+  --teal:#0D9488; --purple:#9333EA; --purple2:#6D28D9;
+  --white:#FFFFFF; --bg:#FFF8F0; --card:#FFFFFF;
+  --muted:#7A5C3A; --border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09); --sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg); color:var(--navy);
+  max-width:420px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background-image:
+    radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+    radial-gradient(circle at 90% 80%,rgba(147,51,234,0.04) 0%,transparent 50%);
+  pointer-events:none; z-index:0;
+}
+.header{
+  background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#9333EA 82%,#6D28D9 100%);
+  padding:46px 18px 0; position:relative; overflow:hidden;
+}
+.header::before{content:'🔑'; position:absolute; right:8px; top:22px; font-size:90px; opacity:0.08; line-height:1;}
+.header::after{
+  content:''; position:absolute; bottom:0; left:0; width:100%; height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);
+}
+.hdr-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2;}
+.icon-btn{
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; color:#fff; cursor:pointer; text-decoration:none;
+}
+.hdr-center{text-align:center; position:relative; z-index:2;}
+.hdr-flag{font-size:28px; display:block;}
+.hdr-title{font-size:20px; font-weight:800; color:#fff; letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px; color:rgba(255,255,255,0.50); margin-top:1px; font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{
+  background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0; padding:11px 14px;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  position:relative; z-index:2; margin-top:4px;
+}
+.rs{text-align:center; position:relative;}
+.rs:not(:last-child)::after{content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px; color:rgba(255,255,255,0.46); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px; font-weight:800; color:#fff; line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px; color:rgba(255,255,255,0.36); margin-top:1px; font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px; position:relative; z-index:1;}
+.sec{
+  font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase;
+  letter-spacing:1px; margin:22px 0 11px; display:flex; align-items:center;
+  justify-content:space-between; font-family:'Trebuchet MS',sans-serif;
+}
+.sec .badge{font-size:9px; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:none; letter-spacing:0;}
+
+/* TAB SWITCHER */
+.tabs{display:flex; gap:7px; margin-bottom:14px;}
+.tab{
+  flex:1; padding:10px 6px; border-radius:12px; text-align:center;
+  font-size:12px; font-weight:800; cursor:pointer; transition:all .2s;
+  border:1.5px solid var(--border); color:var(--muted);
+  font-family:'Trebuchet MS',sans-serif; background:var(--card);
+}
+.tab.active-tab{
+  background:linear-gradient(135deg,var(--purple),var(--purple2));
+  color:#fff; border-color:transparent;
+  box-shadow:0 4px 14px rgba(147,51,234,0.30);
+}
+
+/* HERO / CALC */
+.hero{
+  border-radius:22px; padding:20px; position:relative; overflow:hidden; box-shadow:var(--sh2); margin-bottom:11px;
+}
+.hero.ltcg{background:linear-gradient(148deg,var(--purple),var(--purple2));}
+.hero.stcg{background:linear-gradient(148deg,var(--navy),var(--chakra));}
+.hero::before{content:''; position:absolute; top:-50px; right:-50px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,0.08);}
+.hero::after{content:'🔑'; position:absolute; right:14px; bottom:12px; font-size:54px; opacity:.10;}
+.h-tag{font-size:9px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:.8px; font-family:'Trebuchet MS',sans-serif;}
+.h-title{font-size:17px; font-weight:800; color:#fff; margin:4px 0 14px; line-height:1.25;}
+.h-title span{color:var(--ochre-lt);}
+.h-input-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+.h-field{background:rgba(255,255,255,0.11); border:1px solid rgba(255,255,255,0.18); border-radius:11px; padding:10px 11px;}
+.h-field label{font-size:8.5px; color:rgba(255,255,255,0.48); display:block; margin-bottom:4px; font-family:'Trebuchet MS',sans-serif; text-transform:uppercase; letter-spacing:.4px;}
+.h-field input, .h-field select{
+  width:100%; background:transparent; border:none; outline:none;
+  font-size:13px; font-weight:800; color:#fff;
+  font-family:'Book Antiqua',Palatino,Georgia,serif;
+}
+.h-field select option{color:var(--navy); background:#fff;}
+.full-col{grid-column:1/-1;}
+.h-btn{
+  margin-top:13px; width:100%;
+  background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border:none; border-radius:13px; padding:13px;
+  font-size:14px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,107,0,0.42);
+  font-family:'Book Antiqua',Palatino,Georgia,serif; letter-spacing:.3px;
+}
+
+/* RESULT PANELS */
+.result-section{display:none;}
+.result-hero{
+  border-radius:22px; padding:20px; box-shadow:var(--sh2); position:relative; overflow:hidden; margin-bottom:11px;
+}
+.result-hero.ltcg-res{background:linear-gradient(148deg,var(--purple),var(--purple2));}
+.result-hero.stcg-res{background:linear-gradient(148deg,var(--navy),var(--chakra));}
+.result-hero::after{content:'☸'; position:absolute; right:14px; bottom:12px; font-size:54px; color:rgba(255,255,255,0.06);}
+.rc-tag{font-size:9px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:.8px; font-family:'Trebuchet MS',sans-serif; margin-bottom:10px;}
+.rc-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+.rc-box{background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.16); border-radius:11px; padding:11px;}
+.rc-box label{font-size:8.5px; color:rgba(255,255,255,0.45); display:block; margin-bottom:3px; font-family:'Trebuchet MS',sans-serif;}
+.rc-box .v{font-size:15px; font-weight:800; color:#fff;}
+.rc-box .vs{font-size:9px; color:rgba(255,255,255,0.50); font-family:'Trebuchet MS',sans-serif; margin-top:2px;}
+.tax-highlight{
+  border-radius:13px; padding:14px; margin-top:10px; text-align:center;
+  background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.25);
+}
+.th-lbl{font-size:9px; color:rgba(255,255,255,0.55); font-family:'Trebuchet MS',sans-serif;}
+.th-val{font-size:28px; font-weight:800; color:var(--ochre-lt); margin:4px 0;}
+.th-sub{font-size:9.5px; color:rgba(255,255,255,0.65); font-family:'Trebuchet MS',sans-serif;}
+
+/* INDEX CHART */
+.index-card{
+  background:var(--card); border-radius:17px; padding:16px 15px;
+  box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:11px;
+}
+.ic-title{font-size:13px; font-weight:800; color:var(--navy); margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;}
+.ic-title span{font-size:10px; font-weight:600; color:var(--saffron); font-family:'Trebuchet MS',sans-serif;}
+.cii-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;}
+.cii-item{
+  background:rgba(255,107,0,0.04); border-radius:10px; padding:9px 8px;
+  text-align:center; border:1px solid rgba(255,107,0,0.08);
+}
+.cii-yr{font-size:9px; color:var(--muted); font-weight:700; font-family:'Trebuchet MS',sans-serif;}
+.cii-val{font-size:14px; font-weight:800; color:var(--navy); margin:2px 0;}
+.cii-item.highlight-cii{
+  background:linear-gradient(135deg,rgba(147,51,234,0.10),rgba(109,40,217,0.08));
+  border-color:rgba(147,51,234,0.25);
+}
+.cii-item.highlight-cii .cii-val{color:var(--purple);}
+
+/* EXEMPTION CARDS */
+.exemption-list{display:flex; flex-direction:column; gap:9px;}
+.ex-card{
+  background:var(--card); border-radius:15px; padding:14px 15px;
+  box-shadow:var(--sh); border:1px solid var(--border); position:relative; overflow:hidden;
+}
+.ex-card::before{content:''; position:absolute; left:0; top:0; width:4px; height:100%; border-radius:15px 0 0 15px;}
+.ex-card.sec54::before{background:var(--green);}
+.ex-card.sec54f::before{background:var(--saffron);}
+.ex-card.sec54ec::before{background:var(--purple);}
+.ex-card.sec54b::before{background:var(--teal);}
+.ex-header{display:flex; align-items:flex-start; gap:10px; margin-bottom:7px;}
+.ex-icon{font-size:20px; flex-shrink:0;}
+.ex-title{font-size:13px; font-weight:800; color:var(--navy);}
+.ex-max{
+  margin-left:auto; font-size:9px; font-weight:700; padding:3px 9px; border-radius:20px;
+  font-family:'Trebuchet MS',sans-serif; white-space:nowrap; flex-shrink:0;
+}
+.ex-sub{font-size:9.5px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; line-height:1.45; padding-left:30px;}
+.ex-conditions{margin-top:7px; padding-left:30px; display:flex; flex-wrap:wrap; gap:5px;}
+.ex-cond{
+  font-size:8.5px; font-weight:700; padding:2px 8px; border-radius:20px;
+  font-family:'Trebuchet MS',sans-serif;
+}
+
+/* COMPARE TABLE */
+.compare-card{
+  background:var(--card); border-radius:17px; box-shadow:var(--sh);
+  border:1px solid var(--border); overflow:hidden; margin-bottom:11px;
+}
+.ct-hdr{background:linear-gradient(135deg,var(--purple),var(--purple2)); padding:12px 15px; display:grid; grid-template-columns:1.4fr 1fr 1fr;}
+.ct-hdr div{font-size:9px; font-weight:800; color:rgba(255,255,255,0.75); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif;}
+.ct-row{padding:10px 15px; display:grid; grid-template-columns:1.4fr 1fr 1fr; border-bottom:1px solid var(--border); align-items:center;}
+.ct-row:last-child{border-bottom:none;}
+.ct-row:nth-child(even){background:rgba(147,51,234,0.02);}
+.ct-cell{font-size:10.5px; font-weight:700; color:var(--navy);}
+.ct-cell.muted{color:var(--muted); font-size:9.5px; font-weight:600; font-family:'Trebuchet MS',sans-serif;}
+.ct-cell.ltcg{color:var(--purple); font-weight:800;}
+.ct-cell.stcg{color:var(--saffron); font-weight:800;}
+
+/* SAVE */
+.save-btn{
+  width:100%; background:linear-gradient(135deg,var(--purple),var(--purple2));
+  border:none; border-radius:13px; padding:13px;
+  font-size:14px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(147,51,234,0.30);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;
+  display:flex; align-items:center; justify-content:center; gap:8px; margin-top:4px;
+}
+.save-toast{display:none; text-align:center; margin-top:8px; font-size:11px; color:var(--green); font-weight:700; font-family:'Trebuchet MS',sans-serif;}
+
+.bnav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:420px; background:var(--card);
+  border-top:1px solid var(--border); display:flex;
+  padding:10px 0 20px; box-shadow:0 -4px 22px rgba(11,31,72,0.09); z-index:100;
+}
+.ni{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;}
+.ni-ic{font-size:19px; line-height:1;}
+.ni-lb{font-size:10px; font-weight:700; color:var(--muted); font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+.fu6{animation:fadeUp .38s ease both .29s;}
+.fu7{animation:fadeUp .38s ease both .34s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="screen_india.html">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔑</div>
+      <div class="hdr-title">Capital Gains <span>Tax</span></div>
+      <div class="hdr-sub">LTCG · STCG · Indexation · Sec 54 Exemptions – Budget 2024</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">LTCG Rate</div>
+      <div class="rs-v saf">12.5%</div>
+      <div class="rs-n">Budget 2024</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">STCG Rate</div>
+      <div class="rs-v">Slab</div>
+      <div class="rs-n">As per ITR</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">LTCG Holding</div>
+      <div class="rs-v grn">2+ yrs</div>
+      <div class="rs-n">For property</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">CII FY25</div>
+      <div class="rs-v">363</div>
+      <div class="rs-n">CBDT 2025</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- BUDGET 2024 ALERT -->
+  <div style="background:linear-gradient(135deg,#F5F3FF,#EDE9FE); border:1.5px solid #C4B5FD; border-radius:16px; padding:13px 15px; margin-bottom:14px; display:flex; gap:11px; align-items:flex-start;" class="fu1">
+    <div style="font-size:20px; flex-shrink:0;">📢</div>
+    <div>
+      <div style="font-size:12.5px; font-weight:800; color:var(--purple2);">Budget 2024: Major LTCG Change</div>
+      <div style="font-size:9.5px; color:#6D28D9; margin-top:2px; font-family:'Trebuchet MS',sans-serif; line-height:1.4;">LTCG on property reduced from 20% (with indexation) to 12.5% (without indexation) w.e.f. July 23, 2024. Properties purchased before this date can choose either method.</div>
+    </div>
+  </div>
+
+  <!-- TAB SWITCHER -->
+  <div class="tabs fu1">
+    <div class="tab active-tab" id="tab-ltcg" onclick="switchTab('ltcg')">Long-Term (LTCG)<br><small style="font-size:9px;opacity:.8;">Held 2+ years</small></div>
+    <div class="tab" id="tab-stcg" onclick="switchTab('stcg')">Short-Term (STCG)<br><small style="font-size:9px;opacity:.8;">Held &lt; 2 years</small></div>
+  </div>
+
+  <!-- LTCG CALCULATOR -->
+  <div id="ltcg-calc" class="fu2">
+    <div class="sec" style="margin-top:4px;">LTCG Calculator – Budget 2024 <span class="badge" style="background:#F5F3FF;color:#6D28D9;">12.5% No Indexation</span></div>
+    <div class="hero ltcg">
+      <div class="h-tag">दीर्घकालिक पूंजीगत लाभ – Long-Term Capital Gains</div>
+      <div class="h-title">Calculate LTCG tax on <span>property sold</span></div>
+      <div class="h-input-grid">
+        <div class="h-field">
+          <label>Sale Price (₹)</label>
+          <input type="number" id="l-sale" value="9500000" placeholder="9500000">
+        </div>
+        <div class="h-field">
+          <label>Purchase Price (₹)</label>
+          <input type="number" id="l-buy" value="4000000" placeholder="4000000">
+        </div>
+        <div class="h-field">
+          <label>Purchase Year</label>
+          <select id="l-buy-yr">
+            <option value="2001">FY 2001-02 (CII: 100)</option>
+            <option value="2005">FY 2005-06 (CII: 117)</option>
+            <option value="2010">FY 2010-11 (CII: 167)</option>
+            <option value="2014">FY 2014-15 (CII: 240)</option>
+            <option value="2017">FY 2017-18 (CII: 272)</option>
+            <option value="2019">FY 2019-20 (CII: 289)</option>
+            <option value="2021">FY 2021-22 (CII: 317)</option>
+            <option value="2022">FY 2022-23 (CII: 331)</option>
+            <option value="2023">FY 2023-24 (CII: 348)</option>
+            <option value="2024" selected>FY 2024-25 (CII: 363)</option>
+          </select>
+        </div>
+        <div class="h-field">
+          <label>Purchase Date</label>
+          <select id="l-purchase-date">
+            <option value="before">Before Jul 23, 2024</option>
+            <option value="after" selected>After Jul 23, 2024</option>
+          </select>
+        </div>
+        <div class="h-field full-col">
+          <label>Improvement Cost (₹)</label>
+          <input type="number" id="l-improve" value="0" placeholder="0">
+        </div>
+      </div>
+      <button class="h-btn" onclick="calcLTCG()">🔑 Calculate LTCG Tax</button>
+    </div>
+    <div class="result-section" id="ltcg-result">
+      <div class="result-hero ltcg-res">
+        <div class="rc-tag">☸ Long-Term Capital Gains Calculation</div>
+        <div class="rc-grid">
+          <div class="rc-box">
+            <label>Sale Price</label>
+            <div class="v" id="lr-sale">₹95,00,000</div>
+            <div class="vs">Full value of consideration</div>
+          </div>
+          <div class="rc-box">
+            <label>Indexed Cost (Old)</label>
+            <div class="v" id="lr-indexed">₹54,82,000</div>
+            <div class="vs">With indexation benefit</div>
+          </div>
+          <div class="rc-box">
+            <label>LTCG (12.5%)</label>
+            <div class="v" id="lr-gain-new">₹55,00,000</div>
+            <div class="vs">Without indexation</div>
+          </div>
+          <div class="rc-box">
+            <label>LTCG (20% Indexed)</label>
+            <div class="v" id="lr-gain-old">₹40,18,000</div>
+            <div class="vs">With indexation (if eligible)</div>
+          </div>
+        </div>
+        <div class="tax-highlight">
+          <div class="th-lbl">💰 Best Tax Option for You</div>
+          <div class="th-val" id="lr-best">₹6,87,500</div>
+          <div class="th-sub" id="lr-best-sub">12.5% without indexation is lower. Use this method.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STCG CALCULATOR -->
+  <div id="stcg-calc" style="display:none;" class="fu2">
+    <div class="sec" style="margin-top:4px;">STCG Calculator <span class="badge" style="background:#EFF6FF;color:#1D4ED8;">As per Slab</span></div>
+    <div class="hero stcg">
+      <div class="h-tag">अल्पकालिक पूंजीगत लाभ – Short-Term Capital Gains</div>
+      <div class="h-title">Calculate STCG on <span>property sold</span> in &lt; 2 years</div>
+      <div class="h-input-grid">
+        <div class="h-field">
+          <label>Sale Price (₹)</label>
+          <input type="number" id="s-sale" value="6000000" placeholder="6000000">
+        </div>
+        <div class="h-field">
+          <label>Purchase Price (₹)</label>
+          <input type="number" id="s-buy" value="4500000" placeholder="4500000">
+        </div>
+        <div class="h-field">
+          <label>Transfer Expenses (₹)</label>
+          <input type="number" id="s-exp" value="50000" placeholder="50000">
+        </div>
+        <div class="h-field">
+          <label>Annual Income (₹)</label>
+          <input type="number" id="s-income" value="1500000" placeholder="1500000">
+        </div>
+        <div class="h-field full-col">
+          <label>Tax Regime</label>
+          <select id="s-regime">
+            <option value="old">Old Regime (with deductions)</option>
+            <option value="new">New Regime (FY 2025-26)</option>
+          </select>
+        </div>
+      </div>
+      <button class="h-btn" onclick="calcSTCG()">📊 Calculate STCG Tax</button>
+    </div>
+    <div class="result-section" id="stcg-result">
+      <div class="result-hero stcg-res">
+        <div class="rc-tag">☸ Short-Term Capital Gains Calculation</div>
+        <div class="rc-grid">
+          <div class="rc-box">
+            <label>Short-Term Gain</label>
+            <div class="v" id="sr-gain">₹14,50,000</div>
+            <div class="vs">Sale – Purchase – Expenses</div>
+          </div>
+          <div class="rc-box">
+            <label>Taxable Income</label>
+            <div class="v" id="sr-taxable">₹29,50,000</div>
+            <div class="vs">Total with STCG added</div>
+          </div>
+          <div class="rc-box">
+            <label>Tax on STCG</label>
+            <div class="v" id="sr-tax">₹4,35,000</div>
+            <div class="vs">At applicable slab rate</div>
+          </div>
+          <div class="rc-box">
+            <label>Effective Rate</label>
+            <div class="v" id="sr-rate">30%</div>
+            <div class="vs">Tax bracket applied</div>
+          </div>
+        </div>
+        <div class="tax-highlight">
+          <div class="th-lbl">Total STCG Tax Liability</div>
+          <div class="th-val" id="sr-total">₹4,35,000</div>
+          <div class="th-sub">No exemption under Sec 54 for STCG. Consider holding 2+ years to qualify for LTCG @ 12.5%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CII TABLE -->
+  <div class="sec fu3">Cost Inflation Index (CII) – CBDT 2025</div>
+  <div class="index-card fu3">
+    <div class="ic-title">CII for Indexation of Acquisition Cost <span>Note: No indexation from Budget 2024</span></div>
+    <div class="cii-grid">
+      <div class="cii-item"><div class="cii-yr">FY 2001-02</div><div class="cii-val">100</div></div>
+      <div class="cii-item"><div class="cii-yr">FY 2010-11</div><div class="cii-val">167</div></div>
+      <div class="cii-item"><div class="cii-yr">FY 2015-16</div><div class="cii-val">254</div></div>
+      <div class="cii-item"><div class="cii-yr">FY 2017-18</div><div class="cii-val">272</div></div>
+      <div class="cii-item"><div class="cii-yr">FY 2019-20</div><div class="cii-val">289</div></div>
+      <div class="cii-item"><div class="cii-yr">FY 2021-22</div><div class="cii-val">317</div></div>
+      <div class="cii-item"><div class="cii-yr">FY 2022-23</div><div class="cii-val">331</div></div>
+      <div class="cii-item"><div class="cii-yr">FY 2023-24</div><div class="cii-val">348</div></div>
+      <div class="cii-item highlight-cii"><div class="cii-yr">FY 2024-25</div><div class="cii-val">363</div></div>
+    </div>
+    <div style="margin-top:10px; font-size:9.5px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; background:rgba(147,51,234,0.04); padding:9px; border-radius:9px; line-height:1.4;">
+      Indexed Cost = (Purchase Price × CII of Sale Year) ÷ CII of Purchase Year. Applicable only for properties purchased before July 23, 2024 under the old LTCG method.
+    </div>
+  </div>
+
+  <!-- COMPARE TABLE -->
+  <div class="sec fu4">LTCG vs STCG – Quick Comparison</div>
+  <div class="compare-card fu4">
+    <div class="ct-hdr">
+      <div>Parameter</div>
+      <div>LTCG</div>
+      <div>STCG</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-cell">Holding Period</div>
+      <div class="ct-cell ltcg">2+ Years</div>
+      <div class="ct-cell stcg">&lt; 2 Years</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-cell">Tax Rate</div>
+      <div class="ct-cell ltcg">12.5%*</div>
+      <div class="ct-cell stcg">Slab Rate</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-cell">Indexation</div>
+      <div class="ct-cell ltcg">Not allowed (post Jul-24)</div>
+      <div class="ct-cell stcg muted">Not applicable</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-cell">Sec 54 Exemption</div>
+      <div class="ct-cell ltcg">Available ✓</div>
+      <div class="ct-cell stcg muted">Not available ✗</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-cell">Surcharge Cap</div>
+      <div class="ct-cell ltcg">15%</div>
+      <div class="ct-cell stcg">As per slab</div>
+    </div>
+    <div class="ct-row">
+      <div class="ct-cell">Loss Set-off</div>
+      <div class="ct-cell ltcg">LTCL only</div>
+      <div class="ct-cell stcg">Any CG Loss</div>
+    </div>
+  </div>
+
+  <!-- EXEMPTIONS -->
+  <div class="sec fu5">Capital Gains Exemptions – Save Your Tax</div>
+  <div class="exemption-list fu5">
+    <div class="ex-card sec54">
+      <div class="ex-header">
+        <div class="ex-icon">🏠</div>
+        <div>
+          <div class="ex-title">Section 54 – Reinvest in Residential Property</div>
+        </div>
+        <div class="ex-max" style="background:#ECFDF5;color:#065F46;">Full LTCG</div>
+      </div>
+      <div class="ex-sub">Exempt LTCG by purchasing one new residential property in India within 1 year before or 2 years after sale, or constructing within 3 years. LTCG amount must be invested, not the sale price.</div>
+      <div class="ex-conditions">
+        <span class="ex-cond" style="background:#ECFDF5;color:#065F46;">LTCG only</span>
+        <span class="ex-cond" style="background:#EFF6FF;color:#1D4ED8;">1 property max (2 allowed once if gain ≤₹2Cr)</span>
+        <span class="ex-cond" style="background:#FFF7ED;color:#C2410C;">3-yr lock-in on new property</span>
+      </div>
+    </div>
+    <div class="ex-card sec54f">
+      <div class="ex-header">
+        <div class="ex-icon">💰</div>
+        <div>
+          <div class="ex-title">Section 54F – Reinvest Full Sale Proceeds</div>
+        </div>
+        <div class="ex-max" style="background:#FFF3E0;color:#E05A00;">Proportional</div>
+      </div>
+      <div class="ex-sub">For non-residential asset sales. Invest entire sale consideration (not just gain) in one residential property within 2 years. Proportional exemption if partial investment. Can't own more than 1 house at time of sale.</div>
+      <div class="ex-conditions">
+        <span class="ex-cond" style="background:#FFF3E0;color:#C2410C;">All assets except residential property</span>
+        <span class="ex-cond" style="background:#ECFDF5;color:#065F46;">Entire sale price must be invested</span>
+      </div>
+    </div>
+    <div class="ex-card sec54ec">
+      <div class="ex-header">
+        <div class="ex-icon">📜</div>
+        <div>
+          <div class="ex-title">Section 54EC – NHAI / REC Bonds</div>
+        </div>
+        <div class="ex-max" style="background:#F5F3FF;color:#6D28D9;">₹50L max</div>
+      </div>
+      <div class="ex-sub">Invest LTCG (up to ₹50 Lakh) in NHAI or REC bonds within 6 months of property sale. Bonds have 5-year lock-in. 5.25% interest (taxable). No TDS but interest must be declared in ITR.</div>
+      <div class="ex-conditions">
+        <span class="ex-cond" style="background:#F5F3FF;color:#6D28D9;">NHAI / REC / PFC / IRFC bonds</span>
+        <span class="ex-cond" style="background:#EFF6FF;color:#1D4ED8;">Within 6 months</span>
+        <span class="ex-cond" style="background:#FEF2F2;color:#B91C1C;">₹50L limit</span>
+      </div>
+    </div>
+    <div class="ex-card sec54b">
+      <div class="ex-header">
+        <div class="ex-icon">🌾</div>
+        <div>
+          <div class="ex-title">Section 54B – Agricultural Land</div>
+        </div>
+        <div class="ex-max" style="background:#ECFDF5;color:#065F46;">Full LTCG</div>
+      </div>
+      <div class="ex-sub">LTCG from sale of agricultural land can be exempt if proceeds are reinvested in agricultural land within 2 years of sale. Land must have been used for agriculture by assessee or parent for 2 years before sale.</div>
+      <div class="ex-conditions">
+        <span class="ex-cond" style="background:#ECFDF5;color:#065F46;">Agricultural land only</span>
+        <span class="ex-cond" style="background:#FFF7ED;color:#C2410C;">2 years agriculture usage required</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE -->
+  <div class="sec fu6">Save This Calculation</div>
+  <div class="fu6">
+    <button class="save-btn" onclick="saveResult()">🔖 Save Capital Gains Report</button>
+    <div class="save-toast" id="saveToast">✅ Capital Gains report saved to your profile!</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const CII = {2001:100,2005:117,2010:167,2014:240,2017:272,2019:289,2021:317,2022:331,2023:348,2024:363};
+
+function fmtL(v){
+  if(v<0) return '-'+fmtL(-v);
+  if(v>=10000000) return '₹'+(v/10000000).toFixed(2)+'Cr';
+  if(v>=100000) return '₹'+(v/100000).toFixed(2)+'L';
+  return '₹'+Math.round(v).toLocaleString('en-IN');
+}
+
+function switchTab(type){
+  document.getElementById('tab-ltcg').className = type==='ltcg' ? 'tab active-tab' : 'tab';
+  document.getElementById('tab-stcg').className = type==='stcg' ? 'tab active-tab' : 'tab';
+  document.getElementById('ltcg-calc').style.display = type==='ltcg' ? '' : 'none';
+  document.getElementById('stcg-calc').style.display = type==='stcg' ? '' : 'none';
+}
+
+function calcLTCG(){
+  const sale = parseFloat(document.getElementById('l-sale').value)||0;
+  const buy = parseFloat(document.getElementById('l-buy').value)||0;
+  const improve = parseFloat(document.getElementById('l-improve').value)||0;
+  const buyYr = parseInt(document.getElementById('l-buy-yr').value)||2024;
+  const purchaseDate = document.getElementById('l-purchase-date').value;
+
+  // Indexed cost (if eligible)
+  const ciiSale = 363; // FY 2024-25
+  const ciiBuy = CII[buyYr] || 363;
+  const indexedCost = Math.round((buy + improve) * ciiSale / ciiBuy);
+
+  // LTCG without indexation (new method @ 12.5%)
+  const gainNoIndex = Math.max(0, sale - (buy + improve));
+  const taxNoIndex = Math.round(gainNoIndex * 0.125);
+
+  // LTCG with indexation (old method @ 20%) – only for pre-Jul 23, 2024 purchases
+  const gainIndexed = Math.max(0, sale - indexedCost);
+  const taxIndexed = Math.round(gainIndexed * 0.20);
+
+  const eligible = purchaseDate === 'before';
+
+  document.getElementById('lr-sale').textContent = fmtL(sale);
+  document.getElementById('lr-indexed').textContent = eligible ? fmtL(indexedCost) : 'Not eligible';
+  document.getElementById('lr-gain-new').textContent = fmtL(gainNoIndex) + ' → Tax: ' + fmtL(taxNoIndex);
+  document.getElementById('lr-gain-old').textContent = eligible ? fmtL(gainIndexed) + ' → Tax: ' + fmtL(taxIndexed) : 'N/A – post Jul 23, 2024';
+
+  let bestTax, bestSub;
+  if(eligible && taxIndexed < taxNoIndex){
+    bestTax = taxIndexed;
+    bestSub = `Old method (20% with indexation) saves ₹${fmtL(taxNoIndex - taxIndexed).replace('₹','')} vs new method. Choose indexed.`;
+  } else {
+    bestTax = taxNoIndex;
+    bestSub = eligible
+      ? `New method (12.5% without indexation) is lower. Budget 2024 applies.`
+      : `Only new method (12.5%) applies – purchase after Jul 23, 2024.`;
+  }
+
+  document.getElementById('lr-best').textContent = fmtL(bestTax);
+  document.getElementById('lr-best-sub').textContent = bestSub;
+
+  document.getElementById('ltcg-result').style.display = 'block';
+  document.getElementById('ltcg-result').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function calcSTCG(){
+  const sale = parseFloat(document.getElementById('s-sale').value)||0;
+  const buy = parseFloat(document.getElementById('s-buy').value)||0;
+  const exp = parseFloat(document.getElementById('s-exp').value)||0;
+  const income = parseFloat(document.getElementById('s-income').value)||0;
+
+  const gain = Math.max(0, sale - buy - exp);
+  const totalIncome = income + gain;
+
+  // Slab rate (New Regime FY25-26 simplified)
+  let rate, taxOnGain;
+  if(totalIncome <= 300000) rate = 0;
+  else if(totalIncome <= 700000) rate = 0.05;
+  else if(totalIncome <= 1000000) rate = 0.10;
+  else if(totalIncome <= 1200000) rate = 0.15;
+  else if(totalIncome <= 1500000) rate = 0.20;
+  else rate = 0.30;
+
+  taxOnGain = Math.round(gain * rate);
+  const ratePercent = Math.round(rate * 100);
+
+  document.getElementById('sr-gain').textContent = fmtL(gain);
+  document.getElementById('sr-taxable').textContent = fmtL(totalIncome);
+  document.getElementById('sr-tax').textContent = fmtL(taxOnGain);
+  document.getElementById('sr-rate').textContent = ratePercent + '%';
+  document.getElementById('sr-total').textContent = fmtL(taxOnGain);
+
+  document.getElementById('stcg-result').style.display = 'block';
+  document.getElementById('stcg-result').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function saveResult(){
+  const t = document.getElementById('saveToast');
+  t.style.display = 'block';
+  setTimeout(()=>t.style.display='none', 3000);
+}
+</script>
+</body>
+</html>

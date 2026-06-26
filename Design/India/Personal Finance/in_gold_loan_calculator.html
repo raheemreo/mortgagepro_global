@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gold Loan Calculator – India Financial Tools</title>
+<style>
+:root{--saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;--navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;--teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;--muted:#7A5C3A;--border:rgba(255,107,0,0.10);--sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);--gold:#D4AF37;--gold2:#B8960C;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(212,175,55,0.06) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(255,107,0,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#78350F 40%,#D4AF37 82%,#B8960C 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'✦';position:absolute;right:-10px;top:20px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.gold{color:#FFDEA0;}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .info{font-size:11px;font-weight:600;color:#B8960C;text-transform:none;letter-spacing:0;}
+.calc-card{background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh2);border:1px solid rgba(212,175,55,0.20);margin-bottom:14px;}
+.field{margin-bottom:15px;}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field-row{display:flex;align-items:center;gap:8px;}
+.inp{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:11px 14px;font-size:15px;font-weight:800;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--gold);}
+.inp-unit{background:rgba(212,175,55,0.10);border:1.5px solid rgba(212,175,55,0.20);border-radius:11px;padding:11px 12px;font-size:12px;font-weight:800;color:var(--gold2);white-space:nowrap;font-family:'Trebuchet MS',sans-serif;}
+.slider-wrap{margin-top:7px;}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;background:linear-gradient(90deg,var(--gold) var(--pct,50%),rgba(212,175,55,0.15) var(--pct,50%));border-radius:4px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--gold);border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(212,175,55,0.5);cursor:pointer;}
+.slider-labels{display:flex;justify-content:space-between;margin-top:4px;}
+.slider-labels span{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.toggle-row{display:flex;gap:6px;flex-wrap:wrap;}
+.tgl{flex:1;padding:9px 6px;border-radius:10px;font-size:11px;font-weight:800;text-align:center;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-family:'Trebuchet MS',sans-serif;transition:all .2s;}
+.tgl.active{background:var(--gold);color:#fff;border-color:var(--gold);box-shadow:0 4px 14px rgba(212,175,55,0.40);}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:13px;padding:15px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(212,175,55,0.45);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;transition:transform .15s;margin-top:4px;}
+.calc-btn:active{transform:scale(.97);}
+/* GOLD PRICE LIVE */
+.gold-ticker{background:linear-gradient(135deg,#78350F,#92400E);border-radius:17px;padding:14px 15px;display:flex;align-items:center;gap:12px;margin-bottom:14px;box-shadow:var(--sh2);}
+.gt-icon{font-size:30px;}
+.gt-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,0.50);font-family:'Trebuchet MS',sans-serif;}
+.gt-val{font-size:24px;font-weight:800;color:#FFDEA0;line-height:1;}
+.gt-sub{font-size:9px;color:rgba(255,255,255,0.50);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+.gt-chg{margin-left:auto;background:rgba(134,239,172,0.15);border:1px solid rgba(134,239,172,0.30);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;color:#86EFAC;font-family:'Trebuchet MS',sans-serif;}
+/* RESULT */
+.result-card{background:linear-gradient(148deg,#78350F,#92400E);border-radius:22px;padding:20px;box-shadow:var(--sh2);position:relative;overflow:hidden;margin-bottom:14px;}
+.result-card::after{content:'✦';position:absolute;right:14px;bottom:12px;font-size:54px;color:rgba(255,255,255,0.06);}
+.res-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.7px;font-family:'Trebuchet MS',sans-serif;}
+.res-big{font-size:32px;font-weight:800;color:#FFDEA0;margin:4px 0 14px;line-height:1;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.res-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:10px 12px;}
+.res-box-lbl{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.res-box-val{font-size:16px;font-weight:800;color:#fff;margin-top:3px;}
+.res-box-val.gold{color:#FFDEA0;}
+.res-box-val.grn{color:#86EFAC;}
+.res-box-val.red{color:#FCA5A5;}
+.save-btn{width:100%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.20);border-radius:11px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Trebuchet MS',sans-serif;letter-spacing:.3px;margin-top:10px;transition:background .2s;}
+.chart-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid rgba(212,175,55,0.15);margin-bottom:14px;}
+.chart-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.chart-title span{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;font-weight:600;}
+/* LTV METER */
+.ltv-meter{position:relative;height:18px;border-radius:9px;overflow:hidden;background:rgba(212,175,55,0.10);margin:10px 0;}
+.ltv-fill{height:100%;border-radius:9px;transition:width .5s;background:linear-gradient(90deg,#86EFAC,#FCD34D,#EF4444);}
+.ltv-marker{position:absolute;top:-2px;width:3px;height:22px;background:var(--navy);border-radius:2px;transform:translateX(-50%);}
+.ltv-labels{display:flex;justify-content:space-between;margin-top:4px;}
+.ltv-labels span{font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+/* BANK COMPARISON */
+.bank-list{display:flex;flex-direction:column;gap:9px;}
+.bank-item{background:var(--card);border-radius:15px;padding:13px 14px;box-shadow:var(--sh);border:1px solid rgba(212,175,55,0.15);display:flex;align-items:center;gap:10px;cursor:pointer;}
+.bank-icon{width:40px;height:40px;border-radius:12px;background:rgba(212,175,55,0.10);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.bank-name{font-size:12px;font-weight:800;color:var(--navy);}
+.bank-type{font-size:9px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.bank-rate-wrap{margin-left:auto;text-align:right;}
+.bank-rate{font-size:15px;font-weight:800;color:var(--gold2);}
+.bank-ltv{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+/* SCHEDULE TABLE */
+.table-card{background:var(--card);border-radius:18px;overflow:hidden;box-shadow:var(--sh);border:1px solid rgba(212,175,55,0.15);margin-bottom:14px;}
+.tbl-head{background:linear-gradient(90deg,#78350F,#92400E);display:grid;grid-template-columns:1fr 1.2fr 1.2fr 1.2fr;padding:10px 14px;}
+.th{font-size:8.5px;font-weight:800;color:rgba(255,255,255,0.70);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.tbl-row{display:grid;grid-template-columns:1fr 1.2fr 1.2fr 1.2fr;padding:10px 14px;border-bottom:1px solid var(--border);}
+.tbl-row:last-child{border-bottom:none;}
+.tbl-row:nth-child(even){background:rgba(212,175,55,0.03);}
+.td{font-size:10px;font-weight:700;color:var(--navy);font-family:'Trebuchet MS',sans-serif;}
+.td.red{color:#DC2626;}
+.td.grn{color:var(--green);}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--gold2);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:800;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .10s;}
+.fu3{animation:fadeUp .38s ease both .16s;}
+.fu4{animation:fadeUp .38s ease both .22s;}
+.fu5{animation:fadeUp .38s ease both .28s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="javascript:history.back()">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🥇</div>
+      <div class="hdr-title">Gold Loan <span>Calculator</span></div>
+      <div class="hdr-sub">MCX Gold Price · LTV 75% · RBI Norms · 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Gold 24K/10g</div><div class="rs-v gold">₹95,220</div><div class="rs-n">MCX Jun 25</div></div>
+    <div class="rs"><div class="rs-l">22K / 10g</div><div class="rs-v gold">₹87,285</div><div class="rs-n">Hallmark</div></div>
+    <div class="rs"><div class="rs-l">Max LTV</div><div class="rs-v grn">75%</div><div class="rs-n">RBI Norm</div></div>
+    <div class="rs"><div class="rs-l">Best Rate</div><div class="rs-v">8.50%</div><div class="rs-n">SBI</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <!-- LIVE GOLD TICKER -->
+  <div class="gold-ticker fu1">
+    <div class="gt-icon">🥇</div>
+    <div>
+      <div class="gt-lbl">MCX Gold Spot · 24 Karat</div>
+      <div class="gt-val">₹95,220 <span style="font-size:13px;color:rgba(255,222,160,0.70)">/10g</span></div>
+      <div class="gt-sub">Updated: June 2025 · MCX India</div>
+    </div>
+    <div class="gt-chg">↑ +1.2%</div>
+  </div>
+
+  <div class="sec fu1" style="margin-top:0">Gold Pledge Details <span class="info">RBI Max LTV 75% ⓘ</span></div>
+  <div class="calc-card fu1">
+    <div class="field">
+      <label>Gold Purity</label>
+      <div class="toggle-row" id="purityToggle">
+        <div class="tgl" onclick="setTgl('purityToggle',this,'18','purityV');calc()">18K</div>
+        <div class="tgl active" onclick="setTgl('purityToggle',this,'22','purityV');calc()">22K</div>
+        <div class="tgl" onclick="setTgl('purityToggle',this,'24','purityV');calc()">24K</div>
+      </div>
+      <input type="hidden" id="purityV" value="22">
+    </div>
+    <div class="field">
+      <label>Gold Weight (grams)</label>
+      <div class="field-row">
+        <input class="inp" type="number" id="weight" value="50" min="1" oninput="updateSlider('wRange',this.value,1,500);calc()">
+        <span class="inp-unit">grams</span>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="wRange" min="1" max="500" value="50" oninput="syncInput('weight',this.value);calc()">
+        <div class="slider-labels"><span>1g</span><span>500g</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>LTV (Loan-to-Value Ratio)</label>
+      <div class="toggle-row" id="ltvToggle">
+        <div class="tgl" onclick="setTgl('ltvToggle',this,'60','ltvV');calc()">60%</div>
+        <div class="tgl" onclick="setTgl('ltvToggle',this,'65','ltvV');calc()">65%</div>
+        <div class="tgl active" onclick="setTgl('ltvToggle',this,'75','ltvV');calc()">75% Max</div>
+      </div>
+      <input type="hidden" id="ltvV" value="75">
+    </div>
+    <div class="field">
+      <label>Interest Rate (p.a.)</label>
+      <div class="field-row">
+        <input class="inp" type="number" id="rate" value="9.5" step="0.1" min="7" max="30" oninput="updateSlider('rRange',this.value,7,30);calc()">
+        <span class="inp-unit">% p.a.</span>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="rRange" min="7" max="30" step="0.1" value="9.5" oninput="syncInput('rate',this.value);calc()">
+        <div class="slider-labels"><span>7%</span><span>30%</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Loan Tenure</label>
+      <div class="toggle-row" id="tenureToggle">
+        <div class="tgl" onclick="setTgl('tenureToggle',this,'3','tenureV');calc()">3 mo</div>
+        <div class="tgl" onclick="setTgl('tenureToggle',this,'6','tenureV');calc()">6 mo</div>
+        <div class="tgl active" onclick="setTgl('tenureToggle',this,'12','tenureV');calc()">1 yr</div>
+        <div class="tgl" onclick="setTgl('tenureToggle',this,'24','tenureV');calc()">2 yr</div>
+      </div>
+      <input type="hidden" id="tenureV" value="12">
+    </div>
+    <button class="calc-btn" onclick="calc()">🥇 Calculate Gold Loan</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card fu2">
+    <div class="res-label">Maximum Loan Amount</div>
+    <div class="res-big" id="loanAmt">₹0</div>
+    <div class="res-grid">
+      <div class="res-box"><div class="res-box-lbl">Gold Market Value</div><div class="res-box-val gold" id="goldValue">₹0</div></div>
+      <div class="res-box"><div class="res-box-lbl">Monthly EMI</div><div class="res-box-val" id="emi">₹0</div></div>
+      <div class="res-box"><div class="res-box-lbl">Total Interest</div><div class="res-box-val red" id="totalInt">₹0</div></div>
+      <div class="res-box"><div class="res-box-lbl">Total Payable</div><div class="res-box-val grn" id="totalPay">₹0</div></div>
+    </div>
+    <button class="save-btn" onclick="saveCalc()">📥 Save Calculation</button>
+  </div>
+
+  <!-- LTV METER -->
+  <div class="sec fu3">LTV Risk Meter <span class="info">RBI Maximum: 75%</span></div>
+  <div class="chart-card fu3">
+    <div class="chart-title">Loan-to-Value Ratio <span id="ltvPct">75%</span></div>
+    <div class="ltv-meter">
+      <div class="ltv-fill" id="ltvFill" style="width:75%"></div>
+      <div class="ltv-marker" id="ltvMarker" style="left:75%"></div>
+    </div>
+    <div class="ltv-labels"><span>0% Safe</span><span>50% Moderate</span><span>75% Max</span><span>90% Risky</span></div>
+    <div style="margin-top:10px;font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;line-height:1.5" id="ltvWarning"></div>
+  </div>
+
+  <!-- EMI SCHEDULE -->
+  <div class="sec fu3">EMI Schedule <span class="info">Monthly breakdown</span></div>
+  <div class="table-card fu4">
+    <div class="tbl-head">
+      <div class="th">Month</div>
+      <div class="th">Principal</div>
+      <div class="th">Interest</div>
+      <div class="th">Balance</div>
+    </div>
+    <div id="scheduleBody"></div>
+  </div>
+
+  <!-- BANK COMPARISON -->
+  <div class="sec fu4">Gold Loan Lenders 2025 <span class="info">Compare rates</span></div>
+  <div class="bank-list fu5">
+    <div class="bank-item"><div class="bank-icon">🏦</div><div><div class="bank-name">SBI Gold Loan</div><div class="bank-type">PSU Bank · Online & Branch</div></div><div class="bank-rate-wrap"><div class="bank-rate">8.50%</div><div class="bank-ltv">LTV up to 75%</div></div></div>
+    <div class="bank-item"><div class="bank-icon">⚡</div><div><div class="bank-name">Muthoot Finance</div><div class="bank-type">NBFC · 4,400+ branches</div></div><div class="bank-rate-wrap"><div class="bank-rate">10–26%</div><div class="bank-ltv">LTV up to 75%</div></div></div>
+    <div class="bank-item"><div class="bank-icon">🌿</div><div><div class="bank-name">Manappuram Gold</div><div class="bank-type">NBFC · 5,000+ branches</div></div><div class="bank-rate-wrap"><div class="bank-rate">9.90%</div><div class="bank-ltv">LTV up to 75%</div></div></div>
+    <div class="bank-item"><div class="bank-icon">🏛️</div><div><div class="bank-name">HDFC Bank</div><div class="bank-type">Private Bank · Doorstep</div></div><div class="bank-rate-wrap"><div class="bank-rate">9.50%</div><div class="bank-ltv">LTV up to 75%</div></div></div>
+    <div class="bank-item"><div class="bank-icon">💼</div><div><div class="bank-name">ICICI Bank</div><div class="bank-type">Private Bank · 30-min disbursal</div></div><div class="bank-rate-wrap"><div class="bank-rate">10.00%</div><div class="bank-ltv">LTV up to 75%</div></div></div>
+    <div class="bank-item"><div class="bank-icon">🔶</div><div><div class="bank-name">Bajaj Finance</div><div class="bank-type">NBFC · 60-min disbursal</div></div><div class="bank-rate-wrap"><div class="bank-rate">9.50%</div><div class="bank-ltv">LTV up to 75%</div></div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">📥 Gold loan saved!</div>
+
+<script>
+// Gold prices per 10g (MCX June 2025)
+const GOLD_PRICES = {18: 71415, 22: 87285, 24: 95220};
+function fmt(n){return '₹'+n.toLocaleString('en-IN',{maximumFractionDigits:0});}
+function syncInput(id,v){document.getElementById(id).value=v;}
+function updateSlider(id,v,mn,mx){const s=document.getElementById(id);s.value=Math.min(mx,Math.max(mn,parseFloat(v)));s.style.setProperty('--pct',((parseFloat(s.value)-mn)/(mx-mn)*100)+'%');}
+function setTgl(gId,el,v,hId){document.querySelectorAll('#'+gId+' .tgl').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById(hId).value=v;}
+
+function calc(){
+  const purity=parseInt(document.getElementById('purityV').value)||22;
+  const weight=parseFloat(document.getElementById('weight').value)||50;
+  const ltv=parseFloat(document.getElementById('ltvV').value)||75;
+  const rate=parseFloat(document.getElementById('rate').value)||9.5;
+  const tenure=parseInt(document.getElementById('tenureV').value)||12;
+
+  const pricePerGram=GOLD_PRICES[purity]/10;
+  const goldValue=weight*pricePerGram;
+  const loanAmt=goldValue*(ltv/100);
+  const mRate=rate/100/12;
+  const emi=mRate>0?loanAmt*(mRate*Math.pow(1+mRate,tenure))/(Math.pow(1+mRate,tenure)-1):loanAmt/tenure;
+  const totalPay=emi*tenure;
+  const totalInt=totalPay-loanAmt;
+
+  document.getElementById('loanAmt').textContent=fmt(loanAmt);
+  document.getElementById('goldValue').textContent=fmt(goldValue);
+  document.getElementById('emi').textContent=fmt(emi)+'/mo';
+  document.getElementById('totalInt').textContent=fmt(totalInt);
+  document.getElementById('totalPay').textContent=fmt(totalPay);
+
+  // LTV meter
+  document.getElementById('ltvPct').textContent=ltv+'%';
+  document.getElementById('ltvFill').style.width=Math.min(100,ltv*100/90)+'%';
+  document.getElementById('ltvMarker').style.left=Math.min(100,ltv*100/90)+'%';
+  const warn=ltv>=75?'⚠️ At RBI maximum LTV. Lender may ask for top-up margin if gold price drops.':ltv>=65?'✅ Moderate LTV. Good cushion for price fluctuations.':'✅ Conservative LTV. Safe borrowing position.';
+  document.getElementById('ltvWarning').textContent=warn;
+
+  // Schedule
+  let bal=loanAmt,rows='';
+  for(let i=1;i<=Math.min(tenure,12);i++){
+    const int=bal*mRate;
+    const prin=emi-int;
+    bal=Math.max(0,bal-prin);
+    rows+=`<div class="tbl-row"><div class="td">Mo ${i}</div><div class="td grn">${fmt(prin)}</div><div class="td red">${fmt(int)}</div><div class="td">${fmt(bal)}</div></div>`;
+  }
+  document.getElementById('scheduleBody').innerHTML=rows;
+  window._lastCalc={purity,weight,ltv,rate,tenure,goldValue,loanAmt,emi,totalInt,totalPay};
+}
+
+function saveCalc(){
+  if(!window._lastCalc) return;
+  try{const s=JSON.parse(localStorage.getItem('gold_saves')||'[]');s.push({...window._lastCalc,date:new Date().toLocaleDateString('en-IN')});localStorage.setItem('gold_saves',JSON.stringify(s));}catch(e){}
+  const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+['wRange','rRange'].forEach(id=>{
+  const s=document.getElementById(id);
+  s.style.setProperty('--pct',((parseFloat(s.value)-parseFloat(s.min))/(parseFloat(s.max)-parseFloat(s.min))*100)+'%');
+  s.addEventListener('input',function(){this.style.setProperty('--pct',((parseFloat(this.value)-parseFloat(this.min))/(parseFloat(this.max)-parseFloat(this.min))*100)+'%');});
+});
+calc();
+</script>
+</body>
+</html>

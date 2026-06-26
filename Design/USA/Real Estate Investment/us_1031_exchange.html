@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1031 Exchange Calculator</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --white:#FFFFFF;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09);
+    --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --grn:#15803D; --grn-lt:#BBF7D0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* ── HEADER ── */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#15803D 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🔄';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);} .rs-v.grn{color:#6EE7B7;}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* ── LAYOUT ── */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* ── CALCULATOR HERO ── */
+  .hero{background:linear-gradient(148deg,#0B1D3A,#15803D);border-radius:20px;padding:19px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(21,128,61,0.20);}
+  .h-tag{font-size:9.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.8px;}
+  .h-title{font-size:17px;font-weight:800;color:#fff;margin:4px 0 13px;line-height:1.2;font-family:Georgia,serif;}
+  .h-title span{color:var(--gold-lt);}
+  .input-row{display:flex;gap:8px;margin-bottom:8px;}
+  .inp-group{flex:1;}
+  .inp-group label{font-size:8.5px;color:rgba(255,255,255,0.55);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.4px;}
+  .inp-group input,.inp-group select{width:100%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);border-radius:10px;padding:9px 10px;font-size:13px;font-weight:700;color:#fff;outline:none;font-family:'Helvetica Neue',Arial,sans-serif;transition:border-color .2s;}
+  .inp-group input:focus,.inp-group select:focus{border-color:rgba(255,255,255,0.50);}
+  .inp-group input::placeholder{color:rgba(255,255,255,0.35);font-weight:400;}
+  .inp-group select option{background:#0B1D3A;color:#fff;}
+
+  /* ── CALCULATE BUTTON ── */
+  .calc-btn{width:100%;background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(21,128,61,0.50);font-family:Georgia,serif;letter-spacing:0.2px;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,box-shadow .12s;}
+  .calc-btn:active{transform:scale(.98);}
+  .calc-btn:hover{background:linear-gradient(135deg,#16a34a,#15803D);}
+
+  /* ── RESULT BOX (inside hero) ── */
+  .result-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.20);border-radius:14px;padding:14px;margin-top:12px;display:none;}
+  .result-box.show{display:block;animation:fadeUp .3s ease both;}
+  .result-title{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;font-weight:700;}
+  .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .res-item{text-align:center;background:rgba(255,255,255,0.07);border-radius:10px;padding:9px 6px;}
+  .res-lbl{font-size:8.5px;color:rgba(255,255,255,0.50);margin-bottom:3px;}
+  .res-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .res-val.gold{color:var(--gold-lt);} .res-val.grn{color:#6EE7B7;} .res-val.red{color:#FCA5A5;}
+  .res-divider{height:1px;background:rgba(255,255,255,0.12);margin:10px 0;}
+  .res-note{font-size:9px;color:rgba(255,255,255,0.50);text-align:center;line-height:1.5;}
+
+  /* ── SAVE BAR ── */
+  .save-bar{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1.5px solid #86EFAC;border-radius:14px;padding:13px 15px;display:none;align-items:center;gap:12px;margin-bottom:12px;}
+  .save-bar.visible{display:flex;animation:fadeUp .3s ease both;}
+  .save-txt{flex:1;}
+  .save-title-txt{font-size:12px;font-weight:800;color:#15803D;font-family:Georgia,serif;}
+  .save-sub-txt{font-size:9.5px;color:#166534;margin-top:1px;}
+  .save-action-btn{background:#15803D;color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;transition:background .15s,opacity .15s;}
+  .save-action-btn:hover{background:#166534;}
+  .save-action-btn.done{background:#BBF7D0;color:#15803D;pointer-events:none;}
+
+  /* ── VISUAL STATS CHARTS ── */
+  .stats-section{display:none;}
+  .stats-section.visible{display:block;animation:fadeUp .35s ease both;}
+
+  .chart-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+
+  /* Comparison bars */
+  .bar-group{display:flex;flex-direction:column;gap:10px;}
+  .bar-item{display:flex;flex-direction:column;gap:4px;}
+  .bar-header{display:flex;justify-content:space-between;align-items:center;}
+  .bar-name{font-size:10.5px;font-weight:700;color:var(--navy);}
+  .bar-amount{font-size:11px;font-weight:800;font-family:Georgia,serif;}
+  .bar-track{height:11px;background:#EFF6FF;border-radius:6px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;transition:width .7s cubic-bezier(.34,1.56,.64,1);}
+
+  /* Donut chart */
+  .donut-row{display:flex;align-items:center;gap:16px;margin-bottom:14px;}
+  .donut-svg{width:90px;height:90px;flex-shrink:0;}
+  .donut-legend{flex:1;display:flex;flex-direction:column;gap:8px;}
+  .dl-row{display:flex;align-items:center;gap:8px;}
+  .dl-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0;}
+  .dl-label{font-size:10.5px;font-weight:700;color:var(--navy);flex:1;}
+  .dl-val{font-size:10.5px;font-weight:800;font-family:Georgia,serif;color:var(--muted);}
+
+  /* Gain breakdown stacked */
+  .gain-stack{display:flex;height:16px;border-radius:8px;overflow:hidden;margin-bottom:10px;gap:1px;}
+  .gain-seg{transition:flex .7s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;min-width:0;overflow:hidden;white-space:nowrap;}
+
+  /* Compound growth mini chart */
+  .mini-bars{display:flex;align-items:flex-end;gap:4px;height:60px;margin-bottom:8px;}
+  .mb{flex:1;border-radius:4px 4px 0 0;transition:height .6s ease;position:relative;}
+  .mb-lbl{font-size:8px;font-weight:700;color:var(--muted);text-align:center;margin-top:3px;}
+
+  /* ── SAVED LIST ── */
+  .saved-section{display:none;}
+  .saved-section.visible{display:block;}
+  .saved-list{display:flex;flex-direction:column;gap:8px;}
+  .saved-item{background:var(--card);border-radius:13px;padding:12px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .si-icon{font-size:18px;flex-shrink:0;}
+  .si-body{flex:1;min-width:0;}
+  .si-name{font-size:11.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .si-detail{font-size:9px;color:var(--muted);margin-top:1px;}
+  .si-saving{font-size:13px;font-weight:800;color:var(--grn);font-family:Georgia,serif;flex-shrink:0;}
+  .si-del{width:26px;height:26px;border-radius:8px;background:#FEF2F2;border:none;color:#B91C1C;cursor:pointer;font-size:11px;flex-shrink:0;}
+
+  /* ── TIMELINE ── */
+  .timeline-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .tl-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .tl-steps{display:flex;flex-direction:column;gap:0;}
+  .tl-step{display:flex;gap:12px;position:relative;padding-bottom:14px;}
+  .tl-step:last-child{padding-bottom:0;}
+  .tl-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+  .tl-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;z-index:1;}
+  .tl-dot.nv{background:var(--navy);} .tl-dot.bl{background:var(--blue);}
+  .tl-dot.gd{background:var(--gold);} .tl-dot.grn{background:var(--grn);} .tl-dot.red{background:var(--red);}
+  .tl-line{width:2px;flex:1;background:var(--border);margin-top:4px;}
+  .tl-step:last-child .tl-line{display:none;}
+  .tl-body{flex:1;padding-top:5px;}
+  .tl-day{font-size:9px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:0.5px;}
+  .tl-name{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .tl-desc{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;}
+  .tl-badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:8.5px;font-weight:700;margin-top:5px;}
+  .badge-r{background:#FEF2F2;color:#B91C1C;} .badge-g{background:#F0FDF4;color:#15803D;}
+  .badge-b{background:#EFF6FF;color:#1D4ED8;} .badge-o{background:#FFF7ED;color:#C2410C;}
+
+  /* ── RULE GRID ── */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tc{background:var(--card);border-radius:16px;padding:14px 12px;box-shadow:var(--sh);border:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden;transition:transform .15s;}
+  .tc:active{transform:scale(.97);}
+  .tc.nv{background:linear-gradient(140deg,#0B1D3A,#1B3F72);}
+  .tc.rd{background:linear-gradient(140deg,#B91C1C,#991B1B);}
+  .tc.gd{background:linear-gradient(140deg,#D97706,#B45309);}
+  .tc.grn{background:linear-gradient(140deg,#15803D,#166534);}
+  .tc.sl{background:linear-gradient(140deg,#334155,#1E293B);}
+  .ti{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:9px;}
+  .tc:not(.nv):not(.rd):not(.gd):not(.grn):not(.sl) .ti{background:var(--bg);}
+  .tc.nv .ti,.tc.rd .ti,.tc.gd .ti,.tc.grn .ti,.tc.sl .ti{background:rgba(255,255,255,0.14);}
+  .tn{font-size:12.5px;font-weight:800;color:var(--navy);line-height:1.2;font-family:Georgia,serif;}
+  .tc.nv .tn,.tc.rd .tn,.tc.gd .tn,.tc.grn .tn,.tc.sl .tn{color:#fff;}
+  .td{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .tc.nv .td,.tc.rd .td,.tc.gd .td,.tc.grn .td,.tc.sl .td{color:rgba(255,255,255,0.58);}
+  .ta{position:absolute;bottom:11px;right:11px;font-size:14px;color:rgba(11,29,58,0.16);}
+  .tc.nv .ta,.tc.rd .ta,.tc.gd .ta,.tc.grn .ta,.tc.sl .ta{color:rgba(255,255,255,0.22);}
+  .bge{display:inline-flex;padding:2px 7px;border-radius:20px;font-size:8.5px;font-weight:700;margin-top:5px;}
+  .bge-b{background:#EFF6FF;color:#1D4ED8;} .bge-r{background:#FEF2F2;color:#B91C1C;}
+  .bge-g{background:#F0FDF4;color:#15803D;} .bge-o{background:#FFF7ED;color:#C2410C;}
+
+  /* ── PROPERTY SCROLL ── */
+  .prop-scroll{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+  .prop-scroll::-webkit-scrollbar{display:none;}
+  .prop-card{flex-shrink:0;width:115px;background:var(--card);border-radius:15px;padding:13px 11px;box-shadow:var(--sh);border:1px solid var(--border);cursor:pointer;}
+  .prop-icon{font-size:24px;margin-bottom:7px;display:block;}
+  .prop-type{font-size:10px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .prop-desc{font-size:8.5px;color:var(--muted);margin-top:2px;}
+  .prop-badge{display:inline-flex;padding:2px 6px;border-radius:20px;font-size:8px;font-weight:700;margin-top:5px;}
+
+  /* ── INFO LIST ── */
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  /* ── WARN BANNER ── */
+  .warn-banner{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 15px;display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+  .wb-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
+  .wb-title{font-size:12px;font-weight:800;color:#92400E;font-family:Georgia,serif;}
+  .wb-sub{font-size:9.5px;color:#B45309;margin-top:3px;line-height:1.45;}
+
+  /* ── BOTTOM NAV ── */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  /* ── TOAST ── */
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#0B1D3A;color:#fff;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .hero{animation:fadeUp .35s ease both .05s;}
+  .g2{animation:fadeUp .35s ease both .12s;}
+  .timeline-card{animation:fadeUp .35s ease both .18s;}
+  .ilist{animation:fadeUp .35s ease both .28s;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔄</div>
+      <div class="hdr-title">1031 Exchange</div>
+      <div class="hdr-sub">Tax-Deferred Real Estate Swap · IRC §1031</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Cap Gains Tax</div><div class="rs-v gold">20%</div><div class="rs-n">Long-Term</div></div>
+    <div class="rs"><div class="rs-l">Depreciation</div><div class="rs-v">25%</div><div class="rs-n">Recapture</div></div>
+    <div class="rs"><div class="rs-l">NIIT</div><div class="rs-v grn">3.8%</div><div class="rs-n">Net Inv. Income</div></div>
+    <div class="rs"><div class="rs-l">Max Deferral</div><div class="rs-v gold">100%</div><div class="rs-n">Qualified</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- CALCULATOR -->
+  <div class="sec" style="margin-top:0">1031 Exchange Calculator <span class="more">IRS Rules →</span></div>
+  <div class="hero">
+    <div class="h-tag">Tax Deferral Estimator · IRC §1031</div>
+    <div class="h-title">Calculate Your <span>Tax Savings</span><br>on Like-Kind Exchange</div>
+    <div class="input-row">
+      <div class="inp-group">
+        <label>Relinquished Sale Price</label>
+        <input type="text" id="salePrice" placeholder="$850,000" value="850000">
+      </div>
+      <div class="inp-group">
+        <label>Original Cost Basis</label>
+        <input type="text" id="costBasis" placeholder="$400,000" value="400000">
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="inp-group">
+        <label>Depreciation Claimed</label>
+        <input type="text" id="depreciation" placeholder="$80,000" value="80000">
+      </div>
+      <div class="inp-group">
+        <label>Replacement Property $</label>
+        <input type="text" id="replacePrice" placeholder="$950,000" value="950000">
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="inp-group">
+        <label>Filing Status</label>
+        <select id="filingStatus">
+          <option value="single">Single (20% LT rate)</option>
+          <option value="married" selected>Married Filing Joint</option>
+          <option value="corp">Corporation</option>
+        </select>
+      </div>
+      <div class="inp-group">
+        <label>State Tax Add-On</label>
+        <select id="stateRate">
+          <option value="0">No State Tax (TX/FL)</option>
+          <option value="0.0725" selected>CA — 7.25%</option>
+          <option value="0.0685">NY — 6.85%</option>
+          <option value="0.0499">OR — 4.99%</option>
+          <option value="0.0330">CO — 3.30%</option>
+          <option value="0.0575">VA — 5.75%</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- CALCULATE BUTTON -->
+    <button class="calc-btn" id="calcBtn" onclick="runCalc()">
+      <span style="font-size:18px;">🔄</span> Calculate 1031 Tax Deferral
+    </button>
+
+    <!-- RESULTS -->
+    <div class="result-box" id="resultBox">
+      <div class="result-title">📊 Exchange Analysis Results</div>
+      <div class="res-grid">
+        <div class="res-item"><div class="res-lbl">Capital Gain</div><div class="res-val" id="capGain">—</div></div>
+        <div class="res-item"><div class="res-lbl">Tax Without 1031</div><div class="res-val red" id="taxWithout">—</div></div>
+        <div class="res-item"><div class="res-lbl">Tax With 1031</div><div class="res-val grn" id="taxWith">—</div></div>
+        <div class="res-item"><div class="res-lbl">💰 Tax Savings</div><div class="res-val gold" id="taxSavings">—</div></div>
+      </div>
+      <div class="res-divider"></div>
+      <div class="res-grid">
+        <div class="res-item"><div class="res-lbl">Boot (Taxable)</div><div class="res-val" id="bootAmt">—</div></div>
+        <div class="res-item"><div class="res-lbl">Deferred Basis</div><div class="res-val" id="deferredBasis">—</div></div>
+      </div>
+      <div class="res-divider"></div>
+      <div class="res-note" id="resultNote">—</div>
+    </div>
+  </div>
+
+  <!-- SAVE BAR -->
+  <div class="save-bar" id="saveBar">
+    <div style="font-size:22px;">💾</div>
+    <div class="save-txt">
+      <div class="save-title-txt" id="saveTitle">Save This Exchange Analysis</div>
+      <div class="save-sub-txt" id="saveSub">Tap to save for comparison</div>
+    </div>
+    <button class="save-action-btn" id="saveBtn" onclick="saveCalc()">Save</button>
+  </div>
+
+  <!-- VISUAL STATS -->
+  <div class="stats-section" id="statsSection">
+
+    <!-- Tax comparison bar chart -->
+    <div class="sec">Tax Impact Analysis <span class="more">Full Breakdown →</span></div>
+    <div class="chart-card">
+      <div class="chart-title"><span>📊</span> Tax Comparison: With vs Without 1031</div>
+      <div class="bar-group" id="taxCompBars"></div>
+      <div style="margin-top:12px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;font-weight:700;color:#15803D;">💡 Total Tax Deferred</span>
+        <span style="font-size:15px;font-weight:800;color:#15803D;font-family:Georgia,serif;" id="totalDeferredDisplay">—</span>
+      </div>
+    </div>
+
+    <!-- Gain breakdown donut -->
+    <div class="chart-card">
+      <div class="chart-title"><span>🍩</span> Capital Gain Breakdown</div>
+      <div class="donut-row">
+        <svg class="donut-svg" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="34" fill="none" stroke="#EFF6FF" stroke-width="13"/>
+          <circle cx="45" cy="45" r="34" fill="none" stroke="#B91C1C" stroke-width="13"
+            stroke-dasharray="213.6 213.6" stroke-linecap="round"
+            transform="rotate(-90 45 45)" id="donutLT"/>
+          <circle cx="45" cy="45" r="34" fill="none" stroke="#D97706" stroke-width="13"
+            stroke-dasharray="0 213.6" stroke-linecap="round"
+            transform="rotate(-90 45 45)" id="donutDepr"/>
+          <text x="45" y="42" text-anchor="middle" font-size="10" font-weight="800" fill="#0B1D3A" id="donutMain">—</text>
+          <text x="45" y="53" text-anchor="middle" font-size="7.5" fill="#4A5C7A">Total Gain</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="dl-row"><div class="dl-dot" style="background:#B91C1C;"></div><span class="dl-label">LT Capital Gain</span><span class="dl-val" id="lgLT">—</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#D97706;"></div><span class="dl-label">Depr. Recapture</span><span class="dl-val" id="lgDepr">—</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#6EE7B7;"></div><span class="dl-label">Deferred via 1031</span><span class="dl-val" id="lgDefer">—</span></div>
+        </div>
+      </div>
+      <!-- Stacked gain bar -->
+      <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:6px;">Gain Composition</div>
+      <div class="gain-stack" id="gainStack">
+        <div class="gain-seg" id="segLT" style="background:#B91C1C;">LT Gain</div>
+        <div class="gain-seg" id="segDepr" style="background:#D97706;">Depr.</div>
+      </div>
+    </div>
+
+    <!-- Compound wealth chart -->
+    <div class="chart-card">
+      <div class="chart-title"><span>📈</span> Deferred Tax Compounding (10 yrs @ 7%)</div>
+      <div style="font-size:9.5px;color:var(--muted);margin-bottom:10px;">What the saved tax amount could grow to if reinvested</div>
+      <div class="mini-bars" id="compoundBars"></div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;font-weight:700;color:var(--muted);margin-bottom:10px;" id="compoundLabels"></div>
+      <div style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;font-weight:700;color:#15803D;">10-yr Compounded Value</span>
+        <span style="font-size:14px;font-weight:800;color:#15803D;font-family:Georgia,serif;" id="compoundFinal">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVED CALCULATIONS -->
+  <div class="saved-section" id="savedSection">
+    <div class="sec">Saved Analyses <span class="more" onclick="clearSaved()">Clear All</span></div>
+    <div class="saved-list" id="savedList"></div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="sec">Critical Deadlines <span class="more">IRS Rev. Ruling →</span></div>
+  <div class="timeline-card">
+    <div class="tl-title">⏱️ 1031 Exchange Timeline (2025 IRS Rules)</div>
+    <div class="tl-steps">
+      <div class="tl-step">
+        <div class="tl-left"><div class="tl-dot nv">1</div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-day">Day 0</div>
+          <div class="tl-name">Close Relinquished Property</div>
+          <div class="tl-desc">Sale of your existing investment property closes. Proceeds must go directly to a Qualified Intermediary (QI) — never touch the funds.</div>
+          <span class="tl-badge badge-r">⚠️ Do NOT receive proceeds</span>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-left"><div class="tl-dot gd">2</div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-day">Day 1–45</div>
+          <div class="tl-name">Identification Period</div>
+          <div class="tl-desc">Identify up to 3 replacement properties (3-Property Rule) OR any number if total value ≤ 200% of relinquished (200% Rule). Must be in writing to QI.</div>
+          <span class="tl-badge badge-o">⏰ Hard Deadline — No Extensions</span>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-left"><div class="tl-dot grn">3</div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-day">Day 46–180</div>
+          <div class="tl-name">Exchange Period</div>
+          <div class="tl-desc">Must close on identified replacement property within 180 days of the relinquished property closing OR the tax return due date (including extensions), whichever is earlier.</div>
+          <span class="tl-badge badge-g">✅ 180-Day Window</span>
+        </div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-left"><div class="tl-dot bl">4</div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-day">Post-Close</div>
+          <div class="tl-name">Report on IRS Form 8824</div>
+          <div class="tl-desc">File Form 8824 with your federal tax return. Report like-kind exchange, boot received, deferred gain, and new adjusted basis of replacement property.</div>
+          <span class="tl-badge badge-b">📋 Form 8824 Required</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IRS RULES -->
+  <div class="sec">IRS Qualification Rules <span class="more">IRC §1031 →</span></div>
+  <div class="g2">
+    <div class="tc nv"><div class="ti">🏘️</div><div class="tn">Like-Kind Property</div><div class="td">Real property for real property in the US</div><div class="bge bge-b">IRC §1031(a)</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🔁</div><div class="tn">Trade Up Rule</div><div class="td">Replace with equal or greater value property</div><div class="bge bge-g">Fully Deferred</div><div class="ta">›</div></div>
+    <div class="tc gd"><div class="ti">⚖️</div><div class="tn">Boot Rules</div><div class="td">Cash or unlike property received is taxable "boot"</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🏢</div><div class="tn">Held for Investment</div><div class="td">Must be held for investment or business use</div><div class="bge bge-r">Not Personal Use</div><div class="ta">›</div></div>
+    <div class="tc rd"><div class="ti">👤</div><div class="tn">QI Required</div><div class="td">Qualified Intermediary must hold proceeds</div><div class="ta">›</div></div>
+    <div class="tc grn"><div class="ti">📍</div><div class="tn">US Property Only</div><div class="td">Since TCJA 2017 — no foreign property exchanges</div><div class="ta">›</div></div>
+  </div>
+
+  <!-- ELIGIBLE PROPERTY TYPES -->
+  <div class="sec">Eligible Property Types <span class="more">All Types →</span></div>
+  <div class="prop-scroll">
+    <div class="prop-card"><span class="prop-icon">🏘️</span><div class="prop-type">Residential Rental</div><div class="prop-desc">SFR, duplex, apartment complex</div><span class="prop-badge bge-g">✅ Qualifies</span></div>
+    <div class="prop-card"><span class="prop-icon">🏢</span><div class="prop-type">Commercial</div><div class="prop-desc">Office, retail, industrial</div><span class="prop-badge bge-g">✅ Qualifies</span></div>
+    <div class="prop-card"><span class="prop-icon">🌾</span><div class="prop-type">Raw Land</div><div class="prop-desc">Held for investment purposes</div><span class="prop-badge bge-g">✅ Qualifies</span></div>
+    <div class="prop-card"><span class="prop-icon">🏨</span><div class="prop-type">DST / TIC</div><div class="prop-desc">Delaware Statutory Trust interests</div><span class="prop-badge bge-b">Rev. Rul. 2004-86</span></div>
+    <div class="prop-card"><span class="prop-icon">🏠</span><div class="prop-type">Primary Home</div><div class="prop-desc">Personal residence — NOT eligible</div><span class="prop-badge bge-r">❌ Excluded</span></div>
+    <div class="prop-card"><span class="prop-icon">📦</span><div class="prop-type">Fix &amp; Flip</div><div class="prop-desc">Dealer property — NOT eligible</div><span class="prop-badge bge-r">❌ Excluded</span></div>
+  </div>
+
+  <!-- KEY RESOURCES -->
+  <div class="sec">Key Resources &amp; Advisors</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📋</div><div><div class="in">IRS Form 8824</div><div class="is">Like-Kind Exchanges · 2024 instructions · Schedule D coordination</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Qualified Intermediary (QI)</div><div class="is">Required middleman · Federation of Exchange Accommodators (FEA)</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🤝</div><div><div class="in">Reverse 1031 Exchange</div><div class="is">Buy replacement first · EAT · Rev. Proc. 2000-37 safe harbor</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏗️</div><div><div class="in">Build-to-Suit / Improvement</div><div class="is">Construct on replacement · 180-day build window</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">⚖️</div><div><div class="in">Partial 1031 Exchange</div><div class="is">Boot management · recognize some gain · basis allocation</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📈</div><div><div class="in">Opportunity Zone Alternative</div><div class="is">QOZ vs 1031 — compare tax deferral strategies</div></div><div class="ich">›</div></div>
+  </div>
+
+  <!-- DISCLAIMER -->
+  <div class="sec" style="margin-top:18px">Important Disclaimer</div>
+  <div class="warn-banner">
+    <div class="wb-icon">⚠️</div>
+    <div>
+      <div class="wb-title">Consult a Qualified Tax Advisor</div>
+      <div class="wb-sub">1031 Exchange rules are complex. Deadlines are strict and non-extendable. Always work with a licensed CPA, tax attorney, and a qualified intermediary (QI). This tool is for educational estimation only and does not constitute tax advice.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let lastResult = null;
+let savedCalcs = JSON.parse(localStorage.getItem('1031_saved') || '[]');
+
+function fmt(n){ return (n<0?'-$':'$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+function fmtM(n){ return '$' + (Math.round(Math.abs(n)/1000)) + 'K'; }
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function runCalc() {
+  const sale = parseFloat(String(document.getElementById('salePrice').value).replace(/[^0-9.]/g,'')) || 0;
+  const basis = parseFloat(String(document.getElementById('costBasis').value).replace(/[^0-9.]/g,'')) || 0;
+  const depr = parseFloat(String(document.getElementById('depreciation').value).replace(/[^0-9.]/g,'')) || 0;
+  const replace = parseFloat(String(document.getElementById('replacePrice').value).replace(/[^0-9.]/g,'')) || 0;
+  const stateRate = parseFloat(document.getElementById('stateRate').value) || 0;
+
+  if (!sale || !basis) { showToast('⚠️ Enter sale price and cost basis'); return; }
+
+  const adjBasis = basis - depr;
+  const totalGain = sale - adjBasis;
+  if (totalGain <= 0) { showToast('⚠️ No gain to calculate — check basis vs sale price'); return; }
+
+  const deprRecapture = Math.min(depr, totalGain);
+  const ltGain = Math.max(0, totalGain - deprRecapture);
+
+  const ltRate = 0.20, deprRate = 0.25, niitRate = 0.038;
+  const fedTax = (ltGain * (ltRate + niitRate)) + (deprRecapture * deprRate);
+  const stateTax = totalGain * stateRate;
+  const totalTaxWithout = fedTax + stateTax;
+
+  const boot = Math.max(0, sale - replace);
+  const bootTax = boot > 0 ? (boot * (ltRate + niitRate + stateRate)) : 0;
+  const totalTaxWith = bootTax;
+  const savings = totalTaxWithout - totalTaxWith;
+  const newBasis = Math.max(adjBasis, basis + (replace - sale));
+
+  // Update result box
+  document.getElementById('capGain').textContent = fmt(totalGain);
+  document.getElementById('taxWithout').textContent = fmt(totalTaxWithout);
+  document.getElementById('taxWith').textContent = boot > 0 ? fmt(totalTaxWith) : '$0';
+  document.getElementById('taxSavings').textContent = fmt(savings);
+  document.getElementById('bootAmt').textContent = boot > 0 ? fmt(boot) : '$0 (None)';
+  document.getElementById('deferredBasis').textContent = fmt(newBasis);
+
+  const note = replace >= sale
+    ? '✅ Full deferral: Replacement ≥ Sale Price. All taxes deferred. Step-up basis at death eliminates gain for heirs.'
+    : `⚠️ Partial exchange: Boot of ${fmt(boot)} is taxable. Increase replacement value to defer all taxes.`;
+  document.getElementById('resultNote').textContent = note;
+  document.getElementById('resultBox').classList.add('show');
+
+  lastResult = { sale, basis, depr, replace, stateRate, totalGain, deprRecapture, ltGain, totalTaxWithout, totalTaxWith, savings, boot, newBasis, date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) };
+
+  // Show save bar
+  const saveBar = document.getElementById('saveBar');
+  saveBar.classList.add('visible');
+  document.getElementById('saveTitle').textContent = 'Save This Exchange Analysis';
+  document.getElementById('saveSub').textContent = `${fmt(sale)} sale · ${fmt(savings)} deferred`;
+  document.getElementById('saveBtn').textContent = 'Save';
+  document.getElementById('saveBtn').className = 'save-action-btn';
+
+  // Render visual stats
+  renderStats(lastResult);
+  document.getElementById('statsSection').classList.add('visible');
+
+  renderSaved();
+}
+
+function renderStats(r) {
+  // Tax comparison bars
+  const maxTax = r.totalTaxWithout;
+  const bars = [
+    { label: 'Without 1031', amt: r.totalTaxWithout, color: '#B91C1C', pct: 100 },
+    { label: 'Boot Tax (With)', amt: r.totalTaxWith, color: '#D97706', pct: maxTax > 0 ? (r.totalTaxWith / maxTax) * 100 : 0 },
+    { label: 'Tax Deferred 💡', amt: r.savings, color: '#15803D', pct: maxTax > 0 ? (r.savings / maxTax) * 100 : 0 },
+  ];
+  document.getElementById('taxCompBars').innerHTML = bars.map(b => `
+    <div class="bar-item">
+      <div class="bar-header">
+        <span class="bar-name">${b.label}</span>
+        <span class="bar-amount" style="color:${b.color}">${fmt(b.amt)}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,b.pct)}%;background:${b.color};"></div></div>
+    </div>`).join('');
+  document.getElementById('totalDeferredDisplay').textContent = fmt(r.savings);
+
+  // Donut
+  const circ = 213.6;
+  const ltFrac = r.totalGain > 0 ? r.ltGain / r.totalGain : 0.5;
+  const deprFrac = r.totalGain > 0 ? r.deprRecapture / r.totalGain : 0.5;
+  const ltDash = ltFrac * circ;
+  const deprDash = deprFrac * circ;
+  // LT arc starts at 0 offset
+  document.getElementById('donutLT').setAttribute('stroke-dasharray', `${ltDash} ${circ}`);
+  document.getElementById('donutLT').setAttribute('stroke-dashoffset', '0');
+  // Depr arc starts after LT
+  document.getElementById('donutDepr').setAttribute('stroke-dasharray', `${deprDash} ${circ}`);
+  document.getElementById('donutDepr').setAttribute('stroke-dashoffset', `${-ltDash}`);
+  document.getElementById('donutMain').textContent = fmtM(r.totalGain);
+  document.getElementById('lgLT').textContent = fmt(r.ltGain);
+  document.getElementById('lgDepr').textContent = fmt(r.deprRecapture);
+  document.getElementById('lgDefer').textContent = fmt(r.savings);
+
+  // Stacked gain bar
+  const ltPct = ltFrac * 100;
+  const deprPct = deprFrac * 100;
+  document.getElementById('segLT').style.flex = ltPct.toString();
+  document.getElementById('segDepr').style.flex = deprPct.toString();
+
+  // Compound chart (deferred tax growing at 7% for 10 yrs)
+  const vals = [];
+  for (let y = 1; y <= 10; y++) vals.push(Math.round(r.savings * Math.pow(1.07, y)));
+  const maxVal = vals[vals.length - 1];
+  const barsHtml = vals.map((v, i) => `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+      <div class="mb" style="width:100%;height:${Math.max(4, (v / maxVal) * 52)}px;background:${i === 9 ? 'linear-gradient(180deg,#15803D,#166534)' : 'linear-gradient(180deg,#6EE7B7,#34D399)'};border-radius:4px 4px 0 0;"></div>
+    </div>`).join('');
+  const labelsHtml = vals.map((v, i) => `<span>Yr${i+1}</span>`).join('');
+  document.getElementById('compoundBars').innerHTML = barsHtml;
+  document.getElementById('compoundLabels').innerHTML = labelsHtml;
+  document.getElementById('compoundFinal').textContent = fmt(maxVal);
+}
+
+function saveCalc() {
+  if (!lastResult) { showToast('Run a calculation first'); return; }
+  const btn = document.getElementById('saveBtn');
+  if (btn.classList.contains('done')) { showToast('Already saved!'); return; }
+  savedCalcs.unshift({ ...lastResult, id: Date.now() });
+  if (savedCalcs.length > 8) savedCalcs.pop();
+  localStorage.setItem('1031_saved', JSON.stringify(savedCalcs));
+  btn.textContent = 'Saved ✓';
+  btn.classList.add('done');
+  showToast('✅ Analysis saved!');
+  renderSaved();
+}
+
+function deleteCalc(id) {
+  savedCalcs = savedCalcs.filter(c => c.id !== id);
+  localStorage.setItem('1031_saved', JSON.stringify(savedCalcs));
+  renderSaved();
+}
+
+function clearSaved() {
+  savedCalcs = [];
+  localStorage.removeItem('1031_saved');
+  renderSaved();
+}
+
+function renderSaved() {
+  const sec = document.getElementById('savedSection');
+  const list = document.getElementById('savedList');
+  if (!savedCalcs.length) { sec.classList.remove('visible'); return; }
+  sec.classList.add('visible');
+  list.innerHTML = savedCalcs.map(c => `
+    <div class="saved-item">
+      <div class="si-icon">🔄</div>
+      <div class="si-body">
+        <div class="si-name">${fmt(c.sale)} Sale</div>
+        <div class="si-detail">Gain: ${fmt(c.totalGain)} · Basis: ${fmt(c.basis)} · ${c.date||''}</div>
+      </div>
+      <div class="si-saving">${fmt(c.savings)}</div>
+      <button class="si-del" onclick="deleteCalc(${c.id})">✕</button>
+    </div>`).join('');
+}
+
+renderSaved();
+</script>
+</body>
+</html>

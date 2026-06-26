@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto Loan Calculator · USA Financial Tools</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+    --teal: #0F766E;
+    --teal-dk: #0D9488;
+    --green: #15803D;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  /* ─── HEADER ─── */
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#0F766E 55%,#0D9488 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after { content:'🏎️'; position:absolute; right:10px; top:46px; font-size:72px; opacity:0.08; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; text-decoration:none; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+
+  /* Rate Strip */
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.up::after { content:'↑'; font-size:9px; color:#6EE7B7; }
+  .rs-v.dn::after { content:'↓'; font-size:9px; color:#FCA5A5; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  /* ─── CONTENT ─── */
+  .content { padding:15px 15px 110px; }
+
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .badge { font-size:9px; font-weight:700; background:#CCFBF1; color:#0F766E; padding:2px 8px; border-radius:20px; text-transform:none; letter-spacing:0; }
+  .sec .badge-gold { font-size:9px; font-weight:700; background:#FEF3C7; color:#92400E; padding:2px 8px; border-radius:20px; text-transform:none; letter-spacing:0; }
+
+  /* ─── INPUT CARD ─── */
+  .input-card { background:var(--card); border-radius:18px; padding:17px; box-shadow:var(--sh2); border:1px solid var(--border); margin-bottom:12px; animation:fadeUp .35s ease both .05s; }
+  .ic-header { display:flex; align-items:center; gap:9px; margin-bottom:15px; }
+  .ic-icon { width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#0F766E,#0D9488); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .ic-title { font-size:14px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .ic-sub { font-size:9.5px; color:var(--muted); margin-top:1px; }
+
+  .field-group { margin-bottom:12px; }
+  .field-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between; }
+  .field-label .hint { font-size:9px; color:var(--teal); font-weight:600; text-transform:none; letter-spacing:0; }
+  .field-input { width:100%; background:var(--bg); border:1.5px solid var(--border); border-radius:11px; padding:11px 14px; font-size:15px; font-weight:700; color:var(--navy); font-family:Georgia,serif; outline:none; transition:border .2s; }
+  .field-input:focus { border-color:var(--teal); background:#fff; }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* Segment Control */
+  .seg { display:flex; background:var(--bg); border-radius:10px; padding:3px; gap:3px; margin-bottom:12px; }
+  .seg-btn { flex:1; padding:8px 4px; border-radius:8px; border:none; background:transparent; font-size:10.5px; font-weight:700; color:var(--muted); cursor:pointer; transition:.15s; }
+  .seg-btn.active { background:linear-gradient(135deg,#0F766E,#0D9488); color:#fff; box-shadow:0 2px 8px rgba(15,118,110,0.30); }
+
+  /* Term Selector */
+  .term-sel { display:flex; gap:7px; flex-wrap:wrap; }
+  .term-chip { padding:7px 14px; border-radius:9px; border:1.5px solid var(--border); background:var(--bg); font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; transition:.15s; }
+  .term-chip.active { background:linear-gradient(135deg,#0F766E,#0D9488); color:#fff; border-color:var(--teal); }
+
+  /* Vehicle type pills */
+  .vtype-sel { display:flex; gap:7px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; margin-bottom:12px; }
+  .vtype-sel::-webkit-scrollbar { display:none; }
+  .vtype-chip { flex-shrink:0; padding:8px 13px; border-radius:20px; border:1.5px solid var(--border); background:var(--bg); font-size:10.5px; font-weight:700; color:var(--muted); cursor:pointer; transition:.15s; white-space:nowrap; }
+  .vtype-chip.active { background:linear-gradient(135deg,#0F766E,#0D9488); color:#fff; border-color:var(--teal); }
+
+  /* CTA Button */
+  .calc-btn { width:100%; background:linear-gradient(135deg,#0F766E,#0D9488); border:none; border-radius:13px; padding:15px; font-size:14px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 18px rgba(15,118,110,0.38); font-family:Georgia,serif; letter-spacing:0.2px; transition:transform .15s; }
+  .calc-btn:active { transform:scale(.98); }
+
+  /* ─── RESULTS ─── */
+  .results { display:none; }
+  .results.show { display:block; animation:fadeUp .35s ease both; }
+
+  /* Monthly Payment Hero */
+  .payment-hero { background:linear-gradient(148deg,#0F766E,#0D9488); border-radius:20px; padding:18px; position:relative; overflow:hidden; box-shadow:var(--sh2); margin-bottom:12px; }
+  .payment-hero::before { content:''; position:absolute; top:-30px; right:-30px; width:130px; height:130px; border-radius:50%; background:rgba(255,255,255,0.07); }
+  .ph-tag { font-size:9px; color:rgba(255,255,255,0.52); text-transform:uppercase; letter-spacing:0.8px; }
+  .ph-amount { font-size:38px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1; margin:4px 0 2px; }
+  .ph-sub { font-size:10px; color:rgba(255,255,255,0.60); margin-bottom:14px; }
+  .ph-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .ph-box { background:rgba(255,255,255,0.12); border-radius:10px; padding:9px 8px; text-align:center; }
+  .ph-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.52); text-transform:uppercase; letter-spacing:0.3px; }
+  .ph-box-val { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+
+  /* Cost Breakdown */
+  .breakdown-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .bd-title { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:12px; }
+  .bd-row { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); }
+  .bd-row:last-child { border-bottom:none; }
+  .bd-lbl { font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:7px; }
+  .bd-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .bd-val { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .bd-val.muted { color:var(--muted); font-size:11px; font-weight:600; }
+
+  /* Donut chart */
+  .donut-wrap { display:flex; align-items:center; gap:14px; margin:14px 0; }
+  .donut-svg { flex-shrink:0; }
+  .donut-legend { flex:1; }
+  .dl-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .dl-dot { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+  .dl-lbl { font-size:10px; color:var(--muted); flex:1; }
+  .dl-val { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+
+  /* Amortization */
+  .amort-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .amort-title { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+  .amort-table { width:100%; border-collapse:collapse; }
+  .amort-table th { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); padding:6px 4px; text-align:right; border-bottom:1px solid var(--border); }
+  .amort-table th:first-child { text-align:left; }
+  .amort-table td { font-size:11px; font-weight:700; color:var(--navy); font-family:Georgia,serif; padding:8px 4px; text-align:right; border-bottom:1px solid var(--bg); }
+  .amort-table td:first-child { text-align:left; color:var(--muted); font-family:inherit; font-size:10px; }
+  .amort-table tr:last-child td { border-bottom:none; font-weight:800; background:var(--bg); border-radius:6px; }
+  .amort-table .int-cell { color:var(--red); }
+  .amort-table .prin-cell { color:var(--green); }
+
+  /* Rate comparison scroll */
+  .hscroll { display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; }
+  .hscroll::-webkit-scrollbar { display:none; }
+  .rate-card { flex-shrink:0; width:118px; background:var(--card); border-radius:14px; padding:12px 11px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .rcard-lender { font-size:9px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:2px; }
+  .rcard-rate { font-size:18px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin:3px 0; }
+  .rcard-type { font-size:9px; color:var(--muted); }
+  .rcard-tag { font-size:8.5px; font-weight:700; padding:2px 6px; border-radius:6px; margin-top:5px; display:inline-block; }
+  .best { background:#CCFBF1; color:#0F766E; }
+  .avg { background:#EFF6FF; color:#1D4ED8; }
+  .high { background:#FEF2F2; color:#B91C1C; }
+
+  /* Tips */
+  .tip-list { display:flex; flex-direction:column; gap:9px; }
+  .tip-item { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:flex-start; gap:12px; }
+  .tip-icon { width:36px; height:36px; border-radius:10px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .tip-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .tip-desc { font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+
+  /* Grid tool cards */
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tc { background:var(--card); border-radius:16px; padding:14px 12px; box-shadow:var(--sh); border:1px solid var(--border); cursor:pointer; position:relative; overflow:hidden; transition:transform .15s; }
+  .tc:active { transform:scale(.97); }
+  .tc.tl { background:linear-gradient(140deg,#0F766E,#0D9488); }
+  .tc.nv { background:linear-gradient(140deg,#0B1D3A,#1B3F72); }
+  .tc.rd { background:linear-gradient(140deg,#B91C1C,#991B1B); }
+  .tc.gd { background:linear-gradient(140deg,#D97706,#B45309); }
+  .ti { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; margin-bottom:9px; }
+  .tc:not(.tl):not(.nv):not(.rd):not(.gd) .ti { background:var(--bg); }
+  .tc.tl .ti,.tc.nv .ti,.tc.rd .ti,.tc.gd .ti { background:rgba(255,255,255,0.14); }
+  .tn { font-size:12.5px; font-weight:800; color:var(--navy); line-height:1.2; font-family:Georgia,serif; }
+  .tc.tl .tn,.tc.nv .tn,.tc.rd .tn,.tc.gd .tn { color:#fff; }
+  .td { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .tc.tl .td,.tc.nv .td,.tc.rd .td,.tc.gd .td { color:rgba(255,255,255,0.58); }
+  .ta { position:absolute; bottom:11px; right:11px; font-size:14px; color:rgba(11,29,58,0.16); }
+  .tc.tl .ta,.tc.nv .ta,.tc.rd .ta,.tc.gd .ta { color:rgba(255,255,255,0.22); }
+
+  /* Badges */
+  .bge { display:inline-flex; padding:2px 7px; border-radius:20px; font-size:8.5px; font-weight:700; margin-top:5px; }
+  .bge-t { background:#CCFBF1; color:#0F766E; }
+  .bge-b { background:#EFF6FF; color:#1D4ED8; }
+  .bge-g { background:#F0FDF4; color:#15803D; }
+  .bge-o { background:#FFF7ED; color:#C2410C; }
+
+  /* ─── BOTTOM NAV ─── */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--teal); }
+
+  /* SAVE BUTTON */
+  .save-btn { width:100%; background:var(--card); border:1.5px solid var(--teal); border-radius:13px; padding:13px; font-size:13px; font-weight:800; color:var(--teal); cursor:pointer; font-family:Georgia,serif; margin-top:8px; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .save-btn:active { transform:scale(.98); background:var(--bg); }
+  .save-btn.saved { background:#DCFCE7; border-color:#15803D; color:#15803D; }
+  .toast { position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px); max-width:380px; width:90%; background:var(--navy); color:#fff; padding:12px 18px; border-radius:12px; font-size:12.5px; font-weight:700; text-align:center; box-shadow:var(--sh2); opacity:0; pointer-events:none; transition:all .3s ease; z-index:200; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* SAVED LIST */
+  .saved-card { background:var(--card); border-radius:16px; padding:14px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .saved-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .saved-row:last-child { border-bottom:none; }
+  .saved-info { display:flex; flex-direction:column; }
+  .saved-name { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .saved-meta { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .saved-del { font-size:13px; color:var(--red); cursor:pointer; padding:6px; }
+  .saved-empty { font-size:11px; color:var(--muted); text-align:center; padding:14px 0; }
+
+  /* No-result state */
+  .no-result { text-align:center; padding:28px 20px; color:var(--muted); }
+  .no-result .nr-icon { font-size:42px; margin-bottom:10px; }
+  .no-result .nr-title { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .no-result .nr-sub { font-size:10.5px; color:var(--muted); margin-top:4px; }
+
+  /* Disclaimer */
+  .disclaimer { font-size:9px; color:var(--muted); text-align:center; line-height:1.5; padding:0 8px; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+
+  /* Range slider */
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:4px; background:var(--bg); border:1px solid var(--border); outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:linear-gradient(135deg,#0F766E,#0D9488); cursor:pointer; box-shadow:0 2px 6px rgba(15,118,110,0.4); }
+  .slider-row { display:flex; align-items:center; justify-content:space-between; font-size:9.5px; color:var(--muted); margin-top:4px; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="hdr-top">
+    <a href="screen_usa.html" class="icon-btn" style="text-decoration:none;">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇺🇸</div>
+      <div class="hdr-title">Auto Loan Calculator</div>
+      <div class="hdr-sub">New · Used · Refinance · Lease vs Buy</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">New Car</div><div class="rs-v dn">7.18%</div><div class="rs-n">Avg APR</div></div>
+    <div class="rs"><div class="rs-l">Used Car</div><div class="rs-v up">11.54%</div><div class="rs-n">Avg APR</div></div>
+    <div class="rs"><div class="rs-l">Credit Union</div><div class="rs-v">6.84%</div><div class="rs-n">New Car</div></div>
+    <div class="rs"><div class="rs-l">Fed Funds</div><div class="rs-v gold">5.33%</div><div class="rs-n">FOMC</div></div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Vehicle Type -->
+  <div class="sec" style="margin-top:0">Vehicle Type <span class="badge">Select One</span></div>
+  <div class="vtype-sel" id="vtypeSel">
+    <div class="vtype-chip active" onclick="selectVtype('new',this)">🚗 New Car</div>
+    <div class="vtype-chip" onclick="selectVtype('used',this)">🚙 Used Car</div>
+    <div class="vtype-chip" onclick="selectVtype('truck',this)">🛻 Truck/SUV</div>
+    <div class="vtype-chip" onclick="selectVtype('ev',this)">⚡ Electric (EV)</div>
+    <div class="vtype-chip" onclick="selectVtype('refi',this)">🔄 Refi Auto</div>
+  </div>
+
+  <!-- Loan Inputs -->
+  <div class="sec">Loan Details <span class="badge">Step 1</span></div>
+  <div class="input-card">
+    <div class="ic-header">
+      <div class="ic-icon">🏎️</div>
+      <div>
+        <div class="ic-title" id="vehicleTitle">New Vehicle Financing</div>
+        <div class="ic-sub" id="vehicleSub">Avg new car price: $48,401 (June 2026, Kelley Blue Book)</div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Vehicle Price <span class="hint" id="priceHint">Avg new: $48,401</span></div>
+      <input class="field-input" id="vehiclePrice" type="number" placeholder="$48,401" value="48401">
+    </div>
+
+    <div class="field-row">
+      <div class="field-group">
+        <div class="field-label">Down Payment</div>
+        <input class="field-input" id="downPayment" type="number" placeholder="$5,000" value="5000">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Trade-In Value</div>
+        <input class="field-input" id="tradeIn" type="number" placeholder="$0" value="0">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Loan APR (%) <span class="hint" id="aprHint">Avg new: 7.18%</span></div>
+      <input class="field-input" id="apr" type="number" step="0.01" placeholder="7.18%" value="7.18">
+      <input type="range" id="aprSlider" min="0" max="25" step="0.25" value="7.18" oninput="syncSlider(this,'apr')" style="margin-top:8px;">
+      <div class="slider-row"><span>0%</span><span>Best credit → lowest APR</span><span>25%</span></div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Loan Term</div>
+      <div class="term-sel" id="termSel">
+        <div class="term-chip" onclick="selectTerm(24)">24 mo</div>
+        <div class="term-chip" onclick="selectTerm(36)">36 mo</div>
+        <div class="term-chip active" onclick="selectTerm(48)">48 mo</div>
+        <div class="term-chip" onclick="selectTerm(60)">60 mo</div>
+        <div class="term-chip" onclick="selectTerm(72)">72 mo</div>
+        <div class="term-chip" onclick="selectTerm(84)">84 mo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Taxes & Fees -->
+  <div class="sec">Taxes & Fees <span class="badge">Step 2</span></div>
+  <div class="input-card">
+    <div class="ic-header">
+      <div class="ic-icon">🏛️</div>
+      <div>
+        <div class="ic-title">State Taxes & Dealer Fees</div>
+        <div class="ic-sub">Avg state sales tax on vehicles: 5.75%</div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field-group">
+        <div class="field-label">Sales Tax (%)</div>
+        <input class="field-input" id="salesTax" type="number" step="0.01" placeholder="5.75%" value="5.75">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Doc / Dealer Fees</div>
+        <input class="field-input" id="dealerFees" type="number" placeholder="$500" value="500">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field-group">
+        <div class="field-label">Registration Fee</div>
+        <input class="field-input" id="regFee" type="number" placeholder="$250" value="250">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Rebate / Incentive</div>
+        <input class="field-input" id="rebate" type="number" placeholder="$0" value="0">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Finance Tax & Fees?</div>
+      <div class="seg" id="taxFinSeg">
+        <button class="seg-btn active" onclick="setSeg('taxFin','no',this)">Pay Upfront</button>
+        <button class="seg-btn" onclick="setSeg('taxFin','yes',this)">Roll Into Loan</button>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">🏎️ Calculate Auto Loan</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalculation()">💾 Save This Calculation</button>
+  </div>
+
+  <!-- Today's Auto Loan Rates -->
+  <div class="sec">Today's Auto Loan Rates <span class="badge-gold">Jun 2026 · NCUA</span></div>
+  <div class="hscroll">
+    <div class="rate-card"><div class="rcard-lender">PenFed CU</div><div class="rcard-rate">5.99%</div><div class="rcard-type">New · 36-mo</div><div class="rcard-tag best">Lowest</div></div>
+    <div class="rate-card"><div class="rcard-lender">Navy Fed CU</div><div class="rcard-rate">6.29%</div><div class="rcard-type">New · 60-mo</div><div class="rcard-tag best">Top CU</div></div>
+    <div class="rate-card"><div class="rcard-lender">LightStream</div><div class="rcard-rate">6.49%</div><div class="rcard-type">New · Any term</div><div class="rcard-tag avg">Low</div></div>
+    <div class="rate-card"><div class="rcard-lender">Chase Auto</div><div class="rcard-rate">7.09%</div><div class="rcard-type">New · 60-mo</div><div class="rcard-tag avg">Avg</div></div>
+    <div class="rate-card"><div class="rcard-lender">Capital One</div><div class="rcard-rate">7.54%</div><div class="rcard-type">New / Used</div><div class="rcard-tag avg">Avg</div></div>
+    <div class="rate-card"><div class="rcard-lender">Wells Fargo</div><div class="rcard-rate">7.69%</div><div class="rcard-type">New · 60-mo</div><div class="rcard-tag avg">Avg</div></div>
+    <div class="rate-card"><div class="rcard-lender">Dealer Finance</div><div class="rcard-rate">9.5%+</div><div class="rcard-type">Varies</div><div class="rcard-tag high">Higher</div></div>
+  </div>
+
+  <!-- Saved Calculations -->
+  <div class="sec" style="margin-top:20px;">Saved Calculations <span class="badge" onclick="clearAllSaved()" style="cursor:pointer;">Clear All</span></div>
+  <div class="saved-card">
+    <div id="savedList"><div class="saved-empty">No saved calculations yet. Calculate, then tap "Save This Calculation".</div></div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="sec" style="margin-top:20px;">Your Results <span class="badge">Calculated</span></div>
+
+    <!-- Monthly Payment Hero -->
+    <div class="payment-hero">
+      <div class="ph-tag">Monthly Auto Payment</div>
+      <div class="ph-amount" id="monthlyPayment">$—</div>
+      <div class="ph-sub" id="paymentSub">per month · —</div>
+      <div class="ph-grid">
+        <div class="ph-box">
+          <div class="ph-box-lbl">Total Interest</div>
+          <div class="ph-box-val" id="totalInterest">—</div>
+        </div>
+        <div class="ph-box">
+          <div class="ph-box-lbl">Total Cost</div>
+          <div class="ph-box-val" id="totalCost">—</div>
+        </div>
+        <div class="ph-box">
+          <div class="ph-box-lbl">Loan Amount</div>
+          <div class="ph-box-val" id="loanAmt">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cost Breakdown -->
+    <div class="breakdown-card">
+      <div class="bd-title">💰 Total Cost Breakdown</div>
+
+      <!-- Donut -->
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="90" height="90" viewBox="0 0 90 90">
+          <circle id="donutBg" cx="45" cy="45" r="35" fill="none" stroke="#F0F4FF" stroke-width="14"/>
+          <circle id="donutInt" cx="45" cy="45" r="35" fill="none" stroke="#B91C1C" stroke-width="14"
+                  stroke-dasharray="0 220" stroke-dashoffset="55" stroke-linecap="round"
+                  style="transition:stroke-dasharray .8s ease;transform:rotate(-90deg);transform-origin:45px 45px;"/>
+          <circle id="donutFees" cx="45" cy="45" r="35" fill="none" stroke="#D97706" stroke-width="14"
+                  stroke-dasharray="0 220" stroke-dashoffset="55" stroke-linecap="round"
+                  style="transition:stroke-dasharray .8s ease;transform:rotate(-90deg);transform-origin:45px 45px;"/>
+          <text x="45" y="42" text-anchor="middle" font-size="8" fill="#4A5C7A" font-weight="700" text-transform="uppercase">TOTAL</text>
+          <text x="45" y="56" text-anchor="middle" font-size="11" fill="#0B1D3A" font-weight="800" font-family="Georgia,serif" id="donutCenterVal">$0</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="dl-row"><div class="dl-dot" style="background:#0F766E;"></div><div class="dl-lbl">Principal (Vehicle)</div><div class="dl-val" id="legPrincipal">—</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#B91C1C;"></div><div class="dl-lbl">Total Interest</div><div class="dl-val" id="legInterest">—</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#D97706;"></div><div class="dl-lbl">Tax & Fees</div><div class="dl-val" id="legFees">—</div></div>
+        </div>
+      </div>
+
+      <div class="bd-row"><div class="bd-lbl"><div class="bd-dot" style="background:#0F766E;"></div>Vehicle Price</div><div class="bd-val" id="bdVehiclePrice">—</div></div>
+      <div class="bd-row"><div class="bd-lbl"><div class="bd-dot" style="background:#E0F2FE;border:1px solid #0F766E;"></div>Down + Trade-In</div><div class="bd-val muted" id="bdDown">—</div></div>
+      <div class="bd-row"><div class="bd-lbl"><div class="bd-dot" style="background:#0F766E;"></div>Amount Financed</div><div class="bd-val" id="bdFinanced">—</div></div>
+      <div class="bd-row"><div class="bd-lbl"><div class="bd-dot" style="background:#FCA5A5;"></div>Sales Tax</div><div class="bd-val" id="bdTax">—</div></div>
+      <div class="bd-row"><div class="bd-lbl"><div class="bd-dot" style="background:#D97706;"></div>Dealer + Reg Fees</div><div class="bd-val" id="bdFees">—</div></div>
+      <div class="bd-row"><div class="bd-lbl"><div class="bd-dot" style="background:#B91C1C;"></div>Total Interest Paid</div><div class="bd-val" id="bdInterest" style="color:#B91C1C;">—</div></div>
+      <div class="bd-row" style="background:var(--bg);border-radius:10px;padding:10px 9px;margin-top:4px;"><div class="bd-lbl" style="font-weight:800;color:var(--navy);font-size:12px;">Total Out-of-Pocket</div><div class="bd-val" id="bdTotal" style="font-size:15px;">—</div></div>
+    </div>
+
+    <!-- Amortization Table -->
+    <div class="amort-card">
+      <div class="amort-title">📅 Yearly Amortization <span style="font-size:10px;font-weight:600;color:var(--muted);">P&I breakdown</span></div>
+      <table class="amort-table" id="amortTable">
+        <thead>
+          <tr>
+            <th>Year</th>
+            <th>Payment</th>
+            <th>Interest</th>
+            <th>Principal</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody id="amortBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Related Tools -->
+    <div class="sec">Related Tools</div>
+    <div class="g2">
+      <div class="tc tl"><div class="ti">📊</div><div class="tn">Lease vs Buy</div><div class="td">True cost comparison</div><div class="ta">›</div></div>
+      <div class="tc nv"><div class="ti">💳</div><div class="tn">Credit Score</div><div class="td">APR impact by FICO</div><div class="bge bge-b">620–850</div><div class="ta">›</div></div>
+      <div class="tc"><div class="ti">⚡</div><div class="tn">EV Tax Credit</div><div class="td">IRS §30D · up to $7,500</div><div class="bge bge-g">2026 Rules</div><div class="ta">›</div></div>
+      <div class="tc rd"><div class="ti">🔄</div><div class="tn">Refinance Auto</div><div class="td">Lower your current rate</div><div class="ta">›</div></div>
+    </div>
+
+    <div class="sec" style="margin-top:20px;">💡 Auto Loan Insights</div>
+    <div class="tip-list">
+      <div class="tip-item">
+        <div class="tip-icon">🏦</div>
+        <div>
+          <div class="tip-title">Get Pre-Approved Before the Dealership</div>
+          <div class="tip-desc">Credit unions like PenFed and Navy Federal routinely offer 1–2% lower APR than dealer financing. Getting pre-approved gives you leverage to negotiate.</div>
+        </div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">⚡</div>
+        <div>
+          <div class="tip-title">EV Tax Credit: Up to $7,500</div>
+          <div class="tip-desc">The IRS §30D Clean Vehicle Credit offers up to $7,500 for qualifying new EVs in 2026. Income limits apply: $150K single / $300K married. MSRP cap: $80K SUV/truck, $55K sedan.</div>
+        </div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">📉</div>
+        <div>
+          <div class="tip-title">Shorter Terms Save Thousands</div>
+          <div class="tip-desc">A 48-month loan at 7.18% on $43,000 saves ~$2,800 in interest vs. a 72-month loan, though monthly payments are higher. Only take 72–84 months if cash flow is tight.</div>
+        </div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">🎯</div>
+        <div>
+          <div class="tip-title">20/4/10 Rule of Thumb</div>
+          <div class="tip-desc">Put 20% down, finance for no more than 4 years, and keep total vehicle expenses (payment + insurance) under 10% of gross monthly income for a financially sound purchase.</div>
+        </div>
+      </div>
+    </div>
+
+    <br>
+    <div class="disclaimer">
+      Auto loan rates from NCUA, Experian State of the Automotive Finance Market Q1 2026, and individual lender websites.
+      Average new car price from Kelley Blue Book June 2026. Results are estimates for educational purposes only.
+    </div>
+
+  </div><!-- end results -->
+
+  <!-- Default state -->
+  <div id="defaultState" class="no-result" style="margin-top:10px;">
+    <div class="nr-icon">🏎️</div>
+    <div class="nr-title">Enter Your Vehicle Details Above</div>
+    <div class="nr-sub">We'll calculate your monthly payment,<br>total interest, and full cost breakdown.</div>
+  </div>
+
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<div class="toast" id="toast"></div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+  let selectedTerm = 48;
+  let rollTaxFees = false;
+  let vehicleType = 'new';
+
+  const vtypeData = {
+    new:   { title:'New Vehicle Financing',    sub:'Avg new car price: $48,401 (June 2026, KBB)',       priceHint:'Avg new: $48,401',   aprHint:'Avg new: 7.18%',   price:48401, apr:7.18 },
+    used:  { title:'Used Vehicle Financing',   sub:'Avg used car price: $28,544 (June 2026, KBB)',      priceHint:'Avg used: $28,544',  aprHint:'Avg used: 11.54%', price:28544, apr:11.54 },
+    truck: { title:'Truck / SUV Financing',    sub:'Avg new truck/SUV price: $56,800 (June 2026, KBB)', priceHint:'Avg truck: $56,800', aprHint:'Avg truck: 7.54%', price:56800, apr:7.54 },
+    ev:    { title:'Electric Vehicle Financing', sub:'Avg EV price: $58,940 + up to $7,500 tax credit', priceHint:'Avg EV: $58,940',    aprHint:'Avg EV: 6.89%',    price:58940, apr:6.89 },
+    refi:  { title:'Auto Loan Refinance',      sub:'Refinance your existing auto loan for a lower rate',priceHint:'Current balance',    aprHint:'New refi rate',     price:22000, apr:6.49 },
+  };
+
+  function selectVtype(type, el) {
+    vehicleType = type;
+    document.querySelectorAll('.vtype-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    const d = vtypeData[type];
+    document.getElementById('vehicleTitle').textContent = d.title;
+    document.getElementById('vehicleSub').textContent = d.sub;
+    document.getElementById('priceHint').textContent = d.priceHint;
+    document.getElementById('aprHint').textContent = d.aprHint;
+    document.getElementById('vehiclePrice').value = d.price;
+    document.getElementById('apr').value = d.apr;
+    document.getElementById('aprSlider').value = d.apr;
+    if (type === 'ev') {
+      document.getElementById('rebate').value = 7500;
+    }
+  }
+
+  function selectTerm(t) {
+    selectedTerm = t;
+    document.querySelectorAll('.term-chip').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+
+  function setSeg(group, val, btn) {
+    if (group === 'taxFin') rollTaxFees = val === 'yes';
+    btn.parentElement.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function syncSlider(slider, inputId) {
+    document.getElementById(inputId).value = parseFloat(slider.value).toFixed(2);
+  }
+
+  function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+  function fmtD(n) { return '$' + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+
+  function monthlyPayment(principal, annualRate, months) {
+    const r = annualRate / 100 / 12;
+    if (r === 0) return principal / months;
+    return principal * r * Math.pow(1+r, months) / (Math.pow(1+r, months) - 1);
+  }
+
+  function calculate() {
+    const price    = parseFloat(document.getElementById('vehiclePrice').value) || 48401;
+    const down     = parseFloat(document.getElementById('downPayment').value) || 0;
+    const tradeIn  = parseFloat(document.getElementById('tradeIn').value) || 0;
+    const apr      = parseFloat(document.getElementById('apr').value) || 7.18;
+    const taxRate  = parseFloat(document.getElementById('salesTax').value) || 5.75;
+    const dealFees = parseFloat(document.getElementById('dealerFees').value) || 500;
+    const regFee   = parseFloat(document.getElementById('regFee').value) || 250;
+    const rebate   = parseFloat(document.getElementById('rebate').value) || 0;
+    const months   = selectedTerm;
+
+    const salesTaxAmt = (price - rebate) * (taxRate / 100);
+    const feesTotal   = dealFees + regFee;
+    const totalExtra  = salesTaxAmt + feesTotal;
+
+    const netPrice = price - down - tradeIn - rebate;
+    let financed = rollTaxFees ? netPrice + totalExtra : netPrice;
+    financed = Math.max(0, financed);
+
+    const pmt = monthlyPayment(financed, apr, months);
+    const totalPaid  = pmt * months;
+    const totalInt   = totalPaid - financed;
+    const allIn      = totalPaid + (rollTaxFees ? 0 : totalExtra) + down + tradeIn;
+
+    // Fill hero
+    document.getElementById('monthlyPayment').textContent = fmtD(pmt);
+    document.getElementById('paymentSub').textContent = `per month · ${months}-month loan @ ${apr}% APR`;
+    document.getElementById('totalInterest').textContent = fmtD(totalInt);
+    document.getElementById('totalCost').textContent = fmtD(allIn);
+    document.getElementById('loanAmt').textContent = fmtD(financed);
+
+    // Breakdown
+    document.getElementById('bdVehiclePrice').textContent = fmtD(price);
+    document.getElementById('bdDown').textContent = '– ' + fmtD(down + tradeIn + rebate);
+    document.getElementById('bdFinanced').textContent = fmtD(financed);
+    document.getElementById('bdTax').textContent = fmtD(salesTaxAmt);
+    document.getElementById('bdFees').textContent = fmtD(feesTotal);
+    document.getElementById('bdInterest').textContent = fmtD(totalInt);
+    document.getElementById('bdTotal').textContent = fmtD(allIn);
+
+    // Legend
+    document.getElementById('legPrincipal').textContent = fmtD(financed);
+    document.getElementById('legInterest').textContent = fmtD(totalInt);
+    document.getElementById('legFees').textContent = fmtD(totalExtra);
+
+    // Donut chart
+    const circumference = 2 * Math.PI * 35; // ~220
+    const totalDonut = financed + totalInt + totalExtra;
+    const intFrac = totalInt / totalDonut;
+    const feesFrac = totalExtra / totalDonut;
+    const intDash = (intFrac * circumference).toFixed(1);
+    const feesDash = (feesFrac * circumference).toFixed(1);
+    // Interest arc starts after principal arc
+    const principalFrac = financed / totalDonut;
+    const intOffset = 55 - principalFrac * circumference;
+    document.getElementById('donutInt').style.strokeDasharray = `${intDash} ${circumference}`;
+    document.getElementById('donutInt').style.strokeDashoffset = intOffset;
+    document.getElementById('donutFees').style.strokeDasharray = `${feesDash} ${circumference}`;
+    document.getElementById('donutFees').style.strokeDashoffset = intOffset - parseFloat(intDash);
+    document.getElementById('donutCenterVal').textContent = fmtD(allIn).replace('.00','');
+
+    // Amortization table (yearly)
+    let bal = financed;
+    const r = apr / 100 / 12;
+    let tbody = '';
+    const years = Math.ceil(months / 12);
+    for (let y = 1; y <= years; y++) {
+      const moStart = (y-1)*12 + 1;
+      const moEnd   = Math.min(y*12, months);
+      let yInt = 0, yPrin = 0, yPmt = 0;
+      for (let m = moStart; m <= moEnd; m++) {
+        const intPart  = bal * r;
+        const prinPart = Math.min(pmt - intPart, bal);
+        yInt  += intPart;
+        yPrin += prinPart;
+        yPmt  += pmt;
+        bal   = Math.max(0, bal - prinPart);
+      }
+      const isLast = y === years;
+      tbody += `<tr>
+        <td>Year ${y}</td>
+        <td>${fmtD(yPmt)}</td>
+        <td class="int-cell">${fmtD(yInt)}</td>
+        <td class="prin-cell">${fmtD(yPrin)}</td>
+        <td>${isLast ? '$0' : fmtD(bal)}</td>
+      </tr>`;
+    }
+    // Totals row
+    tbody += `<tr>
+      <td>Total</td>
+      <td>${fmtD(pmt * months)}</td>
+      <td class="int-cell">${fmtD(totalInt)}</td>
+      <td class="prin-cell">${fmtD(financed)}</td>
+      <td>$0</td>
+    </tr>`;
+    document.getElementById('amortBody').innerHTML = tbody;
+
+    // Show results
+    document.getElementById('defaultState').style.display = 'none';
+    document.getElementById('results').classList.add('show');
+    setTimeout(() => document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+  }
+
+  /* ===== SAVE / LOAD ===== */
+  const SAVE_KEY = 'autoloan_saved';
+
+  function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2200);
+  }
+  function getSaved(){ try{return JSON.parse(localStorage.getItem(SAVE_KEY))||[];}catch(e){return [];} }
+  function setSaved(arr){ localStorage.setItem(SAVE_KEY, JSON.stringify(arr)); }
+
+  function saveCalculation(){
+    const monthly = document.getElementById('monthlyPayment').textContent;
+    if(monthly==='$—'){ showToast('Calculate first, then save'); return; }
+    const price = document.getElementById('vehiclePrice').value;
+    const down = document.getElementById('downPayment').value;
+    const tradeIn = document.getElementById('tradeIn').value;
+    const apr = document.getElementById('apr').value;
+    const salesTax = document.getElementById('salesTax').value;
+    const dealerFees = document.getElementById('dealerFees').value;
+    const regFee = document.getElementById('regFee').value;
+    const rebate = document.getElementById('rebate').value;
+    const total = document.getElementById('totalCost').textContent;
+
+    const entry = {
+      id: Date.now(),
+      name: monthly + '/mo · ' + vehicleType.toUpperCase() + ' · ' + selectedTerm + 'mo',
+      meta: 'Price $' + Number(price).toLocaleString() + ' · ' + apr + '% APR · Total ' + total,
+      data: { vehicleType, price, down, tradeIn, apr, salesTax, dealerFees, regFee, rebate, term: selectedTerm, roll: rollTaxFees }
+    };
+    const arr = getSaved();
+    arr.unshift(entry);
+    if(arr.length>10) arr.pop();
+    setSaved(arr);
+    renderSaved();
+
+    const btn = document.getElementById('saveBtn');
+    btn.classList.add('saved');
+    btn.textContent='✓ Saved!';
+    showToast('Calculation saved');
+    setTimeout(()=>{btn.classList.remove('saved'); btn.innerHTML='💾 Save This Calculation';},1600);
+  }
+
+  function loadCalculation(id){
+    const entry = getSaved().find(e=>e.id===id);
+    if(!entry) return;
+    const d = entry.data;
+    // restore vtype chip
+    document.querySelectorAll('.vtype-chip').forEach((c,i)=>{
+      const types=['new','used','truck','ev','refi'];
+      c.classList.toggle('active', types[i]===d.vehicleType);
+    });
+    vehicleType = d.vehicleType;
+    const vd = vtypeData[d.vehicleType];
+    document.getElementById('vehicleTitle').textContent = vd.title;
+    document.getElementById('vehicleSub').textContent = vd.sub;
+    document.getElementById('priceHint').textContent = vd.priceHint;
+    document.getElementById('aprHint').textContent = vd.aprHint;
+
+    document.getElementById('vehiclePrice').value = d.price;
+    document.getElementById('downPayment').value = d.down;
+    document.getElementById('tradeIn').value = d.tradeIn;
+    document.getElementById('apr').value = d.apr;
+    document.getElementById('aprSlider').value = d.apr;
+    document.getElementById('salesTax').value = d.salesTax;
+    document.getElementById('dealerFees').value = d.dealerFees;
+    document.getElementById('regFee').value = d.regFee;
+    document.getElementById('rebate').value = d.rebate;
+
+    selectedTerm = d.term;
+    document.querySelectorAll('.term-chip').forEach(c=>{
+      c.classList.toggle('active', c.textContent.trim()===d.term+' mo');
+    });
+
+    rollTaxFees = d.roll;
+    document.querySelectorAll('#taxFinSeg .seg-btn').forEach((b,i)=>{
+      b.classList.toggle('active', (i===1)===rollTaxFees);
+    });
+
+    calculate();
+    showToast('Calculation loaded');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function deleteSaved(id,evt){
+    evt.stopPropagation();
+    setSaved(getSaved().filter(e=>e.id!==id));
+    renderSaved();
+    showToast('Removed');
+  }
+
+  function clearAllSaved(){
+    if(getSaved().length===0) return;
+    setSaved([]);
+    renderSaved();
+    showToast('All saved calculations cleared');
+  }
+
+  function renderSaved(){
+    const arr = getSaved();
+    const list = document.getElementById('savedList');
+    if(arr.length===0){
+      list.innerHTML = '<div class="saved-empty">No saved calculations yet. Calculate, then tap "Save This Calculation".</div>';
+      return;
+    }
+    list.innerHTML = arr.map(e=>`
+      <div class="saved-row" onclick="loadCalculation(${e.id})">
+        <div class="saved-info">
+          <div class="saved-name">${e.name}</div>
+          <div class="saved-meta">${e.meta}</div>
+        </div>
+        <div class="saved-del" onclick="deleteSaved(${e.id},event)">🗑️</div>
+      </div>`).join('');
+  }
+  renderSaved();
+</script>
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBA Rate History – Australia Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-hero{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:0;position:relative;z-index:2;}
+.rh-item{text-align:center;}
+.rh-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rh-val{font-size:22px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+.rh-val.gold{color:#FFD700;}.rh-val.red{color:#FF8A9A;}.rh-val.grn{color:#BBF7D0;}
+.rh-change{font-size:10px;font-weight:700;margin-top:2px;}
+.rh-div{width:1px;height:40px;background:rgba(255,255,255,0.15);}
+.tab-strip{display:flex;gap:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;overflow:hidden;position:relative;z-index:2;margin-top:10px;}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer;transition:all 0.2s;}
+.tab.active{background:rgba(255,255,255,0.18);color:#fff;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+
+/* Chart */
+.chart-card{background:#fff;border-radius:20px;padding:18px 16px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:4px;}
+.chart-subtitle{font-size:10px;color:#92400E;margin-bottom:14px;}
+.range-tabs{display:flex;gap:5px;margin-bottom:14px;}
+.rt-btn{padding:5px 10px;border-radius:20px;font-size:10px;font-weight:700;border:1.5px solid rgba(124,45,18,0.2);background:#FFF8F0;color:#7C2D12;cursor:pointer;transition:all 0.18s;}
+.rt-btn.active{background:#7C2D12;color:#fff;border-color:#7C2D12;}
+#rateChart{width:100%;height:180px;display:block;}
+.chart-tooltip{position:absolute;background:#1A0A00;color:#fff;padding:6px 10px;border-radius:8px;font-size:10px;font-weight:700;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:10;}
+.chart-wrapper{position:relative;}
+
+/* Decisions list */
+.decisions-list{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:14px;}
+.dl-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:12px;}
+.decision-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(124,45,18,0.07);}
+.decision-item:last-child{border-bottom:none;}
+.di-date{font-size:10px;color:#92400E;width:65px;flex-shrink:0;}
+.di-badge{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+.di-badge.up{background:#FEE2E2;}
+.di-badge.down{background:#DCFCE7;}
+.di-badge.hold{background:#FFF8F0;}
+.di-info{flex:1;}
+.di-change{font-size:13px;font-weight:800;color:#1A0A00;}
+.di-rate{font-size:10px;color:#7C2D12;margin-top:1px;}
+.di-arrow{font-size:11px;font-weight:700;}
+.di-arrow.up{color:#DC2626;}.di-arrow.down{color:#16A34A;}.di-arrow.hold{color:#92400E;}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);}
+.sc-lbl{font-size:10px;color:#92400E;font-weight:600;}
+.sc-val{font-size:20px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-top:3px;}
+.sc-sub{font-size:9px;color:#92400E;margin-top:2px;}
+.sc-val.red{color:#DC2626;}.sc-val.grn{color:#16A34A;}.sc-val.blue{color:#1D4ED8;}.sc-val.gold{color:#D97706;}
+
+/* Impact calculator */
+.impact-card{background:linear-gradient(145deg,#1A0A00,#7C2D12);border-radius:20px;padding:18px;box-shadow:0 8px 32px rgba(26,10,0,0.28);margin-bottom:14px;}
+.ic-title{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-bottom:12px;}
+.ic-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.ic-lbl{font-size:11px;color:rgba(255,255,255,0.6);width:100px;flex-shrink:0;}
+.ic-inp{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:9px;padding:8px 11px;font-size:14px;font-weight:700;color:#fff;flex:1;outline:none;font-family:Georgia,serif;}
+.ic-result{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px;margin-top:8px;}
+.icr-lbl{font-size:10px;color:rgba(255,255,255,0.5);margin-bottom:4px;}
+.icr-val{font-size:20px;font-weight:800;color:#FFD700;font-family:Georgia,serif;}
+.icr-sub{font-size:10px;color:rgba(255,255,255,0.45);margin-top:2px;}
+.ic-btn{width:100%;background:#002868;border:none;border-radius:11px;padding:11px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;margin-top:10px;box-shadow:0 4px 14px rgba(0,40,104,0.4);}
+
+/* Forecast */
+.forecast-card{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:16px;padding:15px;margin-bottom:12px;}
+.fc-title{font-size:13px;font-weight:800;color:#1E3A8A;font-family:Georgia,serif;margin-bottom:8px;}
+.fc-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(29,78,216,0.1);}
+.fc-item:last-child{border-bottom:none;}
+.fc-date{font-size:11px;color:#1D4ED8;font-weight:600;}
+.fc-rate{font-size:13px;font-weight:800;color:#1E3A8A;font-family:Georgia,serif;}
+.fc-prob{font-size:10px;color:#1D4ED8;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏦</span><div class="hdr-title">RBA Rate History</div><div class="hdr-sub">Reserve Bank of Australia · Cash Rate</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-hero">
+    <div class="rh-item"><div class="rh-lbl">Cash Rate</div><div class="rh-val gold">4.35%</div><div class="rh-change" style="color:#FFD700;">Current</div></div>
+    <div class="rh-div"></div>
+    <div class="rh-item"><div class="rh-lbl">Last Change</div><div class="rh-val" style="color:#FF8A9A;font-size:16px;">Nov '23</div><div class="rh-change" style="color:#FF8A9A;">+0.25%</div></div>
+    <div class="rh-div"></div>
+    <div class="rh-item"><div class="rh-lbl">Peak (Cycle)</div><div class="rh-val red">4.35%</div><div class="rh-change" style="color:#FF8A9A;">13-yr high</div></div>
+    <div class="rh-div"></div>
+    <div class="rh-item"><div class="rh-lbl">Trough</div><div class="rh-val grn">0.10%</div><div class="rh-change" style="color:#BBF7D0;">Nov '20–Apr '22</div></div>
+  </div>
+  <div class="tab-strip">
+    <div class="tab active" onclick="switchTab('chart',this)">Chart</div>
+    <div class="tab" onclick="switchTab('decisions',this)">Decisions</div>
+    <div class="tab" onclick="switchTab('impact',this)">Impact</div>
+    <div class="tab" onclick="switchTab('forecast',this)">Outlook</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- TAB: CHART -->
+  <div id="tab-chart">
+    <div class="sec-lbl" style="margin-top:0">Cash Rate History</div>
+    <div class="chart-card">
+      <div class="chart-title">RBA Cash Rate Target (%)</div>
+      <div class="chart-subtitle">Reserve Bank of Australia — Monthly data</div>
+      <div class="range-tabs" id="rangeTabs">
+        <div class="rt-btn" onclick="setRange('2y',this)">2Y</div>
+        <div class="rt-btn active" onclick="setRange('5y',this)">5Y</div>
+        <div class="rt-btn" onclick="setRange('10y',this)">10Y</div>
+        <div class="rt-btn" onclick="setRange('20y',this)">20Y</div>
+        <div class="rt-btn" onclick="setRange('all',this)">All</div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="rateChart"></canvas>
+        <div class="chart-tooltip" id="tooltip"></div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="sc-lbl">Hikes (May'22–Nov'23)</div><div class="sc-val red">13</div><div class="sc-sub">425 bps total</div></div>
+      <div class="stat-card"><div class="sc-lbl">Consecutive Holds</div><div class="sc-val gold">13</div><div class="sc-sub">Dec'23 – Feb'25</div></div>
+      <div class="stat-card"><div class="sc-lbl">Avg Rate (10yr)</div><div class="sc-val blue">1.83%</div><div class="sc-sub">2014–2024</div></div>
+      <div class="stat-card"><div class="sc-lbl">Avg Rate (all time)</div><div class="sc-val">5.20%</div><div class="sc-sub">1990–2024</div></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Rate Cycle Overview</div>
+      <div class="chart-subtitle">Key tightening & easing cycles</div>
+      <canvas id="cycleChart" width="100%" height="120"></canvas>
+    </div>
+  </div>
+
+  <!-- TAB: DECISIONS -->
+  <div id="tab-decisions" style="display:none;">
+    <div class="sec-lbl" style="margin-top:0">Recent RBA Decisions</div>
+    <div class="decisions-list">
+      <div class="dl-title">2022–2025 Rate Decisions</div>
+      <div id="decisionsList"></div>
+    </div>
+  </div>
+
+  <!-- TAB: IMPACT -->
+  <div id="tab-impact" style="display:none;">
+    <div class="sec-lbl" style="margin-top:0">Repayment Impact Calculator</div>
+    <div class="impact-card">
+      <div class="ic-title">📊 Rate Change Impact</div>
+      <div class="ic-row"><span class="ic-lbl">Loan Balance</span><input class="ic-inp" id="loanBal" type="number" value="600000" oninput="calcImpact()"></div>
+      <div class="ic-row"><span class="ic-lbl">Term (years)</span><input class="ic-inp" id="loanTerm" type="number" value="25" oninput="calcImpact()"></div>
+      <div class="ic-row"><span class="ic-lbl">Base Rate %</span><input class="ic-inp" id="baseRate" type="number" value="6.09" step="0.01" oninput="calcImpact()"></div>
+      <div class="ic-row"><span class="ic-lbl">New Rate %</span><input class="ic-inp" id="newRate" type="number" value="5.84" step="0.01" oninput="calcImpact()"></div>
+      <div class="ic-result">
+        <div class="icr-lbl">Monthly Saving / (Cost)</div>
+        <div class="icr-val" id="impactMonthly">–</div>
+        <div class="icr-sub" id="impactAnnual">–</div>
+      </div>
+      <div id="repayComparison" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="sec-lbl" style="margin-top:0">Historical Impact on $600K Loan</div>
+    <div class="chart-card">
+      <div class="chart-title">Monthly Repayment at Various Rates</div>
+      <canvas id="repayChart" height="130"></canvas>
+    </div>
+  </div>
+
+  <!-- TAB: FORECAST -->
+  <div id="tab-forecast" style="display:none;">
+    <div class="sec-lbl" style="margin-top:0">Market Outlook 2025</div>
+    <div class="forecast-card">
+      <div class="fc-title">📅 Upcoming RBA Meetings</div>
+      <div class="fc-item"><span class="fc-date">Feb 17–18, 2025</span><span class="fc-rate">4.10%?</span><span class="fc-prob">Cut expected</span></div>
+      <div class="fc-item"><span class="fc-date">Apr 1, 2025</span><span class="fc-rate">3.85%?</span><span class="fc-prob">Possible cut</span></div>
+      <div class="fc-item"><span class="fc-date">May 20, 2025</span><span class="fc-rate">3.60%?</span><span class="fc-prob">Possible cut</span></div>
+      <div class="fc-item"><span class="fc-date">Jul 8, 2025</span><span class="fc-rate">3.35%?</span><span class="fc-prob">Data dependent</span></div>
+      <div class="fc-item"><span class="fc-date">End 2025 (est.)</span><span class="fc-rate">3.10%</span><span class="fc-prob">Market forecast</span></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Economist Forecasts — Cash Rate End 2025</div>
+      <div id="forecastBars"></div>
+    </div>
+
+    <div class="chart-card" style="background:linear-gradient(135deg,#FFFBEB,#FEF3C7);border:1px solid #FCD34D;">
+      <div class="chart-title" style="color:#92400E;">Key Inflation Metrics (Latest)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+        <div style="background:#fff;border-radius:11px;padding:11px;">
+          <div style="font-size:10px;color:#92400E;">CPI (Annual)</div>
+          <div style="font-size:20px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;">3.5%</div>
+          <div style="font-size:9px;color:#92400E;">Q3 2024</div>
+        </div>
+        <div style="background:#fff;border-radius:11px;padding:11px;">
+          <div style="font-size:10px;color:#92400E;">Trimmed Mean CPI</div>
+          <div style="font-size:20px;font-weight:800;color:#DC2626;font-family:Georgia,serif;">3.5%</div>
+          <div style="font-size:9px;color:#92400E;">RBA target: 2–3%</div>
+        </div>
+        <div style="background:#fff;border-radius:11px;padding:11px;">
+          <div style="font-size:10px;color:#92400E;">Unemployment</div>
+          <div style="font-size:20px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;">4.1%</div>
+          <div style="font-size:9px;color:#92400E;">Nov 2024</div>
+        </div>
+        <div style="background:#fff;border-radius:11px;padding:11px;">
+          <div style="font-size:10px;color:#92400E;">GDP Growth</div>
+          <div style="font-size:20px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;">0.8%</div>
+          <div style="font-size:9px;color:#92400E;">Annual, Q2 2024</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// ─── RBA Data ─────────────────────────────────────────────────────────────────
+// Monthly rates (date, rate)
+const ALL_DATA = [
+  // 2000
+  ['2000-02',5.50],['2000-03',5.75],['2000-05',6.00],['2000-08',6.25],
+  // 2001 cuts
+  ['2001-02',5.75],['2001-03',5.50],['2001-04',5.25],['2001-05',5.00],
+  ['2001-09',4.75],['2001-10',4.50],['2001-12',4.25],
+  // 2002-07 hikes
+  ['2002-06',4.50],['2002-11',4.75],['2003-03',4.75],['2003-11',5.00],
+  ['2004-11',5.25],['2005-03',5.50],['2006-05',5.75],['2006-08',6.00],
+  ['2007-08',6.25],['2007-11',6.50],['2008-02',7.00],['2008-03',7.25],
+  // 2008 cuts
+  ['2008-09',7.00],['2008-10',6.00],['2008-11',5.25],['2008-12',4.25],
+  ['2009-02',3.25],['2009-04',3.00],
+  // 2009-10 hikes
+  ['2009-10',3.25],['2009-11',3.50],['2009-12',3.75],['2010-03',4.00],
+  ['2010-04',4.25],['2010-05',4.50],['2010-11',4.75],
+  // 2011-12 cuts
+  ['2011-11',4.50],['2012-05',3.75],['2012-06',3.50],['2012-10',3.25],
+  ['2012-12',3.00],['2013-05',2.75],['2013-08',2.50],
+  ['2015-02',2.25],['2015-05',2.00],['2016-05',1.75],['2016-08',1.50],
+  ['2019-06',1.25],['2019-07',1.00],['2019-10',0.75],
+  ['2020-03',0.50],['2020-03',0.25],['2020-11',0.10],
+  // 2022 hikes
+  ['2022-05',0.35],['2022-06',0.85],['2022-07',1.35],['2022-08',1.85],
+  ['2022-09',2.35],['2022-10',2.60],['2022-11',2.85],['2022-12',3.10],
+  ['2023-02',3.35],['2023-03',3.60],['2023-05',3.85],['2023-06',4.10],
+  ['2023-07',4.10],['2023-08',4.10],['2023-09',4.10],['2023-10',4.10],
+  ['2023-11',4.35],['2023-12',4.35],
+  ['2024-01',4.35],['2024-02',4.35],['2024-03',4.35],['2024-04',4.35],
+  ['2024-05',4.35],['2024-06',4.35],['2024-07',4.35],['2024-08',4.35],
+  ['2024-09',4.35],['2024-10',4.35],['2024-11',4.35],['2024-12',4.35]
+];
+
+const DECISIONS = [
+  {date:'Nov 2023',action:'up',change:'+0.25%',rate:'4.35%',note:'12th hike of the cycle'},
+  {date:'Oct 2023',action:'hold',change:'Hold',rate:'4.10%',note:'Board held amid cooling CPI'},
+  {date:'Sep 2023',action:'hold',change:'Hold',rate:'4.10%',note:'Inflation moderating'},
+  {date:'Aug 2023',action:'hold',change:'Hold',rate:'4.10%',note:'Data assessment'},
+  {date:'Jul 2023',action:'hold',change:'Hold',rate:'4.10%',note:'Monitoring labour market'},
+  {date:'Jun 2023',action:'up',change:'+0.25%',rate:'4.10%',note:'Persistent inflation'},
+  {date:'May 2023',action:'up',change:'+0.25%',rate:'3.85%',note:'Inflation still high'},
+  {date:'Mar 2023',action:'up',change:'+0.25%',rate:'3.60%',note:'Services inflation concern'},
+  {date:'Feb 2023',action:'up',change:'+0.25%',rate:'3.35%',note:'CPI hit 7.8% in Q4 2022'},
+  {date:'Dec 2022',action:'up',change:'+0.25%',rate:'3.10%',note:'8th consecutive hike'},
+  {date:'Nov 2022',action:'up',change:'+0.25%',rate:'2.85%',note:''},
+  {date:'Oct 2022',action:'up',change:'+0.25%',rate:'2.60%',note:'Slower pace'},
+  {date:'Sep 2022',action:'up',change:'+0.50%',rate:'2.35%',note:''},
+  {date:'Aug 2022',action:'up',change:'+0.50%',rate:'1.85%',note:''},
+  {date:'Jul 2022',action:'up',change:'+0.50%',rate:'1.35%',note:''},
+  {date:'Jun 2022',action:'up',change:'+0.50%',rate:'0.85%',note:'Accelerated hikes'},
+  {date:'May 2022',action:'up',change:'+0.25%',rate:'0.35%',note:'First hike since 2010'},
+  {date:'Nov 2020',action:'down',change:'-0.15%',rate:'0.10%',note:'Historic low — COVID QE'},
+  {date:'Mar 2020',action:'down',change:'-0.25%',rate:'0.25%',note:'Emergency COVID cut #2'},
+  {date:'Mar 2020',action:'down',change:'-0.25%',rate:'0.50%',note:'Emergency COVID cut #1'},
+];
+
+let currentRange = '5y';
+let chartData = [];
+
+function filterData(range) {
+  const now = new Date('2025-01-01');
+  const cutoff = new Date(now);
+  if (range === '2y') cutoff.setFullYear(now.getFullYear()-2);
+  else if (range === '5y') cutoff.setFullYear(now.getFullYear()-5);
+  else if (range === '10y') cutoff.setFullYear(now.getFullYear()-10);
+  else if (range === '20y') cutoff.setFullYear(now.getFullYear()-20);
+  else return ALL_DATA;
+  return ALL_DATA.filter(([d]) => new Date(d+'-01') >= cutoff);
+}
+
+function setRange(r, el) {
+  currentRange = r;
+  document.querySelectorAll('.rt-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  drawChart();
+}
+
+function drawChart() {
+  const canvas = document.getElementById('rateChart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 350;
+  const H = 180;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  const data = filterData(currentRange);
+  const rates = data.map(d => d[1]);
+  const maxR = Math.max(...rates);
+  const minR = Math.min(...rates);
+  const padT = 16, padB = 24, padL = 28, padR = 10;
+  const W2 = W - padL - padR, H2 = H - padT - padB;
+
+  function xPos(i) { return padL + (i / (data.length - 1)) * W2; }
+  function yPos(r) { return padT + H2 - ((r - minR) / (maxR - minR || 1)) * H2; }
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(124,45,18,0.07)';
+  ctx.lineWidth = 1;
+  [0,1,2,3,4].forEach(i => {
+    const y = padT + (i / 4) * H2;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + W2, y); ctx.stroke();
+    const val = maxR - (i / 4) * (maxR - minR);
+    ctx.fillStyle = 'rgba(146,64,14,0.5)';
+    ctx.font = '8px Helvetica Neue';
+    ctx.fillText(val.toFixed(1)+'%', 0, y + 3);
+  });
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, padT, 0, H - padB);
+  grad.addColorStop(0, 'rgba(124,45,18,0.18)');
+  grad.addColorStop(1, 'rgba(124,45,18,0)');
+  ctx.beginPath();
+  data.forEach(([d,r], i) => {
+    if (i === 0) ctx.moveTo(xPos(i), yPos(r));
+    else ctx.lineTo(xPos(i), yPos(r));
+  });
+  ctx.lineTo(xPos(data.length-1), H - padB);
+  ctx.lineTo(xPos(0), H - padB);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = '#7C2D12';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  data.forEach(([d,r], i) => {
+    if (i === 0) ctx.moveTo(xPos(i), yPos(r));
+    else ctx.lineTo(xPos(i), yPos(r));
+  });
+  ctx.stroke();
+
+  // Endpoint dot
+  const last = data[data.length-1];
+  ctx.beginPath();
+  ctx.arc(xPos(data.length-1), yPos(last[1]), 5, 0, Math.PI*2);
+  ctx.fillStyle = '#FFD700';
+  ctx.fill();
+
+  // X labels (first & last)
+  ctx.fillStyle = 'rgba(146,64,14,0.6)';
+  ctx.font = '8px Helvetica Neue';
+  ctx.fillText(data[0][0].slice(0,7), padL, H - 6);
+  ctx.textAlign = 'right';
+  ctx.fillText(data[data.length-1][0].slice(0,7), padL + W2, H - 6);
+  ctx.textAlign = 'left';
+
+  chartData = data.map(([d,r], i) => ({ x: xPos(i), y: yPos(r), date: d, rate: r }));
+}
+
+function renderDecisions() {
+  let html = '';
+  DECISIONS.forEach(d => {
+    const icon = d.action === 'up' ? '↑' : d.action === 'down' ? '↓' : '—';
+    const cls = d.action === 'up' ? 'up' : d.action === 'down' ? 'down' : 'hold';
+    html += `<div class="decision-item">
+      <div class="di-date">${d.date}</div>
+      <div class="di-badge ${cls}">${icon}</div>
+      <div class="di-info">
+        <div class="di-change">${d.change}</div>
+        <div class="di-rate">Cash Rate → ${d.rate}${d.note ? ' · ' + d.note : ''}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('decisionsList').innerHTML = html;
+}
+
+function calcImpact() {
+  const bal = parseFloat(document.getElementById('loanBal').value) || 600000;
+  const term = parseFloat(document.getElementById('loanTerm').value) || 25;
+  const base = parseFloat(document.getElementById('baseRate').value) || 6.09;
+  const newR = parseFloat(document.getElementById('newRate').value) || 5.84;
+
+  function monthly(rate, b, t) {
+    const r = rate / 100 / 12, n = t * 12;
+    return b * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+  }
+  const m1 = monthly(base, bal, term);
+  const m2 = monthly(newR, bal, term);
+  const diff = m2 - m1;
+  const fmt = n => '$'+Math.abs(Math.round(n)).toLocaleString('en-AU');
+
+  document.getElementById('impactMonthly').textContent = (diff < 0 ? '− ' : '+ ') + fmt(diff) + '/mo';
+  document.getElementById('impactAnnual').textContent = 'Annual: ' + (diff < 0 ? '− ' : '+ ') + fmt(diff * 12) +
+    ' · Base: $'+Math.round(m1).toLocaleString('en-AU')+'/mo → New: $'+Math.round(m2).toLocaleString('en-AU')+'/mo';
+
+  document.getElementById('repayComparison').innerHTML = `
+    <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div><div style="font-size:9px;color:rgba(255,255,255,0.5);">At ${base}%</div><div style="font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;">$${Math.round(m1).toLocaleString('en-AU')}</div></div>
+      <div><div style="font-size:9px;color:rgba(255,255,255,0.5);">At ${newR}%</div><div style="font-size:16px;font-weight:800;color:#BBF7D0;font-family:Georgia,serif;">$${Math.round(m2).toLocaleString('en-AU')}</div></div>
+    </div>`;
+}
+
+function drawRepayChart() {
+  const canvas = document.getElementById('repayChart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 350;
+  const H = 130;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  const rates = [0.10, 1.00, 2.00, 3.00, 4.00, 5.00, 6.09, 7.00, 8.00];
+  function monthly(rate) {
+    const r = rate / 100 / 12, n = 25 * 12, bal = 600000;
+    return bal * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+  }
+  const vals = rates.map(monthly);
+  const maxV = Math.max(...vals);
+  const minV = Math.min(...vals);
+  const padL = 50, padR = 10, padT = 12, padB = 30;
+  const W2 = W - padL - padR, H2 = H - padT - padB;
+  const barW = W2 / rates.length - 6;
+
+  rates.forEach((r, i) => {
+    const x = padL + i * (W2 / rates.length) + 3;
+    const v = vals[i];
+    const h = ((v - minV) / (maxV - minV)) * (H2 * 0.85) + H2 * 0.1;
+    const y = padT + H2 - h;
+    ctx.fillStyle = r === 4.35 ? '#FFD700' : r === 0.10 ? '#BBF7D0' : '#7C2D12';
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, h, 4);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    // Rate label
+    ctx.fillStyle = 'rgba(146,64,14,0.7)';
+    ctx.font = '8px Helvetica Neue';
+    ctx.textAlign = 'center';
+    ctx.fillText(r+'%', x + barW/2, H - 14);
+    // Value
+    ctx.fillStyle = '#1A0A00';
+    ctx.font = 'bold 7px Helvetica Neue';
+    ctx.fillText('$'+Math.round(v/1000)+'K', x + barW/2, y - 3);
+  });
+}
+
+function renderForecastBars() {
+  const forecasts = [
+    {bank:'CBA',rate:'3.10%',color:'#7C2D12'},
+    {bank:'Westpac',rate:'3.10%',color:'#002868'},
+    {bank:'ANZ',rate:'3.35%',color:'#D97706'},
+    {bank:'NAB',rate:'3.10%',color:'#0F766E'},
+    {bank:'Macquarie',rate:'2.85%',color:'#7C3AED'},
+    {bank:'AMP',rate:'3.35%',color:'#BE185D'},
+  ];
+  let html = '';
+  forecasts.forEach(f => {
+    const val = parseFloat(f.rate);
+    const pct = Math.round((val / 4.35) * 100);
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div style="font-size:11px;font-weight:700;color:#7C2D12;width:60px;">${f.bank}</div>
+      <div style="flex:1;height:20px;background:#FFF8F0;border-radius:5px;overflow:hidden;">
+        <div style="width:${pct}%;height:100%;background:${f.color};border-radius:5px;display:flex;align-items:center;padding-left:6px;">
+          <span style="font-size:9px;font-weight:700;color:#fff;">${pct>40 ? f.rate : ''}</span>
+        </div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#1A0A00;min-width:35px;text-align:right;">${f.rate}</div>
+    </div>`;
+  });
+  document.getElementById('forecastBars').innerHTML = html;
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['chart','decisions','impact','forecast'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === name ? 'block' : 'none';
+  });
+  if (name === 'chart') { setTimeout(drawChart, 50); }
+  if (name === 'decisions') renderDecisions();
+  if (name === 'impact') { calcImpact(); setTimeout(drawRepayChart, 50); }
+  if (name === 'forecast') renderForecastBars();
+}
+
+// Init
+setTimeout(() => { drawChart(); }, 100);
+</script>
+</body>
+</html>

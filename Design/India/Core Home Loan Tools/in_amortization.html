@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amortization Schedule – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 100px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+
+.calc-card{background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.inp-wrap{display:flex;flex-direction:column;gap:5px;}
+.inp-lbl{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.inp-field{border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:800;color:var(--navy);background:var(--bg);font-family:'Book Antiqua',Palatino,serif;outline:none;width:100%;}
+.inp-field:focus{border-color:var(--saffron);}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;}
+
+/* summary */
+.summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.sum-box{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);text-align:center;}
+.sum-lbl{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.5px;}
+.sum-val{font-size:16px;font-weight:800;color:var(--navy);margin-top:4px;}
+.sum-box.highlight{background:linear-gradient(140deg,var(--navy),var(--chakra));}
+.sum-box.highlight .sum-lbl{color:rgba(255,255,255,0.5);}
+.sum-box.highlight .sum-val{color:var(--ochre-lt);}
+
+/* bar chart */
+.bar-chart-wrap{background:var(--card);border-radius:22px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.bar-chart-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.bar-chart-sub{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:14px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.bar-year{font-size:9px;font-weight:700;color:var(--muted);width:24px;text-align:right;font-family:'Trebuchet MS',sans-serif;}
+.bar-track{flex:1;height:16px;border-radius:8px;background:#F5E6D4;overflow:hidden;display:flex;}
+.bar-p{height:100%;background:linear-gradient(90deg,var(--saffron),var(--ochre));border-radius:8px 0 0 8px;transition:width .5s ease;}
+.bar-i{height:100%;background:linear-gradient(90deg,var(--chakra),#4F6FBF);border-radius:0 8px 8px 0;transition:width .5s ease;}
+.bar-legend{display:flex;gap:12px;margin-top:10px;}
+.bl-item{display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.bl-dot{width:10px;height:10px;border-radius:3px;}
+
+/* table */
+.table-wrap{background:var(--card);border-radius:20px;box-shadow:var(--sh);border:1px solid var(--border);overflow:hidden;margin-bottom:14px;}
+.table-header{background:linear-gradient(90deg,var(--navy),var(--chakra));padding:12px 14px;display:grid;grid-template-columns:40px 1fr 1fr 1fr;gap:6px;}
+.th{font-size:9px;font-weight:800;color:rgba(255,255,255,0.8);font-family:'Trebuchet MS',sans-serif;text-align:right;}
+.th:first-child{text-align:left;}
+.table-body{max-height:320px;overflow-y:auto;}
+.table-body::-webkit-scrollbar{width:4px;}
+.table-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.tr{padding:10px 14px;display:grid;grid-template-columns:40px 1fr 1fr 1fr;gap:6px;border-bottom:1px solid var(--border);}
+.tr:last-child{border-bottom:none;}
+.tr.year-end{background:rgba(255,107,0,0.04);}
+.td-cell{font-size:10px;font-weight:700;color:var(--navy);text-align:right;font-family:'Trebuchet MS',sans-serif;}
+.td-cell:first-child{text-align:left;color:var(--muted);}
+.td-cell.green{color:var(--green);}
+.td-cell.saf{color:var(--saffron2);}
+
+/* filter tabs */
+.tabs{display:flex;gap:6px;margin-bottom:12px;}
+.tab{flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--border);font-size:10px;font-weight:700;color:var(--muted);text-align:center;cursor:pointer;font-family:'Trebuchet MS',sans-serif;transition:all .15s;}
+.tab.active{background:var(--saffron);border-color:var(--saffron);color:#fff;}
+
+.save-bar{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;border-radius:17px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.save-btn{background:var(--green);color:#fff;font-size:10px;font-weight:800;padding:9px 14px;border-radius:10px;border:none;cursor:pointer;font-family:'Trebuchet MS',sans-serif;white-space:nowrap;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .3s;z-index:200;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}.fu5{animation:fadeUp .38s ease both .24s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📊</div>
+      <div class="hdr-title">Amortization <span>Schedule</span></div>
+      <div class="hdr-sub">Month-by-month loan repayment breakdown</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">EMI</div><div class="rs-v saf" id="hs-emi">₹43,391</div><div class="rs-n">Monthly</div></div>
+    <div class="rs"><div class="rs-l">Principal</div><div class="rs-v">₹50L</div><div class="rs-n">Loan Amt</div></div>
+    <div class="rs"><div class="rs-l">Interest</div><div class="rs-v">₹54.1L</div><div class="rs-n">Total Int</div></div>
+    <div class="rs"><div class="rs-l">Tenure</div><div class="rs-v saf">20 Yr</div><div class="rs-n">240 EMIs</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Loan Parameters</div>
+  <div class="calc-card fu1">
+    <div class="input-row">
+      <div class="inp-wrap">
+        <div class="inp-lbl">Loan Amount (₹)</div>
+        <input class="inp-field" type="number" id="inp-amt" value="5000000" placeholder="50,00,000">
+      </div>
+      <div class="inp-wrap">
+        <div class="inp-lbl">Interest Rate (%)</div>
+        <input class="inp-field" type="number" id="inp-rate" value="8.50" step="0.05" placeholder="8.50">
+      </div>
+      <div class="inp-wrap">
+        <div class="inp-lbl">Tenure (Years)</div>
+        <input class="inp-field" type="number" id="inp-tenure" value="20" placeholder="20">
+      </div>
+      <div class="inp-wrap">
+        <div class="inp-lbl">Start Month</div>
+        <input class="inp-field" type="month" id="inp-start" value="2025-07">
+      </div>
+    </div>
+    <button class="calc-btn" onclick="generate()">☸ Generate Schedule</button>
+  </div>
+
+  <div class="summary-grid fu2">
+    <div class="sum-box highlight">
+      <div class="sum-lbl">Monthly EMI</div>
+      <div class="sum-val" id="sum-emi">₹43,391</div>
+    </div>
+    <div class="sum-box">
+      <div class="sum-lbl">Total Payment</div>
+      <div class="sum-val" id="sum-total">₹1.04Cr</div>
+    </div>
+    <div class="sum-box">
+      <div class="sum-lbl">Total Interest</div>
+      <div class="sum-val" id="sum-int">₹54.1L</div>
+    </div>
+    <div class="sum-box">
+      <div class="sum-lbl">Interest %</div>
+      <div class="sum-val" id="sum-pct">52%</div>
+    </div>
+  </div>
+
+  <div class="bar-chart-wrap fu3">
+    <div class="bar-chart-title">📈 Annual Principal vs Interest</div>
+    <div class="bar-chart-sub">Stacked view — how your payment shifts over years</div>
+    <div id="bar-chart"></div>
+    <div class="bar-legend">
+      <div class="bl-item"><div class="bl-dot" style="background:var(--saffron)"></div>Principal</div>
+      <div class="bl-item"><div class="bl-dot" style="background:var(--chakra)"></div>Interest</div>
+    </div>
+  </div>
+
+  <div class="sec fu3">Monthly Schedule
+    <div class="tabs" style="margin:0">
+      <div class="tab active" onclick="switchView('monthly',this)">Monthly</div>
+      <div class="tab" onclick="switchView('yearly',this)">Yearly</div>
+    </div>
+  </div>
+  <div class="table-wrap fu4">
+    <div class="table-header">
+      <div class="th">EMI#</div>
+      <div class="th">Principal</div>
+      <div class="th">Interest</div>
+      <div class="th">Balance</div>
+    </div>
+    <div class="table-body" id="table-body"></div>
+  </div>
+
+  <div class="save-bar fu5">
+    <div style="font-size:24px">💾</div>
+    <div style="flex:1">
+      <div style="font-size:12px;font-weight:800;color:var(--green2)">Save Amortization Schedule</div>
+      <div style="font-size:9.5px;color:var(--green);font-family:'Trebuchet MS',sans-serif">Save full schedule for future reference</div>
+    </div>
+    <button class="save-btn" onclick="saveCalc()">Save</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Schedule Saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let currentView='monthly';
+let scheduleData=[];
+
+function fmt(n){
+  if(n>=10000000)return '₹'+(n/10000000).toFixed(2)+'Cr';
+  if(n>=100000)return '₹'+(n/100000).toFixed(1)+'L';
+  return '₹'+Math.round(n).toLocaleString('en-IN');
+}
+function fmtSh(n){return '₹'+Math.round(n).toLocaleString('en-IN');}
+
+function generate(){
+  const p=+document.getElementById('inp-amt').value||5000000;
+  const r=(+document.getElementById('inp-rate').value||8.5)/1200;
+  const n=(+document.getElementById('inp-tenure').value||20)*12;
+  const emi=p*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+  const totalPay=emi*n;
+  const totalInt=totalPay-p;
+
+  document.getElementById('sum-emi').textContent='₹'+Math.round(emi).toLocaleString('en-IN');
+  document.getElementById('sum-total').textContent=fmt(totalPay);
+  document.getElementById('sum-int').textContent=fmt(totalInt);
+  document.getElementById('sum-pct').textContent=Math.round(totalInt/totalPay*100)+'%';
+
+  scheduleData=[];
+  let bal=p;
+  for(let i=1;i<=n;i++){
+    const intPart=bal*r;
+    const prinPart=emi-intPart;
+    bal-=prinPart;
+    scheduleData.push({emi:i,principal:prinPart,interest:intPart,balance:Math.max(0,bal)});
+  }
+  renderBarChart();
+  renderTable();
+}
+
+function renderBarChart(){
+  const years=Math.ceil(scheduleData.length/12);
+  let html='';
+  for(let y=1;y<=Math.min(years,20);y++){
+    const slice=scheduleData.slice((y-1)*12,y*12);
+    const totP=slice.reduce((a,b)=>a+b.principal,0);
+    const totI=slice.reduce((a,b)=>a+b.interest,0);
+    const tot=totP+totI;
+    const pw=Math.round(totP/tot*100);
+    const iw=100-pw;
+    html+=`<div class="bar-row">
+      <div class="bar-year">Y${y}</div>
+      <div class="bar-track">
+        <div class="bar-p" style="width:${pw}%"></div>
+        <div class="bar-i" style="width:${iw}%"></div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('bar-chart').innerHTML=html;
+}
+
+function renderTable(){
+  const body=document.getElementById('table-body');
+  if(currentView==='monthly'){
+    body.innerHTML=scheduleData.map(r=>`
+      <div class="tr ${r.emi%12===0?'year-end':''}">
+        <div class="td-cell">${r.emi}</div>
+        <div class="td-cell green">${fmtSh(r.principal)}</div>
+        <div class="td-cell saf">${fmtSh(r.interest)}</div>
+        <div class="td-cell">${fmtSh(r.balance)}</div>
+      </div>`).join('');
+  } else {
+    const years=Math.ceil(scheduleData.length/12);
+    let html='';
+    for(let y=1;y<=years;y++){
+      const slice=scheduleData.slice((y-1)*12,y*12);
+      const totP=slice.reduce((a,b)=>a+b.principal,0);
+      const totI=slice.reduce((a,b)=>a+b.interest,0);
+      const bal=slice[slice.length-1]?.balance||0;
+      html+=`<div class="tr year-end">
+        <div class="td-cell">Yr ${y}</div>
+        <div class="td-cell green">${fmtSh(totP)}</div>
+        <div class="td-cell saf">${fmtSh(totI)}</div>
+        <div class="td-cell">${fmtSh(bal)}</div>
+      </div>`;
+    }
+    body.innerHTML=html;
+  }
+}
+
+function switchView(v,el){
+  currentView=v;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+function saveCalc(){
+  const t=document.getElementById('toast');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+generate();
+</script>
+</body>
+</html>

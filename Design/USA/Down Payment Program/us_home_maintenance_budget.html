@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Maintenance Budget</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --white:#FFFFFF;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10);
+    --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --green:#15803D; --green-lt:#DCFCE7;
+    --orange:#EA580C; --orange-lt:#FEF3C7;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#D97706 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🔧';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* HERO */
+  .result-hero{background:linear-gradient(148deg,#92400E,#D97706);border-radius:20px;padding:19px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:14px;}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.08);}
+  .rh-tag{font-size:9.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-main{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;margin:4px 0 2px;}
+  .rh-main span{font-size:22px;}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.60);}
+  .rh-bars{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-bar-item{background:rgba(255,255,255,0.12);border-radius:10px;padding:9px 10px;}
+  .rh-bar-lbl{font-size:8px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.4px;}
+  .rh-bar-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+  .rh-bar-sub{font-size:8px;color:rgba(255,255,255,0.40);margin-top:1px;}
+
+  /* INPUT CARD */
+  .input-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .input-card-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .ic-icon{width:30px;height:30px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .field{margin-bottom:13px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .field-row{display:flex;align-items:center;background:var(--bg);border-radius:11px;border:1.5px solid var(--border);overflow:hidden;transition:border-color .2s;}
+  .field-row:focus-within{border-color:var(--gold);}
+  .field-prefix{padding:0 10px;font-size:14px;font-weight:800;color:var(--muted);background:transparent;}
+  .field-input{flex:1;border:none;background:transparent;padding:11px 8px 11px 0;font-size:14px;font-weight:700;color:var(--navy);outline:none;}
+  .field-suffix{padding:0 10px;font-size:11px;font-weight:700;color:var(--muted);}
+  .pill-row{display:flex;gap:7px;flex-wrap:wrap;}
+  .pill{padding:7px 13px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;}
+  .pill.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#D97706,#92400E);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(217,119,6,0.35);font-family:Georgia,serif;margin-top:4px;transition:transform .15s;}
+  .calc-btn:active{transform:scale(.98);}
+
+  /* SAVE BUTTON */
+  .save-btn{width:100%;background:var(--card);border:1.5px solid var(--gold);border-radius:14px;padding:13px;font-size:13px;font-weight:800;color:var(--gold);cursor:pointer;font-family:Georgia,serif;margin-top:8px;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .save-btn:active{transform:scale(.98);background:var(--bg);}
+  .save-btn.saved{background:#DCFCE7;border-color:#15803D;color:#15803D;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);max-width:380px;width:90%;background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;font-size:12.5px;font-weight:700;text-align:center;box-shadow:var(--sh2);opacity:0;pointer-events:none;transition:all .3s ease;z-index:200;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* CATEGORY BREAKDOWN */
+  .cat-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .cat-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .cat-row{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
+  .cat-row:last-child{border-bottom:none;}
+  .cat-icon{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .cat-info{flex:1;padding:0 12px;}
+  .cat-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .cat-desc{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .cat-bar-wrap{margin-top:5px;}
+  .cat-bar-track{background:rgba(27,63,114,0.08);border-radius:4px;height:5px;overflow:hidden;}
+  .cat-bar-fill{height:100%;border-radius:4px;transition:width .5s ease;}
+  .cat-amount{text-align:right;min-width:60px;}
+  .cat-mo{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .cat-yr{font-size:9.5px;color:var(--muted);margin-top:2px;}
+
+  /* CHART CANVAS */
+  .chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  #pieCanvas{display:block;margin:0 auto;}
+  .pie-legend{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .pie-leg-row{display:flex;align-items:center;gap:10px;}
+  .pie-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0;}
+  .pie-lbl{font-size:10.5px;color:var(--muted);flex:1;}
+  .pie-pct{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+
+  /* ANNUAL BAR CHART */
+  .bar-chart-wrap{margin-top:10px;}
+  .bar-group{display:flex;align-items:flex-end;gap:5px;height:90px;margin-bottom:6px;}
+  .bar-col{display:flex;flex-direction:column;align-items:center;flex:1;}
+  .bar-fill{width:100%;border-radius:5px 5px 0 0;transition:height .5s ease;position:relative;}
+  .bar-lbl{font-size:8.5px;color:var(--muted);font-weight:600;margin-top:4px;text-align:center;}
+  .bar-val{font-size:7.5px;color:var(--navy);font-weight:700;margin-top:2px;text-align:center;}
+
+  /* SEASONAL */
+  .season-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .season-card{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .season-header{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+  .season-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .season-name{font-size:11.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .season-item{font-size:9px;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;}
+  .season-item:last-child{border-bottom:none;}
+  .season-cost{font-weight:700;color:var(--navy);}
+
+  /* RESERVE METER */
+  .reserve-card{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #BFDBFE;border-radius:16px;padding:14px 15px;margin-bottom:12px;}
+  .reserve-title{font-size:12px;font-weight:800;color:#1D4ED8;font-family:Georgia,serif;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+  .reserve-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+  .reserve-lbl{font-size:10.5px;font-weight:600;color:#1E40AF;}
+  .reserve-val{font-size:12px;font-weight:800;color:#1D4ED8;font-family:Georgia,serif;}
+
+  /* SAVED LIST */
+  .saved-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .saved-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+  .saved-row:last-child{border-bottom:none;}
+  .saved-info{display:flex;flex-direction:column;}
+  .saved-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .saved-meta{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .saved-del{font-size:13px;color:var(--red);cursor:pointer;padding:6px;}
+  .saved-empty{font-size:11px;color:var(--muted);text-align:center;padding:14px 0;}
+
+  /* NAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  .badge{display:inline-flex;padding:2px 7px;border-radius:12px;font-size:8.5px;font-weight:700;margin-top:4px;}
+  .badge-g{background:#DCFCE7;color:#15803D;}
+  .badge-o{background:#FEF3C7;color:#B45309;}
+  .badge-r{background:#FEF2F2;color:#B91C1C;}
+  .badge-b{background:#EFF6FF;color:#1D4ED8;}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero{animation:fadeUp .35s ease both .05s;}
+  .input-card{animation:fadeUp .35s ease both .10s;}
+  .cat-card,.chart-card,.reserve-card{animation:fadeUp .35s ease both .16s;}
+
+  input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:linear-gradient(to right,var(--gold) 0%,var(--gold) var(--pct,50%),rgba(27,63,114,0.15) var(--pct,50%),rgba(27,63,114,0.15) 100%);outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--gold);border:3px solid #fff;box-shadow:0 2px 8px rgba(217,119,6,0.35);}
+  .slider-labels{display:flex;justify-content:space-between;margin-top:5px;}
+  .slider-labels span{font-size:9px;color:var(--muted);font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="us_down_payment.html" style="text-decoration:none;">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇺🇸</div>
+      <div class="hdr-title">Home Maintenance Budget</div>
+      <div class="hdr-sub">1–2% Rule · Seasonal Planner · Reserve Fund</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Rule of Thumb</div><div class="rs-v gold">1–2%</div><div class="rs-n">Home Value/yr</div></div>
+    <div class="rs"><div class="rs-l">Avg US Spend</div><div class="rs-v">$6,413</div><div class="rs-n">Per year</div></div>
+    <div class="rs"><div class="rs-l">Emergency</div><div class="rs-v">3–6 mo</div><div class="rs-n">Reserves</div></div>
+    <div class="rs"><div class="rs-l">Reserve Fund</div><div class="rs-v">$10K+</div><div class="rs-n">Recommended</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- HERO -->
+  <div class="sec" style="margin-top:0;">Maintenance Budget <span class="more" id="resetBtn">Reset</span></div>
+  <div class="result-hero">
+    <div class="rh-tag">Estimated Annual Maintenance Cost</div>
+    <div class="rh-main"><span>$</span><span id="annualBudget">4,500</span></div>
+    <div class="rh-sub" id="heroSub">1.0% of $450,000 · Budget $375/mo</div>
+    <div class="rh-bars">
+      <div class="rh-bar-item">
+        <div class="rh-bar-lbl">Monthly Budget</div>
+        <div class="rh-bar-val" id="heroMonthly">$375</div>
+        <div class="rh-bar-sub">Set aside/mo</div>
+      </div>
+      <div class="rh-bar-item">
+        <div class="rh-bar-lbl">Reserve Target</div>
+        <div class="rh-bar-val" id="heroReserve">$13,500</div>
+        <div class="rh-bar-sub">3× annual est.</div>
+      </div>
+      <div class="rh-bar-item">
+        <div class="rh-bar-lbl">Home Age Risk</div>
+        <div class="rh-bar-val" id="heroRisk">Low</div>
+        <div class="rh-bar-sub" id="heroRiskSub">Under 10 yrs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="sec">Your Home Details</div>
+  <div class="input-card">
+    <div class="input-card-title"><div class="ic-icon">🏠</div>Home Information</div>
+
+    <div class="field">
+      <label>Home Value</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="homeValue" type="number" value="450000" min="50000" step="5000">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Home Age (Years)</label>
+      <div style="margin-bottom:8px;">
+        <input type="range" id="ageSlider" min="0" max="80" step="1" value="5" style="--pct:6.25%">
+        <div class="slider-labels"><span>New</span><span id="ageDisplay">5 yrs</span><span>80 yrs</span></div>
+      </div>
+      <div class="pill-row">
+        <div class="pill active" data-age="5">0–10 yrs</div>
+        <div class="pill" data-age="20">10–25 yrs</div>
+        <div class="pill" data-age="35">25–50 yrs</div>
+        <div class="pill" data-age="60">50+ yrs</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Maintenance Rate</label>
+      <div class="pill-row">
+        <div class="pill" data-rate="1">1% Basic</div>
+        <div class="pill active" data-rate="1.5">1.5% Standard</div>
+        <div class="pill" data-rate="2">2% Premium</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Current Maintenance Reserve</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="currentReserve" type="number" value="0" min="0" step="500">
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">🔧 Calculate Maintenance Budget</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">💾 Save This Budget</button>
+  </div>
+
+  <!-- CATEGORY BREAKDOWN -->
+  <div class="sec">Annual Cost by Category <span class="more">US Avg</span></div>
+  <div class="cat-card">
+    <div class="cat-title">Where Your Budget Goes — <span id="catPriceLabel" style="color:var(--blue);">$450,000 Home</span></div>
+    <div id="catRows"></div>
+  </div>
+
+  <!-- PIE CHART -->
+  <div class="sec">Budget Breakdown</div>
+  <div class="chart-card">
+    <div class="chart-title">Maintenance Category Distribution</div>
+    <canvas id="pieCanvas" width="200" height="200"></canvas>
+    <div class="pie-legend" id="pieLegend"></div>
+  </div>
+
+  <!-- ANNUAL BAR PROJECTION -->
+  <div class="sec">3-Year Cost Projection</div>
+  <div class="chart-card">
+    <div class="chart-title">Estimated Annual Spend — Next 3 Years</div>
+    <div id="barChartWrap"></div>
+    <div style="font-size:9px;color:var(--muted);margin-top:8px;text-align:center;">Costs increase ~3.5%/yr (US inflation avg). Major systems replacement cycles accounted for.</div>
+  </div>
+
+  <!-- SEASONAL PLANNER -->
+  <div class="sec">Seasonal Maintenance Planner</div>
+  <div class="season-grid" id="seasonGrid"></div>
+
+  <!-- RESERVE METER -->
+  <div class="sec">Reserve Fund Health</div>
+  <div class="reserve-card">
+    <div class="reserve-title">🏦 Maintenance Reserve Status</div>
+    <div class="reserve-row"><div class="reserve-lbl">Current Reserve</div><div class="reserve-val" id="rsvCurrent">$0</div></div>
+    <div class="reserve-row"><div class="reserve-lbl">Recommended (3× Annual)</div><div class="reserve-val" id="rsvTarget">$13,500</div></div>
+    <div class="reserve-row"><div class="reserve-lbl">Monthly Contribution Needed</div><div class="reserve-val" id="rsvMonthly">$375/mo</div></div>
+    <div style="margin-top:10px;">
+      <div style="background:rgba(29,78,216,0.10);border-radius:8px;height:10px;overflow:hidden;">
+        <div id="rsvFill" style="height:100%;border-radius:8px;background:linear-gradient(135deg,#1D4ED8,#3B82F6);transition:width .6s ease;width:0%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px;">
+        <span style="font-size:9px;color:#1E40AF;font-weight:600;">$0</span>
+        <span id="rsvPctLbl" style="font-size:9px;color:#1E40AF;font-weight:600;">0% funded</span>
+        <span id="rsvTargetLbl" style="font-size:9px;color:#1E40AF;font-weight:600;">$13,500 goal</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="sec" style="margin-top:20px;">Saved Budgets <span class="more" onclick="clearAll()">Clear All</span></div>
+  <div class="saved-card">
+    <div id="savedList"><div class="saved-empty">No saved budgets yet. Tap "Save This Budget" above.</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// ── Real US maintenance data (2024-2025 NAR / HomeAdvisor averages) ──
+const CATEGORIES = [
+  { name:'HVAC Service & Repair',    icon:'❄️',  desc:'Filter, tune-up, emergencies',     pct:0.18, color:'#1B3F72' },
+  { name:'Roof & Gutters',           icon:'🏠',  desc:'Inspection, cleaning, patching',   pct:0.16, color:'#D97706' },
+  { name:'Plumbing',                 icon:'🚿',  desc:'Leaks, fixtures, water heater',    pct:0.14, color:'#15803D' },
+  { name:'Electrical',               icon:'⚡',  desc:'Outlets, panels, lighting',        pct:0.11, color:'#7C3AED' },
+  { name:'Exterior & Paint',         icon:'🎨',  desc:'Siding, deck, driveway',           pct:0.13, color:'#EA580C' },
+  { name:'Lawn & Landscaping',       icon:'🌿',  desc:'Mowing, irrigation, trees',       pct:0.12, color:'#0EA5E9' },
+  { name:'Interior Repairs',         icon:'🔨',  desc:'Drywall, flooring, doors',        pct:0.09, color:'#EC4899' },
+  { name:'Appliance Maintenance',    icon:'🫙',  desc:'Fridge, dishwasher, washer',      pct:0.07, color:'#F59E0B' },
+];
+
+const SEASONS = [
+  { name:'Spring', icon:'🌸', bg:'#DCFCE7',
+    tasks:[
+      {task:'HVAC service (A/C tune-up)', cost:'$80–$150'},
+      {task:'Roof & gutter inspection',   cost:'$100–$300'},
+      {task:'Exterior paint touch-up',    cost:'$200–$800'},
+      {task:'Window & door sealing',      cost:'$50–$200'},
+    ]
+  },
+  { name:'Summer', icon:'☀️', bg:'#FEF9C3',
+    tasks:[
+      {task:'Lawn irrigation service',    cost:'$75–$200'},
+      {task:'Deck/patio cleaning & seal', cost:'$150–$500'},
+      {task:'Pest inspection',            cost:'$100–$300'},
+      {task:'Exterior cleaning/power wash',cost:'$150–$400'},
+    ]
+  },
+  { name:'Fall', icon:'🍂', bg:'#FEF3C7',
+    tasks:[
+      {task:'Heating system tune-up',     cost:'$80–$150'},
+      {task:'Gutter cleaning',            cost:'$100–$225'},
+      {task:'Chimney sweep/inspection',   cost:'$150–$350'},
+      {task:'Weatherstripping doors',     cost:'$50–$150'},
+    ]
+  },
+  { name:'Winter', icon:'❄️', bg:'#EFF6FF',
+    tasks:[
+      {task:'Pipe insulation check',      cost:'$50–$200'},
+      {task:'Smoke/CO detector test',     cost:'$20–$50'},
+      {task:'Water heater flush',         cost:'$50–$100'},
+      {task:'Roof snow load check',       cost:'$0–$200'},
+    ]
+  },
+];
+
+let maintenanceRate = 1.5;
+let homeAge = 5;
+
+// ── Age risk factor ──
+function ageFactor(age) {
+  if (age < 10) return { label:'Low', sub:'Under 10 yrs', mult:1.0 };
+  if (age < 25) return { label:'Moderate', sub:'10–25 yrs', mult:1.3 };
+  if (age < 50) return { label:'High', sub:'25–50 yrs', mult:1.7 };
+  return { label:'Critical', sub:'50+ yrs', mult:2.2 };
+}
+
+function fmt(n){ return '$'+Math.round(n).toLocaleString(); }
+
+function calculate() {
+  const value   = +document.getElementById('homeValue').value || 450000;
+  const reserve = +document.getElementById('currentReserve').value || 0;
+  const factor  = ageFactor(homeAge);
+  const rate    = maintenanceRate / 100;
+  const annual  = value * rate * factor.mult;
+  const monthly = annual / 12;
+  const reserveTarget = annual * 3;
+
+  // Hero
+  document.getElementById('annualBudget').textContent = Math.round(annual).toLocaleString();
+  document.getElementById('heroSub').textContent = maintenanceRate + '% of ' + fmt(value) + ' · Budget ' + fmt(monthly) + '/mo';
+  document.getElementById('heroMonthly').textContent = fmt(monthly);
+  document.getElementById('heroReserve').textContent  = fmt(reserveTarget);
+  document.getElementById('heroRisk').textContent     = factor.label;
+  document.getElementById('heroRiskSub').textContent  = factor.sub;
+  document.getElementById('catPriceLabel').textContent = fmt(value) + ' Home';
+
+  // Category rows
+  const catHTML = CATEGORIES.map(c => {
+    const catAnnual  = annual * c.pct;
+    const catMonthly = catAnnual / 12;
+    const barPct     = (c.pct * 100).toFixed(0);
+    return `<div class="cat-row">
+      <div class="cat-icon">${c.icon}</div>
+      <div class="cat-info">
+        <div class="cat-name">${c.name}</div>
+        <div class="cat-desc">${c.desc}</div>
+        <div class="cat-bar-wrap">
+          <div class="cat-bar-track">
+            <div class="cat-bar-fill" style="width:${barPct*3}%;background:${c.color};"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cat-amount">
+        <div class="cat-mo">${fmt(catMonthly)}/mo</div>
+        <div class="cat-yr">${fmt(catAnnual)}/yr</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('catRows').innerHTML = catHTML;
+
+  // Pie chart
+  drawPie(annual);
+
+  // Bar chart
+  drawBarChart(annual);
+
+  // Season grid
+  drawSeasons();
+
+  // Reserve
+  const rsvPct = Math.min(100, (reserve / reserveTarget) * 100);
+  document.getElementById('rsvCurrent').textContent   = fmt(reserve);
+  document.getElementById('rsvTarget').textContent    = fmt(reserveTarget);
+  document.getElementById('rsvTargetLbl').textContent = fmt(reserveTarget) + ' goal';
+  const monthlyNeeded = reserve >= reserveTarget ? 0 : (reserveTarget - reserve) / 36;
+  document.getElementById('rsvMonthly').textContent   = monthlyNeeded > 0 ? fmt(monthlyNeeded) + '/mo (3yr plan)' : '✓ Fully Funded!';
+  document.getElementById('rsvFill').style.width      = rsvPct + '%';
+  document.getElementById('rsvPctLbl').textContent    = rsvPct.toFixed(0) + '% funded';
+}
+
+function drawPie(annual) {
+  const canvas = document.getElementById('pieCanvas');
+  const ctx    = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const cx = W/2, cy = H/2, r = 70, inner = 42;
+  let startAngle = -Math.PI / 2;
+  CATEGORIES.forEach(c => {
+    const slice = c.pct * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, startAngle + slice);
+    ctx.closePath();
+    ctx.fillStyle = c.color;
+    ctx.fill();
+    startAngle += slice;
+  });
+  // donut hole
+  ctx.beginPath();
+  ctx.arc(cx, cy, inner, 0, 2 * Math.PI);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  // center label
+  ctx.fillStyle = '#0B1D3A';
+  ctx.font = 'bold 13px Georgia,serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(fmt(annual/12), cx, cy - 4);
+  ctx.font = '600 9px Arial';
+  ctx.fillStyle = '#4A5C7A';
+  ctx.fillText('per month', cx, cy + 10);
+
+  // legend
+  const legendHTML = CATEGORIES.map(c =>
+    `<div class="pie-leg-row"><div class="pie-dot" style="background:${c.color}"></div><div class="pie-lbl">${c.name}</div><div class="pie-pct">${(c.pct*100).toFixed(0)}%</div></div>`
+  ).join('');
+  document.getElementById('pieLegend').innerHTML = legendHTML;
+}
+
+function drawBarChart(annual) {
+  const inflRate = 1.035;
+  const years = [
+    { label:'Year 1', val: annual,                        note:'Baseline' },
+    { label:'Year 2', val: annual * inflRate,              note:'+3.5%' },
+    { label:'Year 3', val: annual * Math.pow(inflRate, 2), note:'+7.1%' },
+  ];
+  const maxVal = Math.max(...years.map(y => y.val));
+  const colors = ['#1B3F72','#D97706','#B91C1C'];
+
+  let html = `<div class="bar-group">`;
+  years.forEach((y, i) => {
+    const h = Math.round((y.val / maxVal) * 82);
+    html += `<div class="bar-col">
+      <div style="font-size:8px;color:var(--muted);font-weight:700;margin-bottom:3px;">${fmt(y.val)}</div>
+      <div class="bar-fill" style="height:${h}px;background:${colors[i]};"></div>
+      <div class="bar-lbl">${y.label}</div>
+      <div class="bar-val" style="color:${colors[i]};">${y.note}</div>
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('barChartWrap').innerHTML = html;
+}
+
+function drawSeasons() {
+  const html = SEASONS.map(s => `
+    <div class="season-card" style="background:${s.bg};">
+      <div class="season-header">
+        <div class="season-icon" style="background:rgba(255,255,255,0.5);">${s.icon}</div>
+        <div class="season-name">${s.name}</div>
+      </div>
+      ${s.tasks.map(t => `<div class="season-item"><span>${t.task}</span><span class="season-cost">${t.cost}</span></div>`).join('')}
+    </div>`).join('');
+  document.getElementById('seasonGrid').innerHTML = html;
+}
+
+// ── Slider ──
+const ageSlider = document.getElementById('ageSlider');
+ageSlider.addEventListener('input', () => {
+  const v = +ageSlider.value;
+  homeAge = v;
+  const pct = ((v - 0) / (80 - 0) * 100).toFixed(1);
+  ageSlider.style.setProperty('--pct', pct + '%');
+  document.getElementById('ageDisplay').textContent = v + ' yrs';
+  calculate();
+});
+
+// ── Age pills ──
+document.querySelectorAll('[data-age]').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('[data-age]').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    homeAge = +p.dataset.age;
+    ageSlider.value = homeAge;
+    const pct = ((homeAge / 80) * 100).toFixed(1);
+    ageSlider.style.setProperty('--pct', pct + '%');
+    document.getElementById('ageDisplay').textContent = homeAge + ' yrs';
+    calculate();
+  });
+});
+
+// ── Rate pills ──
+document.querySelectorAll('[data-rate]').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('[data-rate]').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    maintenanceRate = +p.dataset.rate;
+    calculate();
+  });
+});
+
+['homeValue','currentReserve'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calculate);
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('homeValue').value = 450000;
+  document.getElementById('currentReserve').value = 0;
+  homeAge = 5;
+  maintenanceRate = 1.5;
+  ageSlider.value = 5;
+  ageSlider.style.setProperty('--pct','6.25%');
+  document.getElementById('ageDisplay').textContent = '5 yrs';
+  document.querySelectorAll('[data-age]').forEach(p => p.classList.toggle('active', +p.dataset.age === 5));
+  document.querySelectorAll('[data-rate]').forEach(p => p.classList.toggle('active', +p.dataset.rate === 1.5));
+  calculate();
+});
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Save ──
+const SAVE_KEY = 'maint_budget_saved';
+function getSaved() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || []; } catch(e) { return []; } }
+function setSaved(arr) { localStorage.setItem(SAVE_KEY, JSON.stringify(arr)); }
+
+function saveCalc() {
+  const value   = document.getElementById('homeValue').value;
+  const reserve = document.getElementById('currentReserve').value;
+  const factor  = ageFactor(homeAge);
+  const annual  = (+value * maintenanceRate / 100 * factor.mult);
+  const entry   = {
+    id: Date.now(),
+    name: fmt(annual) + '/yr maintenance · ' + maintenanceRate + '% rate',
+    meta: 'Home ' + fmt(+value) + ' · Age ' + homeAge + ' yrs · Reserve ' + fmt(+reserve),
+    data: { value, reserve, homeAge, maintenanceRate }
+  };
+  const arr = getSaved();
+  arr.unshift(entry);
+  if (arr.length > 10) arr.pop();
+  setSaved(arr);
+  renderSaved();
+
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  btn.textContent = '✓ Saved!';
+  showToast('Budget saved!');
+  setTimeout(() => { btn.classList.remove('saved'); btn.innerHTML = '💾 Save This Budget'; }, 1600);
+}
+
+function loadCalc(id) {
+  const entry = getSaved().find(e => e.id === id);
+  if (!entry) return;
+  const d = entry.data;
+  document.getElementById('homeValue').value    = d.value;
+  document.getElementById('currentReserve').value = d.reserve;
+  homeAge = d.homeAge;
+  maintenanceRate = d.maintenanceRate;
+  ageSlider.value = homeAge;
+  ageSlider.style.setProperty('--pct', ((homeAge / 80) * 100).toFixed(1) + '%');
+  document.getElementById('ageDisplay').textContent = homeAge + ' yrs';
+  document.querySelectorAll('[data-age]').forEach(p => p.classList.toggle('active', +p.dataset.age === homeAge));
+  document.querySelectorAll('[data-rate]').forEach(p => p.classList.toggle('active', +p.dataset.rate === maintenanceRate));
+  calculate();
+  showToast('Budget loaded');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteSaved(id, evt) {
+  evt.stopPropagation();
+  setSaved(getSaved().filter(e => e.id !== id));
+  renderSaved();
+  showToast('Removed');
+}
+
+function clearAll() {
+  setSaved([]);
+  renderSaved();
+  showToast('All saved budgets cleared');
+}
+
+function renderSaved() {
+  const arr  = getSaved();
+  const list = document.getElementById('savedList');
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="saved-empty">No saved budgets yet. Tap "Save This Budget" above.</div>';
+    return;
+  }
+  list.innerHTML = arr.map(e => `
+    <div class="saved-row" onclick="loadCalc(${e.id})" style="cursor:pointer;">
+      <div class="saved-info">
+        <div class="saved-name">${e.name}</div>
+        <div class="saved-meta">${e.meta}</div>
+      </div>
+      <div class="saved-del" onclick="deleteSaved(${e.id},event)">🗑️</div>
+    </div>`).join('');
+}
+
+calculate();
+renderSaved();
+</script>
+</body>
+</html>

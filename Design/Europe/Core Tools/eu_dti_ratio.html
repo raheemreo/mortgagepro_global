@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DTI Ratio EUR – Europe</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F0F4FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+
+/* HEADER */
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;flex-shrink:0;}
+.hdr-title-wrap{text-align:center;flex:1;}
+.hdr-flag{font-size:22px;display:block;}
+.hdr-title{font-size:17px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}.rs-val.red{color:#FF8A9A;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:28px;background:rgba(255,255,255,0.15);}
+
+/* CONTENT */
+.content{padding:16px 16px 110px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.f1{animation:fadeUp 0.38s ease both;}.f2{animation:fadeUp 0.38s 0.07s ease both;}.f3{animation:fadeUp 0.38s 0.14s ease both;}.f4{animation:fadeUp 0.38s 0.21s ease both;}.f5{animation:fadeUp 0.38s 0.28s ease both;}
+
+/* COUNTRY PILLS */
+.country-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:14px;}
+.country-row::-webkit-scrollbar{display:none;}
+.cpill{flex-shrink:0;padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all 0.2s;}
+.cpill.active{background:#003399;color:#FFCC00;border-color:#003399;}
+.cpill:not(.active){background:#fff;color:#1A0040;border-color:rgba(0,51,153,0.15);}
+
+/* CARDS */
+.card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(0,51,153,0.09);border:1px solid rgba(0,51,153,0.07);margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:800;color:#1A0040;margin-bottom:14px;font-family:Georgia,serif;}
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px;}
+.field-row{margin-bottom:13px;}
+.field-label{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;justify-content:space-between;}
+.field-val{font-size:14px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.slider{width:100%;-webkit-appearance:none;height:5px;border-radius:3px;background:linear-gradient(to right,#003399 0%,#003399 var(--pct,30%),#E0E7FF var(--pct,30%),#E0E7FF 100%);outline:none;cursor:pointer;}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#003399;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,51,153,0.3);cursor:pointer;}
+
+/* DEBT INPUTS */
+.inp-group{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.inp-box{background:#F7F3FF;border:1.5px solid rgba(0,51,153,0.12);border-radius:11px;padding:10px 12px;transition:border-color 0.2s;}
+.inp-box:focus-within{border-color:#003399;}
+.inp-box label{font-size:9px;color:#6B21A8;font-weight:700;text-transform:uppercase;display:block;margin-bottom:3px;}
+.inp-box input{width:100%;background:transparent;border:none;outline:none;font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.inp-box input::placeholder{color:#C4B5D6;font-weight:400;}
+
+/* TOTAL INCOME BANNER */
+.income-banner{background:linear-gradient(135deg,#EEF2FF,#F7F3FF);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+.ib-lbl{font-size:11px;font-weight:700;color:#6B21A8;}
+.ib-val{font-size:16px;font-weight:900;color:#003399;font-family:Georgia,serif;}
+
+/* ACTION BUTTONS */
+.action-row{display:flex;gap:10px;margin-bottom:14px;}
+.calc-btn{flex:1;background:linear-gradient(135deg,#003399,#1A0040);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#FFCC00;cursor:pointer;box-shadow:0 4px 16px rgba(0,51,153,0.3);transition:transform 0.15s,box-shadow 0.15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.calc-btn:active{transform:scale(0.97);box-shadow:0 2px 8px rgba(0,51,153,0.2);}
+.save-btn-main{flex-shrink:0;width:54px;background:#fff;border:2px solid #003399;border-radius:14px;padding:15px 0;font-size:13px;font-weight:800;color:#003399;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.save-btn-main:active{background:#EEF2FF;}
+.save-btn-main.saved{background:#003399;color:#FFCC00;border-color:#003399;}
+
+/* RESULTS */
+.results-section{transition:opacity 0.3s;}
+.results-section.pending{opacity:0.35;pointer-events:none;}
+.pending-overlay{display:none;text-align:center;padding:20px 0 8px;color:#6B21A8;font-size:12px;font-weight:700;}
+.results-section.pending .pending-overlay{display:block;}
+
+/* GAUGE */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0 8px;}
+.gauge-svg{position:relative;}
+.gauge-label{text-align:center;margin-top:10px;}
+.g-dti{font-size:38px;font-weight:900;font-family:Georgia,serif;line-height:1;transition:color 0.4s;}
+.g-status{font-size:13px;font-weight:700;margin-top:4px;transition:color 0.4s;}
+.g-sub{font-size:11px;color:#6B21A8;margin-top:3px;}
+
+/* BANDS */
+.bands-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px;}
+.band{padding:8px 6px;border-radius:10px;text-align:center;transition:transform 0.2s;}
+.band.active-band{transform:scale(1.06);box-shadow:0 3px 10px rgba(0,0,0,0.1);}
+.band-pct{font-size:12px;font-weight:800;font-family:Georgia,serif;}
+.band-lbl{font-size:9px;font-weight:700;margin-top:2px;text-transform:uppercase;}
+
+/* BREAKDOWN */
+.breakdown-row{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.br-item{display:flex;align-items:center;gap:10px;background:#F7F3FF;border-radius:11px;padding:10px 12px;}
+.br-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.br-name{font-size:12px;font-weight:700;color:#1A0040;flex:1;}
+.br-amt{font-size:13px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.br-pct{font-size:10px;color:#6B21A8;margin-left:4px;}
+.br-bar-wrap{height:4px;background:#E0E7FF;border-radius:2px;margin-top:5px;overflow:hidden;}
+.br-bar{height:100%;border-radius:2px;transition:width 0.5s ease;}
+
+/* STAT MINI ROW */
+.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.ms-box{background:#fff;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:0 2px 10px rgba(0,51,153,0.07);}
+.ms-val{font-size:16px;font-weight:900;color:#003399;font-family:Georgia,serif;}
+.ms-lbl{font-size:9px;color:#6B21A8;font-weight:700;text-transform:uppercase;margin-top:3px;}
+
+/* HORIZONTAL STACKED BAR */
+.stack-bar-wrap{margin-top:4px;}
+.stack-lbl{font-size:10px;color:#6B21A8;font-weight:700;text-transform:uppercase;margin-bottom:8px;}
+.stack-bar{display:flex;height:24px;border-radius:12px;overflow:hidden;gap:2px;}
+.stack-seg{height:100%;transition:flex 0.5s ease;display:flex;align-items:center;justify-content:center;}
+.stack-seg-lbl{font-size:9px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;padding:0 4px;}
+
+/* PROGRESS TO LIMIT */
+.limit-progress{margin-top:12px;}
+.lp-header{display:flex;justify-content:space-between;margin-bottom:6px;}
+.lp-country{font-size:11px;font-weight:700;color:#1A0040;}
+.lp-status{font-size:11px;font-weight:800;}
+.lp-track{height:10px;background:#E0E7FF;border-radius:5px;overflow:hidden;margin-bottom:10px;}
+.lp-fill{height:100%;border-radius:5px;transition:width 0.6s ease;}
+
+/* EU LIMITS */
+.limits-card{background:linear-gradient(145deg,#003399,#1A0040);border-radius:18px;padding:16px;margin-bottom:14px;}
+.lc-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:12px;font-family:Georgia,serif;}
+.limit-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.limit-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.li-country{font-size:12px;color:rgba(255,255,255,0.7);}
+.li-limit{font-size:14px;font-weight:800;color:#FFCC00;font-family:Georgia,serif;}
+.li-note{font-size:9px;color:rgba(255,255,255,0.45);margin-top:1px;}
+.li-bar{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:4px;overflow:hidden;}
+.li-bar-fill{height:100%;border-radius:2px;background:rgba(255,204,0,0.5);}
+
+/* INSIGHT */
+.insight-card{background:linear-gradient(135deg,#6B21A8,#1A0040);border-radius:16px;padding:14px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-start;}
+.insight-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
+.insight-title{font-size:12px;font-weight:800;color:#FFCC00;}
+.insight-text{font-size:11px;color:rgba(255,255,255,0.75);margin-top:3px;line-height:1.5;}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1A0040;color:#FFCC00;font-size:13px;font-weight:700;padding:12px 22px;border-radius:50px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+@keyframes pulse{0%{box-shadow:0 4px 16px rgba(0,51,153,0.3);}50%{box-shadow:0 4px 28px rgba(0,51,153,0.55);}100%{box-shadow:0 4px 16px rgba(0,51,153,0.3);}}
+.calc-btn.pulse{animation:pulse 0.6s ease;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ DTI saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">📊</span>
+      <div class="hdr-title">DTI Ratio EUR</div>
+      <div class="hdr-sub">Debt-to-Income · European Standards</div>
+    </div>
+    <div style="width:36px;"></div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">🇩🇪 Max DTI</div><div class="rs-val grn">40%</div><div class="rs-note">Germany</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇫🇷 Max DTI</div><div class="rs-val">35%</div><div class="rs-note">France (HCSF)</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇪🇸 Max DTI</div><div class="rs-val gold">40%</div><div class="rs-note">Spain</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">EU Avg</div><div class="rs-val">38%</div><div class="rs-note">Guideline</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl f1" style="margin-top:0;">Country &amp; Income</div>
+  <div class="country-row f1">
+    <div class="cpill active" onclick="setCountry(this,'DE',40,'Germany')">🇩🇪 Germany</div>
+    <div class="cpill" onclick="setCountry(this,'FR',35,'France')">🇫🇷 France</div>
+    <div class="cpill" onclick="setCountry(this,'ES',40,'Spain')">🇪🇸 Spain</div>
+    <div class="cpill" onclick="setCountry(this,'IT',40,'Italy')">🇮🇹 Italy</div>
+    <div class="cpill" onclick="setCountry(this,'NL',43,'Netherlands')">🇳🇱 Netherlands</div>
+    <div class="cpill" onclick="setCountry(this,'PT',50,'Portugal')">🇵🇹 Portugal</div>
+  </div>
+
+  <div class="card f2">
+    <div class="card-title">💼 Monthly Gross Income</div>
+    <div class="field-row">
+      <div class="field-label"><span>Your Gross Monthly Income</span><span class="field-val" id="inc-lbl">€ 5,500</span></div>
+      <input type="range" class="slider" id="income" min="1000" max="20000" step="100" value="5500" oninput="updSlider(this,'inc-lbl','€ ');markDirty();">
+    </div>
+    <div class="field-row" style="margin-bottom:0;">
+      <div class="field-label"><span>Partner Income (optional)</span><span class="field-val" id="inc2-lbl">€ 0</span></div>
+      <input type="range" class="slider" id="income2" min="0" max="15000" step="100" value="0" oninput="updSlider(this,'inc2-lbl','€ ');markDirty();">
+    </div>
+    <div class="income-banner" id="income-banner" style="display:none;">
+      <div class="ib-lbl">Combined Monthly Income</div>
+      <div class="ib-val" id="combined-income">€ 5,500</div>
+    </div>
+  </div>
+
+  <div class="card f3">
+    <div class="card-title">📋 Monthly Debt Payments</div>
+    <div class="inp-group">
+      <div class="inp-box"><label>Mortgage / Rent</label><input type="number" id="d1" value="1200" oninput="markDirty();updateDebtTotal();" placeholder="0" min="0"></div>
+      <div class="inp-box"><label>Car Loan</label><input type="number" id="d2" value="250" oninput="markDirty();updateDebtTotal();" placeholder="0" min="0"></div>
+      <div class="inp-box"><label>Credit Cards</label><input type="number" id="d3" value="80" oninput="markDirty();updateDebtTotal();" placeholder="0" min="0"></div>
+      <div class="inp-box"><label>Student Loan</label><input type="number" id="d4" value="120" oninput="markDirty();updateDebtTotal();" placeholder="0" min="0"></div>
+      <div class="inp-box"><label>Personal Loan</label><input type="number" id="d5" value="0" oninput="markDirty();updateDebtTotal();" placeholder="0" min="0"></div>
+      <div class="inp-box"><label>Other Debt</label><input type="number" id="d6" value="0" oninput="markDirty();updateDebtTotal();" placeholder="0" min="0"></div>
+    </div>
+    <div class="income-banner">
+      <div class="ib-lbl">Total Monthly Debt</div>
+      <div class="ib-val" id="debt-total">€ 1,650</div>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="action-row f4">
+    <button class="calc-btn" id="calcBtn" onclick="runCalc()">
+      <span>📐</span> Calculate DTI
+    </button>
+    <button class="save-btn-main" id="saveBtn" onclick="saveCalc()" title="Save DTI result">💾</button>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div class="results-section pending" id="resultsSection">
+    <div class="pending-overlay">⬆️ Tap Calculate DTI to see your results</div>
+
+    <!-- GAUGE CARD -->
+    <div class="card f3">
+      <div class="card-title">📈 Your DTI Score</div>
+      <div class="gauge-wrap">
+        <svg class="gauge-svg" width="210" height="120" viewBox="0 0 210 120">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#22C55E"/>
+              <stop offset="40%" stop-color="#FFCC00"/>
+              <stop offset="70%" stop-color="#F97316"/>
+              <stop offset="100%" stop-color="#DC2626"/>
+            </linearGradient>
+          </defs>
+          <!-- Track -->
+          <path d="M 25 105 A 80 80 0 0 1 185 105" fill="none" stroke="#E0E7FF" stroke-width="16" stroke-linecap="round"/>
+          <!-- Fill -->
+          <path d="M 25 105 A 80 80 0 0 1 185 105" fill="none" stroke="url(#gaugeGrad)" stroke-width="16" stroke-linecap="round" stroke-dasharray="251.2" id="gauge-fill" stroke-dashoffset="200"/>
+          <!-- Limit marker -->
+          <circle id="limit-marker" cx="105" cy="25" r="4" fill="#FFCC00" opacity="0.9"/>
+          <!-- Needle -->
+          <line id="gauge-needle" x1="105" y1="105" x2="105" y2="35" stroke="#1A0040" stroke-width="2.5" stroke-linecap="round" transform="rotate(-90,105,105)"/>
+          <circle cx="105" cy="105" r="5" fill="#1A0040"/>
+          <!-- Labels -->
+          <text x="18" y="118" font-size="9" fill="#6B21A8" font-weight="700">0%</text>
+          <text x="98" y="18" font-size="9" fill="#6B21A8" font-weight="700" text-anchor="middle">35%</text>
+          <text x="190" y="118" font-size="9" fill="#6B21A8" font-weight="700" text-anchor="end">70%+</text>
+        </svg>
+        <div class="gauge-label">
+          <div class="g-dti" id="g-dti-val" style="color:#22C55E">—</div>
+          <div class="g-status" id="g-status" style="color:#22C55E">Calculate to see</div>
+          <div class="g-sub" id="g-sub">Enter your details above</div>
+        </div>
+      </div>
+      <div class="bands-row" id="bandsRow">
+        <div class="band" id="band-1" style="background:#DCFCE7"><div class="band-pct" style="color:#166534">≤35%</div><div class="band-lbl" style="color:#166534">Excellent</div></div>
+        <div class="band" id="band-2" style="background:#FEF9C3"><div class="band-pct" style="color:#854D0E">36–43%</div><div class="band-lbl" style="color:#854D0E">Good</div></div>
+        <div class="band" id="band-3" style="background:#FFEDD5"><div class="band-pct" style="color:#9A3412">44–50%</div><div class="band-lbl" style="color:#9A3412">Caution</div></div>
+        <div class="band" id="band-4" style="background:#FEE2E2"><div class="band-pct" style="color:#991B1B">50%+</div><div class="band-lbl" style="color:#991B1B">High Risk</div></div>
+      </div>
+    </div>
+
+    <!-- MINI STATS -->
+    <div class="mini-stats">
+      <div class="ms-box"><div class="ms-val" id="stat-dti">—</div><div class="ms-lbl">Your DTI</div></div>
+      <div class="ms-box"><div class="ms-val" id="stat-maxborrow">—</div><div class="ms-lbl">Max Borrowing</div></div>
+      <div class="ms-box"><div class="ms-val" id="stat-headroom">—</div><div class="ms-lbl">Headroom</div></div>
+    </div>
+
+    <!-- STACKED INCOME BAR -->
+    <div class="card f4">
+      <div class="card-title">💰 Income Allocation</div>
+      <div class="stack-bar-wrap">
+        <div class="stack-lbl">Monthly gross income breakdown</div>
+        <div class="stack-bar" id="stackBar">
+          <div class="stack-seg" id="seg-debt" style="background:#003399;flex:20"><span class="stack-seg-lbl">Debt</span></div>
+          <div class="stack-seg" id="seg-free" style="background:#22C55E;flex:80"><span class="stack-seg-lbl">Free Income</span></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:3px;background:#003399;"></div><span style="font-size:10px;color:#1A0040;font-weight:700;">Debt <span id="seg-debt-pct" style="color:#003399;font-family:Georgia,serif;"></span></span></div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:3px;background:#22C55E;"></div><span style="font-size:10px;color:#1A0040;font-weight:700;">Free <span id="seg-free-pct" style="color:#22C55E;font-family:Georgia,serif;"></span></span></div>
+      </div>
+    </div>
+
+    <!-- BREAKDOWN -->
+    <div class="card f4">
+      <div class="card-title">🔍 Payment Breakdown</div>
+      <div class="breakdown-row" id="breakdown"></div>
+    </div>
+
+    <!-- LIMIT PROGRESS AGAINST EU COUNTRIES -->
+    <div class="card f4">
+      <div class="card-title">🏳️ Your DTI vs EU Country Limits</div>
+      <div class="limit-progress" id="limitProgress"></div>
+    </div>
+
+    <!-- INSIGHT -->
+    <div class="insight-card f4" id="insightCard">
+      <div class="insight-icon">💡</div>
+      <div>
+        <div class="insight-title" id="insight-title">Smart Insight</div>
+        <div class="insight-text" id="insight-text">Calculate your DTI to get a personalised assessment.</div>
+      </div>
+    </div>
+
+    <!-- EU LENDER LIMITS -->
+    <div class="limits-card f5">
+      <div class="lc-title">🏛️ EU Lender DTI Limits (2025)</div>
+      <div class="limit-item">
+        <div><div class="li-country">🇩🇪 Germany – BaFin Guidelines</div><div class="li-note">No hard cap; 40% common practice</div><div class="li-bar"><div class="li-bar-fill" style="width:57%"></div></div></div>
+        <div class="li-limit">40%</div>
+      </div>
+      <div class="limit-item">
+        <div><div class="li-country">🇫🇷 France – HCSF Regulation</div><div class="li-note">Hard cap enforced since Jan 2022</div><div class="li-bar"><div class="li-bar-fill" style="width:50%"></div></div></div>
+        <div class="li-limit">35%</div>
+      </div>
+      <div class="limit-item">
+        <div><div class="li-country">🇪🇸 Spain – Banco de España</div><div class="li-note">Max 40% recommended</div><div class="li-bar"><div class="li-bar-fill" style="width:57%"></div></div></div>
+        <div class="li-limit">40%</div>
+      </div>
+      <div class="limit-item">
+        <div><div class="li-country">🇳🇱 Netherlands – NHG Rules</div><div class="li-note">Up to 43% with NHG guarantee</div><div class="li-bar"><div class="li-bar-fill" style="width:61%"></div></div></div>
+        <div class="li-limit">43%</div>
+      </div>
+      <div class="limit-item">
+        <div><div class="li-country">🇵🇹 Portugal – Banco de Portugal</div><div class="li-note">Max 50% (36% preferred)</div><div class="li-bar"><div class="li-bar-fill" style="width:71%"></div></div></div>
+        <div class="li-limit">50%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let maxDTI=40, countryName='Germany', countryCode='DE', isDirty=true;
+
+const euLimits=[
+  {flag:'🇩🇪',name:'Germany',max:40,color:'#003399'},
+  {flag:'🇫🇷',name:'France',max:35,color:'#1e3a8a'},
+  {flag:'🇪🇸',name:'Spain',max:40,color:'#DC2626'},
+  {flag:'🇮🇹',name:'Italy',max:40,color:'#166534'},
+  {flag:'🇳🇱',name:'Netherlands',max:43,color:'#9A3412'},
+  {flag:'🇵🇹',name:'Portugal',max:50,color:'#4338CA'},
+];
+
+function setCountry(el,code,max,name){
+  document.querySelectorAll('.cpill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active'); maxDTI=max; countryName=name; countryCode=code; markDirty();
+}
+function markDirty(){
+  isDirty=true;
+  document.getElementById('resultsSection').classList.add('pending');
+}
+function fmt(n){return new Intl.NumberFormat('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.round(n));}
+function fmtK(n){if(n>=1000)return '€'+(n/1000).toFixed(0)+'k';return '€'+fmt(n);}
+
+function updSlider(el,lblId,prefix){
+  const v=parseFloat(el.value);
+  const pct=(v-el.min)/(el.max-el.min)*100;
+  el.style.setProperty('--pct',pct+'%');
+  document.getElementById(lblId).textContent=(prefix||'')+fmt(v);
+  // Show combined if partner income active
+  const inc1=parseFloat(document.getElementById('income').value)||0;
+  const inc2=parseFloat(document.getElementById('income2').value)||0;
+  if(inc2>0){
+    document.getElementById('income-banner').style.display='flex';
+    document.getElementById('combined-income').textContent='€ '+fmt(inc1+inc2);
+  } else {
+    document.getElementById('income-banner').style.display='none';
+  }
+}
+function updateDebtTotal(){
+  const ids=['d1','d2','d3','d4','d5','d6'];
+  const total=ids.reduce((s,id)=>s+(parseFloat(document.getElementById(id).value)||0),0);
+  document.getElementById('debt-total').textContent='€ '+fmt(total);
+}
+
+function runCalc(){
+  const btn=document.getElementById('calcBtn');
+  btn.classList.add('pulse');
+  setTimeout(()=>btn.classList.remove('pulse'),600);
+
+  const inc1=parseFloat(document.getElementById('income').value)||0;
+  const inc2=parseFloat(document.getElementById('income2').value)||0;
+  const totalInc=inc1+inc2;
+  const debtSources=[
+    {name:'Mortgage/Rent',color:'#003399',val:parseFloat(document.getElementById('d1').value)||0},
+    {name:'Car Loan',color:'#6D28D9',val:parseFloat(document.getElementById('d2').value)||0},
+    {name:'Credit Cards',color:'#FFCC00',val:parseFloat(document.getElementById('d3').value)||0},
+    {name:'Student Loan',color:'#0F766E',val:parseFloat(document.getElementById('d4').value)||0},
+    {name:'Personal Loan',color:'#B45309',val:parseFloat(document.getElementById('d5').value)||0},
+    {name:'Other',color:'#6B21A8',val:parseFloat(document.getElementById('d6').value)||0},
+  ];
+  const debts=debtSources.filter(d=>d.val>0);
+  const totalDebt=debts.reduce((s,d)=>s+d.val,0);
+  const dti=totalInc>0?(totalDebt/totalInc)*100:0;
+
+  // === GAUGE ===
+  const fillPct=Math.min(dti,70)/70;
+  const arcLen=251.2;
+  document.getElementById('gauge-fill').setAttribute('stroke-dashoffset',arcLen*(1-fillPct));
+  const needleAngle=-90+(180*fillPct);
+  document.getElementById('gauge-needle').setAttribute('transform',`rotate(${needleAngle},105,105)`);
+
+  // Limit marker position (maxDTI on gauge)
+  const limitFillPct=Math.min(maxDTI,70)/70;
+  const limitAngle=-90+(180*limitFillPct);
+  const lx=105+70*Math.cos((limitAngle*Math.PI)/180);
+  const ly=105+70*Math.sin((limitAngle*Math.PI)/180);
+  document.getElementById('limit-marker').setAttribute('cx',lx.toFixed(1));
+  document.getElementById('limit-marker').setAttribute('cy',ly.toFixed(1));
+
+  // Status color
+  let color,statusText,subText;
+  if(dti<=35){color='#22C55E';statusText='✅ Excellent';subText=`Well within ${countryName} limit (${maxDTI}%)`;}
+  else if(dti<=maxDTI){color='#D97706';statusText='⚠️ Acceptable';subText=`Within ${countryName} limit (${maxDTI}%)`;}
+  else if(dti<=50){color='#F97316';statusText='🔶 Caution';subText=`Exceeds ${countryName} guideline of ${maxDTI}%`;}
+  else{color='#DC2626';statusText='❌ High Risk';subText='Likely to be declined by EU lenders';}
+
+  const dtiEl=document.getElementById('g-dti-val');
+  const statusEl=document.getElementById('g-status');
+  dtiEl.textContent=dti.toFixed(1)+'%';
+  dtiEl.style.color=color;
+  statusEl.textContent=statusText;
+  statusEl.style.color=color;
+  document.getElementById('g-sub').textContent=subText;
+
+  // Band highlight
+  ['band-1','band-2','band-3','band-4'].forEach(id=>document.getElementById(id).classList.remove('active-band'));
+  if(dti<=35) document.getElementById('band-1').classList.add('active-band');
+  else if(dti<=43) document.getElementById('band-2').classList.add('active-band');
+  else if(dti<=50) document.getElementById('band-3').classList.add('active-band');
+  else document.getElementById('band-4').classList.add('active-band');
+
+  // === MINI STATS ===
+  document.getElementById('stat-dti').textContent=dti.toFixed(1)+'%';
+  document.getElementById('stat-dti').style.color=color;
+  // Max borrowable at current DTI limit: monthly budget = totalInc * maxDTI/100
+  const maxMonthlyDebt=totalInc*(maxDTI/100);
+  const headroom=Math.max(0,maxMonthlyDebt-totalDebt);
+  document.getElementById('stat-maxborrow').textContent=fmtK(maxMonthlyDebt);
+  document.getElementById('stat-headroom').textContent=fmtK(headroom);
+
+  // === STACKED BAR ===
+  const debtPct=Math.min(dti,100);
+  const freePct=Math.max(0,100-debtPct);
+  document.getElementById('seg-debt').style.flex=debtPct;
+  document.getElementById('seg-free').style.flex=freePct;
+  document.getElementById('seg-debt').style.background=color;
+  document.getElementById('seg-debt-pct').textContent=dti.toFixed(1)+'%';
+  document.getElementById('seg-free-pct').textContent=(100-Math.min(dti,100)).toFixed(1)+'%';
+
+  // === BREAKDOWN ===
+  const bd=document.getElementById('breakdown');
+  bd.innerHTML='';
+  debts.forEach(d=>{
+    const pct=totalInc>0?((d.val/totalInc)*100).toFixed(1):0;
+    const barW=totalInc>0?Math.min((d.val/totalInc)*100/maxDTI*100,100):0;
+    bd.innerHTML+=`<div class="br-item" style="flex-direction:column;align-items:stretch;gap:4px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="br-dot" style="background:${d.color}"></div>
+        <div class="br-name">${d.name}</div>
+        <div class="br-amt">€${fmt(d.val)}</div>
+        <div class="br-pct">${pct}%</div>
+      </div>
+      <div class="br-bar-wrap"><div class="br-bar" style="width:${barW}%;background:${d.color}"></div></div>
+    </div>`;
+  });
+  if(debts.length===0){
+    bd.innerHTML=`<div style="text-align:center;padding:20px;color:#6B21A8;font-size:12px;">No debt entries — add amounts above</div>`;
+  } else {
+    bd.innerHTML+=`<div class="br-item" style="background:#EEF2FF;border:1px solid #818CF8"><div class="br-dot" style="background:#4F46E5"></div><div class="br-name" style="font-weight:800;color:#4338CA">Total Debt</div><div class="br-amt" style="color:#4338CA">€${fmt(totalDebt)}</div><div class="br-pct" style="color:#4338CA;font-weight:800">${dti.toFixed(1)}%</div></div>`;
+  }
+
+  // === LIMIT PROGRESS ===
+  const lp=document.getElementById('limitProgress');
+  lp.innerHTML='';
+  euLimits.forEach(l=>{
+    const pctOfLimit=totalInc>0?Math.min((dti/l.max)*100,130):0;
+    const over=dti>l.max;
+    const fillColor=over?'#DC2626':l.color;
+    const statusLabel=over?`❌ Over limit by ${(dti-l.max).toFixed(1)}%`:`✅ ${(l.max-dti).toFixed(1)}% headroom`;
+    lp.innerHTML+=`<div class="lp-header">
+      <div class="lp-country">${l.flag} ${l.name} <span style="font-size:10px;color:#6B21A8;">(limit: ${l.max}%)</span></div>
+      <div class="lp-status" style="color:${over?'#DC2626':'#166534'}">${statusLabel}</div>
+    </div>
+    <div class="lp-track"><div class="lp-fill" style="width:${Math.min(pctOfLimit,100)}%;background:${fillColor}"></div></div>`;
+  });
+
+  // === INSIGHT ===
+  let insTitle,insText;
+  const passCount=euLimits.filter(l=>dti<=l.max).length;
+  if(dti<=35){insTitle='🟢 Strong Financial Position';insText=`Your DTI of ${dti.toFixed(1)}% qualifies you with all major EU lenders. You have €${fmt(headroom)}/month headroom before hitting ${countryName}'s limit.`;}
+  else if(dti<=maxDTI){insTitle='🟡 Borderline Acceptable';insText=`You qualify in ${countryName} but are approaching the limit. Reducing monthly debt by €${fmt(totalDebt-totalInc*0.35)} would put you in the "Excellent" range.`;}
+  else{insTitle='🔴 Exceeds '+countryName+' Limit';insText=`Your DTI of ${dti.toFixed(1)}% is above the ${maxDTI}% guideline. You qualify in ${passCount} of ${euLimits.length} EU countries. Consider paying down high-interest debt first.`;}
+  document.getElementById('insight-title').textContent=insTitle;
+  document.getElementById('insight-text').textContent=insText;
+
+  isDirty=false;
+  document.getElementById('resultsSection').classList.remove('pending');
+}
+
+function saveCalc(){
+  if(isDirty){
+    const t=document.getElementById('toast');
+    t.textContent='⚠️ Calculate first, then save!';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2200);
+    return;
+  }
+  const inc1=parseFloat(document.getElementById('income').value)||0;
+  const inc2=parseFloat(document.getElementById('income2').value)||0;
+  const dtiVal=document.getElementById('g-dti-val').textContent;
+  const saved={country:countryCode,countryName,income:inc1+inc2,dti:dtiVal,status:document.getElementById('g-status').textContent,date:new Date().toLocaleDateString('en-GB')};
+  const existing=JSON.parse(localStorage.getItem('dti_saves')||'[]');
+  existing.unshift(saved);
+  localStorage.setItem('dti_saves',JSON.stringify(existing.slice(0,10)));
+
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved'); btn.textContent='✅';
+  setTimeout(()=>{btn.classList.remove('saved');btn.textContent='💾';},2000);
+
+  const t=document.getElementById('toast');
+  t.textContent='✅ DTI result saved!';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// Init sliders
+['income','income2'].forEach(id=>{
+  const el=document.getElementById(id);
+  const pct=(el.value-el.min)/(el.max-el.min)*100;
+  el.style.setProperty('--pct',pct+'%');
+});
+updateDebtTotal();
+</script>
+</body>
+</html>

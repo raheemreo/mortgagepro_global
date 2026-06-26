@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HELOC Calculator</title>
+<style>
+  :root{--navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;--bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;--border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);--tl:#0F766E;--tl2:#0D9488;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#0F766E 55%,#0D9488 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🏦';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+  .content{padding:15px 15px 120px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--tl);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* Toast */
+  .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:9999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .input-group{margin-bottom:13px;}
+  .input-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+  .input-row{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;}
+  .input-prefix{padding:12px 11px;font-size:14px;font-weight:700;color:var(--muted);background:rgba(27,63,114,0.05);border-right:1px solid var(--border);}
+  .input-row input{flex:1;border:none;background:transparent;padding:12px 12px;font-size:15px;font-weight:700;color:var(--navy);font-family:Georgia,serif;outline:none;}
+  .input-suffix{padding:12px 11px;font-size:11px;font-weight:700;color:var(--muted);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  /* Action Buttons */
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:6px;}
+  .calc-btn{background:linear-gradient(135deg,#0F766E,#0D9488);border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(15,118,110,0.40);font-family:Georgia,serif;transition:transform .1s;}
+  .calc-btn:active{transform:scale(0.97);}
+  .save-btn{background:linear-gradient(135deg,#D97706,#B45309);border:none;border-radius:13px;padding:14px 16px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(217,119,6,0.35);white-space:nowrap;transition:transform .1s;}
+  .save-btn:active{transform:scale(0.97);}
+
+  .result-hero{background:linear-gradient(148deg,#0F766E,#0D9488);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.07);}
+  .rh-label{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.7px;}
+  .rh-val{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:6px 0 2px;}
+  .rh-sub{font-size:11px;color:rgba(255,255,255,0.65);}
+  .rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-item{background:rgba(255,255,255,0.12);border-radius:11px;padding:9px 8px;text-align:center;}
+  .rh-item-l{font-size:8.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;}
+  .rh-item-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+  .rh-item-v.gold{color:var(--gold-lt);}
+
+  /* Equity Visual */
+  .equity-visual{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .ev-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .ev-bar-wrap{background:#EEF2F8;border-radius:12px;height:28px;overflow:hidden;position:relative;margin-bottom:8px;display:flex;}
+  .ev-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:rgba(255,255,255,0.9);transition:width .6s ease;overflow:hidden;white-space:nowrap;}
+  .ev-legend{display:flex;flex-wrap:wrap;gap:8px;}
+  .ev-leg{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);font-weight:600;}
+  .ev-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+
+  /* Payment phases chart */
+  .phase-chart{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .phase-chart-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .phase-timeline{display:flex;gap:0;border-radius:10px;overflow:hidden;height:48px;margin-bottom:10px;}
+  .phase-draw{background:linear-gradient(135deg,#0F766E,#0D9488);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;}
+  .phase-repay{background:linear-gradient(135deg,#0B1D3A,#1B3F72);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;}
+  .phase-label{font-size:9px;font-weight:800;opacity:0.85;}
+  .phase-val{font-size:14px;font-weight:800;font-family:Georgia,serif;}
+  .phase-info{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);}
+
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .stat-card{background:var(--card);border-radius:16px;padding:15px 13px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .sc-icon{font-size:22px;margin-bottom:6px;}
+  .sc-label{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .sc-val{font-size:18px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .sc-sub{font-size:9px;color:var(--muted);}
+
+  .rate-info{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid rgba(15,118,110,0.25);border-radius:14px;padding:13px;margin-bottom:12px;}
+  .ri-title{font-size:11px;font-weight:800;color:#065F46;font-family:Georgia,serif;margin-bottom:8px;}
+  .ri-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  .ri-item{background:rgba(255,255,255,0.70);border-radius:9px;padding:8px;text-align:center;}
+  .ri-l{font-size:8.5px;color:#065F46;font-weight:700;text-transform:uppercase;}
+  .ri-v{font-size:14px;font-weight:800;color:#0F766E;font-family:Georgia,serif;margin-top:2px;}
+
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--tl);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .calc-card{animation:fadeUp .35s ease both .05s;}
+  .result-hero{animation:fadeUp .35s ease both .10s;}
+  .equity-visual{animation:fadeUp .35s ease both .15s;}
+  .phase-chart{animation:fadeUp .35s ease both .17s;}
+  .g2{animation:fadeUp .35s ease both .20s;}
+  .ilist{animation:fadeUp .35s ease both .25s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">💾 HELOC saved!</div>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div style="font-size:28px">🏦</div>
+      <div class="hdr-title">HELOC Calculator</div>
+      <div class="hdr-sub">Home Equity Line of Credit · Draw & Repayment</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Prime Rate</div><div class="rs-v gold">8.50%</div><div class="rs-n">Current</div></div>
+    <div class="rs"><div class="rs-l">HELOC Avg</div><div class="rs-v">9.18%</div><div class="rs-n">Bankrate</div></div>
+    <div class="rs"><div class="rs-l">Max CLTV</div><div class="rs-v">85%</div><div class="rs-n">Most Lenders</div></div>
+    <div class="rs"><div class="rs-l">Draw Period</div><div class="rs-v gold">10yr</div><div class="rs-n">Typical</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">HELOC Setup <span class="more" onclick="resetForm()">Reset</span></div>
+  <div class="calc-card">
+    <div class="row2">
+      <div class="input-group"><label class="input-label">Home Value</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="homeVal" value="550000"></div></div>
+      <div class="input-group"><label class="input-label">Mortgage Balance</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="mortBal" value="320000"></div></div>
+    </div>
+    <div class="row2">
+      <div class="input-group"><label class="input-label">HELOC Rate (APR)</label><div class="input-row"><input type="number" id="helocRate" value="9.18" step="0.01"><span class="input-suffix">%</span></div></div>
+      <div class="input-group"><label class="input-label">Draw Amount</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="drawAmt" value="50000"></div></div>
+    </div>
+    <div class="row2">
+      <div class="input-group"><label class="input-label">Draw Period</label><div class="input-row"><input type="number" id="drawYrs" value="10"><span class="input-suffix">yrs</span></div></div>
+      <div class="input-group"><label class="input-label">Repay Period</label><div class="input-row"><input type="number" id="repayYrs" value="20"><span class="input-suffix">yrs</span></div></div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">🏦 Calculate HELOC</button>
+      <button class="save-btn" onclick="saveCalc()">💾 Save</button>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-hero">
+    <div class="rh-label">Available Credit Line</div>
+    <div class="rh-val" id="creditLine">—</div>
+    <div class="rh-sub" id="cltv">Press Calculate to see your HELOC details</div>
+    <div class="rh-grid">
+      <div class="rh-item"><div class="rh-item-l">Draw Payment</div><div class="rh-item-v" id="drawPmt">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">Repay Payment</div><div class="rh-item-v" id="repayPmt">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">Total Interest</div><div class="rh-item-v gold" id="totalInt">—</div></div>
+    </div>
+  </div>
+
+  <!-- Equity Visualization -->
+  <div class="equity-visual">
+    <div class="ev-title">Home Equity Breakdown</div>
+    <div class="ev-bar-wrap" id="equityBarWrap">
+      <div class="ev-seg" id="segMort" style="background:#1B3F72;width:58%">Mortgage</div>
+      <div class="ev-seg" id="segHeloc" style="background:#0F766E;width:9%">HELOC</div>
+      <div class="ev-seg" id="segAvail" style="background:#5EEAD4;width:6%;color:rgba(0,0,0,0.5)"></div>
+      <div class="ev-seg" id="segEquity" style="background:#E0F2F1;width:27%;color:rgba(11,29,58,0.5)">Equity</div>
+    </div>
+    <div class="ev-legend">
+      <div class="ev-leg"><div class="ev-dot" style="background:#1B3F72"></div>Mortgage Balance</div>
+      <div class="ev-leg"><div class="ev-dot" style="background:#0F766E"></div>HELOC Draw</div>
+      <div class="ev-leg"><div class="ev-dot" style="background:#5EEAD4"></div>Available HELOC</div>
+      <div class="ev-leg"><div class="ev-dot" style="background:#E0F2F1;border:1px solid #ccc"></div>Protected Equity</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <div style="background:var(--bg);border-radius:9px;padding:8px;"><div style="font-size:8.5px;color:var(--muted);font-weight:700;">HOME EQUITY</div><div style="font-size:16px;font-weight:800;color:var(--navy);font-family:Georgia,serif;" id="totalEquity">—</div></div>
+      <div style="background:var(--bg);border-radius:9px;padding:8px;"><div style="font-size:8.5px;color:var(--muted);font-weight:700;">MAX LINE (85% CLTV)</div><div style="font-size:16px;font-weight:800;color:var(--tl);font-family:Georgia,serif;" id="maxLine">—</div></div>
+    </div>
+  </div>
+
+  <!-- Payment Phases Chart -->
+  <div class="sec">Payment Phases</div>
+  <div class="phase-chart">
+    <div class="phase-chart-title">📅 Monthly Payment Timeline</div>
+    <div class="phase-timeline">
+      <div class="phase-draw" id="phaseDrawBlock" style="flex:10;">
+        <div class="phase-label">Draw Phase</div>
+        <div class="phase-val" id="drawPhaseVal">—/mo</div>
+      </div>
+      <div class="phase-repay" id="phaseRepayBlock" style="flex:20;">
+        <div class="phase-label">Repayment Phase</div>
+        <div class="phase-val" id="repayPhaseVal">—/mo</div>
+      </div>
+    </div>
+    <div class="phase-info">
+      <span id="phaseInfo1">Draw: Yr 1–10 (Interest only)</span>
+      <span id="phaseInfo2">Repay: Yr 11–30 (P+I)</span>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="stat-card">
+      <div class="sc-icon">📤</div>
+      <div class="sc-label">Draw Phase</div>
+      <div class="sc-val" id="drawPhase">—</div>
+      <div class="sc-sub">Interest-only/mo</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon">📥</div>
+      <div class="sc-label">Repay Phase</div>
+      <div class="sc-val" id="repayPhase">—</div>
+      <div class="sc-sub">Principal + interest/mo</div>
+    </div>
+  </div>
+
+  <div class="rate-info">
+    <div class="ri-title">📊 Current HELOC Rate Environment (2025)</div>
+    <div class="ri-grid">
+      <div class="ri-item"><div class="ri-l">Prime Rate</div><div class="ri-v">8.50%</div></div>
+      <div class="ri-item"><div class="ri-l">Lowest HELOC</div><div class="ri-v">8.75%</div></div>
+      <div class="ri-item"><div class="ri-l">National Avg</div><div class="ri-v">9.18%</div></div>
+    </div>
+  </div>
+
+  <div class="sec">Key HELOC Facts</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🔄</div><div><div class="in">Variable Rate (Prime + Margin)</div><div class="is">Rates fluctuate with Fed decisions · budget for increases</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📋</div><div><div class="in">85% CLTV Standard</div><div class="is">Combined Loan-To-Value · some lenders go to 90%</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">💰</div><div><div class="in">Interest May Be Tax Deductible</div><div class="is">If used for home improvements · consult a tax advisor</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">⚠️</div><div><div class="in">Payment Shock at Repayment</div><div class="is">Draw: interest only → Repayment: P+I can jump 40–80%</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmt(n){return'$'+Math.round(n).toLocaleString();}
+function fmtK(n){return'$'+Math.round(n/1000)+'K';}
+function calcPI(loan,rate,yrs){const mo=rate/100/12,n=yrs*12;return mo===0?loan/n:loan*mo*Math.pow(1+mo,n)/(Math.pow(1+mo,n)-1);}
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+function resetForm(){
+  document.getElementById('homeVal').value=550000;
+  document.getElementById('mortBal').value=320000;
+  document.getElementById('helocRate').value=9.18;
+  document.getElementById('drawAmt').value=50000;
+  document.getElementById('drawYrs').value=10;
+  document.getElementById('repayYrs').value=20;
+}
+
+function calculate(){
+  const hv=parseFloat(document.getElementById('homeVal').value)||550000;
+  const mb=parseFloat(document.getElementById('mortBal').value)||320000;
+  const rate=parseFloat(document.getElementById('helocRate').value)||9.18;
+  const draw=parseFloat(document.getElementById('drawAmt').value)||50000;
+  const drawYrs=parseFloat(document.getElementById('drawYrs').value)||10;
+  const repayYrs=parseFloat(document.getElementById('repayYrs').value)||20;
+
+  // Validation
+  if(mb>=hv){showToast('⚠️ Mortgage balance exceeds home value');return;}
+  if(draw<=0){showToast('⚠️ Draw amount must be greater than 0');return;}
+
+  const maxCLTV=0.85*hv;
+  const maxLine=Math.max(0,maxCLTV-mb);
+  const actualDraw=Math.min(draw,maxLine);
+  const cltv=((mb+actualDraw)/hv*100).toFixed(1);
+  const equity=hv-mb;
+
+  const drawPmt=actualDraw*(rate/100/12);
+  const repayPmt=calcPI(actualDraw,rate,repayYrs);
+  const totalIntDraw=drawPmt*drawYrs*12;
+  const totalIntRepay=repayPmt*repayYrs*12-actualDraw;
+  const totalInt=totalIntDraw+totalIntRepay;
+
+  const mbPct=Math.min(mb/hv*100,100);
+  const drawPct=Math.min(actualDraw/hv*100,100);
+  const availPct=Math.max(0,Math.min((maxLine-actualDraw)/hv*100,100));
+  const eqPct=Math.max(0,100-mbPct-drawPct-availPct);
+
+  document.getElementById('creditLine').textContent=fmt(maxLine);
+  document.getElementById('cltv').textContent=`CLTV: ${cltv}% · 85% max allowed${actualDraw<draw?' · Draw capped at max line':''}`;
+  document.getElementById('drawPmt').textContent=fmt(drawPmt)+'/mo';
+  document.getElementById('repayPmt').textContent=fmt(repayPmt)+'/mo';
+  document.getElementById('totalInt').textContent=fmtK(totalInt);
+  document.getElementById('totalEquity').textContent=fmt(equity);
+  document.getElementById('maxLine').textContent=fmt(maxLine);
+  document.getElementById('drawPhase').textContent=fmt(drawPmt);
+  document.getElementById('repayPhase').textContent=fmt(repayPmt);
+  document.getElementById('drawPhaseVal').textContent=fmt(drawPmt)+'/mo';
+  document.getElementById('repayPhaseVal').textContent=fmt(repayPmt)+'/mo';
+
+  document.getElementById('phaseDrawBlock').style.flex=drawYrs;
+  document.getElementById('phaseRepayBlock').style.flex=repayYrs;
+  document.getElementById('phaseInfo1').textContent=`Draw: Yr 1–${drawYrs} (Interest only)`;
+  document.getElementById('phaseInfo2').textContent=`Repay: Yr ${drawYrs+1}–${drawYrs+repayYrs} (P+I)`;
+
+  // Color warning if repay jumps a lot
+  const jumpPct=((repayPmt-drawPmt)/drawPmt*100);
+  document.getElementById('repayPhase').style.color=jumpPct>50?'#B91C1C':jumpPct>25?'#D97706':'var(--navy)';
+
+  document.getElementById('segMort').style.width=mbPct+'%';
+  document.getElementById('segHeloc').style.width=drawPct+'%';
+  document.getElementById('segAvail').style.width=availPct+'%';
+  document.getElementById('segEquity').style.width=eqPct+'%';
+}
+
+function saveCalc(){
+  const data={
+    homeVal:document.getElementById('homeVal').value,
+    mortBal:document.getElementById('mortBal').value,
+    helocRate:document.getElementById('helocRate').value,
+    drawAmt:document.getElementById('drawAmt').value,
+    creditLine:document.getElementById('creditLine').textContent,
+    drawPmt:document.getElementById('drawPmt').textContent,
+    repayPmt:document.getElementById('repayPmt').textContent,
+    savedAt:new Date().toLocaleString()
+  };
+  try{localStorage.setItem('helocSave',JSON.stringify(data));}catch(e){}
+  showToast('💾 HELOC calculation saved!');
+}
+
+calculate();
+</script>
+</body>
+</html>

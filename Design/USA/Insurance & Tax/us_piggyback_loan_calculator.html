@@ -1,0 +1,1921 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Piggyback Loan Calculator</title>
+  <style>
+    :root {
+      --navy: #0B1D3A;
+      --blue: #1B3F72;
+      --red: #B91C1C;
+      --crimson: #991B1B;
+      --gold: #D97706;
+      --gold-lt: #FCD34D;
+      --teal: #0D7B6B;
+      --teal-lt: #5EEAD4;
+      --white: #FFFFFF;
+      --bg: #F0F4FF;
+      --card: #FFFFFF;
+      --muted: #4A5C7A;
+      --border: rgba(27, 63, 114, 0.09);
+      --sh: 0 4px 20px rgba(11, 29, 58, 0.10);
+      --sh2: 0 8px 36px rgba(11, 29, 58, 0.18);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--navy);
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(155deg, #0B1D3A 0%, #1B3F72 55%, #0D7B6B 100%);
+      padding: 46px 20px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .header::after {
+      content: '🔀';
+      position: absolute;
+      right: 10px;
+      top: 50px;
+      font-size: 72px;
+      opacity: 0.07;
+    }
+
+    .hdr-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #fff;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .hdr-center {
+      text-align: center;
+    }
+
+    .hdr-flag {
+      font-size: 28px;
+    }
+
+    .hdr-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.3px;
+      font-family: Georgia, serif;
+    }
+
+    .hdr-sub {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.52);
+      margin-top: 1px;
+    }
+
+    .rate-strip {
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px 14px 0 0;
+      padding: 11px 14px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      position: relative;
+      z-index: 2;
+      margin-top: 4px;
+    }
+
+    .rs {
+      text-align: center;
+      position: relative;
+    }
+
+    .rs:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 15%;
+      height: 70%;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .rs-l {
+      font-size: 8.5px;
+      color: rgba(255, 255, 255, 0.48);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .rs-v {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      font-family: Georgia, serif;
+      line-height: 1.1;
+    }
+
+    .rs-v.up::after {
+      content: '↑';
+      font-size: 9px;
+      color: #6EE7B7;
+    }
+
+    .rs-v.dn::after {
+      content: '↓';
+      font-size: 9px;
+      color: #FCA5A5;
+    }
+
+    .rs-v.tl {
+      color: #5EEAD4;
+    }
+
+    .rs-n {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.38);
+      margin-top: 1px;
+    }
+
+    /* CONTENT */
+    .content {
+      padding: 15px 15px 110px;
+    }
+
+    .sec {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 20px 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sec .more {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--blue);
+      text-transform: none;
+      letter-spacing: 0;
+      cursor: pointer;
+    }
+
+    /* HERO RESULT */
+    .result-hero {
+      background: linear-gradient(135deg, #0B1D3A, #1B3F72);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 8px 28px rgba(11, 29, 58, 0.30);
+      margin-bottom: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-hero::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: rgba(13, 123, 107, 0.18);
+    }
+
+    .rh-label {
+      font-size: 9.5px;
+      color: rgba(255, 255, 255, 0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .rh-amount {
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      font-family: Georgia, serif;
+      line-height: 1;
+      margin: 4px 0 2px;
+    }
+
+    .rh-sub {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.60);
+    }
+
+    .rh-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .rh-box {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 9px 10px;
+    }
+
+    .rh-box-lbl {
+      font-size: 8.5px;
+      color: rgba(255, 255, 255, 0.50);
+    }
+
+    .rh-box-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      font-family: Georgia, serif;
+      margin-top: 2px;
+    }
+
+    .rh-box-val.tl {
+      color: #5EEAD4;
+    }
+
+    .rh-box-val.gd {
+      color: var(--gold-lt);
+    }
+
+    /* STRUCTURE BANNER */
+    .structure-banner {
+      background: linear-gradient(135deg, #0D7B6B, #065F52);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 6px 20px rgba(13, 123, 107, 0.28);
+    }
+
+    .sb-icon {
+      font-size: 28px;
+    }
+
+    .sb-text {
+      flex: 1;
+    }
+
+    .sb-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      font-family: Georgia, serif;
+    }
+
+    .sb-desc {
+      font-size: 9.5px;
+      color: rgba(255, 255, 255, 0.65);
+      margin-top: 2px;
+    }
+
+    .sb-tag {
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 20px;
+      padding: 3px 9px;
+      font-size: 9px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 6px;
+      display: inline-block;
+    }
+
+    /* INPUT CARD */
+    .input-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+    }
+
+    .inp-group {
+      margin-bottom: 14px;
+    }
+
+    .inp-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .inp-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .inp-label .hint {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: var(--blue);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    input[type=range] {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(to right, var(--blue) 0%, var(--blue) 20%, #CBD5E1 20%, #CBD5E1 100%);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 3px solid #fff;
+      box-shadow: 0 2px 8px rgba(11, 29, 58, 0.25);
+    }
+
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .inp-field {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 14px 11px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--navy);
+      background: var(--bg);
+      outline: none;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .inp-field:focus {
+      border-color: var(--blue);
+      background: #fff;
+    }
+
+    /* LOAN STRUCTURE PILLS */
+    .structure-pills {
+      display: flex;
+      gap: 8px;
+    }
+
+    .s-pill {
+      flex: 1;
+      padding: 10px 6px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      text-align: center;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .s-pill.active {
+      border-color: #0D7B6B;
+      background: #F0FDF9;
+    }
+
+    .s-pill-top {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+    }
+
+    .s-pill.active .s-pill-top {
+      color: #0D7B6B;
+    }
+
+    .s-pill-bot {
+      font-size: 8.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* CALC / SAVE BTN */
+    .calc-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #0D7B6B, #065F52);
+      border: none;
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(13, 123, 107, 0.35);
+      font-family: Georgia, serif;
+      letter-spacing: 0.3px;
+      margin-top: 14px;
+      transition: transform .12s, box-shadow .12s;
+    }
+
+    .calc-btn:active {
+      transform: scale(.98);
+      box-shadow: 0 2px 8px rgba(13, 123, 107, 0.30);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn-row .calc-btn {
+      margin-top: 0;
+      flex: 1;
+    }
+
+    .save-btn {
+      flex: 0 0 52px;
+      background: var(--card);
+      border: 1.5px solid var(--teal);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      cursor: pointer;
+      transition: transform .12s;
+      color: var(--teal);
+    }
+
+    .save-btn:active {
+      transform: scale(.94);
+    }
+
+    .save-btn.saved {
+      background: #F0FDF9;
+    }
+
+    /* PAYMENT BREAKDOWN BARS */
+    .breakdown-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+    }
+
+    .bc-row {
+      margin-bottom: 14px;
+    }
+
+    .bc-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .bc-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .bc-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bc-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 3px;
+    }
+
+    .bc-val {
+      font-size: 13px;
+      font-weight: 800;
+      font-family: Georgia, serif;
+      color: var(--navy);
+    }
+
+    .bc-bar-bg {
+      height: 9px;
+      border-radius: 5px;
+      background: #E2E8F0;
+      overflow: hidden;
+    }
+
+    .bc-bar {
+      height: 100%;
+      border-radius: 5px;
+      transition: width .6s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .bc-sub {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* COMPARISON TABLE */
+    .comp-table {
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+    }
+
+    .ct-head {
+      background: linear-gradient(135deg, #0B1D3A, #1B3F72);
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr 1fr;
+      padding: 10px 12px;
+    }
+
+    .ct-th {
+      font-size: 9px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.65);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+    }
+
+    .ct-th:first-child {
+      text-align: left;
+    }
+
+    .ct-row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr 1fr;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+
+    .ct-row:last-child {
+      border-bottom: none;
+    }
+
+    .ct-row.highlight {
+      background: #F0FDF9;
+    }
+
+    .ct-cell {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--navy);
+      text-align: center;
+    }
+
+    .ct-cell:first-child {
+      text-align: left;
+      font-size: 10.5px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .ct-cell.best {
+      color: #0D7B6B;
+      font-weight: 800;
+    }
+
+    .ct-cell.bad {
+      color: #B91C1C;
+    }
+
+    .check {
+      color: #0D7B6B;
+      font-weight: 900;
+    }
+
+    .cross {
+      color: #B91C1C;
+      font-weight: 900;
+    }
+
+    /* SAVINGS HIGHLIGHT */
+    .savings-card {
+      background: linear-gradient(135deg, #0D7B6B, #065F52);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 8px 28px rgba(13, 123, 107, 0.28);
+    }
+
+    .sc-label {
+      font-size: 9.5px;
+      color: rgba(255, 255, 255, 0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .sc-amount {
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      font-family: Georgia, serif;
+      line-height: 1;
+      margin: 4px 0 2px;
+    }
+
+    .sc-sub {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.60);
+    }
+
+    .sc-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .sc-box {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 9px 10px;
+    }
+
+    .sc-box-lbl {
+      font-size: 8.5px;
+      color: rgba(255, 255, 255, 0.50);
+    }
+
+    .sc-box-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      font-family: Georgia, serif;
+      margin-top: 2px;
+    }
+
+    /* PIE / DONUT */
+    .donut-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .donut-wrap {
+      position: relative;
+      width: 108px;
+      height: 108px;
+      flex-shrink: 0;
+    }
+
+    .donut-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .donut-center .dc-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+    }
+
+    .donut-center .dc-lbl {
+      font-size: 8px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .donut-legend {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .dl-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .dl-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .dl-val {
+      margin-left: auto;
+      font-family: Georgia, serif;
+    }
+
+    /* INFO CARDS */
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .tc {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 12px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform .15s;
+    }
+
+    .tc:active {
+      transform: scale(.97);
+    }
+
+    .tc.nv {
+      background: linear-gradient(140deg, #0B1D3A, #1B3F72);
+    }
+
+    .tc.tl {
+      background: linear-gradient(140deg, #0D7B6B, #065F52);
+    }
+
+    .tc.gd {
+      background: linear-gradient(140deg, #D97706, #B45309);
+    }
+
+    .ti {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      margin-bottom: 9px;
+    }
+
+    .tc:not(.nv):not(.tl):not(.gd) .ti {
+      background: var(--bg);
+    }
+
+    .tc.nv .ti,
+    .tc.tl .ti,
+    .tc.gd .ti {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .tn {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.2;
+      font-family: Georgia, serif;
+    }
+
+    .tc.nv .tn,
+    .tc.tl .tn,
+    .tc.gd .tn {
+      color: #fff;
+    }
+
+    .td {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .tc.nv .td,
+    .tc.tl .td,
+    .tc.gd .td {
+      color: rgba(255, 255, 255, 0.58);
+    }
+
+    .ta {
+      position: absolute;
+      bottom: 11px;
+      right: 11px;
+      font-size: 14px;
+      color: rgba(11, 29, 58, 0.16);
+    }
+
+    .tc.nv .ta,
+    .tc.tl .ta,
+    .tc.gd .ta {
+      color: rgba(255, 255, 255, 0.22);
+    }
+
+    .bge {
+      display: inline-flex;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-size: 8.5px;
+      font-weight: 700;
+      margin-top: 5px;
+    }
+
+    .bge-tl {
+      background: #CCFBF1;
+      color: #0D7B6B;
+    }
+
+    .bge-b {
+      background: #EFF6FF;
+      color: #1D4ED8;
+    }
+
+    .bge-g {
+      background: #F0FDF4;
+      color: #15803D;
+    }
+
+    .bge-r {
+      background: #FEF2F2;
+      color: #B91C1C;
+    }
+
+    /* INFO LIST */
+    .ilist {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .ic {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 13px 14px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .ii {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .in {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+    }
+
+    .is {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .ich {
+      font-size: 16px;
+      color: rgba(11, 29, 58, 0.18);
+      margin-left: auto;
+    }
+
+    /* SAVED LIST */
+    .saved-section {
+      display: none;
+    }
+
+    .saved-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .saved-card .sd-amt {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0D7B6B;
+      font-family: Georgia, serif;
+    }
+
+    .saved-card .sd-meta {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .saved-del {
+      margin-left: auto;
+      font-size: 16px;
+      color: #B91C1C;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .saved-empty {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      padding: 18px 0;
+    }
+
+    /* AMORT TIMELINE */
+    .timeline {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+    }
+
+    .tl-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tl-row:last-child {
+      border-bottom: none;
+    }
+
+    .tl-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .tl-val {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--blue);
+      font-family: Georgia, serif;
+    }
+
+    .tl-val.tl-color {
+      color: #0D7B6B;
+    }
+
+    .tl-val.red {
+      color: #B91C1C;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--navy);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: var(--sh2);
+      opacity: 0;
+      transition: all .25s;
+      z-index: 200;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* BOTTOM NAV */
+    .bnav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 10px 0 18px;
+      box-shadow: 0 -4px 20px rgba(11, 29, 58, 0.07);
+      z-index: 100;
+    }
+
+    .ni {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+
+    .ni-ic {
+      font-size: 19px;
+    }
+
+    .ni-lb {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .ni.active .ni-lb {
+      color: #0D7B6B;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .result-hero {
+      animation: fadeUp .35s ease both .05s;
+    }
+
+    .input-card,
+    .savings-card {
+      animation: fadeUp .35s ease both .10s;
+    }
+
+    .breakdown-card,
+    .donut-card {
+      animation: fadeUp .35s ease both .15s;
+    }
+
+    .comp-table,
+    .g2,
+    .ilist {
+      animation: fadeUp .35s ease both .20s;
+    }
+
+    /* VISUAL BAR CHART */
+    .bar-chart {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+    }
+
+    .bch-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+      margin-bottom: 14px;
+    }
+
+    .bch-groups {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      height: 120px;
+    }
+
+    .bch-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .bch-bars {
+      display: flex;
+      gap: 4px;
+      align-items: flex-end;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .bch-bar {
+      width: 22px;
+      border-radius: 4px 4px 0 0;
+      transition: height .6s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .bch-bar-label {
+      font-size: 8px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    .bch-val-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 4px;
+      font-family: Georgia, serif;
+    }
+
+    .bch-legend {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+      justify-content: center;
+    }
+
+    .bch-leg-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .bch-leg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="hdr-top">
+      <a href="us_pmi_calculator.html" class="icon-btn" style="text-decoration:none;">←</a>
+      <div class="hdr-center">
+        <div class="hdr-flag">🔀</div>
+        <div class="hdr-title">Piggyback Loan</div>
+        <div class="hdr-sub">80/10/10 · 80/15/5 · 80/5/15 Structure · No PMI</div>
+      </div>
+      <div class="icon-btn">ℹ️</div>
+    </div>
+    <div class="rate-strip">
+      <div class="rs">
+        <div class="rs-l">1st Loan</div>
+        <div class="rs-v">6.82%</div>
+        <div class="rs-n">30yr Fixed Avg</div>
+      </div>
+      <div class="rs">
+        <div class="rs-l">2nd Loan</div>
+        <div class="rs-v tl up">8.65%</div>
+        <div class="rs-n">HELOC/2nd Avg</div>
+      </div>
+      <div class="rs">
+        <div class="rs-l">PMI Saved</div>
+        <div class="rs-v up">0.58%</div>
+        <div class="rs-n">Avg PMI Rate</div>
+      </div>
+      <div class="rs">
+        <div class="rs-l">Structure</div>
+        <div class="rs-v">80/10/10</div>
+        <div class="rs-n">Most Common</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- WHAT IS IT BANNER -->
+    <div class="sec" style="margin-top:0;">Strategy Overview <span class="more">How It Works →</span></div>
+    <div class="structure-banner">
+      <div class="sb-icon">🏦</div>
+      <div class="sb-text">
+        <div class="sb-title">Piggyback Loan Strategy</div>
+        <div class="sb-desc">Take two mortgages simultaneously to avoid PMI. The 1st covers 80% of the price; the 2nd
+          "piggybacks" the gap.</div>
+        <div class="sb-tag">✅ Zero PMI · Requires Only 5–10% Down</div>
+      </div>
+    </div>
+
+    <!-- RESULT HERO -->
+    <div class="sec">Your Piggyback Result <span class="more">Explain →</span></div>
+    <div class="result-hero">
+      <div class="rh-label">Combined Monthly Payment</div>
+      <div class="rh-amount" id="totalPayment">$2,847</div>
+      <div class="rh-sub" id="resultSubtitle">80/10/10 Structure · $0 PMI · Saves vs single loan</div>
+      <div class="rh-row">
+        <div class="rh-box">
+          <div class="rh-box-lbl">1st Loan Pmt</div>
+          <div class="rh-box-val tl" id="firstPayment">$2,380</div>
+        </div>
+        <div class="rh-box">
+          <div class="rh-box-lbl">2nd Loan Pmt</div>
+          <div class="rh-box-val gd" id="secondPayment">$467</div>
+        </div>
+        <div class="rh-box">
+          <div class="rh-box-lbl">PMI Saved/mo</div>
+          <div class="rh-box-val" id="pmiSavedMonthly" style="color:#5EEAD4;">$218</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INPUTS -->
+    <div class="sec">Loan Details <span class="more" onclick="resetCalc()">Reset</span></div>
+    <div class="input-card">
+
+      <div class="inp-group">
+        <div class="inp-label">Home Purchase Price <span class="hint" id="priceDisplay">$450,000</span></div>
+        <input type="range" id="priceSlider" min="100000" max="1500000" step="5000" value="450000"
+          oninput="updateCalc()">
+        <div class="range-labels"><span>$100K</span><span>$500K</span><span>$1M</span><span>$1.5M</span></div>
+      </div>
+
+      <div class="inp-group">
+        <div class="inp-label">Down Payment % <span class="hint" id="downDisplay">10%</span></div>
+        <input type="range" id="downSlider" min="5" max="19" step="1" value="10" oninput="updateCalc()">
+        <div class="range-labels"><span>5%</span><span>10%</span><span>15%</span><span>19%</span></div>
+      </div>
+
+      <div class="inp-group">
+        <div class="inp-label">1st Loan Rate (30yr Fixed) <span class="hint" id="rate1Display">6.82%</span></div>
+        <input type="range" id="rate1Slider" min="5.0" max="9.0" step="0.05" value="6.82" oninput="updateCalc()">
+        <div class="range-labels"><span>5.0%</span><span>6.5%</span><span>7.5%</span><span>9.0%</span></div>
+      </div>
+
+      <div class="inp-group">
+        <div class="inp-label">2nd Loan Rate (HELOC/Fixed) <span class="hint" id="rate2Display">8.65%</span></div>
+        <input type="range" id="rate2Slider" min="6.0" max="12.0" step="0.05" value="8.65" oninput="updateCalc()">
+        <div class="range-labels"><span>6.0%</span><span>8.0%</span><span>10.0%</span><span>12.0%</span></div>
+      </div>
+
+      <div class="inp-group">
+        <div class="inp-label">Piggyback Structure</div>
+        <div class="structure-pills">
+          <div class="s-pill active" id="pill-801010" onclick="selectStructure('80/10/10',this)">
+            <div class="s-pill-top">80/10/10</div>
+            <div class="s-pill-bot">10% down</div>
+          </div>
+          <div class="s-pill" id="pill-80155" onclick="selectStructure('80/15/5',this)">
+            <div class="s-pill-top">80/15/5</div>
+            <div class="s-pill-bot">5% down</div>
+          </div>
+          <div class="s-pill" id="pill-80515" onclick="selectStructure('80/5/15',this)">
+            <div class="s-pill-top">80/5/15</div>
+            <div class="s-pill-bot">15% down</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="inp-group">
+        <div class="inp-label">Credit Score <span class="hint" id="scoreDisplay">720</span></div>
+        <input type="range" id="scoreSlider" min="620" max="850" step="10" value="720" oninput="updateCalc()">
+        <div class="range-labels"><span>620</span><span>680</span><span>720</span><span>780</span><span>850</span></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="calc-btn" onclick="updateCalc()">Calculate Piggyback</button>
+        <div class="save-btn" id="saveBtn" onclick="saveCalc()">💾</div>
+      </div>
+    </div>
+
+    <!-- PMI SAVINGS HIGHLIGHT -->
+    <div class="sec">PMI Savings Over Life of Loan <span class="more">vs Standard Loan</span></div>
+    <div class="savings-card">
+      <div class="sc-label">Total PMI Avoided</div>
+      <div class="sc-amount" id="totalPmiSaved">$18,648</div>
+      <div class="sc-sub" id="savingsSub">vs. Conventional Loan with 10% Down · 0.58% PMI · ~7.2 yrs</div>
+      <div class="sc-row">
+        <div class="sc-box">
+          <div class="sc-box-lbl">Monthly Saving</div>
+          <div class="sc-box-val" id="scMonthly">$218</div>
+        </div>
+        <div class="sc-box">
+          <div class="sc-box-lbl">Break-even Point</div>
+          <div class="sc-box-val" id="scBreakeven">~28 mo</div>
+        </div>
+        <div class="sc-box">
+          <div class="sc-box-lbl">Net 10yr Saving</div>
+          <div class="sc-box-val" id="scNet10">$8,240</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT BREAKDOWN BARS -->
+    <div class="sec">Monthly Payment Breakdown</div>
+    <div class="breakdown-card">
+      <div class="bc-row">
+        <div class="bc-label-row">
+          <div class="bc-label"><span class="bc-dot" style="background:#1B3F72;"></span>1st Mortgage (80%)</div>
+          <div class="bc-val" id="bc1">$2,380</div>
+        </div>
+        <div class="bc-bar-bg">
+          <div class="bc-bar" id="bar1" style="background:#1B3F72;width:72%;"></div>
+        </div>
+        <div class="bc-sub" id="bc1sub">6.82% · 30yr fixed · $360,000</div>
+      </div>
+      <div class="bc-row">
+        <div class="bc-label-row">
+          <div class="bc-label"><span class="bc-dot" style="background:#0D7B6B;"></span>2nd Loan (Piggyback)</div>
+          <div class="bc-val" id="bc2">$467</div>
+        </div>
+        <div class="bc-bar-bg">
+          <div class="bc-bar" id="bar2" style="background:#0D7B6B;width:14%;"></div>
+        </div>
+        <div class="bc-sub" id="bc2sub">8.65% · 10yr fixed · $45,000</div>
+      </div>
+      <div class="bc-row">
+        <div class="bc-label-row">
+          <div class="bc-label"><span class="bc-dot" style="background:#D97706;"></span>Down Payment</div>
+          <div class="bc-val" id="bc3">$45,000</div>
+        </div>
+        <div class="bc-bar-bg">
+          <div class="bc-bar" id="bar3" style="background:#D97706;width:14%;"></div>
+        </div>
+        <div class="bc-sub" id="bc3sub">10% of purchase price</div>
+      </div>
+      <div class="bc-row" style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+        <div class="bc-label-row">
+          <div class="bc-label" style="color:#B91C1C;"><span class="bc-dot" style="background:#B91C1C;"></span>PMI
+            (Avoided!)</div>
+          <div class="bc-val" style="color:#B91C1C;text-decoration:line-through;" id="bc4">$218</div>
+        </div>
+        <div class="bc-bar-bg">
+          <div class="bc-bar" id="bar4" style="background:#B91C1C;width:7%;opacity:0.35;"></div>
+        </div>
+        <div class="bc-sub" style="color:#0D7B6B;">✅ $0 PMI with Piggyback structure</div>
+      </div>
+    </div>
+
+    <!-- LOAN STRUCTURE DONUT -->
+    <div class="sec">Loan Composition</div>
+    <div class="donut-card">
+      <div class="donut-wrap">
+        <svg viewBox="0 0 36 36" width="108" height="108" style="transform:rotate(-90deg)">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#EEF2FF" stroke-width="3.6"></circle>
+          <circle id="donut1st" cx="18" cy="18" r="15.9" fill="none" stroke="#1B3F72" stroke-width="3.6"
+            stroke-dasharray="80 100" stroke-dashoffset="0" stroke-linecap="round"></circle>
+          <circle id="donut2nd" cx="18" cy="18" r="15.9" fill="none" stroke="#0D7B6B" stroke-width="3.6"
+            stroke-dasharray="10 100" stroke-dashoffset="-80" stroke-linecap="round"></circle>
+          <circle id="donutDp" cx="18" cy="18" r="15.9" fill="none" stroke="#D97706" stroke-width="3.6"
+            stroke-dasharray="10 100" stroke-dashoffset="-90" stroke-linecap="round"></circle>
+        </svg>
+        <div class="donut-center">
+          <div class="dc-val" id="donutStructure">80/10</div>
+          <div class="dc-lbl">Structure</div>
+        </div>
+      </div>
+      <div class="donut-legend">
+        <div class="dl-row"><span class="dl-dot" style="background:#1B3F72"></span>1st Mortgage<span class="dl-val"
+            id="leg1">$360,000</span></div>
+        <div class="dl-row"><span class="dl-dot" style="background:#0D7B6B"></span>2nd Loan<span class="dl-val"
+            id="leg2">$45,000</span></div>
+        <div class="dl-row"><span class="dl-dot" style="background:#D97706"></span>Down Payment<span class="dl-val"
+            id="leg3">$45,000</span></div>
+      </div>
+    </div>
+
+    <!-- BAR CHART COMPARISON -->
+    <div class="sec">10-Year Cost Comparison</div>
+    <div class="bar-chart">
+      <div class="bch-title">Piggyback vs Conventional with PMI</div>
+      <div class="bch-groups" id="barChart">
+        <!-- generated by JS -->
+      </div>
+      <div class="bch-legend">
+        <div class="bch-leg-item"><span class="bch-leg-dot" style="background:#1B3F72"></span>1st Mortgage</div>
+        <div class="bch-leg-item"><span class="bch-leg-dot" style="background:#0D7B6B"></span>2nd Loan</div>
+        <div class="bch-leg-item"><span class="bch-leg-dot" style="background:#B91C1C"></span>PMI (Conv.)</div>
+      </div>
+    </div>
+
+    <!-- AMORT KEY DATES -->
+    <div class="sec">Key Milestones <span class="more">Full Schedule</span></div>
+    <div class="timeline">
+      <div class="tl-row">
+        <div class="tl-label">🏁 2nd Loan Payoff Date</div>
+        <div class="tl-val tl-color" id="milePay2nd">~Jun 2036</div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label">📉 Combined = 1 Payment After</div>
+        <div class="tl-val tl-color" id="mileSingle">~Jul 2036</div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label">🏠 1st Loan Payoff (30yr)</div>
+        <div class="tl-val" id="mile1stPayoff">Jun 2056</div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label">💰 Total 2nd Loan Interest</div>
+        <div class="tl-val red" id="total2ndInterest">$10,874</div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label">📊 2nd Loan Fully Amortized</div>
+        <div class="tl-val" id="mile2ndTerm">10-year term</div>
+      </div>
+    </div>
+
+    <!-- COMPARISON TABLE -->
+    <div class="sec">Side-by-Side Comparison <span class="more">2026 Data</span></div>
+    <div class="comp-table">
+      <div class="ct-head">
+        <div class="ct-th">Feature</div>
+        <div class="ct-th">Piggyback</div>
+        <div class="ct-th">Conv. PMI</div>
+        <div class="ct-th">20% Down</div>
+      </div>
+      <div class="ct-row highlight">
+        <div class="ct-cell">Monthly PMI</div>
+        <div class="ct-cell best">$0 ✅</div>
+        <div class="ct-cell bad" id="cmpPmi">$218</div>
+        <div class="ct-cell best">$0 ✅</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-cell">Down Payment</div>
+        <div class="ct-cell" id="cmpDownPig">$45,000</div>
+        <div class="ct-cell" id="cmpDownConv">$45,000</div>
+        <div class="ct-cell bad" id="cmpDown20">$90,000</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-cell">Monthly Pmt</div>
+        <div class="ct-cell" id="cmpPayPig">$2,847</div>
+        <div class="ct-cell bad" id="cmpPayConv">$3,065</div>
+        <div class="ct-cell best" id="cmpPay20">$2,625</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-cell">No PMI</div>
+        <div class="ct-cell"><span class="check">✓</span></div>
+        <div class="ct-cell"><span class="cross">✗</span></div>
+        <div class="ct-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-cell">2nd Mortgage</div>
+        <div class="ct-cell bad"><span class="cross">Yes</span></div>
+        <div class="ct-cell"><span class="check">No</span></div>
+        <div class="ct-cell"><span class="check">No</span></div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-cell">Tax Deductible</div>
+        <div class="ct-cell"><span class="check">Both int.</span></div>
+        <div class="ct-cell">1st only</div>
+        <div class="ct-cell"><span class="check">Yes</span></div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-cell">Best For</div>
+        <div class="ct-cell best" style="font-size:9px;">Low down, no PMI</div>
+        <div class="ct-cell" style="font-size:9px;">Simplicity</div>
+        <div class="ct-cell" style="font-size:9px;">Best rate</div>
+      </div>
+    </div>
+
+    <!-- SAVED CALCS -->
+    <div class="saved-section" id="savedSection">
+      <div class="sec">Saved Calculations <span class="more" onclick="clearSaved()">Clear All</span></div>
+      <div id="savedList"></div>
+    </div>
+
+
+    <!-- HOW IT WORKS -->
+    <div class="sec">How Piggyback Works</div>
+    <div class="ilist">
+      <div class="ic">
+        <div class="ii">1️⃣</div>
+        <div>
+          <div class="in">First Mortgage — 80%</div>
+          <div class="is">Conventional loan at market rate (6.82% avg 2026). LTV = 80%, so NO PMI required by lender.
+          </div>
+        </div>
+        <div class="ich"></div>
+      </div>
+      <div class="ic">
+        <div class="ii">2️⃣</div>
+        <div>
+          <div class="in">Second Loan — 10% (or 5/15%)</div>
+          <div class="is">HELOC or fixed second mortgage covers the gap. Higher rate but eliminates PMI requirement.
+          </div>
+        </div>
+        <div class="ich"></div>
+      </div>
+      <div class="ic">
+        <div class="ii">3️⃣</div>
+        <div>
+          <div class="in">Your Down Payment — 10%</div>
+          <div class="is">You bring the remaining down payment. Together: 80 + 10 + 10 = 100% purchase price covered.
+          </div>
+        </div>
+        <div class="ich"></div>
+      </div>
+      <div class="ic">
+        <div class="ii">4️⃣</div>
+        <div>
+          <div class="in">Pay Off 2nd, Simplify</div>
+          <div class="is">Most piggyback 2nd loans are 10-year terms. Once paid off, you have one clean mortgage
+            payment.</div>
+        </div>
+        <div class="ich"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <div class="ni">
+      <div class="ni-ic">🏠</div>
+      <div class="ni-lb">Home</div>
+    </div>
+    <div class="ni active">
+      <div class="ni-ic">🔀</div>
+      <div class="ni-lb">Piggyback</div>
+    </div>
+    <div class="ni">
+      <div class="ni-ic">🔖</div>
+      <div class="ni-lb">Saved</div>
+    </div>
+    <div class="ni">
+      <div class="ni-ic">🌍</div>
+      <div class="ni-lb">Global</div>
+    </div>
+    <div class="ni">
+      <div class="ni-ic">⚙️</div>
+      <div class="ni-lb">Settings</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- State ----
+    let structure = '80/10/10';
+    let savedCalcs = JSON.parse(localStorage.getItem('piggybackSaved') || '[]');
+
+    const PMI_TABLE = {
+      '95': { low: 1.25, mid: 0.78, high: 0.55 },
+      '90': { low: 0.85, mid: 0.58, high: 0.38 },
+      '85': { low: 0.65, mid: 0.40, high: 0.24 },
+      '80': { low: 0.35, mid: 0.22, high: 0.17 }
+    };
+
+    function fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+    function fmtK(n) { return n >= 1000 ? '$' + (n / 1000).toFixed(0) + 'K' : '$' + Math.round(n); }
+
+    function getScoreBand(score) {
+      if (score < 680) return 'low';
+      if (score < 760) return 'mid';
+      return 'high';
+    }
+
+    function monthlyPayment(principal, annualRate, years) {
+      if (principal <= 0) return 0;
+      const r = annualRate / 100 / 12;
+      const n = years * 12;
+      if (r === 0) return principal / n;
+      return principal * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    }
+
+    function selectStructure(s, el) {
+      structure = s;
+      document.querySelectorAll('.s-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      // Adjust down slider based on structure
+      const downSlider = document.getElementById('downSlider');
+      if (s === '80/15/5') downSlider.value = 5;
+      else if (s === '80/10/10') downSlider.value = 10;
+      else if (s === '80/5/15') downSlider.value = 15;
+      updateCalc();
+    }
+
+    function updateCalc() {
+      const price = +document.getElementById('priceSlider').value;
+      const down = +document.getElementById('downSlider').value;
+      const r1 = +document.getElementById('rate1Slider').value;
+      const r2 = +document.getElementById('rate2Slider').value;
+      const score = +document.getElementById('scoreSlider').value;
+
+      document.getElementById('priceDisplay').textContent = fmt(price);
+      document.getElementById('downDisplay').textContent = down.toFixed(0) + '%';
+      document.getElementById('rate1Display').textContent = r1.toFixed(2) + '%';
+      document.getElementById('rate2Display').textContent = r2.toFixed(2) + '%';
+      document.getElementById('scoreDisplay').textContent = score;
+
+      // Parse structure
+      const parts = structure.split('/').map(Number);
+      const pct1 = parts[0] / 100;
+      const pct2 = parts[1] / 100;
+      const dpPct = parts[2] / 100;
+
+      const loan1 = price * pct1;
+      const loan2 = price * pct2;
+      const dp = price * dpPct;
+      const actualDown = down / 100;
+
+      // Use the actual slider for dp
+      const dpAmt = price * actualDown;
+      const actualLoan2 = price * (1 - pct1 - actualDown);
+
+      const pmt1 = monthlyPayment(loan1, r1, 30);
+      const pmt2 = actualLoan2 > 0 ? monthlyPayment(actualLoan2, r2, 10) : 0;
+      const totalPmt = pmt1 + pmt2;
+
+      // PMI on conventional loan at same down payment
+      const convLtv = (1 - actualDown) * 100;
+      let pmiRate = 0;
+      const band = getScoreBand(score);
+      if (convLtv > 90) pmiRate = PMI_TABLE['95'][band];
+      else if (convLtv > 85) pmiRate = PMI_TABLE['90'][band];
+      else if (convLtv > 80) pmiRate = PMI_TABLE['85'][band];
+      else if (convLtv > 78) pmiRate = PMI_TABLE['80'][band];
+      const convLoanAmt = price * (1 - actualDown);
+      const pmiMonthly = convLoanAmt * pmiRate / 100 / 12;
+      const convPmt = monthlyPayment(convLoanAmt, r1, 30) + pmiMonthly;
+
+      // PMI total until 80% LTV
+      const targetBal = price * 0.80;
+      const mr = r1 / 100 / 12;
+      const n30 = 360;
+      const convMonthlyBase = monthlyPayment(convLoanAmt, r1, 30);
+      let bal = convLoanAmt, months = 0;
+      while (bal > targetBal && months < n30) { bal = bal * (1 + mr) - convMonthlyBase; months++; }
+      const totalPmiSaved = pmiMonthly * months;
+
+      // 2nd loan total interest
+      const n2 = 120; // 10yr
+      const r2m = r2 / 100 / 12;
+      const total2ndPaid = pmt2 * n2;
+      const total2ndInterest = total2ndPaid - (actualLoan2 > 0 ? actualLoan2 : 0);
+
+      // Net saving vs conv PMI over 10 years
+      const piggybackTotal10 = totalPmt * 120;
+      const convTotal10 = convPmt * 120;
+      const net10 = convTotal10 - piggybackTotal10;
+
+      // Break-even: higher 2nd loan cost vs PMI saved
+      const extraCostPerMo = pmt2 - 0; // compared to 0 if no 2nd loan
+      const breakeven = pmiMonthly > 0 ? Math.round(total2ndInterest / pmiMonthly) : 0;
+
+      // Update hero
+      document.getElementById('totalPayment').textContent = fmt(totalPmt);
+      document.getElementById('firstPayment').textContent = fmt(pmt1);
+      document.getElementById('secondPayment').textContent = fmt(pmt2);
+      document.getElementById('pmiSavedMonthly').textContent = fmt(pmiMonthly);
+      document.getElementById('resultSubtitle').textContent =
+        structure + ' Structure · $0 PMI · Saves ' + fmt(pmiMonthly) + '/mo vs Conventional';
+
+      // Savings
+      document.getElementById('totalPmiSaved').textContent = fmt(totalPmiSaved);
+      document.getElementById('savingsSub').textContent =
+        'vs. Conventional Loan with ' + down + '% Down · ' + pmiRate.toFixed(2) + '% PMI · ~' + (months / 12).toFixed(1) + ' yrs';
+      document.getElementById('scMonthly').textContent = fmt(pmiMonthly);
+      document.getElementById('scBreakeven').textContent = '~' + breakeven + ' mo';
+      document.getElementById('scNet10').textContent = fmt(Math.abs(net10));
+
+      // Breakdown bars
+      const maxPmt = totalPmt * 1.1;
+      document.getElementById('bc1').textContent = fmt(pmt1);
+      document.getElementById('bc2').textContent = fmt(pmt2);
+      document.getElementById('bc3').textContent = fmt(dpAmt);
+      document.getElementById('bc4').textContent = fmt(pmiMonthly);
+      document.getElementById('bar1').style.width = Math.min(95, (pmt1 / maxPmt * 100)) + '%';
+      document.getElementById('bar2').style.width = Math.min(95, (pmt2 / maxPmt * 100)) + '%';
+      document.getElementById('bar3').style.width = Math.min(95, (dpAmt / price * 100)) + '%';
+      document.getElementById('bar4').style.width = Math.min(95, (pmiMonthly / totalPmt * 100)) + '%';
+      document.getElementById('bc1sub').textContent = r1.toFixed(2) + '% · 30yr fixed · ' + fmt(loan1);
+      document.getElementById('bc2sub').textContent = r2.toFixed(2) + '% · 10yr fixed · ' + fmt(actualLoan2);
+      document.getElementById('bc3sub').textContent = down + '% of purchase price';
+
+      // Donut
+      document.getElementById('donutStructure').textContent = parts[0] + '/' + parts[1];
+      document.getElementById('donut1st').setAttribute('stroke-dasharray', pct1 * 100 + ' 100');
+      document.getElementById('donut1st').setAttribute('stroke-dashoffset', '0');
+      document.getElementById('donut2nd').setAttribute('stroke-dasharray', (actualDown > 0 ? (1 - pct1 - actualDown) * 100 : pct2 * 100) + ' 100');
+      document.getElementById('donut2nd').setAttribute('stroke-dashoffset', -(pct1 * 100) + '');
+      document.getElementById('donutDp').setAttribute('stroke-dasharray', actualDown * 100 + ' 100');
+      document.getElementById('donutDp').setAttribute('stroke-dashoffset', -(pct1 * 100 + (actualLoan2 / price * 100)) + '');
+      document.getElementById('leg1').textContent = fmt(loan1);
+      document.getElementById('leg2').textContent = fmt(actualLoan2);
+      document.getElementById('leg3').textContent = fmt(dpAmt);
+
+      // Milestones
+      const today = new Date(2026, 5, 17);
+      const pay2Date = new Date(today); pay2Date.setMonth(pay2Date.getMonth() + 120);
+      const singleDate = new Date(pay2Date); singleDate.setMonth(singleDate.getMonth() + 1);
+      const payoff1Date = new Date(today); payoff1Date.setMonth(payoff1Date.getMonth() + 360);
+      const opts = { month: 'short', year: 'numeric' };
+      document.getElementById('milePay2nd').textContent = pay2Date.toLocaleDateString('en-US', opts);
+      document.getElementById('mileSingle').textContent = singleDate.toLocaleDateString('en-US', opts);
+      document.getElementById('mile1stPayoff').textContent = payoff1Date.toLocaleDateString('en-US', opts);
+      document.getElementById('total2ndInterest').textContent = fmt(Math.max(0, total2ndInterest));
+
+      // Comparison table
+      const pay20 = monthlyPayment(price * 0.80, r1, 30);
+      document.getElementById('cmpPmi').textContent = fmt(pmiMonthly);
+      document.getElementById('cmpDownPig').textContent = fmt(dpAmt);
+      document.getElementById('cmpDownConv').textContent = fmt(dpAmt);
+      document.getElementById('cmpDown20').textContent = fmt(price * 0.20);
+      document.getElementById('cmpPayPig').textContent = fmt(totalPmt);
+      document.getElementById('cmpPayConv').textContent = fmt(convPmt);
+      document.getElementById('cmpPay20').textContent = fmt(pay20);
+
+      // Bar chart
+      renderBarChart(pmt1, pmt2, pmiMonthly, convMonthlyBase);
+
+      renderSavedList();
+    }
+
+    function renderBarChart(pmt1, pmt2, pmiMonthly, convBase) {
+      const chart = document.getElementById('barChart');
+      const maxH = 100;
+      const years = [1, 3, 5, 10];
+      const maxVal = Math.max(pmt1 + pmt2, convBase + pmiMonthly) * 12 * 10;
+
+      chart.innerHTML = '';
+      years.forEach(yr => {
+        const pig = (pmt1 + pmt2) * 12 * yr;
+        const conv = (convBase + pmiMonthly) * 12 * yr;
+
+        const h1 = (pmt1 * 12 * yr / maxVal * maxH).toFixed(1);
+        const h2 = (pmt2 * 12 * yr / maxVal * maxH).toFixed(1);
+        const hpmi = (pmiMonthly * 12 * yr / maxVal * maxH).toFixed(1);
+        const hconv = (convBase * 12 * yr / maxVal * maxH).toFixed(1);
+
+        const group = document.createElement('div');
+        group.className = 'bch-group';
+        group.innerHTML = `
+        <div class="bch-bars">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div class="bch-val-label" style="color:#0D7B6B;font-size:8px;">${fmtK(pig)}</div>
+            <div style="display:flex;gap:2px;align-items:flex-end;">
+              <div class="bch-bar" style="background:#1B3F72;height:${h1}px;"></div>
+              <div class="bch-bar" style="background:#0D7B6B;height:${h2}px;"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;margin-left:4px;">
+            <div class="bch-val-label" style="color:#B91C1C;font-size:8px;">${fmtK(conv)}</div>
+            <div style="display:flex;gap:2px;align-items:flex-end;">
+              <div class="bch-bar" style="background:#475569;height:${hconv}px;"></div>
+              <div class="bch-bar" style="background:#B91C1C;height:${hpmi}px;opacity:0.75;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="bch-bar-label">${yr}yr</div>
+      `;
+        chart.appendChild(group);
+      });
+    }
+
+    function saveCalc() {
+      const price = +document.getElementById('priceSlider').value;
+      const down = +document.getElementById('downSlider').value;
+      const r1 = +document.getElementById('rate1Slider').value;
+      const r2 = +document.getElementById('rate2Slider').value;
+      const pmt1 = parseFloat(document.getElementById('firstPayment').textContent.replace(/[$,]/g, ''));
+      const pmt2 = parseFloat(document.getElementById('secondPayment').textContent.replace(/[$,]/g, ''));
+      const total = parseFloat(document.getElementById('totalPayment').textContent.replace(/[$,]/g, ''));
+
+      const entry = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        price, down, r1, r2,
+        structure,
+        total: Math.round(total),
+        pmt1: Math.round(pmt1),
+        pmt2: Math.round(pmt2)
+      };
+      savedCalcs.unshift(entry);
+      if (savedCalcs.length > 10) savedCalcs.pop();
+      try { localStorage.setItem('piggybackSaved', JSON.stringify(savedCalcs)); } catch (e) { }
+
+      const btn = document.getElementById('saveBtn');
+      btn.textContent = '✅'; btn.classList.add('saved');
+      setTimeout(() => { btn.textContent = '💾'; btn.classList.remove('saved'); }, 1800);
+      showToast('Calculation saved! 💾');
+      renderSavedList();
+    }
+
+    function deleteCalc(id) {
+      savedCalcs = savedCalcs.filter(c => c.id !== id);
+      try { localStorage.setItem('piggybackSaved', JSON.stringify(savedCalcs)); } catch (e) { }
+      renderSavedList();
+    }
+
+    function clearSaved() {
+      savedCalcs = [];
+      try { localStorage.removeItem('piggybackSaved'); } catch (e) { }
+      renderSavedList();
+    }
+
+    function renderSavedList() {
+      const section = document.getElementById('savedSection');
+      const list = document.getElementById('savedList');
+      if (savedCalcs.length === 0) {
+        section.style.display = 'none'; return;
+      }
+      section.style.display = 'block';
+      list.innerHTML = savedCalcs.map(c => `
+      <div class="saved-card">
+        <div style="width:38px;height:38px;border-radius:11px;background:#F0FDF9;display:flex;align-items:center;justify-content:center;font-size:18px;">🔀</div>
+        <div>
+          <div class="sd-amt">${fmt(c.total)}/mo · ${c.structure}</div>
+          <div class="sd-meta">${fmt(c.price)} · ${c.down}% down · ${c.r1.toFixed(2)}%+${c.r2.toFixed(2)}% · ${c.date}</div>
+        </div>
+        <div class="saved-del" onclick="deleteCalc(${c.id})">🗑️</div>
+      </div>
+    `).join('');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function resetCalc() {
+      document.getElementById('priceSlider').value = 450000;
+      document.getElementById('downSlider').value = 10;
+      document.getElementById('rate1Slider').value = 6.82;
+      document.getElementById('rate2Slider').value = 8.65;
+      document.getElementById('scoreSlider').value = 720;
+      structure = '80/10/10';
+      document.querySelectorAll('.s-pill').forEach(p => p.classList.remove('active'));
+      document.getElementById('pill-801010').classList.add('active');
+      updateCalc();
+      showToast('Reset to defaults');
+    }
+
+    // Init
+    updateCalc();
+    renderSavedList();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construction Loan – Australia</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+
+/* ── HEADER ── */
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.save-btn{height:36px;padding:0 14px;border-radius:10px;background:rgba(255,215,0,0.18);border:1px solid rgba(255,215,0,0.4);display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#FFD700;cursor:pointer;white-space:nowrap;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+
+/* ── CONTENT ── */
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;}
+
+/* ── INFO BANNER ── */
+.info-banner{background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:1px solid rgba(234,88,12,0.25);border-radius:15px;padding:13px 15px;display:flex;align-items:flex-start;gap:11px;margin-bottom:14px;}
+.ib-icon{font-size:22px;flex-shrink:0;}
+.ib-title{font-size:12px;font-weight:800;color:#7C2D12;font-family:Georgia,serif;}
+.ib-sub{font-size:10px;color:#C2410C;margin-top:2px;line-height:1.4;}
+
+/* ── INPUT CARDS ── */
+.icard{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.icard-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field label{font-size:10px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.prefix-wrap{position:relative;}
+.prefix-wrap input{padding-left:26px !important;}
+.prefix-wrap .pfx{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;color:#92400E;}
+.suffix-wrap{position:relative;}
+.suffix-wrap input{padding-right:38px !important;}
+.suffix-wrap .sfx{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;color:#92400E;font-weight:600;}
+.field input,.field select{width:100%;background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.15);border-radius:10px;padding:11px 13px;font-size:14px;font-weight:700;color:#1A0A00;outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:#7C2D12;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* ── STAGE BUILDER ── */
+.stage-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.stage-row{background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.12);border-radius:12px;padding:11px 12px;position:relative;}
+.stage-row.active-stage{border-color:#7C2D12;background:linear-gradient(135deg,#FFF8F0,#FFF0E4);}
+.sr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.sr-name{font-size:12px;font-weight:800;color:#1A0A00;display:flex;align-items:center;gap:6px;}
+.sr-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;}
+.sr-badge.done{background:#BBF7D0;color:#15803D;}
+.sr-badge.prog{background:#FEF9C3;color:#92400E;}
+.sr-badge.pend{background:#F3F4F6;color:#6B7280;}
+.sr-pct-wrap{display:flex;align-items:center;gap:8px;}
+.sr-pct{font-size:13px;font-weight:800;color:#7C2D12;width:40px;text-align:right;}
+.sr-bar-bg{flex:1;height:6px;background:#E5E7EB;border-radius:3px;overflow:hidden;}
+.sr-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#7C2D12,#002868);transition:width .6s ease;}
+.sr-drawdown{font-size:11px;color:#92400E;font-weight:700;margin-top:3px;}
+.sr-amount-row{display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+.sr-amount-input{background:white;border:1px solid rgba(124,45,18,0.2);border-radius:8px;padding:5px 8px;font-size:12px;font-weight:700;color:#1A0A00;width:110px;outline:none;}
+.sr-label{font-size:10px;color:#92400E;}
+
+/* ── PROGRESS TRACKER ── */
+.progress-card{background:linear-gradient(145deg,#002868,#1e3a8a);border-radius:18px;padding:16px;margin-bottom:12px;}
+.pc-title{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-bottom:14px;}
+.progress-track{position:relative;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.pt-line{position:absolute;top:14px;left:0;right:0;height:3px;background:rgba(255,255,255,0.2);}
+.pt-line-fill{position:absolute;top:14px;left:0;height:3px;background:linear-gradient(90deg,#FFD700,#FFA500);transition:width .8s ease;}
+.pt-step{display:flex;flex-direction:column;align-items:center;position:relative;z-index:1;}
+.pt-dot{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .3s;}
+.pt-dot.done{background:#FFD700;border-color:#FFD700;}
+.pt-dot.active{background:rgba(255,215,0,0.3);border-color:#FFD700;box-shadow:0 0 0 4px rgba(255,215,0,0.15);}
+.pt-dot-label{font-size:8px;color:rgba(255,255,255,0.6);margin-top:4px;text-align:center;max-width:44px;line-height:1.2;}
+.pc-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.pc-stat{background:rgba(255,255,255,0.1);border-radius:10px;padding:9px 8px;text-align:center;}
+.pc-stat label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.pc-stat .v{font-size:14px;font-weight:800;color:#fff;}
+.pc-stat .v.gold{color:#FFD700;}
+
+/* ── RESULT HERO ── */
+.result-hero{background:linear-gradient(145deg,#1A0A00,#7C2D12);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,10,0,0.28);margin-bottom:12px;}
+.result-hero::before{content:'🏗️';position:absolute;right:8px;top:4px;font-size:68px;opacity:0.08;}
+.rh-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.8px;}
+.rh-big{font-size:34px;font-weight:800;color:#FFD700;font-family:Georgia,serif;line-height:1.1;margin:4px 0 2px;}
+.rh-label{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:14px;}
+.rh-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rh-box{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 11px;}
+.rh-box label{font-size:9px;color:rgba(255,255,255,.5);display:block;margin-bottom:3px;}
+.rh-box .v{font-size:13px;font-weight:800;color:#fff;}
+.rh-box .v.grn{color:#BBF7D0;}.rh-box .v.gold{color:#FFD700;}.rh-box .v.red{color:#FF8A9A;}
+
+/* ── DRAWDOWN CHART ── */
+.chart-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.cc-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:10px;}
+.chart-legend{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#92400E;}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+
+/* ── INTEREST TABLE ── */
+.interest-table-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.itc-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:12px;}
+.it-header{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:6px;padding:6px 8px;background:#FFF8F0;border-radius:8px;margin-bottom:6px;}
+.it-hcell{font-size:9px;font-weight:700;color:#92400E;text-transform:uppercase;}
+.it-row{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:6px;padding:8px;border-bottom:1px solid rgba(124,45,18,0.07);align-items:center;}
+.it-row:last-child{border-bottom:none;}
+.it-cell{font-size:11px;color:#1A0A00;font-weight:600;}
+.it-cell.grey{color:#92400E;}
+.it-cell.bold{font-weight:800;}
+.it-cell.grn{color:#15803D;font-weight:800;}
+.stage-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;}
+
+/* ── COST BREAKDOWN ── */
+.cost-card{background:linear-gradient(145deg,#0F766E,#115E59);border-radius:18px;padding:16px;margin-bottom:12px;}
+.cost-title{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-bottom:12px;}
+.cost-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.1);}
+.cost-row:last-child{border-bottom:none;}
+.cost-name{font-size:12px;color:rgba(255,255,255,0.75);}
+.cost-val{font-size:13px;font-weight:700;color:#fff;}
+.cost-total-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.2);}
+.cost-total-label{font-size:13px;font-weight:800;color:#FFD700;}
+.cost-total-val{font-size:18px;font-weight:800;color:#FFD700;}
+
+/* ── TIPS ── */
+.tip-card{background:#fff;border-radius:15px;padding:14px;box-shadow:0 3px 14px rgba(26,10,0,0.07);border:1px solid rgba(124,45,18,0.08);margin-bottom:10px;display:flex;align-items:flex-start;gap:11px;}
+.tip-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+.tip-title{font-size:12px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+.tip-body{font-size:10px;color:#92400E;margin-top:2px;line-height:1.5;}
+
+/* ── CALC BUTTON ── */
+.calc-btn{width:100%;background:linear-gradient(135deg,#7C2D12,#002868);border:none;border-radius:13px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(124,45,18,0.3);transition:opacity .2s;margin-top:4px;}
+.calc-btn:active{opacity:.85;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:420px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.modal-overlay.show .modal{transform:translateY(0);}
+.modal-title{font-size:17px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:4px;}
+.modal-sub{font-size:11px;color:#92400E;margin-bottom:16px;}
+.modal input{width:100%;background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.15);border-radius:10px;padding:12px 13px;font-size:14px;font-weight:600;color:#1A0A00;outline:none;margin-bottom:12px;}
+.modal-row{display:flex;gap:10px;}
+.modal-cancel{flex:1;background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.15);border-radius:11px;padding:13px;font-size:13px;font-weight:700;color:#7C2D12;cursor:pointer;}
+.modal-save{flex:2;background:linear-gradient(135deg,#7C2D12,#002868);border:none;border-radius:11px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1A0A00;color:#FFD700;font-size:12px;font-weight:700;padding:10px 18px;border-radius:20px;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.hidden{display:none;}
+
+/* ── NAV ── */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">🇦🇺</span>
+      <div class="hdr-title">Construction Loan</div>
+      <div class="hdr-sub">Progressive Drawdown · Interest Only</div>
+    </div>
+    <div class="save-btn" onclick="openSave()">💾 Save</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Const. Rate</div><div class="rs-val red">6.49%</div><div class="rs-note">Avg 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">RBA Cash</div><div class="rs-val gold">4.10%</div><div class="rs-note">May 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">P&I Rate</div><div class="rs-val grn">6.09%</div><div class="rs-note">Post-build</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">IO Period</div><div class="rs-val">12 mo</div><div class="rs-note">Typical</div></div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- INFO BANNER -->
+  <div class="info-banner" style="margin-top:0;">
+    <div class="ib-icon">🏗️</div>
+    <div>
+      <div class="ib-title">How Construction Loans Work in Australia</div>
+      <div class="ib-sub">Funds are released in progressive drawdowns at each build stage. You only pay interest on the amount drawn down — not the full loan — during construction. Once the build is complete, it converts to a standard P&amp;I mortgage.</div>
+    </div>
+  </div>
+
+  <!-- LOAN DETAILS -->
+  <div class="sec-lbl">Loan Details</div>
+  <div class="icard">
+    <div class="icard-title">🏦 Construction Finance</div>
+    <div class="row2">
+      <div class="field">
+        <label>Total Build Cost</label>
+        <div class="prefix-wrap"><span class="pfx">$</span><input type="number" id="totalCost" value="380000" oninput="updateStageHints()"></div>
+      </div>
+      <div class="field">
+        <label>Land Value</label>
+        <div class="prefix-wrap"><span class="pfx">$</span><input type="number" id="landValue" value="320000" oninput="updateStageHints()"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Deposit Paid</label>
+        <div class="prefix-wrap"><span class="pfx">$</span><input type="number" id="deposit" value="70000" oninput="updateStageHints()"></div>
+      </div>
+      <div class="field">
+        <label>Construction Rate</label>
+        <div class="suffix-wrap"><input type="number" id="constRate" value="6.49" step="0.01" oninput="updateStageHints()"><span class="sfx">% p.a.</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>P&I Rate (post-build)</label>
+        <div class="suffix-wrap"><input type="number" id="piRate" value="6.09" step="0.01" oninput="updateStageHints()"><span class="sfx">% p.a.</span></div>
+      </div>
+      <div class="field">
+        <label>Loan Term</label>
+        <div class="suffix-wrap"><input type="number" id="loanTerm" value="30" min="10" max="30" oninput="updateStageHints()"><span class="sfx">years</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Build Duration</label>
+        <div class="suffix-wrap"><input type="number" id="buildDuration" value="12" min="1" max="36" oninput="updateStageHints()"><span class="sfx">months</span></div>
+      </div>
+      <div class="field">
+        <label>Builder</label>
+        <select id="builderType">
+          <option value="vol">Volume Builder</option>
+          <option value="cus">Custom Builder</option>
+          <option value="ow">Owner-Builder</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE BUILDER -->
+  <div class="sec-lbl">Progressive Drawdown Stages</div>
+  <div class="icard">
+    <div class="icard-title">📋 Build Stages <span style="font-size:10px;font-weight:500;color:#92400E;margin-left:4px;">(AUS Standard)</span></div>
+
+    <div class="stage-list" id="stageList">
+      <!-- stages rendered by JS -->
+    </div>
+
+    <div id="stageSumRow" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 2px;border-top:1.5px solid rgba(124,45,18,0.12);margin-top:4px;">
+      <span style="font-size:11px;font-weight:700;color:#92400E;">Total Allocated</span>
+      <span id="stageSumVal" style="font-size:14px;font-weight:800;color:#7C2D12;">$0 (0%)</span>
+    </div>
+    <div id="stageWarning" class="hidden" style="font-size:10px;color:#EF4444;margin-top:6px;font-weight:700;"></div>
+  </div>
+
+  <!-- PROGRESS TRACKER -->
+  <div class="sec-lbl">Construction Progress</div>
+  <div class="progress-card">
+    <div class="pc-title">🏗️ Build Stage Tracker</div>
+    <div class="progress-track" id="progressTrack">
+      <!-- rendered by JS -->
+    </div>
+    <div class="pc-stats">
+      <div class="pc-stat"><label>Drawn Down</label><div class="v gold" id="pc-drawn">$0</div></div>
+      <div class="pc-stat"><label>Remaining</label><div class="v" id="pc-remaining">$0</div></div>
+      <div class="pc-stat"><label>Build %</label><div class="v gold" id="pc-pct">0%</div></div>
+    </div>
+  </div>
+
+  <!-- CALCULATE BUTTON -->
+  <button class="calc-btn" onclick="calculate()">🏗️ Calculate Construction Costs</button>
+
+  <!-- RESULTS -->
+  <div id="resultsSection" class="hidden">
+
+    <!-- HERO -->
+    <div class="sec-lbl">Cost Summary</div>
+    <div class="result-hero">
+      <div class="rh-tag">Total Interest During Construction</div>
+      <div class="rh-big" id="r-constInt">$0</div>
+      <div class="rh-label">interest-only during build period</div>
+      <div class="rh-grid">
+        <div class="rh-box"><label>Monthly P&I (post-build)</label><div class="v gold" id="r-piPmt">$0</div></div>
+        <div class="rh-box"><label>Total Loan Amount</label><div class="v" id="r-loanAmt">$0</div></div>
+        <div class="rh-box"><label>LVR</label><div class="v" id="r-lvr">0%</div></div>
+        <div class="rh-box"><label>Avg Interest / Month</label><div class="v grn" id="r-avgInt">$0</div></div>
+      </div>
+    </div>
+
+    <!-- DRAWDOWN CHART -->
+    <div class="chart-card">
+      <div class="cc-title">📊 Progressive Drawdown &amp; Interest</div>
+      <div class="chart-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#002868;"></div>Cumul. Draw</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#EF4444;"></div>Monthly Interest</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#FFD700;"></div>Remaining Funds</div>
+      </div>
+      <svg id="drawdownChart" viewBox="0 0 360 180" style="width:100%;overflow:visible;"></svg>
+    </div>
+
+    <!-- STAGE INTEREST TABLE -->
+    <div class="interest-table-card">
+      <div class="itc-title">📋 Stage-by-Stage Interest Breakdown</div>
+      <div class="it-header">
+        <div class="it-hcell">Stage</div>
+        <div class="it-hcell">Drawdown</div>
+        <div class="it-hcell">Balance</div>
+        <div class="it-hcell">Int. Due</div>
+      </div>
+      <div id="stageTable"></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 8px 4px;border-top:1.5px solid rgba(124,45,18,0.12);margin-top:4px;">
+        <span style="font-size:12px;font-weight:800;color:#7C2D12;">Total Construction Interest</span>
+        <span style="font-size:14px;font-weight:800;color:#7C2D12;" id="it-total">$0</span>
+      </div>
+    </div>
+
+    <!-- TOTAL COST BREAKDOWN -->
+    <div class="cost-card">
+      <div class="cost-title">💰 Total Project Cost Breakdown</div>
+      <div class="cost-row"><span class="cost-name">Land Cost</span><span class="cost-val" id="c-land">$0</span></div>
+      <div class="cost-row"><span class="cost-name">Build Contract</span><span class="cost-val" id="c-build">$0</span></div>
+      <div class="cost-row"><span class="cost-name">Construction Interest</span><span class="cost-val" id="c-constInt">$0</span></div>
+      <div class="cost-row"><span class="cost-name">Loan Est. Fees</span><span class="cost-val">~$1,200</span></div>
+      <div class="cost-row"><span class="cost-name">Building Insurance</span><span class="cost-val">~$1,500/yr</span></div>
+      <div class="cost-row"><span class="cost-name">Deposit / Equity</span><span class="cost-val red" style="color:#FF8A9A;" id="c-deposit">$0</span></div>
+      <div class="cost-total-row">
+        <span class="cost-total-label">Total Project Value</span>
+        <span class="cost-total-val" id="c-total">$0</span>
+      </div>
+    </div>
+
+    <!-- POST-BUILD SUMMARY -->
+    <div class="chart-card">
+      <div class="cc-title">📈 Post-Build Amortisation (First 10 Years)</div>
+      <div class="chart-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#002868;"></div>Principal</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#EF4444;"></div>Interest</div>
+      </div>
+      <svg id="postBuildChart" viewBox="0 0 360 160" style="width:100%;overflow:visible;"></svg>
+    </div>
+
+    <!-- TIPS -->
+    <div class="sec-lbl">Key Tips for Australian Construction Loans</div>
+    <div class="tip-card">
+      <div class="tip-icon">🛡️</div>
+      <div>
+        <div class="tip-title">Home Builder Insurance is Mandatory</div>
+        <div class="tip-body">All states except QLD, WA and TAS require Domestic Building Insurance (DBI) for work over $16,000. Your builder must provide evidence before receiving progress payments.</div>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">📝</div>
+      <div>
+        <div class="tip-title">Fixed-Price Building Contract</div>
+        <div class="tip-body">Lenders prefer a fixed-price contract with a registered builder. Cost-plus contracts can make it harder to get approved. Get an independent valuation before the slab is poured.</div>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">📋</div>
+      <div>
+        <div class="tip-title">Council Approvals & HESS</div>
+        <div class="tip-body">Ensure Development Approval (DA) or a Complying Development Certificate (CDC) is in hand. HESS (HomeStart) in SA or similar state grants may reduce your construction loan amount.</div>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">💡</div>
+      <div>
+        <div class="tip-title">Interest Only Saves Cash During Build</div>
+        <div class="tip-body">During the construction phase you only pay interest on drawn funds — not the full loan. This frees up cash while you may be paying rent. Plan your budget around the P&amp;I conversion date.</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- SAVE MODAL -->
+<div class="modal-overlay" id="saveModal">
+  <div class="modal">
+    <div class="modal-title">💾 Save Calculation</div>
+    <div class="modal-sub">Give this construction loan scenario a name</div>
+    <input type="text" id="saveName" placeholder="e.g. 4BR Knockdown-Rebuild – Baulkham Hills">
+    <div class="modal-row">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" onclick="doSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Saved successfully!</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────
+   AUS STANDARD 5-STAGE DRAWDOWN STRUCTURE
+   Source: MFAA / HIA guidelines 2024-25
+───────────────────────────────────────────── */
+const STAGE_COLORS = ['#7C2D12','#002868','#0F766E','#D97706','#15803D'];
+const STAGE_EMOJIS = ['📋','🏗️','🏠','🪟','🔑'];
+
+const defaultStages = [
+  { name: 'Base / Slab',   pct: 15, status: 'done',    months: 1.5 },
+  { name: 'Frame',         pct: 20, status: 'done',    months: 2.0 },
+  { name: 'Lock-Up',       pct: 25, status: 'active',  months: 2.5 },
+  { name: 'Fit-Out',       pct: 25, status: 'pending', months: 3.5 },
+  { name: 'Practical Completion', pct: 15, status: 'pending', months: 2.5 },
+];
+// Deposit is typically 5% upfront — remaining 95% drawn in stages
+
+let stages = defaultStages.map(s => ({...s}));
+let lastResult = null;
+
+const fmt  = v => '$' + Math.round(v).toLocaleString('en-AU');
+const fmtK = v => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'k' : fmt(v);
+const fmtPct = v => v.toFixed(1) + '%';
+
+/* ── BUILD STAGE UI ── */
+function renderStages() {
+  const totalCost = parseFloat(document.getElementById('totalCost').value) || 0;
+  const html = stages.map((s, i) => {
+    const amt = totalCost * s.pct / 100;
+    return `
+    <div class="stage-row ${s.status === 'active' ? 'active-stage' : ''}">
+      <div class="sr-top">
+        <div class="sr-name">
+          ${STAGE_EMOJIS[i]} ${s.name}
+          <span class="sr-badge ${s.status === 'done' ? 'done' : s.status === 'active' ? 'prog' : 'pend'}">
+            ${s.status === 'done' ? '✓ Done' : s.status === 'active' ? '⚡ In Progress' : '⏳ Pending'}
+          </span>
+        </div>
+        <select style="font-size:10px;font-weight:700;color:#7C2D12;background:transparent;border:none;outline:none;cursor:pointer;" 
+                onchange="stages[${i}].status=this.value;renderStages();updateProgress();">
+          <option value="done"    ${s.status==='done'   ?'selected':''}>Done</option>
+          <option value="active"  ${s.status==='active' ?'selected':''}>In Progress</option>
+          <option value="pending" ${s.status==='pending'?'selected':''}>Pending</option>
+        </select>
+      </div>
+      <div class="sr-pct-wrap">
+        <div class="sr-bar-bg">
+          <div class="sr-bar-fill" style="width:${s.pct}%;background:${STAGE_COLORS[i]};"></div>
+        </div>
+        <span class="sr-pct">${s.pct}%</span>
+      </div>
+      <div class="sr-amount-row">
+        <span class="sr-label">Drawdown Amount</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input class="sr-amount-input" type="number" value="${s.pct}" min="1" max="100"
+                 oninput="stages[${i}].pct=parseFloat(this.value)||0;renderStages();" 
+                 style="width:55px;text-align:right;">
+          <span style="font-size:11px;font-weight:700;color:#92400E;">% = ${fmt(amt)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('stageList').innerHTML = html;
+  updateStageSummary();
+  updateProgress();
+}
+
+function updateStageSummary() {
+  const totalCost = parseFloat(document.getElementById('totalCost').value) || 0;
+  const sumPct = stages.reduce((a,s)=>a+s.pct, 0);
+  const sumAmt = totalCost * sumPct / 100;
+  document.getElementById('stageSumVal').textContent = `${fmt(sumAmt)} (${sumPct.toFixed(0)}%)`;
+  const warn = document.getElementById('stageWarning');
+  if (Math.round(sumPct) !== 100) {
+    warn.classList.remove('hidden');
+    warn.textContent = `⚠️ Stage percentages total ${sumPct.toFixed(0)}% — should equal 100%`;
+  } else { warn.classList.add('hidden'); }
+}
+
+function updateProgress() {
+  const totalCost = parseFloat(document.getElementById('totalCost').value) || 0;
+  const donePct = stages.filter(s=>s.status==='done').reduce((a,s)=>a+s.pct,0)
+                + stages.filter(s=>s.status==='active').reduce((a,s)=>a+s.pct/2,0);
+  const drawn = totalCost * donePct / 100;
+  const remaining = totalCost - drawn;
+
+  document.getElementById('pc-drawn').textContent = fmt(drawn);
+  document.getElementById('pc-remaining').textContent = fmt(remaining);
+  document.getElementById('pc-pct').textContent = donePct.toFixed(0) + '%';
+
+  // Progress dots
+  const track = document.getElementById('progressTrack');
+  const lineFill = `<div class="pt-line"></div><div class="pt-line-fill" style="width:${Math.min(donePct,98)}%;"></div>`;
+  const dots = stages.map((s,i) => {
+    const cls = s.status==='done' ? 'done' : s.status==='active' ? 'active' : '';
+    const ico = s.status==='done' ? '✓' : s.status==='active' ? '⚡' : (i+1).toString();
+    return `<div class="pt-step"><div class="pt-dot ${cls}">${ico}</div><div class="pt-dot-label">${s.name.split(' ')[0]}</div></div>`;
+  }).join('');
+  track.innerHTML = lineFill + dots;
+}
+
+function updateStageHints() {
+  updateStageSummary();
+}
+
+/* ── MAIN CALCULATION ── */
+function calculate() {
+  const totalCost   = parseFloat(document.getElementById('totalCost').value)    || 0;
+  const landValue   = parseFloat(document.getElementById('landValue').value)     || 0;
+  const deposit     = parseFloat(document.getElementById('deposit').value)       || 0;
+  const constRate   = parseFloat(document.getElementById('constRate').value)     || 0;
+  const piRate      = parseFloat(document.getElementById('piRate').value)        || 0;
+  const loanTermYr  = parseInt(document.getElementById('loanTerm').value)        || 30;
+  const buildMonths = parseInt(document.getElementById('buildDuration').value)   || 12;
+
+  if (!totalCost || !constRate || !piRate) return;
+
+  const loanAmount  = landValue + totalCost - deposit;
+  const propValue   = landValue + totalCost;
+  const lvr         = (loanAmount / propValue) * 100;
+  const monthlyConstRate = constRate / 100 / 12;
+
+  // Distribute drawdowns across build months proportionally by stage %
+  // Typical: deposit 5% upfront + 5 progress claims
+  const drawdownEvents = [];
+  let cumMonths = 0;
+  stages.forEach((s, i) => {
+    cumMonths += (s.months || buildMonths / stages.length);
+    const mo = Math.min(Math.round(cumMonths), buildMonths);
+    drawdownEvents.push({ mo, amt: loanAmount * s.pct / 100, stageName: s.name, stageIdx: i });
+  });
+
+  // Simulate month-by-month during construction (interest only on drawn balance)
+  let drawn = 0;
+  const monthlyData = []; // {mo, drawn, interest, balance}
+  let totalConstInt = 0;
+
+  for (let mo = 1; mo <= buildMonths; mo++) {
+    // Any drawdowns this month?
+    drawdownEvents.forEach(ev => { if (ev.mo === mo) drawn += ev.amt; });
+    drawn = Math.min(drawn, loanAmount);
+    const interest = drawn * monthlyConstRate;
+    totalConstInt += interest;
+    monthlyData.push({ mo, drawn, interest, balance: loanAmount - drawn });
+  }
+
+  // Post-build P&I
+  const r = piRate / 100 / 12;
+  const n = loanTermYr * 12;
+  const piPmt = loanAmount * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+  const avgMonthlyInt = totalConstInt / buildMonths;
+
+  lastResult = { loanAmount, totalCost, landValue, deposit, constRate, piRate, loanTermYr, buildMonths, totalConstInt, piPmt, lvr };
+
+  /* ── UPDATE DOM ── */
+  document.getElementById('resultsSection').classList.remove('hidden');
+  document.getElementById('r-constInt').textContent = fmt(totalConstInt);
+  document.getElementById('r-piPmt').textContent    = fmt(piPmt) + '/mo';
+  document.getElementById('r-loanAmt').textContent  = fmt(loanAmount);
+  document.getElementById('r-lvr').textContent      = fmtPct(lvr) + (lvr > 80 ? ' ⚠️' : ' ✓');
+  document.getElementById('r-avgInt').textContent   = fmt(avgMonthlyInt) + '/mo';
+
+  document.getElementById('c-land').textContent     = fmt(landValue);
+  document.getElementById('c-build').textContent    = fmt(totalCost);
+  document.getElementById('c-constInt').textContent = fmt(totalConstInt);
+  document.getElementById('c-deposit').textContent  = '−' + fmt(deposit);
+  document.getElementById('c-total').textContent    = fmt(landValue + totalCost + totalConstInt);
+  document.getElementById('it-total').textContent   = fmt(totalConstInt);
+
+  drawDrawdownChart(monthlyData, loanAmount, buildMonths);
+  buildStageTable(drawdownEvents, loanAmount, monthlyConstRate, buildMonths);
+  drawPostBuildChart(loanAmount, piRate, loanTermYr, piPmt);
+}
+
+/* ── DRAWDOWN CHART ── */
+function drawDrawdownChart(data, loanAmt, buildMo) {
+  const W=360,H=160,pL=46,pB=22,pT=8,pR=8;
+  const cW=W-pL-pR, cH=H-pB-pT;
+  const px = m => pL + ((m-1)/(buildMo-1||1))*cW;
+  const maxInt = Math.max(...data.map(d=>d.interest)) * 1.1;
+  const pyDraw = v => pT + cH - (v/loanAmt)*cH;
+  const pyInt  = v => pT + cH - (v/maxInt)*cH;
+
+  const pathDraw = data.map((d,i)=>(i===0?`M${px(d.mo)},${pyDraw(d.drawn)}`:`L${px(d.mo)},${pyDraw(d.drawn)}`)).join(' ');
+  const pathInt  = data.map((d,i)=>(i===0?`M${px(d.mo)},${pyInt(d.interest)}`:`L${px(d.mo)},${pyInt(d.interest)}`)).join(' ');
+  const pathRem  = data.map((d,i)=>(i===0?`M${px(d.mo)},${pyDraw(loanAmt-d.drawn)}`:`L${px(d.mo)},${pyDraw(loanAmt-d.drawn)}`)).join(' ');
+  const fillDraw = pathDraw + ` L${px(data[data.length-1].mo)},${pT+cH} L${pL},${pT+cH} Z`;
+
+  const yLabels = [0,.25,.5,.75,1].map(f=>{
+    const v=f*loanAmt; const yp=pyDraw(v);
+    return `<text x="${pL-4}" y="${yp+3}" text-anchor="end" font-size="8" fill="#92400E">${fmtK(v)}</text>
+            <line x1="${pL}" y1="${yp}" x2="${W-pR}" y2="${yp}" stroke="#FFF0E4" stroke-width="1"/>`;
+  }).join('');
+  const xLabels = data.filter((_,i)=>i===0||i===Math.floor(buildMo/2)-1||i===buildMo-1)
+    .map(d=>`<text x="${px(d.mo)}" y="${H-4}" text-anchor="middle" font-size="8" fill="#92400E">Mo ${d.mo}</text>`).join('');
+
+  document.getElementById('drawdownChart').innerHTML = `
+    ${yLabels}${xLabels}
+    <path d="${fillDraw}" fill="#002868" opacity="0.1"/>
+    <path d="${pathDraw}" fill="none" stroke="#002868" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="${pathRem}"  fill="none" stroke="#FFD700" stroke-width="1.5" stroke-dasharray="4,3" stroke-linejoin="round"/>
+    <path d="${pathInt}"  fill="none" stroke="#EF4444" stroke-width="2" stroke-linejoin="round"/>
+  `;
+}
+
+/* ── STAGE TABLE ── */
+function buildStageTable(events, loanAmt, r, buildMo) {
+  // For each stage, calc interest over the months where this drawdown is active
+  const monthsPerStage = buildMo / events.length;
+  let cumBalance = 0;
+  const rows = events.map((ev, i) => {
+    cumBalance += ev.amt;
+    const stageMonths = monthsPerStage;
+    const stageInt = cumBalance * r * stageMonths;
+    return `
+    <div class="it-row">
+      <div class="it-cell grey"><span class="stage-dot" style="background:${STAGE_COLORS[i]};"></span>${i+1}</div>
+      <div class="it-cell">${fmt(ev.amt)}</div>
+      <div class="it-cell bold">${fmt(cumBalance)}</div>
+      <div class="it-cell grn">${fmt(stageInt)}</div>
+    </div>`;
+  });
+  document.getElementById('stageTable').innerHTML = rows.join('');
+}
+
+/* ── POST-BUILD AMORT CHART ── */
+function drawPostBuildChart(P, annualRate, years, pmt) {
+  const r = annualRate / 100 / 12;
+  const showYears = Math.min(years, 10);
+  const pts = [];
+  let bal = P;
+  for (let y = 1; y <= showYears; y++) {
+    let intYear = 0, prinYear = 0;
+    for (let m = 0; m < 12; m++) {
+      const i = bal * r; intYear += i;
+      bal = Math.max(0, bal - (pmt - i));
+      prinYear += pmt - i;
+    }
+    pts.push({ y, prin: prinYear, int: intYear });
+  }
+
+  const W=360,H=150,pL=46,pB=22,pT=8,pR=8;
+  const cW=W-pL-pR, cH=H-pB-pT;
+  const maxV = Math.max(...pts.map(p=>p.prin+p.int));
+  const barW = (cW / showYears) * 0.6;
+  const gapW = (cW / showYears);
+  const pyv = v => pT + cH - (v/maxV)*cH;
+
+  const yLabels = [0,.25,.5,.75,1].map(f=>{
+    const v=f*maxV; const yp=pyv(v);
+    return `<text x="${pL-4}" y="${yp+3}" text-anchor="end" font-size="8" fill="#92400E">${fmtK(v)}</text>
+            <line x1="${pL}" y1="${yp}" x2="${W-pR}" y2="${yp}" stroke="#FFF0E4" stroke-width="1"/>`;
+  }).join('');
+
+  const bars = pts.map(p => {
+    const x = pL + (p.y - 1) * gapW + (gapW - barW)/2;
+    const hP = (p.prin/maxV)*cH;
+    const hI = (p.int/maxV)*cH;
+    const yP = pT + cH - hP;
+    const yI = yP - hI;
+    return `
+      <rect x="${x}" y="${yP}" width="${barW}" height="${hP}" rx="2" fill="#002868" opacity="0.85"/>
+      <rect x="${x}" y="${yI}" width="${barW}" height="${hI}" rx="2" fill="#EF4444" opacity="0.75"/>
+      <text x="${x+barW/2}" y="${H-5}" text-anchor="middle" font-size="7.5" fill="#92400E">Yr${p.y}</text>`;
+  }).join('');
+
+  document.getElementById('postBuildChart').innerHTML = yLabels + bars;
+}
+
+/* ── MODAL ── */
+function openSave() {
+  document.getElementById('saveModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('saveModal').classList.remove('show');
+}
+function doSave() {
+  const name = document.getElementById('saveName').value.trim() || 'Construction Loan Calc';
+  const r = lastResult;
+  const item = {
+    name, date: new Date().toLocaleDateString('en-AU'),
+    loanAmount: r ? fmt(r.loanAmount) : '—',
+    constInt:   r ? fmt(r.totalConstInt) : '—',
+    piPmt:      r ? fmt(r.piPmt) + '/mo' : '—',
+    lvr:        r ? r.lvr.toFixed(1) + '%' : '—'
+  };
+  const list = JSON.parse(localStorage.getItem('au_construction_saves') || '[]');
+  list.push(item);
+  localStorage.setItem('au_construction_saves', JSON.stringify(list));
+  closeModal();
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+/* ── INIT ── */
+renderStages();
+</script>
+</body>
+</html>

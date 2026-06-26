@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Loan EMI – MortgagePro India</title>
+<style>
+:root{--saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;--navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;--teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;--muted:#7A5C3A;--border:rgba(255,107,0,0.10);--sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .tag{font-size:9px;font-weight:700;background:#FFF3E0;color:var(--saffron);padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+.calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.field-wrap{margin-bottom:13px;}
+.field-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;margin-bottom:5px;}
+.field-row{display:flex;align-items:center;gap:8px;}
+.field-input{flex:1;background:#FFF8F0;border:1.5px solid var(--border);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;transition:border-color .2s;}
+.field-input:focus{border-color:var(--saffron);}
+.field-unit{font-size:11px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;min-width:32px;}
+.slider-wrap{margin-top:6px;}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--saffron) var(--pct,40%),#F0E0D0 var(--pct,40%));outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--saffron);box-shadow:0 2px 8px rgba(255,107,0,0.4);cursor:pointer;}
+.toggle-row{display:flex;gap:8px;margin-bottom:13px;}
+.tog-btn{flex:1;padding:9px 5px;border-radius:11px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:'Trebuchet MS',sans-serif;transition:all .2s;}
+.tog-btn.active{background:linear-gradient(135deg,var(--teal),#0F766E);color:#fff;border-color:transparent;}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;margin-top:4px;}
+.result-card{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:20px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden;}
+.result-card::after{content:'🏎️';position:absolute;right:14px;bottom:10px;font-size:54px;opacity:.08;}
+.result-title{font-size:10px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.7px;font-family:'Trebuchet MS',sans-serif;margin-bottom:12px;}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.res-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:11px 12px;}
+.res-lbl{font-size:8.5px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.res-val{font-size:15px;font-weight:800;color:#fff;margin-top:3px;}
+.res-val.hi{color:var(--ochre-lt);}
+.res-val.gr{color:#86EFAC;}
+.res-note{font-size:9px;color:rgba(255,255,255,0.40);margin-top:3px;font-family:'Trebuchet MS',sans-serif;}
+/* Donut */
+.donut-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.donut-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+.donut-wrap{display:flex;align-items:center;justify-content:center;gap:20px;}
+.donut-center{font-size:13px;font-weight:800;fill:var(--navy);}
+.legend{display:flex;flex-direction:column;gap:8px;}
+.leg-row{display:flex;align-items:center;gap:8px;}
+.leg-dot{width:12px;height:12px;border-radius:4px;flex-shrink:0;}
+.leg-info .l-lbl{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.leg-info .l-val{font-size:12px;font-weight:800;color:var(--navy);}
+/* Car models scroll */
+.car-scroll{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:14px;}
+.car-scroll::-webkit-scrollbar{display:none;}
+.car-card{flex-shrink:0;width:110px;background:var(--card);border-radius:15px;padding:12px 10px;box-shadow:var(--sh);border:1px solid var(--border);cursor:pointer;transition:transform .15s;}
+.car-card:active{transform:scale(.97);}
+.car-icon{font-size:24px;margin-bottom:5px;display:block;}
+.car-name{font-size:11px;font-weight:800;color:var(--navy);}
+.car-price{font-size:12px;font-weight:800;color:var(--saffron);margin-top:3px;}
+.car-emi{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+/* bar */
+.chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.chart-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+.bar-wrap{display:flex;flex-direction:column;gap:9px;}
+.bar-row{display:flex;align-items:center;gap:10px;}
+.bar-lbl{font-size:10px;font-weight:700;color:var(--muted);width:90px;font-family:'Trebuchet MS',sans-serif;flex-shrink:0;}
+.bar-track{flex:1;height:10px;background:#F0E0D0;border-radius:5px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:5px;transition:width .6s ease;}
+.bar-val{font-size:10px;font-weight:800;color:var(--navy);width:52px;text-align:right;font-family:'Trebuchet MS',sans-serif;flex-shrink:0;}
+.tip-card{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;border-radius:15px;padding:13px 14px;margin-bottom:14px;display:flex;gap:11px;align-items:flex-start;}
+.tip-icon{font-size:20px;flex-shrink:0;}
+.tip-text{font-size:10.5px;color:var(--green2);font-family:'Trebuchet MS',sans-serif;line-height:1.5;}
+.tip-text strong{font-family:'Book Antiqua',Palatino,Georgia,serif;font-size:11.5px;}
+.save-btn{width:100%;background:linear-gradient(135deg,var(--green),var(--green2));border:none;border-radius:13px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(4,106,56,0.30);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}.fu5{animation:fadeUp .38s ease both .24s;}
+.saved-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 22px;border-radius:30px;font-size:12px;font-weight:700;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .35s;z-index:200;white-space:nowrap;}
+.saved-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏎️</div>
+      <div class="hdr-title">Car Loan <span>EMI Calc</span></div>
+      <div class="hdr-sub">Vehicle financing · New & Used · India 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">SBI Car Loan</div><div class="rs-v saf">8.75%</div><div class="rs-n">Jun 2025</div></div>
+    <div class="rs"><div class="rs-v">9.25%</div><div class="rs-l">HDFC</div><div class="rs-n">New Car</div></div>
+    <div class="rs"><div class="rs-v">9.00%</div><div class="rs-l">ICICI</div><div class="rs-n">New Car</div></div>
+    <div class="rs"><div class="rs-v">10.5%</div><div class="rs-l">Used Car</div><div class="rs-n">Avg Rate</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Popular Models <span class="tag">Ex-Showroom 2025</span></div>
+  <div class="car-scroll fu1">
+    <div class="car-card" onclick="setPrice(1500000)"><span class="car-icon">🚗</span><div class="car-name">Maruti Swift</div><div class="car-price">₹15.0L</div><div class="car-emi">~₹30,000/mo</div></div>
+    <div class="car-card" onclick="setPrice(1800000)"><span class="car-icon">🚙</span><div class="car-name">Hyundai Creta</div><div class="car-price">₹18.0L</div><div class="car-emi">~₹36,000/mo</div></div>
+    <div class="car-card" onclick="setPrice(3000000)"><span class="car-icon">🛻</span><div class="car-name">Tata Nexon EV</div><div class="car-price">₹30.0L</div><div class="car-emi">~₹60,000/mo</div></div>
+    <div class="car-card" onclick="setPrice(1200000)"><span class="car-icon">🚗</span><div class="car-name">Tata Punch</div><div class="car-price">₹12.0L</div><div class="car-emi">~₹24,000/mo</div></div>
+    <div class="car-card" onclick="setPrice(5000000)"><span class="car-icon">🚐</span><div class="car-name">Innova HyCross</div><div class="car-price">₹50.0L</div><div class="car-emi">~₹1.0L/mo</div></div>
+  </div>
+
+  <div class="sec fu2">Loan Details</div>
+  <div class="calc-card fu2">
+    <div class="field-wrap">
+      <div class="field-label">Car Price / On-Road (₹)</div>
+      <div class="field-row"><input class="field-input" id="carPrice" type="number" value="1500000" oninput="syncSlider('carPrice','sldP',100000,10000000);calc()"><span class="field-unit">₹</span></div>
+      <div class="slider-wrap"><input type="range" id="sldP" min="100000" max="10000000" step="50000" value="1500000" oninput="syncInput('sldP','carPrice');calc()"></div>
+    </div>
+    <div class="field-label" style="margin-bottom:6px;">Car Type</div>
+    <div class="toggle-row" id="carType">
+      <div class="tog-btn active" onclick="setType(this,'new')">New Car</div>
+      <div class="tog-btn" onclick="setType(this,'used')">Used Car</div>
+      <div class="tog-btn" onclick="setType(this,'ev')">EV</div>
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Down Payment (%)</div>
+      <div class="field-row"><input class="field-input" id="downPct" type="number" value="20" oninput="syncSlider('downPct','sldD',10,50);calc()"><span class="field-unit">%</span></div>
+      <div class="slider-wrap"><input type="range" id="sldD" min="10" max="50" step="1" value="20" oninput="syncInput('sldD','downPct');calc()"></div>
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Interest Rate (% p.a.)</div>
+      <div class="field-row"><input class="field-input" id="rate" type="number" value="8.75" step="0.05" oninput="syncSlider('rate','sldR',7,18);calc()"><span class="field-unit">%</span></div>
+      <div class="slider-wrap"><input type="range" id="sldR" min="7" max="18" step="0.05" value="8.75" oninput="syncInput('sldR','rate');calc()"></div>
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Loan Tenure (Years)</div>
+      <div class="field-row"><input class="field-input" id="tenure" type="number" value="5" oninput="syncSlider('tenure','sldT',1,7);calc()"><span class="field-unit">yr</span></div>
+      <div class="slider-wrap"><input type="range" id="sldT" min="1" max="7" step="1" value="5" oninput="syncInput('sldT','tenure');calc()"></div>
+    </div>
+    <button class="calc-btn" onclick="calc()">☸ Calculate Car Loan EMI</button>
+  </div>
+
+  <div class="result-card fu3">
+    <div class="result-title">Car Loan Results</div>
+    <div class="result-grid">
+      <div class="res-box"><div class="res-lbl">Loan Amount</div><div class="res-val hi" id="rLoan">₹12.0 L</div><div class="res-note">80% on-road</div></div>
+      <div class="res-box"><div class="res-lbl">Monthly EMI</div><div class="res-val" id="rEmi">₹24,931</div><div class="res-note">5-year tenure</div></div>
+      <div class="res-box"><div class="res-lbl">Total Interest</div><div class="res-val hi" id="rInt">₹2.96 L</div><div class="res-note">Cumulative cost</div></div>
+      <div class="res-box"><div class="res-lbl">Total Payable</div><div class="res-val gr" id="rTotal">₹14.96 L</div><div class="res-note">Loan + interest</div></div>
+      <div class="res-box"><div class="res-lbl">Down Payment</div><div class="res-val" id="rDown">₹3.0 L</div><div class="res-note">20% upfront</div></div>
+      <div class="res-box"><div class="res-lbl">Processing Fee</div><div class="res-val" id="rFee">₹6,000</div><div class="res-note">~0.5% of loan</div></div>
+    </div>
+  </div>
+
+  <!-- Donut -->
+  <div class="donut-card fu3">
+    <div class="donut-title">💰 Cost Breakup</div>
+    <div class="donut-wrap">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="44" fill="none" stroke="#F0E0D0" stroke-width="20"/>
+        <circle id="arcPrincipal" cx="60" cy="60" r="44" fill="none" stroke="url(#cg1)" stroke-width="20" stroke-dasharray="0 276.5" transform="rotate(-90 60 60)" stroke-linecap="round" style="transition:stroke-dasharray .6s;"/>
+        <circle id="arcInterest" cx="60" cy="60" r="44" fill="none" stroke="url(#cg2)" stroke-width="20" stroke-dasharray="0 276.5" transform="rotate(-90 60 60)" stroke-linecap="round" style="transition:stroke-dasharray .6s;"/>
+        <defs>
+          <linearGradient id="cg1" x1="0%" y1="0%" x2="100%"><stop offset="0%" stop-color="#0B1F48"/><stop offset="100%" stop-color="#1A3A8F"/></linearGradient>
+          <linearGradient id="cg2" x1="0%" y1="0%" x2="100%"><stop offset="0%" stop-color="#FF6B00"/><stop offset="100%" stop-color="#E05A00"/></linearGradient>
+        </defs>
+        <text x="60" y="56" text-anchor="middle" font-size="11" fill="#0B1F48" font-weight="800" font-family="Trebuchet MS">EMI</text>
+        <text x="60" y="69" text-anchor="middle" font-size="9" fill="#7A5C3A" font-family="Trebuchet MS" id="emiCenter">₹24,931</text>
+      </svg>
+      <div class="legend">
+        <div class="leg-row"><div class="leg-dot" style="background:linear-gradient(135deg,#0B1F48,#1A3A8F);"></div><div class="leg-info"><div class="l-lbl">Principal</div><div class="l-val" id="legPrincipal">₹12.0 L</div></div></div>
+        <div class="leg-row"><div class="leg-dot" style="background:linear-gradient(135deg,var(--saffron),var(--saffron2));"></div><div class="leg-info"><div class="l-lbl">Total Interest</div><div class="l-val" id="legInterest">₹2.96 L</div></div></div>
+        <div class="leg-row"><div class="leg-dot" style="background:linear-gradient(135deg,var(--teal),#0F766E);"></div><div class="leg-info"><div class="l-lbl">Down Payment</div><div class="l-val" id="legDown">₹3.0 L</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bank rates bar -->
+  <div class="chart-card fu4">
+    <div class="chart-title">Top Banks – Car Loan Rates 2025</div>
+    <div class="bar-wrap">
+      <div class="bar-row"><div class="bar-lbl">SBI</div><div class="bar-track"><div class="bar-fill" style="width:55%;background:linear-gradient(90deg,var(--navy),var(--chakra));"></div></div><div class="bar-val">8.75%</div></div>
+      <div class="bar-row"><div class="bar-lbl">HDFC</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:linear-gradient(90deg,var(--saffron),var(--saffron2));"></div></div><div class="bar-val">9.25%</div></div>
+      <div class="bar-row"><div class="bar-lbl">ICICI</div><div class="bar-track"><div class="bar-fill" style="width:58%;background:linear-gradient(90deg,var(--teal),#0F766E);"></div></div><div class="bar-val">9.00%</div></div>
+      <div class="bar-row"><div class="bar-lbl">Axis</div><div class="bar-track"><div class="bar-fill" style="width:62%;background:linear-gradient(90deg,var(--ochre),#B45309);"></div></div><div class="bar-val">9.50%</div></div>
+      <div class="bar-row"><div class="bar-lbl">Kotak</div><div class="bar-track"><div class="bar-fill" style="width:61%;background:linear-gradient(90deg,var(--green),var(--green2));"></div></div><div class="bar-val">9.25%</div></div>
+      <div class="bar-row"><div class="bar-lbl">Used Car Avg</div><div class="bar-track"><div class="bar-fill" style="width:72%;background:linear-gradient(90deg,#9333EA,#6D28D9);"></div></div><div class="bar-val">10.50%</div></div>
+    </div>
+  </div>
+
+  <div class="tip-card fu4">
+    <div class="tip-icon">💡</div>
+    <div class="tip-text"><strong>India Car Loan Tips:</strong> New cars: 85–90% financing available. Used cars (under 5 years): up to 80% LTV. EV loans — SBI Green Car Loan at 8.75%, HDFC at 8.50% for electric vehicles. CIBIL 750+ gets best rates. Processing fee: 0.5–1% of loan.</div>
+  </div>
+
+  <button class="save-btn fu5" onclick="saveCalc()">💾 Save This Calculation</button>
+</div>
+<div class="saved-toast" id="toast">✅ Saved!</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+function syncSlider(i,s,min,max){let v=parseFloat(document.getElementById(i).value);v=Math.min(Math.max(v,min),max);document.getElementById(s).value=v;ubg(s,min,max);}
+function syncInput(s,i){let v=document.getElementById(s).value;document.getElementById(i).value=v;ubg(s,parseFloat(document.getElementById(s).min),parseFloat(document.getElementById(s).max));}
+function ubg(id,min,max){let el=document.getElementById(id);let pct=((el.value-min)/(max-min))*100;el.style.setProperty('--pct',pct+'%');}
+function fmt(n){if(n>=10000000)return'₹'+(n/10000000).toFixed(2)+' Cr';if(n>=100000)return'₹'+(n/100000).toFixed(2)+' L';return'₹'+Math.round(n).toLocaleString('en-IN');}
+function fmtS(n){if(n>=100000)return'₹'+(n/100000).toFixed(1)+'L';return'₹'+Math.round(n).toLocaleString('en-IN');}
+let carTypeMode='new';
+function setType(el,mode){document.querySelectorAll('#carType .tog-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');carTypeMode=mode;let r=mode==='used'?10.50:mode==='ev'?8.75:8.75;document.getElementById('rate').value=r;syncSlider('rate','sldR',7,18);calc();}
+function setPrice(p){document.getElementById('carPrice').value=p;syncSlider('carPrice','sldP',100000,10000000);calc();}
+function calc(){
+  let price=parseFloat(document.getElementById('carPrice').value)||1500000;
+  let dp=parseFloat(document.getElementById('downPct').value)||20;
+  let rate=parseFloat(document.getElementById('rate').value)||8.75;
+  let t=parseInt(document.getElementById('tenure').value)||5;
+  let loan=price*(1-dp/100);
+  let down=price*(dp/100);
+  let r=rate/12/100,n=t*12;
+  let emi=loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+  let total=emi*n;
+  let interest=total-loan;
+  let fee=loan*0.005;
+  document.getElementById('rLoan').textContent=fmt(loan);
+  document.getElementById('rEmi').textContent='₹'+Math.round(emi).toLocaleString('en-IN');
+  document.getElementById('rInt').textContent=fmt(interest);
+  document.getElementById('rTotal').textContent=fmt(total);
+  document.getElementById('rDown').textContent=fmt(down);
+  document.getElementById('rFee').textContent='₹'+Math.round(fee).toLocaleString('en-IN');
+  document.getElementById('emiCenter').textContent='₹'+Math.round(emi).toLocaleString('en-IN');
+  document.getElementById('legPrincipal').textContent=fmtS(loan);
+  document.getElementById('legInterest').textContent=fmtS(interest);
+  document.getElementById('legDown').textContent=fmtS(down);
+  // Donut
+  let circ=2*Math.PI*44;
+  let p1=loan/total;
+  let p2=interest/total;
+  document.getElementById('arcPrincipal').setAttribute('stroke-dasharray',(p1*circ)+' '+circ);
+  document.getElementById('arcInterest').setAttribute('stroke-dasharray',(p2*circ)+' '+circ);
+  document.getElementById('arcInterest').setAttribute('stroke-dashoffset',-(p1*circ));
+}
+function saveCalc(){let t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+['sldP','sldD','sldR','sldT'].forEach(id=>{let el=document.getElementById(id);ubg(id,parseFloat(el.min),parseFloat(el.max));});
+calc();
+</script>
+</body>
+</html>

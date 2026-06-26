@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yield Curve · 2s10s Spread Tracker</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+    --teal: #0F766E;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after  { content:'📊'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; text-decoration:none; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-v.grn { color:#6EE7B7; }
+  .rs-v.red { color:#FCA5A5; }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* HERO SPREAD CARD */
+  .hero-spread { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:20px; position:relative; overflow:hidden; box-shadow:var(--sh2); animation:fadeUp .35s ease both .05s; }
+  .hero-spread::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:rgba(15,118,110,0.18); }
+  .hs-tag { font-size:9.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.8px; }
+  .hs-main { display:flex; align-items:flex-end; gap:10px; margin:8px 0; }
+  .hs-val { font-size:48px; font-weight:800; color:#6EE7B7; font-family:Georgia,serif; line-height:1; }
+  .hs-unit { font-size:16px; color:rgba(255,255,255,0.65); font-weight:700; align-self:center; }
+  .hs-status { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .pill { padding:4px 10px; border-radius:20px; font-size:9.5px; font-weight:800; }
+  .pill-norm { background:rgba(110,231,183,0.22); color:#6EE7B7; border:1px solid rgba(110,231,183,0.38); }
+  .pill-date { background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.75); border:1px solid rgba(255,255,255,0.18); }
+  .hs-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .hs-box { background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:9px 10px; text-align:center; }
+  .hs-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.3px; }
+  .hs-box-val { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+  .hs-box-val.grn { color:#6EE7B7; }
+  .hs-box-val.red { color:#FCA5A5; }
+  .hs-box-val.gold { color:var(--gold-lt); }
+
+  /* YIELD CURVE SVG CARD */
+  .curve-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .12s; }
+  .curve-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between; }
+  .curve-title span { font-size:10px; font-weight:500; color:var(--blue); }
+  .curve-sub { font-size:9.5px; color:var(--muted); margin-bottom:14px; }
+  .curve-wrap { position:relative; height:160px; }
+  .curve-legend { display:flex; gap:14px; margin-top:8px; flex-wrap:wrap; }
+  .cl-item { display:flex; align-items:center; gap:5px; font-size:9px; color:var(--muted); }
+  .cl-dot { width:10px; height:3px; border-radius:2px; }
+
+  /* MATURITY RATE TABLE */
+  .mat-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .15s; }
+  .mat-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:12px; }
+  .mat-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .mat-row:last-child { border-bottom:none; }
+  .mat-term { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:50px; flex-shrink:0; }
+  .mat-bar-wrap { flex:1; height:8px; background:#F1F5F9; border-radius:10px; overflow:hidden; }
+  .mat-bar { height:100%; border-radius:10px; }
+  .mat-rate { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:46px; text-align:right; flex-shrink:0; }
+  .mat-chg { font-size:9.5px; font-weight:700; width:46px; text-align:right; flex-shrink:0; }
+  .chg-up { color:#B91C1C; }
+  .chg-dn { color:#15803D; }
+  .chg-flat { color:var(--muted); }
+
+  /* SPREAD HISTORY */
+  .spread-card { background:linear-gradient(135deg,#0B1D3A,#1B3F72); border-radius:18px; padding:16px; box-shadow:var(--sh2); margin-bottom:10px; animation:fadeUp .35s ease both .20s; }
+  .sc-title { font-size:12px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-bottom:3px; }
+  .sc-sub { font-size:9.5px; color:rgba(255,255,255,0.45); margin-bottom:12px; }
+  .sc-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .sc-box { background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:12px; }
+  .sc-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:4px; }
+  .sc-box-val { font-size:20px; font-weight:800; font-family:Georgia,serif; }
+  .sc-box-note { font-size:8.5px; color:rgba(255,255,255,0.40); margin-top:3px; }
+  .val-grn { color:#6EE7B7; }
+  .val-red { color:#FCA5A5; }
+  .val-gold { color:var(--gold-lt); }
+
+  /* INVERSION HISTORY */
+  .inv-card { background:var(--card); border-radius:18px; box-shadow:var(--sh); border:1px solid var(--border); overflow:hidden; margin-bottom:10px; animation:fadeUp .35s ease both .25s; }
+  .inv-head { background:linear-gradient(135deg,#B91C1C,#991B1B); padding:13px 15px; display:flex; align-items:center; gap:10px; }
+  .inv-head-title { font-size:12.5px; font-weight:800; color:#fff; font-family:Georgia,serif; }
+  .inv-head-sub { font-size:9px; color:rgba(255,255,255,0.50); margin-top:1px; }
+  .inv-row { display:flex; align-items:center; padding:11px 15px; border-bottom:1px solid var(--border); gap:10px; }
+  .inv-row:last-child { border-bottom:none; }
+  .inv-period { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:80px; flex-shrink:0; }
+  .inv-body { flex:1; }
+  .inv-name { font-size:10.5px; font-weight:700; color:var(--navy); }
+  .inv-note { font-size:9px; color:var(--muted); margin-top:1px; }
+  .inv-result { font-size:11px; font-weight:800; text-align:right; flex-shrink:0; }
+  .inv-result.rec { color:var(--red); }
+  .inv-result.ok { color:#15803D; }
+
+  /* BOTTOM NAV */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  .live-dot { width:7px; height:7px; border-radius:50%; background:#22C55E; display:inline-block; margin-right:5px; animation:pulse 1.6s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  .src-note { font-size:9px; color:var(--muted); text-align:center; padding:6px 0; }
+  .divider { height:1px; background:var(--border); margin:10px 0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_fed_funds_rate_fred.html" class="icon-btn">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">📊</div>
+      <div class="hdr-title">Yield Curve</div>
+      <div class="hdr-sub">2s10s Spread · Inversion Tracker · Jun 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">2s10s</div><div class="rs-v grn">+33bps</div><div class="rs-n">Spread</div></div>
+    <div class="rs"><div class="rs-l">2-Yr</div><div class="rs-v gold">4.10%</div><div class="rs-n">Treasury</div></div>
+    <div class="rs"><div class="rs-l">10-Yr</div><div class="rs-v">4.43%</div><div class="rs-n">Treasury</div></div>
+    <div class="rs"><div class="rs-l">Shape</div><div class="rs-v grn">Normal</div><div class="rs-n">Upward Slope</div></div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <div class="sec" style="margin-top:0">2s10s Spread <span class="more"><span class="live-dot"></span>FRED Live</span></div>
+  <div class="hero-spread">
+    <div class="hs-tag">10-Year Treasury Yield Minus 2-Year Treasury Yield · Key Recession Signal</div>
+    <div class="hs-main">
+      <div class="hs-val">+33</div>
+      <div class="hs-unit">bps</div>
+    </div>
+    <div class="hs-status">
+      <span class="pill pill-norm">✅ Normal — Upward Slope</span>
+      <span class="pill pill-date">Jun 16, 2025</span>
+    </div>
+    <div class="hs-grid">
+      <div class="hs-box">
+        <div class="hs-box-lbl">2-Yr Yield</div>
+        <div class="hs-box-val gold">4.10%</div>
+      </div>
+      <div class="hs-box">
+        <div class="hs-box-lbl">10-Yr Yield</div>
+        <div class="hs-box-val">4.43%</div>
+      </div>
+      <div class="hs-box">
+        <div class="hs-box-lbl">Spread</div>
+        <div class="hs-box-val grn">+33bps</div>
+      </div>
+      <div class="hs-box">
+        <div class="hs-box-lbl">Inversion End</div>
+        <div class="hs-box-val">Sep 2024</div>
+      </div>
+      <div class="hs-box">
+        <div class="hs-box-lbl">Peak Inv.</div>
+        <div class="hs-box-val red">-108bps</div>
+      </div>
+      <div class="hs-box">
+        <div class="hs-box-lbl">Inv. Duration</div>
+        <div class="hs-box-val">~26 mo.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yield Curve Shape -->
+  <div class="sec">Current Yield Curve Shape <span class="more">FRED →</span></div>
+  <div class="curve-card">
+    <div class="curve-title">US Treasury Yield Curve — Jun 16, 2025 <span>vs. Jun 2024</span></div>
+    <div class="curve-sub">Upward sloping · 2s10s spread: +33bps · Dis-inverted since Sep 2024</div>
+    <div class="curve-wrap">
+      <svg viewBox="0 0 380 150" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="curveGrad25" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1B3F72" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#1B3F72" stop-opacity="0.02"/>
+          </linearGradient>
+          <linearGradient id="curveGrad24" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#B91C1C" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#B91C1C" stop-opacity="0.01"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid -->
+        <line x1="0" y1="20" x2="380" y2="20" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="55" x2="380" y2="55" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="90" x2="380" y2="90" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="125" x2="380" y2="125" stroke="#E2E8F0" stroke-width="1"/>
+        <!-- Y labels -->
+        <text x="2" y="18" font-size="7.5" fill="#94A3B8">5.5%</text>
+        <text x="2" y="53" font-size="7.5" fill="#94A3B8">4.5%</text>
+        <text x="2" y="88" font-size="7.5" fill="#94A3B8">3.5%</text>
+        <text x="2" y="123" font-size="7.5" fill="#94A3B8">2.5%</text>
+        <!-- X axis labels (maturities): 1M 3M 6M 1Y 2Y 3Y 5Y 7Y 10Y 20Y 30Y -->
+        <!-- x positions: 28 65 100 135 165 195 225 255 285 330 365 -->
+        <text x="24" y="145" font-size="7.5" fill="#94A3B8">1M</text>
+        <text x="60" y="145" font-size="7.5" fill="#94A3B8">3M</text>
+        <text x="96" y="145" font-size="7.5" fill="#94A3B8">6M</text>
+        <text x="130" y="145" font-size="7.5" fill="#94A3B8">1Y</text>
+        <text x="161" y="145" font-size="7.5" fill="#94A3B8">2Y</text>
+        <text x="191" y="145" font-size="7.5" fill="#94A3B8">3Y</text>
+        <text x="221" y="145" font-size="7.5" fill="#94A3B8">5Y</text>
+        <text x="251" y="145" font-size="7.5" fill="#94A3B8">7Y</text>
+        <text x="281" y="145" font-size="7.5" fill="#94A3B8">10Y</text>
+        <text x="320" y="145" font-size="7.5" fill="#94A3B8">20Y</text>
+        <text x="355" y="145" font-size="7.5" fill="#94A3B8">30Y</text>
+        <!-- 
+          Jun 2025 yields (approx): 1M=4.30 3M=4.25 6M=4.15 1Y=4.05 2Y=4.10 3Y=4.05 5Y=4.15 7Y=4.28 10Y=4.43 20Y=4.80 30Y=4.90
+          Scale: y = 145 - ((yield - 2.5)/3.0)*125  => range 2.5% to 5.5%
+          4.30% => y = 145 - (1.80/3.0)*125 = 145-75 = 70
+          4.25% => 145-73 = 72
+          4.15% => 145-69 = 76
+          4.05% => 145-65 = 80
+          4.10% => 145-67 = 78
+          4.05% => 80
+          4.15% => 76
+          4.28% => 71
+          4.43% => 145-80 = 65
+          4.80% => 145-96 = 49
+          4.90% => 145-100 = 45
+        -->
+        <!-- Jun 2024 (inverted): 1M=5.35 3M=5.40 6M=5.35 1Y=5.10 2Y=4.80 3Y=4.60 5Y=4.50 7Y=4.50 10Y=4.35 20Y=4.55 30Y=4.45
+          5.35 => y=145-118=27
+          5.40 => y=145-120=25
+          5.35 => 27
+          5.10 => 145-110=35
+          4.80 => 145-96=49
+          4.60 => 145-88=57
+          4.50 => 145-83=62
+          4.50 => 62
+          4.35 => 145-77=68
+          4.55 => 145-85=60
+          4.45 => 145-81=64
+        -->
+        <!-- Jun 2024 line (red dashed - inverted) -->
+        <polyline points="28,27 65,25 100,27 135,35 165,49 195,57 225,62 255,62 285,68 330,60 365,64"
+          fill="none" stroke="#B91C1C" stroke-width="1.8" stroke-dasharray="5,3" stroke-linejoin="round" stroke-linecap="round" opacity="0.7"/>
+        <!-- Jun 2025 area + line (upward sloping) -->
+        <polygon points="28,70 65,72 100,76 135,80 165,78 195,80 225,76 255,71 285,65 330,49 365,45 365,140 28,140"
+          fill="url(#curveGrad25)"/>
+        <polyline points="28,70 65,72 100,76 135,80 165,78 195,80 225,76 255,71 285,65 330,49 365,45"
+          fill="none" stroke="#1B3F72" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- Key dots -->
+        <circle cx="165" cy="78" r="4" fill="#D97706"/>
+        <circle cx="285" cy="65" r="4" fill="#1B3F72"/>
+        <!-- labels -->
+        <text x="148" y="93" font-size="7.5" fill="#D97706" font-weight="bold">2Y 4.10%</text>
+        <text x="265" y="60" font-size="7.5" fill="#1B3F72" font-weight="bold">10Y 4.43%</text>
+      </svg>
+    </div>
+    <div class="curve-legend">
+      <div class="cl-item"><div class="cl-dot" style="background:#1B3F72;"></div>Jun 2025 (Normal)</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#B91C1C;border-top:2px dashed #B91C1C;"></div>Jun 2024 (Inverted)</div>
+    </div>
+  </div>
+
+  <!-- Full maturity rates -->
+  <div class="sec">Full Maturity Rates — Jun 16, 2025 <span class="more">Treasury.gov →</span></div>
+  <div class="mat-card">
+    <div class="mat-title">📋 US Treasury Yields by Maturity</div>
+    <div class="mat-row">
+      <div class="mat-term">1-Mo</div>
+      <div class="mat-bar-wrap"><div class="mat-bar" style="width:57%;background:linear-gradient(90deg,#334155,#1E293B)"></div></div>
+      <div class="mat-rate">4.30%</div>
+      <div class="mat-chg chg-dn">−3bps</div>
+    </div>
+    <div class="mat-row">
+      <div class="mat-term">3-Mo</div>
+      <div class="mat-bar-wrap"><div class="mat-bar" style="width:56%;background:linear-gradient(90deg,#334155,#1E293B)"></div></div>
+      <div class="mat-rate">4.25%</div>
+      <div class="mat-chg chg-dn">−2bps</div>
+    </div>
+    <div class="mat-row">
+      <div class="mat-term">6-Mo</div>
+      <div class="mat-bar-wrap"><div class="mat-bar" style="width:55%;background:linear-gradient(90deg,#1B3F72,#0B1D3A)"></div></div>
+      <div class="mat-rate">4.15%</div>
+      <div class="mat-chg chg-flat">0bps</div>
+    </div>
+    <div class="mat-row">
+      <div class="mat-term">1-Yr</div>
+      <div class="mat-bar-wrap"><div class="mat-bar" style="width:54%;background:linear-gradient(90deg,#1B3F72,#0B1D3A)"></div></div>
+      <div class="mat-rate">4.05%</div>
+      <div class="mat-chg chg-dn">−1bps</div>
+    </div>
+    <div class="mat-row">
+      <div class="mat-term">2-Yr</div>
+      <div class="mat-bar-wrap"><div class="mat-bar" style="width:55%;background:linear-gradient(90deg,#D97706,#B45309)"></div></div>
+      <div class="mat-rate">4.10%</div>
+      <div class="mat-chg chg-up">+2bps</div>
+    </div>
+    <div class="mat-row">
+      <div class="mat-term">5-Yr</div>
+      <div class="mat-bar-wrap"><div class="mat-bar" style="width:56%;background:linear-gradient(90deg,#D97706,#B45309)"></div></div>
+      <div class="mat-rate">4.15%</div>
+      <div class="mat-chg chg-up">+3bps</div>
+    </div>
+    <div class="mat-row">
+      <div class="mat-term">10-Yr</div>
+      <div class="mat-bar-wrap"><div class="mat-bar" style="width:59%;background:linear-gradient(90deg,#0F766E,#0D9488)"></div></div>
+      <div class="mat-rate">4.43%</div>
+      <div class="mat-chg chg-up">+4bps</div>
+    </div>
+    <div class="mat-row">
+      <div class="mat-term">20-Yr</div>
+      <div class="mat-bar-wrap"><div class="mat-bar" style="width:64%;background:linear-gradient(90deg,#0F766E,#0D9488)"></div></div>
+      <div class="mat-rate">4.80%</div>
+      <div class="mat-chg chg-up">+5bps</div>
+    </div>
+    <div class="mat-row">
+      <div class="mat-term">30-Yr</div>
+      <div class="mat-bar-wrap"><div class="mat-bar" style="width:65%;background:linear-gradient(90deg,#B91C1C,#991B1B)"></div></div>
+      <div class="mat-rate">4.90%</div>
+      <div class="mat-chg chg-up">+5bps</div>
+    </div>
+    <div class="divider"></div>
+    <div class="src-note">Source: US Treasury · FRED · Updated Jun 16, 2025</div>
+  </div>
+
+  <!-- Spread history boxes -->
+  <div class="sec">Spread Snapshots <span class="more">Historical →</span></div>
+  <div class="spread-card">
+    <div class="sc-title">2s10s Spread — Key Historical Readings</div>
+    <div class="sc-sub">2-Year vs 10-Year Treasury yield differential · Recession signal tracker</div>
+    <div class="sc-grid">
+      <div class="sc-box">
+        <div class="sc-box-lbl">Today (Jun 2025)</div>
+        <div class="sc-box-val val-grn">+33bps</div>
+        <div class="sc-box-note">Normal curve · Positive</div>
+      </div>
+      <div class="sc-box">
+        <div class="sc-box-lbl">Peak Inversion</div>
+        <div class="sc-box-val val-red">−108bps</div>
+        <div class="sc-box-note">Jul 2023 · Deepest point</div>
+      </div>
+      <div class="sc-box">
+        <div class="sc-box-lbl">Dis-inverted</div>
+        <div class="sc-box-val val-gold">Sep 2024</div>
+        <div class="sc-box-note">After ~26 month inversion</div>
+      </div>
+      <div class="sc-box">
+        <div class="sc-box-lbl">Pre-COVID</div>
+        <div class="sc-box-val val-grn">+60bps</div>
+        <div class="sc-box-note">Feb 2020 baseline</div>
+      </div>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,0.10);margin:12px 0;"></div>
+    <div style="font-size:9px;color:rgba(255,255,255,0.40);text-align:center;">Source: FRED · US Treasury · Updated Jun 16, 2025</div>
+  </div>
+
+  <!-- Inversion & Recession History -->
+  <div class="sec">Inversion → Recession History <span class="more">Research →</span></div>
+  <div class="inv-card">
+    <div class="inv-head">
+      <div>
+        <div class="inv-head-title">⚠️ Yield Curve Inversion Precedents</div>
+        <div class="inv-head-sub">Every major 2s10s inversion since 1980 · Recession followed</div>
+      </div>
+    </div>
+    <div class="inv-row">
+      <div class="inv-period">1978–80</div>
+      <div class="inv-body"><div class="inv-name">Pre-Volcker Shock</div><div class="inv-note">Deep inversion · Recession followed 1980 & 1981</div></div>
+      <div class="inv-result rec">Recession</div>
+    </div>
+    <div class="inv-row">
+      <div class="inv-period">1988–89</div>
+      <div class="inv-body"><div class="inv-name">S&L Crisis Era</div><div class="inv-note">Mild inversion · 1990–91 recession followed</div></div>
+      <div class="inv-result rec">Recession</div>
+    </div>
+    <div class="inv-row">
+      <div class="inv-period">1998–2000</div>
+      <div class="inv-body"><div class="inv-name">Dot-Com Bubble</div><div class="inv-note">Inversion → 2001 recession · 18-month lag</div></div>
+      <div class="inv-result rec">Recession</div>
+    </div>
+    <div class="inv-row">
+      <div class="inv-period">2005–07</div>
+      <div class="inv-body"><div class="inv-name">Pre-GFC</div><div class="inv-note">Inversion 2006 → GFC 2008 · 24-month lag</div></div>
+      <div class="inv-result rec">Recession</div>
+    </div>
+    <div class="inv-row">
+      <div class="inv-period">2022–24</div>
+      <div class="inv-body"><div class="inv-name">Inflation Shock Era</div><div class="inv-note">26 months inverted · Dis-inverted Sep 2024 · No recession yet</div></div>
+      <div class="inv-result ok">Pending</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+</body>
+</html>

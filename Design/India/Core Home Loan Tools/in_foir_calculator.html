@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOIR Calculator – MortgagePro India</title>
+<style>
+:root{--saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;--navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;--teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;--muted:#7A5C3A;--border:rgba(255,107,0,0.10);--sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 100px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 11px;font-family:'Trebuchet MS',sans-serif;}
+.calc-card{background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.field-grp{margin-bottom:14px;}
+.field-label{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:6px;display:flex;justify-content:space-between;}
+.field-label span{font-size:13px;font-weight:800;color:var(--navy);}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--saffron) 50%,#F5E6D4 50%);outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--saffron);border:3px solid #fff;box-shadow:0 2px 8px rgba(255,107,0,0.4);}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;margin-top:4px;}
+
+/* FOIR gauge card */
+.foir-card{border-radius:22px;padding:24px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:14px;text-align:center;}
+.foir-label{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;margin-bottom:6px;}
+.foir-pct{font-size:52px;font-weight:800;line-height:1;margin-bottom:6px;}
+.foir-status{font-size:12px;font-weight:700;font-family:'Trebuchet MS',sans-serif;margin-bottom:16px;}
+.foir-bar{background:rgba(255,255,255,0.2);border-radius:8px;height:12px;margin:0 0 16px;}
+.foir-fill{height:12px;border-radius:8px;transition:width .8s ease;}
+.foir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.foir-box{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:10px 8px;}
+.foir-box-lbl{font-size:8px;color:rgba(255,255,255,0.5);font-family:'Trebuchet MS',sans-serif;}
+.foir-box-val{font-size:13px;font-weight:800;color:#fff;margin-top:3px;}
+
+/* zones */
+.zone-wrap{background:var(--card);border-radius:22px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.zone-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.zone-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);align-items:center;}
+.zone-item:last-child{border-bottom:none;}
+.zone-dot{width:12px;height:12px;border-radius:4px;flex-shrink:0;margin-top:2px;}
+.zone-lbl{font-size:11.5px;font-weight:800;color:var(--navy);}
+.zone-desc{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+.zone-pct{font-size:12px;font-weight:800;margin-left:auto;font-family:'Trebuchet MS',sans-serif;}
+
+/* emi breakdown */
+.emi-list{display:flex;flex-direction:column;gap:8px;}
+.emi-row{background:var(--card);border-radius:14px;padding:12px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.emi-icon{font-size:20px;width:36px;text-align:center;}
+.emi-lbl{font-size:12px;font-weight:800;color:var(--navy);flex:1;}
+.emi-sub{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:1px;}
+.emi-amt{font-size:13px;font-weight:800;color:var(--saffron);}
+.emi-pct{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+
+.save-bar{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;border-radius:17px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.save-btn{background:var(--green);color:#fff;font-size:10px;font-weight:800;padding:9px 14px;border-radius:10px;border:none;cursor:pointer;font-family:'Trebuchet MS',sans-serif;white-space:nowrap;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .3s;z-index:200;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}.fu5{animation:fadeUp .38s ease both .24s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📐</div>
+      <div class="hdr-title">FOIR <span>Calculator</span></div>
+      <div class="hdr-sub">Fixed Obligation to Income Ratio · RBI Norms</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Safe FOIR</div><div class="rs-v saf">≤40%</div><div class="rs-n">Ideal</div></div>
+    <div class="rs"><div class="rs-l">Max FOIR</div><div class="rs-v">50%</div><div class="rs-n">RBI Limit</div></div>
+    <div class="rs"><div class="rs-l">Salaried</div><div class="rs-v">50%</div><div class="rs-n">Allowed</div></div>
+    <div class="rs"><div class="rs-l">Self-Emp</div><div class="rs-v saf">45%</div><div class="rs-n">Allowed</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Income Details</div>
+  <div class="calc-card fu1">
+    <div class="field-grp">
+      <div class="field-label">Gross Monthly Salary <span id="lbl-salary">₹1,20,000</span></div>
+      <input type="range" id="sl-salary" min="20000" max="600000" step="5000" value="120000" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Other Income (Rental/Business) <span id="lbl-other">₹10,000</span></div>
+      <input type="range" id="sl-other" min="0" max="200000" step="5000" value="10000" oninput="update()">
+    </div>
+    <div class="sec" style="margin-top:4px">Existing Monthly Obligations</div>
+    <div class="field-grp">
+      <div class="field-label">Home Loan EMI (current) <span id="lbl-home">₹0</span></div>
+      <input type="range" id="sl-home" min="0" max="100000" step="1000" value="0" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Car / Personal Loan EMI <span id="lbl-car">₹8,000</span></div>
+      <input type="range" id="sl-car" min="0" max="80000" step="1000" value="8000" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Credit Card Min. Payment <span id="lbl-cc">₹2,500</span></div>
+      <input type="range" id="sl-cc" min="0" max="50000" step="500" value="2500" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Proposed New Home Loan EMI <span id="lbl-new">₹40,000</span></div>
+      <input type="range" id="sl-new" min="5000" max="200000" step="1000" value="40000" oninput="update()">
+    </div>
+    <button class="calc-btn" onclick="update()">☸ Calculate FOIR</button>
+  </div>
+
+  <div class="foir-card fu2" id="foir-card" style="background:linear-gradient(148deg,var(--navy),var(--chakra))">
+    <div class="foir-label">Your FOIR (Fixed Obligation to Income Ratio)</div>
+    <div class="foir-pct" id="foir-pct" style="color:var(--ochre-lt)">42.3%</div>
+    <div class="foir-status" id="foir-status" style="color:#86EFAC">✅ Within acceptable limit — loan likely approved</div>
+    <div class="foir-bar"><div class="foir-fill" id="foir-fill" style="width:42%;background:linear-gradient(90deg,#22C55E,#86EFAC)"></div></div>
+    <div class="foir-grid">
+      <div class="foir-box"><div class="foir-box-lbl">Total Income</div><div class="foir-box-val" id="fb-income">₹1.30L</div></div>
+      <div class="foir-box"><div class="foir-box-lbl">Total Obligations</div><div class="foir-box-val" id="fb-oblig">₹50,500</div></div>
+      <div class="foir-box"><div class="foir-box-lbl">Disposable</div><div class="foir-box-val" id="fb-dispos">₹79,500</div></div>
+    </div>
+  </div>
+
+  <div class="zone-wrap fu3">
+    <div class="zone-title">📊 FOIR Zones — Banks' View</div>
+    <div class="zone-item">
+      <div class="zone-dot" style="background:#22C55E"></div>
+      <div><div class="zone-lbl">Excellent Zone</div><div class="zone-desc">High approval chance · Best interest rates offered</div></div>
+      <div class="zone-pct" style="color:#22C55E">≤35%</div>
+    </div>
+    <div class="zone-item">
+      <div class="zone-dot" style="background:#86EFAC"></div>
+      <div><div class="zone-lbl">Good Zone</div><div class="zone-desc">Approved easily · Standard rates apply</div></div>
+      <div class="zone-pct" style="color:#16A34A">36–45%</div>
+    </div>
+    <div class="zone-item">
+      <div class="zone-dot" style="background:#EAB308"></div>
+      <div><div class="zone-lbl">Borderline Zone</div><div class="zone-desc">May get approval with additional documentation</div></div>
+      <div class="zone-pct" style="color:#D97706">46–50%</div>
+    </div>
+    <div class="zone-item">
+      <div class="zone-dot" style="background:#EF4444"></div>
+      <div><div class="zone-lbl">Rejection Zone</div><div class="zone-desc">Most banks will reject — reduce obligations first</div></div>
+      <div class="zone-pct" style="color:#DC2626">&gt;50%</div>
+    </div>
+  </div>
+
+  <div class="sec fu3">Obligation Breakdown</div>
+  <div class="emi-list fu4" id="emi-list"></div>
+
+  <div class="save-bar fu5">
+    <div style="font-size:24px">💾</div>
+    <div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--green2)">Save FOIR Report</div><div style="font-size:9.5px;color:var(--green);font-family:'Trebuchet MS',sans-serif">Useful for bank loan application</div></div>
+    <button class="save-btn" onclick="saveCalc()">Save</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ FOIR Report Saved!</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+function fmt(n){if(n>=100000)return '₹'+(n/100000).toFixed(1)+'L';return '₹'+Math.round(n).toLocaleString('en-IN');}
+function update(){
+  const salary=+document.getElementById('sl-salary').value;
+  const other=+document.getElementById('sl-other').value;
+  const home=+document.getElementById('sl-home').value;
+  const car=+document.getElementById('sl-car').value;
+  const cc=+document.getElementById('sl-cc').value;
+  const newEmi=+document.getElementById('sl-new').value;
+  document.getElementById('lbl-salary').textContent=fmt(salary);
+  document.getElementById('lbl-other').textContent=fmt(other);
+  document.getElementById('lbl-home').textContent=fmt(home);
+  document.getElementById('lbl-car').textContent=fmt(car);
+  document.getElementById('lbl-cc').textContent=fmt(cc);
+  document.getElementById('lbl-new').textContent=fmt(newEmi);
+  const totalIncome=salary+other;
+  const totalOblig=home+car+cc+newEmi;
+  const foir=totalOblig/totalIncome*100;
+  const disposable=totalIncome-totalOblig;
+  document.getElementById('foir-pct').textContent=foir.toFixed(1)+'%';
+  document.getElementById('fb-income').textContent=fmt(totalIncome);
+  document.getElementById('fb-oblig').textContent=fmt(totalOblig);
+  document.getElementById('fb-dispos').textContent=fmt(disposable);
+  const fillW=Math.min(100,foir);
+  const card=document.getElementById('foir-card');
+  const fill=document.getElementById('foir-fill');
+  const status=document.getElementById('foir-status');
+  const pctEl=document.getElementById('foir-pct');
+  if(foir<=35){fill.style.background='linear-gradient(90deg,#22C55E,#86EFAC)';status.textContent='✅ Excellent — Best rates guaranteed';status.style.color='#86EFAC';pctEl.style.color='#86EFAC';}
+  else if(foir<=45){fill.style.background='linear-gradient(90deg,#86EFAC,#A3E635)';status.textContent='✅ Good — Loan approval likely';status.style.color='#86EFAC';pctEl.style.color='#86EFAC';}
+  else if(foir<=50){fill.style.background='linear-gradient(90deg,#EAB308,#FACC15)';status.textContent='⚠️ Borderline — Reduce EMIs for better approval';status.style.color='#FACC15';pctEl.style.color='#FACC15';}
+  else{fill.style.background='linear-gradient(90deg,#EF4444,#FCA5A5)';status.textContent='❌ High FOIR — Loan rejection likely';status.style.color='#FCA5A5';pctEl.style.color='#FCA5A5';}
+  fill.style.width=fillW+'%';
+  const items=[
+    {icon:'💰',lbl:'Gross Monthly Salary',sub:'Primary income',amt:salary},
+    {icon:'🏘️',lbl:'Rental / Other Income',sub:'Secondary income',amt:other},
+    {icon:'🏠',lbl:'Existing Home Loan EMI',sub:'Current obligation',amt:-home},
+    {icon:'🚗',lbl:'Car / Personal Loan EMI',sub:'Current obligation',amt:-car},
+    {icon:'💳',lbl:'Credit Card Payment',sub:'Min. monthly payment',amt:-cc},
+    {icon:'🏗️',lbl:'Proposed Home Loan EMI',sub:'New obligation',amt:-newEmi},
+  ];
+  document.getElementById('emi-list').innerHTML=items.map(i=>`
+    <div class="emi-row">
+      <div class="emi-icon">${i.icon}</div>
+      <div style="flex:1"><div class="emi-lbl">${i.lbl}</div><div class="emi-sub">${i.sub}</div></div>
+      <div><div class="emi-amt" style="color:${i.amt>0?'var(--green)':'var(--saffron2)'}">${i.amt>0?'+':''} ₹${Math.abs(i.amt).toLocaleString('en-IN')}</div>
+      <div class="emi-pct">${Math.abs(i.amt/totalIncome*100).toFixed(1)}% of income</div></div>
+    </div>`).join('');
+}
+function saveCalc(){const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+update();
+</script>
+</body>
+</html>

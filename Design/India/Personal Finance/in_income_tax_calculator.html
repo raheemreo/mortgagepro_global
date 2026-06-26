@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Income Tax Calculator – India FY 2025–26</title>
+<style>
+:root{--saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;--navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;--teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;--muted:#7A5C3A;--border:rgba(255,107,0,0.10);--sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .info{font-size:11px;font-weight:600;color:var(--saffron);text-transform:none;letter-spacing:0;}
+/* REGIME TOGGLE */
+.regime-toggle{display:flex;background:rgba(255,107,0,0.06);border-radius:14px;padding:4px;gap:4px;margin-bottom:14px;}
+.reg-btn{flex:1;padding:10px;border-radius:11px;font-size:12px;font-weight:800;text-align:center;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Trebuchet MS',sans-serif;transition:all .2s;}
+.reg-btn.active{background:var(--saffron);color:#fff;box-shadow:0 4px 14px rgba(255,107,0,0.35);}
+.calc-card{background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.field{margin-bottom:14px;}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field-row{display:flex;align-items:center;gap:8px;}
+.inp{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:11px 14px;font-size:15px;font-weight:800;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--saffron);}
+.inp-unit{background:rgba(255,107,0,0.08);border:1.5px solid var(--border);border-radius:11px;padding:11px 12px;font-size:12px;font-weight:800;color:var(--saffron);white-space:nowrap;font-family:'Trebuchet MS',sans-serif;}
+.slider-wrap{margin-top:7px;}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;background:linear-gradient(90deg,var(--saffron) var(--pct,50%),rgba(255,107,0,0.15) var(--pct,50%));border-radius:4px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--saffron);border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(255,107,0,0.4);cursor:pointer;}
+.slider-labels{display:flex;justify-content:space-between;margin-top:4px;}
+.slider-labels span{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:13px;padding:15px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.38);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;transition:transform .15s;margin-top:4px;}
+.calc-btn:active{transform:scale(.97);}
+/* RESULT */
+.result-card{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:22px;padding:20px;box-shadow:var(--sh2);position:relative;overflow:hidden;margin-bottom:14px;}
+.result-card::after{content:'☸';position:absolute;right:14px;bottom:12px;font-size:54px;color:rgba(255,255,255,0.06);}
+.res-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.7px;font-family:'Trebuchet MS',sans-serif;}
+.res-big{font-size:32px;font-weight:800;color:var(--ochre-lt);margin:4px 0 14px;line-height:1;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.res-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:10px 12px;}
+.res-box-lbl{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.res-box-val{font-size:16px;font-weight:800;color:#fff;margin-top:3px;}
+.res-box-val.grn{color:#86EFAC;}
+.res-box-val.saf{color:var(--ochre-lt);}
+.res-box-val.red{color:#FCA5A5;}
+.save-btn{width:100%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.20);border-radius:11px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Trebuchet MS',sans-serif;letter-spacing:.3px;margin-top:10px;transition:background .2s;}
+/* SLAB TABLE */
+.chart-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.chart-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.chart-title span{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;font-weight:600;}
+.slab-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.slab-range{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;width:110px;flex-shrink:0;}
+.slab-bar-bg{flex:1;height:9px;background:rgba(255,107,0,0.08);border-radius:5px;overflow:hidden;}
+.slab-fill{height:100%;border-radius:5px;transition:width .5s;}
+.slab-rate{font-size:10px;font-weight:800;color:var(--navy);width:30px;text-align:right;font-family:'Trebuchet MS',sans-serif;}
+/* TAX BREAKDOWN */
+.breakdown-rows{display:flex;flex-direction:column;gap:1px;}
+.br-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.br-row:last-child{border-bottom:none;}
+.br-lbl{font-size:11px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.br-val{font-size:11px;font-weight:800;color:var(--navy);}
+.br-val.grn{color:var(--green);}
+.br-val.red{color:#DC2626;}
+.br-val.big{font-size:14px;color:var(--saffron);}
+/* COMPARE CARD */
+.compare-card{border-radius:20px;overflow:hidden;box-shadow:var(--sh);margin-bottom:14px;}
+.cmp-head{display:grid;grid-template-columns:1fr 1fr 1fr;background:linear-gradient(90deg,var(--navy),var(--chakra));padding:10px 14px;}
+.cmp-th{font-size:9px;font-weight:800;color:rgba(255,255,255,0.70);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;text-align:center;}
+.cmp-row{display:grid;grid-template-columns:1fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--card);}
+.cmp-row:nth-child(even){background:rgba(255,107,0,0.025);}
+.cmp-row:last-child{border-bottom:none;}
+.cmp-td{font-size:10px;font-weight:700;color:var(--navy);font-family:'Trebuchet MS',sans-serif;text-align:center;}
+.cmp-td.hl{color:var(--green);font-weight:800;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:800;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .10s;}
+.fu3{animation:fadeUp .38s ease both .16s;}
+.fu4{animation:fadeUp .38s ease both .22s;}
+.fu5{animation:fadeUp .38s ease both .28s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="javascript:history.back()">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">📊</div>
+      <div class="hdr-title">Income Tax <span>Calculator</span></div>
+      <div class="hdr-sub">ITR · FY 2025–26 · AY 2026–27 · New &amp; Old Regime</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Basic Exempt</div><div class="rs-v saf">₹3L</div><div class="rs-n">New Regime</div></div>
+    <div class="rs"><div class="rs-l">Rebate 87A</div><div class="rs-v grn">₹7L</div><div class="rs-n">New Regime</div></div>
+    <div class="rs"><div class="rs-l">Std Deduct</div><div class="rs-v">₹75K</div><div class="rs-n">Salaried</div></div>
+    <div class="rs"><div class="rs-l">Surcharge</div><div class="rs-v">10%</div><div class="rs-n">>₹50L</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <!-- REGIME SELECTOR -->
+  <div class="sec fu1" style="margin-top:0">Select Tax Regime <span class="info">FY 2025–26 ⓘ</span></div>
+  <div class="regime-toggle fu1">
+    <button class="reg-btn active" id="btnNew" onclick="setRegime('new')">🆕 New Regime</button>
+    <button class="reg-btn" id="btnOld" onclick="setRegime('old')">📋 Old Regime</button>
+  </div>
+
+  <div class="calc-card fu1">
+    <div class="field">
+      <label>Gross Annual Income</label>
+      <div class="field-row">
+        <span class="inp-unit">₹</span>
+        <input class="inp" type="number" id="income" value="1200000" oninput="updateSlider('incRange',this.value,0,5000000);calc()">
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="incRange" min="0" max="5000000" value="1200000" oninput="syncInput('income',this.value);calc()">
+        <div class="slider-labels"><span>₹0</span><span>₹50L</span></div>
+      </div>
+    </div>
+    <!-- OLD REGIME DEDUCTIONS -->
+    <div id="deductBlock">
+      <div class="field">
+        <label>80C Investments (PF+ELSS+LIC etc)</label>
+        <div class="field-row"><span class="inp-unit">₹</span><input class="inp" type="number" id="d80c" value="150000" oninput="calc()"></div>
+      </div>
+      <div class="field">
+        <label>80D Health Insurance Premium</label>
+        <div class="field-row"><span class="inp-unit">₹</span><input class="inp" type="number" id="d80d" value="25000" oninput="calc()"></div>
+      </div>
+      <div class="field">
+        <label>Home Loan Interest (Sec 24b)</label>
+        <div class="field-row"><span class="inp-unit">₹</span><input class="inp" type="number" id="hli" value="0" oninput="calc()"></div>
+      </div>
+      <div class="field">
+        <label>HRA Exemption</label>
+        <div class="field-row"><span class="inp-unit">₹</span><input class="inp" type="number" id="hra" value="0" oninput="calc()"></div>
+      </div>
+      <div class="field">
+        <label>NPS 80CCD(1B) Extra</label>
+        <div class="field-row"><span class="inp-unit">₹</span><input class="inp" type="number" id="nps" value="50000" oninput="calc()"></div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calc()">📊 Calculate Tax Liability</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card fu2">
+    <div class="res-label" id="regimeLabel">New Regime · FY 2025–26</div>
+    <div class="res-big" id="taxPayable">₹0</div>
+    <div class="res-grid">
+      <div class="res-box"><div class="res-box-lbl">Taxable Income</div><div class="res-box-val saf" id="taxableInc">₹0</div></div>
+      <div class="res-box"><div class="res-box-lbl">Effective Rate</div><div class="res-box-val" id="effRate">0%</div></div>
+      <div class="res-box"><div class="res-box-lbl">Monthly TDS</div><div class="res-box-val red" id="monthlyTds">₹0</div></div>
+      <div class="res-box"><div class="res-box-lbl">In-Hand/Month</div><div class="res-box-val grn" id="inHand">₹0</div></div>
+    </div>
+    <button class="save-btn" onclick="saveCalc()">📥 Save Tax Calculation</button>
+  </div>
+
+  <!-- SLAB CHART -->
+  <div class="sec fu3">Tax Slab Breakdown <span class="info" id="slabLabel">New Regime</span></div>
+  <div class="chart-card fu3">
+    <div class="chart-title">Applicable Slabs <span id="slabNote">FY 2025–26</span></div>
+    <div id="slabBars"></div>
+  </div>
+
+  <!-- DETAILED BREAKDOWN -->
+  <div class="sec fu3">Tax Computation Summary</div>
+  <div class="chart-card fu4">
+    <div class="chart-title">Step-by-step calculation</div>
+    <div class="breakdown-rows" id="breakdownRows"></div>
+  </div>
+
+  <!-- NEW vs OLD COMPARISON -->
+  <div class="sec fu4">New vs Old Regime <span class="info">Side-by-side</span></div>
+  <div class="compare-card fu5">
+    <div class="cmp-head">
+      <div class="cmp-th">Detail</div>
+      <div class="cmp-th">New Regime</div>
+      <div class="cmp-th">Old Regime</div>
+    </div>
+    <div id="compareRows"></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">📥 Tax calculation saved!</div>
+
+<script>
+let regime = 'new';
+function fmt(n){return '₹'+n.toLocaleString('en-IN',{maximumFractionDigits:0});}
+function fmtP(n){return n.toFixed(2)+'%';}
+function syncInput(id,v){document.getElementById(id).value=v;}
+function updateSlider(id,v,mn,mx){const s=document.getElementById(id);s.value=Math.min(mx,Math.max(mn,v));s.style.setProperty('--pct',((s.value-mn)/(mx-mn)*100)+'%');}
+
+function setRegime(r){
+  regime=r;
+  document.getElementById('btnNew').classList.toggle('active',r==='new');
+  document.getElementById('btnOld').classList.toggle('active',r==='old');
+  document.getElementById('deductBlock').style.display=r==='old'?'block':'none';
+  document.getElementById('regimeLabel').textContent=(r==='new'?'New':'Old')+' Regime · FY 2025–26';
+  document.getElementById('slabLabel').textContent=(r==='new'?'New':'Old')+' Regime';
+  calc();
+}
+
+// New Regime slabs FY 2025-26
+function calcNewTax(inc){
+  const slabs=[{lo:0,hi:300000,r:0},{lo:300000,hi:700000,r:5},{lo:700000,hi:1000000,r:10},{lo:1000000,hi:1200000,r:15},{lo:1200000,hi:1500000,r:20},{lo:1500000,hi:Infinity,r:30}];
+  let tax=0; const details=[];
+  for(const s of slabs){
+    if(inc<=s.lo) break;
+    const taxable=Math.min(inc,s.hi)-s.lo;
+    const t=taxable*s.r/100;
+    tax+=t;
+    if(taxable>0) details.push({range:fmt(s.lo)+' – '+(s.hi===Infinity?'above':fmt(s.hi)),rate:s.r+'%',taxable,tax:t});
+  }
+  // Rebate u/s 87A — income ≤ 7L tax=0 in new regime
+  if(inc<=700000) tax=0;
+  return{tax,details};
+}
+
+// Old Regime slabs
+function calcOldTax(inc){
+  const slabs=[{lo:0,hi:250000,r:0},{lo:250000,hi:500000,r:5},{lo:500000,hi:1000000,r:20},{lo:1000000,hi:Infinity,r:30}];
+  let tax=0; const details=[];
+  for(const s of slabs){
+    if(inc<=s.lo) break;
+    const taxable=Math.min(inc,s.hi)-s.lo;
+    const t=taxable*s.r/100;
+    tax+=t;
+    if(taxable>0) details.push({range:fmt(s.lo)+' – '+(s.hi===Infinity?'above':fmt(s.hi)),rate:s.r+'%',taxable,tax:t});
+  }
+  if(inc<=500000) tax=0; // 87A old
+  return{tax,details};
+}
+
+function addCess(tax){return tax+(tax>0?tax*0.04:0);}
+function addSurcharge(tax,inc){
+  if(inc>50000000) return tax+(tax*0.37);
+  if(inc>20000000) return tax+(tax*0.25);
+  if(inc>10000000) return tax+(tax*0.15);
+  if(inc>5000000) return tax+(tax*0.10);
+  return tax;
+}
+
+function calc(){
+  const gross=parseFloat(document.getElementById('income').value)||0;
+  const d80c=Math.min(parseFloat(document.getElementById('d80c').value)||0,150000);
+  const d80d=Math.min(parseFloat(document.getElementById('d80d').value)||0,25000);
+  const hli=Math.min(parseFloat(document.getElementById('hli').value)||0,200000);
+  const hra=parseFloat(document.getElementById('hra').value)||0;
+  const nps=Math.min(parseFloat(document.getElementById('nps').value)||0,50000);
+  const stdNew=75000, stdOld=50000;
+
+  let taxableNew=Math.max(0,gross-stdNew);
+  let taxableOld=Math.max(0,gross-stdOld-d80c-d80d-hli-hra-nps);
+
+  const {tax:rawNew,details:detNew}=calcNewTax(taxableNew);
+  const {tax:rawOld,details:detOld}=calcOldTax(taxableOld);
+  const taxNew=addCess(addSurcharge(rawNew,taxableNew));
+  const taxOld=addCess(addSurcharge(rawOld,taxableOld));
+
+  const usedTax=regime==='new'?taxNew:taxOld;
+  const usedTaxable=regime==='new'?taxableNew:taxableOld;
+  const effRate=usedTaxable>0?usedTax/gross*100:0;
+
+  document.getElementById('taxPayable').textContent=fmt(usedTax);
+  document.getElementById('taxableInc').textContent=fmt(usedTaxable);
+  document.getElementById('effRate').textContent=fmtP(effRate);
+  document.getElementById('monthlyTds').textContent=fmt(usedTax/12);
+  document.getElementById('inHand').textContent=fmt((gross-usedTax)/12);
+
+  // Slab bars
+  const slabs=regime==='new'
+    ?[{r:'0%',hi:'₹3L',pct:0},{r:'5%',hi:'₹3L–7L',pct:16.7},{r:'10%',hi:'₹7L–10L',pct:33.3},{r:'15%',hi:'₹10L–12L',pct:50},{r:'20%',hi:'₹12L–15L',pct:66.7},{r:'30%',hi:'Above ₹15L',pct:100}]
+    :[{r:'0%',hi:'Up to ₹2.5L',pct:0},{r:'5%',hi:'₹2.5L–5L',pct:33},{r:'20%',hi:'₹5L–10L',pct:66},{r:'30%',hi:'Above ₹10L',pct:100}];
+  const colors=['#86EFAC','#FCD34D','#FDBA74','#FB923C','#F97316','#DC2626'];
+  document.getElementById('slabBars').innerHTML=slabs.map((s,i)=>`
+    <div class="slab-row">
+      <div class="slab-range">${s.hi}</div>
+      <div class="slab-bar-bg"><div class="slab-fill" style="width:${s.pct||4}%;background:${colors[i]||'#FF6B00'}"></div></div>
+      <div class="slab-rate">${s.r}</div>
+    </div>`).join('');
+
+  // Breakdown
+  const usedDetails=regime==='new'?detNew:detOld;
+  const deductions=regime==='old'?stdOld+d80c+d80d+hli+hra+nps:stdNew;
+  document.getElementById('breakdownRows').innerHTML=`
+    <div class="br-row"><div class="br-lbl">Gross Annual Income</div><div class="br-val">${fmt(gross)}</div></div>
+    <div class="br-row"><div class="br-lbl">Total Deductions</div><div class="br-val grn">- ${fmt(deductions)}</div></div>
+    <div class="br-row"><div class="br-lbl">Taxable Income</div><div class="br-val">${fmt(usedTaxable)}</div></div>
+    ${usedDetails.map(d=>`<div class="br-row"><div class="br-lbl">Slab ${d.range} @ ${d.rate}</div><div class="br-val">${fmt(d.tax)}</div></div>`).join('')}
+    <div class="br-row"><div class="br-lbl">Income Tax (before cess)</div><div class="br-val">${fmt(regime==='new'?rawNew:rawOld)}</div></div>
+    <div class="br-row"><div class="br-lbl">Health & Education Cess (4%)</div><div class="br-val red">+ ${fmt((regime==='new'?rawNew:rawOld)*0.04)}</div></div>
+    <div class="br-row"><div class="br-lbl">Total Tax Payable</div><div class="br-val big">${fmt(usedTax)}</div></div>
+  `;
+
+  // Compare
+  document.getElementById('compareRows').innerHTML=`
+    <div class="cmp-row"><div class="cmp-td" style="text-align:left">Taxable Inc</div><div class="cmp-td">${fmt(taxableNew)}</div><div class="cmp-td">${fmt(taxableOld)}</div></div>
+    <div class="cmp-row"><div class="cmp-td" style="text-align:left">Tax + Cess</div><div class="cmp-td ${taxNew<=taxOld?'hl':''}">${fmt(taxNew)}</div><div class="cmp-td ${taxOld<taxNew?'hl':''}">${fmt(taxOld)}</div></div>
+    <div class="cmp-row"><div class="cmp-td" style="text-align:left">Effective %</div><div class="cmp-td">${fmtP(gross>0?taxNew/gross*100:0)}</div><div class="cmp-td">${fmtP(gross>0?taxOld/gross*100:0)}</div></div>
+    <div class="cmp-row"><div class="cmp-td" style="text-align:left">Monthly TDS</div><div class="cmp-td">${fmt(taxNew/12)}</div><div class="cmp-td">${fmt(taxOld/12)}</div></div>
+    <div class="cmp-row"><div class="cmp-td" style="text-align:left">Savings</div><div class="cmp-td ${taxNew<=taxOld?'hl':''}">+${fmt(Math.max(0,taxOld-taxNew))}</div><div class="cmp-td ${taxOld<taxNew?'hl':''}">+${fmt(Math.max(0,taxNew-taxOld))}</div></div>
+  `;
+
+  window._lastCalc={gross,regime,usedTax,taxableInc:usedTaxable,effRate};
+}
+
+function saveCalc(){
+  if(!window._lastCalc) return;
+  try{const s=JSON.parse(localStorage.getItem('tax_saves')||'[]');s.push({...window._lastCalc,date:new Date().toLocaleDateString('en-IN')});localStorage.setItem('tax_saves',JSON.stringify(s));}catch(e){}
+  const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+const sl=document.getElementById('incRange');
+sl.style.setProperty('--pct',((sl.value-sl.min)/(sl.max-sl.min)*100)+'%');
+sl.addEventListener('input',function(){this.style.setProperty('--pct',((this.value-this.min)/(this.max-this.min)*100)+'%');});
+setRegime('new');
+</script>
+</body>
+</html>

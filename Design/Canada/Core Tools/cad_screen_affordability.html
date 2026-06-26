@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affordability – Canada Tools</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:#F0F7F4;color:#0A2E1A;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0A2E1A 0%,#1A5C35 60%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;text-align:center;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:'Playfair Display',serif;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.save-btn{display:flex;align-items:center;gap:5px;background:#1A5C35;color:#fff;border:none;border-radius:20px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.save-btn.saved{background:#6EDFA0;color:#0A2E1A;}
+.input-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(10,46,26,0.09);border:1px solid rgba(26,92,53,0.09);margin-bottom:12px;}
+.field{margin-bottom:13px;}.field:last-child{margin-bottom:0;}
+.field label{font-size:10px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;}
+.field-row{display:flex;align-items:center;background:#F0F7F4;border-radius:11px;border:1.5px solid rgba(26,92,53,0.12);overflow:hidden;transition:border-color 0.2s;}
+.field-row:focus-within{border-color:#1A5C35;}
+.field-prefix{padding:0 11px;font-size:13px;font-weight:700;color:#1A5C35;}
+.field-input{flex:1;background:none;border:none;outline:none;font-size:16px;font-weight:800;color:#0A2E1A;padding:12px 0;font-family:'DM Sans',sans-serif;}
+.field-suffix{padding:0 11px;font-size:12px;font-weight:600;color:#4A7C5F;}
+.field-note{font-size:10px;color:#4A7C5F;margin-top:4px;}
+.slider{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;background:linear-gradient(to right,#1A5C35 0%,#1A5C35 var(--pct,50%),#D1E8DB var(--pct,50%),#D1E8DB 100%);outline:none;margin-top:8px;}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid #1A5C35;box-shadow:0 2px 6px rgba(26,92,53,0.3);cursor:pointer;}
+.hero-result{background:linear-gradient(145deg,#0A2E1A,#1A5C35);border-radius:20px;padding:22px;box-shadow:0 8px 32px rgba(10,46,26,0.25);position:relative;overflow:hidden;margin-bottom:12px;}
+.hero-result::before{content:'🍁';position:absolute;right:-5px;top:-10px;font-size:75px;opacity:0.07;}
+.hr-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.hr-main{font-size:40px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;letter-spacing:-1.5px;margin:5px 0 4px;}
+.hr-sub{font-size:11px;color:rgba(255,255,255,0.55);}
+.hr-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;}
+.hr-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:11px;padding:10px 12px;}
+.hr-box-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;}
+.hr-box-val{font-size:13px;font-weight:800;color:#fff;margin-top:2px;font-family:'Playfair Display',serif;}
+.hr-box-val.grn{color:#6EDFA0;}.hr-box-val.warn{color:#FFD580;}.hr-box-val.red{color:#FF8A9A;}
+
+/* Affordability meter */
+.meter-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:12px;}
+.meter-title{font-size:13px;font-weight:700;color:#0A2E1A;font-family:'Playfair Display',serif;margin-bottom:14px;}
+.meter-track{height:14px;background:#EEF6F0;border-radius:7px;overflow:visible;position:relative;margin-bottom:8px;}
+.meter-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#6EDFA0,#1A5C35);transition:width 0.6s ease;position:relative;}
+.meter-fill::after{content:'';position:absolute;right:-6px;top:-4px;width:22px;height:22px;background:#fff;border:3px solid #1A5C35;border-radius:50%;box-shadow:0 2px 6px rgba(26,92,53,0.25);}
+.meter-labels{display:flex;justify-content:space-between;font-size:9px;color:#4A7C5F;margin-top:12px;}
+.meter-note{font-size:11px;color:#4A7C5F;margin-top:6px;text-align:center;}
+
+.city-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:12px;}
+.city-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid rgba(26,92,53,0.07);}
+.city-row:last-child{border-bottom:none;}
+.city-flag{font-size:20px;margin-right:10px;flex-shrink:0;}
+.city-name{font-size:13px;font-weight:700;color:#0A2E1A;}
+.city-price{font-size:11px;color:#4A7C5F;}
+.city-right{flex:1;margin-left:10px;}
+.city-bar{height:6px;border-radius:3px;background:#EEF6F0;overflow:hidden;margin-top:4px;}
+.city-bar-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+.city-can{background:#1A5C35;}
+.city-close{background:#F59E0B;}
+.city-over{background:#C8102E;}
+.city-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;flex-shrink:0;margin-left:8px;}
+.cs-yes{background:#DCF4E8;color:#1A5C35;}.cs-no{background:#FFE4E8;color:#C8102E;}.cs-close{background:#FEF3C7;color:#92400E;}
+
+.down-card{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:12px;}
+.down-header{display:grid;grid-template-columns:1.2fr 1fr 1fr;background:#F0F7F4;padding:9px 14px;border-bottom:1px solid rgba(26,92,53,0.1);}
+.dh{font-size:9px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:0.5px;}
+.down-row{display:grid;grid-template-columns:1.2fr 1fr 1fr;padding:11px 14px;border-bottom:1px solid rgba(26,92,53,0.06);align-items:center;}
+.down-row:last-child{border-bottom:none;}
+.down-row.highlight{background:rgba(26,92,53,0.05);}
+.dc{font-size:12px;font-weight:600;color:#0A2E1A;}.dc.bold{font-weight:800;color:#1A5C35;}
+.calc-btn{width:100%;background:#C8102E;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(200,16,46,0.35);margin-top:14px;font-family:'DM Sans',sans-serif;transition:transform 0.1s;}
+.calc-btn:active{transform:scale(0.98);}
+.saved-list{margin-bottom:12px;}
+.saved-item{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 2px 8px rgba(10,46,26,0.07);border:1px solid rgba(26,92,53,0.08);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.saved-item-name{font-size:12px;font-weight:700;color:#0A2E1A;}
+.saved-item-sub{font-size:10px;color:#4A7C5F;margin-top:2px;}
+.saved-item-val{font-size:15px;font-weight:800;color:#1A5C35;font-family:'Playfair Display',serif;}
+.saved-item-del{background:none;border:none;color:#ccc;font-size:16px;cursor:pointer;margin-left:8px;}
+.saved-item-del:hover{color:#C8102E;}
+.empty-saved{text-align:center;padding:18px;color:#4A7C5F;font-size:12px;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0A2E1A;color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:200;}
+.toast.show{opacity:1;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,92,53,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,46,26,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#4A7C5F;}
+.ni.active .ni-lb{color:#1A5C35;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">💰</span><div class="hdr-title">Affordability</div><div class="hdr-sub">Max Home Price · CAD · Stress Test</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Toronto Avg</div><div class="rs-val">$1.11M</div><div class="rs-note">May 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Vancouver</div><div class="rs-val">$1.19M</div><div class="rs-note">May 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Calgary</div><div class="rs-val">$587K</div><div class="rs-note">May 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">National</div><div class="rs-val">$703K</div><div class="rs-note">CREA May 25</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Your Finances</div>
+  <div class="input-card">
+    <div class="field">
+      <label>Annual Household Income</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="income" type="number" value="130000" oninput="calculate()">
+        <div class="field-suffix">/yr</div>
+      </div>
+      <input type="range" class="slider" id="incSlider" min="40000" max="500000" step="1000" value="130000" oninput="syncInc();calculate()">
+    </div>
+    <div class="field">
+      <label>Down Payment Saved</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="down" type="number" value="80000" oninput="calculate()">
+      </div>
+    </div>
+    <div class="field">
+      <label>Monthly Debts</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="debts" type="number" value="500" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+      <div class="field-note">Car, student loans, credit cards (3% of balance)</div>
+    </div>
+    <div class="field">
+      <label>Amortization</label>
+      <div class="field-row">
+        <input class="field-input" id="amort" type="number" value="25" min="5" max="30" oninput="calculate()" style="padding-left:12px;">
+        <div class="field-suffix">years</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Interest Rate</label>
+      <div class="field-row">
+        <input class="field-input" id="rate" type="number" value="4.99" step="0.01" oninput="calculate()" style="padding-left:12px;">
+        <div class="field-suffix">%</div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">💰 Calculate Affordability</button>
+  </div>
+
+  <div class="sec-lbl">
+    <span>Maximum Affordable Price</span>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+  </div>
+  <div class="hero-result">
+    <div class="hr-tag">Maximum Home Price (Stress-Tested)</div>
+    <div class="hr-main" id="maxPrice">CA$621,000</div>
+    <div class="hr-sub" id="maxPriceSub">Qualified at 7.00% stress rate · 25-yr amort</div>
+    <div class="hr-grid">
+      <div class="hr-box"><div class="hr-box-lbl">Contract Payment/mo</div><div class="hr-box-val grn" id="contractPmt">CA$2,955</div></div>
+      <div class="hr-box"><div class="hr-box-lbl">Stress Payment/mo</div><div class="hr-box-val warn" id="stressPmt">CA$3,475</div></div>
+      <div class="hr-box"><div class="hr-box-lbl">Min Down Required</div><div class="hr-box-val" id="minDown">CA$37,100</div></div>
+      <div class="hr-box"><div class="hr-box-lbl">Your Down Surplus</div><div class="hr-box-val grn" id="downSurplus">CA$42,900</div></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Buying Power Meter</div>
+  <div class="meter-card">
+    <div class="meter-title">Your Affordability vs. National Average</div>
+    <div class="meter-track">
+      <div class="meter-fill" id="meterFill" style="width:60%"></div>
+    </div>
+    <div class="meter-labels"><span>CA$0</span><span>$500K</span><span>$1M</span><span>$1.5M+</span></div>
+    <div class="meter-note" id="meterNote">Your max CA$621K · National avg CA$703K</div>
+  </div>
+
+  <div class="sec-lbl">Canadian City Comparison (May 2025)</div>
+  <div class="city-card" id="cityCard"></div>
+
+  <div class="sec-lbl">Minimum Down Payment Rules</div>
+  <div class="down-card">
+    <div class="down-header"><div class="dh">Purchase Price</div><div class="dh">Min. Down</div><div class="dh">Min. Amount</div></div>
+    <div class="down-row highlight"><div class="dc bold">Up to CA$500K</div><div class="dc bold">5%</div><div class="dc bold">CA$25,000</div></div>
+    <div class="down-row"><div class="dc">CA$500K–$999K</div><div class="dc">5%+10%</div><div class="dc">CA$25K–$74.9K</div></div>
+    <div class="down-row"><div class="dc">CA$1M–$1.5M</div><div class="dc">20%</div><div class="dc">CA$200K+</div></div>
+    <div class="down-row"><div class="dc">Over CA$1.5M</div><div class="dc">20%+</div><div class="dc">No CMHC</div></div>
+  </div>
+
+  <div class="sec-lbl">
+    <span>📌 Saved Calculations</span>
+    <button class="save-btn" onclick="clearSaved()" style="background:#eee;color:#666;">Clear All</button>
+  </div>
+  <div class="saved-list" id="savedList"><div class="empty-saved">No saved calculations yet.</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🍁</div><div class="ni-lb">Canada</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const CITIES=[{name:'Toronto, ON',emoji:'🏙️',price:1110000},{name:'Vancouver, BC',emoji:'🌊',price:1190000},{name:'Calgary, AB',emoji:'🏔️',price:587000},{name:'Ottawa, ON',emoji:'🏛️',price:671000},{name:'Montreal, QC',emoji:'⚜️',price:538000},{name:'Edmonton, AB',emoji:'🛢️',price:408000},{name:'Halifax, NS',emoji:'⚓',price:498000}];
+let savedCalcs=JSON.parse(localStorage.getItem('afford_saved')||'[]');
+function fmt(n){return 'CA$'+Math.round(n).toLocaleString('en-CA');}
+function fmtK(n){return n>=1000000?'$'+(n/1000000).toFixed(2)+'M':'$'+(n/1000).toFixed(0)+'K';}
+function syncInc(){const v=document.getElementById('incSlider').value;document.getElementById('income').value=v;const pct=(v-40000)/(500000-40000)*100;document.getElementById('incSlider').style.setProperty('--pct',pct+'%');}
+function monthlyPayment(loan,annualRate,years){const ea=Math.pow(1+annualRate/200,2)-1;const r=ea/12;const n=years*12;return n>0&&r>0?loan*r/(1-Math.pow(1+r,-n)):loan/n;}
+function minDown(price){if(price<=500000)return price*0.05;if(price<=999999)return 25000+(price-500000)*0.10;return price*0.20;}
+function maxAffordable(income,debts,stressRate,amort,down){const mi=income/12;let lo=0,hi=3000000;for(let i=0;i<60;i++){const mid=(lo+hi)/2;const loan=mid-down;if(loan<=0){hi=mid;continue;}const pmt=monthlyPayment(loan,stressRate,amort);const gds=(pmt+400+150)/mi;const tds=gds+debts/mi;if(tds<=0.44&&gds<=0.39)lo=mid;else hi=mid;}return Math.floor(lo/1000)*1000;}
+function calculate(){
+  const income=parseFloat(document.getElementById('income').value)||1;
+  const down=parseFloat(document.getElementById('down').value)||0;
+  const debts=parseFloat(document.getElementById('debts').value)||0;
+  const amort=parseFloat(document.getElementById('amort').value)||25;
+  const contractRate=parseFloat(document.getElementById('rate').value)||4.99;
+  const stressRate=Math.max(contractRate+2,7.00);
+  const maxP=maxAffordable(income,debts,stressRate,amort,down);
+  const loan=maxP-down;
+  const cPmt=loan>0?monthlyPayment(loan,contractRate,amort):0;
+  const sPmt=loan>0?monthlyPayment(loan,stressRate,amort):0;
+  const md=minDown(maxP);
+  const ds=down-md;
+  document.getElementById('maxPrice').textContent=fmt(maxP);
+  document.getElementById('maxPriceSub').textContent=`Qualified at ${stressRate.toFixed(2)}% stress rate · ${amort}-yr amort`;
+  document.getElementById('contractPmt').textContent=fmt(cPmt);
+  document.getElementById('stressPmt').textContent=fmt(sPmt);
+  document.getElementById('minDown').textContent=fmt(md);
+  document.getElementById('downSurplus').textContent=ds>=0?fmt(ds):'⚠ Need '+fmt(-ds)+' more';
+  document.getElementById('downSurplus').className='hr-box-val '+(ds>=0?'grn':'red');
+  // Meter
+  const mPct=Math.min(maxP/1500000*100,100);
+  document.getElementById('meterFill').style.width=mPct+'%';
+  document.getElementById('meterNote').textContent=`Your max ${fmt(maxP)} · National avg CA$703K`;
+  // Cities
+  const card=document.getElementById('cityCard');
+  card.innerHTML='';
+  const maxBar=1500000;
+  CITIES.forEach(c=>{
+    const canAfford=maxP>=c.price;
+    const pct=Math.min(maxP/c.price*100,130);
+    const barWidth=Math.min(pct,100);
+    const barColor=canAfford?'city-can':pct>80?'city-close':'city-over';
+    const statusClass=canAfford?'cs-yes':pct>80?'cs-close':'cs-no';
+    const statusText=canAfford?'✓ Afford':pct>80?'Close':'✗ Over';
+    card.innerHTML+=`<div class="city-row"><div class="city-flag">${c.emoji}</div><div class="city-right"><div style="display:flex;justify-content:space-between"><div><div class="city-name">${c.name}</div><div class="city-price">${fmtK(c.price)} avg · ${Math.round(pct)}% of budget</div></div></div><div class="city-bar"><div class="city-bar-fill ${barColor}" style="width:${barWidth}%"></div></div></div><div class="city-status ${statusClass}">${statusText}</div></div>`;
+  });
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function saveCalc(){
+  const income=parseFloat(document.getElementById('income').value)||0;
+  const down=parseFloat(document.getElementById('down').value)||0;
+  const rate=parseFloat(document.getElementById('rate').value)||4.99;
+  const amort=parseFloat(document.getElementById('amort').value)||25;
+  const debts=parseFloat(document.getElementById('debts').value)||0;
+  const stressRate=Math.max(rate+2,7.00);
+  const maxP=maxAffordable(income,debts,stressRate,amort,down);
+  savedCalcs.unshift({id:Date.now(),income,down,rate,maxP,date:new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric'})});
+  if(savedCalcs.length>5)savedCalcs.pop();
+  localStorage.setItem('afford_saved',JSON.stringify(savedCalcs));
+  renderSaved();showToast('✅ Saved!');
+  const btn=document.getElementById('saveBtn');btn.classList.add('saved');btn.textContent='✓ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.textContent='🔖 Save';},2000);
+}
+function clearSaved(){savedCalcs=[];localStorage.setItem('afford_saved',JSON.stringify(savedCalcs));renderSaved();showToast('🗑️ Cleared');}
+function renderSaved(){
+  const list=document.getElementById('savedList');
+  if(!savedCalcs.length){list.innerHTML='<div class="empty-saved">No saved calculations yet.</div>';return;}
+  list.innerHTML=savedCalcs.map(c=>`<div class="saved-item"><div><div class="saved-item-name">Income CA$${Math.round(c.income/1000)}K · Down CA$${Math.round(c.down/1000)}K</div><div class="saved-item-sub">${c.date} · ${c.rate}% rate</div></div><div style="text-align:right"><div class="saved-item-val">${fmt(c.maxP)}</div></div><button class="saved-item-del" onclick="delSaved(${c.id})">✕</button></div>`).join('');
+}
+function delSaved(id){savedCalcs=savedCalcs.filter(c=>c.id!==id);localStorage.setItem('afford_saved',JSON.stringify(savedCalcs));renderSaved();}
+document.getElementById('incSlider').style.setProperty('--pct','20%');
+renderSaved();calculate();
+</script>
+</body>
+</html>

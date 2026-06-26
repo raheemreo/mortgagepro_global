@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NZX Investor Calc – NZ</title>
+<style>
+  :root{--black:#0A0F0D;--forest:#0D3B2E;--fern:#1A6B4A;--silver:#C0C8C1;--teal:#0D9488;--sky:#0EA5E9;--red:#C0392B;--gold:#D4A017;--gold-lt:#F5D060;--bg:#EDF5F2;--card:#FFFFFF;--muted:#4A6358;--border:rgba(13,59,46,0.09);--sh:0 4px 20px rgba(10,15,13,0.09);--sh2:0 8px 36px rgba(10,15,13,0.18);}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--black);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(158deg,#0A0F0D 0%,#0D3B2E 45%,#1A6B4A 80%,#0EA5E9 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(14,165,233,0.10);}
+  .header::after{content:'💹';position:absolute;right:12px;top:44px;font-size:78px;opacity:0.09;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.11);border:1px solid rgba(255,255,255,0.19);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;display:block;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:0.4px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-v.sky{color:#7DD3FC;}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .sec .badge{font-size:9px;font-weight:700;background:#EFF6FF;color:#1D4ED8;padding:3px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+  /* NZX Ticker */
+  .nzx-ticker{background:var(--card);border-radius:16px;padding:14px 15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .nzx-header{font-size:12px;font-weight:800;color:var(--black);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+  .nzx-live{font-size:9px;font-weight:700;background:#ECFDF5;color:#065F46;padding:3px 8px;border-radius:20px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .nzx-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .nzx-item{text-align:center;background:var(--bg);border-radius:10px;padding:9px 6px;}
+  .nzx-sym{font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .nzx-val{font-size:14px;font-weight:800;color:var(--black);margin:3px 0;}
+  .nzx-chg{font-size:9px;font-weight:700;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .up{color:#15803D;}.dn{color:#C0392B;}
+
+  /* Tax Method Cards */
+  .method-tabs{display:flex;gap:8px;margin-bottom:14px;}
+  .tab-btn{flex:1;padding:10px 8px;border-radius:12px;border:2px solid var(--border);background:var(--card);font-size:11px;font-weight:800;color:var(--muted);cursor:pointer;text-align:center;transition:.2s;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .tab-btn.active{border-color:var(--sky);background:linear-gradient(135deg,#0EA5E9,#0369A1);color:#fff;}
+
+  /* Calc Card */
+  .calc-card{background:linear-gradient(148deg,#0A0F0D,#0D3B2E);border-radius:20px;padding:18px;box-shadow:var(--sh2);position:relative;overflow:hidden;margin-bottom:12px;}
+  .calc-card::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(14,165,233,0.18);}
+  .calc-tag{font-size:9.5px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.8px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .calc-title{font-size:16px;font-weight:800;color:#fff;margin:4px 0 14px;line-height:1.2;}
+  .calc-title span{color:#7DD3FC;}
+  .inp-label{font-size:9px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.5px;font-family:'Helvetica Neue',Arial,sans-serif;margin-bottom:4px;display:block;}
+  .inp-row{display:flex;gap:8px;margin-bottom:10px;}
+  .inp-box{flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.18);border-radius:11px;padding:10px 12px;}
+  .inp-box input,.inp-box select{background:transparent;border:none;outline:none;width:100%;font-size:14px;font-weight:800;color:#fff;font-family:'Palatino Linotype',Palatino,Georgia,serif;}
+  .inp-box input::placeholder{color:rgba(255,255,255,0.35);}
+  .inp-box select option{background:#0D3B2E;color:#fff;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#0EA5E9,#0369A1);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(14,165,233,0.35);font-family:'Palatino Linotype',Palatino,Georgia,serif;margin-top:4px;}
+
+  /* Results */
+  .result-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;display:none;}
+  .result-card.show{display:block;animation:fadeUp .3s ease both;}
+  .result-title{font-size:13px;font-weight:800;color:var(--black);margin-bottom:14px;}
+  .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .res-box{background:var(--bg);border-radius:12px;padding:12px;}
+  .res-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-family:'Helvetica Neue',Arial,sans-serif;margin-bottom:4px;}
+  .res-val{font-size:18px;font-weight:800;color:var(--black);}
+  .res-val.green{color:var(--fern);}
+  .res-val.red{color:var(--red);}
+  .res-val.sky{color:var(--sky);}
+  .res-sub{font-size:9px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;margin-top:2px;}
+
+  /* FIF Method comparison chart */
+  .chart-wrap{background:var(--bg);border-radius:14px;padding:14px;margin-bottom:14px;}
+  .chart-title{font-size:11px;font-weight:800;color:var(--black);margin-bottom:12px;}
+  .method-compare{display:flex;flex-direction:column;gap:8px;}
+  .mc-row{background:var(--card);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:12px;border:1px solid var(--border);}
+  .mc-row.best{border-color:var(--sky);background:linear-gradient(135deg,#EFF6FF,#DBEAFE);}
+  .mc-label{flex:1;font-size:11px;font-weight:800;color:var(--black);}
+  .mc-val{font-size:15px;font-weight:800;color:var(--black);}
+  .mc-val.sky{color:var(--sky);}
+  .mc-badge{font-size:8.5px;font-weight:700;background:#EFF6FF;color:#1D4ED8;padding:2px 7px;border-radius:20px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .mc-badge.best{background:#0EA5E9;color:#fff;}
+
+  /* Donut chart SVG */
+  .donut-wrap{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px;}
+  .donut-legend{display:flex;flex-direction:column;gap:8px;}
+  .dl-item{display:flex;align-items:center;gap:8px;}
+  .dl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+  .dl-label{font-size:10px;font-weight:700;color:var(--black);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .dl-val{font-size:10px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  /* PIE rates */
+  .pie-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+  .pie-item{background:var(--card);border-radius:14px;padding:12px 10px;box-shadow:var(--sh);border:1px solid var(--border);text-align:center;}
+  .pie-item.active{background:linear-gradient(140deg,#0EA5E9,#0369A1);}
+  .pie-rate{font-size:20px;font-weight:800;color:var(--black);}
+  .pie-item.active .pie-rate{color:#fff;}
+  .pie-desc{font-size:9px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;margin-top:3px;}
+  .pie-item.active .pie-desc{color:rgba(255,255,255,0.7);}
+
+  .save-btn{width:100%;background:var(--card);border:2px solid var(--sky);border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:var(--sky);cursor:pointer;font-family:'Palatino Linotype',Palatino,Georgia,serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;}
+  .save-confirm{background:#EFF6FF;border:1px solid #93C5FD;border-radius:10px;padding:10px 14px;font-size:11px;color:#1D4ED8;font-family:'Helvetica Neue',Arial,sans-serif;text-align:center;display:none;margin-bottom:12px;}
+  .save-confirm.show{display:block;animation:fadeUp .3s ease both;}
+
+  /* Info items */
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;}
+  .ii{width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .in{font-size:12px;font-weight:800;color:var(--black);}
+  .is{font-size:9.5px;color:var(--muted);margin-top:3px;font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.45;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,15,13,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ni.active .ni-lb{color:var(--fern);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .nzx-ticker{animation:fadeUp .35s ease both .04s;}
+  .method-tabs{animation:fadeUp .35s ease both .08s;}
+  .calc-card{animation:fadeUp .35s ease both .12s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇳🇿</div>
+      <div class="hdr-title">NZX Investor Calc</div>
+      <div class="hdr-sub">FIF · PIE · FDR · CV Method · IRD Tax Rates</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">PIE Max</div><div class="rs-v sky">28%</div><div class="rs-n">Top PIR rate</div></div>
+    <div class="rs"><div class="rs-l">FIF FDR</div><div class="rs-v">5%</div><div class="rs-n">Deemed return</div></div>
+    <div class="rs"><div class="rs-l">NZX 50</div><div class="rs-v gold">11,820</div><div class="rs-n">+0.62% today</div></div>
+    <div class="rs"><div class="rs-l">NZD/USD</div><div class="rs-v">0.6102</div><div class="rs-n">Live rate</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Live NZX Snapshot <span class="badge">Market Data</span></div>
+  <div class="nzx-ticker">
+    <div class="nzx-header">NZX Top Movers & Indices <span class="nzx-live">● Live</span></div>
+    <div class="nzx-grid">
+      <div class="nzx-item"><div class="nzx-sym">NZX 50</div><div class="nzx-val">11,820</div><div class="nzx-chg up">+0.62%</div></div>
+      <div class="nzx-item"><div class="nzx-sym">FNZ</div><div class="nzx-val">$5.42</div><div class="nzx-chg up">+1.1%</div></div>
+      <div class="nzx-item"><div class="nzx-sym">MEL</div><div class="nzx-val">$7.38</div><div class="nzx-chg dn">-0.4%</div></div>
+      <div class="nzx-item"><div class="nzx-sym">AIR</div><div class="nzx-val">$0.72</div><div class="nzx-chg up">+2.8%</div></div>
+      <div class="nzx-item"><div class="nzx-sym">SPK</div><div class="nzx-val">$3.11</div><div class="nzx-chg dn">-0.6%</div></div>
+      <div class="nzx-item"><div class="nzx-sym">PCT</div><div class="nzx-val">$1.63</div><div class="nzx-chg up">+0.6%</div></div>
+    </div>
+  </div>
+
+  <div class="sec">PIE Tax Rates (Prescribed Investor Rate)</div>
+  <div class="pie-grid">
+    <div class="pie-item">
+      <div class="pie-rate">10.5%</div>
+      <div class="pie-desc">Income ≤$14K</div>
+    </div>
+    <div class="pie-item active">
+      <div class="pie-rate">17.5%</div>
+      <div class="pie-desc">$14K–$48K</div>
+    </div>
+    <div class="pie-item">
+      <div class="pie-rate">28%</div>
+      <div class="pie-desc">Over $48K</div>
+    </div>
+  </div>
+
+  <div class="sec">Investment Tax Calculator</div>
+  <div class="method-tabs">
+    <button class="tab-btn active" onclick="setTab(this,'fif')">🌏 FIF / Overseas</button>
+    <button class="tab-btn" onclick="setTab(this,'pie')">🥝 PIE Fund</button>
+    <button class="tab-btn" onclick="setTab(this,'nzx')">💹 NZX Direct</button>
+  </div>
+
+  <div class="calc-card">
+    <div class="calc-tag" id="calcTag">Foreign Investment Fund (FIF) Calculator · IRD NZ</div>
+    <div class="calc-title">Calculate your <span id="calcTitleSpan">FIF Tax</span> Liability</div>
+    <div id="fif-inputs">
+      <div class="inp-row">
+        <div class="inp-box">
+          <label class="inp-label">Opening Market Value (NZD)</label>
+          <input type="number" id="openVal" placeholder="50000" value="50000">
+        </div>
+        <div class="inp-box">
+          <label class="inp-label">Closing Market Value (NZD)</label>
+          <input type="number" id="closeVal" placeholder="58000" value="58000">
+        </div>
+      </div>
+      <div class="inp-row">
+        <div class="inp-box">
+          <label class="inp-label">Dividends Received (NZD)</label>
+          <input type="number" id="divs" placeholder="1200" value="1200">
+        </div>
+        <div class="inp-box">
+          <label class="inp-label">Your Tax Rate</label>
+          <select id="fifRate">
+            <option value="10.5">10.5%</option>
+            <option value="17.5">17.5%</option>
+            <option value="30" selected>30%</option>
+            <option value="33">33%</option>
+            <option value="39">39%</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="pie-inputs" style="display:none">
+      <div class="inp-row">
+        <div class="inp-box">
+          <label class="inp-label">PIE Fund Investment (NZD)</label>
+          <input type="number" id="pieInvest" placeholder="25000" value="25000">
+        </div>
+        <div class="inp-box">
+          <label class="inp-label">Annual Return Rate (%)</label>
+          <input type="number" id="pieReturn" placeholder="7.5" value="7.5">
+        </div>
+      </div>
+      <div class="inp-row">
+        <div class="inp-box">
+          <label class="inp-label">Your PIR Rate</label>
+          <select id="pierRate">
+            <option value="10.5">10.5%</option>
+            <option value="17.5" selected>17.5%</option>
+            <option value="28">28%</option>
+          </select>
+        </div>
+        <div class="inp-box">
+          <label class="inp-label">Your Marginal Rate</label>
+          <select id="margRate">
+            <option value="17.5">17.5%</option>
+            <option value="30" selected>30%</option>
+            <option value="33">33%</option>
+            <option value="39">39%</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="nzx-inputs" style="display:none">
+      <div class="inp-row">
+        <div class="inp-box">
+          <label class="inp-label">Shares Bought Price (NZD)</label>
+          <input type="number" id="buyPrice" placeholder="10000" value="10000">
+        </div>
+        <div class="inp-box">
+          <label class="inp-label">Current Value (NZD)</label>
+          <input type="number" id="sellPrice" placeholder="13500" value="13500">
+        </div>
+      </div>
+      <div class="inp-row">
+        <div class="inp-box">
+          <label class="inp-label">NZX Dividends (NZD)</label>
+          <input type="number" id="nzxDiv" placeholder="450" value="450">
+        </div>
+        <div class="inp-box">
+          <label class="inp-label">Imputation Credits (NZD)</label>
+          <input type="number" id="impute" placeholder="190" value="190">
+        </div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calcInvestor()">💹 Calculate Investment Tax</button>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-title" id="resultTitle">📊 FIF Tax Analysis</div>
+    <div class="res-grid" id="resGrid">
+      <!-- populated by JS -->
+    </div>
+    <div class="chart-wrap" id="methodCompare">
+      <div class="chart-title">FIF Method Comparison — Best Option</div>
+      <div class="method-compare" id="methodRows"></div>
+    </div>
+    <button class="save-btn" onclick="saveCalc()">🔖 Save This Calculation</button>
+    <div class="save-confirm" id="saveConfirm">✅ Calculation saved! View in Saved tab.</div>
+  </div>
+
+  <div class="sec">Key NZ Investment Tax Rules</div>
+  <div class="ilist">
+    <div class="ic">
+      <div class="ii">🌏</div>
+      <div>
+        <div class="in">FIF — Foreign Investment Fund</div>
+        <div class="is">Applies to overseas shares over NZD $50,000 cost threshold. Choose FDR (5% of opening value) or Comparative Value (actual gain) — use whichever gives lower tax.</div>
+      </div>
+    </div>
+    <div class="ic">
+      <div class="ii">🥝</div>
+      <div>
+        <div class="in">PIE Funds — Tax at PIR Rate</div>
+        <div class="is">Portfolio Investment Entities are taxed at your Prescribed Investor Rate (10.5%, 17.5% or 28%). PIE tax is a final tax — no top-up required even if your marginal rate is higher.</div>
+      </div>
+    </div>
+    <div class="ic">
+      <div class="ii">💹</div>
+      <div>
+        <div class="in">NZX Direct Shares — No CGT</div>
+        <div class="is">NZ has no capital gains tax on NZX shares for passive investors. Dividends are taxable income. Imputation credits from company tax can offset your tax bill.</div>
+      </div>
+    </div>
+    <div class="ic">
+      <div class="ii">📊</div>
+      <div>
+        <div class="in">$50K FIF Threshold</div>
+        <div class="is">If overseas shares cost ≤ NZD $50,000, FIF rules don't apply — dividends taxed as ordinary income, capital gains generally tax-free. Threshold applies per person (not per fund).</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🌿</div><div class="ni-lb">New Zealand</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let currentTab='fif';
+function setTab(btn,tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['fif-inputs','pie-inputs','nzx-inputs'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById(tab+'-inputs').style.display='block';
+  const titles={fif:['Foreign Investment Fund (FIF) Calculator · IRD NZ','FIF Tax'],pie:['PIE Fund Tax Calculator · PIR Rate','PIE Tax Saving'],nzx:['NZX Direct Shares Calculator · Imputation','NZX Dividend Tax']};
+  document.getElementById('calcTag').textContent=titles[tab][0];
+  document.getElementById('calcTitleSpan').textContent=titles[tab][1];
+  document.getElementById('resultCard').classList.remove('show');
+}
+function fmt(v){return '$'+Math.round(v).toLocaleString('en-NZ');}
+function calcInvestor(){
+  let boxes=[], compare=[], title='';
+  if(currentTab==='fif'){
+    const open=parseFloat(document.getElementById('openVal').value)||50000;
+    const close=parseFloat(document.getElementById('closeVal').value)||58000;
+    const divs=parseFloat(document.getElementById('divs').value)||1200;
+    const rate=parseFloat(document.getElementById('fifRate').value)||30;
+    const fdrIncome=open*0.05;
+    const cvIncome=Math.max(0,close-open)+divs;
+    const fdrTax=fdrIncome*rate/100;
+    const cvTax=cvIncome*rate/100;
+    const best=fdrTax<cvTax?'FDR':'CV';
+    const bestTax=Math.min(fdrTax,cvTax);
+    title='📊 FIF Tax Analysis';
+    boxes=[
+      {label:'FDR Deemed Income',val:fmt(fdrIncome),cls:'sky',sub:'5% of opening value'},
+      {label:'FDR Tax Liability',val:fmt(fdrTax),cls:'red',sub:'At your tax rate'},
+      {label:'CV Actual Income',val:fmt(cvIncome),cls:'sky',sub:'Gain + dividends'},
+      {label:'CV Tax Liability',val:fmt(cvTax),cls:'red',sub:'At your tax rate'},
+    ];
+    document.getElementById('methodCompare').style.display='block';
+    document.getElementById('methodRows').innerHTML=`
+      <div class="mc-row${best==='FDR'?' best':''}">
+        <span style="font-size:16px">📊</span>
+        <div class="mc-label">FDR Method (5% deemed)</div>
+        <div class="mc-val${best==='FDR'?' sky':''}">${fmt(fdrTax)}</div>
+        ${best==='FDR'?'<div class="mc-badge best">✓ Best</div>':'<div class="mc-badge">Higher</div>'}
+      </div>
+      <div class="mc-row${best==='CV'?' best':''}">
+        <span style="font-size:16px">📈</span>
+        <div class="mc-label">CV Method (actual gain)</div>
+        <div class="mc-val${best==='CV'?' sky':''}">${fmt(cvTax)}</div>
+        ${best==='CV'?'<div class="mc-badge best">✓ Best</div>':'<div class="mc-badge">Higher</div>'}
+      </div>
+      <div style="padding:8px 4px;font-size:10px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;">Use <strong>${best}</strong> method — saves ${fmt(Math.abs(fdrTax-cvTax))} this year</div>`;
+  } else if(currentTab==='pie'){
+    const invest=parseFloat(document.getElementById('pieInvest').value)||25000;
+    const ret=parseFloat(document.getElementById('pieReturn').value)||7.5;
+    const pir=parseFloat(document.getElementById('pierRate').value)||17.5;
+    const marg=parseFloat(document.getElementById('margRate').value)||30;
+    const returnAmt=invest*ret/100;
+    const pieTax=returnAmt*pir/100;
+    const margTax=returnAmt*marg/100;
+    const saving=margTax-pieTax;
+    title='📊 PIE Fund Tax Analysis';
+    boxes=[
+      {label:'Annual Return',val:fmt(returnAmt),cls:'green',sub:`${ret}% on ${fmt(invest)}`},
+      {label:'PIE Tax (PIR)',val:fmt(pieTax),cls:'red',sub:`${pir}% PIR rate`},
+      {label:'Marginal Tax (if direct)',val:fmt(margTax),cls:'red',sub:`${marg}% marginal rate`},
+      {label:'PIE Tax Saving',val:fmt(saving),cls:'green',sub:'Annual benefit'},
+    ];
+    document.getElementById('methodCompare').style.display='none';
+  } else {
+    const buy=parseFloat(document.getElementById('buyPrice').value)||10000;
+    const sell=parseFloat(document.getElementById('sellPrice').value)||13500;
+    const div=parseFloat(document.getElementById('nzxDiv').value)||450;
+    const imp=parseFloat(document.getElementById('impute').value)||190;
+    const gain=sell-buy;
+    const grossDiv=div+imp;
+    const taxOnDiv=grossDiv*0.30-imp;
+    title='📊 NZX Shares Tax Analysis';
+    boxes=[
+      {label:'Capital Gain',val:fmt(gain),cls:'green',sub:'Generally tax-free (NZ)'},
+      {label:'Gross Dividend',val:fmt(grossDiv),cls:'sky',sub:'Div + imputation credits'},
+      {label:'Tax on Dividends',val:fmt(Math.max(0,taxOnDiv)),cls:'red',sub:'After imputation credits'},
+      {label:'Net Dividend After Tax',val:fmt(div-Math.max(0,taxOnDiv)),cls:'green',sub:'In your hand'},
+    ];
+    document.getElementById('methodCompare').style.display='none';
+  }
+  document.getElementById('resultTitle').textContent=title;
+  document.getElementById('resGrid').innerHTML=boxes.map(b=>`
+    <div class="res-box">
+      <div class="res-label">${b.label}</div>
+      <div class="res-val ${b.cls}">${b.val}</div>
+      <div class="res-sub">${b.sub}</div>
+    </div>`).join('');
+  document.getElementById('resultCard').classList.add('show');
+}
+function saveCalc(){
+  document.getElementById('saveConfirm').classList.add('show');
+  setTimeout(()=>document.getElementById('saveConfirm').classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Land Transfer Tax – Canada Mortgage Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F0F7F4;color:#0A2E1A;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0A2E1A 0%,#1A5C35 60%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;text-align:center;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#6EDFA0;}.rs-val.red{color:#FF8A9A;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.input-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:10px;}
+.input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F0F7F4;}
+.input-row:last-child{border-bottom:none;}
+.input-lbl{font-size:12px;font-weight:600;color:#0A2E1A;}
+.input-sub{font-size:10px;color:#4A7C5F;margin-top:1px;}
+.inp{background:#F0F7F4;border:1px solid rgba(26,92,53,0.15);border-radius:9px;padding:7px 10px;font-size:13px;font-weight:700;color:#0A2E1A;width:120px;text-align:right;font-family:'Helvetica Neue',Arial,sans-serif;}
+.inp:focus{outline:none;border-color:#1A5C35;}
+.unit-lbl{font-size:11px;color:#4A7C5F;font-weight:600;}
+.prov-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
+.prov-btn{background:#fff;border:1.5px solid rgba(26,92,53,0.12);border-radius:10px;padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:#4A7C5F;cursor:pointer;}
+.prov-btn.active{background:#1A5C35;color:#fff;border-color:#1A5C35;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F0F7F4;}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-lbl{font-size:12px;font-weight:600;color:#0A2E1A;}
+.toggle-sub{font-size:10px;color:#4A7C5F;margin-top:1px;}
+.toggle{width:42px;height:24px;background:#e0e0e0;border-radius:12px;position:relative;cursor:pointer;transition:background 0.2s;}
+.toggle.on{background:#1A5C35;}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.15);}
+.toggle.on::after{left:21px;}
+.calc-btn{width:100%;background:#C8102E;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(200,16,46,0.35);margin-top:4px;}
+.result-hero{background:linear-gradient(145deg,#0A2E1A,#1A5C35);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(10,46,26,0.25);}
+.result-hero::before{content:'🏛️';position:absolute;right:-5px;top:-10px;font-size:75px;opacity:0.07;}
+.rh-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.rh-title{font-size:13px;font-weight:700;color:rgba(255,255,255,0.7);margin:4px 0 2px;}
+.rh-val{font-size:32px;font-weight:800;color:#FF8A9A;font-family:Georgia,serif;letter-spacing:-1px;}
+.rh-row{display:flex;gap:8px;margin-top:14px;}
+.rh-box{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.rh-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.rh-box .v{font-size:13px;font-weight:800;color:#fff;}
+.rh-box .v.grn{color:#6EDFA0;}
+.breakdown-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);}
+.bk-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F0F7F4;}
+.bk-row:last-child{border-bottom:none;}
+.bk-lbl{font-size:12px;color:#4A7C5F;}
+.bk-val{font-size:13px;font-weight:700;color:#0A2E1A;}
+.bk-val.grn{color:#1A5C35;}.bk-val.red{color:#C8102E;}
+.rate-table{background:#fff;border-radius:17px;overflow:hidden;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);}
+.rt-hdr{background:#0A2E1A;padding:12px 15px;display:flex;justify-content:space-between;}
+.rt-hdr span{font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.5px;}
+.rt-row{display:flex;justify-content:space-between;align-items:center;padding:10px 15px;border-bottom:1px solid #F0F7F4;}
+.rt-row:last-child{border-bottom:none;}
+.rt-bracket{font-size:12px;color:#4A7C5F;}
+.rt-rate{font-size:13px;font-weight:700;color:#0A2E1A;}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.cmp-card{background:#fff;border-radius:14px;padding:13px;box-shadow:0 3px 10px rgba(10,46,26,0.07);border:1px solid rgba(26,92,53,0.08);text-align:center;}
+.cmp-prov{font-size:11px;font-weight:700;color:#4A7C5F;margin-bottom:4px;}
+.cmp-val{font-size:16px;font-weight:800;color:#0A2E1A;font-family:Georgia,serif;}
+.cmp-val.low{color:#1A5C35;}.cmp-val.high{color:#C8102E;}
+.cmp-note{font-size:9px;color:#4A7C5F;margin-top:2px;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,92,53,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,46,26,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#4A7C5F;}
+.ni.active .ni-lb{color:#1A5C35;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏛️</span><div class="hdr-title">Land Transfer Tax</div><div class="hdr-sub">All Provinces · 2026 Rates · Rebates</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Ontario</div><div class="rs-val">0.5–2.5%</div><div class="rs-note">+Toronto</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">BC</div><div class="rs-val">1–3%</div><div class="rs-note">PTT</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Alberta</div><div class="rs-val grn">$0 LTT</div><div class="rs-note">Reg fee only</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">1st-Time</div><div class="rs-val grn">Rebate</div><div class="rs-note">Up to $4,475</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Select Province</div>
+  <div class="prov-grid" id="provGrid">
+    <div class="prov-btn active" onclick="setProv(this,'ON')">ON</div>
+    <div class="prov-btn" onclick="setProv(this,'BC')">BC</div>
+    <div class="prov-btn" onclick="setProv(this,'AB')">AB</div>
+    <div class="prov-btn" onclick="setProv(this,'QC')">QC</div>
+    <div class="prov-btn" onclick="setProv(this,'MB')">MB</div>
+    <div class="prov-btn" onclick="setProv(this,'NS')">NS</div>
+    <div class="prov-btn" onclick="setProv(this,'NB')">NB</div>
+    <div class="prov-btn" onclick="setProv(this,'SK')">SK</div>
+  </div>
+  <div class="input-card">
+    <div class="input-row">
+      <div><div class="input-lbl">Purchase Price</div><div class="input-sub">Home value</div></div>
+      <div style="display:flex;align-items:center;gap:6px"><span class="unit-lbl">CA$</span><input class="inp" id="price" type="number" value="750000"></div>
+    </div>
+    <div class="toggle-row" id="torontoRow" style="display:none">
+      <div><div class="toggle-lbl">City of Toronto</div><div class="toggle-sub">+Municipal LTT applies</div></div>
+      <div class="toggle" id="torontoToggle" onclick="toggle(this)"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">First-Time Home Buyer</div><div class="toggle-sub">Eligible for provincial rebate</div></div>
+      <div class="toggle" id="ftbToggle" onclick="toggle(this)"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">Foreign / Non-Resident Buyer</div><div class="toggle-sub">Additional speculation tax may apply</div></div>
+      <div class="toggle" id="foreignToggle" onclick="toggle(this)"></div>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calculate()">🏛️ Calculate Land Transfer Tax</button>
+  <div id="results" style="display:none">
+    <div class="sec-lbl">Tax Owing</div>
+    <div class="result-hero">
+      <div class="rh-tag">Total Land Transfer Tax</div>
+      <div class="rh-title" id="result-prov-label">Ontario LTT</div>
+      <div class="rh-val" id="total-ltt">CA$0</div>
+      <div class="rh-row">
+        <div class="rh-box"><label>Provincial LTT</label><div class="v" id="prov-ltt">–</div></div>
+        <div class="rh-box"><label>Municipal</label><div class="v" id="muni-ltt">–</div></div>
+        <div class="rh-box"><label>Rebate</label><div class="v grn" id="rebate-val">–</div></div>
+      </div>
+    </div>
+    <div class="sec-lbl">Breakdown</div>
+    <div class="breakdown-card" id="breakdown-card"></div>
+  </div>
+  <div class="sec-lbl">Province Comparison — CA$750K</div>
+  <div class="compare-grid">
+    <div class="cmp-card"><div class="cmp-prov">🏙️ Toronto, ON</div><div class="cmp-val high">$21,475</div><div class="cmp-note">Prov + Muni LTT</div></div>
+    <div class="cmp-card"><div class="cmp-prov">🌊 Vancouver, BC</div><div class="cmp-val high">$13,000</div><div class="cmp-note">Property Transfer Tax</div></div>
+    <div class="cmp-card"><div class="cmp-prov">🍁 Ontario (ex-TO)</div><div class="cmp-val">$10,475</div><div class="cmp-note">Provincial only</div></div>
+    <div class="cmp-card"><div class="cmp-prov">❄️ Alberta</div><div class="cmp-val low">~$380</div><div class="cmp-note">Reg. fee only</div></div>
+    <div class="cmp-card"><div class="cmp-prov">🌾 Quebec (MTL)</div><div class="cmp-val">$9,975</div><div class="cmp-note">Welcome Tax</div></div>
+    <div class="cmp-card"><div class="cmp-prov">🌻 Manitoba</div><div class="cmp-val">$8,870</div><div class="cmp-note">Provincial LTT</div></div>
+  </div>
+  <div class="sec-lbl">Ontario Rate Table (2026)</div>
+  <div class="rate-table">
+    <div class="rt-hdr"><span>Property Value</span><span>Rate</span></div>
+    <div class="rt-row"><div class="rt-bracket">First $55,000</div><div class="rt-rate">0.50%</div></div>
+    <div class="rt-row"><div class="rt-bracket">$55,000 – $250,000</div><div class="rt-rate">1.00%</div></div>
+    <div class="rt-row"><div class="rt-bracket">$250,000 – $400,000</div><div class="rt-rate">1.50%</div></div>
+    <div class="rt-row"><div class="rt-bracket">$400,000 – $2,000,000</div><div class="rt-rate">2.00%</div></div>
+    <div class="rt-row"><div class="rt-bracket">Over $2,000,000</div><div class="rt-rate">2.50%</div></div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🍁</div><div class="ni-lb">Canada</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+let prov = 'ON';
+function setProv(btn, p){
+  prov = p;
+  document.querySelectorAll('.prov-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('torontoRow').style.display = (p==='ON')?'flex':'none';
+}
+function toggle(el){ el.classList.toggle('on'); }
+function fmt(n){ return n===0?'$0 (None)':'CA$'+Math.round(n).toLocaleString('en-CA'); }
+
+function calcON(price){
+  let t=0;
+  const brackets=[[55000,0.005],[250000,0.01],[400000,0.015],[2000000,0.02],[Infinity,0.025]];
+  let prev=0;
+  for(let [upper,rate] of brackets){
+    if(price<=prev) break;
+    t+=( Math.min(price,upper)-prev )*rate;
+    prev=upper;
+  }
+  return t;
+}
+function calcBC(price){
+  let t=0;
+  if(price<=200000) t=price*0.01;
+  else if(price<=2000000) t=200000*0.01+(price-200000)*0.02;
+  else t=200000*0.01+1800000*0.02+(price-2000000)*0.03;
+  return t;
+}
+function calcQC(price){ // Montreal brackets 2026
+  let t=0;
+  const brackets=[[55200,0.005],[276200,0.01],[552300,0.015],[1104400,0.02],[Infinity,0.025]];
+  let prev=0;
+  for(let [upper,rate] of brackets){
+    if(price<=prev) break;
+    t+=( Math.min(price,upper)-prev )*rate;
+    prev=upper;
+  }
+  return t;
+}
+function calcMB(price){
+  let t=0;
+  if(price<=30000) return 0;
+  const brackets=[[90000,0.005],[150000,0.01],[200000,0.015],[Infinity,0.02]];
+  let prev=0;
+  for(let [upper,rate] of brackets){
+    if(price<=prev) break;
+    t+=( Math.min(price,upper)-prev )*rate;
+    prev=upper;
+  }
+  return t;
+}
+function calculate(){
+  const price = parseFloat(document.getElementById('price').value)||750000;
+  const isFTB = document.getElementById('ftbToggle').classList.contains('on');
+  const isToronto = document.getElementById('torontoToggle').classList.contains('on');
+  const isForeign = document.getElementById('foreignToggle').classList.contains('on');
+  let provTax=0, muniTax=0, rebate=0, foreignTax=0;
+  let lines=[];
+  if(prov==='ON'){
+    provTax=calcON(price);
+    if(isToronto){ muniTax=calcON(price); }
+    if(isFTB){ rebate=Math.min(4000,provTax)+(isToronto?Math.min(4475,muniTax):0); }
+    if(isForeign){ foreignTax=price*0.25; lines.push(['NRST (Non-Resident Speculation Tax)','25% · CA$'+Math.round(foreignTax).toLocaleString()]); }
+    document.getElementById('result-prov-label').textContent = isToronto ? 'Ontario + Toronto MLTT' : 'Ontario LTT';
+    lines=[['Ontario LTT (marginal)','CA$'+Math.round(provTax).toLocaleString()]];
+    if(isToronto) lines.push(['Toronto MLTT','CA$'+Math.round(muniTax).toLocaleString()]);
+    if(isFTB) lines.push(['First-Time Buyer Rebate','−CA$'+Math.round(rebate).toLocaleString()]);
+    if(isForeign) lines.push(['NRST (25%)','CA$'+Math.round(foreignTax).toLocaleString()]);
+  } else if(prov==='BC'){
+    provTax=calcBC(price);
+    if(isFTB && price<=500000){ rebate=provTax; }
+    else if(isFTB && price<525000){ rebate=provTax*(525000-price)/25000; }
+    if(isForeign){ foreignTax=price*0.20; }
+    document.getElementById('result-prov-label').textContent = 'BC Property Transfer Tax';
+    lines=[['BC PTT (marginal)','CA$'+Math.round(provTax).toLocaleString()]];
+    if(isFTB) lines.push(['First-Time Buyer Rebate','−CA$'+Math.round(rebate).toLocaleString()]);
+    if(isForeign) lines.push(['Foreign Buyer (20% ADDT)','CA$'+Math.round(foreignTax).toLocaleString()]);
+  } else if(prov==='AB'){
+    const titleFee = 50+Math.ceil(price/5000)*5;
+    provTax=titleFee;
+    document.getElementById('result-prov-label').textContent = 'Alberta — Registration Fee Only';
+    lines=[['Title Registration Fee','CA$'+Math.round(provTax).toLocaleString()],['No LTT in Alberta','✓ Significant saving vs ON/BC']];
+  } else if(prov==='QC'){
+    provTax=calcQC(price);
+    document.getElementById('result-prov-label').textContent = 'Quebec Welcome Tax (Montreal)';
+    lines=[['Bienvenue / Welcome Tax','CA$'+Math.round(provTax).toLocaleString()],['Note: No FTHB rebate in QC','Check municipal rules']];
+  } else if(prov==='MB'){
+    provTax=calcMB(price);
+    document.getElementById('result-prov-label').textContent = 'Manitoba Land Transfer Tax';
+    lines=[['MB LTT (marginal)','CA$'+Math.round(provTax).toLocaleString()],['No FTHB rebate in MB','Check city of Winnipeg rules']];
+  } else if(prov==='NS'){
+    provTax=price*0.015;
+    document.getElementById('result-prov-label').textContent = 'Nova Scotia Deed Transfer Tax';
+    lines=[['Deed Transfer Tax (1.5%)','CA$'+Math.round(provTax).toLocaleString()],['Rate varies by municipality','1.5% is Halifax baseline']];
+  } else if(prov==='NB'){
+    provTax=price*0.01;
+    document.getElementById('result-prov-label').textContent = 'New Brunswick RPTT';
+    lines=[['Real Property Transfer Tax (1%)','CA$'+Math.round(provTax).toLocaleString()]];
+  } else if(prov==='SK'){
+    provTax=price*0.003;
+    document.getElementById('result-prov-label').textContent = 'Saskatchewan Title Transfer Fee';
+    lines=[['Title Transfer Fee (0.3%)','CA$'+Math.round(provTax).toLocaleString()],['No full LTT in Saskatchewan','Much lower than ON/BC']];
+  }
+  const total = provTax + muniTax - rebate + foreignTax;
+  document.getElementById('total-ltt').textContent = 'CA$'+Math.round(Math.max(0,total)).toLocaleString('en-CA');
+  document.getElementById('prov-ltt').textContent = 'CA$'+Math.round(provTax).toLocaleString();
+  document.getElementById('muni-ltt').textContent = muniTax>0?'CA$'+Math.round(muniTax).toLocaleString():'N/A';
+  document.getElementById('rebate-val').textContent = rebate>0?'−CA$'+Math.round(rebate).toLocaleString():'None';
+  const bkEl = document.getElementById('breakdown-card');
+  bkEl.innerHTML = lines.map(([l,v],i)=>`<div class="bk-row${i===lines.length-1?' last':''}"><span class="bk-lbl">${l}</span><span class="bk-val">${v}</span></div>`).join('');
+  document.getElementById('results').style.display = 'block';
+}
+calculate();
+</script>
+</body>
+</html>

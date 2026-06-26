@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>USA Financial Tools — Calculator Suite</title>
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════ */
+:root {
+  --navy:   #0B1D3A;
+  --royal:  #1B3F72;
+  --sky:    #2563EB;
+  --red:    #C0392B;
+  --gold:   #D97706;
+  --gold-l: #FCD34D;
+  --teal:   #0D9488;
+  --green:  #15803D;
+  --purple: #6D28D9;
+  --bg:     #F0F4FF;
+  --card:   #FFFFFF;
+  --muted:  #5B6E8F;
+  --border: rgba(27,63,114,0.10);
+  --sh:     0 4px 20px rgba(11,29,58,0.09);
+  --sh2:    0 10px 40px rgba(11,29,58,0.18);
+  --inp:    #F5F8FF;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  font-family: 'Palatino Linotype', Palatino, Georgia, serif;
+  background: var(--bg);
+  color: var(--navy);
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ═══ PAGE SYSTEM ═══ */
+.page { display:none; }
+.page.active { display:block; }
+
+/* ═══ TOP NAVIGATION (tool index) ═══ */
+.tool-index {
+  background: linear-gradient(155deg, #0B1D3A 0%, #1B3F72 60%, #C0392B 100%);
+  padding: 52px 18px 24px;
+  position: relative; overflow: hidden;
+}
+.tool-index::before {
+  content:'🦅'; position:absolute; right:14px; top:52px;
+  font-size:90px; opacity:.05;
+}
+.ti-brand { display:flex; align-items:center; gap:10px; margin-bottom:20px; position:relative; z-index:2; }
+.ti-logo { width:42px; height:42px; background:var(--gold); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:0 4px 14px rgba(217,119,6,.4); }
+.ti-name { font-size:19px; font-weight:800; color:#fff; letter-spacing:-.3px; }
+.ti-name span { color:var(--gold-l); }
+.ti-sub { font-size:10px; color:rgba(255,255,255,.50); font-family:'Trebuchet MS',sans-serif; }
+.ti-head { font-size:26px; font-weight:800; color:#fff; line-height:1.2; position:relative; z-index:2; margin-bottom:4px; }
+.ti-head span { color:var(--gold-l); }
+.ti-desc { font-size:11px; color:rgba(255,255,255,.52); font-family:'Trebuchet MS',sans-serif; position:relative; z-index:2; margin-bottom:20px; }
+
+.tool-list { display:flex; flex-direction:column; gap:10px; position:relative; z-index:2; }
+.tool-btn {
+  display:flex; align-items:center; gap:14px;
+  background: rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.18);
+  border-radius:16px; padding:14px 16px; cursor:pointer;
+  transition:all .2s; text-decoration:none;
+}
+.tool-btn:hover { background:rgba(255,255,255,.16); transform:translateX(4px); }
+.tool-btn:active { transform:scale(.98); }
+.tb-icon { width:46px; height:46px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.tb-body { flex:1; }
+.tb-name { font-size:14px; font-weight:800; color:#fff; }
+.tb-desc { font-size:10px; color:rgba(255,255,255,.55); margin-top:2px; font-family:'Trebuchet MS',sans-serif; }
+.tb-arrow { font-size:20px; color:rgba(255,255,255,.35); }
+.tb-num { font-size:11px; font-weight:800; color:rgba(255,255,255,.40); }
+
+/* ═══ SHARED CALCULATOR STYLES ═══ */
+.calc-header {
+  padding: 50px 18px 22px;
+  position: relative; overflow: hidden;
+}
+.ch-back {
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.20);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; color:#fff; cursor:pointer; margin-bottom:16px;
+}
+.ch-tag  { font-size:9px; color:rgba(255,255,255,.45); text-transform:uppercase; letter-spacing:.8px; font-family:'Trebuchet MS',sans-serif; }
+.ch-title { font-size:22px; font-weight:800; color:#fff; line-height:1.2; margin:4px 0 6px; }
+.ch-title span { opacity:.75; }
+.ch-sub { font-size:10px; color:rgba(255,255,255,.50); font-family:'Trebuchet MS',sans-serif; }
+
+.content { padding:16px 15px 30px; }
+
+/* ═══ INPUT FIELDS ═══ */
+.input-group { margin-bottom:13px; }
+.input-label {
+  font-size:10px; font-weight:800; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px; display:block;
+  font-family:'Trebuchet MS',sans-serif;
+}
+.input-wrap { position:relative; }
+.input-prefix, .input-suffix {
+  position:absolute; top:50%; transform:translateY(-50%);
+  font-size:14px; font-weight:700; color:var(--muted);
+  font-family:'Trebuchet MS',sans-serif;
+}
+.input-prefix { left:14px; }
+.input-suffix { right:14px; }
+.calc-input {
+  width:100%; background:var(--inp); border:2px solid var(--border);
+  border-radius:12px; padding:13px 14px; font-size:16px; font-weight:700;
+  color:var(--navy); outline:none; font-family:'Palatino Linotype',Palatino,Georgia,serif;
+  transition:border-color .2s, box-shadow .2s;
+}
+.calc-input:focus { border-color:var(--sky); box-shadow:0 0 0 3px rgba(37,99,235,.12); background:#fff; }
+.has-prefix .calc-input { padding-left:30px; }
+.has-suffix .calc-input { padding-right:36px; }
+
+/* Slider */
+.slider-row { display:flex; align-items:center; gap:10px; margin-top:6px; }
+.range-slider {
+  flex:1; -webkit-appearance:none; height:5px; border-radius:3px;
+  background:linear-gradient(90deg, var(--sky) var(--pct,30%), #D1D9F0 var(--pct,30%));
+  outline:none; cursor:pointer;
+}
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
+  background:var(--sky); cursor:pointer;
+  box-shadow:0 2px 8px rgba(37,99,235,.40);
+  border:2px solid #fff;
+}
+.slider-val {
+  width:56px; text-align:center; font-size:13px; font-weight:800;
+  color:var(--navy); background:var(--inp); border-radius:8px;
+  padding:5px 6px; border:2px solid var(--border);
+  font-family:'Trebuchet MS',sans-serif;
+}
+
+/* Row of 2 inputs */
+.input-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* ═══ CALCULATE BUTTON ═══ */
+.calc-btn {
+  width:100%; border:none; border-radius:14px; padding:15px;
+  font-size:15px; font-weight:800; color:#fff; cursor:pointer;
+  font-family:'Palatino Linotype',Palatino,Georgia,serif;
+  letter-spacing:.3px; transition:transform .15s, box-shadow .2s;
+  margin-top:4px;
+}
+.calc-btn:active { transform:scale(.98); }
+
+/* ═══ RESULT PANEL ═══ */
+.result-panel {
+  background: var(--card); border-radius:20px; padding:20px;
+  box-shadow:var(--sh2); border:1px solid var(--border);
+  margin-top:16px; display:none;
+}
+.result-panel.show { display:block; animation:slideUp .4s cubic-bezier(.34,1.56,.64,1) both; }
+.rp-main {
+  text-align:center; padding:16px 0 18px;
+  border-bottom:1px solid var(--border); margin-bottom:16px;
+}
+.rp-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; font-family:'Trebuchet MS',sans-serif; }
+.rp-amount { font-size:40px; font-weight:800; color:var(--navy); line-height:1.1; margin:4px 0 2px; }
+.rp-note { font-size:10px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; }
+
+.rp-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.rp-item {
+  background:var(--bg); border-radius:12px; padding:11px 12px;
+  text-align:center;
+}
+.rp-item-label { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif; }
+.rp-item-val   { font-size:16px; font-weight:800; color:var(--navy); margin-top:3px; }
+
+.rp-grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px; }
+
+/* Donut chart */
+.donut-wrap { display:flex; align-items:center; gap:16px; margin-bottom:14px; }
+.donut-svg { flex-shrink:0; }
+.donut-legend { flex:1; display:flex; flex-direction:column; gap:7px; }
+.dl-item { display:flex; align-items:center; gap:8px; }
+.dl-dot { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+.dl-label { font-size:10px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; flex:1; }
+.dl-val   { font-size:11px; font-weight:800; color:var(--navy); }
+
+/* Amortization table */
+.amort-table { border-radius:12px; overflow:hidden; border:1px solid var(--border); }
+.amort-table table { width:100%; border-collapse:collapse; font-size:11px; }
+.amort-table th { background:var(--navy); color:#fff; padding:8px 10px; text-align:center; font-family:'Trebuchet MS',sans-serif; font-size:10px; letter-spacing:.3px; }
+.amort-table td { padding:8px 10px; text-align:center; border-bottom:1px solid var(--border); font-family:'Trebuchet MS',sans-serif; font-weight:600; color:var(--navy); }
+.amort-table tr:nth-child(even) td { background:var(--bg); }
+.amort-table tr:last-child td { border-bottom:none; }
+
+/* Progress bar */
+.progress-bar { background:#E2E8F0; border-radius:6px; height:8px; overflow:hidden; margin:6px 0; }
+.progress-fill { height:100%; border-radius:6px; transition:width .6s ease; }
+
+.save-btn {
+  width:100%; background:var(--bg); border:2px solid var(--border);
+  border-radius:12px; padding:12px; font-size:13px; font-weight:700;
+  color:var(--navy); cursor:pointer; margin-top:10px;
+  font-family:'Trebuchet MS',sans-serif;
+}
+
+/* ═══ SECTION DIVIDER ═══ */
+.form-section {
+  background:var(--card); border-radius:18px; padding:18px;
+  box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px;
+}
+.fs-title {
+  font-size:12px; font-weight:800; color:var(--navy); margin-bottom:14px;
+  display:flex; align-items:center; gap:8px;
+}
+.fs-title .fs-icon {
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes slideUp { from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);} }
+@keyframes fadeUp  { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
+.fu { animation:fadeUp .35s ease both; }
+.d1{animation-delay:.04s} .d2{animation-delay:.09s} .d3{animation-delay:.14s}
+.d4{animation-delay:.19s} .d5{animation-delay:.24s} .d6{animation-delay:.29s}
+
+/* ═══ SPECIFIC HEADER COLORS ═══ */
+.hdr-piti   { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 65%,#C0392B 100%); }
+.hdr-mort   { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 100%); }
+.hdr-dti    { background:linear-gradient(155deg,#0F766E 0%,#0D9488 70%,#0B1D3A 100%); }
+.hdr-amort  { background:linear-gradient(155deg,#6D28D9 0%,#4C1D95 70%,#0B1D3A 100%); }
+.hdr-afford { background:linear-gradient(155deg,#15803D 0%,#166534 70%,#0B1D3A 100%); }
+.hdr-auto   { background:linear-gradient(155deg,#D97706 0%,#B45309 70%,#0B1D3A 100%); }
+
+.btn-piti   { background:linear-gradient(135deg,#C0392B,#922B21); box-shadow:0 4px 16px rgba(192,57,43,.38); }
+.btn-mort   { background:linear-gradient(135deg,#1B3F72,#0B1D3A); box-shadow:0 4px 16px rgba(27,63,114,.38); }
+.btn-dti    { background:linear-gradient(135deg,#0D9488,#0F766E); box-shadow:0 4px 16px rgba(13,148,136,.38); }
+.btn-amort  { background:linear-gradient(135deg,#6D28D9,#4C1D95); box-shadow:0 4px 16px rgba(109,40,217,.38); }
+.btn-afford { background:linear-gradient(135deg,#15803D,#166534); box-shadow:0 4px 16px rgba(21,128,61,.38); }
+.btn-auto   { background:linear-gradient(135deg,#D97706,#B45309); box-shadow:0 4px 16px rgba(217,119,6,.38); }
+
+.accent-piti   { color:#C0392B; }
+.accent-mort   { color:var(--royal); }
+.accent-dti    { color:#0D9488; }
+.accent-amort  { color:#6D28D9; }
+.accent-afford { color:#15803D; }
+.accent-auto   { color:#D97706; }
+
+/* status pills */
+.pill {
+  display:inline-flex; padding:4px 10px; border-radius:20px;
+  font-size:10px; font-weight:800; font-family:'Trebuchet MS',sans-serif;
+  margin-top:4px;
+}
+.pill-good { background:#F0FDF4; color:#15803D; }
+.pill-warn { background:#FFF7ED; color:#C2410C; }
+.pill-bad  { background:#FEF2F2; color:#C0392B; }
+
+/* DTI bar segments */
+.dti-bar { height:14px; border-radius:7px; overflow:hidden; display:flex; margin:8px 0; }
+.dti-seg { height:100%; transition:width .6s ease; }
+
+/* Affordability gauge */
+.gauge-wrap { text-align:center; padding:10px 0; }
+.gauge-label-wrap { display:flex; justify-content:space-between; font-size:9px; font-family:'Trebuchet MS',sans-serif; color:var(--muted); margin-top:4px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+  PAGE 0 — TOOL INDEX
+══════════════════════════════════════════ -->
+<div class="page active" id="pg-index">
+  <div class="tool-index">
+    <div class="ti-brand">
+      <div class="ti-logo">🏠</div>
+      <div>
+        <div class="ti-name">Mortgage<span>Pro</span></div>
+        <div class="ti-sub">🇺🇸 USA Tool Suite</div>
+      </div>
+    </div>
+    <div class="ti-head">Top <span>Calculator</span><br>Tools</div>
+    <div class="ti-desc">Select a calculator to get started</div>
+    <div class="tool-list">
+      <div class="tool-btn fu d1" onclick="show('pg-piti')">
+        <div class="tb-icon" style="background:rgba(192,57,43,.25)">📊</div>
+        <div class="tb-body">
+          <div class="tb-name">PITI Calculator</div>
+          <div class="tb-desc">Principal · Interest · Tax · Insurance breakdown</div>
+        </div>
+        <div class="tb-num">01</div>
+        <div class="tb-arrow">›</div>
+      </div>
+      <div class="tool-btn fu d2" onclick="show('pg-mortgage')">
+        <div class="tb-icon" style="background:rgba(27,63,114,.30)">🧮</div>
+        <div class="tb-body">
+          <div class="tb-name">Mortgage Calculator</div>
+          <div class="tb-desc">Monthly payment with rate & amortization</div>
+        </div>
+        <div class="tb-num">02</div>
+        <div class="tb-arrow">›</div>
+      </div>
+      <div class="tool-btn fu d3" onclick="show('pg-dti')">
+        <div class="tb-icon" style="background:rgba(13,148,136,.28)">📈</div>
+        <div class="tb-body">
+          <div class="tb-name">DTI Calculator</div>
+          <div class="tb-desc">Debt-to-income · 28/36 qualifying rule</div>
+        </div>
+        <div class="tb-num">03</div>
+        <div class="tb-arrow">›</div>
+      </div>
+      <div class="tool-btn fu d4" onclick="show('pg-amort')">
+        <div class="tb-icon" style="background:rgba(109,40,217,.25)">📅</div>
+        <div class="tb-body">
+          <div class="tb-name">Amortization Schedule</div>
+          <div class="tb-desc">Full payment-by-payment breakdown</div>
+        </div>
+        <div class="tb-num">04</div>
+        <div class="tb-arrow">›</div>
+      </div>
+      <div class="tool-btn fu d5" onclick="show('pg-afford')">
+        <div class="tb-icon" style="background:rgba(21,128,61,.25)">💰</div>
+        <div class="tb-body">
+          <div class="tb-name">Affordability Calculator</div>
+          <div class="tb-desc">How much house can you afford?</div>
+        </div>
+        <div class="tb-num">05</div>
+        <div class="tb-arrow">›</div>
+      </div>
+      <div class="tool-btn fu d6" onclick="show('pg-auto')">
+        <div class="tb-icon" style="background:rgba(217,119,6,.25)">🏎️</div>
+        <div class="tb-body">
+          <div class="tb-name">Auto Loan Calculator</div>
+          <div class="tb-desc">Monthly car payment · total cost · payoff</div>
+        </div>
+        <div class="tb-num">06</div>
+        <div class="tb-arrow">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+  PAGE 1 — PITI CALCULATOR
+══════════════════════════════════════════ -->
+<div class="page" id="pg-piti">
+  <div class="calc-header hdr-piti">
+    <div class="ch-back" onclick="show('pg-index')">← Back</div>
+    <div class="ch-tag">Tool 01 of 06 · USA Mortgage Suite</div>
+    <div class="ch-title">PITI <span>Calculator</span></div>
+    <div class="ch-sub">Principal · Interest · Tax · Insurance · Full monthly breakdown</div>
+  </div>
+  <div class="content">
+
+    <div class="form-section fu d1">
+      <div class="fs-title"><div class="fs-icon" style="background:#EFF6FF">🏠</div>Property Details</div>
+      <div class="input-group">
+        <label class="input-label">Home Price</label>
+        <div class="input-wrap has-prefix">
+          <span class="input-prefix">$</span>
+          <input class="calc-input" id="piti-price" type="number" value="450000" oninput="calcPITI()">
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Down Payment</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="piti-down" type="number" value="20" min="3" max="50" oninput="calcPITI()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Loan Term</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="piti-term" type="number" value="30" oninput="calcPITI()">
+            <span class="input-suffix">yr</span>
+          </div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Interest Rate</label>
+        <div class="slider-row">
+          <input class="range-slider" id="piti-rate-s" type="range" min="3" max="12" step="0.05" value="6.82" oninput="document.getElementById('piti-rate-v').value=parseFloat(this.value).toFixed(2);updateSlider(this);calcPITI()">
+          <div class="input-wrap has-suffix" style="width:80px">
+            <input class="calc-input slider-val" id="piti-rate-v" type="number" value="6.82" step="0.05" style="padding-right:22px;font-size:12px" oninput="document.getElementById('piti-rate-s').value=this.value;updateSlider(document.getElementById('piti-rate-s'));calcPITI()">
+            <span class="input-suffix" style="font-size:11px">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section fu d2">
+      <div class="fs-title"><div class="fs-icon" style="background:#FFF3E0">🏛️</div>Tax & Insurance</div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Annual Tax</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="piti-tax" type="number" value="1.2" step="0.1" oninput="calcPITI()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Home Insurance</label>
+          <div class="input-wrap has-prefix">
+            <span class="input-prefix">$</span>
+            <input class="calc-input" id="piti-ins" type="number" value="1200" oninput="calcPITI()">
+          </div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">PMI Rate</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="piti-pmi" type="number" value="0.5" step="0.1" oninput="calcPITI()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">HOA / Month</label>
+          <div class="input-wrap has-prefix">
+            <span class="input-prefix">$</span>
+            <input class="calc-input" id="piti-hoa" type="number" value="0" oninput="calcPITI()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="calc-btn btn-piti fu d3" onclick="calcPITI(true)">⚡ Calculate Full PITI Payment</button>
+
+    <div class="result-panel" id="piti-result">
+      <div class="rp-main">
+        <div class="rp-label">Total Monthly PITI Payment</div>
+        <div class="rp-amount accent-piti" id="piti-total">$0</div>
+        <div class="rp-note" id="piti-loan-note">Loan amount: $0</div>
+      </div>
+
+      <!-- Donut -->
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#E2E8F0" stroke-width="14"/>
+          <circle id="piti-arc-pi"  cx="55" cy="55" r="40" fill="none" stroke="#1B3F72" stroke-width="14" stroke-dasharray="251.2" stroke-dashoffset="0"   stroke-linecap="round" transform="rotate(-90 55 55)" style="transition:.6s"/>
+          <circle id="piti-arc-tax" cx="55" cy="55" r="40" fill="none" stroke="#C0392B" stroke-width="14" stroke-dasharray="251.2" stroke-dashoffset="188" stroke-linecap="round" transform="rotate(-90 55 55)" style="transition:.6s"/>
+          <circle id="piti-arc-ins" cx="55" cy="55" r="40" fill="none" stroke="#D97706" stroke-width="14" stroke-dasharray="251.2" stroke-dashoffset="220" stroke-linecap="round" transform="rotate(-90 55 55)" style="transition:.6s"/>
+          <circle id="piti-arc-pmi" cx="55" cy="55" r="40" fill="none" stroke="#0D9488" stroke-width="14" stroke-dasharray="251.2" stroke-dashoffset="238" stroke-linecap="round" transform="rotate(-90 55 55)" style="transition:.6s"/>
+          <text x="55" y="49" text-anchor="middle" font-size="9" fill="#5B6E8F" font-family="Trebuchet MS">Monthly</text>
+          <text x="55" y="64" text-anchor="middle" font-size="12" font-weight="800" fill="#0B1D3A" id="piti-donut-center">$0</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="dl-item"><div class="dl-dot" style="background:#1B3F72"></div><div class="dl-label">Principal & Interest</div><div class="dl-val" id="piti-pi-val">$0</div></div>
+          <div class="dl-item"><div class="dl-dot" style="background:#C0392B"></div><div class="dl-label">Property Tax</div><div class="dl-val" id="piti-tax-val">$0</div></div>
+          <div class="dl-item"><div class="dl-dot" style="background:#D97706"></div><div class="dl-label">Home Insurance</div><div class="dl-val" id="piti-ins-val">$0</div></div>
+          <div class="dl-item"><div class="dl-dot" style="background:#0D9488"></div><div class="dl-label">PMI</div><div class="dl-val" id="piti-pmi-val">$0</div></div>
+          <div class="dl-item"><div class="dl-dot" style="background:#6D28D9"></div><div class="dl-label">HOA</div><div class="dl-val" id="piti-hoa-val">$0</div></div>
+        </div>
+      </div>
+
+      <div class="rp-grid">
+        <div class="rp-item"><div class="rp-item-label">Total Interest</div><div class="rp-item-val accent-piti" id="piti-total-int">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Total Cost</div><div class="rp-item-val" id="piti-total-cost">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Down Payment</div><div class="rp-item-val" id="piti-dp-val">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Loan Amount</div><div class="rp-item-val" id="piti-loan-val">$0</div></div>
+      </div>
+      <button class="save-btn">🔖 Save Calculation</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+  PAGE 2 — MORTGAGE CALCULATOR
+══════════════════════════════════════════ -->
+<div class="page" id="pg-mortgage">
+  <div class="calc-header hdr-mort">
+    <div class="ch-back" onclick="show('pg-index')">← Back</div>
+    <div class="ch-tag">Tool 02 of 06 · USA Mortgage Suite</div>
+    <div class="ch-title">Mortgage <span>Calculator</span></div>
+    <div class="ch-sub">Monthly payment · total interest · payoff timeline</div>
+  </div>
+  <div class="content">
+    <div class="form-section fu d1">
+      <div class="fs-title"><div class="fs-icon" style="background:#EFF6FF">🏠</div>Loan Details</div>
+      <div class="input-group">
+        <label class="input-label">Home Price</label>
+        <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+          <input class="calc-input" id="m-price" type="number" value="450000" oninput="calcMort()">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Down Payment ($)</label>
+        <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+          <input class="calc-input" id="m-down" type="number" value="90000" oninput="calcMort()">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Interest Rate</label>
+        <div class="slider-row">
+          <input class="range-slider" id="m-rate-s" type="range" min="2" max="12" step="0.05" value="6.82" oninput="document.getElementById('m-rate-v').value=parseFloat(this.value).toFixed(2);updateSlider(this);calcMort()">
+          <div class="input-wrap has-suffix" style="width:80px">
+            <input class="calc-input slider-val" id="m-rate-v" type="number" value="6.82" step="0.05" style="padding-right:22px;font-size:12px" oninput="document.getElementById('m-rate-s').value=this.value;updateSlider(document.getElementById('m-rate-s'));calcMort()">
+            <span class="input-suffix" style="font-size:11px">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Loan Term</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="m-term" type="number" value="30" oninput="calcMort()">
+            <span class="input-suffix">yr</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Start Year</label>
+          <input class="calc-input" id="m-year" type="number" value="2025" oninput="calcMort()">
+        </div>
+      </div>
+    </div>
+    <button class="calc-btn btn-mort fu d2" onclick="calcMort(true)">🧮 Calculate Mortgage Payment</button>
+    <div class="result-panel" id="mort-result">
+      <div class="rp-main">
+        <div class="rp-label">Monthly Payment</div>
+        <div class="rp-amount accent-mort" id="m-monthly">$0</div>
+        <div class="rp-note" id="m-payoff">Payoff: —</div>
+      </div>
+      <div class="rp-grid">
+        <div class="rp-item"><div class="rp-item-label">Loan Amount</div><div class="rp-item-val" id="m-loan">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Total Interest</div><div class="rp-item-val accent-mort" id="m-int">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Total Payment</div><div class="rp-item-val" id="m-total">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Int. Rate</div><div class="rp-item-val" id="m-rate-disp">0%</div></div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px">Principal vs Interest split</div>
+        <div class="dti-bar" id="m-split-bar">
+          <div class="dti-seg" id="m-principal-seg" style="background:#1B3F72;width:60%"></div>
+          <div class="dti-seg" id="m-interest-seg"  style="background:#C0392B;width:40%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;font-family:'Trebuchet MS',sans-serif">
+          <span style="color:#1B3F72;font-weight:700">■ Principal <span id="m-p-pct">0%</span></span>
+          <span style="color:#C0392B;font-weight:700">■ Interest <span id="m-i-pct">0%</span></span>
+        </div>
+      </div>
+      <button class="save-btn">🔖 Save Calculation</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+  PAGE 3 — DTI CALCULATOR
+══════════════════════════════════════════ -->
+<div class="page" id="pg-dti">
+  <div class="calc-header hdr-dti">
+    <div class="ch-back" onclick="show('pg-index')">← Back</div>
+    <div class="ch-tag">Tool 03 of 06 · USA Mortgage Suite</div>
+    <div class="ch-title">DTI <span>Calculator</span></div>
+    <div class="ch-sub">Debt-to-income ratio · 28/36 qualifying rule · lender limits</div>
+  </div>
+  <div class="content">
+    <div class="form-section fu d1">
+      <div class="fs-title"><div class="fs-icon" style="background:#F0FDFA">💵</div>Monthly Income</div>
+      <div class="input-group">
+        <label class="input-label">Gross Monthly Income</label>
+        <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+          <input class="calc-input" id="dti-income" type="number" value="8000" oninput="calcDTI()">
+        </div>
+      </div>
+    </div>
+    <div class="form-section fu d2">
+      <div class="fs-title"><div class="fs-icon" style="background:#FEF2F2">💳</div>Monthly Housing Costs</div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Proposed P&amp;I</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="dti-pi" type="number" value="2387" oninput="calcDTI()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Property Tax</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="dti-tax" type="number" value="450" oninput="calcDTI()">
+          </div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Insurance/PMI</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="dti-ins" type="number" value="100" oninput="calcDTI()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">HOA</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="dti-hoa" type="number" value="0" oninput="calcDTI()">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section fu d3">
+      <div class="fs-title"><div class="fs-icon" style="background:#FFF7ED">🏦</div>Monthly Debt Obligations</div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Car Payment</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="dti-car" type="number" value="400" oninput="calcDTI()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Student Loan</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="dti-student" type="number" value="250" oninput="calcDTI()">
+          </div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Credit Cards</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="dti-cc" type="number" value="100" oninput="calcDTI()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Other Debts</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="dti-other" type="number" value="0" oninput="calcDTI()">
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="calc-btn btn-dti fu d4" onclick="calcDTI(true)">📈 Calculate DTI Ratio</button>
+    <div class="result-panel" id="dti-result">
+      <div class="rp-grid" style="margin-bottom:0">
+        <div class="rp-item" style="text-align:center;padding:16px">
+          <div class="rp-item-label">Front-End DTI</div>
+          <div class="rp-item-val accent-dti" id="dti-front" style="font-size:28px">0%</div>
+          <div id="dti-front-pill"></div>
+          <div style="font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:4px">Limit: 28%</div>
+        </div>
+        <div class="rp-item" style="text-align:center;padding:16px">
+          <div class="rp-item-label">Back-End DTI</div>
+          <div class="rp-item-val accent-dti" id="dti-back" style="font-size:28px">0%</div>
+          <div id="dti-back-pill"></div>
+          <div style="font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:4px">Limit: 36–43%</div>
+        </div>
+      </div>
+      <div style="margin:14px 0 8px">
+        <div style="font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px">Debt Composition</div>
+        <div class="dti-bar" id="dti-comp-bar">
+          <div class="dti-seg" id="dti-housing-seg"  style="background:#0D9488"></div>
+          <div class="dti-seg" id="dti-car-seg"       style="background:#C0392B"></div>
+          <div class="dti-seg" id="dti-student-seg"   style="background:#D97706"></div>
+          <div class="dti-seg" id="dti-cc-seg"        style="background:#6D28D9"></div>
+          <div class="dti-seg" id="dti-other-seg"     style="background:#5B6E8F"></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:5px">
+          <span style="font-size:9px;font-weight:700;color:#0D9488;font-family:'Trebuchet MS',sans-serif">■ Housing</span>
+          <span style="font-size:9px;font-weight:700;color:#C0392B;font-family:'Trebuchet MS',sans-serif">■ Car</span>
+          <span style="font-size:9px;font-weight:700;color:#D97706;font-family:'Trebuchet MS',sans-serif">■ Student</span>
+          <span style="font-size:9px;font-weight:700;color:#6D28D9;font-family:'Trebuchet MS',sans-serif">■ Credit Card</span>
+        </div>
+      </div>
+      <div class="rp-grid">
+        <div class="rp-item"><div class="rp-item-label">Housing Cost</div><div class="rp-item-val" id="dti-housing-total">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">All Debts</div><div class="rp-item-val" id="dti-all-debts">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Gross Income</div><div class="rp-item-val" id="dti-income-disp">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Verdict</div><div class="rp-item-val" id="dti-verdict" style="font-size:12px">—</div></div>
+      </div>
+      <button class="save-btn">🔖 Save Calculation</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+  PAGE 4 — AMORTIZATION SCHEDULE
+══════════════════════════════════════════ -->
+<div class="page" id="pg-amort">
+  <div class="calc-header hdr-amort">
+    <div class="ch-back" onclick="show('pg-index')">← Back</div>
+    <div class="ch-tag">Tool 04 of 06 · USA Mortgage Suite</div>
+    <div class="ch-title">Amortization <span>Schedule</span></div>
+    <div class="ch-sub">Year-by-year payment breakdown · principal vs interest</div>
+  </div>
+  <div class="content">
+    <div class="form-section fu d1">
+      <div class="fs-title"><div class="fs-icon" style="background:#F5F3FF">📅</div>Loan Details</div>
+      <div class="input-group">
+        <label class="input-label">Loan Amount</label>
+        <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+          <input class="calc-input" id="am-loan" type="number" value="360000" oninput="calcAmort()">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Interest Rate</label>
+        <div class="slider-row">
+          <input class="range-slider" id="am-rate-s" type="range" min="2" max="12" step="0.05" value="6.82" oninput="document.getElementById('am-rate-v').value=parseFloat(this.value).toFixed(2);updateSlider(this);calcAmort()">
+          <div class="input-wrap has-suffix" style="width:80px">
+            <input class="calc-input slider-val" id="am-rate-v" type="number" value="6.82" step="0.05" style="padding-right:22px;font-size:12px" oninput="document.getElementById('am-rate-s').value=this.value;updateSlider(document.getElementById('am-rate-s'));calcAmort()">
+            <span class="input-suffix" style="font-size:11px">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Term (years)</label>
+          <input class="calc-input" id="am-term" type="number" value="30" oninput="calcAmort()">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Extra Payment/mo</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="am-extra" type="number" value="0" oninput="calcAmort()">
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="calc-btn btn-amort fu d2" onclick="calcAmort(true)">📅 Generate Amortization Schedule</button>
+    <div class="result-panel" id="amort-result">
+      <div class="rp-main">
+        <div class="rp-label">Monthly Payment</div>
+        <div class="rp-amount accent-amort" id="am-monthly">$0</div>
+        <div class="rp-note" id="am-payoff-note">Payoff: —</div>
+      </div>
+      <div class="rp-grid">
+        <div class="rp-item"><div class="rp-item-label">Total Principal</div><div class="rp-item-val" id="am-principal">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Total Interest</div><div class="rp-item-val accent-amort" id="am-interest">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Total Paid</div><div class="rp-item-val" id="am-total">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Int. Saved</div><div class="rp-item-val accent-afford" id="am-saved" style="color:#15803D">$0</div></div>
+      </div>
+      <div style="font-size:11px;font-weight:800;color:var(--navy);margin-bottom:8px">Year-by-Year Schedule</div>
+      <div class="amort-table" id="am-table-wrap">
+        <table>
+          <thead><tr><th>Year</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead>
+          <tbody id="am-tbody"></tbody>
+        </table>
+      </div>
+      <button class="save-btn" style="margin-top:12px">🔖 Save Schedule</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+  PAGE 5 — AFFORDABILITY CALCULATOR
+══════════════════════════════════════════ -->
+<div class="page" id="pg-afford">
+  <div class="calc-header hdr-afford">
+    <div class="ch-back" onclick="show('pg-index')">← Back</div>
+    <div class="ch-tag">Tool 05 of 06 · USA Mortgage Suite</div>
+    <div class="ch-title">Affordability <span>Calculator</span></div>
+    <div class="ch-sub">Maximum home price based on income, debts & down payment</div>
+  </div>
+  <div class="content">
+    <div class="form-section fu d1">
+      <div class="fs-title"><div class="fs-icon" style="background:#F0FDF4">💵</div>Income & Savings</div>
+      <div class="input-group">
+        <label class="input-label">Annual Gross Income</label>
+        <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+          <input class="calc-input" id="af-income" type="number" value="120000" oninput="calcAfford()">
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Down Payment</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="af-down" type="number" value="60000" oninput="calcAfford()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Down Payment %</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="af-down-pct" type="number" value="20" oninput="calcAfford()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section fu d2">
+      <div class="fs-title"><div class="fs-icon" style="background:#FEF2F2">💳</div>Monthly Debts & Costs</div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Monthly Debts</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="af-debts" type="number" value="500" oninput="calcAfford()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Interest Rate</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="af-rate" type="number" value="6.82" step="0.05" oninput="calcAfford()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Loan Term</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="af-term" type="number" value="30" oninput="calcAfford()">
+            <span class="input-suffix">yr</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">DTI Limit</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="af-dti" type="number" value="36" oninput="calcAfford()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Tax Rate</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="af-tax" type="number" value="1.2" step="0.1" oninput="calcAfford()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Annual Insurance</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="af-ins" type="number" value="1200" oninput="calcAfford()">
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="calc-btn btn-afford fu d3" onclick="calcAfford(true)">💰 Calculate Affordability</button>
+    <div class="result-panel" id="afford-result">
+      <div class="rp-main">
+        <div class="rp-label">Maximum Home Price</div>
+        <div class="rp-amount accent-afford" id="af-max-price" style="color:#15803D">$0</div>
+        <div class="rp-note" id="af-max-note">Monthly payment: $0</div>
+      </div>
+      <div class="rp-grid3">
+        <div class="rp-item"><div class="rp-item-label">Max Loan</div><div class="rp-item-val" id="af-max-loan" style="font-size:13px">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Monthly Pmt</div><div class="rp-item-val" id="af-monthly" style="font-size:13px">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">DTI Used</div><div class="rp-item-val" id="af-dti-used" style="font-size:13px">0%</div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Price Range Scenarios</div>
+        <div id="af-scenarios"></div>
+      </div>
+      <button class="save-btn">🔖 Save Calculation</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+  PAGE 6 — AUTO LOAN CALCULATOR
+══════════════════════════════════════════ -->
+<div class="page" id="pg-auto">
+  <div class="calc-header hdr-auto">
+    <div class="ch-back" onclick="show('pg-index')">← Back</div>
+    <div class="ch-tag">Tool 06 of 06 · USA Mortgage Suite</div>
+    <div class="ch-title">Auto Loan <span>Calculator</span></div>
+    <div class="ch-sub">Monthly car payment · total cost · loan payoff · trade-in</div>
+  </div>
+  <div class="content">
+    <div class="form-section fu d1">
+      <div class="fs-title"><div class="fs-icon" style="background:#FFF7ED">🏎️</div>Vehicle Details</div>
+      <div class="input-group">
+        <label class="input-label">Vehicle Price</label>
+        <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+          <input class="calc-input" id="au-price" type="number" value="35000" oninput="calcAuto()">
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Down Payment</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="au-down" type="number" value="5000" oninput="calcAuto()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Trade-In Value</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="au-trade" type="number" value="0" oninput="calcAuto()">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section fu d2">
+      <div class="fs-title"><div class="fs-icon" style="background:#FEF2F2">💳</div>Loan Terms</div>
+      <div class="input-group">
+        <label class="input-label">Interest Rate (APR)</label>
+        <div class="slider-row">
+          <input class="range-slider" id="au-rate-s" type="range" min="1" max="20" step="0.1" value="6.5" oninput="document.getElementById('au-rate-v').value=parseFloat(this.value).toFixed(1);updateSlider(this);calcAuto()">
+          <div class="input-wrap has-suffix" style="width:80px">
+            <input class="calc-input slider-val" id="au-rate-v" type="number" value="6.5" step="0.1" style="padding-right:22px;font-size:12px" oninput="document.getElementById('au-rate-s').value=this.value;updateSlider(document.getElementById('au-rate-s'));calcAuto()">
+            <span class="input-suffix" style="font-size:11px">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Loan Term</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="au-term" type="number" value="60" oninput="calcAuto()">
+            <span class="input-suffix">mo</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Sales Tax</label>
+          <div class="input-wrap has-suffix">
+            <input class="calc-input" id="au-tax" type="number" value="8.5" step="0.1" oninput="calcAuto()">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Fees & Title</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="au-fees" type="number" value="500" oninput="calcAuto()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Rebate</label>
+          <div class="input-wrap has-prefix"><span class="input-prefix">$</span>
+            <input class="calc-input" id="au-rebate" type="number" value="0" oninput="calcAuto()">
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="calc-btn btn-auto fu d3" onclick="calcAuto(true)">🏎️ Calculate Auto Loan</button>
+    <div class="result-panel" id="auto-result">
+      <div class="rp-main">
+        <div class="rp-label">Monthly Car Payment</div>
+        <div class="rp-amount accent-auto" id="au-monthly" style="color:#D97706">$0</div>
+        <div class="rp-note" id="au-note">Total loan: $0</div>
+      </div>
+      <div class="rp-grid">
+        <div class="rp-item"><div class="rp-item-label">Loan Amount</div><div class="rp-item-val" id="au-loan">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Total Interest</div><div class="rp-item-val accent-auto" id="au-interest" style="color:#D97706">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">Total Cost</div><div class="rp-item-val" id="au-total">$0</div></div>
+        <div class="rp-item"><div class="rp-item-label">True Price</div><div class="rp-item-val" id="au-true">$0</div></div>
+      </div>
+      <!-- Term comparison -->
+      <div style="font-size:11px;font-weight:800;color:var(--navy);margin-bottom:8px">Term Comparison</div>
+      <div id="au-compare"></div>
+      <button class="save-btn" style="margin-top:10px">🔖 Save Calculation</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ══════════════════════════════════
+   UTILITIES
+══════════════════════════════════ */
+const fmt = n => '$' + Math.round(n).toLocaleString();
+const fmtD = n => '$' + n.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+const pct  = n => n.toFixed(1) + '%';
+const v    = id => parseFloat(document.getElementById(id).value) || 0;
+
+function show(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function updateSlider(el) {
+  const min=parseFloat(el.min), max=parseFloat(el.max), val=parseFloat(el.value);
+  el.style.setProperty('--pct', ((val-min)/(max-min)*100)+'%');
+}
+// Init sliders
+document.querySelectorAll('.range-slider').forEach(s => updateSlider(s));
+
+function showResult(id) {
+  const el = document.getElementById(id);
+  el.classList.add('show');
+}
+
+// Monthly PMT formula
+function pmt(rate, nper, pv) {
+  if(rate===0) return pv/nper;
+  const r=rate/12;
+  return pv * r * Math.pow(1+r,nper) / (Math.pow(1+r,nper)-1);
+}
+
+/* ══════════════════════════════════
+   1. PITI CALCULATOR
+══════════════════════════════════ */
+function calcPITI(show) {
+  const price   = v('piti-price');
+  const downPct = v('piti-down')/100;
+  const term    = v('piti-term');
+  const rate    = v('piti-rate-v')/100;
+  const taxPct  = v('piti-tax')/100;
+  const insAnn  = v('piti-ins');
+  const pmiRate = v('piti-pmi')/100;
+  const hoa     = v('piti-hoa');
+
+  const dp     = price * downPct;
+  const loan   = price - dp;
+  const pi     = pmt(rate, term*12, loan);
+  const taxMo  = (price * taxPct)/12;
+  const insMo  = insAnn/12;
+  const pmiMo  = downPct < 0.20 ? (loan * pmiRate)/12 : 0;
+  const total  = pi + taxMo + insMo + pmiMo + hoa;
+  const totalInt = (pi * term * 12) - loan;
+  const totalCost = (total * term * 12);
+
+  set('piti-total',    fmt(total));
+  set('piti-loan-note','Loan amount: '+fmt(loan));
+  set('piti-pi-val',   fmt(pi));
+  set('piti-tax-val',  fmt(taxMo));
+  set('piti-ins-val',  fmt(insMo));
+  set('piti-pmi-val',  fmt(pmiMo));
+  set('piti-hoa-val',  fmt(hoa));
+  set('piti-total-int',fmt(totalInt));
+  set('piti-total-cost',fmt(totalCost));
+  set('piti-dp-val',   fmt(dp));
+  set('piti-loan-val', fmt(loan));
+  set('piti-donut-center', fmt(total));
+
+  // Donut arcs
+  const circ = 251.2;
+  const piPct  = pi/total;
+  const taxPctV = taxMo/total;
+  const insPctV = insMo/total;
+  const pmiPctV = pmiMo/total;
+  const hoaPctV = hoa/total;
+
+  animateArc('piti-arc-pi',  0,              circ*(1-piPct));
+  animateArc('piti-arc-tax', circ*(piPct),   circ*(1-taxPctV));
+  animateArc('piti-arc-ins', circ*(piPct+taxPctV), circ*(1-insPctV));
+  animateArc('piti-arc-pmi', circ*(piPct+taxPctV+insPctV), circ*(1-pmiPctV));
+
+  if(show) showResult('piti-result');
+}
+
+function animateArc(id, offset, dashoff) {
+  const el = document.getElementById(id);
+  if(el) {
+    el.style.strokeDashoffset = dashoff;
+    el.style.strokeDasharray  = 251.2;
+  }
+}
+
+/* ══════════════════════════════════
+   2. MORTGAGE CALCULATOR
+══════════════════════════════════ */
+function calcMort(sh) {
+  const price = v('m-price');
+  const down  = v('m-down');
+  const rate  = v('m-rate-v')/100;
+  const term  = v('m-term');
+  const year  = v('m-year');
+
+  const loan    = price - down;
+  const monthly = pmt(rate, term*12, loan);
+  const totalPaid = monthly * term * 12;
+  const totalInt  = totalPaid - loan;
+  const pPct = (loan/totalPaid*100).toFixed(1);
+  const iPct = (totalInt/totalPaid*100).toFixed(1);
+
+  set('m-monthly',   fmt(monthly));
+  set('m-payoff',    'Payoff: ' + (year + term));
+  set('m-loan',      fmt(loan));
+  set('m-int',       fmt(totalInt));
+  set('m-total',     fmt(totalPaid));
+  set('m-rate-disp', v('m-rate-v')+'%');
+  set('m-p-pct',     pPct+'%');
+  set('m-i-pct',     iPct+'%');
+
+  document.getElementById('m-principal-seg').style.width = pPct+'%';
+  document.getElementById('m-interest-seg').style.width  = iPct+'%';
+
+  if(sh) showResult('mort-result');
+}
+
+/* ══════════════════════════════════
+   3. DTI CALCULATOR
+══════════════════════════════════ */
+function calcDTI(sh) {
+  const income  = v('dti-income');
+  const pi      = v('dti-pi');
+  const tax     = v('dti-tax');
+  const ins     = v('dti-ins');
+  const hoa     = v('dti-hoa');
+  const car     = v('dti-car');
+  const student = v('dti-student');
+  const cc      = v('dti-cc');
+  const other   = v('dti-other');
+
+  const housing = pi + tax + ins + hoa;
+  const allDebts = housing + car + student + cc + other;
+  const frontDTI = (housing/income*100);
+  const backDTI  = (allDebts/income*100);
+
+  set('dti-front', frontDTI.toFixed(1)+'%');
+  set('dti-back',  backDTI.toFixed(1)+'%');
+  set('dti-housing-total', fmt(housing));
+  set('dti-all-debts',     fmt(allDebts));
+  set('dti-income-disp',   fmt(income));
+
+  // Front DTI pill
+  const fEl = document.getElementById('dti-front-pill');
+  if(frontDTI<=28)      fEl.innerHTML='<span class="pill pill-good">✓ Within 28%</span>';
+  else if(frontDTI<=36) fEl.innerHTML='<span class="pill pill-warn">⚠ Borderline</span>';
+  else                  fEl.innerHTML='<span class="pill pill-bad">✗ Over Limit</span>';
+
+  const bEl = document.getElementById('dti-back-pill');
+  if(backDTI<=36)       bEl.innerHTML='<span class="pill pill-good">✓ Excellent</span>';
+  else if(backDTI<=43)  bEl.innerHTML='<span class="pill pill-warn">⚠ Acceptable</span>';
+  else                  bEl.innerHTML='<span class="pill pill-bad">✗ Too High</span>';
+
+  let verdict = backDTI<=36 ? '✓ Qualified' : backDTI<=43 ? '⚠ Borderline' : '✗ Not Qualified';
+  set('dti-verdict', verdict);
+
+  // Bar segments
+  const total = allDebts||1;
+  setSeg('dti-housing-seg',  housing/total*100);
+  setSeg('dti-car-seg',      car/total*100);
+  setSeg('dti-student-seg',  student/total*100);
+  setSeg('dti-cc-seg',       cc/total*100);
+  setSeg('dti-other-seg',    other/total*100);
+
+  if(sh) showResult('dti-result');
+}
+
+/* ══════════════════════════════════
+   4. AMORTIZATION SCHEDULE
+══════════════════════════════════ */
+function calcAmort(sh) {
+  const loan    = v('am-loan');
+  const rate    = v('am-rate-v')/100;
+  const term    = v('am-term');
+  const extra   = v('am-extra');
+
+  const monthly = pmt(rate, term*12, loan);
+  const monthlyTotal = monthly + extra;
+  let balance   = loan;
+  let totalInt  = 0;
+  let month     = 0;
+  const yearData = [];
+
+  while(balance > 0.01 && month < term*12) {
+    const intPmt  = balance * (rate/12);
+    let   prinPmt = monthlyTotal - intPmt;
+    if(prinPmt > balance) prinPmt = balance;
+    balance  -= prinPmt;
+    totalInt += intPmt;
+    month++;
+
+    if(month%12===0 || balance<=0.01) {
+      yearData.push({ year: Math.ceil(month/12), balance: Math.max(0,balance), cumInt: totalInt });
+    }
+  }
+
+  const actualPayoff = month;
+  const stdPayoff    = term * 12;
+  const stdInt       = (pmt(rate, stdPayoff, loan) * stdPayoff) - loan;
+  const saved        = stdInt - totalInt;
+
+  set('am-monthly',    fmt(monthly) + (extra>0?' + '+fmt(extra):''));
+  set('am-payoff-note','Payoff: '+(actualPayoff<stdPayoff ? actualPayoff+' months ('+Math.floor(actualPayoff/12)+'y '+actualPayoff%12+'m)' : term+' years'));
+  set('am-principal',  fmt(loan));
+  set('am-interest',   fmt(totalInt));
+  set('am-total',      fmt(loan + totalInt));
+  set('am-saved',      saved > 0 ? fmt(saved) : '$0');
+
+  // Build table (show every year, max 15 rows for readability)
+  const tbody = document.getElementById('am-tbody');
+  tbody.innerHTML = '';
+  const step = yearData.length > 15 ? Math.ceil(yearData.length/15) : 1;
+  yearData.forEach((row, i) => {
+    if(i%step===0 || i===yearData.length-1) {
+      const tr = document.createElement('tr');
+      const cumPrincipal = loan - row.balance;
+      tr.innerHTML = `<td>${row.year}</td><td>${fmt(cumPrincipal)}</td><td>${fmt(row.cumInt)}</td><td>${fmt(row.balance)}</td>`;
+      tbody.appendChild(tr);
+    }
+  });
+
+  if(sh) showResult('amort-result');
+}
+
+/* ══════════════════════════════════
+   5. AFFORDABILITY CALCULATOR
+══════════════════════════════════ */
+function calcAfford(sh) {
+  const annIncome = v('af-income');
+  const down      = v('af-down');
+  const rate      = v('af-rate')/100;
+  const term      = v('af-term');
+  const dtiLimit  = v('af-dti')/100;
+  const debts     = v('af-debts');
+  const taxPct    = v('af-tax')/100;
+  const insAnn    = v('af-ins');
+
+  const monthlyIncome = annIncome/12;
+  const maxHousing    = monthlyIncome * dtiLimit - debts;
+  const insMo         = insAnn/12;
+
+  // Solve: maxHousing = PI + tax*price/12 + ins/12
+  // PI = pmt(r,n,loan); loan = price - down
+  // Iterate
+  let price = 300000;
+  for(let i=0;i<50;i++){
+    const loan   = Math.max(0, price - down);
+    const taxMo  = price * taxPct / 12;
+    const piMo   = pmt(rate, term*12, loan);
+    const total  = piMo + taxMo + insMo;
+    const diff   = total - maxHousing;
+    price -= diff * 1000;
+    if(Math.abs(diff)<0.5) break;
+  }
+  price = Math.max(0, price);
+  const loan    = Math.max(0, price - down);
+  const monthly = pmt(rate, term*12, loan) + (price*taxPct/12) + insMo;
+  const dtiUsed = (monthly+debts)/monthlyIncome*100;
+
+  set('af-max-price', fmt(price));
+  set('af-max-note',  'Monthly payment: '+fmt(monthly));
+  set('af-max-loan',  fmt(loan));
+  set('af-monthly',   fmt(monthly));
+  set('af-dti-used',  dtiUsed.toFixed(1)+'%');
+
+  // Scenarios
+  const scEl = document.getElementById('af-scenarios');
+  const dtiOptions = [28,36,43];
+  scEl.innerHTML = dtiOptions.map(d => {
+    let p2=300000;
+    for(let i=0;i<50;i++){
+      const l2=Math.max(0,p2-down);
+      const t2=p2*taxPct/12;
+      const pi2=pmt(rate,term*12,l2);
+      const tot=(pi2+t2+insMo+debts)/(monthlyIncome);
+      p2 -= (tot-(d/100))*5000;
+      if(Math.abs(tot-(d/100))<0.001) break;
+    }
+    p2=Math.max(0,p2);
+    const color = d===28?'#15803D':d===36?'#D97706':'#C0392B';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:800;color:${color};font-family:'Trebuchet MS',sans-serif;width:40px">${d}% DTI</div>
+      <div style="flex:1">
+        <div class="progress-bar"><div class="progress-fill" style="background:${color};width:${(p2/price*100).toFixed(0)}%"></div></div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:var(--navy)">${fmt(p2)}</div>
+    </div>`;
+  }).join('');
+
+  if(sh) showResult('afford-result');
+}
+
+/* ══════════════════════════════════
+   6. AUTO LOAN CALCULATOR
+══════════════════════════════════ */
+function calcAuto(sh) {
+  const price   = v('au-price');
+  const down    = v('au-down');
+  const trade   = v('au-trade');
+  const rate    = v('au-rate-v')/100;
+  const termMo  = v('au-term');
+  const taxPct  = v('au-tax')/100;
+  const fees    = v('au-fees');
+  const rebate  = v('au-rebate');
+
+  const taxAmt   = price * taxPct;
+  const loanAmt  = price + taxAmt + fees - down - trade - rebate;
+  const monthly  = pmt(rate, termMo, loanAmt);
+  const totalPaid= monthly * termMo;
+  const totalInt = totalPaid - loanAmt;
+  const truePrice= price + taxAmt + fees;
+
+  set('au-monthly',  fmt(monthly));
+  set('au-note',     'Total loan: '+fmt(loanAmt));
+  set('au-loan',     fmt(loanAmt));
+  set('au-interest', fmt(totalInt));
+  set('au-total',    fmt(totalPaid + down + trade + rebate));
+  set('au-true',     fmt(truePrice));
+
+  // Term comparison table
+  const terms = [24, 36, 48, 60, 72, 84];
+  const cmpEl = document.getElementById('au-compare');
+  cmpEl.innerHTML = `<div style="background:var(--bg);border-radius:12px;overflow:hidden;border:1px solid var(--border)">
+    ${terms.map(t => {
+      const mo = pmt(rate, t, loanAmt);
+      const int = mo*t - loanAmt;
+      const isActive = t === termMo;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);${isActive?'background:#EFF6FF;':''}">
+        <div style="font-size:11px;font-weight:800;color:${isActive?'#1B3F72':'var(--muted)'};font-family:'Trebuchet MS',sans-serif;width:36px">${t}mo</div>
+        <div style="flex:1;font-size:13px;font-weight:800;color:${isActive?'var(--navy)':'var(--muted)'}">${fmt(mo)}/mo</div>
+        <div style="font-size:10px;color:${isActive?'#C0392B':'var(--muted)'};font-family:'Trebuchet MS',sans-serif">+${fmt(int)} int</div>
+        ${isActive?'<div style="font-size:9px;background:#1B3F72;color:#fff;border-radius:6px;padding:2px 6px;font-family:\'Trebuchet MS\',sans-serif">Selected</div>':''}
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  if(sh) showResult('auto-result');
+}
+
+/* helpers */
+function set(id, val) { const el=document.getElementById(id); if(el) el.textContent=val; }
+function setSeg(id, pct) { const el=document.getElementById(id); if(el) el.style.width=Math.max(0,pct).toFixed(1)+'%'; }
+
+// Auto-calculate on load
+calcPITI(); calcMort(); calcDTI(); calcAmort(); calcAfford(); calcAuto();
+</script>
+
+</body>
+</html>

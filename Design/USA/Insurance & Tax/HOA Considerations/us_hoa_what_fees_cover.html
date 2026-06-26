@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What HOA Fees Cover</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --gold:#D97706; --gold-lt:#FCD34D;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A; --border:rgba(27,63,114,0.09);
+    --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --vt:#6D28D9; --vt2:#4C1D95;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#4C1D95 55%,#6D28D9 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'📋';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+
+  /* Coverage Categories */
+  .cat-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .cat-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .cat-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+  .cat-title{font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .cat-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+  .item-list{display:flex;flex-direction:column;gap:8px;}
+  .item-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg);border-radius:11px;}
+  .item-left{display:flex;align-items:center;gap:9px;}
+  .item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .item-name{font-size:12px;font-weight:700;color:var(--navy);}
+  .item-badge{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;}
+  .badge-green{background:#DCFCE7;color:#15803D;}
+  .badge-yellow{background:#FEF9C3;color:#92400E;}
+  .badge-blue{background:#DBEAFE;color:#1D4ED8;}
+  .badge-purple{background:#F3E8FF;color:#6D28D9;}
+  .badge-red{background:#FEE2E2;color:#B91C1C;}
+
+  /* Donut Allocation Chart */
+  .alloc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .alloc-title{font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .alloc-wrap{display:flex;align-items:center;gap:16px;}
+  .alloc-chart-wrap{position:relative;width:130px;height:130px;flex-shrink:0;}
+  .alloc-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+  .alloc-center-label{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;}
+  .alloc-center-val{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;line-height:1.2;}
+  .legend{flex:1;display:flex;flex-direction:column;gap:7px;}
+  .leg-row{display:flex;align-items:center;justify-content:space-between;}
+  .leg-left{display:flex;align-items:center;gap:7px;}
+  .leg-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;}
+  .leg-name{font-size:10.5px;font-weight:700;color:var(--navy);}
+  .leg-pct{font-size:11px;font-weight:800;color:var(--muted);font-family:Georgia,serif;}
+
+  /* Condo vs SFR Comparison */
+  .compare-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .compare-title{font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .compare-col{border-radius:13px;padding:13px 11px;}
+  .compare-col.left{background:linear-gradient(140deg,#EFF6FF,#DBEAFE);border:1px solid rgba(59,130,246,0.20);}
+  .compare-col.right{background:linear-gradient(140deg,#F5F3FF,#EDE9FE);border:1px solid rgba(109,40,217,0.18);}
+  .cc-head{font-size:11px;font-weight:800;margin-bottom:10px;text-align:center;}
+  .cc-head.blue{color:#1D4ED8;} .cc-head.purple{color:#6D28D9;}
+  .cc-item{font-size:10px;font-weight:600;color:var(--navy);padding:5px 0;border-bottom:1px solid rgba(11,29,58,0.07);display:flex;align-items:center;gap:5px;}
+  .cc-item:last-child{border-bottom:none;}
+
+  /* What's NOT covered banner */
+  .not-covered{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border:1px solid rgba(185,28,28,0.22);border-radius:16px;padding:14px;margin-bottom:12px;}
+  .nc-title{font-size:12px;font-weight:800;color:#B91C1C;font-family:Georgia,serif;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+  .nc-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+  .nc-item{background:rgba(255,255,255,0.60);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:#7F1D1D;}
+
+  /* Tip box */
+  .tip-box{background:linear-gradient(135deg,#F3E8FF,#EDE9FE);border:1px solid rgba(109,40,217,0.18);border-radius:14px;padding:13px 14px;margin-bottom:12px;}
+  .tip-title{font-size:11px;font-weight:800;color:#4C1D95;font-family:Georgia,serif;margin-bottom:5px;}
+  .tip-text{font-size:10px;color:#6D28D9;line-height:1.55;}
+
+  /* Stat cards */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stat-card{background:var(--card);border-radius:16px;padding:15px 13px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .sc-icon{font-size:22px;margin-bottom:6px;}
+  .sc-label{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .sc-val{font-size:20px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .sc-sub{font-size:9px;color:var(--muted);}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--vt);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .fade-in{animation:fadeUp .4s ease both;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_hoa_fee_impact.html" class="icon-btn">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">📋</div>
+      <div class="hdr-title">What HOA Fees Cover</div>
+      <div class="hdr-sub">Services · Amenities · Maintenance</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Nat'l Avg</div><div class="rs-v gold">$291</div><div class="rs-n">Per Month</div></div>
+    <div class="rs"><div class="rs-l">Condo Avg</div><div class="rs-v">$415</div><div class="rs-n">Per Month</div></div>
+    <div class="rs"><div class="rs-l">SFR Avg</div><div class="rs-v">$188</div><div class="rs-n">Per Month</div></div>
+    <div class="rs"><div class="rs-l">HOA States</div><div class="rs-v gold">73%</div><div class="rs-n">New Homes</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Allocation Donut -->
+  <div class="sec" style="margin-top:0">Typical Fee Allocation</div>
+  <div class="alloc-card fade-in">
+    <div class="alloc-title">Where Your HOA Dollars Go</div>
+    <div class="alloc-wrap">
+      <div class="alloc-chart-wrap">
+        <canvas id="allocChart" width="130" height="130"></canvas>
+        <div class="alloc-center">
+          <div class="alloc-center-label">Avg/Mo</div>
+          <div class="alloc-center-val">$291</div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="leg-row"><div class="leg-left"><div class="leg-dot" style="background:#1B3F72"></div><div class="leg-name">Maintenance</div></div><div class="leg-pct">32%</div></div>
+        <div class="leg-row"><div class="leg-left"><div class="leg-dot" style="background:#6D28D9"></div><div class="leg-name">Reserves</div></div><div class="leg-pct">25%</div></div>
+        <div class="leg-row"><div class="leg-left"><div class="leg-dot" style="background:#D97706"></div><div class="leg-name">Insurance</div></div><div class="leg-pct">18%</div></div>
+        <div class="leg-row"><div class="leg-left"><div class="leg-dot" style="background:#15803D"></div><div class="leg-name">Amenities</div></div><div class="leg-pct">15%</div></div>
+        <div class="leg-row"><div class="leg-left"><div class="leg-dot" style="background:#B91C1C"></div><div class="leg-name">Admin/Mgmt</div></div><div class="leg-pct">10%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Stats -->
+  <div class="g2 fade-in" style="margin-bottom:12px;">
+    <div class="stat-card"><div class="sc-icon">🏘️</div><div class="sc-label">HOA Communities</div><div class="sc-val">358K</div><div class="sc-sub">In the U.S. (2024)</div></div>
+    <div class="stat-card"><div class="sc-icon">👨‍👩‍👧</div><div class="sc-label">People in HOAs</div><div class="sc-val">74.2M</div><div class="sc-sub">~22% of U.S. pop.</div></div>
+  </div>
+
+  <!-- Exterior & Structure -->
+  <div class="sec">Exterior & Structure</div>
+  <div class="cat-card fade-in">
+    <div class="cat-header">
+      <div class="cat-icon" style="background:linear-gradient(140deg,#1B3F72,#0B1D3A);">🏗️</div>
+      <div>
+        <div class="cat-title">Building & Structural</div>
+        <div class="cat-sub">Roofs, siding, foundations — typically condo/townhouse</div>
+      </div>
+    </div>
+    <div class="item-list">
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#1B3F72"></div><div class="item-name">Roof Repair & Replacement</div></div><span class="item-badge badge-blue">Condo</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#1B3F72"></div><div class="item-name">Exterior Siding & Paint</div></div><span class="item-badge badge-blue">Condo/TH</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#1B3F72"></div><div class="item-name">Foundation & Structural</div></div><span class="item-badge badge-blue">Condo</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#1B3F72"></div><div class="item-name">Windows & Doors (exterior)</div></div><span class="item-badge badge-blue">Varies</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#1B3F72"></div><div class="item-name">Parking Lots & Driveways</div></div><span class="item-badge badge-green">Most HOAs</span></div>
+    </div>
+  </div>
+
+  <!-- Landscaping & Grounds -->
+  <div class="sec">Landscaping & Grounds</div>
+  <div class="cat-card fade-in">
+    <div class="cat-header">
+      <div class="cat-icon" style="background:linear-gradient(140deg,#15803D,#166534);">🌳</div>
+      <div>
+        <div class="cat-title">Grounds Maintenance</div>
+        <div class="cat-sub">Lawns, trees, seasonal care — most HOA communities</div>
+      </div>
+    </div>
+    <div class="item-list">
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#15803D"></div><div class="item-name">Lawn Mowing & Edging</div></div><span class="item-badge badge-green">Common Areas</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#15803D"></div><div class="item-name">Tree Trimming & Removal</div></div><span class="item-badge badge-green">Common Areas</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#15803D"></div><div class="item-name">Snow & Ice Removal</div></div><span class="item-badge badge-yellow">Climate-Dep.</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#15803D"></div><div class="item-name">Irrigation Systems</div></div><span class="item-badge badge-green">Most HOAs</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#15803D"></div><div class="item-name">Seasonal Planting</div></div><span class="item-badge badge-yellow">Mid–High HOAs</span></div>
+    </div>
+  </div>
+
+  <!-- Amenities -->
+  <div class="sec">Amenities & Facilities</div>
+  <div class="cat-card fade-in">
+    <div class="cat-header">
+      <div class="cat-icon" style="background:linear-gradient(140deg,#6D28D9,#4C1D95);">🏊</div>
+      <div>
+        <div class="cat-title">Shared Amenities</div>
+        <div class="cat-sub">Pools, gyms, clubs — depends on community tier</div>
+      </div>
+    </div>
+    <div class="item-list">
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#6D28D9"></div><div class="item-name">Swimming Pool & Spa</div></div><span class="item-badge badge-purple">$+50–150/mo</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#6D28D9"></div><div class="item-name">Fitness Center / Gym</div></div><span class="item-badge badge-purple">$+20–60/mo</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#6D28D9"></div><div class="item-name">Clubhouse & Event Space</div></div><span class="item-badge badge-purple">Mid–High HOAs</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#6D28D9"></div><div class="item-name">Tennis / Pickleball Courts</div></div><span class="item-badge badge-yellow">Varies</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#6D28D9"></div><div class="item-name">Playground & Dog Park</div></div><span class="item-badge badge-green">Common</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#6D28D9"></div><div class="item-name">Gated Security / Guard</div></div><span class="item-badge badge-red">$+100–300/mo</span></div>
+    </div>
+  </div>
+
+  <!-- Utilities & Services -->
+  <div class="sec">Utilities & Services</div>
+  <div class="cat-card fade-in">
+    <div class="cat-header">
+      <div class="cat-icon" style="background:linear-gradient(140deg,#D97706,#92400E);">⚡</div>
+      <div>
+        <div class="cat-title">Utilities & Services</div>
+        <div class="cat-sub">Shared utilities, trash, internet — varies widely</div>
+      </div>
+    </div>
+    <div class="item-list">
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#D97706"></div><div class="item-name">Trash & Recycling Collection</div></div><span class="item-badge badge-green">Most HOAs</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#D97706"></div><div class="item-name">Water & Sewer (common)</div></div><span class="item-badge badge-blue">Condo</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#D97706"></div><div class="item-name">Common Area Electric</div></div><span class="item-badge badge-green">All HOAs</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#D97706"></div><div class="item-name">Cable / Internet Bundle</div></div><span class="item-badge badge-yellow">Some HOAs</span></div>
+      <div class="item-row"><div class="item-left"><div class="item-dot" style="background:#D97706"></div><div class="item-name">Pest Control (exterior)</div></div><span class="item-badge badge-yellow">Varies</span></div>
+    </div>
+  </div>
+
+  <!-- Condo vs SFR Comparison -->
+  <div class="sec">Coverage Comparison</div>
+  <div class="compare-card fade-in">
+    <div class="compare-title">Condo vs. Single-Family HOA</div>
+    <div class="compare-grid">
+      <div class="compare-col left">
+        <div class="cc-head blue">🏢 Condo HOA</div>
+        <div class="cc-item">✅ Roof & Exterior</div>
+        <div class="cc-item">✅ Master Insurance</div>
+        <div class="cc-item">✅ Plumbing (shared)</div>
+        <div class="cc-item">✅ All Landscaping</div>
+        <div class="cc-item">✅ Hallways/Elevators</div>
+        <div class="cc-item">✅ Pool/Gym</div>
+      </div>
+      <div class="compare-col right">
+        <div class="cc-head purple">🏡 SFR HOA</div>
+        <div class="cc-item">⚠️ Common Areas Only</div>
+        <div class="cc-item">⚠️ Community Insurance</div>
+        <div class="cc-item">❌ Your Plumbing</div>
+        <div class="cc-item">⚠️ Common Landscape</div>
+        <div class="cc-item">✅ Entrance/Roads</div>
+        <div class="cc-item">⚠️ Pool if shared</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What's NOT Covered -->
+  <div class="not-covered fade-in">
+    <div class="nc-title">🚫 What HOA Fees Do NOT Cover</div>
+    <div class="nc-grid">
+      <div class="nc-item">🔧 Your HVAC System</div>
+      <div class="nc-item">🪟 Interior Windows</div>
+      <div class="nc-item">💧 Interior Plumbing</div>
+      <div class="nc-item">🍽️ Your Appliances</div>
+      <div class="nc-item">🎨 Interior Painting</div>
+      <div class="nc-item">🔌 Your Electricity</div>
+      <div class="nc-item">📦 Storage Unit</div>
+      <div class="nc-item">🚗 Your Parking Spot</div>
+    </div>
+  </div>
+
+  <!-- Pro Tip -->
+  <div class="tip-box fade-in">
+    <div class="tip-title">💡 Buyer's Due Diligence Tip</div>
+    <div class="tip-text">Always request the HOA's <strong>Governing Documents</strong>, <strong>Meeting Minutes</strong>, and <strong>Reserve Fund Study</strong> before closing. The CC&Rs define exactly what is and isn't covered. CAI (Community Associations Institute) reports that 73% of new U.S. homes built in 2024 were in HOA-governed communities.</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// Allocation Donut
+(function(){
+  const canvas = document.getElementById('allocChart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const vals = [32,25,18,15,10];
+  const colors = ['#1B3F72','#6D28D9','#D97706','#15803D','#B91C1C'];
+  const total = vals.reduce((a,b)=>a+b,0);
+  const cx=65,cy=65,R=55,r=36;
+  let angle = -Math.PI/2;
+  ctx.clearRect(0,0,130,130);
+  vals.forEach((v,i)=>{
+    const sweep = 2*Math.PI*(v/total);
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,R,angle,angle+sweep);
+    ctx.closePath();ctx.fillStyle=colors[i];ctx.fill();
+    angle+=sweep;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();
+  // gap lines
+  angle = -Math.PI/2;
+  vals.forEach((v)=>{
+    const sweep = 2*Math.PI*(v/total);
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,R,angle,angle+0.01);
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    angle+=sweep;
+  });
+})();
+</script>
+</body>
+</html>

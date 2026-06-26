@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GST Calculator – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+  radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);
+  pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);
+  padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);
+  position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .more{font-size:11px;font-weight:600;color:var(--saffron);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* GST SLABS TABS */
+.slab-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.slab-tabs::-webkit-scrollbar{display:none;}
+.slab-tab{flex-shrink:0;padding:8px 16px;border-radius:25px;border:1.5px solid var(--border);
+  background:var(--card);font-size:12px;font-weight:800;color:var(--navy);cursor:pointer;
+  transition:all .15s;font-family:'Trebuchet MS',sans-serif;}
+.slab-tab.active{background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border-color:var(--saffron);color:#fff;box-shadow:0 3px 12px rgba(255,107,0,0.30);}
+
+/* FORM */
+.fcard{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);
+  border:1px solid var(--border);margin-bottom:14px;}
+.field{margin-bottom:14px;}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.6px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field input,.field select{width:100%;background:#FFF3E8;border:1.5px solid rgba(255,107,0,0.18);
+  border-radius:12px;padding:12px 14px;font-size:14px;font-weight:700;color:var(--navy);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;appearance:none;-webkit-appearance:none;}
+.field input:focus,.field select:focus{border-color:var(--saffron);box-shadow:0 0 0 3px rgba(255,107,0,0.10);}
+.sel-wrap{position:relative;}
+.sel-wrap::after{content:'▼';position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:10px;color:var(--muted);pointer-events:none;}
+.toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.tgl{background:#FFF3E8;border:1.5px solid rgba(255,107,0,0.18);border-radius:12px;
+  padding:10px 12px;cursor:pointer;text-align:center;transition:all .15s;}
+.tgl.active{background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border-color:var(--saffron);box-shadow:0 4px 14px rgba(255,107,0,0.30);}
+.tgl span{font-size:12px;font-weight:800;color:var(--navy);}
+.tgl.active span{color:#fff;}
+.tgl small{font-size:9px;color:var(--muted);display:block;font-family:'Trebuchet MS',sans-serif;}
+.tgl.active small{color:rgba(255,255,255,0.75);}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;
+  color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;margin-top:6px;}
+
+/* RESULT */
+.result-card{background:linear-gradient(148deg,var(--navy),var(--chakra));
+  border-radius:20px;padding:20px;box-shadow:var(--sh2);margin-bottom:14px;
+  position:relative;overflow:hidden;}
+.result-card::after{content:'☸';position:absolute;right:12px;bottom:8px;
+  font-size:64px;color:rgba(255,255,255,0.05);}
+.rc-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;
+  letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.rc-total{font-size:26px;font-weight:800;color:var(--ochre-lt);margin:6px 0 14px;line-height:1;}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rc-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);
+  border-radius:12px;padding:10px 12px;}
+.rc-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;
+  font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.5px;}
+.rc-box .v{font-size:14px;font-weight:800;color:#fff;}
+.rc-box .v.grn{color:#86EFAC;}
+.rc-box .v.saf{color:var(--ochre-lt);}
+
+/* DONUT */
+.chart-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);
+  border:1px solid var(--border);margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;}
+.chart-title span{font-size:10px;font-weight:600;color:var(--saffron);font-family:'Trebuchet MS',sans-serif;}
+.pie-wrap{display:flex;align-items:center;gap:16px;}
+.legend{flex:1;display:flex;flex-direction:column;gap:8px;}
+.leg-item{display:flex;align-items:center;gap:8px;}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.leg-lbl{font-size:10px;font-weight:700;color:var(--navy);}
+.leg-val{font-size:10px;font-weight:800;color:var(--saffron);margin-left:auto;font-family:'Trebuchet MS',sans-serif;}
+
+/* COMPONENT BAR */
+.comp-bar{margin-bottom:14px;}
+.comp-bar-label{display:flex;justify-content:space-between;margin-bottom:5px;}
+.comp-bar-label span{font-size:10px;font-weight:700;color:var(--navy);}
+.comp-bar-label em{font-size:10px;font-weight:800;color:var(--saffron);font-style:normal;font-family:'Trebuchet MS',sans-serif;}
+.comp-bar-track{height:12px;background:#FFF3E8;border-radius:6px;overflow:hidden;}
+.comp-bar-fill{height:100%;border-radius:6px;transition:width .5s ease;}
+
+/* SLAB TABLE */
+.slab-table{background:var(--card);border-radius:20px;overflow:hidden;
+  box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.st-header{background:linear-gradient(135deg,var(--navy),var(--chakra));
+  padding:12px 15px;display:grid;grid-template-columns:2fr 1fr 1fr;}
+.st-hcell{font-size:9px;font-weight:800;color:rgba(255,255,255,0.60);
+  text-transform:uppercase;letter-spacing:.4px;font-family:'Trebuchet MS',sans-serif;}
+.st-row{padding:11px 15px;display:grid;grid-template-columns:2fr 1fr 1fr;
+  border-bottom:1px solid var(--border);}
+.st-row:last-child{border-bottom:none;}
+.st-row:nth-child(even){background:rgba(255,107,0,0.03);}
+.st-cell{font-size:10.5px;font-weight:700;color:var(--navy);}
+.st-cell.rate{font-weight:800;color:var(--saffron);}
+.st-cell.note{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+
+.save-btn{width:100%;background:linear-gradient(135deg,var(--green),var(--green2));
+  border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;
+  color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(4,106,56,0.35);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  background:var(--green);color:#fff;padding:10px 22px;border-radius:30px;
+  font-size:13px;font-weight:700;box-shadow:var(--sh2);z-index:200;
+  opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:420px;background:var(--card);
+  border-top:1px solid var(--border);display:flex;
+  padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ Calculation Saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🧾</div>
+      <div class="hdr-title">GST <span>Calculator</span></div>
+      <div class="hdr-sub">Under Construction · Affordable · Luxury Housing GST</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Affordable</div><div class="rs-v saf">1%</div><div class="rs-n">No ITC</div></div>
+    <div class="rs"><div class="rs-l">Regular</div><div class="rs-v saf">5%</div><div class="rs-n">No ITC</div></div>
+    <div class="rs"><div class="rs-l">Commercial</div><div class="rs-v saf">12%</div><div class="rs-n">With ITC</div></div>
+    <div class="rs"><div class="rs-l">Ready-to-move</div><div class="rs-v saf">NIL</div><div class="rs-n">No GST</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Select GST Slab <span class="more">GST Rules →</span></div>
+
+  <div class="slab-tabs fu1">
+    <div class="slab-tab active" id="tab-affordable" onclick="selectSlab('affordable',1,'Affordable Housing')">1% Affordable</div>
+    <div class="slab-tab" id="tab-regular" onclick="selectSlab('regular',5,'Regular Housing')">5% Regular</div>
+    <div class="slab-tab" id="tab-commercial" onclick="selectSlab('commercial',12,'Commercial')">12% Commercial</div>
+    <div class="slab-tab" id="tab-nil" onclick="selectSlab('nil',0,'Ready-to-Move')">NIL Ready</div>
+  </div>
+
+  <div class="fcard fu1">
+    <div style="background:rgba(255,107,0,0.07);border-radius:12px;padding:11px 13px;margin-bottom:14px;border:1px solid rgba(255,107,0,0.15);">
+      <div style="font-size:11px;font-weight:800;color:var(--saffron);" id="slabTitle">Affordable Housing — 1% GST</div>
+      <div style="font-size:9.5px;color:var(--muted);margin-top:3px;font-family:'Trebuchet MS',sans-serif;" id="slabDesc">Carpet area ≤ 60 sqm (metro) / 90 sqm (non-metro) · Value ≤ ₹45 L · No Input Tax Credit</div>
+    </div>
+
+    <div class="field">
+      <label>Transaction Type</label>
+      <div class="toggle-row">
+        <div class="tgl active" id="tgl-excl" onclick="selectTxn('exclusive')">
+          <span>Excl. GST</span><small>Base price</small>
+        </div>
+        <div class="tgl" id="tgl-incl" onclick="selectTxn('inclusive')">
+          <span>Incl. GST</span><small>Final price paid</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Property / Agreement Value (₹)</label>
+      <input type="number" id="gstInput" value="4500000" min="100000" step="100000" oninput="calcGST()"/>
+    </div>
+
+    <div class="field">
+      <label>Carpet Area (sq ft)</label>
+      <input type="number" id="areaInput" value="600" min="100" step="50" oninput="calcGST()"/>
+    </div>
+
+    <button class="calc-btn" onclick="calcGST()">☸ Calculate GST</button>
+  </div>
+
+  <div class="sec fu2">Result <span class="more">Breakdown</span></div>
+  <div class="result-card fu2">
+    <div class="rc-tag">GST Breakdown on Property</div>
+    <div class="rc-total" id="rcGstAmt">₹45,000 <small>GST Amount</small></div>
+    <div class="rc-grid">
+      <div class="rc-box"><label>GST Rate</label><div class="v saf" id="rcRate">1.00%</div></div>
+      <div class="rc-box"><label>CGST (½)</label><div class="v" id="rcCgst">₹22,500</div></div>
+      <div class="rc-box"><label>SGST (½)</label><div class="v" id="rcSgst">₹22,500</div></div>
+      <div class="rc-box"><label>Total Payable</label><div class="v grn" id="rcPayable">₹45,45,000</div></div>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.12);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;">Base Value</div>
+        <div style="font-size:16px;font-weight:800;color:#fff;" id="rcBase">₹45,00,000</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:9px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;">ITC Available</div>
+        <div style="font-size:16px;font-weight:800;color:#86EFAC;" id="rcItc">NO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DONUT CHART -->
+  <div class="chart-card fu3">
+    <div class="chart-title">Value vs GST Split <span>Visual</span></div>
+    <div class="pie-wrap">
+      <svg viewBox="0 0 120 120" width="120" height="120">
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#FFF3E8" stroke-width="20"/>
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#FF6B00" stroke-width="20"
+          stroke-dasharray="16 248" stroke-dashoffset="0" stroke-linecap="butt"
+          transform="rotate(-90 60 60)" id="gstSlice"/>
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#1A3A8F" stroke-width="20"
+          stroke-dasharray="248 16" stroke-dashoffset="-16" stroke-linecap="butt"
+          transform="rotate(-90 60 60)" id="baseSlice"/>
+        <text x="60" y="57" text-anchor="middle" font-size="10" font-weight="800" fill="#0B1F48" font-family="'Book Antiqua',serif" id="pieCenterGst">1%</text>
+        <text x="60" y="68" text-anchor="middle" font-size="7" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">GST</text>
+      </svg>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#1A3A8F"></div><div class="leg-lbl">Base Value</div><div class="leg-val" id="lgBase">₹45.00 L</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#FF6B00"></div><div class="leg-lbl">GST Amount</div><div class="leg-val" id="lgGst">₹45,000</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#046A38"></div><div class="leg-lbl">Total</div><div class="leg-val" id="lgGstTotal">₹45.45 L</div></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="comp-bar">
+        <div class="comp-bar-label"><span>CGST (Centre)</span><em id="cgstPct">50%</em></div>
+        <div class="comp-bar-track"><div class="comp-bar-fill" style="width:50%;background:linear-gradient(90deg,#FF6B00,#E05A00);" id="cgstBar"></div></div>
+      </div>
+      <div class="comp-bar">
+        <div class="comp-bar-label"><span>SGST (State)</span><em id="sgstPct">50%</em></div>
+        <div class="comp-bar-track"><div class="comp-bar-fill" style="width:50%;background:linear-gradient(90deg,#1A3A8F,#0B1F48);" id="sgstBar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="save-btn fu3" onclick="saveCalc()">💾 Save Calculation</button>
+
+  <!-- GST SLAB TABLE -->
+  <div class="sec fu4">GST Slabs — Real Estate 2024 <span class="more">GST Council</span></div>
+  <div class="slab-table fu4">
+    <div class="st-header">
+      <div class="st-hcell">Property Type</div>
+      <div class="st-hcell">GST Rate</div>
+      <div class="st-hcell">ITC</div>
+    </div>
+    <div class="st-row">
+      <div class="st-cell">Affordable (metro ≤60m² / non-metro ≤90m², ≤₹45L)</div>
+      <div class="st-cell rate">1%</div><div class="st-cell note">No</div>
+    </div>
+    <div class="st-row">
+      <div class="st-cell">Under Construction — Residential</div>
+      <div class="st-cell rate">5%</div><div class="st-cell note">No</div>
+    </div>
+    <div class="st-row">
+      <div class="st-cell">Under Construction — Commercial</div>
+      <div class="st-cell rate">12%</div><div class="st-cell note">Yes</div>
+    </div>
+    <div class="st-row">
+      <div class="st-cell">Ready-to-Move (OC received)</div>
+      <div class="st-cell rate">NIL</div><div class="st-cell note">N/A</div>
+    </div>
+    <div class="st-row">
+      <div class="st-cell">Long-term Lease / Plot</div>
+      <div class="st-cell rate">18%</div><div class="st-cell note">Yes</div>
+    </div>
+    <div class="st-row">
+      <div class="st-cell">Works Contract (construction)</div>
+      <div class="st-cell rate">18%</div><div class="st-cell note">Yes</div>
+    </div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let currentSlab = 'affordable', currentRate = 1, txnType = 'exclusive';
+const slabInfo = {
+  affordable:{rate:1,title:'Affordable Housing — 1% GST',
+    desc:'Carpet area ≤ 60 sqm (metro) / 90 sqm (non-metro) · Value ≤ ₹45 L · No ITC',itc:false},
+  regular:   {rate:5,title:'Regular Housing — 5% GST',
+    desc:'Under-construction residential not qualifying as affordable · No Input Tax Credit',itc:false},
+  commercial:{rate:12,title:'Commercial Property — 12% GST',
+    desc:'Under-construction commercial / shops / offices · Input Tax Credit available',itc:true},
+  nil:       {rate:0,title:'Ready-to-Move — NIL GST',
+    desc:'Completion Certificate / OC received · No GST applicable on resale or completed homes',itc:false},
+};
+
+function selectSlab(key,rate,label) {
+  currentSlab=key; currentRate=rate;
+  document.querySelectorAll('.slab-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+key).classList.add('active');
+  const info=slabInfo[key];
+  document.getElementById('slabTitle').textContent=info.title;
+  document.getElementById('slabDesc').textContent=info.desc;
+  calcGST();
+}
+function selectTxn(t) {
+  txnType=t;
+  document.getElementById('tgl-excl').classList.toggle('active',t==='exclusive');
+  document.getElementById('tgl-incl').classList.toggle('active',t==='inclusive');
+  calcGST();
+}
+function fmt(n){
+  if(n>=10000000)return '₹'+(n/10000000).toFixed(2)+' Cr';
+  if(n>=100000)  return '₹'+(n/100000).toFixed(2)+' L';
+  return '₹'+Math.round(n).toLocaleString('en-IN');
+}
+function calcGST() {
+  let inputVal = parseFloat(document.getElementById('gstInput').value)||4500000;
+  let base, gst, total;
+  if(txnType==='exclusive') {
+    base=inputVal; gst=base*currentRate/100; total=base+gst;
+  } else {
+    total=inputVal; base=total/(1+currentRate/100); gst=total-base;
+  }
+  const cgst=gst/2, sgst=gst/2;
+  const info=slabInfo[currentSlab];
+
+  document.getElementById('rcGstAmt').innerHTML=fmt(gst)+' <small>GST Amount</small>';
+  document.getElementById('rcRate').textContent=currentRate.toFixed(2)+'%';
+  document.getElementById('rcCgst').textContent=fmt(cgst);
+  document.getElementById('rcSgst').textContent=fmt(sgst);
+  document.getElementById('rcPayable').textContent=fmt(total);
+  document.getElementById('rcBase').textContent=fmt(base);
+  document.getElementById('rcItc').textContent=info.itc?'YES':'NO';
+  document.getElementById('rcItc').style.color=info.itc?'#86EFAC':'#FCA5A5';
+
+  // legend
+  document.getElementById('lgBase').textContent=fmt(base);
+  document.getElementById('lgGst').textContent=fmt(gst);
+  document.getElementById('lgGstTotal').textContent=fmt(total);
+  document.getElementById('pieCenterGst').textContent=currentRate+'%';
+
+  // donut
+  const circ=2*Math.PI*42;
+  const gstFrac=total>0?gst/total:0;
+  document.getElementById('gstSlice').setAttribute('stroke-dasharray',(circ*gstFrac)+' '+(circ*(1-gstFrac)));
+  document.getElementById('baseSlice').setAttribute('stroke-dasharray',(circ*(1-gstFrac))+' '+(circ*gstFrac));
+  document.getElementById('baseSlice').setAttribute('stroke-dashoffset',-(circ*gstFrac));
+
+  window._gstCalc={slab:currentSlab,rate:currentRate,base,gst,cgst,sgst,total,itc:info.itc};
+}
+function saveCalc(){
+  if(!window._gstCalc)return;
+  const saved=JSON.parse(localStorage.getItem('gstSaved')||'[]');
+  saved.unshift({...window._gstCalc,date:new Date().toLocaleDateString('en-IN')});
+  localStorage.setItem('gstSaved',JSON.stringify(saved.slice(0,20)));
+  const t=document.getElementById('toast');
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+calcGST();
+</script>
+</body>
+</html>

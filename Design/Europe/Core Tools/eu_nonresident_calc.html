@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europe – Non-Resident Calc</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}.rs-val.red{color:#FF8A9A;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+
+.country-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:14px;}
+.country-row::-webkit-scrollbar{display:none;}
+.cpill{flex-shrink:0;padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid transparent;}
+.cpill.active{background:#003399;color:#FFCC00;border-color:#003399;}
+.cpill:not(.active){background:#fff;color:#1A0040;border-color:rgba(0,51,153,0.15);}
+
+.warn-banner{background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:1px solid #FCD34D;border-radius:15px;padding:13px 15px;display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;}
+.warn-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.warn-text{font-size:11px;color:#92400E;line-height:1.5;}
+.warn-title{font-size:12px;font-weight:800;color:#78350F;margin-bottom:3px;}
+
+.calc-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.input-group label{font-size:10px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;}
+.input-group input,.input-group select{background:#F7F3FF;border:1.5px solid rgba(0,51,153,0.12);border-radius:10px;padding:9px 11px;font-size:14px;font-weight:700;color:#1A0040;outline:none;width:100%;}
+.input-group input:focus,.input-group select:focus{border-color:#003399;}
+.input-group.full{grid-column:span 2;}
+
+/* PRIMARY CALCULATE BUTTON */
+.calc-btn-primary{width:100%;background:linear-gradient(135deg,#FFCC00,#F59E0B);border:none;border-radius:16px;padding:16px;font-size:15px;font-weight:900;color:#1A0040;cursor:pointer;box-shadow:0 6px 20px rgba(255,204,0,0.4);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform 0.15s;margin-top:4px;}
+.calc-btn-primary:active{transform:scale(0.97);}
+
+.sum-hero{background:linear-gradient(145deg,#003399,#1A0040);border-radius:20px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden;}
+.sum-hero::before{content:'🏘️';position:absolute;right:10px;top:10px;font-size:55px;opacity:0.1;}
+.sh-label{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.sh-val{font-size:28px;font-weight:800;color:#FFCC00;font-family:Georgia,serif;margin:4px 0;}
+.sh-sub{font-size:11px;color:rgba(255,255,255,0.6);}
+.sh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:13px;}
+.sh-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 8px;text-align:center;}
+.sh-box-lbl{font-size:9px;color:rgba(255,255,255,0.5);margin-bottom:2px;}
+.sh-box-val{font-size:12px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+/* Save inside hero */
+.sh-save{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.12);}
+.sh-save-btn{flex:1;background:rgba(255,204,0,0.18);border:1.5px solid rgba(255,204,0,0.4);border-radius:11px;padding:9px;font-size:12px;font-weight:800;color:#FFCC00;cursor:pointer;text-align:center;}
+
+.section-card{background:#fff;border-radius:20px;padding:15px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:12px;}
+.section-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.fee-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,51,153,0.06);}
+.fee-row:last-child{border-bottom:none;}
+.fee-name{font-size:12px;font-weight:700;color:#1A0040;}
+.fee-sub{font-size:10px;color:#6B21A8;}
+.fee-val{font-size:13px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.fee-extra{color:#BE123C !important;}
+
+/* COST VISUAL BARS */
+.cost-bars{margin-top:8px;}
+.cost-bar-item{margin-bottom:8px;}
+.cost-bar-hdr{display:flex;justify-content:space-between;margin-bottom:3px;}
+.cost-bar-label{font-size:11px;font-weight:700;color:#1A0040;}
+.cost-bar-val{font-size:11px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.cost-bar-track{height:8px;background:#E0E7FF;border-radius:4px;overflow:hidden;}
+.cost-bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease;}
+
+/* DTI GAUGE */
+.gauge-wrap{display:flex;align-items:center;gap:12px;padding:10px 0;}
+.gauge-svg{flex-shrink:0;}
+.gauge-info{flex:1;}
+.gauge-label{font-size:11px;font-weight:800;color:#1A0040;margin-bottom:3px;}
+.gauge-val{font-size:20px;font-weight:900;font-family:Georgia,serif;}
+.gauge-sub{font-size:10px;color:#6B21A8;margin-top:2px;}
+
+.elig-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.elig-card{background:#fff;border-radius:14px;padding:12px;box-shadow:0 3px 12px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);}
+.elig-icon{font-size:20px;margin-bottom:5px;}
+.elig-title{font-size:11px;font-weight:800;color:#1A0040;margin-bottom:3px;}
+.elig-val{font-size:12px;font-weight:800;font-family:Georgia,serif;}
+.elig-val.ok{color:#166534;}.elig-val.warn{color:#B45309;}.elig-val.bad{color:#BE123C;}
+.elig-sub{font-size:9px;color:#6B21A8;margin-top:2px;}
+
+.guide-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,51,153,0.06);}
+.guide-item:last-child{border-bottom:none;}
+.guide-num{width:24px;height:24px;border-radius:8px;background:#003399;color:#FFCC00;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.guide-title{font-size:12px;font-weight:800;color:#1A0040;margin-bottom:2px;}
+.guide-sub{font-size:10px;color:#6B21A8;line-height:1.4;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#003399;color:#FFCC00;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:999;transition:transform 0.3s;box-shadow:0 4px 20px rgba(0,51,153,0.3);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp 0.4s ease both;}.anim-2{animation:fadeUp 0.4s 0.08s ease both;}.anim-3{animation:fadeUp 0.4s 0.16s ease both;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏘️</span><div class="hdr-title">Non-Resident Calc</div><div class="hdr-sub">Foreign Buyer Guide · EU Markets</div></div>
+    <div class="back-btn" style="font-size:13px;" onclick="saveCalc()">💾</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">🇩🇪 Max LTV</div><div class="rs-val grn">60%</div><div class="rs-note">Non-resident</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇪🇸 Max LTV</div><div class="rs-val">70%</div><div class="rs-note">Non-resident</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇵🇹 Gold Visa</div><div class="rs-val gold">€280k</div><div class="rs-note">Min invest</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇫🇷 Extra Tax</div><div class="rs-val red">+0%</div><div class="rs-note">No extra</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Select Target Country</div>
+  <div class="country-row anim">
+    <div class="cpill active" onclick="selectCountry('DE',this)">🇩🇪 Germany</div>
+    <div class="cpill" onclick="selectCountry('FR',this)">🇫🇷 France</div>
+    <div class="cpill" onclick="selectCountry('ES',this)">🇪🇸 Spain</div>
+    <div class="cpill" onclick="selectCountry('IT',this)">🇮🇹 Italy</div>
+    <div class="cpill" onclick="selectCountry('NL',this)">🇳🇱 Netherlands</div>
+    <div class="cpill" onclick="selectCountry('PT',this)">🇵🇹 Portugal</div>
+  </div>
+
+  <div class="warn-banner anim">
+    <span class="warn-icon">⚠️</span>
+    <div><div class="warn-title">Non-Resident Buyers Face Extra Restrictions</div><div class="warn-text">Foreign buyers typically face lower LTV limits, higher rates, extra documentation, and country-specific taxes. Consult a local solicitor before proceeding.</div></div>
+  </div>
+
+  <div class="calc-card anim-2">
+    <div class="input-row">
+      <div class="input-group full">
+        <label>Property Purchase Price (€)</label>
+        <input type="number" id="price" value="400000" step="10000">
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Buyer Origin</label>
+        <select id="buyerOrigin">
+          <option value="eu_nonres">EU Non-Resident</option>
+          <option value="uk">UK Buyer</option>
+          <option value="us">US/Canada</option>
+          <option value="other">Other Non-EU</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Purpose</label>
+        <select id="purpose">
+          <option value="holiday">Holiday Home</option>
+          <option value="investment">Investment</option>
+          <option value="relocation">Relocation</option>
+          <option value="goldvisa">Golden Visa</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Annual Income (€)</label>
+        <input type="number" id="income" value="90000" step="5000">
+      </div>
+      <div class="input-group">
+        <label>Existing EU Debt (€/mo)</label>
+        <input type="number" id="debt" value="0" step="100">
+      </div>
+    </div>
+
+    <!-- PRIMARY CALCULATE BUTTON -->
+    <button class="calc-btn-primary" onclick="calculate()">
+      <span style="font-size:18px">🏘️</span> Calculate Non-Resident Costs
+    </button>
+  </div>
+
+  <div id="results" style="display:none">
+    <!-- SUMMARY HERO -->
+    <div class="sum-hero anim-3">
+      <div class="sh-label">Max Loan (Non-Resident)</div>
+      <div class="sh-val" id="maxLoan">€240,000</div>
+      <div class="sh-sub" id="sumSub">Based on 60% LTV · Germany · 2025 rates</div>
+      <div class="sh-grid">
+        <div class="sh-box"><div class="sh-box-lbl">LTV Limit</div><div class="sh-box-val" id="ltvBox">60%</div></div>
+        <div class="sh-box"><div class="sh-box-lbl">Rate (NR)</div><div class="sh-box-val" id="rateBox">4.35%</div></div>
+        <div class="sh-box"><div class="sh-box-lbl">Monthly Pay</div><div class="sh-box-val" id="monthlyBox">€1,481</div></div>
+      </div>
+      <div class="sh-save">
+        <div class="sh-save-btn" onclick="saveCalc()">💾 Save Analysis</div>
+        <div class="sh-save-btn" onclick="shareResult()" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff;">📤 Share</div>
+      </div>
+    </div>
+
+    <!-- COST BREAKDOWN WITH VISUAL BARS -->
+    <div class="sec-lbl">Total Upfront Costs</div>
+    <div class="section-card">
+      <div class="section-title">💶 Cost Breakdown</div>
+      <div id="costRows"></div>
+      <div class="cost-bars" id="costBars"></div>
+    </div>
+
+    <!-- DTI GAUGE + ELIGIBILITY -->
+    <div class="sec-lbl">Affordability Assessment</div>
+    <div class="section-card">
+      <div class="section-title">📊 DTI Analysis</div>
+      <div class="gauge-wrap">
+        <svg class="gauge-svg" width="90" height="90" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="36" fill="none" stroke="#E0E7FF" stroke-width="10"/>
+          <circle cx="45" cy="45" r="36" fill="none" stroke="#003399" stroke-width="10"
+            stroke-dasharray="226.2" stroke-dashoffset="226.2"
+            stroke-linecap="round" transform="rotate(-90 45 45)" id="dtiArc"/>
+          <text x="45" y="42" text-anchor="middle" font-size="13" font-weight="900" fill="#1A0040" font-family="Georgia,serif" id="dtiPctText">30%</text>
+          <text x="45" y="56" text-anchor="middle" font-size="9" fill="#6B21A8">of income</text>
+        </svg>
+        <div class="gauge-info">
+          <div class="gauge-label">Monthly Income vs Payment</div>
+          <div class="gauge-val" id="dtiVal" style="color:#003399">30%</div>
+          <div class="gauge-sub" id="dtiStatus">✅ Within 33% guideline — good</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Eligibility Assessment</div>
+    <div class="elig-grid" id="eligGrid"></div>
+
+    <!-- STEP GUIDE -->
+    <div class="sec-lbl">Step-by-Step Buying Guide</div>
+    <div class="section-card" id="guideCard">
+      <div class="section-title">📋 <span id="guideTitle">How to Buy in Germany as Non-Resident</span></div>
+      <div id="guideSteps"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Analysis saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const CD={
+  DE:{name:'Germany',flag:'🇩🇪',maxLTV:{eu_nonres:60,uk:60,us:50,other:50},rateAdder:0.5,closingPct:10.57,steps:['Appoint a German solicitor (Notar) – required by law','Obtain German tax ID (Steuer-ID) from Finanzamt','Open a German bank account (required for mortgage)','Get credit pre-approval from German bank','Sign preliminary contract (Vorvertrag)','Notarize sale contract','Pay Grunderwerbsteuer within 1 month','Register in Grundbuch (land registry)']},
+  FR:{name:'France',flag:'🇫🇷',maxLTV:{eu_nonres:75,uk:70,us:65,other:65},rateAdder:0.4,closingPct:8.0,steps:['Get Numéro Fiscal from Direction des Finances Publiques','Engage notaire – represents both parties','Sign Compromis de Vente (preliminary contract)','Obtain mortgage offer (30-day cooling off period)','Satisfy conditions suspensives (mortgage, survey)','Sign Acte Authentique at notaire','Pay all taxes and fees','Register with Service de publicité foncière']},
+  ES:{name:'Spain',flag:'🇪🇸',maxLTV:{eu_nonres:70,uk:70,us:60,other:60},rateAdder:0.6,closingPct:13.0,steps:['Obtain NIE number (at Spanish consulate or in Spain)','Open Spanish bank account','Engage Spanish lawyer (abogado)','Request Nota Simple from Land Registry','Sign Arras contract with 10% deposit','Secure mortgage from Spanish bank','Sign before Spanish notary (Escritura)','Register with Registro de Propiedad']},
+  IT:{name:'Italy',flag:'🇮🇹',maxLTV:{eu_nonres:60,uk:60,us:50,other:50},rateAdder:0.75,closingPct:14.0,steps:['Obtain Codice Fiscale from Italian consulate','Hire geometra for property survey','Sign preliminary contract (Compromesso)','Pay 10–20% deposit in escrow','Apply for Italian mortgage (codice fiscale required)','Final deed (Atto Rogito) before notaio','Pay all taxes within legal deadlines','Register with Agenzia delle Entrate']},
+  NL:{name:'Netherlands',flag:'🇳🇱',maxLTV:{eu_nonres:80,uk:75,us:70,other:70},rateAdder:0.3,closingPct:12.0,steps:['Register at local gemeente to get BSN','Open Dutch bank account','Engage mortgage advisor (verplicht)','Commission building inspection (bouwtechnische keuring)','Sign preliminary purchase agreement','3-day cooling off period by law','Final transfer at notaris','Register mortgage with Kadaster']},
+  PT:{name:'Portugal',flag:'🇵🇹',maxLTV:{eu_nonres:70,uk:65,us:65,other:65},rateAdder:0.5,closingPct:10.5,steps:['Obtain NIF from Finanças (or consulate)','Appoint fiscal representative (non-EU required)','Sign CPCV (promissory contract) + 10-30% deposit','Obtain Portuguese mortgage pre-approval','Complete due diligence via lawyer','Sign Escritura at cartório notarial','Pay IMT, Stamp Duty, and fees','Register in Conservatória do Registo Predial']}
+};
+let selectedCountry='DE';
+function selectCountry(c,el){
+  selectedCountry=c;
+  document.querySelectorAll('.cpill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  if(document.getElementById('results').style.display!=='none') calculate();
+}
+function fmt(n){return new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);}
+
+function calculate(){
+  const price=parseFloat(document.getElementById('price').value)||0;
+  if(price<=0){showToast('⚠️ Enter a valid property price');return;}
+  const origin=document.getElementById('buyerOrigin').value;
+  const income=parseFloat(document.getElementById('income').value)||0;
+  const debtMo=parseFloat(document.getElementById('debt').value)||0;
+  const c=CD[selectedCountry];
+  const ltv=c.maxLTV[origin]||c.maxLTV.other;
+  const maxLoan=price*ltv/100;
+  const baseRate=3.85+c.rateAdder;
+  const r=baseRate/100/12; const n=20*12;
+  const monthly=maxLoan*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+  const closingTotal=price*c.closingPct/100;
+  const deposit=price*(1-ltv/100);
+  const totalCash=deposit+closingTotal;
+  const monthlyIncome=income/12;
+  const dtiPct=monthlyIncome>0?((monthly+debtMo)/monthlyIncome*100):0;
+  const dtiOk=dtiPct<=33;
+
+  document.getElementById('maxLoan').textContent=fmt(maxLoan);
+  document.getElementById('sumSub').textContent=`Based on ${ltv}% LTV · ${c.name} · 2025 rates`;
+  document.getElementById('ltvBox').textContent=ltv+'%';
+  document.getElementById('rateBox').textContent=baseRate.toFixed(2)+'%';
+  document.getElementById('monthlyBox').textContent=fmt(monthly);
+
+  // Cost rows
+  const costItems=[
+    {icon:'🏠',name:'Property Price',sub:'Purchase price',val:price,extra:false,pct:100},
+    {icon:'⬇️',name:'Required Deposit',sub:`${(100-ltv)}% down (non-res LTV ${ltv}%)`,val:deposit,extra:false,pct:(deposit/price*100)},
+    {icon:'🏛️',name:`Closing Costs (~${c.closingPct}%)`,sub:'Taxes, notary, agent, registry',val:closingTotal,extra:false,pct:c.closingPct},
+    {icon:'💶',name:'Total Cash Required',sub:'Deposit + closing costs',val:totalCash,extra:true,pct:(totalCash/price*100)},
+  ];
+  document.getElementById('costRows').innerHTML=costItems.map(it=>`
+    <div class="fee-row">
+      <div><div class="fee-name">${it.icon} ${it.name}</div><div class="fee-sub">${it.sub}</div></div>
+      <div class="fee-val ${it.extra?'fee-extra':''}">${fmt(it.val)}</div>
+    </div>`).join('');
+
+  // Visual cost bars
+  const maxBar=totalCash;
+  const barColors=['#003399','#6D28D9','#0F766E','#BE123C'];
+  const barItems=costItems.filter(i=>!i.extra);
+  document.getElementById('costBars').innerHTML='<div style="margin-top:10px;font-size:12px;font-weight:800;color:#1A0040;margin-bottom:8px;">Cash Requirement Breakdown</div>'+barItems.map((it,i)=>`
+    <div class="cost-bar-item">
+      <div class="cost-bar-hdr"><div class="cost-bar-label">${it.icon} ${it.name}</div><div class="cost-bar-val">${fmt(it.val)}</div></div>
+      <div class="cost-bar-track"><div class="cost-bar-fill" style="width:${Math.min(100,(it.val/totalCash*100)).toFixed(1)}%;background:${barColors[i]}"></div></div>
+    </div>`).join('');
+
+  // DTI Gauge
+  const arc=226.2;
+  const dtiClamped=Math.min(dtiPct,100);
+  const offset=arc-(dtiClamped/100)*arc;
+  const arcEl=document.getElementById('dtiArc');
+  arcEl.setAttribute('stroke-dashoffset',offset);
+  arcEl.setAttribute('stroke',dtiOk?'#003399':'#BE123C');
+  document.getElementById('dtiPctText').textContent=dtiPct.toFixed(0)+'%';
+  document.getElementById('dtiVal').textContent=dtiPct.toFixed(1)+'% DTI';
+  document.getElementById('dtiVal').style.color=dtiOk?'#003399':'#BE123C';
+  document.getElementById('dtiStatus').textContent=dtiOk?'✅ Within 33% guideline':'⚠️ Exceeds 33% — lender may decline';
+
+  // Eligibility
+  const eligItems=[
+    {icon:'📊',title:'Max Loan',val:fmt(maxLoan),status:'ok',sub:`${ltv}% LTV limit`},
+    {icon:'💰',title:'DTI Check',val:dtiOk?'✓ Pass':'⚠ Review',status:dtiOk?'ok':'warn',sub:dtiPct.toFixed(0)+'% of income'},
+    {icon:'🏦',title:'Mortgage Rate',val:baseRate.toFixed(2)+'%',status:'warn',sub:'+'+c.rateAdder+'% vs residents'},
+    {icon:'📋',title:'Docs Needed',val:'5–8 docs',status:'warn',sub:'See guide below'},
+  ];
+  document.getElementById('eligGrid').innerHTML=eligItems.map(it=>`
+    <div class="elig-card">
+      <div class="elig-icon">${it.icon}</div>
+      <div class="elig-title">${it.title}</div>
+      <div class="elig-val ${it.status}">${it.val}</div>
+      <div class="elig-sub">${it.sub}</div>
+    </div>`).join('');
+
+  // Guide
+  document.getElementById('guideTitle').textContent=`How to Buy in ${c.name} as Non-Resident`;
+  document.getElementById('guideSteps').innerHTML=c.steps.map((s,i)=>`
+    <div class="guide-item">
+      <div class="guide-num">${i+1}</div>
+      <div><div class="guide-title">${s}</div></div>
+    </div>`).join('');
+
+  document.getElementById('results').style.display='block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function saveCalc(){
+  if(document.getElementById('results').style.display==='none'){showToast('⚠️ Run a calculation first');return;}
+  const d={saved:new Date().toISOString(),country:selectedCountry,price:document.getElementById('price').value,maxLoan:document.getElementById('maxLoan').textContent};
+  const arr=JSON.parse(localStorage.getItem('eu_nonres_saves')||'[]'); arr.push(d);
+  localStorage.setItem('eu_nonres_saves',JSON.stringify(arr));
+  showToast('✅ Analysis saved!');
+}
+function shareResult(){
+  const text=`Non-Resident ${selectedCountry}: Max Loan ${document.getElementById('maxLoan').textContent} | Rate ${document.getElementById('rateBox').textContent} | Monthly ${document.getElementById('monthlyBox').textContent}`;
+  if(navigator.share) navigator.share({title:'EU Non-Resident',text});
+  else {navigator.clipboard.writeText(text).catch(()=>{}); showToast('📋 Copied!');}
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+</script>
+</body>
+</html>

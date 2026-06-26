@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHA MIP Cancellation Rules</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{
+  --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;
+  --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+  --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+  --green:#15803D;--green-dk:#166534;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 60%,#166534 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::after{content:'🛡️';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;}
+.hdr-flag{font-size:26px;}
+.hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+.rs-v.gold{color:var(--gold-lt);}
+.rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+.content{padding:14px 14px 110px;}
+.sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;display:flex;align-items:center;justify-content:space-between;}
+.sec .badge{font-size:9px;font-weight:700;background:#FEF3C7;color:#92400E;padding:3px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+.hero{background:linear-gradient(140deg,#0B1D3A,#B45309);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:12px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.h-tag{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.h-title{font-size:17px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;margin:5px 0 6px;line-height:1.25;}
+.h-title span{color:var(--gold-lt);}
+.h-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-bottom:13px;line-height:1.5;}
+.tier-row{display:flex;gap:8px;}
+.tier-box{flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.15);border-radius:11px;padding:10px 8px;text-align:center;}
+.tier-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;}
+.tier-box .v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;}
+
+/* RULE COMPARISON CARDS */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+.cg-card{border-radius:15px;padding:14px;box-shadow:var(--sh2);}
+.cg-card.under10{background:linear-gradient(140deg,#7F1D1D,#B91C1C);}
+.cg-card.over10{background:linear-gradient(140deg,#0B1D3A,#15803D);}
+.cg-title{font-size:14px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;margin-bottom:2px;}
+.cg-subtitle{font-size:8.5px;color:rgba(255,255,255,0.5);margin-bottom:10px;}
+.cg-row{margin-bottom:8px;}
+.cg-label{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.3px;}
+.cg-val{font-size:10.5px;font-weight:700;color:#fff;line-height:1.3;}
+
+/* CALCULATOR */
+.input-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.input-card h3{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.inp-box{background:var(--bg);border-radius:13px;padding:11px 13px;border:1.5px solid var(--border);}
+.inp-box:focus-within{border-color:var(--green);}
+.inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:14px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;background:transparent;-webkit-appearance:none;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(21,128,61,0.32);font-family:'DM Serif Display',serif;}
+
+/* RESULT */
+.result-card{border-radius:16px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;display:none;}
+.result-card.show{display:block;animation:fadeUp .32s ease both;}
+.result-card.lifetime{background:linear-gradient(140deg,#7F1D1D,#B91C1C);}
+.result-card.cancellable{background:linear-gradient(140deg,#0B1D3A,#15803D);}
+.rc-icon{font-size:30px;margin-bottom:6px;}
+.rc-title{font-size:17px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;}
+.rc-sub{font-size:10.5px;color:rgba(255,255,255,0.65);margin-top:4px;margin-bottom:12px;line-height:1.5;}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rc-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.rc-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:2px;}
+.rc-box .v{font-size:13px;font-weight:700;color:#fff;}
+.rc-box .v.warn{color:#FCA5A5;}
+.save-btn-inline{width:100%;margin-top:12px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:10px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;}
+.save-btn-inline.saved{background:rgba(21,128,61,0.4);border-color:rgba(21,128,61,0.6);}
+
+/* TIMELINE */
+.timeline-card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.timeline-card h3{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:14px;}
+.tl-item{display:flex;gap:11px;margin-bottom:13px;}
+.tl-dot-wrap{display:flex;flex-direction:column;align-items:center;}
+.tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.tl-dot.g{background:#DCFCE7;}
+.tl-dot.gold{background:#FEF3C7;}
+.tl-dot.r{background:#FEE2E2;}
+.tl-line{width:2px;flex:1;background:var(--border);margin-top:3px;}
+.tl-content{flex:1;padding-bottom:2px;}
+.tl-title{font-size:11.5px;font-weight:700;color:var(--navy);}
+.tl-sub{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+/* BAR CHART comparing MIP vs PMI cost */
+.chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:13px;}
+.bar-group{margin-bottom:10px;}
+.bar-label{font-size:9.5px;font-weight:600;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between;}
+.bar-track{background:#EEF2F8;border-radius:8px;height:22px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:10px;font-size:9px;font-weight:700;color:#fff;}
+
+.ilist{display:flex;flex-direction:column;gap:8px;}
+.ic{background:var(--card);border-radius:13px;padding:12px 13px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+.ii{width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.in{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+.is{font-size:9px;color:var(--muted);margin-top:2px;}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:18px;}
+.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+.ni.active .ni-lb{color:var(--green);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.hero,.compare-grid,.input-card,.timeline-card,.chart-card{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🛡️</div>
+      <div class="hdr-title">MIP Cancellation Rules</div>
+      <div class="hdr-sub">Mortgage Insurance Premium · Life-of-Loan vs 11-Yr</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">UFMIP</div><div class="rs-v">1.75%</div><div class="rs-n">Upfront</div></div>
+    <div class="rs"><div class="rs-l">Annual MIP (&gt;95% LTV)</div><div class="rs-v gold">0.55%</div><div class="rs-n">30-yr term</div></div>
+    <div class="rs"><div class="rs-l">Cancel at 10%+ Down</div><div class="rs-v">11 Years</div><div class="rs-n">Max duration</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">MIP Rule Overview <span class="badge">Post-June 2013 Rule</span></div>
+  <div class="hero">
+    <div class="h-tag">FHA Mortgage Insurance Premium — HUD Handbook 4000.1</div>
+    <div class="h-title">Down payment under 10%? <span>MIP lasts the life of the loan</span></div>
+    <div class="h-sub">Since June 3, 2013, FHA changed the rules: MIP no longer auto-cancels at 78% LTV like before. The only ways out now are 10%+ down, refinancing, or selling.</div>
+    <div class="tier-row">
+      <div class="tier-box"><label>Down &lt; 10%</label><div class="v">Life of Loan</div></div>
+      <div class="tier-box"><label>Down ≥ 10%</label><div class="v">11 Years</div></div>
+      <div class="tier-box"><label>Loans Before 6/3/2013</label><div class="v">Old Rules Apply</div></div>
+    </div>
+  </div>
+
+  <!-- Side by Side Rules -->
+  <div class="sec">The Two Scenarios</div>
+  <div class="compare-grid">
+    <div class="cg-card under10">
+      <div class="cg-title">&lt; 10% Down</div>
+      <div class="cg-subtitle">Most FHA Borrowers (3.5%)</div>
+      <div class="cg-row"><div class="cg-label">MIP Duration</div><div class="cg-val">Entire Loan Term</div></div>
+      <div class="cg-row"><div class="cg-label">Cancel via LTV?</div><div class="cg-val">No — Not Allowed</div></div>
+      <div class="cg-row"><div class="cg-label">Only Exit Options</div><div class="cg-val">Refinance or Sell/Payoff</div></div>
+      <div class="cg-row"><div class="cg-label">Typical Borrower</div><div class="cg-val">3.5% min. down, FICO 580+</div></div>
+    </div>
+    <div class="cg-card over10">
+      <div class="cg-title">≥ 10% Down</div>
+      <div class="cg-subtitle">Higher Down Payment Buyers</div>
+      <div class="cg-row"><div class="cg-label">MIP Duration</div><div class="cg-val">11 Years Maximum</div></div>
+      <div class="cg-row"><div class="cg-label">Cancel via LTV?</div><div class="cg-val">Auto-cancels at 11 yrs</div></div>
+      <div class="cg-row"><div class="cg-label">Only Exit Options</div><div class="cg-val">Wait 11 yrs, refi, or sell</div></div>
+      <div class="cg-row"><div class="cg-label">Typical Borrower</div><div class="cg-val">10%+ down, often 700+ FICO</div></div>
+    </div>
+  </div>
+
+  <!-- MIP Removal Calculator -->
+  <div class="sec">MIP Removal Estimator</div>
+  <div class="input-card">
+    <h3>🔍 When Can I Remove My MIP?</h3>
+    <div class="input-grid">
+      <div class="inp-box">
+        <label>Home Price ($)</label>
+        <input type="number" id="homePrice" value="350000" step="5000">
+      </div>
+      <div class="inp-box">
+        <label>Down Payment (%)</label>
+        <input type="number" id="downPct" value="3.5" step="0.5">
+      </div>
+      <div class="inp-box">
+        <label>Loan Origination Date</label>
+        <input type="date" id="loanDate" value="2024-06-01">
+      </div>
+      <div class="inp-box">
+        <label>Current Home Value ($)</label>
+        <input type="number" id="currentValue" value="380000" step="5000">
+      </div>
+    </div>
+    <button class="calc-btn" onclick="checkMIP()">🛡️ Check My MIP Status</button>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="rc-icon" id="rcIcon">⏳</div>
+    <div class="rc-title" id="rcTitle">Life-of-Loan MIP Applies</div>
+    <div class="rc-sub" id="rcSub">With 3.5% down, MIP cannot be removed by LTV. Refinancing to conventional is your main option.</div>
+    <div class="rc-grid">
+      <div class="rc-box"><label>Down Payment</label><div class="v" id="rcDown">3.5%</div></div>
+      <div class="rc-box"><label>MIP Removal Date</label><div class="v warn" id="rcRemoval">N/A — Life of Loan</div></div>
+      <div class="rc-box"><label>Current LTV</label><div class="v" id="rcLTV">90.5%</div></div>
+      <div class="rc-box"><label>Best Path to Remove</label><div class="v" id="rcPath">Refinance to Conventional</div></div>
+    </div>
+    <button class="save-btn-inline" id="saveBtn" onclick="saveCalc()">🔖 Save This Result</button>
+  </div>
+
+  <!-- Timeline -->
+  <div class="sec">Path to Removing MIP</div>
+  <div class="timeline-card">
+    <div class="tl-item">
+      <div class="tl-dot-wrap"><div class="tl-dot g">1️⃣</div><div class="tl-line"></div></div>
+      <div class="tl-content"><div class="tl-title">Build 20% Equity</div><div class="tl-sub">Through paydown or appreciation — needed for conventional refinance with no PMI.</div></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot-wrap"><div class="tl-dot gold">2️⃣</div><div class="tl-line"></div></div>
+      <div class="tl-content"><div class="tl-title">Get a New Appraisal</div><div class="tl-sub">Lender orders appraisal to confirm current value supports 80% LTV or better.</div></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot-wrap"><div class="tl-dot g">3️⃣</div><div class="tl-line"></div></div>
+      <div class="tl-content"><div class="tl-title">Refinance to Conventional Loan</div><div class="tl-sub">Replace your FHA loan with a conventional mortgage — eliminates MIP entirely if 20%+ equity.</div></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot-wrap"><div class="tl-dot r">⚠️</div></div>
+      <div class="tl-content"><div class="tl-title">Or: Sell the Home</div><div class="tl-sub">MIP obligation ends automatically when the loan is paid off through sale.</div></div>
+    </div>
+  </div>
+
+  <!-- Cost Comparison Chart -->
+  <div class="sec">MIP Cost Over Time</div>
+  <div class="chart-card">
+    <div class="chart-title">📊 Cumulative MIP Paid — $337,750 Loan @ 0.55%</div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Year 1</span><span>$1,857</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:8%;background:linear-gradient(90deg,#1B3F72,#0B1D3A);">$1.9K</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Year 5</span><span>$8,900</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:38%;background:linear-gradient(90deg,#D97706,#B45309);">$8.9K</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Year 11 (Conventional Cutoff)</span><span>$18,500</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:70%;background:linear-gradient(90deg,#B91C1C,#7F1D1D);">$18.5K</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Year 30 (If Never Removed)</span><span>$26,400</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#7F1D1D,#450A0A);">$26.4K</div></div>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:4px;">Estimate assumes flat MIP rate on declining balance. Refinancing earlier reduces lifetime MIP cost significantly.</div>
+  </div>
+
+  <!-- Key Facts -->
+  <div class="sec">Key Facts to Know</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📅</div><div><div class="in">Rule Changed June 3, 2013</div><div class="is">Loans before this date may follow older 78% LTV cancellation rules</div></div></div>
+    <div class="ic"><div class="ii">🔄</div><div><div class="in">Refinancing Resets MIP</div><div class="is">A new FHA refinance restarts MIP terms under current rules</div></div></div>
+    <div class="ic"><div class="ii">💰</div><div><div class="in">UFMIP Refund on Refi</div><div class="is">Partial UFMIP refund possible if refinancing FHA-to-FHA within 3 years</div></div></div>
+    <div class="ic"><div class="ii">🏠</div><div><div class="in">Conventional PMI is Different</div><div class="is">Conventional loans auto-cancel PMI at 78% LTV by federal law (HPA)</div></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function checkMIP(){
+  const price = parseFloat(document.getElementById('homePrice').value)||0;
+  const downPct = parseFloat(document.getElementById('downPct').value)||0;
+  const loanDate = new Date(document.getElementById('loanDate').value);
+  const currentVal = parseFloat(document.getElementById('currentValue').value)||price;
+
+  const downAmt = price * (downPct/100);
+  const loanAmt = price - downAmt;
+  const ltv = (loanAmt/currentVal*100).toFixed(1);
+
+  const card = document.getElementById('resultCard');
+  card.classList.remove('lifetime','cancellable');
+
+  const elevenYearDate = new Date(loanDate);
+  elevenYearDate.setFullYear(elevenYearDate.getFullYear()+11);
+
+  if(downPct < 10){
+    card.classList.add('lifetime','show');
+    document.getElementById('rcIcon').textContent = '⏳';
+    document.getElementById('rcTitle').textContent = 'Life-of-Loan MIP Applies';
+    document.getElementById('rcSub').textContent = 'With '+downPct+'% down (below 10%), MIP cannot be cancelled by reaching a certain LTV. Refinancing to a conventional loan is your main path to remove it.';
+    document.getElementById('rcRemoval').textContent = 'N/A — Life of Loan';
+  } else {
+    card.classList.add('cancellable','show');
+    document.getElementById('rcIcon').textContent = '✅';
+    document.getElementById('rcTitle').textContent = 'MIP Auto-Cancels at 11 Years';
+    document.getElementById('rcSub').textContent = 'With '+downPct+'% down (10%+), your MIP automatically cancels after 11 years of payments, regardless of LTV.';
+    document.getElementById('rcRemoval').textContent = elevenYearDate.toLocaleDateString();
+  }
+  document.getElementById('rcDown').textContent = downPct+'%';
+  document.getElementById('rcLTV').textContent = ltv+'%';
+  document.getElementById('rcPath').textContent = downPct < 10 ? 'Refinance to Conventional' : 'Wait for 11-Yr Mark or Refinance';
+}
+
+function saveCalc(){
+  const data = {
+    date: new Date().toLocaleDateString(),
+    down: document.getElementById('rcDown').textContent,
+    removal: document.getElementById('rcRemoval').textContent
+  };
+  const saves = JSON.parse(localStorage.getItem('fha_mip_saves')||'[]');
+  saves.unshift(data);
+  if(saves.length>5) saves.length=5;
+  localStorage.setItem('fha_mip_saves', JSON.stringify(saves));
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved'); btn.textContent='✅ Saved';
+  showToast('MIP status saved!');
+  setTimeout(()=>{btn.classList.remove('saved'); btn.textContent='🔖 Save This Result';}, 2000);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>

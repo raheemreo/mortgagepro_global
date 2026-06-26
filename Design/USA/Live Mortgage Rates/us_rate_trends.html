@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rate Trends · USA Financial Tools</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+    --green: #15803D;
+    --green-lt: #6EE7B7;
+    --red-lt: #FCA5A5;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  /* ─── HEADER ─── */
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after  { content:'📈'; position:absolute; right:12px; top:44px; font-size:68px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+
+  /* Rate Strip */
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.up::after { content:'↑'; font-size:9px; color:#6EE7B7; }
+  .rs-v.dn::after { content:'↓'; font-size:9px; color:#FCA5A5; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  /* ─── CONTENT ─── */
+  .content { padding:15px 15px 110px; }
+
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* ─── TREND TABS ─── */
+  .tabs { display:flex; gap:7px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { flex-shrink:0; padding:7px 14px; border-radius:20px; font-size:11px; font-weight:700; border:1.5px solid var(--border); background:var(--card); color:var(--muted); cursor:pointer; transition:all .18s; }
+  .tab.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+
+  /* ─── MAIN CHART CARD ─── */
+  .chart-card { background:var(--card); border-radius:20px; padding:18px 16px 14px; box-shadow:var(--sh2); border:1px solid var(--border); margin-bottom:14px; }
+  .cc-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:4px; }
+  .cc-title { font-size:14px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .cc-sub { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .cc-badge { background:#EFF6FF; color:#1D4ED8; font-size:9px; font-weight:800; padding:3px 9px; border-radius:20px; }
+  .cc-badge.up { background:#F0FDF4; color:#15803D; }
+  .cc-badge.dn { background:#FEF2F2; color:#B91C1C; }
+
+  /* SVG chart wrapper */
+  .chart-wrap { position:relative; margin:12px 0 4px; }
+  .chart-wrap svg { width:100%; height:170px; display:block; overflow:visible; }
+
+  /* Y-axis labels */
+  .y-labels { position:absolute; left:0; top:0; height:100%; display:flex; flex-direction:column; justify-content:space-between; pointer-events:none; }
+  .y-lbl { font-size:8.5px; color:var(--muted); padding-right:4px; line-height:1; }
+
+  .chart-legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+  .leg-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); font-weight:600; }
+  .leg-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+  /* Time range buttons */
+  .time-range { display:flex; gap:5px; margin-bottom:12px; }
+  .tr-btn { flex:1; padding:6px 0; border-radius:9px; font-size:10px; font-weight:700; border:1.5px solid var(--border); background:var(--card); color:var(--muted); cursor:pointer; text-align:center; transition:all .15s; }
+  .tr-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+
+  /* ─── RATE COMPARISON TABLE ─── */
+  .rate-table { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:14px; }
+  .rt-title { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+  .rt-title span { font-size:10px; font-weight:500; color:var(--blue); }
+  .rt-row { display:grid; grid-template-columns:1fr auto auto auto; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .rt-row:last-child { border-bottom:none; padding-bottom:0; }
+  .rt-row:first-of-type { padding-top:0; }
+  .rt-icon-name { display:flex; align-items:center; gap:8px; }
+  .rt-icon { width:32px; height:32px; border-radius:9px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .rt-name { font-size:11.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .rt-src { font-size:8.5px; color:var(--muted); margin-top:1px; }
+  .rt-rate { font-size:16px; font-weight:800; color:var(--navy); font-family:Georgia,serif; text-align:right; }
+  .rt-chg { font-size:10px; font-weight:700; text-align:right; white-space:nowrap; }
+  .rt-wk { font-size:9px; color:var(--muted); text-align:right; white-space:nowrap; }
+  .up { color:#15803D; } .dn { color:#B91C1C; }
+  .flat { color:var(--muted); }
+
+  /* ─── SPARKLINE MINI CARDS ─── */
+  .spark-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .spark-card { background:var(--card); border-radius:16px; padding:14px 13px 10px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .sk-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .sk-label { font-size:9.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .sk-rate { font-size:18px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .sk-chg { font-size:10px; font-weight:700; }
+  .sk-svg { width:100%; height:38px; display:block; }
+  .sk-meta { font-size:8.5px; color:var(--muted); margin-top:4px; }
+
+  /* ─── FED FORECAST CARD ─── */
+  .fed-card { background:linear-gradient(140deg,#0B1D3A,#1B3F72); border-radius:18px; padding:16px; box-shadow:var(--sh2); margin-bottom:14px; position:relative; overflow:hidden; }
+  .fed-card::before { content:'🏛️'; position:absolute; right:14px; top:10px; font-size:54px; opacity:0.08; }
+  .fc-tag { font-size:9px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.8px; font-weight:700; }
+  .fc-title { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; margin:4px 0 12px; }
+  .fc-title span { color:var(--gold-lt); }
+  .fc-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .fc-box { background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.13); border-radius:11px; padding:10px 8px; text-align:center; }
+  .fc-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.46); text-transform:uppercase; letter-spacing:0.4px; }
+  .fc-box-val { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; margin:3px 0 1px; }
+  .fc-box-sub { font-size:8px; color:rgba(255,255,255,0.38); }
+  .fc-box.gold .fc-box-val { color:var(--gold-lt); }
+  .fc-divider { height:1px; background:rgba(255,255,255,0.08); margin:12px 0; }
+  .fc-note { font-size:9.5px; color:rgba(255,255,255,0.50); line-height:1.5; }
+  .fc-note strong { color:rgba(255,255,255,0.80); }
+
+  /* ─── HISTORICAL MILESTONES ─── */
+  .milestone-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:14px; }
+  .mc-title { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:12px; }
+  .ms-item { display:flex; align-items:flex-start; gap:11px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .ms-item:last-child { border-bottom:none; padding-bottom:0; }
+  .ms-year { background:var(--bg); border-radius:9px; padding:5px 8px; font-size:10px; font-weight:800; color:var(--navy); font-family:Georgia,serif; flex-shrink:0; text-align:center; min-width:46px; }
+  .ms-year.hi { background:#FEF2F2; color:#B91C1C; }
+  .ms-year.lo { background:#F0FDF4; color:#15803D; }
+  .ms-year.now { background:#EFF6FF; color:#1D4ED8; }
+  .ms-body { flex:1; }
+  .ms-title { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .ms-desc { font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.4; }
+  .ms-rate { font-size:14px; font-weight:800; font-family:Georgia,serif; }
+  .ms-rate.hi { color:#B91C1C; }
+  .ms-rate.lo { color:#15803D; }
+  .ms-rate.now { color:var(--blue); }
+
+  /* ─── RATE ALERT CARD ─── */
+  .alert-card { background:linear-gradient(135deg,#FEF3C7,#FDE68A); border:1px solid #F59E0B; border-radius:16px; padding:14px 15px; margin-bottom:14px; }
+  .ac-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .ac-icon { font-size:22px; }
+  .ac-title { font-size:13px; font-weight:800; color:#92400E; font-family:Georgia,serif; }
+  .ac-sub { font-size:9.5px; color:#B45309; margin-top:1px; }
+  .ac-inputs { display:flex; flex-direction:column; gap:8px; }
+  .ac-row { display:flex; align-items:center; justify-content:space-between; }
+  .ac-lbl { font-size:11px; color:#92400E; font-weight:600; }
+  .ac-field { background:rgba(255,255,255,0.65); border:1.5px solid rgba(245,158,11,0.35); border-radius:9px; padding:7px 10px; font-size:12px; font-weight:800; color:#92400E; width:100px; text-align:right; font-family:Georgia,serif; outline:none; }
+  .ac-btn { width:100%; margin-top:10px; background:#D97706; border:none; border-radius:11px; padding:12px; font-size:12px; font-weight:800; color:#fff; cursor:pointer; font-family:Georgia,serif; }
+
+  /* ─── LENDER SNAPSHOT ─── */
+  .lender-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:14px; }
+  .lc-title { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+  .lc-title span { font-size:10px; font-weight:500; color:var(--blue); cursor:pointer; }
+  .lender-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .lender-row:last-child { border-bottom:none; padding-bottom:0; }
+  .lender-rank { width:22px; height:22px; border-radius:7px; background:var(--bg); font-size:10px; font-weight:800; color:var(--navy); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .lender-rank.gold { background:#FEF3C7; color:#D97706; }
+  .lender-name { flex:1; font-size:11.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .lender-type { font-size:9px; color:var(--muted); margin-top:1px; }
+  .lender-rate { font-size:15px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .lender-apr { font-size:9px; color:var(--muted); text-align:right; }
+  .lender-bar-wrap { height:4px; background:var(--bg); border-radius:3px; margin-top:4px; }
+  .lender-bar { height:4px; border-radius:3px; }
+
+  /* ─── BOTTOM NAV ─── */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  /* ─── TOOLTIP ─── */
+  .tooltip-line { position:absolute; top:0; bottom:0; width:1.5px; background:rgba(27,63,114,0.25); pointer-events:none; border-radius:2px; display:none; }
+  .tooltip-dot { position:absolute; width:10px; height:10px; border-radius:50%; border:2px solid white; box-shadow:0 2px 6px rgba(0,0,0,0.2); pointer-events:none; display:none; transform:translate(-50%,-50%); }
+  .tooltip-box { position:absolute; background:var(--navy); color:#fff; border-radius:9px; padding:6px 10px; font-size:10px; font-weight:700; pointer-events:none; display:none; white-space:nowrap; box-shadow:var(--sh); transform:translateX(-50%); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  .chart-card { animation:fadeUp .3s ease both .05s; }
+  .rate-table { animation:fadeUp .3s ease both .10s; }
+  .spark-grid { animation:fadeUp .3s ease both .15s; }
+  .fed-card { animation:fadeUp .3s ease both .20s; }
+  .milestone-card { animation:fadeUp .3s ease both .25s; }
+  .alert-card { animation:fadeUp .3s ease both .30s; }
+  .lender-card { animation:fadeUp .3s ease both .35s; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇺🇸</div>
+      <div class="hdr-title">Rate Trends</div>
+      <div class="hdr-sub">Freddie Mac · FRED · FOMC · Updated Jun 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">30-Yr Fixed</div><div class="rs-v up">6.82%</div><div class="rs-n">Freddie Mac</div></div>
+    <div class="rs"><div class="rs-l">15-Yr Fixed</div><div class="rs-v">6.11%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">5/1 ARM</div><div class="rs-v dn">6.05%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">Fed Funds</div><div class="rs-v gold">5.33%</div><div class="rs-n">FOMC</div></div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Trend Type Tabs -->
+  <div class="sec" style="margin-top:0">Rate Type <span class="more">Compare All →</span></div>
+  <div class="tabs" id="rateTabs">
+    <div class="tab active" data-type="30yr">30-Yr Fixed</div>
+    <div class="tab" data-type="15yr">15-Yr Fixed</div>
+    <div class="tab" data-type="arm">5/1 ARM</div>
+    <div class="tab" data-type="jumbo">Jumbo</div>
+    <div class="tab" data-type="va">VA Loan</div>
+    <div class="tab" data-type="fha">FHA</div>
+  </div>
+
+  <!-- Time Range -->
+  <div class="time-range" id="timeRange">
+    <div class="tr-btn" data-r="1m">1M</div>
+    <div class="tr-btn" data-r="3m">3M</div>
+    <div class="tr-btn active" data-r="6m">6M</div>
+    <div class="tr-btn" data-r="1y">1Y</div>
+    <div class="tr-btn" data-r="3y">3Y</div>
+    <div class="tr-btn" data-r="5y">5Y</div>
+  </div>
+
+  <!-- Main Chart -->
+  <div class="chart-card">
+    <div class="cc-head">
+      <div>
+        <div class="cc-title" id="chartTitle">30-Year Fixed Mortgage Rate</div>
+        <div class="cc-sub" id="chartSub">Freddie Mac Primary Mortgage Market Survey</div>
+      </div>
+      <div class="cc-badge up" id="chartBadge">↑ +0.05 wk</div>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      <svg id="mainChart" viewBox="0 0 360 170" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1B3F72" stop-opacity="0.22"/>
+            <stop offset="100%" stop-color="#1B3F72" stop-opacity="0.00"/>
+          </linearGradient>
+          <linearGradient id="fillGrad2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#B91C1C" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#B91C1C" stop-opacity="0.00"/>
+          </linearGradient>
+          <linearGradient id="fillGrad3" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#D97706" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#D97706" stop-opacity="0.00"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid lines -->
+        <g id="gridLines"></g>
+        <!-- X-axis labels -->
+        <g id="xLabels"></g>
+        <!-- Y-axis labels -->
+        <g id="yLabels"></g>
+        <!-- Fill area -->
+        <path id="fillPath" fill="url(#fillGrad)" opacity="0.9"/>
+        <!-- Secondary line (10-Yr Treasury) -->
+        <path id="line2" fill="none" stroke="#B91C1C" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.55"/>
+        <!-- Main line -->
+        <path id="mainLine" fill="none" stroke="#1B3F72" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Current rate dot -->
+        <circle id="currentDot" r="5" fill="#1B3F72" stroke="white" stroke-width="2"/>
+        <!-- Tooltip elements -->
+        <line id="tipLine" x1="0" y1="0" x2="0" y2="170" stroke="rgba(27,63,114,0.3)" stroke-width="1.5" stroke-dasharray="3,2" opacity="0" pointer-events="none"/>
+        <circle id="tipDot" r="5" fill="#1B3F72" stroke="white" stroke-width="2" opacity="0" pointer-events="none"/>
+        <g id="tipBox" opacity="0" pointer-events="none">
+          <rect id="tipRect" rx="7" ry="7" fill="#0B1D3A"/>
+          <text id="tipRate" fill="white" font-size="10" font-weight="800" font-family="Georgia,serif"/>
+          <text id="tipDate" fill="rgba(255,255,255,0.58)" font-size="8.5" font-family="Helvetica Neue, Arial, sans-serif"/>
+        </g>
+        <!-- Interactive overlay -->
+        <rect id="chartOverlay" x="30" y="0" width="320" height="155" fill="transparent" cursor="crosshair"/>
+      </svg>
+    </div>
+    <div class="chart-legend" id="chartLegend">
+      <div class="leg-item"><div class="leg-dot" style="background:#1B3F72;"></div><span id="leg1">30-Yr Fixed (Freddie Mac)</span></div>
+      <div class="leg-item"><div class="leg-dot" style="background:#B91C1C; opacity:0.6;"></div><span>10-Yr Treasury Yield</span></div>
+    </div>
+  </div>
+
+  <!-- Current Rate Comparison Table -->
+  <div class="rate-table">
+    <div class="rt-title">Current Rates · Week of Jun 5, 2025 <span>Freddie Mac</span></div>
+
+    <div class="rt-row">
+      <div class="rt-icon-name">
+        <div class="rt-icon">🏠</div>
+        <div><div class="rt-name">30-Yr Fixed</div><div class="rt-src">Freddie Mac PMMS</div></div>
+      </div>
+      <div class="rt-rate">6.82%</div>
+      <div class="rt-chg up">↑ +0.05</div>
+      <div class="rt-wk">vs 6.77%</div>
+    </div>
+
+    <div class="rt-row">
+      <div class="rt-icon-name">
+        <div class="rt-icon">🏡</div>
+        <div><div class="rt-name">15-Yr Fixed</div><div class="rt-src">National Average</div></div>
+      </div>
+      <div class="rt-rate">6.11%</div>
+      <div class="rt-chg dn">↓ −0.02</div>
+      <div class="rt-wk">vs 6.13%</div>
+    </div>
+
+    <div class="rt-row">
+      <div class="rt-icon-name">
+        <div class="rt-icon">📊</div>
+        <div><div class="rt-name">5/1 ARM</div><div class="rt-src">Adjustable Rate</div></div>
+      </div>
+      <div class="rt-rate">6.05%</div>
+      <div class="rt-chg dn">↓ −0.03</div>
+      <div class="rt-wk">vs 6.08%</div>
+    </div>
+
+    <div class="rt-row">
+      <div class="rt-icon-name">
+        <div class="rt-icon">🏢</div>
+        <div><div class="rt-name">Jumbo 30-Yr</div><div class="rt-src">&gt;$766,550 loans</div></div>
+      </div>
+      <div class="rt-rate">7.04%</div>
+      <div class="rt-chg up">↑ +0.08</div>
+      <div class="rt-wk">vs 6.96%</div>
+    </div>
+
+    <div class="rt-row">
+      <div class="rt-icon-name">
+        <div class="rt-icon">🎖️</div>
+        <div><div class="rt-name">VA Loan</div><div class="rt-src">Veterans Affairs</div></div>
+      </div>
+      <div class="rt-rate">6.25%</div>
+      <div class="rt-chg up">↑ +0.01</div>
+      <div class="rt-wk">vs 6.24%</div>
+    </div>
+
+    <div class="rt-row">
+      <div class="rt-icon-name">
+        <div class="rt-icon">🏦</div>
+        <div><div class="rt-name">FHA 30-Yr</div><div class="rt-src">3.5% min down</div></div>
+      </div>
+      <div class="rt-rate">6.55%</div>
+      <div class="rt-chg flat">→ 0.00</div>
+      <div class="rt-wk">unchanged</div>
+    </div>
+
+    <div class="rt-row">
+      <div class="rt-icon-name">
+        <div class="rt-icon">🌾</div>
+        <div><div class="rt-name">USDA Rural</div><div class="rt-src">502 Guaranteed</div></div>
+      </div>
+      <div class="rt-rate">6.35%</div>
+      <div class="rt-chg dn">↓ −0.01</div>
+      <div class="rt-wk">vs 6.36%</div>
+    </div>
+
+    <div class="rt-row">
+      <div class="rt-icon-name">
+        <div class="rt-icon">📉</div>
+        <div><div class="rt-name">10-Yr T-Note</div><div class="rt-src">US Treasury</div></div>
+      </div>
+      <div class="rt-rate">4.47%</div>
+      <div class="rt-chg dn">↓ −0.03</div>
+      <div class="rt-wk">vs 4.50%</div>
+    </div>
+  </div>
+
+  <!-- Sparkline Mini Cards -->
+  <div class="sec">52-Week Range <span class="more">Full History →</span></div>
+  <div class="spark-grid">
+    <div class="spark-card">
+      <div class="sk-top">
+        <div class="sk-label">30-Yr Fixed</div>
+        <div class="sk-chg up">↑ +0.05</div>
+      </div>
+      <div class="sk-rate">6.82%</div>
+      <svg class="sk-svg" viewBox="0 0 120 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="sg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1B3F72" stop-opacity="0.2"/><stop offset="100%" stop-color="#1B3F72" stop-opacity="0"/></linearGradient></defs>
+        <path d="M0,28 L10,24 L20,26 L30,20 L40,30 L50,22 L60,18 L70,24 L80,16 L90,20 L100,14 L110,18 L120,16 Z" fill="url(#sg1)"/>
+        <path d="M0,28 L10,24 L20,26 L30,20 L40,30 L50,22 L60,18 L70,24 L80,16 L90,20 L100,14 L110,18 L120,16" fill="none" stroke="#1B3F72" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="120" cy="16" r="3" fill="#1B3F72" stroke="white" stroke-width="1.5"/>
+      </svg>
+      <div class="sk-meta">52-wk: 6.61% – 7.79%</div>
+    </div>
+
+    <div class="spark-card">
+      <div class="sk-top">
+        <div class="sk-label">15-Yr Fixed</div>
+        <div class="sk-chg dn">↓ −0.02</div>
+      </div>
+      <div class="sk-rate">6.11%</div>
+      <svg class="sk-svg" viewBox="0 0 120 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="sg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#15803D" stop-opacity="0.2"/><stop offset="100%" stop-color="#15803D" stop-opacity="0"/></linearGradient></defs>
+        <path d="M0,32 L10,28 L20,30 L30,24 L40,28 L50,20 L60,22 L70,18 L80,22 L90,16 L100,20 L110,16 L120,18 Z" fill="url(#sg2)"/>
+        <path d="M0,32 L10,28 L20,30 L30,24 L40,28 L50,20 L60,22 L70,18 L80,22 L90,16 L100,20 L110,16 L120,18" fill="none" stroke="#15803D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="120" cy="18" r="3" fill="#15803D" stroke="white" stroke-width="1.5"/>
+      </svg>
+      <div class="sk-meta">52-wk: 5.92% – 7.02%</div>
+    </div>
+
+    <div class="spark-card">
+      <div class="sk-top">
+        <div class="sk-label">5/1 ARM</div>
+        <div class="sk-chg dn">↓ −0.03</div>
+      </div>
+      <div class="sk-rate">6.05%</div>
+      <svg class="sk-svg" viewBox="0 0 120 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="sg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D97706" stop-opacity="0.2"/><stop offset="100%" stop-color="#D97706" stop-opacity="0"/></linearGradient></defs>
+        <path d="M0,30 L10,24 L20,28 L30,22 L40,26 L50,18 L60,24 L70,16 L80,20 L90,14 L100,20 L110,18 L120,22 Z" fill="url(#sg3)"/>
+        <path d="M0,30 L10,24 L20,28 L30,22 L40,26 L50,18 L60,24 L70,16 L80,20 L90,14 L100,20 L110,18 L120,22" fill="none" stroke="#D97706" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="120" cy="22" r="3" fill="#D97706" stroke="white" stroke-width="1.5"/>
+      </svg>
+      <div class="sk-meta">52-wk: 5.77% – 6.89%</div>
+    </div>
+
+    <div class="spark-card">
+      <div class="sk-top">
+        <div class="sk-label">10-Yr T-Note</div>
+        <div class="sk-chg dn">↓ −0.03</div>
+      </div>
+      <div class="sk-rate">4.47%</div>
+      <svg class="sk-svg" viewBox="0 0 120 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="sg4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#B91C1C" stop-opacity="0.15"/><stop offset="100%" stop-color="#B91C1C" stop-opacity="0"/></linearGradient></defs>
+        <path d="M0,14 L10,18 L20,12 L30,20 L40,16 L50,22 L60,18 L70,24 L80,20 L90,26 L100,22 L110,24 L120,22 Z" fill="url(#sg4)"/>
+        <path d="M0,14 L10,18 L20,12 L30,20 L40,16 L50,22 L60,18 L70,24 L80,20 L90,26 L100,22 L110,24 L120,22" fill="none" stroke="#B91C1C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="120" cy="22" r="3" fill="#B91C1C" stroke="white" stroke-width="1.5"/>
+      </svg>
+      <div class="sk-meta">52-wk: 3.80% – 4.99%</div>
+    </div>
+  </div>
+
+  <!-- Fed Rate Forecast -->
+  <div class="fed-card">
+    <div class="fc-tag">Federal Reserve · FOMC 2025 Outlook</div>
+    <div class="fc-title">Fed Funds Rate: <span>5.25–5.50%</span></div>
+    <div class="fc-row">
+      <div class="fc-box gold">
+        <div class="fc-box-lbl">Current</div>
+        <div class="fc-box-val">5.33%</div>
+        <div class="fc-box-sub">Effective rate</div>
+      </div>
+      <div class="fc-box">
+        <div class="fc-box-lbl">Next FOMC</div>
+        <div class="fc-box-val">Jul 30</div>
+        <div class="fc-box-sub">2025 meeting</div>
+      </div>
+      <div class="fc-box">
+        <div class="fc-box-lbl">Cut Odds</div>
+        <div class="fc-box-val">65%</div>
+        <div class="fc-box-sub">CME FedWatch</div>
+      </div>
+    </div>
+    <div class="fc-divider"></div>
+    <!-- Dot plot mini bar chart -->
+    <div style="margin-bottom:8px;">
+      <div style="font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:700;">Rate Cut Probability by Meeting</div>
+      <div id="dotPlot" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+    <div class="fc-divider"></div>
+    <div class="fc-note"><strong>Fed Outlook:</strong> Markets price in 1–2 cuts in H2 2025. Mortgage rates typically follow the 10-year Treasury, not the Fed Funds rate directly. A 25bps cut may lower mortgage rates by only ~0.10–0.15%.</div>
+  </div>
+
+  <!-- Historical Milestones -->
+  <div class="milestone-card">
+    <div class="mc-title">📜 Historical Rate Milestones</div>
+
+    <div class="ms-item">
+      <div class="ms-year hi">1981</div>
+      <div class="ms-body">
+        <div class="ms-title">All-Time High — Volcker Era</div>
+        <div class="ms-desc">Fed Chair Paul Volcker raised rates aggressively to fight 14% inflation. US economy entered recession.</div>
+      </div>
+      <div class="ms-rate hi">18.63%</div>
+    </div>
+
+    <div class="ms-item">
+      <div class="ms-year lo">2021</div>
+      <div class="ms-body">
+        <div class="ms-title">All-Time Low — COVID Era</div>
+        <div class="ms-desc">Pandemic-era stimulus drove 30-yr rates to record lows. Refinance boom surged to $2.8T in 2021.</div>
+      </div>
+      <div class="ms-rate lo">2.65%</div>
+    </div>
+
+    <div class="ms-item">
+      <div class="ms-year hi">2023</div>
+      <div class="ms-body">
+        <div class="ms-title">20-Year High — Inflation Fight</div>
+        <div class="ms-desc">Fastest Fed rate-hike cycle since 1980 pushed 30-yr to highest level since 2000.</div>
+      </div>
+      <div class="ms-rate hi">7.79%</div>
+    </div>
+
+    <div class="ms-item">
+      <div class="ms-year" style="background:#EFF6FF;color:#1D4ED8;">2000</div>
+      <div class="ms-body">
+        <div class="ms-title">Pre-Crisis Average</div>
+        <div class="ms-desc">Long-run average from 2000–2019. Rates above 6% were historically considered normal.</div>
+      </div>
+      <div class="ms-rate" style="color:#1D4ED8;">6.29%</div>
+    </div>
+
+    <div class="ms-item">
+      <div class="ms-year now">Today</div>
+      <div class="ms-body">
+        <div class="ms-title">Current Rate · Jun 2025</div>
+        <div class="ms-desc">Above long-run average. Affordability remains stretched vs 2021 lows at a $400K home.</div>
+      </div>
+      <div class="ms-rate now">6.82%</div>
+    </div>
+  </div>
+
+  <!-- Rate Alert Setup -->
+  <div class="alert-card">
+    <div class="ac-head">
+      <div class="ac-icon">🔔</div>
+      <div>
+        <div class="ac-title">Set Rate Alert</div>
+        <div class="ac-sub">Get notified when 30-yr fixed hits your target</div>
+      </div>
+    </div>
+    <div class="ac-inputs">
+      <div class="ac-row">
+        <div class="ac-lbl">Alert when rate drops below</div>
+        <input class="ac-field" type="text" id="alertRate" value="6.50%" />
+      </div>
+      <div class="ac-row">
+        <div class="ac-lbl">Loan type</div>
+        <select class="ac-field" style="width:120px;font-size:11px;">
+          <option>30-Yr Fixed</option>
+          <option>15-Yr Fixed</option>
+          <option>5/1 ARM</option>
+          <option>VA Loan</option>
+          <option>FHA Loan</option>
+        </select>
+      </div>
+    </div>
+    <button class="ac-btn" onclick="saveAlert()">🔔 Save Rate Alert</button>
+  </div>
+
+  <!-- Top Lenders -->
+  <div class="lender-card">
+    <div class="lc-title">Top Lender Rates Today <span>View All →</span></div>
+
+    <div class="lender-row">
+      <div class="lender-rank gold">1</div>
+      <div><div class="lender-name">Rocket Mortgage</div><div class="lender-type">Online · Largest US lender</div></div>
+      <div style="text-align:right;">
+        <div class="lender-rate">6.79%</div>
+        <div class="lender-apr">APR 7.01%</div>
+        <div class="lender-bar-wrap" style="width:72px;"><div class="lender-bar" style="width:95%;background:#1B3F72;"></div></div>
+      </div>
+    </div>
+
+    <div class="lender-row">
+      <div class="lender-rank">2</div>
+      <div><div class="lender-name">United Wholesale</div><div class="lender-type">Wholesale · broker channel</div></div>
+      <div style="text-align:right;">
+        <div class="lender-rate">6.81%</div>
+        <div class="lender-apr">APR 7.04%</div>
+        <div class="lender-bar-wrap" style="width:72px;"><div class="lender-bar" style="width:90%;background:#1B3F72;"></div></div>
+      </div>
+    </div>
+
+    <div class="lender-row">
+      <div class="lender-rank">3</div>
+      <div><div class="lender-name">Chase Bank</div><div class="lender-type">Retail bank · full service</div></div>
+      <div style="text-align:right;">
+        <div class="lender-rate">6.88%</div>
+        <div class="lender-apr">APR 7.10%</div>
+        <div class="lender-bar-wrap" style="width:72px;"><div class="lender-bar" style="width:80%;background:#1B3F72;"></div></div>
+      </div>
+    </div>
+
+    <div class="lender-row">
+      <div class="lender-rank">4</div>
+      <div><div class="lender-name">Wells Fargo</div><div class="lender-type">Retail bank · nationwide</div></div>
+      <div style="text-align:right;">
+        <div class="lender-rate">6.91%</div>
+        <div class="lender-apr">APR 7.14%</div>
+        <div class="lender-bar-wrap" style="width:72px;"><div class="lender-bar" style="width:74%;background:#1B3F72;"></div></div>
+      </div>
+    </div>
+
+    <div class="lender-row">
+      <div class="lender-rank">5</div>
+      <div><div class="lender-name">Better.com</div><div class="lender-type">Online · instant pre-approval</div></div>
+      <div style="text-align:right;">
+        <div class="lender-rate">6.75%</div>
+        <div class="lender-apr">APR 6.96%</div>
+        <div class="lender-bar-wrap" style="width:72px;"><div class="lender-bar" style="width:100%;background:#15803D;"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────
+const DATASETS = {
+  '30yr': {
+    title: '30-Year Fixed Mortgage Rate',
+    sub: 'Freddie Mac Primary Mortgage Market Survey',
+    badge: '↑ +0.05 wk', badgeClass: 'up',
+    color: '#1B3F72',
+    fill: 'url(#fillGrad)',
+    '1m':  { labels:['May 8','May 15','May 22','May 29','Jun 5'], values:[6.76,6.81,6.77,6.77,6.82] },
+    '3m':  { labels:['Mar','Apr','May','Jun'], values:[6.65,6.82,6.77,6.82] },
+    '6m':  { labels:['Jan','Feb','Mar','Apr','May','Jun'], values:[6.96,6.87,6.65,6.82,6.77,6.82] },
+    '1y':  { labels:['Jun 24','Sep 24','Dec 24','Mar 25','Jun 25'], values:[6.86,6.09,6.72,6.65,6.82] },
+    '3y':  { labels:['2022','2023','2024','2025'], values:[3.76,6.81,6.72,6.82] },
+    '5y':  { labels:['2021','2022','2023','2024','2025'], values:[2.65,3.76,7.79,6.72,6.82] },
+    tsy: { '1m':[4.44,4.50,4.47,4.50,4.47],'3m':[4.22,4.50,4.50,4.47],'6m':[4.57,4.42,4.22,4.50,4.50,4.47],'1y':[4.36,3.77,4.39,4.22,4.47],'3y':[2.75,3.88,4.39,4.47],'5y':[1.52,2.75,3.88,4.39,4.47] }
+  },
+  '15yr': {
+    title: '15-Year Fixed Mortgage Rate',
+    sub: 'Freddie Mac · National Average',
+    badge: '↓ −0.02 wk', badgeClass: 'dn',
+    color: '#15803D',
+    fill: 'url(#fillGrad)',
+    '1m':  { labels:['May 8','May 15','May 22','May 29','Jun 5'], values:[6.14,6.16,6.13,6.13,6.11] },
+    '3m':  { labels:['Mar','Apr','May','Jun'], values:[6.04,6.10,6.13,6.11] },
+    '6m':  { labels:['Jan','Feb','Mar','Apr','May','Jun'], values:[6.28,6.18,6.04,6.10,6.13,6.11] },
+    '1y':  { labels:['Jun 24','Sep 24','Dec 24','Mar 25','Jun 25'], values:[6.19,5.38,6.04,6.04,6.11] },
+    '3y':  { labels:['2022','2023','2024','2025'], values:[3.10,6.11,6.04,6.11] },
+    '5y':  { labels:['2021','2022','2023','2024','2025'], values:[2.16,3.10,7.02,6.04,6.11] },
+    tsy: { '1m':[4.44,4.50,4.47,4.50,4.47],'3m':[4.22,4.50,4.50,4.47],'6m':[4.57,4.42,4.22,4.50,4.50,4.47],'1y':[4.36,3.77,4.39,4.22,4.47],'3y':[2.75,3.88,4.39,4.47],'5y':[1.52,2.75,3.88,4.39,4.47] }
+  },
+  'arm': {
+    title: '5/1 Adjustable-Rate Mortgage',
+    sub: 'National Average · First 5 years fixed',
+    badge: '↓ −0.03 wk', badgeClass: 'dn',
+    color: '#D97706',
+    fill: 'url(#fillGrad3)',
+    '1m':  { labels:['May 8','May 15','May 22','May 29','Jun 5'], values:[6.12,6.10,6.08,6.08,6.05] },
+    '3m':  { labels:['Mar','Apr','May','Jun'], values:[6.00,6.05,6.08,6.05] },
+    '6m':  { labels:['Jan','Feb','Mar','Apr','May','Jun'], values:[6.25,6.10,6.00,6.05,6.08,6.05] },
+    '1y':  { labels:['Jun 24','Sep 24','Dec 24','Mar 25','Jun 25'], values:[6.25,5.85,6.00,6.00,6.05] },
+    '3y':  { labels:['2022','2023','2024','2025'], values:[3.36,6.30,6.00,6.05] },
+    '5y':  { labels:['2021','2022','2023','2024','2025'], values:[2.40,3.36,6.89,6.00,6.05] },
+    tsy: { '1m':[4.44,4.50,4.47,4.50,4.47],'3m':[4.22,4.50,4.50,4.47],'6m':[4.57,4.42,4.22,4.50,4.50,4.47],'1y':[4.36,3.77,4.39,4.22,4.47],'3y':[2.75,3.88,4.39,4.47],'5y':[1.52,2.75,3.88,4.39,4.47] }
+  },
+  'jumbo': {
+    title: 'Jumbo 30-Year Mortgage Rate',
+    sub: 'Loans above $766,550 conforming limit',
+    badge: '↑ +0.08 wk', badgeClass: 'up',
+    color: '#6D28D9',
+    fill: 'url(#fillGrad)',
+    '1m':  { labels:['May 8','May 15','May 22','May 29','Jun 5'], values:[6.92,6.98,6.96,6.96,7.04] },
+    '3m':  { labels:['Mar','Apr','May','Jun'], values:[6.85,6.97,6.96,7.04] },
+    '6m':  { labels:['Jan','Feb','Mar','Apr','May','Jun'], values:[7.10,7.00,6.85,6.97,6.96,7.04] },
+    '1y':  { labels:['Jun 24','Sep 24','Dec 24','Mar 25','Jun 25'], values:[7.11,6.35,6.85,6.85,7.04] },
+    '3y':  { labels:['2022','2023','2024','2025'], values:[3.90,7.20,6.85,7.04] },
+    '5y':  { labels:['2021','2022','2023','2024','2025'], values:[2.70,3.90,7.96,6.85,7.04] },
+    tsy: { '1m':[4.44,4.50,4.47,4.50,4.47],'3m':[4.22,4.50,4.50,4.47],'6m':[4.57,4.42,4.22,4.50,4.50,4.47],'1y':[4.36,3.77,4.39,4.22,4.47],'3y':[2.75,3.88,4.39,4.47],'5y':[1.52,2.75,3.88,4.39,4.47] }
+  },
+  'va': {
+    title: 'VA Home Loan Rate',
+    sub: 'Veterans Affairs · No PMI · 0% down',
+    badge: '↑ +0.01 wk', badgeClass: 'up',
+    color: '#0F766E',
+    fill: 'url(#fillGrad)',
+    '1m':  { labels:['May 8','May 15','May 22','May 29','Jun 5'], values:[6.20,6.24,6.22,6.24,6.25] },
+    '3m':  { labels:['Mar','Apr','May','Jun'], values:[6.10,6.18,6.24,6.25] },
+    '6m':  { labels:['Jan','Feb','Mar','Apr','May','Jun'], values:[6.40,6.28,6.10,6.18,6.24,6.25] },
+    '1y':  { labels:['Jun 24','Sep 24','Dec 24','Mar 25','Jun 25'], values:[6.30,5.75,6.10,6.10,6.25] },
+    '3y':  { labels:['2022','2023','2024','2025'], values:[3.40,6.50,6.10,6.25] },
+    '5y':  { labels:['2021','2022','2023','2024','2025'], values:[2.48,3.40,7.48,6.10,6.25] },
+    tsy: { '1m':[4.44,4.50,4.47,4.50,4.47],'3m':[4.22,4.50,4.50,4.47],'6m':[4.57,4.42,4.22,4.50,4.50,4.47],'1y':[4.36,3.77,4.39,4.22,4.47],'3y':[2.75,3.88,4.39,4.47],'5y':[1.52,2.75,3.88,4.39,4.47] }
+  },
+  'fha': {
+    title: 'FHA 30-Year Mortgage Rate',
+    sub: '3.5% minimum down · MIP included',
+    badge: '→ unchanged', badgeClass: '',
+    color: '#B91C1C',
+    fill: 'url(#fillGrad2)',
+    '1m':  { labels:['May 8','May 15','May 22','May 29','Jun 5'], values:[6.52,6.58,6.56,6.55,6.55] },
+    '3m':  { labels:['Mar','Apr','May','Jun'], values:[6.42,6.52,6.55,6.55] },
+    '6m':  { labels:['Jan','Feb','Mar','Apr','May','Jun'], values:[6.72,6.58,6.42,6.52,6.55,6.55] },
+    '1y':  { labels:['Jun 24','Sep 24','Dec 24','Mar 25','Jun 25'], values:[6.60,5.92,6.42,6.42,6.55] },
+    '3y':  { labels:['2022','2023','2024','2025'], values:[3.60,6.84,6.42,6.55] },
+    '5y':  { labels:['2021','2022','2023','2024','2025'], values:[2.55,3.60,7.58,6.42,6.55] },
+    tsy: { '1m':[4.44,4.50,4.47,4.50,4.47],'3m':[4.22,4.50,4.50,4.47],'6m':[4.57,4.42,4.22,4.50,4.50,4.47],'1y':[4.36,3.77,4.39,4.22,4.47],'3y':[2.75,3.88,4.39,4.47],'5y':[1.52,2.75,3.88,4.39,4.47] }
+  }
+};
+
+let currentType = '30yr';
+let currentRange = '6m';
+
+// ─── CHART RENDERER ─────────────────────────────────────────────────────
+function renderChart(type, range) {
+  const ds = DATASETS[type];
+  const d = ds[range];
+  const tsyVals = ds.tsy[range];
+  const vals = d.values;
+  const labels = d.labels;
+
+  const W = 360, H = 170, PAD_L = 32, PAD_R = 8, PAD_T = 12, PAD_B = 22;
+  const plotW = W - PAD_L - PAD_R;
+  const plotH = H - PAD_T - PAD_B;
+
+  const allVals = [...vals, ...tsyVals];
+  const minV = Math.min(...allVals) - 0.3;
+  const maxV = Math.max(...allVals) + 0.3;
+
+  function xPos(i) { return PAD_L + (i / (vals.length - 1)) * plotW; }
+  function yPos(v) { return PAD_T + plotH - ((v - minV) / (maxV - minV)) * plotH; }
+
+  // Grid
+  const gridEl = document.getElementById('gridLines');
+  gridEl.innerHTML = '';
+  const gridCount = 4;
+  for (let i = 0; i <= gridCount; i++) {
+    const y = PAD_T + (i / gridCount) * plotH;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', PAD_L); line.setAttribute('x2', W - PAD_R);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', 'rgba(27,63,114,0.08)'); line.setAttribute('stroke-width','1');
+    gridEl.appendChild(line);
+  }
+
+  // Y labels
+  const yEl = document.getElementById('yLabels');
+  yEl.innerHTML = '';
+  for (let i = 0; i <= gridCount; i++) {
+    const v = minV + ((gridCount - i) / gridCount) * (maxV - minV);
+    const y = PAD_T + (i / gridCount) * plotH;
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', PAD_L - 4); t.setAttribute('y', y + 3.5);
+    t.setAttribute('text-anchor','end'); t.setAttribute('font-size','8');
+    t.setAttribute('fill','rgba(74,92,122,0.7)'); t.setAttribute('font-family','Helvetica Neue, Arial');
+    t.textContent = v.toFixed(1) + '%';
+    yEl.appendChild(t);
+  }
+
+  // X labels
+  const xEl = document.getElementById('xLabels');
+  xEl.innerHTML = '';
+  labels.forEach((lbl, i) => {
+    const x = xPos(i);
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', x); t.setAttribute('y', H - 4);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','8');
+    t.setAttribute('fill','rgba(74,92,122,0.7)'); t.setAttribute('font-family','Helvetica Neue, Arial');
+    t.textContent = lbl;
+    xEl.appendChild(t);
+  });
+
+  // Main path
+  let pathD = vals.map((v, i) => `${i===0?'M':'L'}${xPos(i).toFixed(1)},${yPos(v).toFixed(1)}`).join(' ');
+  document.getElementById('mainLine').setAttribute('d', pathD);
+  document.getElementById('mainLine').setAttribute('stroke', ds.color);
+
+  // Fill path
+  const lastX = xPos(vals.length-1), firstX = xPos(0), botY = PAD_T + plotH;
+  document.getElementById('fillPath').setAttribute('d', pathD + ` L${lastX},${botY} L${firstX},${botY} Z`);
+
+  // Treasury line
+  let tsyD = tsyVals.map((v,i) => `${i===0?'M':'L'}${xPos(i).toFixed(1)},${yPos(v).toFixed(1)}`).join(' ');
+  document.getElementById('line2').setAttribute('d', tsyD);
+
+  // Current dot
+  const lastVal = vals[vals.length-1];
+  document.getElementById('currentDot').setAttribute('cx', xPos(vals.length-1));
+  document.getElementById('currentDot').setAttribute('cy', yPos(lastVal));
+  document.getElementById('currentDot').setAttribute('fill', ds.color);
+
+  // Update header
+  document.getElementById('chartTitle').textContent = ds.title;
+  document.getElementById('chartSub').textContent = ds.sub;
+  const badgeEl = document.getElementById('chartBadge');
+  badgeEl.textContent = ds.badge;
+  badgeEl.className = 'cc-badge ' + ds.badgeClass;
+
+  // Update legend
+  document.getElementById('leg1').textContent = ds.title.split(' ').slice(0,3).join(' ') + ' (' + (type==='30yr'?'Freddie Mac':'Avg') + ')';
+
+  // Tooltip interactivity
+  setupTooltip(vals, labels, ds.color, xPos, yPos);
+}
+
+function setupTooltip(vals, labels, color, xPos, yPos) {
+  const overlay = document.getElementById('chartOverlay');
+  const tipLine = document.getElementById('tipLine');
+  const tipDot = document.getElementById('tipDot');
+  const tipBox = document.getElementById('tipBox');
+  const tipRect = document.getElementById('tipRect');
+  const tipRate = document.getElementById('tipRate');
+  const tipDate = document.getElementById('tipDate');
+
+  overlay.addEventListener('mousemove', handleMove);
+  overlay.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e.touches[0]); }, {passive:false});
+  overlay.addEventListener('mouseleave', hide);
+  overlay.addEventListener('touchend', hide);
+
+  function handleMove(e) {
+    const svg = document.getElementById('mainChart');
+    const rect = svg.getBoundingClientRect();
+    const clientX = e.clientX;
+    const rawX = (clientX - rect.left) / rect.width * 360;
+    const PAD_L = 32, PAD_R = 8, plotW = 360 - PAD_L - PAD_R;
+    const fraction = Math.max(0, Math.min(1, (rawX - PAD_L) / plotW));
+    const idx = Math.round(fraction * (vals.length - 1));
+    const cx = xPos(idx);
+    const cy = yPos(vals[idx]);
+
+    tipLine.setAttribute('x1', cx); tipLine.setAttribute('x2', cx);
+    tipLine.setAttribute('opacity','1');
+    tipDot.setAttribute('cx', cx); tipDot.setAttribute('cy', cy);
+    tipDot.setAttribute('fill', color); tipDot.setAttribute('opacity','1');
+
+    tipRate.textContent = vals[idx].toFixed(2) + '%';
+    tipDate.textContent = labels[idx];
+    const rateW = Math.max(70, vals[idx].toFixed(2).length * 8 + 20);
+    tipRect.setAttribute('width', rateW); tipRect.setAttribute('height', 28);
+    const bx = Math.min(cx - rateW/2, 360 - PAD_R - rateW);
+    const finalBx = Math.max(PAD_L, bx);
+    tipRect.setAttribute('x', finalBx); tipRect.setAttribute('y', cy - 40);
+    tipRate.setAttribute('x', finalBx + rateW/2); tipRate.setAttribute('y', cy - 28);
+    tipRate.setAttribute('text-anchor','middle');
+    tipDate.setAttribute('x', finalBx + rateW/2); tipDate.setAttribute('y', cy - 17);
+    tipDate.setAttribute('text-anchor','middle');
+    tipBox.setAttribute('opacity','1');
+  }
+  function hide() {
+    tipLine.setAttribute('opacity','0');
+    tipDot.setAttribute('opacity','0');
+    tipBox.setAttribute('opacity','0');
+  }
+}
+
+// ─── DOT PLOT ───────────────────────────────────────────────────────────
+function renderDotPlot() {
+  const meetings = [
+    { label:'Jul 30, 2025', prob:65, cut:true },
+    { label:'Sep 17, 2025', prob:78, cut:true },
+    { label:'Nov 5, 2025',  prob:85, cut:true },
+    { label:'Dec 10, 2025', prob:88, cut:true },
+  ];
+  const container = document.getElementById('dotPlot');
+  container.innerHTML = '';
+  meetings.forEach(m => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    row.innerHTML = `
+      <span style="font-size:9px;color:rgba(255,255,255,0.5);width:88px;flex-shrink:0;">${m.label}</span>
+      <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:4px;height:6px;overflow:hidden;">
+        <div style="height:6px;border-radius:4px;background:${m.cut?'#FCD34D':'#6EE7B7'};width:${m.prob}%;transition:width .5s ease;"></div>
+      </div>
+      <span style="font-size:10px;font-weight:800;color:${m.cut?'#FCD34D':'#6EE7B7'};width:32px;text-align:right;">${m.prob}%</span>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ─── TAB & RANGE INTERACTIONS ────────────────────────────────────────────
+document.getElementById('rateTabs').addEventListener('click', function(e) {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  currentType = tab.dataset.type;
+  renderChart(currentType, currentRange);
+});
+
+document.getElementById('timeRange').addEventListener('click', function(e) {
+  const btn = e.target.closest('.tr-btn');
+  if (!btn) return;
+  document.querySelectorAll('.tr-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRange = btn.dataset.r;
+  renderChart(currentType, currentRange);
+});
+
+// ─── ALERT SAVE ─────────────────────────────────────────────────────────
+function saveAlert() {
+  const rate = document.getElementById('alertRate').value;
+  const btn = document.querySelector('.ac-btn');
+  btn.textContent = '✅ Alert Saved — ' + rate;
+  btn.style.background = '#15803D';
+  setTimeout(() => {
+    btn.textContent = '🔔 Save Rate Alert';
+    btn.style.background = '#D97706';
+  }, 2500);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+renderChart('30yr', '6m');
+renderDotPlot();
+</script>
+</body>
+</html>

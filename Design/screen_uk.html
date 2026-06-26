@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UK Mortgage Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#90EE90;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#1a1a5e;text-transform:none;letter-spacing:0;cursor:pointer;}
+.hero-card{background:linear-gradient(145deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(13,13,43,0.28);}
+.hero-card::before{content:'👑';position:absolute;right:5px;top:-5px;font-size:70px;opacity:0.08;}
+.hc-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.hc-title{font-size:19px;font-weight:800;color:#fff;margin:5px 0 13px;line-height:1.2;font-family:Georgia,serif;}
+.hc-title span{color:#FFD700;}
+.hc-row{display:flex;gap:8px;}
+.hc-box{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.hc-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.hc-box .v{font-size:14px;font-weight:800;color:#fff;}
+.hc-btn{margin-top:13px;width:100%;background:#C8102E;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(200,16,46,0.4);}
+.stamp-banner{background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #A5B4FC;border-radius:15px;padding:13px 15px;display:flex;align-items:center;gap:11px;margin-bottom:10px;}
+.sb-title{font-size:13px;font-weight:800;color:#1e1b4b;font-family:Georgia,serif;}.sb-sub{font-size:10px;color:#4338ca;margin-top:2px;}
+.sb-btn{margin-left:auto;background:#4F46E5;color:#fff;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;white-space:nowrap;flex-shrink:0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.tcard{background:#fff;border-radius:17px;padding:15px 13px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);cursor:pointer;position:relative;overflow:hidden;}
+.tcard.dark{background:linear-gradient(140deg,#0D0D2B,#1a1a5e);}
+.tcard.red{background:linear-gradient(140deg,#C8102E,#8B0A1E);}
+.tcard.royal{background:linear-gradient(140deg,#4F46E5,#3730A3);}
+.tcard.gold{background:linear-gradient(140deg,#B45309,#92400E);}
+.tic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;}
+.tcard:not(.dark):not(.red):not(.royal):not(.gold) .tic{background:#F5F5F8;}
+.tcard.dark .tic,.tcard.red .tic,.tcard.royal .tic,.tcard.gold .tic{background:rgba(255,255,255,0.15);}
+.tname{font-size:13px;font-weight:800;color:#0D0D2B;line-height:1.2;font-family:Georgia,serif;}
+.tcard.dark .tname,.tcard.red .tname,.tcard.royal .tname,.tcard.gold .tname{color:#fff;}
+.tdesc{font-size:10px;color:#5C5C8A;margin-top:3px;}
+.tcard.dark .tdesc,.tcard.red .tdesc,.tcard.royal .tdesc,.tcard.gold .tdesc{color:rgba(255,255,255,0.6);}
+.tarr{position:absolute;bottom:12px;right:12px;font-size:15px;color:rgba(13,13,43,0.18);}
+.tcard.dark .tarr,.tcard.red .tarr,.tcard.royal .tarr,.tcard.gold .tarr{color:rgba(255,255,255,0.25);}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-top:5px;}
+.badge-uk{background:#EEF2FF;color:#3730A3;}.badge-r{background:#FEF2F2;color:#991B1B;}
+.info-card{background:#fff;border-radius:15px;padding:14px;box-shadow:0 3px 14px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer;}
+.info-icon{width:40px;height:40px;border-radius:11px;background:#F5F5F8;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.info-name{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.info-sub{font-size:10px;color:#5C5C8A;margin-top:2px;}
+.info-chev{font-size:18px;color:rgba(13,13,43,0.2);margin-left:auto;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇬🇧</span><div class="hdr-title">UK Tools</div><div class="hdr-sub">GBP · BoE Rate · SDLT</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">2-Yr Fixed</div><div class="rs-val red">4.75%</div><div class="rs-note">↑ +0.05</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">5-Yr Fixed</div><div class="rs-val">4.35%</div><div class="rs-note">BoE</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Tracker</div><div class="rs-val grn">5.25%</div><div class="rs-note">Base+0.25</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">BoE Base</div><div class="rs-val gold">5.00%</div><div class="rs-note">Current</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Quick Estimate <span class="more">Advanced →</span></div>
+  <div class="hero-card">
+    <div class="hc-tag">UK Mortgage Calculator</div>
+    <div class="hc-title">Calculate your <span>Stamp Duty</span><br>& monthly payment</div>
+    <div class="hc-row">
+      <div class="hc-box"><label>Property Value</label><div class="v">£380,000</div></div>
+      <div class="hc-box"><label>Deposit</label><div class="v">15%</div></div>
+      <div class="hc-box"><label>Term</label><div class="v">25 yr</div></div>
+    </div>
+    <button class="hc-btn">👑 Calculate UK Mortgage</button>
+  </div>
+  <div class="sec-lbl">Stamp Duty (SDLT) <span class="more">SDLT Guide →</span></div>
+  <div class="stamp-banner">
+    <div style="font-size:24px">🏛️</div>
+    <div><div class="sb-title">Stamp Duty Land Tax</div><div class="sb-sub">First-time buyer relief up to £425,000 — calculate now</div></div>
+    <div class="sb-btn">Calculate</div>
+  </div>
+  <div class="sec-lbl">Core Tools <span class="more">All tools →</span></div>
+  <div class="grid2">
+    <div class="tcard dark"><div class="tic">🏠</div><div class="tname">Mortgage Calc</div><div class="tdesc">Monthly repayment</div><div class="badge badge-uk">Repayment</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">🏛️</div><div class="tname">Stamp Duty (SDLT)</div><div class="tdesc">Tax on purchase</div><div class="badge badge-r">FTB Relief</div><div class="tarr">›</div></div>
+    <div class="tcard royal"><div class="tic">📊</div><div class="tname">LTV Calculator</div><div class="tdesc">Loan-to-value ratio</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">🔁</div><div class="tname">Remortgage Tool</div><div class="tdesc">Switch & save calc</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">💷</div><div class="tname">Affordability</div><div class="tdesc">Max borrowing GBP</div><div class="tarr">›</div></div>
+    <div class="tcard red"><div class="tic">🏘️</div><div class="tname">Help to Buy</div><div class="tdesc">Equity loan scheme</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">📅</div><div class="tname">Amortization</div><div class="tdesc">Repayment schedule</div><div class="tarr">›</div></div>
+    <div class="tcard gold"><div class="tic">🏢</div><div class="tname">Buy-to-Let Calc</div><div class="tdesc">Rental yield & BTL</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">📋</div><div class="tname">Income Multiples</div><div class="tdesc">4x–4.5x salary check</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">🧾</div><div class="tname">SDLT Calculator</div><div class="tdesc">2nd home surcharge</div><div class="tarr">›</div></div>
+  </div>
+  <div class="sec-lbl">UK Resources</div>
+  <div class="info-card"><div class="info-icon">📉</div><div><div class="info-name">BoE Base Rate Tracker</div><div class="info-sub">Live Bank of England rate history</div></div><div class="info-chev">›</div></div>
+  <div class="info-card"><div class="info-icon">🏡</div><div><div class="info-name">UK House Price Index</div><div class="info-sub">HM Land Registry · regional data</div></div><div class="info-chev">›</div></div>
+  <div class="info-card"><div class="info-icon">🤝</div><div><div class="info-name">Shared Ownership Calc</div><div class="info-sub">Part-buy part-rent scheme</div></div><div class="info-chev">›</div></div>
+  <div class="info-card"><div class="info-icon">🤖</div><div><div class="info-name">UK AI Mortgage Advisor</div><div class="info-sub">FCA-aware guidance · SDLT help</div></div><div class="info-chev">›</div></div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+</body>
+</html>

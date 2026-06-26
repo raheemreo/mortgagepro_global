@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affordability EUR – Europe</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.save-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.save-btn{width:auto;padding:0 12px;font-size:12px;font-weight:700;}
+.save-btn[disabled]{opacity:0.4;cursor:not-allowed;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:22px;display:block;}
+.hdr-title{font-size:17px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;}
+.rs-val{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:26px;background:rgba(255,255,255,0.15);}
+.content{padding:16px 16px 100px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.f1{animation:fadeUp 0.38s ease both;}.f2{animation:fadeUp 0.38s 0.07s ease both;}.f3{animation:fadeUp 0.38s 0.14s ease both;}.f4{animation:fadeUp 0.38s 0.21s ease both;}.f5{animation:fadeUp 0.38s 0.28s ease both;}
+
+.country-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:14px;}
+.country-row::-webkit-scrollbar{display:none;}
+.cpill{flex-shrink:0;padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all 0.2s;}
+.cpill.active{background:#003399;color:#FFCC00;border-color:#003399;}
+.cpill:not(.active){background:#fff;color:#1A0040;border-color:rgba(0,51,153,0.15);}
+
+.card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(0,51,153,0.09);border:1px solid rgba(0,51,153,0.07);margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:800;color:#1A0040;margin-bottom:14px;font-family:Georgia,serif;}
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px;}
+.field-row{margin-bottom:13px;}
+.field-label{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;justify-content:space-between;}
+.field-val{font-size:14px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.slider{width:100%;-webkit-appearance:none;height:5px;border-radius:3px;background:linear-gradient(to right,#003399 0%,#003399 var(--pct,30%),#E0E7FF var(--pct,30%),#E0E7FF 100%);outline:none;cursor:pointer;}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#003399;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,51,153,0.3);cursor:pointer;}
+
+.afford-hero{background:linear-gradient(145deg,#003399,#1A0040);border-radius:22px;padding:22px;margin-bottom:14px;position:relative;overflow:hidden;}
+.afford-hero::before{content:'💶';position:absolute;right:5px;bottom:-5px;font-size:80px;opacity:0.07;}
+.ah-lbl{font-size:11px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;}
+.ah-val{font-size:38px;font-weight:900;color:#FFCC00;font-family:Georgia,serif;line-height:1;margin:6px 0 2px;}
+.ah-sub{font-size:11px;color:rgba(255,255,255,0.5);}
+.ah-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px;}
+.ah-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 8px;text-align:center;}
+.ah-box .l{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;}
+.ah-box .v{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+
+/* Capacity bar */
+.cap-wrap{margin-top:6px;}
+.cap-track{height:14px;background:#E0E7FF;border-radius:7px;overflow:hidden;position:relative;margin:8px 0 4px;}
+.cap-fill{height:100%;border-radius:7px;transition:width 0.7s ease;}
+.cap-labels{display:flex;justify-content:space-between;font-size:10px;color:#6B21A8;font-weight:700;}
+
+.scenarios-wrap{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+.scenario{background:#F7F3FF;border:1.5px solid rgba(0,51,153,0.1);border-radius:14px;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;}
+.scenario.best{border-color:#003399;background:#EEF2FF;}
+.sc-left .sc-name{font-size:12px;font-weight:800;color:#1A0040;}
+.sc-left .sc-desc{font-size:10px;color:#6B21A8;margin-top:2px;}
+.sc-val{font-size:16px;font-weight:900;color:#003399;font-family:Georgia,serif;}
+
+.tips-card{background:linear-gradient(145deg,#6D28D9,#4C1D95);border-radius:18px;padding:16px;margin-bottom:14px;}
+.tips-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:10px;font-family:Georgia,serif;}
+.tip-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.tip-item:last-child{margin-bottom:0;}
+.tip-ic{font-size:16px;flex-shrink:0;}
+.tip-text{font-size:11px;color:rgba(255,255,255,0.85);line-height:1.4;}
+
+.calc-btn{width:100%;background:linear-gradient(135deg,#FFCC00,#F59E0B);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#1A0040;cursor:pointer;box-shadow:0 4px 16px rgba(255,204,0,0.35);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,box-shadow .15s;}
+.calc-btn:active{transform:scale(.97);}
+@keyframes pulseGold{0%,100%{box-shadow:0 4px 16px rgba(255,204,0,0.35);}50%{box-shadow:0 4px 26px rgba(255,204,0,0.6);}}
+.calc-btn.idle{animation:pulseGold 2.4s ease-in-out infinite;}
+.results-wrap{display:none;}
+.results-wrap.show{display:block;}
+.save-btn[disabled]{opacity:0.4;cursor:not-allowed;}
+
+/* Quick stats row */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.stat-box{background:#fff;border-radius:14px;padding:12px 9px;box-shadow:0 3px 12px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);text-align:center;}
+.stat-icon{font-size:17px;margin-bottom:4px;}
+.stat-lbl{font-size:8.5px;color:#6B21A8;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+.stat-val{font-size:14px;font-weight:800;color:#1A0040;font-family:Georgia,serif;margin-top:3px;}
+
+/* Empty state */
+.empty-state{text-align:center;padding:30px 20px;color:#6B21A8;}
+.empty-state .es-icon{font-size:40px;margin-bottom:10px;}
+.empty-state .es-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.empty-state .es-sub{font-size:10.5px;color:#6B21A8;margin-top:4px;line-height:1.5;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1A0040;color:#FFCC00;font-size:13px;font-weight:700;padding:12px 22px;border-radius:50px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ Affordability saved!</div>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">💶</span><div class="hdr-title">Affordability EUR</div><div class="hdr-sub">Borrowing Capacity · Per Country</div></div>
+    <div class="save-btn" id="headerSaveBtn" onclick="saveCalc()" disabled>💾 Save</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">🇩🇪 4× rule</div><div class="rs-val grn">4–4.5x</div><div class="rs-note">Income Multiple</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇫🇷 35% DTI</div><div class="rs-val">HCSF</div><div class="rs-note">Hard Limit</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇳🇱 NHG</div><div class="rs-val gold">4.5×</div><div class="rs-note">With NHG</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">ECB Rate</div><div class="rs-val">4.00%</div><div class="rs-note">Current</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl f1" style="margin-top:0;">Country</div>
+  <div class="country-row f1">
+    <div class="cpill active" onclick="setC(this,'DE',4.0,3.85,0.10)">🇩🇪 Germany</div>
+    <div class="cpill" onclick="setC(this,'FR',4.5,3.60,0.10)">🇫🇷 France</div>
+    <div class="cpill" onclick="setC(this,'ES',4.0,4.10,0.20)">🇪🇸 Spain</div>
+    <div class="cpill" onclick="setC(this,'IT',3.5,3.95,0.20)">🇮🇹 Italy</div>
+    <div class="cpill" onclick="setC(this,'NL',4.5,3.75,0.10)">🇳🇱 Netherlands</div>
+    <div class="cpill" onclick="setC(this,'PT',4.0,3.50,0.15)">🇵🇹 Portugal</div>
+  </div>
+
+  <div class="card f2">
+    <div class="card-title">💼 Income & Finances</div>
+    <div class="field-row">
+      <div class="field-label"><span>Annual Gross Income</span><span class="field-val" id="annualInc-lbl">€ 72,000</span></div>
+      <input type="range" class="slider" id="annualInc" min="20000" max="300000" step="1000" value="72000" oninput="updSlider(this,'annualInc-lbl')">
+    </div>
+    <div class="field-row">
+      <div class="field-label"><span>Partner Annual Income</span><span class="field-val" id="partnerInc-lbl">€ 0</span></div>
+      <input type="range" class="slider" id="partnerInc" min="0" max="200000" step="1000" value="0" oninput="updSlider(this,'partnerInc-lbl')">
+    </div>
+    <div class="field-row">
+      <div class="field-label"><span>Total Savings / Deposit</span><span class="field-val" id="savings-lbl">€ 60,000</span></div>
+      <input type="range" class="slider" id="savings" min="5000" max="500000" step="2500" value="60000" oninput="updSlider(this,'savings-lbl')">
+    </div>
+    <div class="field-row">
+      <div class="field-label"><span>Existing Monthly Debts</span><span class="field-val" id="debts-lbl">€ 300</span></div>
+      <input type="range" class="slider" id="debts" min="0" max="5000" step="50" value="300" oninput="updSlider(this,'debts-lbl')">
+    </div>
+    <div class="field-row" style="margin-bottom:4px;">
+      <div class="field-label"><span>Interest Rate</span><span class="field-val" id="aff-rate-lbl">3.85%</span></div>
+      <input type="range" class="slider" id="affRate" min="1" max="10" step="0.05" value="3.85" oninput="updRate(this,'aff-rate-lbl')">
+    </div>
+    <button class="calc-btn idle" id="calcBtn" onclick="calc()" style="margin-top:14px;">📊 Calculate Affordability</button>
+  </div>
+
+  <div class="results-wrap" id="resultsWrap">
+  <div class="sec-lbl f3" style="margin-top:0;">Quick Stats</div>
+  <div class="stats-row f3">
+    <div class="stat-box"><div class="stat-icon">🏷️</div><div class="stat-lbl">Income Multiple</div><div class="stat-val" id="statMultiple">—</div></div>
+    <div class="stat-box"><div class="stat-icon">💰</div><div class="stat-lbl">Deposit Used</div><div class="stat-val" id="statDeposit">—</div></div>
+    <div class="stat-box"><div class="stat-icon">📅</div><div class="stat-lbl">Est. Term</div><div class="stat-val">25 yrs</div></div>
+  </div>
+
+
+  <div class="afford-hero f3">
+    <div class="ah-lbl">Maximum Borrowing</div>
+    <div class="ah-val" id="maxBorrow">€ 288,000</div>
+    <div class="ah-sub" id="afford-sub">Germany · 4× income rule · 3.85%</div>
+    <div class="ah-grid">
+      <div class="ah-box"><div class="l">Max Property</div><div class="v" id="maxProperty">€348,000</div></div>
+      <div class="ah-box"><div class="l">Monthly Pymt</div><div class="v" id="affordMonthly">€1,724</div></div>
+      <div class="ah-box"><div class="l">Income Multi</div><div class="v" id="incMultiple">4.0×</div></div>
+    </div>
+  </div>
+
+  <div class="card f3">
+    <div class="card-title">📊 Borrowing Capacity</div>
+    <div class="cap-wrap">
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:#6B21A8;margin-bottom:4px;"><span>Conservative</span><span>Standard</span><span>Maximum</span></div>
+      <div class="cap-track"><div class="cap-fill" id="capFill" style="width:65%;background:linear-gradient(to right,#22C55E,#FFCC00,#003399)"></div></div>
+      <div class="cap-labels"><span id="cap-min">€216k</span><span id="cap-mid">€288k</span><span id="cap-max">€360k</span></div>
+    </div>
+    <div class="scenarios-wrap" id="scenarios"></div>
+  </div>
+
+  <div class="tips-card f4">
+    <div class="tips-title">💡 Country Affordability Tips</div>
+    <div id="countryTips"></div>
+  </div>
+  </div><!-- /results-wrap -->
+
+  <div class="empty-state" id="emptyState">
+    <div class="es-icon">💶</div>
+    <div class="es-title">Enter Your Details Above</div>
+    <div class="es-sub">Adjust the sliders, then tap<br><strong>Calculate Affordability</strong> to see your borrowing power.</div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+const cData={
+  DE:{name:'Germany',flag:'🇩🇪',multiple:4.0,rate:3.85,minDeposit:0.10,dtiLimit:0.40,tips:['Savings must cover 10–20% deposit plus ~5–6% closing costs (Grunderwerbsteuer, notary, registry)','Germany uses income multiples of 4–5× annual gross income','No hard DTI cap but lenders prefer under 40%','Consider KfW subsidised loans for first buyers (as low as 2.5%)']},
+  FR:{name:'France',flag:'🇫🇷',multiple:4.5,rate:3.60,minDeposit:0.10,dtiLimit:0.35,tips:['France HCSF regulation caps DTI strictly at 35%','Notaire fees of 7–8% apply to resale properties (2.5% on new builds)','PTZ (Prêt à Taux Zéro) zero-interest loan available for first buyers','Maximum term is 25 years (27 years with construction)']},
+  ES:{name:'Spain',flag:'🇪🇸',multiple:4.0,rate:4.10,minDeposit:0.20,dtiLimit:0.40,tips:['Spanish lenders typically require 20% minimum deposit','ITP tax is 6–10% on resale properties depending on region','Euribor-linked variable mortgages are popular but carry rate risk','Non-residents usually get max 70% LTV from Spanish banks']},
+  IT:{name:'Italy',flag:'🇮🇹',multiple:3.5,rate:3.95,minDeposit:0.20,dtiLimit:0.40,tips:['Italian banks use conservative 3.5× income multiples','Notary (Rogito) costs approx 1.5% of property value','First home buyers get reduced Imposta di Registro at 2%','Mutuo Agevolato subsidised mortgages available under age 36']},
+  NL:{name:'Netherlands',flag:'🇳🇱',multiple:4.5,rate:3.75,minDeposit:0.10,dtiLimit:0.43,tips:['NHG (Nationale Hypotheek Garantie) allows up to 4.5× and lower rates','NHG guarantee available on properties up to €435,000 (2025)','Transfer tax is only 2% (0% for buyers under 35 purchasing their first home)','Dutch mortgages up to 100% of property value (LTV)']},
+  PT:{name:'Portugal',flag:'🇵🇹',multiple:4.0,rate:3.50,minDeposit:0.15,dtiLimit:0.50,tips:['Portugal allows up to 50% DTI but 36% is preferred by lenders','NHR (Non-Habitual Resident) tax regime available to new residents','IMT tax applies on resale; new builds attract 23% VAT instead','Maximum term is 40 years for borrowers under 30']},
+};
+let country='DE';
+let hasCalculated=false;
+function setC(el,code){
+  document.querySelectorAll('.cpill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active'); country=code;
+  const c=cData[code];
+  document.getElementById('affRate').value=c.rate;
+  updRate(document.getElementById('affRate'),'aff-rate-lbl');
+  document.getElementById('calcBtn').classList.add('idle');
+}
+function fmt(n){return new Intl.NumberFormat('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.round(n));}
+function updSlider(el,lblId){
+  const v=parseFloat(el.value);
+  const pct=(v-el.min)/(el.max-el.min)*100;
+  el.style.setProperty('--pct',pct+'%');
+  document.getElementById(lblId).textContent='€ '+fmt(v);
+  document.getElementById('calcBtn').classList.add('idle');
+}
+function updRate(el,lblId){
+  const v=parseFloat(el.value);
+  const pct=(v-el.min)/(el.max-el.min)*100;
+  el.style.setProperty('--pct',pct+'%');
+  document.getElementById(lblId).textContent=v.toFixed(2)+'%';
+  document.getElementById('calcBtn').classList.add('idle');
+}
+function calcMonthly(loanAmt,annualRate,termYrs){
+  const r=annualRate/100/12; const n=termYrs*12;
+  return r===0?loanAmt/n:loanAmt*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+}
+function calc(){
+  document.getElementById('calcBtn').classList.remove('idle');
+  const c=cData[country];
+  const annualInc=parseFloat(document.getElementById('annualInc').value)||0;
+  const partnerInc=parseFloat(document.getElementById('partnerInc').value)||0;
+  const savings=parseFloat(document.getElementById('savings').value)||0;
+  const debts=parseFloat(document.getElementById('debts').value)||0;
+  const rate=parseFloat(document.getElementById('affRate').value)||c.rate;
+  const totalInc=annualInc+partnerInc;
+  const monthlyInc=totalInc/12;
+  const maxDTIPayment=monthlyInc*c.dtiLimit-debts;
+  // DTI-based max loan (25yr)
+  const r=rate/100/12; const n=25*12;
+  const maxLoanDTI=maxDTIPayment>0?maxDTIPayment*(Math.pow(1+r,n)-1)/(r*Math.pow(1+r,n)):0;
+  // income multiple based
+  const maxLoanMult=totalInc*c.multiple;
+  const maxLoan=Math.min(maxLoanDTI,maxLoanMult);
+  const depositAvail=savings*(1-0.07); // reserve 7% for costs
+  const maxProperty=maxLoan+depositAvail;
+  const monthly=calcMonthly(maxLoan,rate,25);
+  document.getElementById('maxBorrow').textContent='€ '+fmt(maxLoan);
+  document.getElementById('afford-sub').textContent=`${c.name} · ${c.multiple}× income · ${rate.toFixed(2)}%`;
+  document.getElementById('maxProperty').textContent='€'+fmt(maxProperty);
+  document.getElementById('affordMonthly').textContent='€'+fmt(monthly);
+  document.getElementById('incMultiple').textContent=c.multiple+'×';
+  // quick stats
+  document.getElementById('statMultiple').textContent=c.multiple+'×';
+  document.getElementById('statDeposit').textContent='€'+fmt(depositAvail);
+  // capacity bar
+  const conservative=maxLoan*0.75; const max=maxLoan*1.1;
+  document.getElementById('cap-min').textContent='€'+fmt(conservative);
+  document.getElementById('cap-mid').textContent='€'+fmt(maxLoan);
+  document.getElementById('cap-max').textContent='€'+fmt(max);
+  // scenarios
+  const sc=document.getElementById('scenarios');
+  sc.innerHTML='';
+  const scens=[
+    {name:'Conservative (3.5× income)',desc:'Lower risk, easier approval',loan:totalInc*3.5,best:false},
+    {name:'Standard ('+c.multiple+'× income)',desc:`${c.name} standard`,loan:maxLoan,best:true},
+    {name:'Stretch (5× income)',desc:'Subject to affordability check',loan:totalInc*5,best:false},
+  ];
+  scens.forEach(s=>{
+    sc.innerHTML+=`<div class="scenario${s.best?' best':''}"><div class="sc-left"><div class="sc-name">${s.name}${s.best?' ⭐':''}</div><div class="sc-desc">${s.desc}</div></div><div class="sc-val">€${fmt(s.loan)}</div></div>`;
+  });
+  // tips
+  const tips=document.getElementById('countryTips');
+  tips.innerHTML='';
+  c.tips.forEach(tip=>{
+    tips.innerHTML+=`<div class="tip-item"><div class="tip-ic">•</div><div class="tip-text">${tip}</div></div>`;
+  });
+
+  // reveal results, hide empty state, enable save
+  document.getElementById('resultsWrap').classList.add('show');
+  document.getElementById('emptyState').style.display='none';
+  const saveBtn=document.getElementById('headerSaveBtn');
+  saveBtn.removeAttribute('disabled');
+  hasCalculated=true;
+  lastResult={maxLoan,maxProperty,monthly,country:c.name,rate};
+  setTimeout(()=>{document.getElementById('resultsWrap').scrollIntoView({behavior:'smooth',block:'start'});},80);
+}
+// init
+['annualInc','partnerInc','savings','debts'].forEach(id=>{
+  const el=document.getElementById(id);
+  const pct=(el.value-el.min)/(el.max-el.min)*100;
+  el.style.setProperty('--pct',pct+'%');
+});
+const rateEl=document.getElementById('affRate');
+rateEl.style.setProperty('--pct',((3.85-1)/(10-1)*100)+'%');
+
+let savedCalcs=[];
+let lastResult=null;
+function saveCalc(){
+  if(!hasCalculated||!lastResult){return;}
+  savedCalcs.unshift({...lastResult,ts:new Date().toLocaleTimeString()});
+  const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>

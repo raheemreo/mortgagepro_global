@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>City Property Prices – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'🏙️';position:absolute;right:-10px;top:20px;font-size:120px;opacity:.08;line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+
+/* SEARCH */
+.search-bar{background:var(--card);border:1.5px solid rgba(255,107,0,0.15);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;box-shadow:var(--sh);}
+.search-icon{font-size:16px;flex-shrink:0;}
+.search-bar input{flex:1;background:transparent;border:none;outline:none;font-size:13px;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;}
+.search-bar input::placeholder{color:var(--muted);}
+
+/* FILTER TABS */
+.filter-tabs{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:14px;}
+.filter-tabs::-webkit-scrollbar{display:none;}
+.ftab{flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:'Trebuchet MS',sans-serif;transition:all .15s;}
+.ftab.active{background:var(--saffron);border-color:var(--saffron);color:#fff;}
+
+/* CHART */
+.price-chart{background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.pc-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.pc-sub{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.chart-rows{display:flex;flex-direction:column;gap:8px;}
+.chart-row{display:flex;align-items:center;gap:9px;}
+.cr-city{font-size:9.5px;font-weight:800;color:var(--navy);width:70px;flex-shrink:0;}
+.cr-track{flex:1;height:11px;background:#F5EDE0;border-radius:6px;overflow:hidden;position:relative;}
+.cr-fill{height:100%;border-radius:6px;transition:width .8s ease;}
+.cr-price{font-size:10px;font-weight:800;color:var(--navy);width:68px;text-align:right;flex-shrink:0;font-family:'Trebuchet MS',sans-serif;}
+.cr-chg{font-size:9px;font-weight:700;width:36px;text-align:right;flex-shrink:0;font-family:'Trebuchet MS',sans-serif;}
+.up{color:var(--green);}
+.dn{color:var(--saffron2);}
+
+/* CITY CARDS GRID */
+.city-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cc{background:var(--card);border-radius:17px;padding:14px 13px;box-shadow:var(--sh);border:1px solid var(--border);cursor:pointer;transition:transform .15s;position:relative;overflow:hidden;}
+.cc:active{transform:scale(.97);}
+.cc-icon{font-size:26px;margin-bottom:8px;display:block;}
+.cc-name{font-size:13px;font-weight:800;color:var(--navy);}
+.cc-state{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:1px;}
+.cc-price{font-size:15px;font-weight:800;color:var(--saffron);margin-top:8px;}
+.cc-sqft{font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.cc-chg{font-size:9.5px;font-weight:800;margin-top:4px;font-family:'Trebuchet MS',sans-serif;}
+.cc-yoy{font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:1px;}
+.cc-tier{position:absolute;top:10px;right:10px;font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;font-family:'Trebuchet MS',sans-serif;}
+.tier1{background:#FFF3E0;color:#E05A00;}
+.tier2{background:#EFF6FF;color:#1D4ED8;}
+.tier3{background:#F0FDF4;color:var(--green);}
+
+/* LOCALITY DETAIL PANEL */
+.detail-panel{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:var(--sh2);display:none;}
+.dp-city{font-size:18px;font-weight:800;color:#fff;margin-bottom:4px;}
+.dp-state{font-size:10px;color:rgba(255,255,255,0.55);font-family:'Trebuchet MS',sans-serif;margin-bottom:14px;}
+.dp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
+.dp-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:10px 9px;text-align:center;}
+.dp-lbl{font-size:8px;color:rgba(255,255,255,0.50);font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+.dp-val{font-size:13px;font-weight:800;color:#fff;}
+.dp-val.saf{color:var(--ochre-lt);}
+.locality-title{font-size:11px;font-weight:800;color:rgba(255,255,255,0.70);margin-bottom:8px;}
+.locality-scroll{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;}
+.locality-scroll::-webkit-scrollbar{display:none;}
+.loc-chip{flex-shrink:0;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18);border-radius:11px;padding:7px 11px;text-align:center;}
+.loc-name{font-size:9.5px;font-weight:800;color:#fff;}
+.loc-price{font-size:10px;font-weight:800;color:var(--ochre-lt);margin-top:2px;}
+.loc-chg{font-size:8px;font-family:'Trebuchet MS',sans-serif;margin-top:1px;}
+
+/* TREND SPARKLINE */
+.trend-wrap{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.tw-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.tw-label{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:8px;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .10s;}
+.fu3{animation:fadeUp .38s ease both .16s;}
+.fu4{animation:fadeUp .38s ease both .22s;}
+.fu5{animation:fadeUp .38s ease both .28s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏙️</div>
+      <div class="hdr-title">City <span>Property Prices</span></div>
+      <div class="hdr-sub">All India · ₹/sqft · NHB Residex · Q1 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Mumbai</div><div class="rs-v saf">₹22.4K</div><div class="rs-n">/sqft</div></div>
+    <div class="rs"><div class="rs-l">Bengaluru</div><div class="rs-v grn">₹11.5K</div><div class="rs-n">/sqft</div></div>
+    <div class="rs"><div class="rs-l">Hyderabad</div><div class="rs-v">₹9.1K</div><div class="rs-n">/sqft</div></div>
+    <div class="rs"><div class="rs-l">Avg YoY</div><div class="rs-v grn">+4.2%</div><div class="rs-n">India</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec fu1" style="margin-top:0">Search &amp; Filter Cities</div>
+
+  <div class="search-bar fu1">
+    <div class="search-icon">🔍</div>
+    <input type="text" id="searchInput" placeholder="Search city, state…" oninput="filterCities()">
+  </div>
+
+  <div class="filter-tabs fu1">
+    <div class="ftab active" onclick="filterTab('all',this)">All Cities</div>
+    <div class="ftab" onclick="filterTab('tier1',this)">Tier 1</div>
+    <div class="ftab" onclick="filterTab('tier2',this)">Tier 2</div>
+    <div class="ftab" onclick="filterTab('tier3',this)">Tier 3</div>
+    <div class="ftab" onclick="filterTab('trending',this)">🔥 Trending</div>
+  </div>
+
+  <!-- BAR CHART TOP 8 -->
+  <div class="sec fu2">Price Comparison — Top 8 Cities</div>
+  <div class="price-chart fu2">
+    <div class="pc-title">₹/sqft Residential (Q1 2025) <span class="pc-sub">NHB Residex</span></div>
+    <div class="chart-rows" id="barChart"></div>
+  </div>
+
+  <!-- CITY DETAIL (shown on click) -->
+  <div class="detail-panel" id="detailPanel">
+    <div class="dp-city" id="dp-city">—</div>
+    <div class="dp-state" id="dp-state">—</div>
+    <div class="dp-grid" id="dp-grid"></div>
+    <div class="locality-title">Popular Localities</div>
+    <div class="locality-scroll" id="dp-localities"></div>
+  </div>
+
+  <!-- ALL CITIES GRID -->
+  <div class="sec fu3">All Cities <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;" id="cityCount"></span></div>
+  <div class="city-grid fu3" id="cityGrid"></div>
+
+  <!-- TREND SPARKLINE SVG -->
+  <div class="sec fu4">India Property Price Trend (2020–2025)</div>
+  <div class="trend-wrap fu4">
+    <div class="tw-title">📈 All-India Avg Residential Price Index</div>
+    <div class="tw-label">₹/sqft · Source: NHB Residex</div>
+    <svg viewBox="0 0 340 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;margin-bottom:8px;">
+      <defs>
+        <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FF6B00" stop-opacity=".25"/>
+          <stop offset="100%" stop-color="#FF6B00" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Grid lines -->
+      <line x1="0" y1="20" x2="340" y2="20" stroke="#F5EDE0" stroke-width="1"/>
+      <line x1="0" y1="50" x2="340" y2="50" stroke="#F5EDE0" stroke-width="1"/>
+      <line x1="0" y1="80" x2="340" y2="80" stroke="#F5EDE0" stroke-width="1"/>
+      <!-- Y labels -->
+      <text x="2" y="18" font-size="8" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">7.2K</text>
+      <text x="2" y="48" font-size="8" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">5.8K</text>
+      <text x="2" y="78" font-size="8" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">4.4K</text>
+      <!-- Area fill -->
+      <polygon points="30,82 80,74 130,66 180,55 230,42 280,28 330,22 330,88 30,88" fill="url(#tg)"/>
+      <!-- Line -->
+      <polyline points="30,82 80,74 130,66 180,55 230,42 280,28 330,22" fill="none" stroke="#FF6B00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Dots -->
+      <circle cx="30"  cy="82" r="4" fill="#FF6B00" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="80"  cy="74" r="4" fill="#FF6B00" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="130" cy="66" r="4" fill="#FF6B00" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="180" cy="55" r="4" fill="#FF6B00" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="230" cy="42" r="4" fill="#FF6B00" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="280" cy="28" r="4" fill="#FF6B00" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="330" cy="22" r="5" fill="#046A38" stroke="#fff" stroke-width="2"/>
+      <!-- X labels -->
+      <text x="22"  y="98" font-size="8" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">2020</text>
+      <text x="72"  y="98" font-size="8" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">2021</text>
+      <text x="122" y="98" font-size="8" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">2022</text>
+      <text x="172" y="98" font-size="8" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">2023</text>
+      <text x="222" y="98" font-size="8" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">2024</text>
+      <text x="272" y="98" font-size="8" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">2025</text>
+    </svg>
+    <div style="display:flex;gap:14px;">
+      <div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:3px;background:#FF6B00;"></div><div style="font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;">Avg Price Index</div></div>
+      <div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:3px;background:#046A38;"></div><div style="font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;">2025 (Latest)</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const CITIES = [
+  {icon:'🌆',name:'Mumbai',state:'Maharashtra',price:22400,yoy:3.2,tier:'tier1',trending:true,localities:[{n:'Bandra West',p:55000,c:'+4.1%'},{n:'Powai',p:18500,c:'+3.8%'},{n:'Thane',p:12200,c:'+5.1%'},{n:'Navi Mumbai',p:10800,c:'+4.7%'}]},
+  {icon:'🏙️',name:'Delhi NCR',state:'Delhi · Noida · Gurgaon',price:12800,yoy:4.1,tier:'tier1',trending:true,localities:[{n:'Dwarka Expressway',p:9200,c:'+8.2%'},{n:'Noida Sec 150',p:7800,c:'+6.5%'},{n:'Greater Noida West',p:5400,c:'+7.1%'},{n:'Gurgaon Golf Course',p:18500,c:'+3.2%'}]},
+  {icon:'💻',name:'Bengaluru',state:'Karnataka',price:11500,yoy:5.8,tier:'tier1',trending:true,localities:[{n:'Whitefield',p:9200,c:'+7.2%'},{n:'Sarjapur Road',p:8400,c:'+8.1%'},{n:'Electronic City',p:6200,c:'+5.5%'},{n:'Koramangala',p:14500,c:'+4.3%'}]},
+  {icon:'🏗️',name:'Hyderabad',state:'Telangana',price:9100,yoy:6.2,tier:'tier1',trending:true,localities:[{n:'Gachibowli',p:8500,c:'+7.8%'},{n:'Kondapur',p:7900,c:'+6.9%'},{n:'Kukatpally',p:6200,c:'+5.1%'},{n:'Jubilee Hills',p:15000,c:'+4.2%'}]},
+  {icon:'🌸',name:'Pune',state:'Maharashtra',price:8600,yoy:4.5,tier:'tier1',trending:false,localities:[{n:'Wakad',p:8400,c:'+5.2%'},{n:'Hinjewadi',p:7600,c:'+6.1%'},{n:'Kharadi',p:9200,c:'+4.8%'},{n:'Koregaon Park',p:14000,c:'+3.1%'}]},
+  {icon:'🌊',name:'Chennai',state:'Tamil Nadu',price:8200,yoy:2.4,tier:'tier1',trending:false,localities:[{n:'OMR Perungudi',p:7200,c:'+3.1%'},{n:'Velachery',p:8800,c:'+2.8%'},{n:'Anna Nagar',p:11500,c:'+2.1%'},{n:'Sholinganallur',p:6800,c:'+4.2%'}]},
+  {icon:'🎶',name:'Kolkata',state:'West Bengal',price:6400,yoy:1.9,tier:'tier1',trending:false,localities:[{n:'New Town',p:5800,c:'+3.2%'},{n:'Salt Lake',p:7500,c:'+2.1%'},{n:'Rajarhat',p:4800,c:'+4.1%'},{n:'Alipore',p:14000,c:'+1.2%'}]},
+  {icon:'🌴',name:'Ahmedabad',state:'Gujarat',price:5800,yoy:3.6,tier:'tier2',trending:true,localities:[{n:'SG Road',p:7200,c:'+4.5%'},{n:'Prahlad Nagar',p:8500,c:'+3.8%'},{n:'Bopal',p:5200,c:'+4.1%'},{n:'Satellite',p:9200,c:'+3.1%'}]},
+  {icon:'🏰',name:'Jaipur',state:'Rajasthan',price:4900,yoy:5.1,tier:'tier2',trending:true,localities:[{n:'Vaishali Nagar',p:5500,c:'+5.8%'},{n:'Jagatpura',p:4200,c:'+6.1%'},{n:'Mansarovar',p:4800,c:'+4.9%'},{n:'C-Scheme',p:8200,c:'+3.2%'}]},
+  {icon:'🎓',name:'Lucknow',state:'Uttar Pradesh',price:4600,yoy:4.8,tier:'tier2',trending:true,localities:[{n:'Gomti Nagar',p:5800,c:'+5.5%'},{n:'Aliganj',p:4200,c:'+4.8%'},{n:'Hazratganj',p:8500,c:'+2.1%'},{n:'Sushant Golf City',p:4600,c:'+6.2%'}]},
+  {icon:'⚡',name:'Surat',state:'Gujarat',price:4200,yoy:6.8,tier:'tier2',trending:true,localities:[{n:'Vesu',p:5200,c:'+7.2%'},{n:'Pal',p:4100,c:'+6.8%'},{n:'Adajan',p:4800,c:'+6.1%'},{n:'City Light',p:6200,c:'+5.1%'}]},
+  {icon:'🌿',name:'Indore',state:'Madhya Pradesh',price:4100,yoy:7.2,tier:'tier2',trending:true,localities:[{n:'Vijay Nagar',p:5100,c:'+7.8%'},{n:'Super Corridor',p:3800,c:'+8.5%'},{n:'AB Road',p:6500,c:'+4.2%'},{n:'Scheme 78',p:4600,c:'+6.9%'}]},
+  {icon:'🏖️',name:'Kochi',state:'Kerala',price:5200,yoy:3.1,tier:'tier2',trending:false,localities:[{n:'Marine Drive',p:12000,c:'+2.8%'},{n:'Panampilly Nagar',p:9500,c:'+3.1%'},{n:'Kakkanad',p:5800,c:'+4.2%'},{n:'Thrikkakara',p:4900,c:'+3.8%'}]},
+  {icon:'🌾',name:'Nagpur',state:'Maharashtra',price:4000,yoy:3.9,tier:'tier2',trending:false,localities:[{n:'Wardha Road',p:4800,c:'+4.5%'},{n:'Sitabuldi',p:6200,c:'+2.8%'},{n:'Kalamna',p:3500,c:'+4.1%'},{n:'Manish Nagar',p:4200,c:'+3.9%'}]},
+  {icon:'🎭',name:'Bhopal',state:'Madhya Pradesh',price:3800,yoy:4.2,tier:'tier3',trending:false,localities:[]},
+  {icon:'🏛️',name:'Patna',state:'Bihar',price:3500,yoy:3.8,tier:'tier3',trending:false,localities:[]},
+  {icon:'🌻',name:'Coimbatore',state:'Tamil Nadu',price:4400,yoy:5.4,tier:'tier3',trending:true,localities:[]},
+  {icon:'🎪',name:'Chandigarh',state:'Punjab',price:5500,yoy:2.9,tier:'tier2',trending:false,localities:[]},
+  {icon:'🌊',name:'Visakhapatnam',state:'Andhra Pradesh',price:4600,yoy:4.1,tier:'tier2',trending:false,localities:[]},
+  {icon:'🎯',name:'Nashik',state:'Maharashtra',price:4200,yoy:5.6,tier:'tier3',trending:true,localities:[]},
+];
+
+let activeFilter = 'all';
+let displayedCities = [...CITIES];
+
+function filterTab(tab, el){
+  activeFilter = tab;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  applyFilter();
+}
+
+function filterCities(){
+  applyFilter();
+}
+
+function applyFilter(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  displayedCities = CITIES.filter(c=>{
+    const matchSearch = !q || c.name.toLowerCase().includes(q) || c.state.toLowerCase().includes(q);
+    const matchTier = activeFilter==='all' || activeFilter===c.tier || (activeFilter==='trending'&&c.trending);
+    return matchSearch && matchTier;
+  });
+  renderGrid();
+}
+
+function renderGrid(){
+  const maxP = Math.max(...CITIES.map(c=>c.price));
+  document.getElementById('cityCount').textContent = displayedCities.length + ' cities';
+  document.getElementById('cityGrid').innerHTML = displayedCities.map(c=>`
+    <div class="cc" onclick="showDetail('${c.name}')">
+      <span class="cc-icon">${c.icon}</span>
+      <div class="cc-name">${c.name}</div>
+      <div class="cc-state">${c.state}</div>
+      <div class="cc-price">₹${c.price.toLocaleString('en-IN')}</div>
+      <div class="cc-sqft">per sqft</div>
+      <div class="cc-chg ${c.yoy>=0?'up':'dn'}">${c.yoy>=0?'↑':'↓'} ${Math.abs(c.yoy)}% YoY</div>
+      <div class="cc-tier ${c.tier}">${c.tier==='tier1'?'Tier 1':c.tier==='tier2'?'Tier 2':'Tier 3'}</div>
+    </div>`).join('');
+}
+
+function renderBarChart(){
+  const top = [...CITIES].sort((a,b)=>b.price-a.price).slice(0,8);
+  const maxP = top[0].price;
+  const colors = ['linear-gradient(90deg,#FF6B00,#E05A00)','linear-gradient(90deg,#1A3A8F,#0D9488)','linear-gradient(90deg,#046A38,#10B981)','linear-gradient(90deg,#7C3AED,#6D28D9)','linear-gradient(90deg,#C2410C,#9A3412)','linear-gradient(90deg,#0D9488,#0891B2)','linear-gradient(90deg,#B45309,#92400E)','linear-gradient(90deg,#BE185D,#9D174D)'];
+  document.getElementById('barChart').innerHTML = top.map((c,i)=>`
+    <div class="chart-row">
+      <div class="cr-city">${c.name}</div>
+      <div class="cr-track"><div class="cr-fill" style="width:${(c.price/maxP*100).toFixed(1)}%;background:${colors[i]};"></div></div>
+      <div class="cr-price">₹${c.price.toLocaleString('en-IN')}/sqft</div>
+      <div class="cr-chg up">+${c.yoy}%</div>
+    </div>`).join('');
+}
+
+function showDetail(name){
+  const c = CITIES.find(x=>x.name===name);
+  if(!c) return;
+  const panel = document.getElementById('detailPanel');
+  document.getElementById('dp-city').textContent = c.icon+' '+c.name;
+  document.getElementById('dp-state').textContent = c.state+' · '+c.tier.toUpperCase();
+  document.getElementById('dp-grid').innerHTML = `
+    <div class="dp-box"><div class="dp-lbl">Avg Price</div><div class="dp-val saf">₹${c.price.toLocaleString('en-IN')}/sqft</div></div>
+    <div class="dp-box"><div class="dp-lbl">YoY Growth</div><div class="dp-val" style="color:#86EFAC;">+${c.yoy}%</div></div>
+    <div class="dp-box"><div class="dp-lbl">Tier</div><div class="dp-val">${c.tier==='tier1'?'Tier 1':c.tier==='tier2'?'Tier 2':'Tier 3'}</div></div>`;
+  if(c.localities.length>0){
+    document.getElementById('dp-localities').innerHTML = c.localities.map(l=>`
+      <div class="loc-chip">
+        <div class="loc-name">${l.n}</div>
+        <div class="loc-price">₹${l.p.toLocaleString('en-IN')}/sqft</div>
+        <div class="loc-chg up">${l.c}</div>
+      </div>`).join('');
+  } else {
+    document.getElementById('dp-localities').innerHTML = '<div style="color:rgba(255,255,255,0.45);font-size:10px;font-family:\'Trebuchet MS\',sans-serif;padding:4px;">Locality data coming soon</div>';
+  }
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+renderBarChart();
+renderGrid();
+</script>
+</body>
+</html>

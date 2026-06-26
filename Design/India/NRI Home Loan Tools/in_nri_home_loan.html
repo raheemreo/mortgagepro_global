@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NRI Home Loan · MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:13px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .badge{font-size:9px;font-weight:700;background:#EFF6FF;color:#1D4ED8;padding:3px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+/* HERO */
+.nri-hero{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:22px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:12px;}
+.nri-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,107,0,0.16);}
+.nri-hero::after{content:'✈️';position:absolute;right:14px;bottom:14px;font-size:52px;opacity:.15;}
+.h-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.h-title{font-size:18px;font-weight:800;color:#fff;margin:4px 0 6px;line-height:1.25;}
+.h-title span{color:var(--ochre-lt);}
+.h-sub{font-size:10.5px;color:rgba(255,255,255,0.55);margin-bottom:14px;font-family:'Trebuchet MS',sans-serif;line-height:1.5;}
+.hero-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.hs-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:9px 8px;text-align:center;}
+.hs-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;font-family:'Trebuchet MS',sans-serif;margin-bottom:2px;}
+.hs-box .sv{font-size:13px;font-weight:800;color:#fff;}
+.hs-box .sv.ok{color:#86EFAC;}
+
+/* CATEGORY PILLS */
+.pill-row{display:flex;gap:7px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.pill-row::-webkit-scrollbar{display:none;}
+.pill{flex-shrink:0;padding:8px 14px;border-radius:22px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:'Trebuchet MS',sans-serif;transition:all .18s;}
+.pill.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+/* INPUT CARD */
+.input-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.input-card h3{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.field{margin-bottom:12px;}
+.field label{font-size:9.5px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.4px;}
+.field input,.field select{width:100%;background:#FFF8F0;border:1.5px solid var(--border);border-radius:11px;padding:11px 14px;font-size:13px;font-weight:700;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:var(--saffron);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-hint{font-size:9px;color:var(--muted);margin-top:3px;font-family:'Trebuchet MS',sans-serif;}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;transition:transform .15s;}
+.calc-btn:active{transform:scale(.97);}
+
+/* RESULT */
+.result-card{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:20px;padding:18px;box-shadow:var(--sh2);margin-bottom:12px;display:none;}
+.result-card.show{display:block;}
+.res-title{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.7px;font-family:'Trebuchet MS',sans-serif;margin-bottom:12px;}
+.emi-display{text-align:center;margin-bottom:16px;}
+.emi-label{font-size:11px;color:rgba(255,255,255,0.6);font-family:'Trebuchet MS',sans-serif;}
+.emi-amount{font-size:38px;font-weight:800;color:#fff;line-height:1.1;}
+.emi-currency{font-size:18px;color:var(--ochre-lt);}
+.emi-sub{font-size:11px;color:rgba(255,255,255,0.55);font-family:'Trebuchet MS',sans-serif;margin-top:4px;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.res-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:11px;padding:10px 11px;}
+.res-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:2px;font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;}
+.res-box .rv{font-size:13px;font-weight:800;color:#fff;}
+.res-box .rv.ok{color:#86EFAC;}
+.res-box .rv.warn{color:#FDE68A;}
+
+/* AMORTIZATION VISUAL */
+.amort-bar{margin:12px 0;}
+.amort-label{display:flex;justify-content:space-between;font-size:9.5px;font-family:'Trebuchet MS',sans-serif;margin-bottom:5px;}
+.amort-label .la{color:rgba(255,255,255,0.6);}
+.amort-label .lv{color:#fff;font-weight:700;}
+.amort-track{background:rgba(255,255,255,0.12);border-radius:20px;height:14px;overflow:hidden;display:flex;}
+.amort-principal{height:100%;border-radius:20px 0 0 20px;background:linear-gradient(90deg,var(--saffron),var(--ochre));transition:width .7s;}
+.amort-interest{height:100%;border-radius:0 20px 20px 0;background:rgba(255,255,255,0.25);transition:width .7s;}
+
+/* SAVE BTN */
+.save-btn{width:100%;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.3);border-radius:13px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Trebuchet MS',sans-serif;display:none;transition:all .2s;}
+.save-btn.show{display:block;}
+.saved-tag{display:none;text-align:center;font-size:11px;color:rgba(255,255,255,0.8);font-weight:700;font-family:'Trebuchet MS',sans-serif;margin-top:6px;}
+.saved-tag.show{display:block;}
+
+/* BANK COMPARISON */
+.bank-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.bank-card h3{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.brow{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,107,0,0.07);}
+.brow:last-child{border-bottom:none;}
+.b-icon{font-size:22px;width:36px;flex-shrink:0;}
+.b-name{font-size:11.5px;font-weight:800;color:var(--navy);flex:1;}
+.b-sub{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:1px;}
+.b-rate{font-size:16px;font-weight:800;color:var(--saffron);margin-right:8px;}
+.b-badge{font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:20px;font-family:'Trebuchet MS',sans-serif;}
+.bb-g{background:#ECFDF5;color:#065F46;}
+.bb-s{background:#FFF3E0;color:#C2410C;}
+.bb-b{background:#EFF6FF;color:#1D4ED8;}
+
+/* ELIGIBILITY BAR */
+.elig-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.elig-card h3{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.elig-row{margin-bottom:11px;}
+.elig-info{display:flex;justify-content:space-between;margin-bottom:4px;}
+.elig-lbl{font-size:10.5px;font-weight:700;color:var(--navy);}
+.elig-val{font-size:10px;font-weight:800;color:var(--saffron);}
+.elig-bar{background:#FFF0E0;border-radius:20px;height:10px;overflow:hidden;}
+.elig-fill{height:100%;border-radius:20px;transition:width .6s;}
+.elig-fill.g{background:linear-gradient(90deg,var(--green),#0A9956);}
+.elig-fill.s{background:linear-gradient(90deg,var(--saffron),var(--ochre));}
+.elig-fill.n{background:linear-gradient(90deg,var(--navy),var(--chakra));}
+.elig-sub{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+
+/* INFO ITEMS */
+.info-list{display:flex;flex-direction:column;gap:9px;}
+.info-item{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:flex-start;gap:11px;}
+.info-icon{width:38px;height:38px;border-radius:11px;background:rgba(255,107,0,0.07);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.info-head{font-size:12px;font-weight:800;color:var(--navy);}
+.info-sub{font-size:9.5px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;line-height:1.45;}
+.ibadge{display:inline-flex;padding:2px 7px;border-radius:20px;font-size:8.5px;font-weight:700;margin-top:5px;font-family:'Trebuchet MS',sans-serif;}
+.ib-g{background:#ECFDF5;color:#065F46;}
+.ib-s{background:#FFF3E0;color:#E05A00;}
+.ib-b{background:#EFF6FF;color:#1D4ED8;}
+.ib-r{background:#FEF2F2;color:#B91C1C;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}.fu5{animation:fadeUp .38s ease both .24s;}
+@keyframes popIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+.pop{animation:popIn .35s cubic-bezier(.4,0,.2,1) both;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">✈️</div>
+      <div class="hdr-title">NRI <span>Home Loan</span></div>
+      <div class="hdr-sub">NRI · PIO · OCI · FEMA · RBI Guidelines 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">NRI Rate (SBI)</div><div class="rs-v saf">8.50%</div><div class="rs-n">Floating</div></div>
+    <div class="rs"><div class="rs-l">Max Tenure</div><div class="rs-v grn">30 yrs</div><div class="rs-n">NRI Cap</div></div>
+    <div class="rs"><div class="rs-l">Max LTV</div><div class="rs-v">75–80%</div><div class="rs-n">Of Value</div></div>
+    <div class="rs"><div class="rs-l">USD/INR</div><div class="rs-v">83.52</div><div class="rs-n">Jun 2025</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">NRI Home Loan <span class="badge">NRI/PIO/OCI</span></div>
+  <div class="nri-hero fu1">
+    <div class="h-tag">FEMA · RBI · Income Tax Act — India</div>
+    <div class="h-title">Buy property in India<br>as an <span>NRI / PIO / OCI</span></div>
+    <div class="h-sub">NRIs, PIOs and OCIs can purchase residential and commercial property in India under FEMA. Loan in INR, EMI via NRE/NRO account.</div>
+    <div class="hero-stats">
+      <div class="hs-box"><label>Best NRI Rate</label><div class="sv ok">8.50% p.a.</div></div>
+      <div class="hs-box"><label>Processing Fee</label><div class="sv">0.35–0.50%</div></div>
+      <div class="hs-box"><label>Max Loan</label><div class="sv">₹10 Cr</div></div>
+    </div>
+  </div>
+
+  <!-- Category -->
+  <div class="sec fu2">Select Your Category</div>
+  <div class="pill-row fu2">
+    <div class="pill active" onclick="setCategory(this,'NRI')">🌍 NRI</div>
+    <div class="pill" onclick="setCategory(this,'PIO')">🇮🇳 PIO</div>
+    <div class="pill" onclick="setCategory(this,'OCI')">📘 OCI</div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="input-card fu2">
+    <h3>🏠 EMI & Eligibility Calculator</h3>
+    <div class="field-row">
+      <div class="field">
+        <label>Country of Residence</label>
+        <select id="country">
+          <option value="US">🇺🇸 USA (USD)</option>
+          <option value="AE">🇦🇪 UAE (AED)</option>
+          <option value="GB">🇬🇧 UK (GBP)</option>
+          <option value="CA">🇨🇦 Canada (CAD)</option>
+          <option value="AU">🇦🇺 Australia (AUD)</option>
+          <option value="SG">🇸🇬 Singapore (SGD)</option>
+          <option value="SA">🇸🇦 Saudi (SAR)</option>
+          <option value="DE">🇩🇪 Germany (EUR)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Monthly Income (Foreign)</label>
+        <input type="number" id="foreignIncome" placeholder="e.g. 8000" value="8000">
+        <div class="field-hint">In foreign currency</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Property Value (₹ Lakhs)</label>
+        <input type="number" id="propValue" placeholder="e.g. 8000" value="8000">
+      </div>
+      <div class="field">
+        <label>Down Payment (%)</label>
+        <select id="downPmt">
+          <option value="20">20% (Standard)</option>
+          <option value="25" selected>25% (Preferred)</option>
+          <option value="30">30% (Conservative)</option>
+          <option value="40">40% (Lower EMI)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Interest Rate (%)</label>
+        <input type="number" id="intRate" step="0.05" value="8.75">
+        <div class="field-hint">NRI rate typically 0.25% above resident</div>
+      </div>
+      <div class="field">
+        <label>Tenure (Years)</label>
+        <select id="tenure">
+          <option value="10">10 Years</option>
+          <option value="15">15 Years</option>
+          <option value="20" selected>20 Years</option>
+          <option value="25">25 Years</option>
+          <option value="30">30 Years (Max)</option>
+        </select>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calcNRI()">✈️ Calculate NRI Home Loan</button>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="nriResult">
+    <div class="res-title">NRI Home Loan — EMI Analysis</div>
+    <div class="emi-display">
+      <div class="emi-label">Monthly EMI (INR)</div>
+      <div class="emi-amount"><span class="emi-currency">₹</span><span id="emiAmt">0</span></div>
+      <div class="emi-sub" id="emiSubtitle">≈ <span id="emiForeign">$0</span> · 20 yr @ 8.75%</div>
+    </div>
+    <div class="res-grid">
+      <div class="res-box"><label>Loan Amount</label><div class="rv" id="rLoan">₹0</div></div>
+      <div class="res-box"><label>Down Payment</label><div class="rv warn" id="rDown">₹0</div></div>
+      <div class="res-box"><label>Total Interest</label><div class="rv" id="rInterest">₹0</div></div>
+      <div class="res-box"><label>Total Paid</label><div class="rv" id="rTotal">₹0</div></div>
+      <div class="res-box"><label>INR Equiv. of Monthly Income</label><div class="rv ok" id="rIncome">₹0</div></div>
+      <div class="res-box"><label>FOIR (EMI/Income)</label><div class="rv" id="rFoir">0%</div></div>
+    </div>
+    <div class="amort-bar">
+      <div class="amort-label"><span class="la">Principal</span><span class="lv" id="principalPct">50%</span></div>
+      <div class="amort-track">
+        <div class="amort-principal" id="principalBar" style="width:50%"></div>
+        <div class="amort-interest" id="interestBar" style="width:50%"></div>
+      </div>
+      <div class="amort-label" style="margin-top:4px;"><span class="la">Interest</span><span class="lv" id="interestPct">50%</span></div>
+    </div>
+    <button class="save-btn show" id="saveNRI" onclick="saveNRI()">💾 Save This Calculation</button>
+    <div class="saved-tag" id="savedNRI">✅ Saved to your records</div>
+  </div>
+
+  <!-- Loan Eligibility -->
+  <div class="sec fu3">NRI Loan Eligibility Factors</div>
+  <div class="elig-card fu3">
+    <h3>📊 Eligibility Score Breakdown</h3>
+    <div class="elig-row">
+      <div class="elig-info"><span class="elig-lbl">Income Stability (Salaried NRI)</span><span class="elig-val">High</span></div>
+      <div class="elig-bar"><div class="elig-fill g" style="width:88%"></div></div>
+      <div class="elig-sub">Salaried NRIs get higher eligibility vs self-employed</div>
+    </div>
+    <div class="elig-row">
+      <div class="elig-info"><span class="elig-lbl">CIBIL Score Requirement</span><span class="elig-val">750+</span></div>
+      <div class="elig-bar"><div class="elig-fill s" style="width:75%"></div></div>
+      <div class="elig-sub">Score checked at Indian bureau · maintain credit history</div>
+    </div>
+    <div class="elig-row">
+      <div class="elig-info"><span class="elig-lbl">Country Stability Factor</span><span class="elig-val">US/UAE: Excellent</span></div>
+      <div class="elig-bar"><div class="elig-fill g" style="width:92%"></div></div>
+      <div class="elig-sub">USA, UAE, UK, Canada = highest approval rates</div>
+    </div>
+    <div class="elig-row">
+      <div class="elig-info"><span class="elig-lbl">Max FOIR (Debt/Income)</span><span class="elig-val">50–55%</span></div>
+      <div class="elig-bar"><div class="elig-fill n" style="width:55%"></div></div>
+      <div class="elig-sub">Total existing + new EMI should be below 55% of income</div>
+    </div>
+  </div>
+
+  <!-- Top Banks for NRI -->
+  <div class="sec fu3">Top Banks for NRI Home Loans</div>
+  <div class="bank-card fu3">
+    <h3>🏦 Current NRI Home Loan Rates (2025)</h3>
+    <div class="brow"><div class="b-icon">🏦</div><div><div class="b-name">SBI NRI Home Loan</div><div class="b-sub">PSU · Floating · NRE/NRO repayment</div></div><div class="b-rate">8.50%</div><div class="b-badge bb-g">Best</div></div>
+    <div class="brow"><div class="b-icon">🏛️</div><div><div class="b-name">HDFC Bank NRI</div><div class="b-sub">Private · Floating · Global offices</div></div><div class="b-rate">8.70%</div><div class="b-badge bb-b">Popular</div></div>
+    <div class="brow"><div class="b-icon">💼</div><div><div class="b-name">ICICI NRI Loan</div><div class="b-sub">Private · App-based · Fast process</div></div><div class="b-rate">8.75%</div><div class="b-badge bb-b">Digital</div></div>
+    <div class="brow"><div class="b-icon">⚡</div><div><div class="b-name">Axis Bank NRI</div><div class="b-sub">Private · Doorstep in UAE/US</div></div><div class="b-rate">8.75%</div><div class="b-badge bb-s">Premium</div></div>
+    <div class="brow"><div class="b-icon">🏗️</div><div><div class="b-name">LIC HFL NRI</div><div class="b-sub">HFC · Long tenure · Fixed option</div></div><div class="b-rate">8.65%</div><div class="b-badge bb-g">HFC</div></div>
+    <div class="brow"><div class="b-icon">🌿</div><div><div class="b-name">Bank of Baroda NRI</div><div class="b-sub">PSU · Low processing fee · Global</div></div><div class="b-rate">8.55%</div><div class="b-badge bb-g">PSU</div></div>
+  </div>
+
+  <!-- Key Rules -->
+  <div class="sec fu4">NRI Loan — Must Know Rules</div>
+  <div class="info-list fu4">
+    <div class="info-item"><div class="info-icon">💳</div><div><div class="info-head">EMI via NRE/NRO Account Only</div><div class="info-sub">All loan repayments must be through NRE or NRO account. Direct foreign currency transfer is also allowed via FCNR. Cash payments not permitted under FEMA.</div><div class="ibadge ib-b">FEMA Rule</div></div></div>
+    <div class="info-item"><div class="info-icon">🏠</div><div><div class="info-head">Only Residential & Commercial — No Agricultural</div><div class="info-sub">NRIs can buy residential and commercial property. Agricultural land, farmhouse, and plantation property are prohibited under FEMA without special RBI permission.</div><div class="ibadge ib-r">Restriction</div></div></div>
+    <div class="info-item"><div class="info-icon">📋</div><div><div class="info-head">PoA (Power of Attorney) Needed</div><div class="info-sub">Since NRI cannot always be present in India, a notarised and registered PoA is required for property registration and loan documents.</div><div class="ibadge ib-s">Documentation</div></div></div>
+    <div class="info-item"><div class="info-icon">💰</div><div><div class="info-head">Rental Income — Taxable in India</div><div class="info-sub">Rental income from Indian property is taxable in India at 30% TDS (for NRI). Available deductions: municipal taxes, 30% standard deduction, interest on loan.</div><div class="ibadge ib-g">Tax Note</div></div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const fxRates = {US:83.52,AE:22.74,GB:106.1,CA:61.8,AU:55.2,SG:62.3,SA:22.27,DE:90.2};
+const fxSymbol= {US:'$',AE:'AED',GB:'£',CA:'CA$',AU:'A$',SG:'S$',SA:'SAR',DE:'€'};
+
+function setCategory(el,cat){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function fmtL(v){return v>=10000000?(v/10000000).toFixed(2)+' Cr':v>=100000?(v/100000).toFixed(2)+' L':v>=1000?(v/1000).toFixed(1)+' K':Math.round(v).toLocaleString('en-IN');}
+
+function calcNRI(){
+  const country   = document.getElementById('country').value;
+  const fIncome   = parseFloat(document.getElementById('foreignIncome').value)||0;
+  const propVal   = parseFloat(document.getElementById('propValue').value)*100000||0;
+  const downPct   = parseFloat(document.getElementById('downPmt').value)/100;
+  const r         = parseFloat(document.getElementById('intRate').value)/100/12;
+  const n         = parseInt(document.getElementById('tenure').value)*12;
+
+  const loanAmt   = propVal * (1 - downPct);
+  const downAmt   = propVal * downPct;
+  const emi       = loanAmt * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+  const totalPaid = emi * n;
+  const totalInt  = totalPaid - loanAmt;
+  const inrIncome = fIncome * fxRates[country];
+  const foir      = (emi / inrIncome * 100).toFixed(1);
+  const principalPct = Math.round(loanAmt/totalPaid*100);
+  const emiInForeign = (emi/fxRates[country]).toFixed(0);
+
+  document.getElementById('emiAmt').textContent = Math.round(emi).toLocaleString('en-IN');
+  document.getElementById('emiForeign').textContent = fxSymbol[country]+emiInForeign;
+  document.getElementById('emiSubtitle').innerHTML = '≈ <span id="emiForeign">'+fxSymbol[country]+emiInForeign+'</span> · '+document.getElementById('tenure').value+' yr @ '+document.getElementById('intRate').value+'%';
+  document.getElementById('rLoan').textContent = '₹'+fmtL(loanAmt);
+  document.getElementById('rDown').textContent = '₹'+fmtL(downAmt);
+  document.getElementById('rInterest').textContent = '₹'+fmtL(totalInt);
+  document.getElementById('rTotal').textContent = '₹'+fmtL(totalPaid);
+  document.getElementById('rIncome').textContent = '₹'+fmtL(inrIncome);
+  document.getElementById('rFoir').textContent = foir+'%';
+  document.getElementById('rFoir').className = 'rv '+(parseFloat(foir)>55?'warn':'ok');
+  document.getElementById('principalPct').textContent = principalPct+'%';
+  document.getElementById('interestPct').textContent = (100-principalPct)+'%';
+  document.getElementById('principalBar').style.width = principalPct+'%';
+  document.getElementById('interestBar').style.width = (100-principalPct)+'%';
+
+  document.getElementById('nriResult').classList.add('show','pop');
+  document.getElementById('savedNRI').classList.remove('show');
+  document.getElementById('saveNRI').textContent='💾 Save This Calculation';
+}
+
+function saveNRI(){
+  const data={date:new Date().toLocaleDateString('en-IN'),emi:document.getElementById('emiAmt').textContent,loan:document.getElementById('rLoan').textContent};
+  const saves=JSON.parse(localStorage.getItem('nri_saves')||'[]');saves.push(data);
+  localStorage.setItem('nri_saves',JSON.stringify(saves));
+  document.getElementById('savedNRI').classList.add('show');
+  document.getElementById('saveNRI').textContent='✅ Saved';
+}
+</script>
+</body>
+</html>

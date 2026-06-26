@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UK House Price Index – MortgagePro UK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#90EE90;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#1a1a5e;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* NATIONAL HERO */
+.hpi-hero{background:linear-gradient(145deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(13,13,43,0.28);margin-bottom:14px;}
+.hpi-hero::before{content:'🏡';position:absolute;right:8px;top:2px;font-size:78px;opacity:0.07;}
+.hpi-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.hpi-price{font-size:40px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:6px 0 3px;}
+.hpi-label{font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:14px;}
+.hpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.hpi-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 10px;}
+.hpi-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.4px;}
+.hpi-box .v{font-size:13px;font-weight:800;color:#fff;}
+.hpi-box .v.grn{color:#90EE90;}.hpi-box .v.red{color:#FF8A9A;}.hpi-box .v.gold{color:#FFD700;}
+.badge-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(144,238,144,0.15);border:1px solid rgba(144,238,144,0.25);border-radius:20px;padding:5px 12px;margin-top:11px;}
+.badge-pill span{font-size:10px;font-weight:700;color:#90EE90;}
+
+/* REGION TABS */
+.region-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-bottom:12px;}
+.region-tabs::-webkit-scrollbar{display:none;}
+.rtab{flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid rgba(26,26,94,0.12);color:#5C5C8A;background:#fff;transition:all .15s;}
+.rtab.active{background:linear-gradient(135deg,#C8102E,#8B0A1E);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(200,16,46,0.3);}
+
+/* CHART CARD */
+.chart-card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:14px;}
+.chart-title{font-size:14px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.chart-sub{font-size:10px;color:#5C5C8A;margin-bottom:14px;margin-top:3px;}
+.svg-wrap{width:100%;overflow:hidden;}
+.chart-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:8px;height:8px;border-radius:2px;}
+.leg-lbl{font-size:10px;color:#5C5C8A;font-weight:600;}
+
+/* REGIONAL BREAKDOWN */
+.region-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.reg-card{background:#fff;border-radius:15px;padding:14px 13px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);position:relative;overflow:hidden;cursor:pointer;}
+.reg-card.highlight{background:linear-gradient(140deg,#0D0D2B,#1a1a5e);}
+.reg-flag{font-size:22px;margin-bottom:7px;}
+.reg-name{font-size:12px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.reg-card.highlight .reg-name{color:#fff;}
+.reg-price{font-size:16px;font-weight:800;color:#C8102E;margin:3px 0 2px;font-family:Georgia,serif;}
+.reg-card.highlight .reg-price{color:#FFD700;}
+.reg-chg{font-size:10px;font-weight:700;}
+.chg-pos{color:#16a34a;}.chg-neg{color:#C8102E;}
+.reg-bar-track{height:4px;background:rgba(26,26,94,0.08);border-radius:2px;margin-top:8px;overflow:hidden;}
+.reg-bar-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+.reg-arr{position:absolute;bottom:10px;right:10px;font-size:14px;color:rgba(13,13,43,0.15);}
+.reg-card.highlight .reg-arr{color:rgba(255,255,255,0.2);}
+
+/* PROPERTY TYPE TABLE */
+.type-card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:14px;}
+.tc-header{background:linear-gradient(135deg,#0D0D2B,#1a1a5e);padding:12px 16px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;}
+.tc-hcell{font-size:9px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:.4px;}
+.tc-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:11px 16px;border-bottom:1px solid rgba(26,26,94,0.06);align-items:center;}
+.tc-row:last-child{border-bottom:none;}
+.tc-row:nth-child(even){background:rgba(26,26,94,0.02);}
+.tc-cell{font-size:11px;font-weight:700;color:#0D0D2B;}
+.tc-cell.price{font-weight:800;color:#1a1a5e;font-family:Georgia,serif;}
+.tc-cell.chg-pos{font-size:11px;font-weight:700;color:#16a34a;}
+.tc-cell.chg-neg{font-size:11px;font-weight:700;color:#C8102E;}
+
+/* AFFORDABILITY BANNER */
+.afford-card{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border:1px solid #FCA5A5;border-radius:18px;padding:18px;margin-bottom:14px;}
+.afford-title{font-size:14px;font-weight:800;color:#991B1B;font-family:Georgia,serif;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.afford-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.aff-box{background:#fff;border-radius:12px;padding:11px 12px;border:1px solid rgba(200,16,46,0.12);}
+.aff-lbl{font-size:9px;font-weight:700;color:#991B1B;text-transform:uppercase;letter-spacing:.4px;}
+.aff-val{font-size:16px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin:3px 0 2px;}
+.aff-note{font-size:9px;color:#5C5C8A;}
+
+/* INFO CARDS */
+.info-card{background:#fff;border-radius:15px;padding:14px;box-shadow:0 3px 14px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer;}
+.info-icon{width:40px;height:40px;border-radius:11px;background:#F5F5F8;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.info-name{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.info-sub{font-size:10px;color:#5C5C8A;margin-top:2px;}
+.info-chev{font-size:18px;color:rgba(13,13,43,0.2);margin-left:auto;}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .35s ease both .04s;}.fu2{animation:fadeUp .35s ease both .09s;}
+.fu3{animation:fadeUp .35s ease both .14s;}.fu4{animation:fadeUp .35s ease both .19s;}
+.fu5{animation:fadeUp .35s ease both .24s;}.fu6{animation:fadeUp .35s ease both .29s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">🏡</span>
+      <div class="hdr-title">UK House Price Index</div>
+      <div class="hdr-sub">HM Land Registry · ONS · Regional Data · Mar 2025</div>
+    </div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">UK Avg</div><div class="rs-val gold">£268,319</div><div class="rs-note">Mar 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Annual Chg</div><div class="rs-val grn">+5.4%</div><div class="rs-note">YoY</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">London</div><div class="rs-val">£523,000</div><div class="rs-note">Avg</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Monthly</div><div class="rs-val grn">+0.3%</div><div class="rs-note">MoM</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- NATIONAL HERO -->
+  <div class="sec-lbl fu1" style="margin-top:0">National Average <span class="more">HMLR Data →</span></div>
+  <div class="hpi-hero fu1">
+    <div class="hpi-tag">UK Average House Price — March 2025</div>
+    <div class="hpi-price">£268,319</div>
+    <div class="hpi-label">HM Land Registry · UK HPI Official Data</div>
+    <div class="hpi-row">
+      <div class="hpi-box"><label>Annual Growth</label><div class="v grn">+5.4%</div></div>
+      <div class="hpi-box"><label>Monthly Change</label><div class="v grn">+0.3%</div></div>
+      <div class="hpi-box"><label>Peak (2022)</label><div class="v gold">£292,000</div></div>
+    </div>
+    <div class="badge-pill">
+      <span>📈 Prices rising — 5th consecutive monthly gain</span>
+    </div>
+  </div>
+
+  <!-- PRICE TREND CHART -->
+  <div class="sec-lbl fu2">Price Trend <span class="more">5 Years</span></div>
+  <div class="chart-card fu2">
+    <div class="chart-title">UK Average House Price</div>
+    <div class="chart-sub">Monthly — HM Land Registry Official HPI 2020–2025</div>
+    <div id="hpiChartWrap" class="svg-wrap"></div>
+    <div class="chart-legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#1a1a5e;"></div><div class="leg-lbl">UK Average</div></div>
+      <div class="leg-item"><div class="leg-dot" style="background:#C8102E;"></div><div class="leg-lbl">London</div></div>
+    </div>
+  </div>
+
+  <!-- REGIONS -->
+  <div class="sec-lbl fu3">Regional Breakdown <span class="more">All Regions</span></div>
+  <div class="region-tabs fu3" id="regionTabs">
+    <div class="rtab active" onclick="filterRegion(this,'England')">England</div>
+    <div class="rtab" onclick="filterRegion(this,'Devolved')">Devolved</div>
+    <div class="rtab" onclick="filterRegion(this,'Top')">Top Cities</div>
+  </div>
+  <div class="region-grid fu3" id="regionGrid"></div>
+
+  <!-- PROPERTY TYPE -->
+  <div class="sec-lbl fu4">By Property Type <span class="more">Mar 2025</span></div>
+  <div class="type-card fu4">
+    <div class="tc-header">
+      <div class="tc-hcell">Type</div>
+      <div class="tc-hcell">Avg Price</div>
+      <div class="tc-hcell">Ann. Chg</div>
+      <div class="tc-hcell">vs UK</div>
+    </div>
+    <div class="tc-row"><div class="tc-cell">🏢 Flat</div><div class="tc-cell price">£232,000</div><div class="tc-cell chg-pos">+3.2%</div><div class="tc-cell chg-neg">−13.5%</div></div>
+    <div class="tc-row"><div class="tc-cell">🏘️ Terraced</div><div class="tc-cell price">£236,000</div><div class="tc-cell chg-pos">+4.8%</div><div class="tc-cell chg-neg">−12.1%</div></div>
+    <div class="tc-row"><div class="tc-cell">🏠 Semi-Det</div><div class="tc-cell price">£272,000</div><div class="tc-cell chg-pos">+5.6%</div><div class="tc-cell chg-pos">+1.4%</div></div>
+    <div class="tc-row"><div class="tc-cell">🏡 Detached</div><div class="tc-cell price">£430,000</div><div class="tc-cell chg-pos">+5.1%</div><div class="tc-cell chg-pos">+60.3%</div></div>
+    <div class="tc-row"><div class="tc-cell">🔑 New Build</div><div class="tc-cell price">£312,000</div><div class="tc-cell chg-pos">+6.2%</div><div class="tc-cell chg-pos">+16.3%</div></div>
+  </div>
+
+  <!-- AFFORDABILITY -->
+  <div class="sec-lbl fu5">Affordability Metrics <span class="more">ONS Data</span></div>
+  <div class="afford-card fu5">
+    <div class="afford-title">💷 House Price Affordability — 2025</div>
+    <div class="afford-grid">
+      <div class="aff-box"><div class="aff-lbl">Price-to-Income (UK)</div><div class="aff-val">8.0×</div><div class="aff-note">Avg household income</div></div>
+      <div class="aff-box"><div class="aff-lbl">Price-to-Income (London)</div><div class="aff-val">12.5×</div><div class="aff-note">Most unaffordable</div></div>
+      <div class="aff-box"><div class="aff-lbl">Avg Salary UK</div><div class="aff-val">£34,963</div><div class="aff-note">ONS ASHE 2024</div></div>
+      <div class="aff-box"><div class="aff-lbl">Most Affordable</div><div class="aff-val">N. Ireland</div><div class="aff-note">£175,000 avg</div></div>
+    </div>
+  </div>
+
+  <!-- RELATED -->
+  <div class="sec-lbl fu6">Related Tools</div>
+  <div class="info-card fu6">
+    <div class="info-icon">🏛️</div>
+    <div><div class="info-name">SDLT Calculator</div><div class="info-sub">How much Stamp Duty on your purchase?</div></div>
+    <div class="info-chev">›</div>
+  </div>
+  <div class="info-card fu6">
+    <div class="info-icon">📉</div>
+    <div><div class="info-name">BoE Rate Tracker</div><div class="info-sub">How rate changes affect prices</div></div>
+    <div class="info-chev">›</div>
+  </div>
+  <div class="info-card fu6">
+    <div class="info-icon">🤝</div>
+    <div><div class="info-name">Shared Ownership Calc</div><div class="info-sub">Affordability for part-buy scheme</div></div>
+    <div class="info-chev">›</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+/* ── HPI TREND CHART ── */
+(function() {
+  const labels = ['Jan 20','Jun 20','Jan 21','Jun 21','Jan 22','Jun 22','Jan 23','Jun 23','Jan 24','Jun 24','Jan 25','Mar 25'];
+  const uk     = [232000, 238000, 249000, 265000, 274000, 293000, 275000, 285000, 282000, 285000, 266000, 268319];
+  const london = [476000, 490000, 500000, 512000, 528000, 542000, 515000, 525000, 519000, 522000, 520000, 523000];
+  const W=388, H=180, padL=46, padR=12, padT=14, padB=28;
+  const n=labels.length;
+  const allV=[...uk,...london];
+  const maxV=Math.max(...allV)*1.05, minV=Math.min(...allV)*0.95;
+  const xS=i=>padL+i*(W-padL-padR)/(n-1);
+  const yS=v=>padT+(H-padT-padB)*(1-(v-minV)/(maxV-minV));
+
+  const ukPts=uk.map((v,i)=>`${xS(i)},${yS(v)}`).join(' ');
+  const lnPts=london.map((v,i)=>`${xS(i)},${yS(v)}`).join(' ');
+  const ukArea=`${xS(0)},${H-padB} `+ukPts+` ${xS(n-1)},${H-padB}`;
+
+  const fmt=v=>'£'+(v/1000).toFixed(0)+'k';
+  const yTicks=[200,220,240,260,280,300,320,340,360,380,400,420,440,460,480,500,520,540].filter(v=>v*1000>=minV&&v*1000<=maxV);
+  const grid=yTicks.map(v=>`
+    <line x1="${padL}" y1="${yS(v*1000)}" x2="${W-padR}" y2="${yS(v*1000)}" stroke="rgba(26,26,94,0.06)" stroke-width="1"/>
+    <text x="${padL-4}" y="${yS(v*1000)+4}" text-anchor="end" font-size="8" fill="#5C5C8A">${fmt(v*1000)}</text>`).join('');
+  const xlbls=labels.map((l,i)=>i%3===0||i===n-1?`<text x="${xS(i)}" y="${H-padB+13}" text-anchor="middle" font-size="8" fill="#5C5C8A">${l}</text>`:'').join('');
+
+  document.getElementById('hpiChartWrap').innerHTML=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+    <defs>
+      <linearGradient id="ukGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1a1a5e" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#1a1a5e" stop-opacity="0.01"/>
+      </linearGradient>
+    </defs>
+    ${grid}
+    <polygon points="${ukArea}" fill="url(#ukGrad)"/>
+    <polyline points="${ukPts}" fill="none" stroke="#1a1a5e" stroke-width="2.2" stroke-linejoin="round"/>
+    <polyline points="${lnPts}" fill="none" stroke="#C8102E" stroke-width="1.8" stroke-dasharray="5,3" stroke-linejoin="round"/>
+    ${xlbls}
+    <circle cx="${xS(n-1)}" cy="${yS(uk[n-1])}" r="5" fill="#1a1a5e" stroke="#fff" stroke-width="2"/>
+    <text x="${xS(n-1)-6}" y="${yS(uk[n-1])-8}" text-anchor="end" font-size="9" font-weight="800" fill="#1a1a5e">£268k</text>
+  </svg>`;
+})();
+
+/* ── REGION DATA ── */
+const regions = {
+  England:[
+    {flag:'🏙️',name:'London',      price:'£523,000', chg:'+3.4%', pos:true, bar:100},
+    {flag:'🌿',name:'South East',   price:'£388,000', chg:'+4.6%', pos:true, bar:74},
+    {flag:'🌾',name:'East of Eng.', price:'£345,000', chg:'+5.1%', pos:true, bar:66},
+    {flag:'🏭',name:'Midlands',     price:'£255,000', chg:'+6.8%', pos:true, bar:49},
+    {flag:'⚽',name:'North West',   price:'£221,000', chg:'+7.2%', pos:true, bar:42},
+    {flag:'🌊',name:'South West',   price:'£318,000', chg:'+4.9%', pos:true, bar:61},
+    {flag:'🎯',name:'Yorkshire',    price:'£207,000', chg:'+6.5%', pos:true, bar:40},
+    {flag:'⛏️',name:'North East',   price:'£162,000', chg:'+8.1%', pos:true, bar:31},
+  ],
+  Devolved:[
+    {flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',name:'Scotland',   price:'£196,000', chg:'+5.6%', pos:true, bar:37, hl:true},
+    {flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',name:'Wales',      price:'£211,000', chg:'+4.8%', pos:true, bar:40},
+    {flag:'🇮🇪',name:'N. Ireland',  price:'£175,000', chg:'+9.4%', pos:true, bar:33},
+  ],
+  Top:[
+    {flag:'🏙️',name:'London',       price:'£523,000', chg:'+3.4%', pos:true, bar:100, hl:true},
+    {flag:'🌆',name:'Manchester',    price:'£246,000', chg:'+8.0%', pos:true, bar:47},
+    {flag:'🎓',name:'Cambridge',     price:'£504,000', chg:'+2.9%', pos:true, bar:96},
+    {flag:'🌊',name:'Bristol',       price:'£359,000', chg:'+5.5%', pos:true, bar:69},
+    {flag:'⚙️',name:'Birmingham',   price:'£236,000', chg:'+7.1%', pos:true, bar:45},
+    {flag:'🌁',name:'Edinburgh',     price:'£322,000', chg:'+6.3%', pos:true, bar:62},
+  ]
+};
+
+function filterRegion(el, key) {
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderRegions(regions[key]);
+}
+
+function renderRegions(data) {
+  const g=document.getElementById('regionGrid');
+  g.innerHTML=data.map((r,i)=>`
+    <div class="reg-card ${r.hl?'highlight':''}">
+      <div class="reg-flag">${r.flag}</div>
+      <div class="reg-name">${r.name}</div>
+      <div class="reg-price">${r.price}</div>
+      <div class="reg-chg ${r.pos?'chg-pos':'chg-neg'}">${r.chg} annual</div>
+      <div class="reg-bar-track"><div class="reg-bar-fill" style="width:${r.bar}%;background:${r.hl?'#FFD700':'#C8102E'};"></div></div>
+      <div class="reg-arr">›</div>
+    </div>`).join('');
+}
+
+renderRegions(regions.England);
+</script>
+</body>
+</html>

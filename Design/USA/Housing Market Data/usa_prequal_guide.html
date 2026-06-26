@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mortgage Prequalification Guide</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --white:#FFFFFF;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10);
+    --sh2:0 8px 36px rgba(11,29,58,0.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🦅';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.up::after{content:'↑';font-size:9px;color:#6EE7B7;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* CONTENT */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+  .up{color:#15803D;} .dn{color:#B91C1C;}
+
+  /* HERO ELIGIBILITY CHECKER */
+  .hero{background:linear-gradient(148deg,#0B1D3A,#1B3F72);border-radius:20px;padding:19px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(185,28,28,0.14);}
+  .h-tag{font-size:9.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.8px;}
+  .h-title{font-size:17px;font-weight:800;color:#fff;margin:4px 0 13px;line-height:1.2;font-family:Georgia,serif;}
+  .h-title span{color:var(--gold-lt);}
+  .input-group{margin-bottom:9px;}
+  .input-group label{font-size:9px;color:rgba(255,255,255,0.55);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;}
+  .input-row{display:flex;gap:7px;}
+  .ifield{flex:1;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);border-radius:10px;padding:10px 11px;font-size:13px;font-weight:700;color:#fff;outline:none;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ifield::placeholder{color:rgba(255,255,255,0.35);font-weight:400;}
+  .ifield:focus{border-color:var(--gold-lt);}
+  .ifield-select{appearance:none;-webkit-appearance:none;cursor:pointer;}
+  .h-btn{margin-top:12px;width:100%;background:linear-gradient(135deg,#B91C1C,#991B1B);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(185,28,28,0.40);font-family:Georgia,serif;}
+
+  /* RESULT CARD */
+  .result-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;display:none;}
+  .result-card.visible{display:block;}
+  .rc-status{display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+  .rc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+  .rc-icon.green{background:#F0FDF4;}
+  .rc-icon.yellow{background:#FFF7ED;}
+  .rc-icon.red{background:#FEF2F2;}
+  .rc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
+  .rc-label.green{color:#15803D;}
+  .rc-label.yellow{color:#D97706;}
+  .rc-label.red{color:#B91C1C;}
+  .rc-title{font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .rc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px;}
+  .rc-metric{background:var(--bg);border-radius:9px;padding:9px 7px;text-align:center;}
+  .rc-metric-v{font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .rc-metric-l{font-size:8.5px;color:var(--muted);margin-top:2px;}
+  .rc-gauge{margin-bottom:12px;}
+  .gauge-label{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:5px;}
+  .gauge-track{height:10px;border-radius:20px;background:linear-gradient(90deg,#B91C1C 0%,#D97706 40%,#15803D 75%,#15803D 100%);position:relative;}
+  .gauge-marker{position:absolute;top:-4px;width:18px;height:18px;background:#fff;border:3px solid var(--navy);border-radius:50%;transform:translateX(-50%);}
+  .save-btn{width:100%;background:linear-gradient(135deg,#D97706,#B45309);border:none;border-radius:11px;padding:11px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .save-btn:active{opacity:0.85;}
+  .saved-toast{display:none;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:9px 12px;text-align:center;font-size:11px;font-weight:700;color:#15803D;margin-top:7px;}
+  .saved-toast.show{display:block;}
+
+  /* PREQUAL VS PREAPPROVAL */
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .cmp-card{border-radius:14px;padding:14px;position:relative;overflow:hidden;}
+  .cmp-card.prequal{background:linear-gradient(140deg,#0F766E,#0D9488);}
+  .cmp-card.preapproval{background:linear-gradient(140deg,#0B1D3A,#1B3F72);}
+  .cmp-icon{font-size:22px;margin-bottom:7px;}
+  .cmp-title{font-size:12.5px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-bottom:7px;}
+  .cmp-tag{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;font-weight:700;letter-spacing:0.4px;margin-bottom:8px;}
+  .cmp-item{font-size:9.5px;color:rgba(255,255,255,0.75);margin-bottom:4px;padding-left:12px;position:relative;}
+  .cmp-item::before{content:'•';position:absolute;left:0;color:var(--gold-lt);}
+  .cmp-time{margin-top:8px;font-size:10px;font-weight:800;color:var(--gold-lt);}
+
+  /* STEP TIMELINE */
+  .step-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .step{display:flex;gap:12px;position:relative;padding-bottom:16px;}
+  .step:last-child{padding-bottom:0;}
+  .step::after{content:'';position:absolute;left:16px;top:38px;bottom:0;width:2px;background:linear-gradient(180deg,var(--blue),rgba(27,63,114,0.1));border-radius:2px;}
+  .step:last-child::after{display:none;}
+  .step-num{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;font-family:Georgia,serif;position:relative;z-index:1;}
+  .step-num.done{background:linear-gradient(135deg,#15803D,#166534);}
+  .step-num.active{background:linear-gradient(135deg,#B91C1C,#991B1B);}
+  .step-num.todo{background:linear-gradient(135deg,#1B3F72,#0B1D3A);}
+  .step-body{flex:1;padding-top:3px;}
+  .step-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .step-desc{font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.5;}
+  .step-docs{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+  .doc-tag{background:var(--bg);border:1px solid var(--border);border-radius:20px;font-size:8.5px;font-weight:600;color:var(--navy);padding:3px 8px;}
+  .step-time{font-size:9px;font-weight:700;color:var(--blue);margin-top:5px;}
+
+  /* CREDIT SCORE GUIDE */
+  .score-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .score-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .score-row:last-child{border-bottom:none;}
+  .score-bar-wrap{flex:1;}
+  .score-range{font-size:10px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:3px;}
+  .score-bar{height:7px;border-radius:20px;}
+  .score-label{width:60px;text-align:right;font-size:9.5px;font-weight:700;flex-shrink:0;}
+  .score-rate{width:42px;text-align:right;font-size:10px;font-weight:800;color:var(--navy);flex-shrink:0;font-family:Georgia,serif;}
+
+  /* DTI GAUGE */
+  .dti-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .dti-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .dti-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+  .dti-zone{font-size:9.5px;font-weight:700;}
+  .dti-zone.green{color:#15803D;}
+  .dti-zone.yellow{color:#D97706;}
+  .dti-zone.red{color:#B91C1C;}
+  .dti-track{height:12px;border-radius:20px;background:linear-gradient(90deg,#15803D 0%,#D97706 55%,#B91C1C 80%,#7F1D1D 100%);margin-bottom:8px;position:relative;}
+  .dti-tick{position:absolute;top:-4px;font-size:9px;font-weight:700;color:var(--navy);}
+  .dti-rule{display:flex;gap:7px;margin-top:10px;}
+  .dti-rule-box{flex:1;border-radius:9px;padding:9px;text-align:center;}
+  .dti-rule-box.front{background:#EFF6FF;}
+  .dti-rule-box.back{background:#FEF3C7;}
+  .dti-rule-v{font-size:18px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .dti-rule-l{font-size:8.5px;color:var(--muted);margin-top:2px;}
+
+  /* DOCS CHECKLIST */
+  .doc-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .doc-section{margin-bottom:12px;}
+  .doc-section-title{font-size:10px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+  .doc-item{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);}
+  .doc-item:last-child{border-bottom:none;}
+  .doc-checkbox{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .doc-checkbox.checked{background:linear-gradient(135deg,#15803D,#166534);border-color:#15803D;}
+  .doc-name{font-size:11px;font-weight:600;color:var(--navy);flex:1;}
+  .doc-req{font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:20px;}
+  .doc-req.must{background:#FEF2F2;color:#B91C1C;}
+  .doc-req.maybe{background:#FFF7ED;color:#D97706;}
+  .doc-progress{margin-top:10px;}
+  .dp-label{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--navy);margin-bottom:6px;}
+  .dp-track{height:8px;border-radius:20px;background:var(--bg);overflow:hidden;}
+  .dp-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#15803D,#4ADE80);width:0%;transition:width .8s ease;}
+  .checklist-save{width:100%;background:linear-gradient(135deg,#D97706,#B45309);border:none;border-radius:11px;padding:11px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;font-family:Georgia,serif;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;}
+
+  /* BNAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .hero,.compare-grid,.step-card,.score-card,.dti-card,.doc-card{animation:fadeUp .3s ease both .1s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇺🇸</div>
+      <div class="hdr-title">Prequalification Guide</div>
+      <div class="hdr-sub">Pre-Qual · Pre-Approval · Documents · DTI</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">30-Yr Fixed</div><div class="rs-v up">6.82%</div><div class="rs-n">Freddie Mac</div></div>
+    <div class="rs"><div class="rs-l">15-Yr Fixed</div><div class="rs-v">6.11%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">5/1 ARM</div><div class="rs-v">6.05%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">Fed Rate</div><div class="rs-v gold">5.25%</div><div class="rs-n">FOMC</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- INSTANT ELIGIBILITY CHECKER -->
+  <div class="sec" style="margin-top:0">Quick Eligibility Check <span class="more">Full Calc →</span></div>
+  <div class="hero">
+    <div class="h-tag">Mortgage Pre-Qualification · 2025</div>
+    <div class="h-title">Estimate Your <span>Buying Power</span><br>in 60 Seconds</div>
+    <div class="input-group">
+      <div class="input-row">
+        <div style="flex:1"><label>Annual Income ($)</label><input class="ifield" id="income" type="number" placeholder="e.g. 85000"></div>
+        <div style="flex:1"><label>Monthly Debts ($)</label><input class="ifield" id="debts" type="number" placeholder="e.g. 500"></div>
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-row">
+        <div style="flex:1"><label>Credit Score</label>
+          <select class="ifield ifield-select" id="credit">
+            <option value="">Select Score</option>
+            <option value="760">760+ Excellent</option>
+            <option value="740">740–759 Very Good</option>
+            <option value="720">720–739 Good</option>
+            <option value="700">700–719 Fair-Good</option>
+            <option value="680">680–699 Fair</option>
+            <option value="660">660–679 Below Avg</option>
+            <option value="640">640–659 Poor</option>
+            <option value="620">620–639 Minimum</option>
+          </select>
+        </div>
+        <div style="flex:1"><label>Down Payment ($)</label><input class="ifield" id="downpayment" type="number" placeholder="e.g. 60000"></div>
+      </div>
+    </div>
+    <button class="h-btn" onclick="checkPrequal()">🦅 Check My Eligibility →</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card" id="resultCard">
+    <div class="rc-status">
+      <div class="rc-icon green" id="resultIcon">✅</div>
+      <div>
+        <div class="rc-label green" id="resultLabel">Likely Eligible</div>
+        <div class="rc-title" id="resultTitle">You may qualify for a mortgage!</div>
+      </div>
+    </div>
+    <div class="rc-grid">
+      <div class="rc-metric"><div class="rc-metric-v" id="maxPrice">$0</div><div class="rc-metric-l">Max Home Price</div></div>
+      <div class="rc-metric"><div class="rc-metric-v" id="monthlyPmt">$0</div><div class="rc-metric-l">Est. Monthly Pmt</div></div>
+      <div class="rc-metric"><div class="rc-metric-v" id="dtiResult">0%</div><div class="rc-metric-l">Your DTI Ratio</div></div>
+    </div>
+    <div class="rc-gauge">
+      <div class="gauge-label"><span>High Risk</span><span>Good DTI</span><span>Excellent</span></div>
+      <div class="gauge-track"><div class="gauge-marker" id="gaugeMarker" style="left:50%"></div></div>
+    </div>
+    <button class="save-btn" onclick="saveResult()">💾 Save My Pre-Qual Result</button>
+    <div class="saved-toast" id="savedToast">✅ Pre-Qualification result saved to your profile!</div>
+  </div>
+
+  <!-- PREQUAL vs PREAPPROVAL -->
+  <div class="sec">Pre-Qual vs Pre-Approval <span class="more">Key Diff</span></div>
+  <div class="compare-grid">
+    <div class="cmp-card prequal">
+      <div class="cmp-icon">🔍</div>
+      <div class="cmp-tag">Step 1</div>
+      <div class="cmp-title">Pre-Qualification</div>
+      <div class="cmp-item">Self-reported income</div>
+      <div class="cmp-item">Soft credit pull only</div>
+      <div class="cmp-item">No documents needed</div>
+      <div class="cmp-item">Estimate only</div>
+      <div class="cmp-item">Free & instant</div>
+      <div class="cmp-time">⏱ 5–15 Minutes</div>
+    </div>
+    <div class="cmp-card preapproval">
+      <div class="cmp-icon">✅</div>
+      <div class="cmp-tag">Step 2 — Stronger</div>
+      <div class="cmp-title">Pre-Approval</div>
+      <div class="cmp-item">Verified income & assets</div>
+      <div class="cmp-item">Hard credit pull (−5 pts)</div>
+      <div class="cmp-item">Full docs required</div>
+      <div class="cmp-item">Conditional commitment</div>
+      <div class="cmp-item">Preferred by sellers</div>
+      <div class="cmp-time">⏱ 1–3 Business Days</div>
+    </div>
+  </div>
+
+  <!-- STEP-BY-STEP PROCESS -->
+  <div class="sec">Pre-Approval Steps <span class="more">Full Process</span></div>
+  <div class="step-card">
+    <div class="step">
+      <div class="step-num done">1</div>
+      <div class="step-body">
+        <div class="step-title">Check Your Credit Score</div>
+        <div class="step-desc">Pull your free credit report from AnnualCreditReport.com. Dispute any errors — they can take 30 days to resolve and impact your rate significantly.</div>
+        <div class="step-docs"><span class="doc-tag">FICO Score</span><span class="doc-tag">Credit Report</span><span class="doc-tag">Dispute Letters</span></div>
+        <div class="step-time">⏱ Do this 3–6 months before buying</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num active">2</div>
+      <div class="step-body">
+        <div class="step-title">Calculate Your DTI Ratio</div>
+        <div class="step-desc">Add up all monthly debt payments (car, student loans, credit cards). Divide by gross monthly income. Lenders want front-end ≤28% and back-end ≤36–43%.</div>
+        <div class="step-docs"><span class="doc-tag">Pay Stubs</span><span class="doc-tag">Loan Statements</span></div>
+        <div class="step-time">⏱ Calculate before applying</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num todo">3</div>
+      <div class="step-body">
+        <div class="step-title">Gather Required Documents</div>
+        <div class="step-desc">Collect W-2s (2 years), pay stubs (30 days), bank statements (2–3 months), tax returns, and government-issued ID. Self-employed need 2 years of tax returns + P&L statements.</div>
+        <div class="step-docs"><span class="doc-tag">W-2 (2 yrs)</span><span class="doc-tag">Pay Stubs</span><span class="doc-tag">Bank Stmts</span><span class="doc-tag">Tax Returns</span></div>
+        <div class="step-time">⏱ Takes 1–2 weeks to gather</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num todo">4</div>
+      <div class="step-body">
+        <div class="step-title">Submit Application to Lender</div>
+        <div class="step-desc">Apply to 3–5 lenders within a 14-day window — multiple hard inquiries in this period count as just ONE on your credit score (FICO rate-shopping window).</div>
+        <div class="step-docs"><span class="doc-tag">Uniform Residential Loan App</span><span class="doc-tag">1003 Form</span></div>
+        <div class="step-time">⏱ 14-day rate shopping window</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num todo">5</div>
+      <div class="step-body">
+        <div class="step-title">Receive Pre-Approval Letter</div>
+        <div class="step-desc">Valid typically 60–90 days. Shows sellers you're a serious buyer. Maximum loan amount, rate estimate, and conditions will be listed. Don't make large purchases now!</div>
+        <div class="step-docs"><span class="doc-tag">Pre-Approval Letter</span><span class="doc-tag">Loan Estimate (LE)</span></div>
+        <div class="step-time">⏱ Valid 60–90 days</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREDIT SCORE IMPACT -->
+  <div class="sec">Credit Score → Rate Impact <span class="more">FICO Guide</span></div>
+  <div class="score-card">
+    <div class="score-row">
+      <div class="score-bar-wrap">
+        <div class="score-range">760–850 · Exceptional</div>
+        <div class="score-bar" style="width:100%;background:linear-gradient(90deg,#15803D,#4ADE80);height:7px;border-radius:20px;"></div>
+      </div>
+      <div class="score-label" style="color:#15803D;">Excellent</div>
+      <div class="score-rate">6.82%</div>
+    </div>
+    <div class="score-row">
+      <div class="score-bar-wrap">
+        <div class="score-range">720–759 · Very Good</div>
+        <div class="score-bar" style="width:85%;background:linear-gradient(90deg,#0F766E,#2DD4BF);height:7px;border-radius:20px;"></div>
+      </div>
+      <div class="score-label" style="color:#0F766E;">Very Good</div>
+      <div class="score-rate">7.05%</div>
+    </div>
+    <div class="score-row">
+      <div class="score-bar-wrap">
+        <div class="score-range">680–719 · Good</div>
+        <div class="score-bar" style="width:68%;background:linear-gradient(90deg,#1B3F72,#3B82F6);height:7px;border-radius:20px;"></div>
+      </div>
+      <div class="score-label" style="color:#1D4ED8;">Good</div>
+      <div class="score-rate">7.35%</div>
+    </div>
+    <div class="score-row">
+      <div class="score-bar-wrap">
+        <div class="score-range">640–679 · Fair</div>
+        <div class="score-bar" style="width:48%;background:linear-gradient(90deg,#D97706,#FBBF24);height:7px;border-radius:20px;"></div>
+      </div>
+      <div class="score-label" style="color:#D97706;">Fair</div>
+      <div class="score-rate">7.80%</div>
+    </div>
+    <div class="score-row">
+      <div class="score-bar-wrap">
+        <div class="score-range">620–639 · Poor (Min)</div>
+        <div class="score-bar" style="width:28%;background:linear-gradient(90deg,#B91C1C,#F87171);height:7px;border-radius:20px;"></div>
+      </div>
+      <div class="score-label" style="color:#B91C1C;">Min. FHA</div>
+      <div class="score-rate">8.40%</div>
+    </div>
+    <div style="margin-top:10px;padding:9px 10px;background:#FEF2F2;border-radius:10px;font-size:9.5px;color:#B91C1C;font-weight:600;">
+      📌 760 vs 620 score difference = ~$280/mo more on a $400K loan (30-yr fixed)
+    </div>
+  </div>
+
+  <!-- DTI GUIDE -->
+  <div class="sec">DTI Ratio Guide <span class="more">28/36 Rule</span></div>
+  <div class="dti-card">
+    <div class="dti-title">Debt-to-Income Ratio Zones</div>
+    <div class="dti-track">
+      <span class="dti-tick" style="left:36%;">36%</span>
+      <span class="dti-tick" style="left:55%;">43%</span>
+      <span class="dti-tick" style="left:78%;">50%</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted);margin:4px 0 10px;">
+      <span style="color:#15803D;font-weight:700;">Excellent &lt;28%</span>
+      <span style="color:#D97706;font-weight:700;">Caution 36–43%</span>
+      <span style="color:#B91C1C;font-weight:700;">Risky &gt;50%</span>
+    </div>
+    <div class="dti-rule">
+      <div class="dti-rule-box front">
+        <div class="dti-rule-v">28%</div>
+        <div class="dti-rule-l">Front-End Max<br>(Housing only)</div>
+      </div>
+      <div class="dti-rule-box back">
+        <div class="dti-rule-v">36%</div>
+        <div class="dti-rule-l">Back-End Ideal<br>(All debts)</div>
+      </div>
+      <div class="dti-rule-box" style="background:#F0FDF4;">
+        <div class="dti-rule-v" style="color:#15803D;">43%</div>
+        <div class="dti-rule-l">Max Conventional<br>(QM Rule)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENT CHECKLIST -->
+  <div class="sec">Document Checklist <span class="more">Download PDF</span></div>
+  <div class="doc-card">
+    <div class="doc-progress">
+      <div class="dp-label"><span>Documents Ready</span><span id="checkCount">0 / 10</span></div>
+      <div class="dp-track"><div class="dp-fill" id="checkFill"></div></div>
+    </div>
+    <div style="height:12px;"></div>
+    <div class="doc-section">
+      <div class="doc-section-title">📋 Income Verification</div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">W-2 Forms (last 2 years)</div><span class="doc-req must">Required</span></div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">Recent Pay Stubs (30 days)</div><span class="doc-req must">Required</span></div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">Federal Tax Returns (2 yrs)</div><span class="doc-req must">Required</span></div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">1099 / Self-Employment P&L</div><span class="doc-req maybe">If Self-Employed</span></div>
+    </div>
+    <div class="doc-section">
+      <div class="doc-section-title">🏦 Assets & Accounts</div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">Bank Statements (2–3 months)</div><span class="doc-req must">Required</span></div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">Investment / Retirement Accounts</div><span class="doc-req maybe">If Applicable</span></div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">Gift Letter (if down pmt gifted)</div><span class="doc-req maybe">If Applicable</span></div>
+    </div>
+    <div class="doc-section">
+      <div class="doc-section-title">🪪 Identity & Property</div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">Government-Issued Photo ID</div><span class="doc-req must">Required</span></div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">Social Security Number</div><span class="doc-req must">Required</span></div>
+      <div class="doc-item"><div class="doc-checkbox" onclick="toggleCheck(this)"></div><div class="doc-name">Purchase Agreement (if available)</div><span class="doc-req maybe">After Offer</span></div>
+    </div>
+    <button class="checklist-save" onclick="saveChecklist()">💾 Save My Checklist Progress</button>
+    <div class="saved-toast" id="checklistToast" style="margin-top:7px;">✅ Checklist progress saved!</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function checkPrequal(){
+  const income = parseFloat(document.getElementById('income').value)||0;
+  const debts = parseFloat(document.getElementById('debts').value)||0;
+  const credit = parseInt(document.getElementById('credit').value)||700;
+  const down = parseFloat(document.getElementById('downpayment').value)||0;
+  if(!income){alert('Please enter your annual income.');return;}
+  const monthlyIncome = income/12;
+  const rateMap = {760:6.82,740:7.05,720:7.35,700:7.35,680:7.60,660:7.80,640:8.10,620:8.40};
+  const rate = (rateMap[credit]||7.5)/100/12;
+  const maxHousingDTI = monthlyIncome*0.28;
+  const maxBackDTI = monthlyIncome*0.43;
+  const availableForHousing = Math.min(maxHousingDTI, maxBackDTI - debts);
+  const n=360;
+  const maxLoan = availableForHousing*(Math.pow(1+rate,n)-1)/(rate*Math.pow(1+rate,n));
+  const maxPrice = maxLoan + down;
+  const actualLoan = maxLoan;
+  const monthlyPmt = actualLoan*rate*Math.pow(1+rate,n)/(Math.pow(1+rate,n)-1);
+  const totalMonthlyDebt = monthlyPmt + debts;
+  const dti = (totalMonthlyDebt/monthlyIncome)*100;
+  document.getElementById('maxPrice').textContent = '$'+Math.round(maxPrice/1000)+'K';
+  document.getElementById('monthlyPmt').textContent = '$'+Math.round(monthlyPmt).toLocaleString();
+  document.getElementById('dtiResult').textContent = Math.round(dti)+'%';
+  const gaugePos = Math.min(Math.max((dti/50)*100, 5), 95);
+  document.getElementById('gaugeMarker').style.left = gaugePos+'%';
+  const card = document.getElementById('resultCard');
+  card.classList.add('visible');
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function saveResult(){
+  const d = document.getElementById('savedToast');
+  d.classList.add('show');
+  setTimeout(()=>d.classList.remove('show'),3000);
+}
+let checkedCount=0;
+const totalDocs=10;
+function toggleCheck(el){
+  el.classList.toggle('checked');
+  el.textContent = el.classList.contains('checked')? '✓':'';
+  checkedCount = document.querySelectorAll('.doc-checkbox.checked').length;
+  document.getElementById('checkCount').textContent = checkedCount+' / '+totalDocs;
+  document.getElementById('checkFill').style.width = (checkedCount/totalDocs*100)+'%';
+}
+function saveChecklist(){
+  const t=document.getElementById('checklistToast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>

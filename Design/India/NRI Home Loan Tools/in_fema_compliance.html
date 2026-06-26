@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEMA Compliance – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00; --saffron2:#E05A00; --ochre:#F5A623; --ochre-lt:#FFDEA0;
+  --navy:#0B1F48; --chakra:#1A3A8F; --green:#046A38; --green2:#07543A;
+  --teal:#0D9488; --white:#FFFFFF; --bg:#FFF8F0; --card:#FFFFFF;
+  --muted:#7A5C3A; --border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09); --sh2:0 10px 40px rgba(11,31,72,0.18);
+  --red:#DC2626; --amber:#D97706;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg); color:var(--navy);
+  max-width:420px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+    radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);
+  pointer-events:none; z-index:0;
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);
+  padding:46px 18px 0; position:relative; overflow:hidden;
+}
+.header::before{
+  content:'☸'; position:absolute; right:-10px; top:30px;
+  font-size:130px; color:rgba(255,255,255,0.06); line-height:1;
+}
+.header::after{
+  content:''; position:absolute; bottom:0; left:0; width:100%; height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);
+}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{
+  background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0;padding:11px 14px;
+  display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;
+}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-v.warn{color:#FCA5A5;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+/* CONTENT */
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .more{font-size:11px;font-weight:600;color:var(--saffron);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* FEMA HERO BANNER */
+.fema-hero{
+  background:linear-gradient(148deg,var(--navy),var(--chakra));
+  border-radius:22px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);
+}
+.fema-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,107,0,0.16);}
+.fema-hero::after{content:'⚖️';position:absolute;right:16px;bottom:14px;font-size:44px;opacity:0.15;}
+.fh-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.fh-title{font-size:17px;font-weight:800;color:#fff;margin:4px 0 14px;line-height:1.25;}
+.fh-title span{color:var(--ochre-lt);}
+.fh-pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+.fh-pill{background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:#fff;font-family:'Trebuchet MS',sans-serif;}
+.fh-pill.active{background:var(--saffron);border-color:var(--saffron);}
+.fema-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.fema-tab{flex:1;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;transition:.15s;}
+.fema-tab.active{background:var(--saffron);border-color:var(--saffron);}
+.fema-tab-lbl{font-size:9px;font-weight:800;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.4px;font-family:'Trebuchet MS',sans-serif;}
+.fema-tab.active .fema-tab-lbl{color:#fff;}
+
+/* COMPLIANCE CARDS */
+.comp-card{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+.comp-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.comp-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.comp-icon.green{background:rgba(4,106,56,0.10);}
+.comp-icon.amber{background:rgba(217,119,6,0.10);}
+.comp-icon.red{background:rgba(220,38,38,0.10);}
+.comp-icon.navy{background:rgba(11,31,72,0.08);}
+.comp-icon.teal{background:rgba(13,148,136,0.10);}
+.comp-card-title{font-size:13.5px;font-weight:800;color:var(--navy);}
+.comp-card-sub{font-size:9.5px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;font-family:'Trebuchet MS',sans-serif;margin-left:auto;flex-shrink:0;}
+.status-badge.allowed{background:#ECFDF5;color:#065F46;}
+.status-badge.restricted{background:#FEF2F2;color:#B91C1C;}
+.status-badge.conditional{background:#FFF7ED;color:#C2410C;}
+.status-badge.note{background:#EFF6FF;color:#1D4ED8;}
+
+/* RULE ROWS */
+.rule-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,107,0,0.07);}
+.rule-row:last-child{border-bottom:none;padding-bottom:0;}
+.rule-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.rule-dot.green{background:var(--green);}
+.rule-dot.red{background:var(--red);}
+.rule-dot.amber{background:var(--amber);}
+.rule-text{font-size:11.5px;color:var(--navy);line-height:1.5;font-weight:500;}
+.rule-note{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+
+/* LIMIT METER */
+.limit-section{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+.limit-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.limit-item{margin-bottom:14px;}
+.limit-item:last-child{margin-bottom:0;}
+.limit-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.limit-lbl{font-size:11px;font-weight:700;color:var(--navy);}
+.limit-val{font-size:11px;font-weight:800;color:var(--saffron);}
+.limit-bar-bg{height:7px;background:rgba(255,107,0,0.10);border-radius:10px;}
+.limit-bar-fill{height:100%;border-radius:10px;}
+.limit-bar-fill.green{background:linear-gradient(90deg,var(--green),#22C55E);}
+.limit-bar-fill.amber{background:linear-gradient(90deg,var(--amber),#FCD34D);}
+.limit-bar-fill.red{background:linear-gradient(90deg,var(--red),#F87171);}
+.limit-sub{font-size:9px;color:var(--muted);margin-top:3px;font-family:'Trebuchet MS',sans-serif;}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:12px;padding-bottom:14px;position:relative;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.tl-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.tl-dot.green{background:rgba(4,106,56,0.12);}
+.tl-dot.navy{background:rgba(11,31,72,0.10);}
+.tl-dot.amber{background:rgba(217,119,6,0.12);}
+.tl-line{width:2px;flex:1;background:rgba(255,107,0,0.12);margin-top:4px;}
+.tl-item:last-child .tl-line{display:none;}
+.tl-content{padding-top:4px;}
+.tl-step{font-size:9px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;font-family:'Trebuchet MS',sans-serif;}
+.tl-step.green{color:var(--green);}
+.tl-step.navy{color:var(--chakra);}
+.tl-step.amber{color:var(--amber);}
+.tl-title{font-size:12.5px;font-weight:800;color:var(--navy);margin-top:2px;}
+.tl-desc{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.5;font-family:'Trebuchet MS',sans-serif;}
+
+/* ALERT BOX */
+.alert-box{border-radius:15px;padding:13px 14px;margin-bottom:11px;display:flex;gap:10px;align-items:flex-start;}
+.alert-box.amber{background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:1.5px solid #FDBA74;}
+.alert-box.green{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;}
+.alert-box.red{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border:1.5px solid #FCA5A5;}
+.alert-icon{font-size:22px;flex-shrink:0;}
+.alert-title{font-size:12.5px;font-weight:800;}
+.alert-title.amber{color:#9A3412;}
+.alert-title.green{color:var(--green2);}
+.alert-title.red{color:#B91C1C;}
+.alert-text{font-size:10px;margin-top:3px;line-height:1.5;font-family:'Trebuchet MS',sans-serif;}
+.alert-text.amber{color:#C2410C;}
+.alert-text.green{color:var(--green);}
+.alert-text.red{color:#DC2626;}
+
+/* 2×2 CHECKLIST */
+.check-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.check-card{background:var(--card);border-radius:15px;padding:13px 12px;box-shadow:var(--sh);border:1px solid var(--border);}
+.check-icon{font-size:22px;margin-bottom:7px;display:block;}
+.check-title{font-size:11.5px;font-weight:800;color:var(--navy);}
+.check-items{margin-top:8px;display:flex;flex-direction:column;gap:5px;}
+.check-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.check-item::before{content:'✓';color:var(--green);font-weight:800;font-size:10px;flex-shrink:0;}
+
+/* PENALTY TABLE */
+.penalty-table{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+.pt-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,107,0,0.07);}
+.pt-row:last-child{border-bottom:none;padding-bottom:0;}
+.pt-row:first-child{padding-top:0;}
+.pt-label{font-size:11px;font-weight:700;color:var(--navy);}
+.pt-note{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:1px;}
+.pt-val{font-size:12px;font-weight:800;text-align:right;}
+.pt-val.red{color:var(--red);}
+.pt-val.amber{color:var(--amber);}
+
+/* INFO LIST */
+.ilist{display:flex;flex-direction:column;gap:9px;}
+.ic{background:var(--card);border-radius:15px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+.ii{width:40px;height:40px;border-radius:12px;background:rgba(255,107,0,0.07);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.in{font-size:12.5px;font-weight:800;color:var(--navy);}
+.is{font-size:9.5px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.ich{font-size:16px;color:rgba(11,31,72,0.18);margin-left:auto;}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+.fu6{animation:fadeUp .38s ease both .29s;}
+.fu7{animation:fadeUp .38s ease both .34s;}
+.fu8{animation:fadeUp .38s ease both .39s;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">⚖️</div>
+      <div class="hdr-title">FEMA <span>Compliance</span></div>
+      <div class="hdr-sub">Foreign Exchange Management Act · NRI Property Rules</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">FEMA Act</div>
+      <div class="rs-v saf">1999</div>
+      <div class="rs-n">In force</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">LRS Limit</div>
+      <div class="rs-v grn">$250K</div>
+      <div class="rs-n">Per FY</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Repatriation</div>
+      <div class="rs-v saf">$1M</div>
+      <div class="rs-n">Annual</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Max Properties</div>
+      <div class="rs-v warn">2 Res</div>
+      <div class="rs-n">NRI Limit</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- HERO BANNER -->
+  <div class="fema-hero fu1" style="margin-top:0;">
+    <div class="fh-tag">🇮🇳 भारत · Foreign Exchange Management Act, 1999</div>
+    <div class="fh-title">NRI Property Rules<br>under <span>FEMA 2024–25</span></div>
+    <div class="fh-pills">
+      <span class="fh-pill active">NRI</span>
+      <span class="fh-pill">PIO</span>
+      <span class="fh-pill">OCI</span>
+      <span class="fh-pill">Foreign National</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:8px 10px;">
+        <div style="font-size:8px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;">RBI Master Direction</div>
+        <div style="font-size:12px;font-weight:800;color:#fff;margin-top:2px;">No.13/2015-16</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:8px 10px;">
+        <div style="font-size:8px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;">Last Updated</div>
+        <div style="font-size:12px;font-weight:800;color:#fff;margin-top:2px;">Jan 2025</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:8px 10px;">
+        <div style="font-size:8px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;">Governing Body</div>
+        <div style="font-size:12px;font-weight:800;color:#fff;margin-top:2px;">RBI + ED</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERT -->
+  <div class="alert-box amber fu2">
+    <div class="alert-icon">⚠️</div>
+    <div>
+      <div class="alert-title amber">FEMA Violation Can Lead to Imprisonment</div>
+      <div class="alert-text amber">Non-compliance can result up to 3× the transaction amount as penalty + imprisonment up to 5 years. Always obtain RBI/AD bank approval before transacting.</div>
+    </div>
+  </div>
+
+  <!-- PROPERTY ACQUISITION RULES -->
+  <div class="sec fu2">Property Acquisition Rules <span class="more">RBI Guide →</span></div>
+  <div class="comp-card fu2">
+    <div class="comp-card-hdr">
+      <div class="comp-icon green">🏠</div>
+      <div>
+        <div class="comp-card-title">Residential Property</div>
+        <div class="comp-card-sub">Purchase / Sale by NRI/PIO/OCI</div>
+      </div>
+      <div class="status-badge allowed">✓ Allowed</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot green"></div>
+      <div>
+        <div class="rule-text">NRI/PIO/OCI can buy any number of residential properties in India.</div>
+        <div class="rule-note">No prior RBI approval needed — general permission under FEMA.</div>
+      </div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot green"></div>
+      <div>
+        <div class="rule-text">Payment must be made in INR via normal banking channels (NRE/NRO/FCNR account).</div>
+        <div class="rule-note">Foreign currency cheques / DD from abroad not allowed.</div>
+      </div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot amber"></div>
+      <div>
+        <div class="rule-text">Agricultural land, plantation land, and farmhouses cannot be purchased by NRIs without RBI approval.</div>
+        <div class="rule-note">Gift or inheritance of agricultural land is permitted.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="comp-card fu3">
+    <div class="comp-card-hdr">
+      <div class="comp-icon amber">🏢</div>
+      <div>
+        <div class="comp-card-title">Commercial Property</div>
+        <div class="comp-card-sub">Office, shop, godown acquisition</div>
+      </div>
+      <div class="status-badge allowed">✓ Allowed</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot green"></div>
+      <div>
+        <div class="rule-text">NRI/PIO/OCI can freely acquire commercial immovable property in India.</div>
+        <div class="rule-note">Includes shops, offices, industrial units.</div>
+      </div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot amber"></div>
+      <div>
+        <div class="rule-text">Repatriation of rent income abroad requires an Authorised Dealer (AD) bank certification.</div>
+        <div class="rule-note">Net of applicable Indian income tax (TDS at 30%).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LRS LIMITS -->
+  <div class="sec fu3">Liberalised Remittance Scheme (LRS) <span class="more">RBI Circular →</span></div>
+  <div class="limit-section fu3">
+    <div class="limit-title">Annual Remittance Limits – FY 2025–26</div>
+    <div class="limit-item">
+      <div class="limit-hdr">
+        <div class="limit-lbl">LRS Outward Remittance (Resident Indian)</div>
+        <div class="limit-val">USD 250,000</div>
+      </div>
+      <div class="limit-bar-bg"><div class="limit-bar-fill green" style="width:75%"></div></div>
+      <div class="limit-sub">Per financial year · No RBI approval needed within this limit</div>
+    </div>
+    <div class="limit-item">
+      <div class="limit-hdr">
+        <div class="limit-lbl">NRI Repatriation from NRO Account</div>
+        <div class="limit-val">USD 1,000,000</div>
+      </div>
+      <div class="limit-bar-bg"><div class="limit-bar-fill amber" style="width:55%"></div></div>
+      <div class="limit-sub">Per financial year · Requires Form 15CA/15CB + CA certificate</div>
+    </div>
+    <div class="limit-item">
+      <div class="limit-hdr">
+        <div class="limit-lbl">NRE Account — Full Repatriation</div>
+        <div class="limit-val">Unlimited</div>
+      </div>
+      <div class="limit-bar-bg"><div class="limit-bar-fill green" style="width:100%"></div></div>
+      <div class="limit-sub">Principal + interest freely repatriable · No limit</div>
+    </div>
+    <div class="limit-item">
+      <div class="limit-hdr">
+        <div class="limit-lbl">Property Sale Proceeds (held &lt; 2 yrs)</div>
+        <div class="limit-val">USD 1,000,000</div>
+      </div>
+      <div class="limit-bar-bg"><div class="limit-bar-fill red" style="width:45%"></div></div>
+      <div class="limit-sub">Only 2 residential properties eligible for full repatriation</div>
+    </div>
+  </div>
+
+  <!-- COMPLIANCE CHECKLIST -->
+  <div class="sec fu4">NRI Home Loan Compliance Checklist <span class="more">Full →</span></div>
+  <div class="check-grid fu4">
+    <div class="check-card">
+      <span class="check-icon">📋</span>
+      <div class="check-title">Before Buying</div>
+      <div class="check-items">
+        <div class="check-item">Verify RERA registration</div>
+        <div class="check-item">Check title deed / encumbrance</div>
+        <div class="check-item">Open NRE/NRO account</div>
+        <div class="check-item">Obtain PAN card (mandatory)</div>
+      </div>
+    </div>
+    <div class="check-card">
+      <span class="check-icon">🏦</span>
+      <div class="check-title">Loan Disbursement</div>
+      <div class="check-items">
+        <div class="check-item">Route via AD bank</div>
+        <div class="check-item">INR mode only</div>
+        <div class="check-item">Power of Attorney if abroad</div>
+        <div class="check-item">CIBIL score ≥ 700</div>
+      </div>
+    </div>
+    <div class="check-card">
+      <span class="check-icon">💸</span>
+      <div class="check-title">EMI Repayment</div>
+      <div class="check-items">
+        <div class="check-item">NRE/NRO/FCNR debit</div>
+        <div class="check-item">Foreign currency inward allowed</div>
+        <div class="check-item">Rental income for EMI</div>
+        <div class="check-item">Form 15CA for TDS</div>
+      </div>
+    </div>
+    <div class="check-card">
+      <span class="check-icon">🔄</span>
+      <div class="check-title">On Property Sale</div>
+      <div class="check-items">
+        <div class="check-item">TDS: 20% (long-term)</div>
+        <div class="check-item">Form 15CA/15CB filing</div>
+        <div class="check-item">Max 2 repatriations</div>
+        <div class="check-item">AD bank clearance</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME LOAN PROCESS TIMELINE -->
+  <div class="sec fu5">NRI Home Loan Process <span class="more">Step Guide →</span></div>
+  <div class="comp-card fu5">
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot navy">📄</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-step navy">Step 1 · Documents</div>
+          <div class="tl-title">Submit KYC + Income Proof</div>
+          <div class="tl-desc">Passport, Visa, NRE/NRO statement, 6-month foreign salary slips, overseas employment letter, PAN card.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot amber">🏦</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-step amber">Step 2 · Eligibility</div>
+          <div class="tl-title">Bank Assesses Loan-to-Value</div>
+          <div class="tl-desc">NRI loans: max 80% LTV for ≤₹75L, 75% for ₹75L–₹5Cr. CIBIL score ≥700 required. Tenure max 30 years.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot green">✅</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-step green">Step 3 · Sanction</div>
+          <div class="tl-title">Sanction Letter Issued</div>
+          <div class="tl-desc">Valid 3–6 months. Interest rate linked to RLLR (Repo Rate + Spread). Power of Attorney notarized.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot navy">🔑</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-step navy">Step 4 · Disbursement</div>
+          <div class="tl-title">Funds Released in INR Only</div>
+          <div class="tl-desc">Credited directly to seller/builder. FEMA mandates INR disbursement via AD bank channel.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left">
+          <div class="tl-dot green">💰</div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-step green">Step 5 · Repayment</div>
+          <div class="tl-title">NRE/NRO Auto-Debit EMI</div>
+          <div class="tl-desc">EMI via inward remittance, NRE/NRO debit, or rental income from property (Section 24b applies).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PENALTY SECTION -->
+  <div class="sec fu6">FEMA Penalties & Enforcement <span class="more">ED Rules →</span></div>
+  <div class="penalty-table fu6">
+    <div class="pt-row">
+      <div>
+        <div class="pt-label">Unauthorized Purchase (Agri/Farm)</div>
+        <div class="pt-note">Buying restricted property without RBI approval</div>
+      </div>
+      <div class="pt-val red">3× Value</div>
+    </div>
+    <div class="pt-row">
+      <div>
+        <div class="pt-label">Exceeding Repatriation Limit</div>
+        <div class="pt-note">Without RBI permission over USD 1M/year</div>
+      </div>
+      <div class="pt-val red">3× Amount</div>
+    </div>
+    <div class="pt-row">
+      <div>
+        <div class="pt-label">Late Form 15CA/15CB Filing</div>
+        <div class="pt-note">Not filing before remittance abroad</div>
+      </div>
+      <div class="pt-val amber">₹1L/day</div>
+    </div>
+    <div class="pt-row">
+      <div>
+        <div class="pt-label">Using Foreign Currency for Purchase</div>
+        <div class="pt-note">Direct payment in USD/GBP/AED etc.</div>
+      </div>
+      <div class="pt-val red">Confiscation</div>
+    </div>
+    <div class="pt-row">
+      <div>
+        <div class="pt-label">Criminal Offence (Serious Breach)</div>
+        <div class="pt-note">Willful FEMA violation</div>
+      </div>
+      <div class="pt-val red">Up to 5 Yrs</div>
+    </div>
+  </div>
+
+  <!-- USEFUL LINKS -->
+  <div class="sec fu7">Official Resources <span class="more">All →</span></div>
+  <div class="ilist fu7">
+    <div class="ic">
+      <div class="ii">🏛️</div>
+      <div><div class="in">RBI FEMA Master Direction</div><div class="is">No.13/2015-16 · Full text at rbi.org.in</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic">
+      <div class="ii">📋</div>
+      <div><div class="in">Form 15CA / 15CB Guide</div><div class="is">Income Tax Portal · e-filing mandatory</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic">
+      <div class="ii">⚖️</div>
+      <div><div class="in">ED Adjudicating Authority</div><div class="is">Enforcement Directorate · FEMA Sections 3–9</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic">
+      <div class="ii">🤖</div>
+      <div><div class="in">AI FEMA Compliance Advisor</div><div class="is">Get personalised NRI compliance guidance</div></div>
+      <div class="ich">›</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+</body>
+</html>

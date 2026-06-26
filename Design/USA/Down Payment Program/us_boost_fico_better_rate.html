@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boost FICO → Better Rate</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --white:#FFFFFF;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10);
+    --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --green:#15803D; --green-lt:#DCFCE7;
+    --purple:#7C3AED; --purple-lt:#EDE9FE;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#D97706 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'💳';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* HERO */
+  .result-hero{background:linear-gradient(148deg,#4C1D95,#7C3AED);border-radius:20px;padding:19px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:14px;}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.08);}
+  .rh-tag{font-size:9.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-main{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;margin:4px 0 2px;}
+  .rh-main span{font-size:22px;}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.60);}
+  .rh-bars{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-bar-item{background:rgba(255,255,255,0.12);border-radius:10px;padding:9px 10px;}
+  .rh-bar-lbl{font-size:8px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.4px;}
+  .rh-bar-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+  .rh-bar-sub{font-size:8px;color:rgba(255,255,255,0.40);margin-top:1px;}
+
+  /* FICO GAUGE */
+  .gauge-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .gauge-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .gauge-wrap{position:relative;width:200px;height:110px;margin:0 auto 10px;}
+  #gaugeCanvas{display:block;}
+  .gauge-score{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);text-align:center;}
+  .gauge-score-num{font-size:32px;font-weight:800;color:var(--navy);font-family:Georgia,serif;line-height:1;}
+  .gauge-score-lbl{font-size:10px;font-weight:700;color:var(--muted);margin-top:2px;}
+  .fico-range-labels{display:flex;justify-content:space-between;margin-top:4px;}
+  .fico-range-labels span{font-size:8.5px;color:var(--muted);font-weight:600;}
+
+  /* INPUT CARD */
+  .input-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .input-card-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .ic-icon{width:30px;height:30px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .field{margin-bottom:13px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .field-row{display:flex;align-items:center;background:var(--bg);border-radius:11px;border:1.5px solid var(--border);overflow:hidden;transition:border-color .2s;}
+  .field-row:focus-within{border-color:var(--gold);}
+  .field-prefix{padding:0 10px;font-size:14px;font-weight:800;color:var(--muted);background:transparent;}
+  .field-input{flex:1;border:none;background:transparent;padding:11px 8px 11px 0;font-size:14px;font-weight:700;color:var(--navy);outline:none;}
+  .field-suffix{padding:0 10px;font-size:11px;font-weight:700;color:var(--muted);}
+  .pill-row{display:flex;gap:7px;flex-wrap:wrap;}
+  .pill{padding:7px 13px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;}
+  .pill.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#7C3AED,#4C1D95);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(124,58,237,0.35);font-family:Georgia,serif;margin-top:4px;transition:transform .15s;}
+  .calc-btn:active{transform:scale(.98);}
+  .save-btn{width:100%;background:var(--card);border:1.5px solid var(--gold);border-radius:14px;padding:13px;font-size:13px;font-weight:800;color:var(--gold);cursor:pointer;font-family:Georgia,serif;margin-top:8px;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .save-btn:active{transform:scale(.98);background:var(--bg);}
+  .save-btn.saved{background:#DCFCE7;border-color:#15803D;color:#15803D;}
+
+  input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:linear-gradient(to right,var(--gold) 0%,var(--gold) var(--pct,50%),rgba(27,63,114,0.15) var(--pct,50%),rgba(27,63,114,0.15) 100%);outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--gold);border:3px solid #fff;box-shadow:0 2px 8px rgba(217,119,6,0.35);}
+  .slider-labels{display:flex;justify-content:space-between;margin-top:5px;}
+  .slider-labels span{font-size:9px;color:var(--muted);font-weight:600;}
+
+  /* RATE IMPACT TABLE */
+  .tier-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .tier-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .tier-row{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
+  .tier-row:last-child{border-bottom:none;}
+  .tier-row.highlight{background:linear-gradient(135deg,rgba(124,58,237,0.06),rgba(76,29,149,0.04));border-radius:10px;margin:0 -6px;padding:11px 6px;}
+  .tier-score{width:50px;height:44px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;flex-shrink:0;text-align:center;line-height:1.1;}
+  .tier-score.active-tier{background:var(--purple);color:#fff;}
+  .tier-info{flex:1;padding:0 12px;}
+  .tier-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .tier-desc{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .tier-amounts{text-align:right;}
+  .tier-rate{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .tier-saving{font-size:9.5px;color:var(--green);margin-top:2px;font-weight:700;}
+  .tier-badge{display:inline-flex;padding:2px 7px;border-radius:12px;font-size:8.5px;font-weight:700;margin-top:4px;}
+  .badge-g{background:#DCFCE7;color:#15803D;}
+  .badge-b{background:#EFF6FF;color:#1D4ED8;}
+  .badge-o{background:#FEF3C7;color:#B45309;}
+  .badge-r{background:#FEF2F2;color:#B91C1C;}
+  .badge-p{background:#EDE9FE;color:#7C3AED;}
+
+  /* SAVINGS IMPACT HERO */
+  .savings-hero{background:linear-gradient(148deg,#14532D,#15803D);border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:var(--sh);}
+  .sh-title{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+  .sh-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .sh-item{background:rgba(255,255,255,0.10);border-radius:11px;padding:11px;}
+  .sh-lbl{font-size:8.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.3px;}
+  .sh-val{font-size:18px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:3px;}
+  .sh-sub{font-size:9px;color:rgba(255,255,255,0.45);margin-top:1px;}
+
+  /* BOOST TIPS */
+  .boost-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .boost-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .boost-row{display:flex;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);gap:12px;}
+  .boost-row:last-child{border-bottom:none;}
+  .boost-icon{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .boost-info{flex:1;}
+  .boost-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .boost-desc{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.4;}
+  .boost-pts{text-align:right;min-width:60px;}
+  .boost-pts-val{font-size:13px;font-weight:800;color:var(--green);font-family:Georgia,serif;}
+  .boost-pts-lbl{font-size:9px;color:var(--muted);margin-top:1px;}
+  .boost-badge{display:inline-flex;padding:2px 7px;border-radius:12px;font-size:8px;font-weight:700;margin-top:4px;}
+
+  /* BAR CHART */
+  .chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+
+  /* PMI bonus */
+  .pmi-card{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border:1px solid #FECACA;border-radius:16px;padding:14px 15px;margin-bottom:12px;}
+  .pmi-title{font-size:12px;font-weight:800;color:#B91C1C;font-family:Georgia,serif;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+  .pmi-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+  .pmi-row:last-child{margin-bottom:0;}
+  .pmi-lbl{font-size:10.5px;font-weight:600;color:#991B1B;}
+  .pmi-val{font-size:12px;font-weight:800;color:#B91C1C;font-family:Georgia,serif;}
+
+  /* SAVED */
+  .saved-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .saved-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+  .saved-row:last-child{border-bottom:none;}
+  .saved-info{display:flex;flex-direction:column;}
+  .saved-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .saved-meta{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .saved-del{font-size:13px;color:var(--red);cursor:pointer;padding:6px;}
+  .saved-empty{font-size:11px;color:var(--muted);text-align:center;padding:14px 0;}
+
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);max-width:380px;width:90%;background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;font-size:12.5px;font-weight:700;text-align:center;box-shadow:var(--sh2);opacity:0;pointer-events:none;transition:all .3s ease;z-index:200;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero{animation:fadeUp .35s ease both .05s;}
+  .input-card{animation:fadeUp .35s ease both .10s;}
+  .tier-card,.savings-hero,.boost-card{animation:fadeUp .35s ease both .16s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="us_down_payment.html" style="text-decoration:none;">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇺🇸</div>
+      <div class="hdr-title">Boost FICO → Better Rate</div>
+      <div class="hdr-sub">760+ unlocks the best mortgage rates in the US</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Best FICO</div><div class="rs-v gold">760+</div><div class="rs-n">Prime Rate</div></div>
+    <div class="rs"><div class="rs-l">FHA Min</div><div class="rs-v">580</div><div class="rs-n">3.5% Down</div></div>
+    <div class="rs"><div class="rs-l">Conv. Min</div><div class="rs-v">620</div><div class="rs-n">3% Down</div></div>
+    <div class="rs"><div class="rs-l">Rate Range</div><div class="rs-v">~1.5%</div><div class="rs-n">580→760</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- HERO -->
+  <div class="sec" style="margin-top:0;">FICO Impact <span class="more" id="resetBtn">Reset</span></div>
+  <div class="result-hero">
+    <div class="rh-tag">Rate at Your FICO Score</div>
+    <div class="rh-main"><span id="heroRate">6.82</span><span>%</span></div>
+    <div class="rh-sub" id="heroSub">FICO 700 · Conventional 30-yr · $450,000 home</div>
+    <div class="rh-bars">
+      <div class="rh-bar-item">
+        <div class="rh-bar-lbl">Monthly P&I</div>
+        <div class="rh-bar-val" id="heroPI">$2,942</div>
+        <div class="rh-bar-sub">30-year fixed</div>
+      </div>
+      <div class="rh-bar-item">
+        <div class="rh-bar-lbl">vs. Best Rate</div>
+        <div class="rh-bar-val" id="heroDiff" style="color:#FCD34D;">-$186/mo</div>
+        <div class="rh-bar-sub">vs. 760+ FICO</div>
+      </div>
+      <div class="rh-bar-item">
+        <div class="rh-bar-lbl">30-yr Extra Cost</div>
+        <div class="rh-bar-val" id="heroTotal" style="color:#FCD34D;">$67K</div>
+        <div class="rh-bar-sub">vs. best rate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUT CARD -->
+  <div class="sec">Your Scenario</div>
+  <div class="input-card">
+    <div class="input-card-title"><div class="ic-icon">💳</div>Mortgage & FICO Details</div>
+
+    <div class="field">
+      <label>Loan Amount</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="loanAmount" type="number" value="360000" min="50000" step="5000">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Your Current FICO Score</label>
+      <div style="margin-bottom:8px;">
+        <input type="range" id="ficoSlider" min="580" max="850" step="1" value="700" style="--pct:44%">
+        <div class="slider-labels"><span>580</span><span id="ficoDisplay">700</span><span>850</span></div>
+      </div>
+      <div class="pill-row">
+        <div class="pill" data-fico="580">580</div>
+        <div class="pill" data-fico="620">620</div>
+        <div class="pill" data-fico="640">640</div>
+        <div class="pill active" data-fico="700">700</div>
+        <div class="pill" data-fico="720">720</div>
+        <div class="pill" data-fico="760">760</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Loan Term</label>
+      <div class="pill-row">
+        <div class="pill active" data-term="30">30 yr</div>
+        <div class="pill" data-term="20">20 yr</div>
+        <div class="pill" data-term="15">15 yr</div>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">📊 Calculate Rate Impact</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">💾 Save This Scenario</button>
+  </div>
+
+  <!-- FICO GAUGE -->
+  <div class="sec">FICO Score Gauge</div>
+  <div class="gauge-card">
+    <div class="gauge-title">Your Score Position</div>
+    <div class="gauge-wrap">
+      <canvas id="gaugeCanvas" width="200" height="120"></canvas>
+      <div class="gauge-score">
+        <div class="gauge-score-num" id="gaugeNum">700</div>
+        <div class="gauge-score-lbl" id="gaugeLabel">Good</div>
+      </div>
+    </div>
+    <div class="fico-range-labels">
+      <span style="color:#B91C1C;">Poor<br>580</span>
+      <span style="color:#EA580C;">Fair<br>620</span>
+      <span style="color:#D97706;">Good<br>670</span>
+      <span style="color:#0EA5E9;">V.Good<br>740</span>
+      <span style="color:#15803D;">Excl.<br>800+</span>
+    </div>
+  </div>
+
+  <!-- RATE TIER TABLE -->
+  <div class="sec">FICO → Rate Tiers <span class="more">2025 Avg</span></div>
+  <div class="tier-card">
+    <div class="tier-title">Freddie Mac Rate by FICO — <span id="tierLoanLabel" style="color:var(--blue);">$360K Loan</span></div>
+    <div id="tierRows"></div>
+  </div>
+
+  <!-- SAVINGS IMPACT -->
+  <div class="sec">Lifetime Savings if You Boost</div>
+  <div class="savings-hero">
+    <div class="sh-title">💰 Financial Impact of a Better FICO Score</div>
+    <div class="sh-grid">
+      <div class="sh-item">
+        <div class="sh-lbl">Monthly Savings</div>
+        <div class="sh-val" id="savMo">$186</div>
+        <div class="sh-sub">vs. 760+ score</div>
+      </div>
+      <div class="sh-item">
+        <div class="sh-lbl">Annual Savings</div>
+        <div class="sh-val" id="savYr">$2,232</div>
+        <div class="sh-sub">every year</div>
+      </div>
+      <div class="sh-item">
+        <div class="sh-lbl">10-Year Savings</div>
+        <div class="sh-val" id="sav10">$22K</div>
+        <div class="sh-sub">if you boost now</div>
+      </div>
+      <div class="sh-item">
+        <div class="sh-lbl">30-Year Savings</div>
+        <div class="sh-val" id="sav30">$67K</div>
+        <div class="sh-sub">total extra paid</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAR CHART — rate comparison -->
+  <div class="sec">Rate Comparison Visual</div>
+  <div class="chart-card">
+    <div class="chart-title">Monthly Payment by FICO Score Tier</div>
+    <div id="barChartWrap"></div>
+    <div style="font-size:9px;color:var(--muted);margin-top:8px;text-align:center;">Based on Freddie Mac PMMS + FICO adjustment factors · June 2025</div>
+  </div>
+
+  <!-- PMI BONUS CARD -->
+  <div class="sec">PMI Bonus — Higher FICO = Lower PMI</div>
+  <div class="pmi-card">
+    <div class="pmi-title">⚠️ FICO Also Affects PMI Cost (if &lt;20% Down)</div>
+    <div class="pmi-row"><div class="pmi-lbl">FICO 580–619 · PMI Rate</div><div class="pmi-val" id="pmi580">~1.50%/yr</div></div>
+    <div class="pmi-row"><div class="pmi-lbl">FICO 620–659 · PMI Rate</div><div class="pmi-val" id="pmi620">~1.10%/yr</div></div>
+    <div class="pmi-row"><div class="pmi-lbl">FICO 660–719 · PMI Rate</div><div class="pmi-val" id="pmi660">~0.75%/yr</div></div>
+    <div class="pmi-row"><div class="pmi-lbl">FICO 720–759 · PMI Rate</div><div class="pmi-val" id="pmi720">~0.55%/yr</div></div>
+    <div class="pmi-row"><div class="pmi-lbl">FICO 760+ · PMI Rate</div><div class="pmi-val" style="color:#15803D;" id="pmi760">~0.36%/yr ✓ Best</div></div>
+  </div>
+
+  <!-- BOOST TIPS -->
+  <div class="sec">How to Boost Your FICO Score</div>
+  <div class="boost-card">
+    <div class="boost-title">Proven Strategies — Ranked by Impact</div>
+    <div id="boostTips"></div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="sec" style="margin-top:20px;">Saved Scenarios <span class="more" onclick="clearAll()">Clear All</span></div>
+  <div class="saved-card">
+    <div id="savedList"><div class="saved-empty">No saved scenarios yet. Tap "Save This Scenario" above.</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// ── Real 2025 FICO→rate data (Freddie Mac PMMS + MyFICO loan savings) ──
+const FICO_TIERS = [
+  { label:'580–619', min:580, max:619, rateAdj:1.50, badge:'badge-r', badgeText:'High Risk',   ficoColor:'#B91C1C' },
+  { label:'620–639', min:620, max:639, rateAdj:1.10, badge:'badge-r', badgeText:'Poor',        ficoColor:'#DC2626' },
+  { label:'640–659', min:640, max:659, rateAdj:0.75, badge:'badge-o', badgeText:'Fair',        ficoColor:'#EA580C' },
+  { label:'660–679', min:660, max:679, rateAdj:0.50, badge:'badge-o', badgeText:'Fair-Good',   ficoColor:'#D97706' },
+  { label:'680–699', min:680, max:699, rateAdj:0.30, badge:'badge-o', badgeText:'Good',        ficoColor:'#CA8A04' },
+  { label:'700–719', min:700, max:719, rateAdj:0.20, badge:'badge-b', badgeText:'Good',        ficoColor:'#2563EB' },
+  { label:'720–739', min:720, max:739, rateAdj:0.10, badge:'badge-b', badgeText:'Very Good',   ficoColor:'#0EA5E9' },
+  { label:'740–759', min:740, max:759, rateAdj:0.05, badge:'badge-g', badgeText:'Very Good',   ficoColor:'#16A34A' },
+  { label:'760–850', min:760, max:850, rateAdj:0.00, badge:'badge-g', badgeText:'Excellent ✓', ficoColor:'#15803D' },
+];
+
+const BASE_RATE_30 = 6.82; // Freddie Mac June 2025 30-yr avg
+const BASE_RATE_20 = 6.38;
+const BASE_RATE_15 = 6.10;
+
+const BOOST_TIPS = [
+  { icon:'💳', name:'Pay Down Credit Card Balances',      pts:'+40–100 pts', impact:'High',   badge:'badge-g', desc:'Keep utilization below 10%. This is the single fastest FICO booster — each billing cycle updates.' },
+  { icon:'✅', name:'Never Miss a Payment',               pts:'+20–50 pts',  impact:'High',   badge:'badge-g', desc:'Payment history = 35% of FICO. One 30-day late can drop 60–110 points. Set autopay now.' },
+  { icon:'🚫', name:'Don't Open New Credit Accounts',    pts:'+5–15 pts',   impact:'Med',    badge:'badge-o', desc:'Each hard inquiry drops ~5 pts for 12 months. Freeze new applications 12 months before applying.' },
+  { icon:'📋', name:'Dispute Credit Report Errors',      pts:'+20–100 pts', impact:'High',   badge:'badge-g', desc:'25% of reports have errors. Dispute with Equifax, Experian, TransUnion via AnnualCreditReport.com.' },
+  { icon:'🕒', name:'Become an Authorized User',         pts:'+10–30 pts',  impact:'Med',    badge:'badge-b', desc:'Ask a family member with excellent credit to add you to their old card. Age + limit transfers to you.' },
+  { icon:'📂', name:'Keep Old Accounts Open',            pts:'+5–15 pts',   impact:'Low',    badge:'badge-o', desc:'Credit age = 15% of FICO. Closing old cards shortens history and raises utilization ratio.' },
+  { icon:'🔄', name:'Mix of Credit Types',               pts:'+5–15 pts',   impact:'Low',    badge:'badge-b', desc:'Having a mix (card + auto + installment loan) = 10% of FICO. Don\'t open accounts just for this.' },
+  { icon:'🔐', name:'Credit Builder Loan',               pts:'+15–35 pts',  impact:'Med',    badge:'badge-b', desc:'Self.inc or local CU credit-builder loans add positive payment history. Best for thin files.' },
+];
+
+let currentFico = 700;
+let loanTerm = 30;
+
+function getBaseRate(term) {
+  if (term === 15) return BASE_RATE_15;
+  if (term === 20) return BASE_RATE_20;
+  return BASE_RATE_30;
+}
+
+function getTierForFico(score) {
+  return FICO_TIERS.find(t => score >= t.min && score <= t.max) || FICO_TIERS[FICO_TIERS.length-1];
+}
+
+function getRateForFico(score, term) {
+  const tier = getTierForFico(score);
+  return +(getBaseRate(term) + tier.rateAdj).toFixed(2);
+}
+
+function getBestRate(term) { return getBaseRate(term); }
+
+function monthlyPI(principal, annualRate, years) {
+  const r = annualRate / 100 / 12, n = years * 12;
+  if (r === 0) return principal / n;
+  return principal * (r * Math.pow(1+r, n)) / (Math.pow(1+r, n) - 1);
+}
+
+function fmt(n)  { return '$' + Math.round(n).toLocaleString(); }
+function fmtK(n) { return n >= 1000 ? '$' + (n/1000).toFixed(0) + 'K' : fmt(n); }
+
+function ficoCategory(score) {
+  if (score < 580) return { label:'Very Poor', color:'#991B1B' };
+  if (score < 620) return { label:'Poor',      color:'#B91C1C' };
+  if (score < 640) return { label:'Poor-Fair',  color:'#DC2626' };
+  if (score < 660) return { label:'Fair',       color:'#EA580C' };
+  if (score < 680) return { label:'Fair-Good',  color:'#D97706' };
+  if (score < 700) return { label:'Good',       color:'#CA8A04' };
+  if (score < 720) return { label:'Good',       color:'#2563EB' };
+  if (score < 740) return { label:'Very Good',  color:'#0EA5E9' };
+  if (score < 760) return { label:'Very Good',  color:'#059669' };
+  if (score < 800) return { label:'Excellent',  color:'#15803D' };
+  return { label:'Exceptional', color:'#14532D' };
+}
+
+function drawGauge(score) {
+  const canvas = document.getElementById('gaugeCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const cx = W / 2, cy = H - 14, r = 76;
+
+  // Background arc
+  const startA = Math.PI, endA = 2 * Math.PI;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startA, endA);
+  ctx.lineWidth = 16;
+  ctx.strokeStyle = '#E5E7EB';
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Colored segments (Poor → Excellent)
+  const segments = [
+    { from: 580, to: 620, color:'#B91C1C' },
+    { from: 620, to: 660, color:'#EA580C' },
+    { from: 660, to: 700, color:'#D97706' },
+    { from: 700, to: 740, color:'#0EA5E9' },
+    { from: 740, to: 800, color:'#22C55E' },
+    { from: 800, to: 850, color:'#15803D' },
+  ];
+  segments.forEach(seg => {
+    const sA = Math.PI + ((seg.from - 580) / 270) * Math.PI;
+    const eA = Math.PI + ((seg.to   - 580) / 270) * Math.PI;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, sA, eA);
+    ctx.lineWidth = 14;
+    ctx.strokeStyle = seg.color;
+    ctx.stroke();
+  });
+
+  // Needle
+  const pct = Math.min(1, Math.max(0, (score - 580) / 270));
+  const needleA = Math.PI + pct * Math.PI;
+  const nx = cx + (r - 18) * Math.cos(needleA);
+  const ny = cy + (r - 18) * Math.sin(needleA);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(nx, ny);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#0B1D3A';
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  // pivot dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 6, 0, 2*Math.PI);
+  ctx.fillStyle = '#0B1D3A';
+  ctx.fill();
+
+  // Update label
+  const cat = ficoCategory(score);
+  document.getElementById('gaugeNum').textContent  = score;
+  document.getElementById('gaugeLabel').textContent = cat.label;
+  document.getElementById('gaugeLabel').style.color = cat.color;
+}
+
+function calculate() {
+  const loan = +document.getElementById('loanAmount').value || 360000;
+  const rate  = getRateForFico(currentFico, loanTerm);
+  const bestRate = getBestRate(loanTerm);
+  const pi   = monthlyPI(loan, rate, loanTerm);
+  const bestPI = monthlyPI(loan, bestRate, loanTerm);
+  const diffMo = pi - bestPI;
+  const diff30 = diffMo * loanTerm * 12;
+  const cat = ficoCategory(currentFico);
+
+  // Hero
+  document.getElementById('heroRate').textContent = rate.toFixed(2);
+  document.getElementById('heroSub').textContent  = 'FICO ' + currentFico + ' · ' + loanTerm + '-yr Fixed · ' + fmt(loan) + ' Loan · ' + cat.label;
+  document.getElementById('heroPI').textContent   = fmt(pi);
+  document.getElementById('heroDiff').textContent = diffMo > 0 ? '-' + fmt(diffMo) + '/mo' : '✓ Best Rate';
+  document.getElementById('heroTotal').textContent = diffMo > 0 ? fmtK(diff30) : '$0';
+
+  // Gauge
+  drawGauge(currentFico);
+
+  // Tier rows
+  document.getElementById('tierLoanLabel').textContent = fmt(loan) + ' Loan';
+  const tierHTML = FICO_TIERS.map(t => {
+    const tRate  = +(getBaseRate(loanTerm) + t.rateAdj).toFixed(2);
+    const tPI    = monthlyPI(loan, tRate, loanTerm);
+    const tDiff  = tPI - bestPI;
+    const isActive = currentFico >= t.min && currentFico <= t.max;
+    return `<div class="tier-row ${isActive ? 'highlight' : ''}">
+      <div class="tier-score ${isActive ? 'active-tier' : ''}" style="${isActive ? '' : 'font-size:10px;'}">${t.label}</div>
+      <div class="tier-info">
+        <div class="tier-name">${tRate.toFixed(2)}% Rate</div>
+        <div class="tier-desc">${fmt(tPI)}/mo payment</div>
+        <span class="tier-badge ${t.badge}">${t.badgeText}</span>
+      </div>
+      <div class="tier-amounts">
+        <div class="tier-rate">${tRate.toFixed(2)}%</div>
+        ${tDiff > 0.5 ? `<div class="tier-saving">-${fmt(tDiff)}/mo</div>` : '<div class="tier-saving" style="color:var(--green);">Best Rate ✓</div>'}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('tierRows').innerHTML = tierHTML;
+
+  // Savings impact
+  document.getElementById('savMo').textContent  = diffMo > 0 ? fmt(diffMo) : '$0';
+  document.getElementById('savYr').textContent  = diffMo > 0 ? fmt(diffMo * 12) : '$0';
+  document.getElementById('sav10').textContent  = diffMo > 0 ? fmtK(diffMo * 120) : '$0';
+  document.getElementById('sav30').textContent  = diffMo > 0 ? fmtK(diff30) : '$0';
+
+  // Bar chart
+  drawBarChart(loan, loanTerm);
+
+  // Boost tips
+  const tipsHTML = BOOST_TIPS.map(t => `
+    <div class="boost-row">
+      <div class="boost-icon">${t.icon}</div>
+      <div class="boost-info">
+        <div class="boost-name">${t.name}</div>
+        <div class="boost-desc">${t.desc}</div>
+        <span class="boost-badge ${t.badge}">${t.impact} Impact</span>
+      </div>
+      <div class="boost-pts">
+        <div class="boost-pts-val">${t.pts}</div>
+        <div class="boost-pts-lbl">pts boost</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('boostTips').innerHTML = tipsHTML;
+}
+
+function drawBarChart(loan, term) {
+  const selected = [
+    { fico:580, label:'580' },
+    { fico:640, label:'640' },
+    { fico:680, label:'680' },
+    { fico:700, label:'700' },
+    { fico:720, label:'720' },
+    { fico:760, label:'760+' },
+  ];
+  const payments = selected.map(s => ({
+    ...s,
+    pi: monthlyPI(loan, getRateForFico(s.fico, term), term),
+    rate: getRateForFico(s.fico, term),
+  }));
+  const maxPI = Math.max(...payments.map(p => p.pi));
+  const colors = ['#B91C1C','#EA580C','#D97706','#2563EB','#0EA5E9','#15803D'];
+
+  let html = `<div style="display:flex;align-items:flex-end;gap:5px;height:100px;margin-bottom:6px;">`;
+  payments.forEach((p, i) => {
+    const h = Math.round((p.pi / maxPI) * 90);
+    const isMe = currentFico >= (selected[i].fico) && currentFico < (selected[i+1]?.fico || 851);
+    html += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+      <div style="font-size:7px;color:${colors[i]};font-weight:700;margin-bottom:2px;">${fmt(p.pi)}</div>
+      <div style="width:100%;height:${h}px;border-radius:5px 5px 0 0;background:${colors[i]};position:relative;${isMe?'outline:2px solid '+colors[i]+';outline-offset:2px;':''};"></div>
+      <div style="font-size:8.5px;color:var(--muted);font-weight:600;margin-top:4px;text-align:center;">${p.label}</div>
+      <div style="font-size:7.5px;color:${colors[i]};font-weight:700;">${p.rate.toFixed(2)}%</div>
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('barChartWrap').innerHTML = html;
+}
+
+// ── Slider ──
+const ficoSlider = document.getElementById('ficoSlider');
+ficoSlider.addEventListener('input', () => {
+  const v = +ficoSlider.value;
+  currentFico = v;
+  const pct = ((v - 580) / (850 - 580) * 100).toFixed(1);
+  ficoSlider.style.setProperty('--pct', pct + '%');
+  document.getElementById('ficoDisplay').textContent = v;
+  document.querySelectorAll('[data-fico]').forEach(p => p.classList.toggle('active', +p.dataset.fico === v));
+  calculate();
+});
+
+// ── FICO pills ──
+document.querySelectorAll('[data-fico]').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('[data-fico]').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    currentFico = +p.dataset.fico;
+    ficoSlider.value = currentFico;
+    const pct = ((currentFico - 580) / 270 * 100).toFixed(1);
+    ficoSlider.style.setProperty('--pct', pct + '%');
+    document.getElementById('ficoDisplay').textContent = currentFico;
+    calculate();
+  });
+});
+
+// ── Term pills ──
+document.querySelectorAll('[data-term]').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('[data-term]').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    loanTerm = +p.dataset.term;
+    calculate();
+  });
+});
+
+document.getElementById('loanAmount').addEventListener('input', calculate);
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('loanAmount').value = 360000;
+  currentFico = 700; loanTerm = 30;
+  ficoSlider.value = 700;
+  ficoSlider.style.setProperty('--pct','44%');
+  document.getElementById('ficoDisplay').textContent = 700;
+  document.querySelectorAll('[data-fico]').forEach(p => p.classList.toggle('active', +p.dataset.fico === 700));
+  document.querySelectorAll('[data-term]').forEach(p => p.classList.toggle('active', +p.dataset.term === 30));
+  calculate();
+});
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Save ──
+const SAVE_KEY = 'fico_boost_saved';
+function getSaved() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || []; } catch(e) { return []; } }
+function setSaved(arr) { localStorage.setItem(SAVE_KEY, JSON.stringify(arr)); }
+
+function saveCalc() {
+  const loan  = document.getElementById('loanAmount').value;
+  const rate  = getRateForFico(currentFico, loanTerm);
+  const cat   = ficoCategory(currentFico);
+  const entry = {
+    id:   Date.now(),
+    name: 'FICO ' + currentFico + ' → ' + rate.toFixed(2) + '% Rate · ' + cat.label,
+    meta: 'Loan ' + fmt(+loan) + ' · ' + loanTerm + '-yr · Monthly ' + fmt(monthlyPI(+loan, rate, loanTerm)),
+    data: { loan, fico: currentFico, term: loanTerm }
+  };
+  const arr = getSaved();
+  arr.unshift(entry);
+  if (arr.length > 10) arr.pop();
+  setSaved(arr);
+  renderSaved();
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  btn.textContent = '✓ Saved!';
+  showToast('Scenario saved!');
+  setTimeout(() => { btn.classList.remove('saved'); btn.innerHTML = '💾 Save This Scenario'; }, 1600);
+}
+
+function loadCalc(id) {
+  const entry = getSaved().find(e => e.id === id);
+  if (!entry) return;
+  const d = entry.data;
+  document.getElementById('loanAmount').value = d.loan;
+  currentFico = d.fico;
+  loanTerm    = d.term;
+  ficoSlider.value = currentFico;
+  ficoSlider.style.setProperty('--pct', ((currentFico - 580) / 270 * 100).toFixed(1) + '%');
+  document.getElementById('ficoDisplay').textContent = currentFico;
+  document.querySelectorAll('[data-fico]').forEach(p => p.classList.toggle('active', +p.dataset.fico === currentFico));
+  document.querySelectorAll('[data-term]').forEach(p => p.classList.toggle('active', +p.dataset.term === loanTerm));
+  calculate();
+  showToast('Scenario loaded');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteSaved(id, evt) {
+  evt.stopPropagation();
+  setSaved(getSaved().filter(e => e.id !== id));
+  renderSaved();
+  showToast('Removed');
+}
+
+function clearAll() {
+  setSaved([]);
+  renderSaved();
+  showToast('All saved scenarios cleared');
+}
+
+function renderSaved() {
+  const arr  = getSaved();
+  const list = document.getElementById('savedList');
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="saved-empty">No saved scenarios yet. Tap "Save This Scenario" above.</div>';
+    return;
+  }
+  list.innerHTML = arr.map(e => `
+    <div class="saved-row" onclick="loadCalc(${e.id})" style="cursor:pointer;">
+      <div class="saved-info">
+        <div class="saved-name">${e.name}</div>
+        <div class="saved-meta">${e.meta}</div>
+      </div>
+      <div class="saved-del" onclick="deleteSaved(${e.id},event)">🗑️</div>
+    </div>`).join('');
+}
+
+calculate();
+renderSaved();
+</script>
+</body>
+</html>

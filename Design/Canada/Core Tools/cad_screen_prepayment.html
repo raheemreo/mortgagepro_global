@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prepayment Calculator – Canada Mortgage Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --green-deep:#0A2E1A;--green-mid:#1A5C35;--green-light:#4A7C5F;--green-pale:#DCF4E8;--green-bg:#F0F7F4;
+  --red:#C8102E;--red-pale:#FFE4E8;--accent:#6EDFA0;--amber:#F59E0B;--amber-pale:#FEF3C7;
+  --white:#fff;--shadow:0 4px 20px rgba(10,46,26,0.1);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--green-bg);color:var(--green-deep);max-width:420px;margin:0 auto;min-height:100vh;}
+
+/* HEADER */
+.header{background:linear-gradient(150deg,#071A0F 0%,#0A2E1A 40%,#1A5C35 75%,#C8102E 100%);padding:52px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(110,223,160,0.07);}
+.header::after{content:'';position:absolute;bottom:30px;left:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background 0.2s;}
+.back-btn:hover,.notif-btn:hover{background:rgba(255,255,255,0.2);}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:24px;display:block;text-align:center;margin-bottom:2px;}
+.hdr-title{font-family:'DM Serif Display',serif;font-size:20px;color:#fff;letter-spacing:-0.3px;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px;font-weight:500;}
+.rate-strip{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:16px 16px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:6px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:'DM Serif Display',serif;}
+.rs-val.grn{color:var(--accent);}
+.rs-div{width:1px;height:28px;background:rgba(255,255,255,0.12);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.35);margin-top:1px;}
+
+/* CONTENT */
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:10px;font-weight:700;color:var(--green-light);text-transform:uppercase;letter-spacing:1.2px;margin:22px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl span{font-size:9px;font-weight:600;color:var(--green-light);opacity:0.7;}
+
+/* INPUT CARDS */
+.input-card{background:var(--white);border-radius:20px;padding:16px;box-shadow:var(--shadow);border:1px solid rgba(26,92,53,0.07);margin-bottom:10px;}
+.input-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(240,247,244,1);}
+.input-row:last-child{border-bottom:none;padding-bottom:0;}
+.input-row:first-child{padding-top:0;}
+.input-lbl{font-size:12px;font-weight:700;color:var(--green-deep);}
+.input-sub{font-size:10px;color:var(--green-light);margin-top:2px;font-weight:500;}
+.input-ctrl{display:flex;align-items:center;gap:6px;}
+.inp{background:var(--green-bg);border:1.5px solid rgba(26,92,53,0.12);border-radius:10px;padding:8px 10px;font-size:13px;font-weight:800;color:var(--green-deep);width:110px;text-align:right;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;}
+.inp:focus{outline:none;border-color:var(--green-mid);background:#fff;}
+.unit-lbl{font-size:11px;color:var(--green-light);font-weight:600;}
+.seg-ctrl{display:flex;background:var(--green-bg);border-radius:10px;padding:3px;gap:2px;}
+.seg-btn{flex:1;padding:6px 8px;border-radius:7px;font-size:10px;font-weight:700;color:var(--green-light);border:none;background:transparent;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.seg-btn.active{background:var(--green-mid);color:#fff;box-shadow:0 2px 8px rgba(26,92,53,0.25);}
+
+/* CALC + SAVE BUTTONS */
+.btn-row{display:flex;gap:10px;margin-top:6px;}
+.calc-btn{flex:1;background:linear-gradient(135deg,var(--green-mid),#2D7A52);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(26,92,53,0.35);transition:transform 0.15s,box-shadow 0.15s;font-family:'DM Sans',sans-serif;}
+.calc-btn:active{transform:scale(0.98);}
+.save-btn{width:54px;background:linear-gradient(135deg,#1A4A8A,#2563EB);border:none;border-radius:14px;padding:15px 0;font-size:18px;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,0.3);transition:transform 0.15s,box-shadow 0.15s;display:flex;align-items:center;justify-content:center;}
+.save-btn:active{transform:scale(0.98);}
+.save-btn.saved{background:linear-gradient(135deg,#059669,#10B981);}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--green-deep);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* RESULT HERO */
+.result-hero{background:linear-gradient(145deg,var(--green-deep),#1A5C35);border-radius:22px;padding:22px;position:relative;overflow:hidden;box-shadow:0 10px 40px rgba(10,46,26,0.3);margin-bottom:10px;}
+.result-hero::before{content:'💰';position:absolute;right:-8px;top:-8px;font-size:80px;opacity:0.06;}
+.rh-tag{font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:1px;font-weight:600;}
+.rh-title{font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);margin:4px 0 2px;}
+.rh-val{font-size:36px;font-family:'DM Serif Display',serif;color:var(--accent);letter-spacing:-1px;margin:4px 0;}
+.rh-row{display:flex;gap:8px;margin-top:14px;}
+.rh-box{flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:10px 10px;}
+.rh-box label{font-size:9px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;}
+.rh-box .v{font-size:13px;font-weight:800;color:#fff;font-family:'DM Serif Display',serif;}
+.rh-box .v.grn{color:var(--accent);}
+.rh-box .v.red{color:#FF8A9A;}
+
+/* CHART */
+.chart-card{background:var(--white);border-radius:20px;padding:18px;box-shadow:var(--shadow);border:1px solid rgba(26,92,53,0.07);margin-bottom:10px;}
+.chart-title{font-size:12px;font-weight:700;color:var(--green-deep);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.chart-title span{font-size:10px;color:var(--green-light);font-weight:600;}
+.donut-wrap{display:flex;align-items:center;gap:18px;margin-bottom:14px;}
+.donut-svg{flex-shrink:0;}
+.donut-legend{flex:1;}
+.legend-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.legend-lbl{font-size:11px;color:var(--green-light);font-weight:600;}
+.legend-val{font-size:12px;font-weight:800;color:var(--green-deep);margin-left:auto;font-family:'DM Serif Display',serif;}
+/* Timeline mini-chart */
+.timeline-wrap{margin-top:4px;}
+.tl-label{font-size:10px;color:var(--green-light);margin-bottom:6px;font-weight:600;}
+.tl-bars{display:flex;gap:3px;align-items:flex-end;height:52px;}
+.tl-bar-group{flex:1;display:flex;gap:1px;align-items:flex-end;}
+.tl-bar{flex:1;border-radius:3px 3px 0 0;min-height:3px;transition:height 0.5s ease;}
+.tl-yr{font-size:8px;color:var(--green-light);text-align:center;margin-top:4px;font-weight:600;}
+.tl-footer{display:flex;gap:12px;margin-top:8px;}
+.tl-leg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green-light);font-weight:600;}
+.tl-dot{width:8px;height:8px;border-radius:2px;}
+
+/* BREAKDOWN */
+.breakdown-card{background:var(--white);border-radius:20px;padding:16px;box-shadow:var(--shadow);border:1px solid rgba(26,92,53,0.07);margin-bottom:10px;}
+.bk-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--green-bg);}
+.bk-row:last-child{border-bottom:none;padding-bottom:0;}
+.bk-row:first-child{padding-top:0;}
+.bk-lbl{font-size:12px;color:var(--green-light);font-weight:600;}
+.bk-val{font-size:13px;font-weight:800;color:var(--green-deep);font-family:'DM Serif Display',serif;}
+.bk-val.grn{color:var(--green-mid);}.bk-val.red{color:var(--red);}
+.bar-wrap{background:var(--green-bg);border-radius:6px;height:9px;margin:12px 0 4px;overflow:hidden;}
+.bar-fill{background:linear-gradient(90deg,var(--green-mid),var(--accent));height:100%;border-radius:6px;transition:width 0.8s cubic-bezier(.34,1.56,.64,1);}
+.bar-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--green-light);margin-top:3px;font-weight:600;}
+
+/* TIP */
+.tip-card{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid rgba(26,92,53,0.12);border-radius:17px;padding:14px 15px;display:flex;gap:12px;margin-bottom:10px;}
+.tip-icon{font-size:22px;flex-shrink:0;}
+.tip-title{font-size:12px;font-weight:800;color:#166534;font-family:'DM Serif Display',serif;}
+.tip-sub{font-size:10px;color:var(--green-light);margin-top:3px;line-height:1.55;font-weight:500;}
+
+/* PRIVILEGE CARD */
+.privilege-card{background:var(--white);border-radius:20px;padding:16px;box-shadow:var(--shadow);border:1px solid rgba(26,92,53,0.07);}
+.priv-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--green-bg);}
+.priv-row:last-child{border-bottom:none;padding-bottom:0;}
+.priv-row:first-child{padding-top:0;}
+.priv-ic{width:36px;height:36px;border-radius:10px;background:var(--green-bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.priv-name{font-size:12px;font-weight:800;color:var(--green-deep);}
+.priv-val{font-size:10px;color:var(--green-light);margin-top:2px;font-weight:500;}
+.priv-badge{margin-left:auto;background:var(--green-pale);color:#166534;font-size:10px;font-weight:700;padding:4px 9px;border-radius:8px;white-space:nowrap;}
+
+/* SAVED LIST */
+.saved-section{margin-top:4px;}
+.saved-item{background:var(--white);border-radius:14px;padding:12px 14px;box-shadow:0 2px 10px rgba(10,46,26,0.07);border:1px solid rgba(26,92,53,0.07);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.si-info{flex:1;min-width:0;}
+.si-name{font-size:12px;font-weight:700;color:var(--green-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.si-meta{font-size:10px;color:var(--green-light);margin-top:2px;font-weight:500;}
+.si-saved{font-size:13px;font-weight:800;color:var(--green-mid);font-family:'DM Serif Display',serif;white-space:nowrap;}
+.si-del{background:none;border:none;font-size:16px;cursor:pointer;padding:4px;color:#ccc;transition:color 0.2s;}
+.si-del:hover{color:var(--red);}
+.empty-saved{text-align:center;padding:20px;color:var(--green-light);font-size:12px;font-weight:600;}
+
+/* NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);border-top:1px solid rgba(26,92,53,0.08);display:flex;padding:10px 0 18px;box-shadow:0 -4px 24px rgba(10,46,26,0.08);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:20px;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--green-light);}
+.ni.active .ni-lb{color:var(--green-mid);}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">💾 Calculation saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">🍁</span>
+      <div class="hdr-title">Prepayment Calc</div>
+      <div class="hdr-sub">Lump Sum · Payment Increase · Savings</div>
+    </div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">BoC Rate</div><div class="rs-val grn">2.25%</div><div class="rs-note">Held Jun'26</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Prime</div><div class="rs-val">4.45%</div><div class="rs-note">+220bps</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Max Lump</div><div class="rs-val">20%</div><div class="rs-note">Per year</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Pmt Inc.</div><div class="rs-val">20%</div><div class="rs-note">Max uplift</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Mortgage Details</div>
+  <div class="input-card">
+    <div class="input-row">
+      <div><div class="input-lbl">Balance Owing</div><div class="input-sub">Current principal</div></div>
+      <div class="input-ctrl"><span class="unit-lbl">CA$</span><input class="inp" id="balance" type="number" value="400000" min="0" oninput="calculate()"></div>
+    </div>
+    <div class="input-row">
+      <div><div class="input-lbl">Interest Rate</div><div class="input-sub">Annual rate</div></div>
+      <div class="input-ctrl"><input class="inp" id="rate" type="number" step="0.01" value="4.99" min="0" max="25" style="width:80px" oninput="calculate()"><span class="unit-lbl">%</span></div>
+    </div>
+    <div class="input-row">
+      <div><div class="input-lbl">Amortization Left</div><div class="input-sub">Remaining years</div></div>
+      <div class="input-ctrl"><input class="inp" id="amort" type="number" value="22" min="1" max="30" style="width:80px" oninput="calculate()"><span class="unit-lbl">yrs</span></div>
+    </div>
+    <div class="input-row">
+      <div><div class="input-lbl">Payment Freq.</div></div>
+      <div class="seg-ctrl">
+        <button class="seg-btn" onclick="setFreq(this,'monthly')">Monthly</button>
+        <button class="seg-btn active" onclick="setFreq(this,'biweekly')">Bi-Wkly</button>
+        <button class="seg-btn" onclick="setFreq(this,'accel')">Accel.</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Prepayment Options</div>
+  <div class="input-card">
+    <div class="input-row">
+      <div><div class="input-lbl">Annual Lump Sum</div><div class="input-sub">One-time per year</div></div>
+      <div class="input-ctrl"><span class="unit-lbl">CA$</span><input class="inp" id="lumpsum" type="number" value="20000" min="0" oninput="calculate()"></div>
+    </div>
+    <div class="input-row">
+      <div><div class="input-lbl">Payment Increase</div><div class="input-sub">Extra per payment</div></div>
+      <div class="input-ctrl"><span class="unit-lbl">CA$</span><input class="inp" id="extra" type="number" value="200" min="0" oninput="calculate()"></div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="calc-btn" onclick="calculate()">📈 Calculate Savings</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()" title="Save this calculation">💾</button>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="sec-lbl">Your Savings</div>
+    <div class="result-hero">
+      <div class="rh-tag">Total Interest Saved</div>
+      <div class="rh-title">Compared to baseline payments</div>
+      <div class="rh-val" id="saved-interest">$0</div>
+      <div class="rh-row">
+        <div class="rh-box"><label>Years Saved</label><div class="v grn" id="years-saved">0</div></div>
+        <div class="rh-box"><label>New Payoff</label><div class="v" id="new-payoff">–</div></div>
+        <div class="rh-box"><label>Base Payoff</label><div class="v red" id="base-payoff">–</div></div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Visual Analysis <span>Interest over time</span></div>
+    <div class="chart-card">
+      <div class="chart-title">Interest Breakdown <span id="chart-pct-label">0% saved</span></div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="42" fill="none" stroke="#EEF6F0" stroke-width="14"/>
+          <circle id="donutBase" cx="55" cy="55" r="42" fill="none" stroke="#FFE4E8" stroke-width="14"
+            stroke-dasharray="264" stroke-dashoffset="0" transform="rotate(-90 55 55)" stroke-linecap="round"/>
+          <circle id="donutSaved" cx="55" cy="55" r="42" fill="none" stroke="var(--accent)" stroke-width="14"
+            stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 55 55)" stroke-linecap="round"/>
+          <text x="55" y="50" text-anchor="middle" font-size="14" font-weight="800" fill="#0A2E1A" font-family="DM Serif Display,serif" id="donutPct">0%</text>
+          <text x="55" y="64" text-anchor="middle" font-size="9" fill="#4A7C5F" font-weight="700">saved</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--accent)"></div>
+            <div class="legend-lbl">Interest Saved</div>
+            <div class="legend-val" id="lgSaved">CA$0</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#FFE4E8;border:1px solid #FBBF85"></div>
+            <div class="legend-lbl">Remaining Int.</div>
+            <div class="legend-val" id="lgRemaining">CA$0</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#1A5C35"></div>
+            <div class="legend-lbl">Principal</div>
+            <div class="legend-val" id="lgPrincipal">CA$0</div>
+          </div>
+        </div>
+      </div>
+      <div class="timeline-wrap">
+        <div class="tl-label">5-Year Cumulative Interest (Base vs Prepay)</div>
+        <div class="tl-bars" id="tlBars"></div>
+        <div style="display:flex;justify-content:space-evenly" id="tlYrLabels"></div>
+        <div class="tl-footer">
+          <div class="tl-leg"><div class="tl-dot" style="background:#FFB0B8"></div>Base</div>
+          <div class="tl-leg"><div class="tl-dot" style="background:var(--accent)"></div>With Prepay</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Breakdown</div>
+    <div class="breakdown-card">
+      <div class="bk-row"><span class="bk-lbl">Regular monthly payment</span><span class="bk-val" id="reg-pmt">–</span></div>
+      <div class="bk-row"><span class="bk-lbl">Total interest (no prepay)</span><span class="bk-val red" id="base-interest">–</span></div>
+      <div class="bk-row"><span class="bk-lbl">Total interest (with prepay)</span><span class="bk-val grn" id="new-interest">–</span></div>
+      <div class="bk-row"><span class="bk-lbl">Net interest saved</span><span class="bk-val grn" id="bk-saved">–</span></div>
+      <div style="margin-top:12px">
+        <div style="font-size:10px;color:var(--green-light);margin-bottom:4px;font-weight:600;">Interest reduction %</div>
+        <div class="bar-wrap"><div class="bar-fill" id="savings-bar" style="width:0%"></div></div>
+        <div class="bar-lbl"><span>0%</span><span id="savings-pct">0% saved</span></div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Pro Tip</div>
+    <div class="tip-card">
+      <div class="tip-icon">💡</div>
+      <div><div class="tip-title">Prepay Early for Maximum Impact</div><div class="tip-sub" id="tip-text">In Year 1, ~70% of each payment is interest. A $20K prepayment early in your term can save over $40K total and shorten amortization by 2+ years.</div></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Saved Calculations <span id="savedCount"></span></div>
+  <div class="saved-section" id="savedList">
+    <div class="empty-saved" id="emptySaved">No saved calculations yet. Hit 💾 after calculating.</div>
+  </div>
+
+  <div class="sec-lbl">Lender Privilege Guide (2026)</div>
+  <div class="privilege-card">
+    <div class="priv-row"><div class="priv-ic">🏦</div><div><div class="priv-name">TD Bank</div><div class="priv-val">15% lump sum · 100% pmt increase</div></div><div class="priv-badge">Once/yr</div></div>
+    <div class="priv-row"><div class="priv-ic">🏦</div><div><div class="priv-name">RBC</div><div class="priv-val">10% lump sum · 10% pmt increase</div></div><div class="priv-badge">Once/yr</div></div>
+    <div class="priv-row"><div class="priv-ic">🏦</div><div><div class="priv-name">Scotiabank</div><div class="priv-val">15% lump sum · 15% pmt increase</div></div><div class="priv-badge">Once/yr</div></div>
+    <div class="priv-row"><div class="priv-ic">🏦</div><div><div class="priv-name">BMO</div><div class="priv-val">20% lump sum · 20% pmt increase</div></div><div class="priv-badge">Once/yr</div></div>
+    <div class="priv-row"><div class="priv-ic">🏦</div><div><div class="priv-name">CIBC</div><div class="priv-val">20% lump sum · 100% pmt increase</div></div><div class="priv-badge">Once/yr</div></div>
+    <div class="priv-row"><div class="priv-ic">🏦</div><div><div class="priv-name">nesto / Monoline</div><div class="priv-val">20% lump sum · 20% pmt increase</div></div><div class="priv-badge">Open</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🍁</div><div class="ni-lb">Canada</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let freq = 'biweekly';
+let lastResult = null;
+const STORAGE_KEY = 'prepay_saves';
+
+function setFreq(btn, f){
+  freq = f;
+  btn.parentElement.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  calculate();
+}
+function fmt(n){return 'CA$'+Math.round(n).toLocaleString('en-CA');}
+function mToYrMo(m){const y=Math.floor(m/12);const mo=m%12;return y+'yr '+(mo?mo+'mo':'');}
+
+function calculate(){
+  const P = parseFloat(document.getElementById('balance').value)||0;
+  const annualRate = parseFloat(document.getElementById('rate').value)||0;
+  const years = parseFloat(document.getElementById('amort').value)||1;
+  const lumpsum = parseFloat(document.getElementById('lumpsum').value)||0;
+  const extraPmt = parseFloat(document.getElementById('extra').value)||0;
+  if(P<=0||annualRate<=0||years<=0) return;
+
+  const r = annualRate/100/12;
+  const n = years*12;
+  const pmt = P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+
+  // base simulation
+  let bal=P, totalInt=0, months=0;
+  const baseYrInt=[]; let yInt=0;
+  while(bal>0.01 && months<600){
+    const ip=bal*r; const pp=Math.min(pmt-ip,bal);
+    totalInt+=ip; yInt+=ip; bal-=pp; months++;
+    if(months%12===0){baseYrInt.push(yInt);yInt=0;}
+  }
+
+  // prepay simulation
+  let bal2=P, totalInt2=0, months2=0, monthsInYear=0;
+  const prepYrInt=[]; let yInt2=0;
+  while(bal2>0.01 && months2<600){
+    const ip=bal2*r; const newPmt=pmt+extraPmt; const pp=Math.min(newPmt-ip,bal2);
+    totalInt2+=ip; yInt2+=ip; bal2-=pp; months2++; monthsInYear++;
+    if(monthsInYear===12){
+      if(lumpsum>0) bal2=Math.max(0,bal2-lumpsum);
+      prepYrInt.push(yInt2); yInt2=0; monthsInYear=0;
+    }
+  }
+
+  const saved=Math.max(0,totalInt-totalInt2);
+  const yrsSaved=(months-months2)/12;
+  const pct=totalInt>0?Math.min(100,(saved/totalInt)*100):0;
+
+  lastResult={P,annualRate,years,lumpsum,extraPmt,saved,yrsSaved,pmt,totalInt,totalInt2,months,months2};
+
+  // Update result hero
+  document.getElementById('saved-interest').textContent=fmt(saved);
+  document.getElementById('years-saved').textContent=yrsSaved>0?yrsSaved.toFixed(1)+' yrs':'< 1 mo';
+  document.getElementById('new-payoff').textContent=mToYrMo(months2);
+  document.getElementById('base-payoff').textContent=mToYrMo(months);
+  document.getElementById('reg-pmt').textContent=fmt(pmt)+'/mo';
+  document.getElementById('base-interest').textContent=fmt(totalInt);
+  document.getElementById('new-interest').textContent=fmt(totalInt2);
+  document.getElementById('bk-saved').textContent=fmt(saved);
+  document.getElementById('savings-bar').style.width=pct+'%';
+  document.getElementById('savings-pct').textContent=pct.toFixed(1)+'% saved';
+
+  // Donut chart
+  const circ=264;
+  const savedArc=circ*(pct/100);
+  const baseArc=circ-savedArc;
+  document.getElementById('donutSaved').style.strokeDashoffset=(circ-savedArc).toString();
+  document.getElementById('donutBase').style.strokeDashoffset=savedArc.toString();
+  document.getElementById('donutPct').textContent=pct.toFixed(0)+'%';
+  document.getElementById('chart-pct-label').textContent=pct.toFixed(1)+'% saved';
+  document.getElementById('lgSaved').textContent=fmt(saved);
+  document.getElementById('lgRemaining').textContent=fmt(totalInt2);
+  document.getElementById('lgPrincipal').textContent=fmt(P);
+
+  // Timeline bar chart (5 years)
+  const maxYrs=Math.min(5,Math.max(baseYrInt.length,prepYrInt.length));
+  const maxVal=Math.max(...baseYrInt.slice(0,maxYrs),...prepYrInt.slice(0,maxYrs),1);
+  const barsEl=document.getElementById('tlBars');
+  const lblsEl=document.getElementById('tlYrLabels');
+  barsEl.innerHTML=''; lblsEl.innerHTML='';
+  for(let i=0;i<maxYrs;i++){
+    const bv=baseYrInt[i]||0; const pv=prepYrInt[i]||0;
+    const bh=Math.max(3,Math.round((bv/maxVal)*48));
+    const ph=Math.max(3,Math.round((pv/maxVal)*48));
+    const grp=document.createElement('div'); grp.className='tl-bar-group';
+    const b1=document.createElement('div'); b1.className='tl-bar'; b1.style.cssText=`height:${bh}px;background:#FFB0B8;`;
+    const b2=document.createElement('div'); b2.className='tl-bar'; b2.style.cssText=`height:${ph}px;background:var(--accent);`;
+    grp.appendChild(b1); grp.appendChild(b2); barsEl.appendChild(grp);
+    const yl=document.createElement('div'); yl.className='tl-yr'; yl.style.flex='1'; yl.textContent='Yr '+(i+1);
+    lblsEl.appendChild(yl);
+  }
+
+  document.getElementById('tip-text').textContent=
+    'Your CA$'+lumpsum.toLocaleString()+' annual lump sum + CA$'+extraPmt+'/pmt increase saves '+fmt(saved)+' in interest and cuts '+yrsSaved.toFixed(1)+' years off your mortgage. Applying prepayments in Year 1 maximizes impact.';
+  document.getElementById('results').style.display='block';
+
+  const saveBtn=document.getElementById('saveBtn');
+  saveBtn.classList.remove('saved');
+  saveBtn.textContent='💾';
+}
+
+function saveCalc(){
+  if(!lastResult){calculate();return;}
+  const saves=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  const entry={
+    id:Date.now(),
+    date:new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric'}),
+    balance:lastResult.P,rate:lastResult.annualRate,
+    saved:lastResult.saved,yrsSaved:lastResult.yrsSaved,
+    lumpsum:lastResult.lumpsum,extra:lastResult.extraPmt
+  };
+  saves.unshift(entry);
+  if(saves.length>10) saves.length=10;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(saves));
+  document.getElementById('saveBtn').classList.add('saved');
+  document.getElementById('saveBtn').textContent='✓';
+  showToast('💾 Calculation saved!');
+  renderSaved();
+}
+
+function deleteSave(id){
+  const saves=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]').filter(s=>s.id!==id);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(saves));
+  renderSaved();
+}
+
+function renderSaved(){
+  const saves=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  const list=document.getElementById('savedList');
+  const empty=document.getElementById('emptySaved');
+  const count=document.getElementById('savedCount');
+  count.textContent=saves.length?`(${saves.length})`:'';
+  if(!saves.length){
+    list.innerHTML='';
+    list.appendChild(empty);
+    empty.style.display='';
+    return;
+  }
+  empty.style.display='none';
+  list.innerHTML='';
+  saves.forEach(s=>{
+    const el=document.createElement('div'); el.className='saved-item';
+    el.innerHTML=`<div class="si-info">
+      <div class="si-name">CA$${Math.round(s.balance).toLocaleString()} @ ${s.rate}% · ${s.date}</div>
+      <div class="si-meta">Lump CA$${(s.lumpsum||0).toLocaleString()} + CA$${s.extra||0}/pmt · ${(s.yrsSaved||0).toFixed(1)} yrs saved</div>
+    </div>
+    <div class="si-saved">${fmt(s.saved)}</div>
+    <button class="si-del" onclick="deleteSave(${s.id})">🗑</button>`;
+    list.appendChild(el);
+  });
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+renderSaved();
+calculate();
+</script>
+</body>
+</html>

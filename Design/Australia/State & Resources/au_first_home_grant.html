@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>First Home Owner Grant – Australia Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.tab-strip{display:flex;gap:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;overflow:hidden;position:relative;z-index:2;margin-top:4px;}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer;transition:all 0.2s;}
+.tab.active{background:rgba(255,255,255,0.18);color:#fff;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#7C2D12;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* Hero grant card */
+.hero-grant{background:linear-gradient(145deg,#1A0A00,#7C2D12);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,10,0,0.28);margin-bottom:14px;}
+.hero-grant::before{content:'🏡';position:absolute;right:8px;top:4px;font-size:70px;opacity:0.1;}
+.hg-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.hg-state{font-size:26px;font-weight:800;color:#FFD700;font-family:Georgia,serif;margin:4px 0 2px;}
+.hg-name{font-size:13px;color:rgba(255,255,255,0.7);margin-bottom:12px;}
+.hg-grant-row{display:flex;gap:8px;}
+.hg-box{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:11px;padding:10px;}
+.hg-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.hg-box .v{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.hg-box .v.gold{color:#FFD700;}
+.hg-box .v.grn{color:#BBF7D0;}
+
+/* Input card */
+.input-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:14px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.input-group{display:flex;flex-direction:column;gap:4px;}
+.input-group label{font-size:10px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.5px;}
+.inp{background:#FFF8F0;border:1px solid rgba(124,45,18,0.2);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;color:#1A0A00;width:100%;outline:none;font-family:Georgia,serif;}
+.inp:focus{border-color:#7C2D12;background:#fff;}
+select.inp{appearance:none;cursor:pointer;}
+.state-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.st-btn{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid rgba(124,45,18,0.2);background:#FFF8F0;color:#7C2D12;cursor:pointer;transition:all 0.18s;}
+.st-btn.active{background:#7C2D12;color:#fff;border-color:#7C2D12;}
+.prop-toggle{display:flex;gap:6px;margin-bottom:10px;}
+.pt-btn{flex:1;padding:8px;border-radius:10px;font-size:11px;font-weight:700;border:1.5px solid rgba(124,45,18,0.18);background:#FFF8F0;color:#7C2D12;cursor:pointer;text-align:center;transition:all 0.18s;}
+.pt-btn.active{background:#002868;color:#fff;border-color:#002868;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#7C2D12,#002868);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;margin-top:4px;box-shadow:0 4px 14px rgba(124,45,18,0.3);}
+
+/* Eligibility result */
+.elig-card{border-radius:18px;padding:18px;margin-bottom:12px;display:none;}
+.elig-card.show{display:block;}
+.elig-card.eligible{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:2px solid #4ADE80;}
+.elig-card.partial{background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:2px solid #FB923C;}
+.elig-card.ineligible{background:linear-gradient(135deg,#FFF1F2,#FFE4E6);border:2px solid #FDA4AF;}
+.elig-icon{font-size:32px;margin-bottom:8px;}
+.elig-title{font-size:16px;font-weight:800;font-family:Georgia,serif;margin-bottom:4px;}
+.elig-card.eligible .elig-title{color:#166534;}
+.elig-card.partial .elig-title{color:#9A3412;}
+.elig-card.ineligible .elig-title{color:#9F1239;}
+.elig-sub{font-size:11px;opacity:0.75;margin-bottom:12px;}
+.elig-amount{font-size:28px;font-weight:800;font-family:Georgia,serif;}
+.elig-card.eligible .elig-amount{color:#15803D;}
+.elig-card.partial .elig-amount{color:#C2410C;}
+.elig-card.ineligible .elig-amount{color:#BE123C;}
+.elig-note{font-size:10px;opacity:0.6;margin-top:4px;}
+
+/* Schemes summary */
+.scheme-card{background:#fff;border-radius:17px;padding:15px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:10px;}
+.sc-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.sc-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.sc-icon.blue{background:#EFF6FF;}
+.sc-icon.grn{background:#F0FDF4;}
+.sc-icon.gold{background:#FEFCE8;}
+.sc-icon.purple{background:#FAF5FF;}
+.sc-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+.sc-sub{font-size:10px;color:#92400E;margin-top:1px;}
+.sc-body{font-size:11px;color:#7C2D12;line-height:1.6;}
+.sc-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(124,45,18,0.07);}
+.sc-row:last-child{border-bottom:none;}
+.sc-row .key{font-size:11px;color:#92400E;}
+.sc-row .val{font-size:11px;font-weight:700;color:#1A0A00;}
+.badge-grn{background:#F0FDF4;color:#166534;border-radius:20px;padding:3px 8px;font-size:9px;font-weight:700;display:inline-block;margin-top:5px;}
+.badge-blue{background:#EFF6FF;color:#1D4ED8;border-radius:20px;padding:3px 8px;font-size:9px;font-weight:700;display:inline-block;margin-top:5px;}
+.badge-gold{background:#FEFCE8;color:#92400E;border-radius:20px;padding:3px 8px;font-size:9px;font-weight:700;display:inline-block;margin-top:5px;}
+
+/* Savings timeline */
+.timeline-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:14px;}
+.tl-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:14px;}
+.tl-bar-track{height:10px;background:#FFF8F0;border-radius:5px;overflow:hidden;margin-top:6px;}
+.tl-bar-fill{height:100%;border-radius:5px;transition:width 0.8s cubic-bezier(.4,0,.2,1);}
+.tl-item{margin-bottom:12px;}
+.tl-item-top{display:flex;justify-content:space-between;align-items:center;}
+.tl-lbl{font-size:11px;font-weight:700;color:#7C2D12;}
+.tl-amt{font-size:12px;font-weight:800;color:#1A0A00;}
+
+/* Checklist */
+.checklist{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:14px;}
+.cl-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:12px;}
+.cl-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(124,45,18,0.07);}
+.cl-item:last-child{border-bottom:none;}
+.cl-check{width:22px;height:22px;border-radius:6px;border:2px solid rgba(124,45,18,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;font-size:13px;transition:all 0.18s;}
+.cl-check.checked{background:#7C2D12;border-color:#7C2D12;color:#fff;}
+.cl-text{font-size:11px;color:#7C2D12;line-height:1.5;padding-top:2px;}
+.cl-text strong{color:#1A0A00;font-weight:700;}
+
+/* State grants list */
+.grants-list .state-grant-card{background:#fff;border-radius:16px;padding:15px;margin-bottom:10px;box-shadow:0 2px 10px rgba(26,10,0,0.07);border:1px solid rgba(124,45,18,0.08);}
+.sgc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.sgc-state{font-size:15px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+.sgc-amount{font-size:18px;font-weight:800;color:#7C2D12;font-family:Georgia,serif;}
+.sgc-name{font-size:10px;color:#92400E;margin-bottom:6px;}
+.sgc-rows{font-size:10px;color:#7C2D12;line-height:1.8;}
+.sgc-badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;margin-top:5px;}
+.new-only{background:#F0FDF4;color:#166534;}
+.new-and-sub{background:#EFF6FF;color:#1D4ED8;}
+.any-prop{background:#FFF7ED;color:#C2410C;}
+
+/* Save */
+.save-btn{width:100%;background:rgba(124,45,18,0.07);border:1.5px dashed rgba(124,45,18,0.3);border-radius:12px;padding:11px;font-size:12px;font-weight:700;color:#7C2D12;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1A0A00;color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;opacity:0;transition:opacity 0.3s;z-index:200;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏡</span><div class="hdr-title">First Home Grants</div><div class="hdr-sub">FHOG · FHBG · FHSS · 2024–25</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="tab-strip">
+    <div class="tab active" onclick="switchTab('checker',this)">Eligibility</div>
+    <div class="tab" onclick="switchTab('states',this)">All States</div>
+    <div class="tab" onclick="switchTab('schemes',this)">Schemes</div>
+    <div class="tab" onclick="switchTab('checklist',this)">Checklist</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- TAB: ELIGIBILITY CHECKER -->
+  <div id="tab-checker">
+    <div class="sec-lbl" style="margin-top:0">Your Details</div>
+    <div class="input-card">
+      <div class="state-tabs" id="stateTabs">
+        <div class="st-btn active" onclick="selectState('NSW',this)">NSW</div>
+        <div class="st-btn" onclick="selectState('VIC',this)">VIC</div>
+        <div class="st-btn" onclick="selectState('QLD',this)">QLD</div>
+        <div class="st-btn" onclick="selectState('WA',this)">WA</div>
+        <div class="st-btn" onclick="selectState('SA',this)">SA</div>
+        <div class="st-btn" onclick="selectState('TAS',this)">TAS</div>
+        <div class="st-btn" onclick="selectState('ACT',this)">ACT</div>
+        <div class="st-btn" onclick="selectState('NT',this)">NT</div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Property Value (AUD)</label>
+          <input class="inp" type="number" id="propValue" value="650000" placeholder="650000">
+        </div>
+        <div class="input-group">
+          <label>Deposit Saved</label>
+          <input class="inp" type="number" id="depositVal" value="65000" placeholder="65000">
+        </div>
+      </div>
+      <div class="sec-lbl" style="margin-top:4px;margin-bottom:8px;">Property Type</div>
+      <div class="prop-toggle">
+        <div class="pt-btn active" onclick="selectProp('new',this)">🏗️ New Build</div>
+        <div class="pt-btn" onclick="selectProp('established',this)">🏘️ Established</div>
+        <div class="pt-btn" onclick="selectProp('vacant',this)">🌱 Vacant Land</div>
+      </div>
+      <div class="sec-lbl" style="margin-top:4px;margin-bottom:8px;">Have you owned property before?</div>
+      <div class="prop-toggle">
+        <div class="pt-btn active" onclick="selectOwned('no',this)">✅ Never</div>
+        <div class="pt-btn" onclick="selectOwned('yes',this)">❌ Yes</div>
+      </div>
+      <button class="calc-btn" onclick="checkEligibility()">🏡 Check My Eligibility</button>
+    </div>
+
+    <!-- Result -->
+    <div class="elig-card" id="eligCard">
+      <div class="elig-icon" id="eligIcon">🏡</div>
+      <div class="elig-title" id="eligTitle">Checking...</div>
+      <div class="elig-sub" id="eligSub"></div>
+      <div class="elig-amount" id="eligAmount">$0</div>
+      <div class="elig-note" id="eligNote"></div>
+      <button class="save-btn" style="margin-top:12px;" onclick="saveCalc()">💾 Save This Result</button>
+    </div>
+
+    <!-- Savings breakdown -->
+    <div class="timeline-card" id="savingsCard" style="display:none;">
+      <div class="tl-title">💰 Total Benefit Package</div>
+      <div id="savingsItems"></div>
+    </div>
+  </div>
+
+  <!-- TAB: ALL STATES -->
+  <div id="tab-states" style="display:none;">
+    <div class="sec-lbl" style="margin-top:0">State FHOG 2024–25</div>
+    <div class="grants-list" id="stateGrantsList"></div>
+  </div>
+
+  <!-- TAB: FEDERAL SCHEMES -->
+  <div id="tab-schemes" style="display:none;">
+    <div class="sec-lbl" style="margin-top:0">Federal Assistance Schemes</div>
+
+    <div class="scheme-card">
+      <div class="sc-header">
+        <div class="sc-icon blue">🏦</div>
+        <div><div class="sc-title">First Home Guarantee (FHBG)</div><div class="sc-sub">Housing Australia — 5% deposit, no LMI</div></div>
+      </div>
+      <div class="sc-row"><span class="key">Places (2024–25)</span><span class="val">35,000</span></div>
+      <div class="sc-row"><span class="key">Min Deposit</span><span class="val">5% (no LMI)</span></div>
+      <div class="sc-row"><span class="key">Price Cap – Sydney/Melb</span><span class="val">$900,000</span></div>
+      <div class="sc-row"><span class="key">Price Cap – Other Capital</span><span class="val">$750,000</span></div>
+      <div class="sc-row"><span class="key">Income – Single</span><span class="val">≤ $125,000</span></div>
+      <div class="sc-row"><span class="key">Income – Couple/Joint</span><span class="val">≤ $200,000</span></div>
+      <div class="sc-row"><span class="key">LMI Saving (est.)</span><span class="val">~$15,000–$33,000</span></div>
+      <span class="badge-blue">New &amp; Existing Properties</span>
+    </div>
+
+    <div class="scheme-card">
+      <div class="sc-header">
+        <div class="sc-icon grn">🏘️</div>
+        <div><div class="sc-title">Regional First Home Buyer Guarantee</div><div class="sc-sub">Regional Australia only — 5% deposit</div></div>
+      </div>
+      <div class="sc-row"><span class="key">Places (2024–25)</span><span class="val">10,000</span></div>
+      <div class="sc-row"><span class="key">Price Cap – Regional NSW/VIC/QLD</span><span class="val">$750,000</span></div>
+      <div class="sc-row"><span class="key">Price Cap – Other Regional</span><span class="val">$550,000–$600,000</span></div>
+      <div class="sc-row"><span class="key">Must have lived/worked regionally</span><span class="val">12 months</span></div>
+      <span class="badge-grn">Regional Areas Only</span>
+    </div>
+
+    <div class="scheme-card">
+      <div class="sc-header">
+        <div class="sc-icon gold">💰</div>
+        <div><div class="sc-title">First Home Super Saver (FHSS)</div><div class="sc-sub">Save via superannuation — tax advantage</div></div>
+      </div>
+      <div class="sc-row"><span class="key">Max Withdraw per Person</span><span class="val">$50,000</span></div>
+      <div class="sc-row"><span class="key">Annual Contribution Cap</span><span class="val">$15,000/yr</span></div>
+      <div class="sc-row"><span class="key">Tax Rate in Super</span><span class="val">15%</span></div>
+      <div class="sc-row"><span class="key">Potential Tax Saving</span><span class="val">Up to ~$15,000</span></div>
+      <div class="sc-row"><span class="key">Joint Buyers</span><span class="val">$100,000 combined</span></div>
+      <span class="badge-gold">Tax Benefit via Super</span>
+    </div>
+
+    <div class="scheme-card">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:#FAF5FF;">🤝</div>
+        <div><div class="sc-title">Family Home Guarantee</div><div class="sc-sub">Single parents — 2% deposit</div></div>
+      </div>
+      <div class="sc-row"><span class="key">Places (2024–25)</span><span class="val">5,000</span></div>
+      <div class="sc-row"><span class="key">Min Deposit</span><span class="val">2% (no LMI)</span></div>
+      <div class="sc-row"><span class="key">Eligible Applicants</span><span class="val">Single parents / guardians</span></div>
+      <div class="sc-row"><span class="key">Income Cap</span><span class="val">≤ $125,000</span></div>
+      <div class="sc-row"><span class="key">Must have a dependent</span><span class="val">Yes</span></div>
+      <span class="badge-blue">New &amp; Existing</span>
+    </div>
+  </div>
+
+  <!-- TAB: CHECKLIST -->
+  <div id="tab-checklist" style="display:none;">
+    <div class="sec-lbl" style="margin-top:0">Application Checklist</div>
+    <div class="checklist">
+      <div class="cl-title">FHOG — Required Documents</div>
+      <div id="checklistItems"></div>
+    </div>
+    <div class="checklist">
+      <div class="cl-title">FHBG (First Home Guarantee)</div>
+      <div id="fhbgChecklistItems"></div>
+    </div>
+    <div class="checklist">
+      <div class="cl-title">FHSS (Super Saver)</div>
+      <div id="fhssChecklistItems"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">💾 Result saved!</div>
+
+<script>
+// ─── Data ────────────────────────────────────────────────────────────────────
+const GRANTS = {
+  NSW:{name:'New South Wales',amount:10000,cap:600000,propType:'new',note:'New homes only. Cap $600K for new builds, $750K for off-the-plan.',extraScheme:'Stamp duty exemption <$800K for FHB'},
+  VIC:{name:'Victoria',amount:10000,cap:750000,propType:'new',note:'New homes only. Increased to $20K in regional VIC.',extraScheme:'First Home Buyer Duty Reduction'},
+  QLD:{name:'Queensland',amount:30000,cap:750000,propType:'new',note:'Boosted to $30K until 30 Jun 2025. New builds only.',extraScheme:'Transfer duty concession for owner-occupiers'},
+  WA:{name:'Western Australia',amount:10000,cap:750000,propType:'new',note:'New homes only for FHOG. Established homes no FHOG.',extraScheme:'First Home Owner Rate of Duty reduction'},
+  SA:{name:'South Australia',amount:15000,cap:650000,propType:'new',note:'New homes only, value up to $650K.',extraScheme:'Off-the-plan stamp duty concession'},
+  TAS:{name:'Tasmania',amount:30000,cap:750000,propType:'new',note:'$30K grant until 30 Jun 2025 for new/substantially renovated.',extraScheme:'50% stamp duty discount for FHB'},
+  ACT:{name:'Australian Capital Territory',amount:0,cap:0,propType:'any',note:'ACT has abolished FHOG but offers generous stamp duty concessions.',extraScheme:'Home Buyer Concession Scheme — no duty <$1M'},
+  NT:{name:'Northern Territory',amount:10000,cap:700000,propType:'any',note:'Applies to new and established properties. Up to $10K FHOG.',extraScheme:'First Home Owner Discount of up to $26,730'}
+};
+
+let selectedState = 'NSW';
+let propType = 'new';
+let ownedBefore = 'no';
+let checklistState = {fhog:[],fhbg:[],fhss:[]};
+
+function selectState(st, el) {
+  selectedState = st;
+  document.querySelectorAll('.st-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+function selectProp(t, el) {
+  propType = t;
+  el.closest('.prop-toggle').querySelectorAll('.pt-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+function selectOwned(t, el) {
+  ownedBefore = t;
+  el.closest('.prop-toggle').querySelectorAll('.pt-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function fmt(n) { return '$'+Math.round(n).toLocaleString('en-AU'); }
+
+function checkEligibility() {
+  const val = parseFloat(document.getElementById('propValue').value) || 650000;
+  const deposit = parseFloat(document.getElementById('depositVal').value) || 65000;
+  const g = GRANTS[selectedState];
+  const card = document.getElementById('eligCard');
+  card.classList.remove('eligible','partial','ineligible');
+
+  let eligible = false, partial = false;
+  let reason = '';
+  let grantAmt = 0;
+
+  if (ownedBefore === 'yes') {
+    card.classList.add('ineligible','show');
+    document.getElementById('eligIcon').textContent = '❌';
+    document.getElementById('eligTitle').textContent = 'Not Eligible';
+    document.getElementById('eligSub').textContent = 'You have previously owned property in Australia.';
+    document.getElementById('eligAmount').textContent = '$0';
+    document.getElementById('eligNote').textContent = 'FHOG requires all buyers to be purchasing their first home.';
+    document.getElementById('savingsCard').style.display = 'none';
+    return;
+  }
+
+  if (propType === 'new' && val <= g.cap && g.amount > 0) {
+    eligible = true; grantAmt = g.amount;
+  } else if (propType === 'new' && g.amount > 0) {
+    partial = true; reason = 'Property value exceeds the cap of '+fmt(g.cap)+' for this state.';
+  } else if (propType === 'established' && g.amount > 0 && g.propType === 'any') {
+    eligible = true; grantAmt = g.amount;
+  } else if (propType === 'established' && g.amount > 0) {
+    partial = true; reason = selectedState+' FHOG applies to new homes only. No FHOG for established properties.';
+  } else if (selectedState === 'ACT') {
+    partial = true; reason = 'ACT has abolished FHOG but you may qualify for stamp duty concessions.';
+  }
+
+  // Determine LMI risk
+  const lvr = ((val - deposit) / val) * 100;
+  const fhbgEligible = val <= 900000 && lvr >= 80;
+
+  card.classList.add('show');
+  if (eligible) {
+    card.classList.add('eligible');
+    document.getElementById('eligIcon').textContent = '✅';
+    document.getElementById('eligTitle').textContent = 'Eligible for FHOG!';
+    document.getElementById('eligSub').textContent = selectedState+' — '+g.name;
+    document.getElementById('eligAmount').textContent = fmt(grantAmt);
+    document.getElementById('eligNote').textContent = g.note;
+  } else if (partial) {
+    card.classList.add('partial');
+    document.getElementById('eligIcon').textContent = '⚠️';
+    document.getElementById('eligTitle').textContent = 'Partial / Check Eligibility';
+    document.getElementById('eligSub').textContent = reason;
+    document.getElementById('eligAmount').textContent = 'Seek Advice';
+    document.getElementById('eligNote').textContent = g.extraScheme;
+  }
+
+  // Savings breakdown
+  const savCard = document.getElementById('savingsCard');
+  savCard.style.display = 'block';
+  const items = [
+    {lbl: 'FHOG Grant', amt: eligible ? grantAmt : 0, color:'#7C2D12'},
+    {lbl: 'Stamp Duty Concession (est.)', amt: selectedState === 'NSW' && val < 800000 ? 28000 : selectedState === 'ACT' && val < 1000000 ? 40000 : selectedState === 'VIC' && val < 750000 ? 15000 : 5000, color:'#002868'},
+    {lbl: 'FHBG LMI Savings (est.)', amt: fhbgEligible ? 18000 : 0, color:'#D97706'},
+    {lbl: 'FHSS Super Savings (max)', amt: 50000, color:'#0F766E'},
+  ];
+  const maxAmt = Math.max(...items.map(i=>i.amt));
+  let html = '';
+  let total = 0;
+  items.forEach(it => {
+    if (it.amt === 0) return;
+    total += it.amt;
+    const pct = Math.round((it.amt/maxAmt)*100);
+    html += `<div class="tl-item">
+      <div class="tl-item-top"><span class="tl-lbl">${it.lbl}</span><span class="tl-amt">${fmt(it.amt)}</span></div>
+      <div class="tl-bar-track"><div class="tl-bar-fill" style="width:${pct}%;background:${it.color}"></div></div>
+    </div>`;
+  });
+  html += `<div style="border-top:2px solid rgba(124,45,18,0.1);padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:12px;font-weight:700;color:#7C2D12;">Total Potential Savings</span>
+    <span style="font-size:18px;font-weight:800;color:#7C2D12;font-family:Georgia,serif;">${fmt(total)}</span>
+  </div>`;
+  document.getElementById('savingsItems').innerHTML = html;
+}
+
+function renderStateGrants() {
+  let html = '';
+  Object.entries(GRANTS).forEach(([st, g]) => {
+    const badge = g.propType === 'new' ? '<span class="sgc-badge new-only">New Homes Only</span>' :
+      g.propType === 'any' ? '<span class="sgc-badge any-prop">All Properties</span>' :
+      '<span class="sgc-badge new-and-sub">New &amp; Sub-Renovated</span>';
+    html += `<div class="state-grant-card">
+      <div class="sgc-top">
+        <div class="sgc-state">🏛️ ${st}</div>
+        <div class="sgc-amount">${g.amount > 0 ? '$'+g.amount.toLocaleString('en-AU') : 'Concession'}</div>
+      </div>
+      <div class="sgc-name">${g.name}</div>
+      <div class="sgc-rows">
+        <div>Cap: ${g.cap > 0 ? '$'+g.cap.toLocaleString('en-AU') : 'N/A'} · ${g.note}</div>
+        <div style="color:#002868;margin-top:3px;">+ ${g.extraScheme}</div>
+      </div>
+      ${badge}
+    </div>`;
+  });
+  document.getElementById('stateGrantsList').innerHTML = html;
+}
+
+function renderChecklists() {
+  const fhogItems = [
+    'Completed FHOG application form',
+    'Identity documents (passport or driver\'s licence)',
+    'Evidence of Australian citizenship or permanent residency',
+    'Contract of sale / building contract',
+    'Evidence of property type (new/off-the-plan)',
+    'Bank account details for grant payment',
+    'Statutory declaration (all applicants first home)',
+    'Marriage/change of name certificate if applicable'
+  ];
+  const fhbgItems = [
+    'Confirmed income under threshold ($125K single / $200K couple)',
+    'Pre-approval from a participating lender',
+    'Evidence property value within price cap',
+    'At least 5% genuine savings deposit',
+    'Australian citizenship confirmed',
+    'Signed contract of sale',
+    'No prior property ownership confirmed'
+  ];
+  const fhssItems = [
+    'Voluntary contributions made to super',
+    'FHSS determination application via ATO myGov',
+    'Maximum $15,000 per financial year contributed',
+    'Total release up to $50,000 requested',
+    'Signed contract within 12 months of release',
+    'Bank account nominated for release'
+  ];
+
+  function renderItems(items, containerId) {
+    let html = '';
+    items.forEach((item, i) => {
+      html += `<div class="cl-item">
+        <div class="cl-check" id="cl-${containerId}-${i}" onclick="toggleCheck('cl-${containerId}-${i}')"></div>
+        <div class="cl-text">${item}</div>
+      </div>`;
+    });
+    document.getElementById(containerId).innerHTML = html;
+  }
+  renderItems(fhogItems, 'checklistItems');
+  renderItems(fhbgItems, 'fhbgChecklistItems');
+  renderItems(fhssItems, 'fhssChecklistItems');
+}
+
+function toggleCheck(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('checked');
+  el.textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['checker','states','schemes','checklist'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === name ? 'block' : 'none';
+  });
+  if (name === 'states') renderStateGrants();
+  if (name === 'checklist') renderChecklists();
+}
+
+function saveCalc() {
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+// Hero section
+function renderHero() {
+  const g = GRANTS[selectedState];
+}
+</script>
+</body>
+</html>

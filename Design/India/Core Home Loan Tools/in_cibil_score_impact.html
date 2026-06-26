@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIBIL Score Impact – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00; --saffron2:#E05A00; --ochre:#F5A623; --ochre-lt:#FFDEA0;
+  --navy:#0B1F48; --chakra:#1A3A8F; --green:#046A38; --green2:#07543A;
+  --teal:#0D9488; --white:#FFFFFF; --bg:#FFF8F0; --card:#FFFFFF;
+  --muted:#7A5C3A; --border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09); --sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg); color:var(--navy);
+  max-width:420px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background-image:
+    radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+    radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);
+  pointer-events:none; z-index:0;
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);
+  padding:46px 18px 0; position:relative; overflow:hidden;
+}
+.header::before{
+  content:'☸'; position:absolute; right:-10px; top:30px;
+  font-size:130px; color:rgba(255,255,255,0.06); line-height:1;
+}
+.header::after{
+  content:''; position:absolute; bottom:0; left:0; width:100%; height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);
+}
+.hdr-top{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px; position:relative; z-index:2;
+}
+.icon-btn{
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; color:#fff; cursor:pointer; text-decoration:none;
+}
+.hdr-center{text-align:center; position:relative; z-index:2;}
+.hdr-flag{font-size:28px; display:block;}
+.hdr-title{font-size:20px; font-weight:800; color:#fff; letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px; color:rgba(255,255,255,0.50); margin-top:1px; font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{
+  background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0; padding:11px 14px;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  position:relative; z-index:2; margin-top:4px;
+}
+.rs{text-align:center; position:relative;}
+.rs:not(:last-child)::after{
+  content:''; position:absolute; right:0; top:15%;
+  height:70%; width:1px; background:rgba(255,255,255,0.13);
+}
+.rs-l{font-size:8px; color:rgba(255,255,255,0.46); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px; font-weight:800; color:#fff; line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px; color:rgba(255,255,255,0.36); margin-top:1px; font-family:'Trebuchet MS',sans-serif;}
+
+/* CONTENT */
+.content{padding:16px 15px 112px; position:relative; z-index:1;}
+.sec{
+  font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase;
+  letter-spacing:1px; margin:22px 0 11px; display:flex; align-items:center;
+  justify-content:space-between; font-family:'Trebuchet MS',sans-serif;
+}
+.sec .badge{
+  font-size:9px; font-weight:700; padding:3px 9px; border-radius:20px;
+  background:#EFF6FF; color:#1D4ED8; text-transform:none; letter-spacing:0;
+}
+
+/* SCORE METER CARD */
+.score-card{
+  background:linear-gradient(148deg,var(--navy),var(--chakra));
+  border-radius:22px; padding:20px; position:relative; overflow:hidden;
+  box-shadow:var(--sh2); margin-bottom:11px;
+}
+.score-card::before{
+  content:''; position:absolute; top:-50px; right:-50px;
+  width:180px; height:180px; border-radius:50%; background:rgba(255,107,0,0.16);
+}
+.score-card::after{
+  content:'☸'; position:absolute; right:14px; bottom:12px;
+  font-size:54px; color:rgba(255,255,255,0.06);
+}
+.sc-tag{font-size:9px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:.8px; font-family:'Trebuchet MS',sans-serif;}
+.sc-title{font-size:17px; font-weight:800; color:#fff; margin:4px 0 16px; line-height:1.25;}
+.sc-title span{color:var(--ochre-lt);}
+
+/* GAUGE */
+.gauge-wrap{display:flex; justify-content:center; margin:4px 0 18px; position:relative; z-index:1;}
+.gauge-svg{width:220px; height:120px; overflow:visible;}
+
+.score-display{
+  text-align:center; margin-top:-8px; position:relative; z-index:1;
+}
+.score-num{font-size:42px; font-weight:800; color:#fff; line-height:1;}
+.score-lbl{font-size:11px; color:rgba(255,255,255,0.55); font-family:'Trebuchet MS',sans-serif; margin-top:2px;}
+.score-zone{font-size:13px; font-weight:800; color:var(--ochre-lt); margin-top:4px;}
+
+/* SLIDER */
+.slider-wrap{padding:0 4px; position:relative; z-index:1; margin-bottom:14px;}
+.slider-label{
+  display:flex; justify-content:space-between; margin-bottom:6px;
+  font-size:9px; color:rgba(255,255,255,0.50); font-family:'Trebuchet MS',sans-serif;
+}
+input[type=range]{
+  -webkit-appearance:none; width:100%; height:6px; border-radius:3px;
+  background:linear-gradient(90deg,#EF4444 0%,#F59E0B 35%,#10B981 65%,#047857 100%);
+  outline:none; cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:22px; height:22px; border-radius:50%;
+  background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.25); border:3px solid var(--saffron);
+}
+
+.calc-btn{
+  width:100%; background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border:none; border-radius:13px; padding:13px;
+  font-size:14px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,107,0,0.42);
+  font-family:'Book Antiqua',Palatino,Georgia,serif; letter-spacing:.3px;
+  position:relative; z-index:1;
+}
+
+/* IMPACT TABLE CARD */
+.impact-card{
+  background:var(--card); border-radius:17px; padding:16px 15px;
+  box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:11px;
+}
+.impact-title{
+  font-size:13px; font-weight:800; color:var(--navy); margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.impact-title .dot{
+  width:8px; height:8px; border-radius:50%; background:var(--saffron); display:inline-block;
+}
+
+.score-band{
+  display:flex; align-items:center; gap:10px; padding:10px 0;
+  border-bottom:1px solid rgba(255,107,0,0.07);
+}
+.score-band:last-child{border-bottom:none;}
+.band-bar{
+  width:5px; border-radius:3px; flex-shrink:0; align-self:stretch; min-height:42px;
+}
+.band-info{flex:1;}
+.band-range{font-size:12px; font-weight:800; color:var(--navy);}
+.band-name{font-size:9.5px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; margin-top:1px;}
+.band-rate{
+  text-align:right; font-size:14px; font-weight:800; color:var(--navy);
+}
+.band-rate-sub{font-size:8.5px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; margin-top:1px; text-align:right;}
+.band-badge{
+  font-size:8.5px; font-weight:700; padding:3px 8px; border-radius:20px;
+  font-family:'Trebuchet MS',sans-serif;
+}
+.active-band{
+  background:rgba(255,107,0,0.05); border-radius:12px; padding:10px 10px;
+  margin:-2px -4px; border-left:3px solid var(--saffron);
+}
+
+/* RESULT CARD */
+.result-card{
+  background:linear-gradient(140deg,var(--green),var(--green2));
+  border-radius:17px; padding:16px 15px; margin-bottom:11px;
+  box-shadow:var(--sh2);
+}
+.rc-title{font-size:11px; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:.6px; font-family:'Trebuchet MS',sans-serif;}
+.rc-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+.rc-box{background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); border-radius:11px; padding:11px;}
+.rc-box label{font-size:8.5px; color:rgba(255,255,255,0.50); display:block; margin-bottom:3px; font-family:'Trebuchet MS',sans-serif;}
+.rc-box .v{font-size:17px; font-weight:800; color:#fff;}
+.rc-box .vs{font-size:9px; color:rgba(255,255,255,0.60); font-family:'Trebuchet MS',sans-serif; margin-top:2px;}
+.savings-box{
+  background:rgba(255,255,255,0.16); border:1.5px solid rgba(255,255,255,0.30);
+  border-radius:11px; padding:12px; margin-top:10px; text-align:center;
+}
+.savings-lbl{font-size:9px; color:rgba(255,255,255,0.60); font-family:'Trebuchet MS',sans-serif;}
+.savings-val{font-size:26px; font-weight:800; color:var(--ochre-lt); margin-top:3px;}
+.savings-sub{font-size:9.5px; color:rgba(255,255,255,0.65); font-family:'Trebuchet MS',sans-serif;}
+
+/* BAR CHART */
+.chart-card{
+  background:var(--card); border-radius:17px; padding:16px 15px;
+  box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:11px;
+}
+.chart-title{font-size:13px; font-weight:800; color:var(--navy); margin-bottom:14px;}
+.chart-bars{display:flex; align-items:flex-end; gap:7px; height:100px; padding:0 4px;}
+.bar-wrap{flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;}
+.bar{
+  width:100%; border-radius:6px 6px 0 0; transition:height .5s ease;
+  cursor:pointer; position:relative;
+}
+.bar-val{font-size:9px; font-weight:800; color:var(--navy); font-family:'Trebuchet MS',sans-serif; text-align:center;}
+.bar-lbl{font-size:8px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; text-align:center; line-height:1.2;}
+
+/* TIPS */
+.tip-list{display:flex; flex-direction:column; gap:9px;}
+.tip{
+  background:var(--card); border-radius:15px; padding:13px 14px;
+  box-shadow:var(--sh); border:1px solid var(--border);
+  display:flex; align-items:flex-start; gap:11px;
+}
+.tip-ic{
+  width:38px; height:38px; border-radius:11px;
+  background:rgba(255,107,0,0.08); display:flex; align-items:center;
+  justify-content:center; font-size:17px; flex-shrink:0;
+}
+.tip-title{font-size:12.5px; font-weight:800; color:var(--navy);}
+.tip-sub{font-size:9.5px; color:var(--muted); margin-top:2px; font-family:'Trebuchet MS',sans-serif; line-height:1.4;}
+
+/* SAVE BUTTON */
+.save-btn{
+  width:100%; background:linear-gradient(135deg,var(--navy),var(--chakra));
+  border:none; border-radius:13px; padding:13px;
+  font-size:14px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(11,31,72,0.28);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  margin-top:4px;
+}
+.save-toast{
+  display:none; text-align:center; margin-top:8px;
+  font-size:11px; color:var(--green); font-weight:700; font-family:'Trebuchet MS',sans-serif;
+}
+
+/* BOTTOM NAV */
+.bnav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:420px; background:var(--card);
+  border-top:1px solid var(--border); display:flex;
+  padding:10px 0 20px; box-shadow:0 -4px 22px rgba(11,31,72,0.09); z-index:100;
+}
+.ni{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;}
+.ni-ic{font-size:19px; line-height:1;}
+.ni-lb{font-size:10px; font-weight:700; color:var(--muted); font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+.fu6{animation:fadeUp .38s ease both .29s;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="screen_india.html">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">💳</div>
+      <div class="hdr-title">CIBIL Score <span>Impact</span></div>
+      <div class="hdr-sub">Score → Interest Rate · EMI · Loan Eligibility</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">Min Score</div>
+      <div class="rs-v saf">650</div>
+      <div class="rs-n">Bank avg</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Ideal</div>
+      <div class="rs-v grn">750+</div>
+      <div class="rs-n">Best rates</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Rate Range</div>
+      <div class="rs-v">8.5–11%</div>
+      <div class="rs-n">2025</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Max Score</div>
+      <div class="rs-v">900</div>
+      <div class="rs-n">CIBIL</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- SCORE METER -->
+  <div class="sec fu1" style="margin-top:0">Your CIBIL Score <span class="badge">TransUnion CIBIL 2025</span></div>
+  <div class="score-card fu1">
+    <div class="sc-tag">भारत Credit Score Analyser</div>
+    <div class="sc-title">See how your score affects your <span>Home Loan Rate</span></div>
+
+    <div class="gauge-wrap">
+      <svg class="gauge-svg" viewBox="0 0 220 120" id="gaugeSvg">
+        <!-- Track -->
+        <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="14" stroke-linecap="round"/>
+        <!-- Colored arc segments -->
+        <path d="M 20 110 A 90 90 0 0 1 63 37" fill="none" stroke="#EF4444" stroke-width="14" stroke-linecap="butt" opacity=".85"/>
+        <path d="M 63 37 A 90 90 0 0 1 110 20" fill="none" stroke="#F59E0B" stroke-width="14" stroke-linecap="butt" opacity=".85"/>
+        <path d="M 110 20 A 90 90 0 0 1 157 37" fill="none" stroke="#86EFAC" stroke-width="14" stroke-linecap="butt" opacity=".85"/>
+        <path d="M 157 37 A 90 90 0 0 1 200 110" fill="none" stroke="#22C55E" stroke-width="14" stroke-linecap="round" opacity=".85"/>
+        <!-- Needle -->
+        <line id="needle" x1="110" y1="110" x2="110" y2="28" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="110" cy="110" r="6" fill="#fff"/>
+        <!-- Labels -->
+        <text x="14" y="124" font-size="9" fill="rgba(255,255,255,0.45)" font-family="Trebuchet MS">300</text>
+        <text x="55" y="30" font-size="9" fill="rgba(255,255,255,0.45)" font-family="Trebuchet MS">600</text>
+        <text x="103" y="15" font-size="9" fill="rgba(255,255,255,0.45)" font-family="Trebuchet MS">750</text>
+        <text x="152" y="30" font-size="9" fill="rgba(255,255,255,0.45)" font-family="Trebuchet MS">800</text>
+        <text x="193" y="124" font-size="9" fill="rgba(255,255,255,0.45)" font-family="Trebuchet MS">900</text>
+      </svg>
+    </div>
+
+    <div class="score-display">
+      <div class="score-num" id="scoreNum">750</div>
+      <div class="score-lbl">CIBIL Score</div>
+      <div class="score-zone" id="scoreZone">✅ Excellent – Best Rates Available</div>
+    </div>
+
+    <div class="slider-wrap" style="margin-top:16px;">
+      <div class="slider-label"><span>300 (Poor)</span><span>900 (Exceptional)</span></div>
+      <input type="range" min="300" max="900" value="750" id="scoreSlider" oninput="updateScore(this.value)">
+    </div>
+
+    <button class="calc-btn" onclick="calculateImpact()">☸ Calculate Loan Impact</button>
+  </div>
+
+  <!-- IMPACT TABLE -->
+  <div class="sec fu2">Score Band → Interest Rate Impact <span class="badge">SBI / HDFC 2025</span></div>
+  <div class="impact-card fu2">
+    <div class="impact-title"><span class="dot"></span> How Banks Price Your Score</div>
+
+    <div class="score-band" id="band300">
+      <div class="band-bar" style="background:#EF4444;"></div>
+      <div class="band-info">
+        <div class="band-range">300 – 599</div>
+        <div class="band-name">Poor · High Risk</div>
+      </div>
+      <div>
+        <div class="band-rate" style="color:#EF4444;">10.50%+</div>
+        <div class="band-rate-sub">or Rejected</div>
+        <span class="band-badge" style="background:#FEF2F2;color:#B91C1C;">❌ Refused</span>
+      </div>
+    </div>
+
+    <div class="score-band" id="band600">
+      <div class="band-bar" style="background:#F59E0B;"></div>
+      <div class="band-info">
+        <div class="band-range">600 – 699</div>
+        <div class="band-name">Fair · Moderate Risk</div>
+      </div>
+      <div>
+        <div class="band-rate" style="color:#B45309;">9.75–10.50%</div>
+        <div class="band-rate-sub">Higher premium</div>
+        <span class="band-badge" style="background:#FFF7ED;color:#C2410C;">⚠️ High Rate</span>
+      </div>
+    </div>
+
+    <div class="score-band" id="band700">
+      <div class="band-bar" style="background:#86EFAC;"></div>
+      <div class="band-info">
+        <div class="band-range">700 – 749</div>
+        <div class="band-name">Good · Low-Moderate Risk</div>
+      </div>
+      <div>
+        <div class="band-rate" style="color:var(--green);">9.00–9.75%</div>
+        <div class="band-rate-sub">Standard offer</div>
+        <span class="band-badge" style="background:#ECFDF5;color:#065F46;">✓ Eligible</span>
+      </div>
+    </div>
+
+    <div class="score-band" id="band750">
+      <div class="band-bar" style="background:#22C55E;"></div>
+      <div class="band-info">
+        <div class="band-range">750 – 799</div>
+        <div class="band-name">Very Good · Low Risk</div>
+      </div>
+      <div>
+        <div class="band-rate" style="color:var(--green);">8.50–9.00%</div>
+        <div class="band-rate-sub">Preferred rate</div>
+        <span class="band-badge" style="background:#ECFDF5;color:#065F46;">⭐ Preferred</span>
+      </div>
+    </div>
+
+    <div class="score-band" id="band800">
+      <div class="band-bar" style="background:#047857;"></div>
+      <div class="band-info">
+        <div class="band-range">800 – 900</div>
+        <div class="band-name">Exceptional · Best Rate</div>
+      </div>
+      <div>
+        <div class="band-rate" style="color:#047857;">8.25–8.50%</div>
+        <div class="band-rate-sub">Best available</div>
+        <span class="band-badge" style="background:#D1FAE5;color:#047857;">🏆 Best Rate</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT CARD -->
+  <div class="result-card fu3" id="resultCard" style="display:none;">
+    <div class="rc-title">☸ Your Personalised Loan Impact</div>
+    <div class="rc-grid">
+      <div class="rc-box">
+        <label>Your Score</label>
+        <div class="v" id="res-score">750</div>
+        <div class="vs" id="res-band">Excellent Zone</div>
+      </div>
+      <div class="rc-box">
+        <label>Interest Rate</label>
+        <div class="v" id="res-rate">8.50%</div>
+        <div class="vs">Floating p.a.</div>
+      </div>
+      <div class="rc-box">
+        <label>Monthly EMI</label>
+        <div class="v" id="res-emi">₹43,391</div>
+        <div class="vs">₹50L · 20yr</div>
+      </div>
+      <div class="rc-box">
+        <label>Max Loan</label>
+        <div class="v" id="res-loan">₹75L</div>
+        <div class="vs">Based on FOIR</div>
+      </div>
+    </div>
+    <div class="savings-box">
+      <div class="savings-lbl">💰 Interest Savings vs. Score 650</div>
+      <div class="savings-val" id="res-savings">₹8.7 Lakh</div>
+      <div class="savings-sub">Over 20-year loan tenure of ₹50 Lakhs</div>
+    </div>
+  </div>
+
+  <!-- RATE COMPARISON CHART -->
+  <div class="chart-card fu4">
+    <div class="chart-title">📊 EMI Comparison Across Score Bands (₹50L · 20yr)</div>
+    <div class="chart-bars">
+      <div class="bar-wrap">
+        <div class="bar-val">₹60,490</div>
+        <div class="bar" style="height:100%; background:linear-gradient(180deg,#EF4444,#DC2626); border-radius:6px 6px 0 0;"></div>
+        <div class="bar-lbl">≤599<br>Rejected</div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-val">₹52,160</div>
+        <div class="bar" style="height:86%; background:linear-gradient(180deg,#F59E0B,#D97706); border-radius:6px 6px 0 0;"></div>
+        <div class="bar-lbl">600–699<br>10.25%</div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-val">₹47,048</div>
+        <div class="bar" style="height:68%; background:linear-gradient(180deg,#86EFAC,#22C55E); border-radius:6px 6px 0 0;"></div>
+        <div class="bar-lbl">700–749<br>9.25%</div>
+      </div>
+      <div class="bar-wrap" style="position:relative;">
+        <div class="bar-val" style="color:var(--saffron); font-weight:900;">₹43,391</div>
+        <div class="bar" style="height:55%; background:linear-gradient(180deg,var(--saffron),var(--saffron2)); border-radius:6px 6px 0 0; box-shadow:0 0 10px rgba(255,107,0,0.4);">
+          <div style="position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:8px;background:var(--saffron);color:#fff;padding:2px 6px;border-radius:20px;white-space:nowrap;font-family:'Trebuchet MS',sans-serif;font-weight:700;">You</div>
+        </div>
+        <div class="bar-lbl" style="color:var(--saffron);font-weight:800;">750–799<br>8.50%</div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-val">₹42,130</div>
+        <div class="bar" style="height:48%; background:linear-gradient(180deg,#047857,#065F46); border-radius:6px 6px 0 0;"></div>
+        <div class="bar-lbl">800–900<br>8.25%</div>
+      </div>
+    </div>
+    <div style="margin-top:10px; font-size:9px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; text-align:center; padding:8px; background:rgba(255,107,0,0.04); border-radius:8px;">
+      Lower EMI = More savings. Score 750 saves ₹8.77L vs Score 650 over 20 years.
+    </div>
+  </div>
+
+  <!-- IMPROVEMENT TIPS -->
+  <div class="sec fu5">How to Improve Your CIBIL Score</div>
+  <div class="tip-list fu5">
+    <div class="tip">
+      <div class="tip-ic">💳</div>
+      <div>
+        <div class="tip-title">Pay EMIs & Credit Card on Time</div>
+        <div class="tip-sub">Payment history is 35% of your CIBIL score. Even one missed payment can drop your score by 50–70 points. Set auto-debit mandates.</div>
+      </div>
+    </div>
+    <div class="tip">
+      <div class="tip-ic">📉</div>
+      <div>
+        <div class="tip-title">Keep Credit Utilisation Below 30%</div>
+        <div class="tip-sub">If your credit limit is ₹1L, keep usage below ₹30,000. High utilisation signals credit hunger. CIBIL weighs this at 30%.</div>
+      </div>
+    </div>
+    <div class="tip">
+      <div class="tip-ic">🚫</div>
+      <div>
+        <div class="tip-title">Avoid Multiple Loan Applications</div>
+        <div class="tip-sub">Each hard inquiry reduces your score by 5–10 points. Space applications 6 months apart. Comparison portals use soft checks — safe to use.</div>
+      </div>
+    </div>
+    <div class="tip">
+      <div class="tip-ic">📋</div>
+      <div>
+        <div class="tip-title">Check Your CIBIL Report for Errors</div>
+        <div class="tip-sub">1 in 5 credit reports has errors. Get your free annual report at mycibil.com. Dispute wrong entries — they must be resolved within 30 days.</div>
+      </div>
+    </div>
+    <div class="tip">
+      <div class="tip-ic">⏳</div>
+      <div>
+        <div class="tip-title">Maintain Old Credit Accounts</div>
+        <div class="tip-sub">Length of credit history counts 15% in the score. Keep your oldest credit card active. Closing old accounts reduces average credit age.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE BUTTON -->
+  <div class="sec fu6">Save This Analysis</div>
+  <div class="fu6">
+    <button class="save-btn" onclick="saveResult()">🔖 Save CIBIL Score Analysis</button>
+    <div class="save-toast" id="saveToast">✅ Analysis saved to your profile!</div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const scoreData = {
+  300: {zone:'❌ Poor – Likely Rejected',    rate:10.75, maxLoan:0,    color:'#EF4444'},
+  600: {zone:'⚠️ Fair – High Interest Rate', rate:10.00, maxLoan:30,   color:'#F59E0B'},
+  650: {zone:'⚠️ Fair – Above Average Rate', rate:9.75,  maxLoan:40,   color:'#F59E0B'},
+  700: {zone:'✓ Good – Standard Rate',       rate:9.25,  maxLoan:55,   color:'#86EFAC'},
+  750: {zone:'✅ Excellent – Best Rates',    rate:8.50,  maxLoan:75,   color:'#22C55E'},
+  800: {zone:'🏆 Exceptional – Best Rate',   rate:8.25,  maxLoan:90,   color:'#047857'},
+  850: {zone:'🏆 Exceptional – Best Rate',   rate:8.25,  maxLoan:90,   color:'#047857'},
+  900: {zone:'🏆 Exceptional – Lowest Rate', rate:8.10,  maxLoan:100,  color:'#047857'},
+};
+
+function getScoreInfo(s){
+  const keys = [300,600,650,700,750,800,850,900];
+  for(let i=keys.length-1;i>=0;i--){ if(s>=keys[i]) return {...scoreData[keys[i]], key:keys[i]}; }
+  return {...scoreData[300], key:300};
+}
+
+function calcEMI(P,r,n){ const R=r/(12*100); return Math.round(P*R*Math.pow(1+R,n)/(Math.pow(1+R,n)-1)); }
+
+function rotateNeedle(score){
+  const pct=(score-300)/(900-300);
+  const angle=-90+(pct*180);
+  const rad=angle*Math.PI/180;
+  const cx=110,cy=110,len=82;
+  const x2=cx+len*Math.cos(rad-(Math.PI/2));
+  const y2=cy+len*Math.sin(rad-(Math.PI/2));
+  document.getElementById('needle').setAttribute('x2',x2.toFixed(1));
+  document.getElementById('needle').setAttribute('y2',y2.toFixed(1));
+}
+
+function updateScore(val){
+  val=parseInt(val);
+  document.getElementById('scoreNum').textContent=val;
+  const info=getScoreInfo(val);
+  document.getElementById('scoreZone').textContent=info.zone;
+  document.getElementById('scoreZone').style.color=info.color;
+  rotateNeedle(val);
+  highlightBand(val);
+}
+
+function highlightBand(s){
+  ['band300','band600','band700','band750','band800'].forEach(id=>{
+    document.getElementById(id).classList.remove('active-band');
+  });
+  if(s<600) document.getElementById('band300').classList.add('active-band');
+  else if(s<700) document.getElementById('band600').classList.add('active-band');
+  else if(s<750) document.getElementById('band700').classList.add('active-band');
+  else if(s<800) document.getElementById('band750').classList.add('active-band');
+  else document.getElementById('band800').classList.add('active-band');
+}
+
+function calculateImpact(){
+  const score=parseInt(document.getElementById('scoreSlider').value);
+  const info=getScoreInfo(score);
+  const emi=calcEMI(5000000,info.rate,240);
+  const basEmi=calcEMI(5000000,9.75,240);
+  const savings=Math.round((basEmi-emi)*240/100000*100)/100;
+  const savingsText=savings>0?`₹${savings.toFixed(1)} Lakh`:'₹0 (Base Rate)';
+
+  document.getElementById('res-score').textContent=score;
+  document.getElementById('res-band').textContent=info.zone.replace(/[^a-zA-Z\s–\-]/g,'').trim();
+  document.getElementById('res-rate').textContent=info.rate+'%';
+  document.getElementById('res-emi').textContent='₹'+emi.toLocaleString('en-IN');
+  document.getElementById('res-loan').textContent=info.maxLoan>0?'₹'+info.maxLoan+'L':'Ineligible';
+  document.getElementById('res-savings').textContent=savingsText;
+  document.getElementById('resultCard').style.display='block';
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function saveResult(){
+  const score=document.getElementById('scoreNum').textContent;
+  const saved=JSON.parse(localStorage.getItem('cibil_saves')||'[]');
+  saved.push({score,date:new Date().toLocaleDateString('en-IN'),ts:Date.now()});
+  localStorage.setItem('cibil_saves',JSON.stringify(saved));
+  const t=document.getElementById('saveToast');
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+updateScore(750);
+highlightBand(750);
+</script>
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europe Mortgage Calculator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:22px;display:block;}
+.hdr-title{font-size:17px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}.rs-val.red{color:#FF8A9A;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:28px;background:rgba(255,255,255,0.15);}
+.content{padding:16px 16px 110px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fade1{animation:fadeUp 0.4s ease both;}
+.fade2{animation:fadeUp 0.4s 0.08s ease both;}
+.fade3{animation:fadeUp 0.4s 0.16s ease both;}
+.fade4{animation:fadeUp 0.4s 0.24s ease both;}
+.fade5{animation:fadeUp 0.4s 0.32s ease both;}
+
+.country-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:14px;}
+.country-row::-webkit-scrollbar{display:none;}
+.cpill{flex-shrink:0;padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid transparent;transition:all 0.2s;}
+.cpill.active{background:#003399;color:#FFCC00;border-color:#003399;}
+.cpill:not(.active){background:#fff;color:#1A0040;border-color:rgba(0,51,153,0.15);}
+
+.calc-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 4px 20px rgba(0,51,153,0.1);border:1px solid rgba(0,51,153,0.07);margin-bottom:14px;}
+.cc-title{font-size:13px;font-weight:800;color:#1A0040;margin-bottom:14px;font-family:Georgia,serif;display:flex;align-items:center;gap:6px;}
+.field-row{margin-bottom:14px;}
+.field-label{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;justify-content:space-between;}
+.field-val{font-size:14px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.slider{width:100%;-webkit-appearance:none;height:5px;border-radius:3px;background:linear-gradient(to right,#003399 0%,#003399 var(--pct,50%),#E0E7FF var(--pct,50%),#E0E7FF 100%);outline:none;cursor:pointer;}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#003399;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,51,153,0.3);cursor:pointer;}
+.seg-row{display:flex;gap:6px;}
+.seg{flex:1;padding:8px;border-radius:10px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;border:1.5px solid rgba(0,51,153,0.15);color:#6B21A8;background:#fff;transition:all 0.2s;}
+.seg.active{background:#003399;color:#FFCC00;border-color:#003399;}
+
+/* CALCULATE BUTTON — primary CTA */
+.calc-btn-primary{width:100%;background:linear-gradient(135deg,#FFCC00,#F59E0B);border:none;border-radius:16px;padding:17px;font-size:15px;font-weight:900;color:#1A0040;cursor:pointer;box-shadow:0 6px 20px rgba(255,204,0,0.45);letter-spacing:0.3px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform 0.15s,box-shadow 0.15s;}
+.calc-btn-primary:active{transform:scale(0.97);box-shadow:0 2px 10px rgba(255,204,0,0.3);}
+
+.result-card{background:linear-gradient(145deg,#003399,#1A0040);border-radius:20px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;}
+.result-card::before{content:'€';position:absolute;right:-5px;top:-10px;font-size:100px;opacity:0.05;font-family:Georgia,serif;color:#fff;}
+.rc-lbl{font-size:11px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;}
+.rc-val{font-size:42px;font-weight:900;color:#FFCC00;font-family:Georgia,serif;line-height:1;margin:5px 0 2px;}
+.rc-sub{font-size:11px;color:rgba(255,255,255,0.5);}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;}
+.rc-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 8px;text-align:center;}
+.rc-box .l{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;}
+.rc-box .v{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+
+/* SAVE BUTTON — inside result card */
+.save-inline{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.12);}
+.save-inline-btn{flex:1;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:12px;padding:10px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;text-align:center;transition:background 0.2s;}
+.save-inline-btn:hover{background:rgba(255,255,255,0.22);}
+.save-inline-btn.gold{background:rgba(255,204,0,0.2);border-color:rgba(255,204,0,0.5);color:#FFCC00;}
+
+.chart-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 4px 20px rgba(0,51,153,0.1);border:1px solid rgba(0,51,153,0.07);margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:800;color:#1A0040;margin-bottom:14px;font-family:Georgia,serif;}
+
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:18px;}
+.donut-svg{flex-shrink:0;}
+.legend{flex:1;}
+.leg-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.leg-label{font-size:11px;color:#6B21A8;}
+.leg-val{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;margin-left:auto;}
+.leg-pct{font-size:10px;color:#94a3b8;margin-left:4px;}
+
+/* STATS ROW under donut */
+.stat-trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+.stat-cell{background:#F7F3FF;border-radius:12px;padding:10px 8px;text-align:center;}
+.stat-cell .sl{font-size:9px;color:#6B21A8;text-transform:uppercase;letter-spacing:0.4px;}
+.stat-cell .sv{font-size:14px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+
+/* LINE CHART for amortization */
+.line-chart-wrap{width:100%;overflow:hidden;border-radius:10px;}
+svg.amorLine{width:100%;height:150px;}
+
+/* BAR CHART */
+.bar-chart{margin-top:10px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.bar-yr{font-size:10px;color:#6B21A8;width:28px;flex-shrink:0;text-align:right;}
+.bar-track{flex:1;height:10px;background:#E0E7FF;border-radius:5px;overflow:hidden;position:relative;}
+.bar-fill-p{height:100%;background:linear-gradient(90deg,#003399,#1e40af);border-radius:5px;transition:width 0.5s ease;}
+.bar-fill-i{height:100%;background:linear-gradient(90deg,#FFCC00,#F59E0B);border-radius:5px;position:absolute;top:0;transition:all 0.5s ease;}
+.bar-amt{font-size:10px;font-weight:700;color:#003399;width:54px;text-align:right;font-family:Georgia,serif;}
+
+/* CHART TABS */
+.chart-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.ctab{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid rgba(0,51,153,0.15);color:#6B21A8;background:#F7F3FF;}
+.ctab.active{background:#003399;color:#FFCC00;border-color:#003399;}
+
+.lender-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.lender-row::-webkit-scrollbar{display:none;}
+.lender-card{flex-shrink:0;background:#fff;border:1.5px solid rgba(0,51,153,0.12);border-radius:14px;padding:11px 13px;min-width:130px;}
+.lc-name{font-size:12px;font-weight:800;color:#1A0040;}
+.lc-rate{font-size:18px;font-weight:900;color:#003399;font-family:Georgia,serif;margin:3px 0;}
+.lc-type{font-size:10px;color:#6B21A8;}
+.lc-btn{margin-top:7px;width:100%;background:#003399;color:#FFCC00;font-size:10px;font-weight:700;padding:5px;border-radius:7px;text-align:center;cursor:pointer;}
+
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1A0040;color:#FFCC00;font-size:13px;font-weight:700;padding:12px 22px;border-radius:50px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+/* Insight chip */
+.insight-chip{display:inline-flex;align-items:center;gap:5px;background:#EEF2FF;border:1px solid #818CF8;border-radius:20px;padding:5px 11px;font-size:10px;font-weight:700;color:#3730A3;margin-right:5px;margin-bottom:5px;}
+.insights-wrap{margin-bottom:14px;flex-wrap:wrap;display:flex;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ Calculation saved!</div>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏠</span><div class="hdr-title">Mortgage Calculator</div><div class="hdr-sub">EUR · Multi-Country · Real Rates</div></div>
+    <div class="back-btn" style="font-size:13px;font-weight:700;" onclick="saveCalc()">💾</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">🇩🇪 10yr Fix</div><div class="rs-val grn">3.85%</div><div class="rs-note">Germany</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇫🇷 20yr Fix</div><div class="rs-val">3.60%</div><div class="rs-note">France</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇪🇸 Var</div><div class="rs-val red">4.10%</div><div class="rs-note">Spain</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">ECB</div><div class="rs-val gold">4.00%</div><div class="rs-note">Rate</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl fade1" style="margin-top:0">Select Country</div>
+  <div class="country-row fade1">
+    <div class="cpill active" onclick="setCountry(this,'DE',3.85,'Germany')">🇩🇪 Germany</div>
+    <div class="cpill" onclick="setCountry(this,'FR',3.60,'France')">🇫🇷 France</div>
+    <div class="cpill" onclick="setCountry(this,'ES',4.10,'Spain')">🇪🇸 Spain</div>
+    <div class="cpill" onclick="setCountry(this,'IT',3.95,'Italy')">🇮🇹 Italy</div>
+    <div class="cpill" onclick="setCountry(this,'NL',3.75,'Netherlands')">🇳🇱 Netherlands</div>
+    <div class="cpill" onclick="setCountry(this,'PT',3.50,'Portugal')">🇵🇹 Portugal</div>
+  </div>
+
+  <div class="calc-card fade2">
+    <div class="cc-title">🏠 Loan Details</div>
+    <div class="field-row">
+      <div class="field-label"><span>Property Value</span><span class="field-val" id="propVal-lbl">€ 420,000</span></div>
+      <input type="range" class="slider" id="propVal" min="50000" max="2000000" step="5000" value="420000" oninput="updateSlider(this,'propVal-lbl')">
+    </div>
+    <div class="field-row">
+      <div class="field-label"><span>Deposit / Down Payment</span><span class="field-val" id="deposit-lbl">20%</span></div>
+      <input type="range" class="slider" id="deposit" min="5" max="60" step="1" value="20" oninput="updatePct(this,'deposit-lbl')">
+    </div>
+    <div class="field-row">
+      <div class="field-label"><span>Loan Term</span><span class="field-val" id="term-lbl">20 years</span></div>
+      <input type="range" class="slider" id="term" min="5" max="30" step="1" value="20" oninput="updateYears(this,'term-lbl')">
+    </div>
+    <div class="field-row">
+      <div class="field-label"><span>Interest Rate (Annual)</span><span class="field-val" id="rate-lbl">3.85%</span></div>
+      <input type="range" class="slider" id="rate" min="1" max="10" step="0.05" value="3.85" oninput="updateRate(this,'rate-lbl')">
+    </div>
+    <div class="field-row">
+      <div class="field-label">Mortgage Type</div>
+      <div class="seg-row">
+        <div class="seg active" onclick="setType(this,'repayment')">Repayment</div>
+        <div class="seg" onclick="setType(this,'interest')">Interest Only</div>
+        <div class="seg" onclick="setType(this,'endowment')">Endowment</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIMARY CALCULATE BUTTON -->
+  <button class="calc-btn-primary fade2" onclick="calculate()">
+    <span style="font-size:18px">🧮</span> Calculate Mortgage
+  </button>
+
+  <div class="result-card fade3">
+    <div class="rc-lbl">Monthly Payment</div>
+    <div class="rc-val" id="monthly">€ 2,068</div>
+    <div class="rc-sub" id="result-sub">Germany · 20yr Fixed · 3.85% · €336,000 loan</div>
+    <div class="rc-grid">
+      <div class="rc-box"><div class="l">Total Repaid</div><div class="v" id="totalRepaid">€496,320</div></div>
+      <div class="rc-box"><div class="l">Total Interest</div><div class="v" id="totalInterest">€160,320</div></div>
+      <div class="rc-box"><div class="l">LTV Ratio</div><div class="v" id="ltv">80%</div></div>
+    </div>
+    <!-- Save inside result -->
+    <div class="save-inline">
+      <div class="save-inline-btn gold" onclick="saveCalc()">💾 Save Calculation</div>
+      <div class="save-inline-btn" onclick="shareCalc()">📤 Share</div>
+    </div>
+  </div>
+
+  <!-- SMART INSIGHTS -->
+  <div class="insights-wrap fade3" id="insightsWrap"></div>
+
+  <!-- PAYMENT BREAKDOWN DONUT -->
+  <div class="chart-card fade4">
+    <div class="chart-title">💰 Payment Breakdown</div>
+    <div class="donut-wrap">
+      <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="44" fill="none" stroke="#E0E7FF" stroke-width="20"/>
+        <circle cx="60" cy="60" r="44" fill="none" stroke="#003399" stroke-width="20"
+          stroke-dasharray="276.5" stroke-dashoffset="0"
+          stroke-linecap="butt" transform="rotate(-90 60 60)" id="principal-arc"/>
+        <circle cx="60" cy="60" r="44" fill="none" stroke="#FFCC00" stroke-width="20"
+          stroke-dasharray="276.5" stroke-dashoffset="0"
+          stroke-linecap="butt" transform="rotate(-90 60 60)" id="interest-arc"/>
+        <circle cx="60" cy="60" r="44" fill="none" stroke="#E0E7FF" stroke-width="20"
+          stroke-dasharray="276.5" stroke-dashoffset="0"
+          stroke-linecap="butt" transform="rotate(-90 60 60)" id="deposit-arc"/>
+        <text x="60" y="56" text-anchor="middle" font-size="13" font-weight="900" fill="#1A0040" font-family="Georgia,serif" id="donut-pct">68%</text>
+        <text x="60" y="70" text-anchor="middle" font-size="9" fill="#6B21A8">Principal</text>
+      </svg>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#003399"></div><div class="leg-label">Principal</div><div class="leg-val" id="leg-principal">€336,000</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#FFCC00"></div><div class="leg-label">Interest</div><div class="leg-val" id="leg-interest">€160,320</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#E0E7FF"></div><div class="leg-label">Deposit</div><div class="leg-val" id="leg-deposit">€84,000</div></div>
+      </div>
+    </div>
+    <div class="stat-trio">
+      <div class="stat-cell"><div class="sl">Interest Ratio</div><div class="sv" id="interestRatio">32%</div></div>
+      <div class="stat-cell"><div class="sl">Monthly Int.</div><div class="sv" id="monthlyInt">€668</div></div>
+      <div class="stat-cell"><div class="sl">Break-Even Yr</div><div class="sv" id="breakEven">Yr 10</div></div>
+    </div>
+  </div>
+
+  <!-- AMORTIZATION CHART -->
+  <div class="chart-card fade4">
+    <div class="chart-title">📈 Amortization Analysis</div>
+    <div class="chart-tabs">
+      <div class="ctab active" onclick="setChartView('bar',this)">Bar Chart</div>
+      <div class="ctab" onclick="setChartView('balance',this)">Balance Curve</div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:10px;font-size:9px;color:#6B21A8;font-weight:700;">
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:linear-gradient(90deg,#003399,#1e40af);border-radius:2px;display:inline-block"></span>Principal</span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:linear-gradient(90deg,#FFCC00,#F59E0B);border-radius:2px;display:inline-block"></span>Interest</span>
+    </div>
+    <div id="amorChart"></div>
+  </div>
+
+  <div class="sec-lbl fade4">🏦 Current Lender Rates</div>
+  <div class="lender-row fade5" id="lenderRow"></div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const lenders = {
+  DE:[{name:'Deutsche Bank',rate:3.85,type:'10yr Fixed'},{name:'Commerzbank',rate:3.92,type:'10yr Fixed'},{name:'DZ Bank',rate:3.78,type:'5yr Fixed'},{name:'ING Germany',rate:3.70,type:'5yr Fixed'}],
+  FR:[{name:'BNP Paribas',rate:3.60,type:'20yr Fixed'},{name:'Crédit Agricole',rate:3.55,type:'20yr Fixed'},{name:'Société Générale',rate:3.65,type:'15yr Fixed'},{name:'LCL',rate:3.50,type:'15yr Fixed'}],
+  ES:[{name:'Santander ES',rate:4.10,type:'Variable+0.6'},{name:'BBVA',rate:3.95,type:'Variable+0.5'},{name:'CaixaBank',rate:4.00,type:'Variable+0.55'},{name:'Sabadell',rate:3.90,type:'1yr Fixed'}],
+  IT:[{name:'Intesa Sanpaolo',rate:3.95,type:'20yr Fixed'},{name:'UniCredit',rate:4.05,type:'Variable'},{name:'Mediobanca',rate:3.85,type:'10yr Fixed'},{name:'BNL',rate:3.80,type:'10yr Fixed'}],
+  NL:[{name:'ING Netherlands',rate:3.75,type:'10yr Fixed'},{name:'ABN AMRO',rate:3.80,type:'10yr Fixed'},{name:'Rabobank',rate:3.72,type:'10yr Fixed'},{name:'Aegon',rate:3.65,type:'5yr Fixed'}],
+  PT:[{name:'Caixa Geral',rate:3.50,type:'30yr Fixed'},{name:'Millennium BCP',rate:3.55,type:'Variable'},{name:'Novo Banco',rate:3.60,type:'10yr Fixed'},{name:'Santander PT',rate:3.48,type:'5yr Fixed'}]
+};
+let country='DE', mortgageType='repayment', chartView='bar';
+
+function setCountry(el,code,rate,name){
+  document.querySelectorAll('.cpill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active'); country=code;
+  document.getElementById('rate').value=rate;
+  updateRate(document.getElementById('rate'),'rate-lbl');
+  renderLenders();
+  calculate();
+}
+function setType(el,type){
+  document.querySelectorAll('.seg').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active'); mortgageType=type;
+}
+function setChartView(v,el){
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active'); chartView=v; renderChart();
+}
+function fmt(n){return new Intl.NumberFormat('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.round(n));}
+function updateSlider(el,lblId){
+  const v=parseFloat(el.value);
+  el.style.setProperty('--pct',((v-el.min)/(el.max-el.min)*100)+'%');
+  document.getElementById(lblId).textContent='€ '+fmt(v);
+}
+function updatePct(el,lblId){
+  const v=parseFloat(el.value);
+  el.style.setProperty('--pct',((v-el.min)/(el.max-el.min)*100)+'%');
+  document.getElementById(lblId).textContent=v+'%';
+}
+function updateYears(el,lblId){
+  const v=parseFloat(el.value);
+  el.style.setProperty('--pct',((v-el.min)/(el.max-el.min)*100)+'%');
+  document.getElementById(lblId).textContent=v+' years';
+}
+function updateRate(el,lblId){
+  const v=parseFloat(el.value);
+  el.style.setProperty('--pct',((v-el.min)/(el.max-el.min)*100)+'%');
+  document.getElementById(lblId).textContent=v.toFixed(2)+'%';
+}
+
+// Store last calc results for chart
+let lastCalc={};
+
+function calculate(){
+  const propVal=parseFloat(document.getElementById('propVal').value);
+  const depositPct=parseFloat(document.getElementById('deposit').value)/100;
+  const termYrs=parseFloat(document.getElementById('term').value);
+  const annualRate=parseFloat(document.getElementById('rate').value)/100;
+  const deposit=propVal*depositPct;
+  const loan=propVal-deposit;
+  const n=termYrs*12;
+  const r=annualRate/12;
+  let monthly,totalRepaid,totalInterest;
+  if(mortgageType==='interest'){
+    monthly=loan*r; totalRepaid=monthly*n+loan; totalInterest=monthly*n;
+  } else {
+    monthly=r===0?loan/n:loan*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+    totalRepaid=monthly*n; totalInterest=totalRepaid-loan;
+  }
+  const ltv=((loan/propVal)*100).toFixed(0);
+  // Break-even year (when cumulative principal > cumulative interest)
+  let cumP=0,cumI=0,bEvenYr=null,bal=loan;
+  if(mortgageType!=='interest'){
+    for(let m=1;m<=n;m++){
+      const interest=bal*r; const principal=monthly-interest;
+      cumI+=interest; cumP+=principal; bal-=principal;
+      if(bEvenYr===null && cumP>=cumI) bEvenYr=Math.ceil(m/12);
+    }
+  }
+
+  document.getElementById('monthly').textContent='€ '+fmt(monthly);
+  document.getElementById('result-sub').textContent=`${country} · ${termYrs}yr · ${(annualRate*100).toFixed(2)}% · €${fmt(loan)} loan`;
+  document.getElementById('totalRepaid').textContent='€'+fmt(totalRepaid);
+  document.getElementById('totalInterest').textContent='€'+fmt(totalInterest);
+  document.getElementById('ltv').textContent=ltv+'%';
+  document.getElementById('leg-principal').textContent='€'+fmt(loan);
+  document.getElementById('leg-interest').textContent='€'+fmt(totalInterest);
+  document.getElementById('leg-deposit').textContent='€'+fmt(deposit);
+  document.getElementById('interestRatio').textContent=Math.round(totalInterest/totalRepaid*100)+'%';
+  document.getElementById('monthlyInt').textContent='€'+fmt(monthly*r/(annualRate/12)||totalInterest/n);
+  document.getElementById('breakEven').textContent=bEvenYr?'Yr '+bEvenYr:'N/A';
+
+  // Donut (principal, interest, deposit)
+  const totalAll=loan+totalInterest+deposit;
+  const circ=276.5;
+  const pArc=(loan/totalAll)*circ;
+  const iArc=(totalInterest/totalAll)*circ;
+  const dArc=(deposit/totalAll)*circ;
+  document.getElementById('principal-arc').setAttribute('stroke-dasharray',`${pArc} ${circ-pArc}`);
+  document.getElementById('interest-arc').setAttribute('stroke-dasharray',`${iArc} ${circ-iArc}`);
+  document.getElementById('interest-arc').setAttribute('stroke-dashoffset',`${circ-pArc}`);
+  document.getElementById('deposit-arc').setAttribute('stroke-dasharray',`${dArc} ${circ-dArc}`);
+  document.getElementById('deposit-arc').setAttribute('stroke-dashoffset',`${circ-(pArc+iArc)}`);
+  document.getElementById('donut-pct').textContent=Math.round(loan/totalRepaid*100)+'%';
+
+  // Insights
+  const insights=[];
+  if(ltv>80) insights.push({icon:'⚠️',text:'LTV >80% — lenders may require PMI'});
+  if(annualRate>5) insights.push({icon:'📉',text:'Rate above 5% — consider fixed-rate protection'});
+  if(totalInterest/loan>0.6) insights.push({icon:'💡',text:'Interest >60% of loan — consider shorter term'});
+  if(depositPct>=0.2) insights.push({icon:'✅',text:'20%+ deposit — best rate tier'});
+  document.getElementById('insightsWrap').innerHTML=insights.map(i=>`<div class="insight-chip">${i.icon} ${i.text}</div>`).join('');
+
+  lastCalc={loan,totalRepaid,totalInterest,deposit,monthly,termYrs,r,n,propVal};
+  renderChart();
+}
+
+function renderChart(){
+  const {loan,monthly,termYrs,r,n}=lastCalc;
+  if(!loan) return;
+  const container=document.getElementById('amorChart');
+  if(chartView==='bar') renderBarChart(container,loan,monthly,termYrs,r,n);
+  else renderBalanceLine(container,loan,monthly,termYrs,r,n);
+}
+
+function renderBarChart(container,loan,monthly,termYrs,r,n){
+  const checkYears=[5,10,15,20,25,30].filter(y=>y<=termYrs);
+  let bal=loan; let html='';
+  const maxPay=monthly*12;
+  checkYears.forEach(yr=>{
+    let paidP=0,paidI=0;
+    for(let m=0;m<12;m++){const interest=bal*r;const principal=monthly-interest;paidI+=interest;paidP+=principal;bal-=principal;}
+    const pW=Math.min(100,(paidP/maxPay)*100);
+    const iW=Math.min(100,(paidI/maxPay)*100);
+    html+=`<div class="bar-row"><div class="bar-yr">Yr${yr}</div><div class="bar-track" style="position:relative"><div class="bar-fill-p" style="width:${pW}%"></div><div class="bar-fill-i" style="width:${iW}%;left:${pW}%"></div></div><div class="bar-amt">€${fmt(paidP+paidI)}</div></div>`;
+  });
+  container.innerHTML=html;
+}
+
+function renderBalanceLine(container,loan,monthly,termYrs,r,n){
+  const W=370,H=150,pl=40,pr=10,pt=12,pb=26;
+  const points=[];
+  let bal=loan;
+  const step=Math.max(1,Math.floor(n/50));
+  for(let m=0;m<=n;m+=step){
+    points.push({m,bal:Math.max(0,bal)});
+    for(let i=0;i<step&&m+i<n;i++){const int=bal*r;bal-=(monthly-int);}
+  }
+  points.push({m:n,bal:0});
+  const maxBal=loan;
+  function cx(m){return pl+(m/n)*(W-pl-pr);}
+  function cy(v){return pt+(1-(v/maxBal))*(H-pt-pb);}
+  const path='M'+points.map(p=>cx(p.m)+','+cy(p.bal)).join(' L');
+  const area=path+' L'+cx(n)+','+cy(0)+' L'+cx(0)+','+cy(0)+' Z';
+  // y ticks
+  let ticks='';
+  [0,0.25,0.5,0.75,1].forEach(pct=>{
+    const v=maxBal*pct;
+    ticks+=`<text x="${pl-4}" y="${cy(v)+4}" text-anchor="end" font-size="8" fill="#9ca3af">€${fmt(v/1000)}k</text>`;
+    ticks+=`<line x1="${pl}" y1="${cy(v)}" x2="${W-pr}" y2="${cy(v)}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+  });
+  let xLabels='';
+  [0,termYrs*0.25,termYrs*0.5,termYrs*0.75,termYrs].forEach(yr=>{
+    xLabels+=`<text x="${cx(yr*12)}" y="${H-4}" text-anchor="middle" font-size="8" fill="#9ca3af">Yr${Math.round(yr)}</text>`;
+  });
+  container.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px">
+    <defs><linearGradient id="gB" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#003399" stop-opacity="0.25"/><stop offset="100%" stop-color="#003399" stop-opacity="0.02"/></linearGradient></defs>
+    ${ticks}${xLabels}
+    <path d="${area}" fill="url(#gB)"/>
+    <path d="${path}" fill="none" stroke="#003399" stroke-width="2.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function renderLenders(){
+  const row=document.getElementById('lenderRow');
+  row.innerHTML='';
+  (lenders[country]||lenders.DE).forEach(l=>{
+    row.innerHTML+=`<div class="lender-card"><div class="lc-name">${l.name}</div><div class="lc-rate">${l.rate}%</div><div class="lc-type">${l.type}</div><div class="lc-btn">Compare →</div></div>`;
+  });
+}
+
+function saveCalc(){
+  const data={country,monthly:document.getElementById('monthly').textContent,date:new Date().toLocaleDateString('en-GB'),propVal:document.getElementById('propVal').value,rate:document.getElementById('rate').value};
+  let saved=JSON.parse(localStorage.getItem('eu_mortgage_saves')||'[]');
+  saved.push(data); localStorage.setItem('eu_mortgage_saves',JSON.stringify(saved));
+  showToast('✅ Calculation saved!');
+}
+function shareCalc(){
+  const text=`Mortgage: ${document.getElementById('monthly').textContent}/mo | ${document.getElementById('result-sub').textContent}`;
+  if(navigator.share) navigator.share({title:'EU Mortgage',text});
+  else {navigator.clipboard.writeText(text).catch(()=>{});showToast('📋 Copied to clipboard');}
+}
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// Init sliders
+['propVal','deposit','term','rate'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.style.setProperty('--pct',((el.value-el.min)/(el.max-el.min)*100)+'%');
+});
+renderLenders();
+calculate();
+</script>
+</body>
+</html>

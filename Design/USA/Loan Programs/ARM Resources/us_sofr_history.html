@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOFR Rate History</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root {
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+    --teal:#0F766E;--teal-lt:#99F6E4;--green:#15803D;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#0F766E 60%,#0D9488 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+  .header::after{content:'📈';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:19px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+  .content{padding:14px 14px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;}
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#0F766E);border-radius:18px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;}
+  .result-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:34px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.1;margin:5px 0 4px;}
+  .rh-amount span{font-size:15px;color:var(--gold-lt);}
+  .rh-sub{font-size:9.5px;color:rgba(255,255,255,0.48);}
+  .save-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:9px;padding:6px 11px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .2s;z-index:2;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(20,184,166,0.35);border-color:rgba(20,184,166,0.60);}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .saved-section{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;display:none;}
+  .saved-section.has-saves{display:block;}
+  .saved-item{background:#F8FAFF;border-radius:10px;padding:10px 12px;margin-bottom:7px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .saved-item:last-child{margin-bottom:0;}
+  .si-info{flex:1;}
+  .si-title{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-del{font-size:14px;cursor:pointer;color:#B91C1C;padding:2px 5px;opacity:.6;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#0F766E,#0D9488);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(15,118,110,0.32);font-family:'DM Serif Display',serif;margin-top:3px;}
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:13px;padding:12px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:18px;margin-bottom:5px;}
+  .bk-label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:16px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin:3px 0;}
+  .bk-sub{font-size:8.5px;color:var(--muted);}
+  /* SOFR Line chart */
+  .chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+  .line-wrap{position:relative;height:140px;}
+  .line-yaxis{display:flex;justify-content:space-between;font-size:7.5px;color:var(--muted);margin-top:4px;}
+  /* input grid for impact estimator */
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px;}
+  .inp-box{background:var(--card);border-radius:13px;padding:12px 13px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--teal);}
+  .inp-box.full{grid-column:1/-1;}
+  .inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .inp-box input{width:100%;border:none;outline:none;font-size:14px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:8.5px;color:var(--muted);margin-top:3px;}
+  /* mechanics card */
+  .caps-card{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1px solid #6EE7B7;border-radius:15px;padding:13px 14px;margin-bottom:10px;}
+  .cc-title{font-size:12px;font-weight:700;color:#064E3B;font-family:'DM Serif Display',serif;margin-bottom:9px;}
+  .cc-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(110,231,183,0.4);gap:8px;}
+  .cc-row:last-child{border-bottom:none;}
+  .cc-k{font-size:10px;color:#065F46;font-weight:600;}
+  .cc-v{font-size:10px;font-weight:700;color:#047857;text-align:right;}
+  .ff-card{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:15px;padding:13px 14px;margin-bottom:10px;}
+  .ff-title{font-size:12px;font-weight:700;color:#1E3A5F;font-family:'DM Serif Display',serif;margin-bottom:9px;}
+  .ff-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(147,197,253,0.4);gap:8px;}
+  .ff-row:last-child{border-bottom:none;}
+  .ff-k{font-size:9.5px;color:#1E40AF;font-weight:600;}
+  .ff-v{font-size:9.5px;font-weight:700;color:#1D4ED8;text-align:right;}
+  .note-strip{background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.25);border-radius:12px;padding:10px 12px;font-size:9.5px;color:#92400E;line-height:1.5;margin-bottom:10px;}
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:18px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--teal);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.breakdown-grid,.chart-card,.caps-card,.ff-card{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📈</div>
+      <div class="hdr-title">SOFR Rate History</div>
+      <div class="hdr-sub">NY Fed data · The index behind your ARM</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">SOFR Today</div><div class="rs-v gold">3.63%</div><div class="rs-n">Jun 17, 2026</div></div>
+    <div class="rs"><div class="rs-l">All-Time High</div><div class="rs-v">5.40%</div><div class="rs-n">Dec 2023</div></div>
+    <div class="rs"><div class="rs-l">Fed Funds Rate</div><div class="rs-v">3.50–3.75%</div><div class="rs-n">Current Target</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="note-strip">📌 SOFR (Secured Overnight Financing Rate) replaced LIBOR as the standard ARM index in 2023. Most ARMs add a fixed "margin" (typically 2.25–2.75%) to SOFR to set your adjusted rate.</div>
+
+  <div class="sec">Result</div>
+  <div class="result-hero">
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+    <div class="rh-label">Current SOFR (Overnight)</div>
+    <div class="rh-amount">3.63% <span>as of Jun 17, 2026</span></div>
+    <div class="rh-sub">Down from an all-time high of 5.40% in December 2023</div>
+  </div>
+
+  <div class="saved-section" id="savedSection">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📂 Saved Notes</div>
+    <div id="savedList"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">📈 SOFR Trend: 2022 – 2026</div>
+    <div class="line-wrap" id="sofrChart"></div>
+    <div class="line-yaxis"><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span></div>
+  </div>
+
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">🔺</div><div class="bk-label">Peak Rate</div><div class="bk-value">5.40%</div><div class="bk-sub">Dec 2023</div></div>
+    <div class="bk-card"><div class="bk-icon">🔻</div><div class="bk-label">2026 Low (so far)</div><div class="bk-value">3.62%</div><div class="bk-sub">Mar 2026</div></div>
+    <div class="bk-card"><div class="bk-icon">📉</div><div class="bk-label">Decline Since Peak</div><div class="bk-value">-1.77%</div><div class="bk-sub">Dec 2023 → Jun 2026</div></div>
+    <div class="bk-card"><div class="bk-icon">🏦</div><div class="bk-label">2025 Fed Cuts</div><div class="bk-value">-0.75%</div><div class="bk-sub">Sep, Oct, Dec 2025</div></div>
+  </div>
+
+  <div class="sec">Estimate Your ARM Reset Rate</div>
+  <div class="input-grid">
+    <div class="inp-box">
+      <label>30-Day SOFR Average (%)</label>
+      <input type="number" id="sofrAvg" value="3.63" step="0.01" oninput="estimate()">
+    </div>
+    <div class="inp-box">
+      <label>Your Loan Margin (%)</label>
+      <input type="number" id="margin" value="2.50" step="0.05" oninput="estimate()">
+      <div class="inp-hint">Check your note — typically 2.25–2.75%</div>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="estimate()">📈 Estimate My Fully-Indexed Rate</button>
+
+  <div class="ff-card" id="estimateCard">
+    <div class="ff-title">🧮 Estimated Fully-Indexed ARM Rate</div>
+    <div class="ff-row"><div class="ff-k">30-Day SOFR Average</div><div class="ff-v" id="estSofr">3.63%</div></div>
+    <div class="ff-row"><div class="ff-k">+ Your Margin</div><div class="ff-v" id="estMargin">2.50%</div></div>
+    <div class="ff-row"><div class="ff-k">= Fully-Indexed Rate</div><div class="ff-v" id="estResult" style="font-size:12px;">6.13%</div></div>
+    <div class="ff-row"><div class="ff-k">Subject To</div><div class="ff-v">Your loan's caps</div></div>
+  </div>
+
+  <div class="sec">How SOFR Feeds Your ARM Rate</div>
+  <div class="caps-card">
+    <div class="cc-title">🔧 The ARM Rate Formula</div>
+    <div class="cc-row"><div class="cc-k">Index</div><div class="cc-v">30-day SOFR average (most common)</div></div>
+    <div class="cc-row"><div class="cc-k">+ Margin</div><div class="cc-v">Fixed spread set at origination</div></div>
+    <div class="cc-row"><div class="cc-k">= Fully-Indexed Rate</div><div class="cc-v">What you'd pay with no caps</div></div>
+    <div class="cc-row"><div class="cc-k">Capped By</div><div class="cc-v">Initial / periodic / lifetime caps</div></div>
+    <div class="cc-row"><div class="cc-k">Publication</div><div class="cc-v">NY Fed, ~8:00 AM ET, every business day</div></div>
+  </div>
+
+  <div class="sec">Key SOFR Milestones</div>
+  <div class="ff-card">
+    <div class="ff-title">🗓️ SOFR Timeline</div>
+    <div class="ff-row"><div class="ff-k">2023 — LIBOR officially retired</div><div class="ff-v">SOFR standard</div></div>
+    <div class="ff-row"><div class="ff-k">Dec 2023 — All-time high</div><div class="ff-v">5.40%</div></div>
+    <div class="ff-row"><div class="ff-k">Sep–Dec 2024 — Fed cuts (100bps)</div><div class="ff-v">5.56% → 4.99%</div></div>
+    <div class="ff-row"><div class="ff-k">Sep–Dec 2025 — Fed cuts (75bps)</div><div class="ff-v">→ ~3.75% area</div></div>
+    <div class="ff-row"><div class="ff-k">Jun 2026 — Current</div><div class="ff-v">3.63%</div></div>
+  </div>
+
+  <div class="note-strip">💡 SOFR moves with Federal Reserve policy, but your ARM resets on its own schedule (usually annually) using a published average, not the live overnight rate — so there's a lag between Fed decisions and your payment changing.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let savedNotes = JSON.parse(localStorage.getItem('arm_sofr_saves') || '[]');
+
+// Approximate real SOFR data points (quarterly/key dates), percent
+const sofrHistory = [
+  {label:'Jan22', val:0.05}, {label:'Jun22', val:1.20}, {label:'Dec22', val:4.30},
+  {label:'Jun23', val:5.06}, {label:'Sep23', val:5.31}, {label:'Dec23', val:5.40},
+  {label:'Mar24', val:5.31}, {label:'Jun24', val:5.33}, {label:'Sep24', val:5.56},
+  {label:'Dec24', val:4.99}, {label:'Mar25', val:4.55}, {label:'Jun25', val:4.52},
+  {label:'Sep25', val:4.54}, {label:'Dec25', val:3.85}, {label:'Mar26', val:3.62},
+  {label:'Jun26', val:3.63}
+];
+
+function renderSofrChart(){
+  const wrap = document.getElementById('sofrChart');
+  const W = 320, H = 140, pad = 12;
+  const vals = sofrHistory.map(p=>p.val);
+  const maxV = Math.max(...vals) * 1.1;
+  const minV = 0;
+  const n = sofrHistory.length;
+
+  function toXY(i, val){
+    const x = pad + (i/(n-1)) * (W - pad*2);
+    const y = H - pad - ((val-minV)/(maxV-minV)) * (H - pad*2);
+    return [x,y];
+  }
+  let path = sofrHistory.map((p,i) => { const [x,y]=toXY(i,p.val); return (i===0?'M':'L')+x.toFixed(1)+','+y.toFixed(1); }).join(' ');
+
+  // area fill
+  const [firstX, firstY] = toXY(0, sofrHistory[0].val);
+  const [lastX, lastY] = toXY(n-1, sofrHistory[n-1].val);
+  const areaPath = path + ` L${lastX.toFixed(1)},${H-pad} L${firstX.toFixed(1)},${H-pad} Z`;
+
+  // peak marker
+  const peakIdx = vals.indexOf(Math.max(...vals));
+  const [peakX, peakY] = toXY(peakIdx, vals[peakIdx]);
+
+  // current marker (last point)
+  const [curX, curY] = toXY(n-1, vals[n-1]);
+
+  wrap.innerHTML = `
+    <svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="sofrGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#0F766E" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#0F766E" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      <path d="${areaPath}" fill="url(#sofrGrad)"/>
+      <path d="${path}" fill="none" stroke="#0F766E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${peakX}" cy="${peakY}" r="3.5" fill="#B91C1C"/>
+      <circle cx="${curX}" cy="${curY}" r="3.5" fill="#D97706"/>
+      <text x="${peakX}" y="${peakY-8}" font-size="8" font-weight="700" fill="#B91C1C" text-anchor="middle">5.40%</text>
+      <text x="${curX-18}" y="${curY-8}" font-size="8" font-weight="700" fill="#D97706" text-anchor="middle">3.63%</text>
+    </svg>`;
+}
+
+function estimate(){
+  const sofr = parseFloat(document.getElementById('sofrAvg').value) || 0;
+  const margin = parseFloat(document.getElementById('margin').value) || 0;
+  const result = sofr + margin;
+  document.getElementById('estSofr').textContent = sofr.toFixed(2)+'%';
+  document.getElementById('estMargin').textContent = margin.toFixed(2)+'%';
+  document.getElementById('estResult').textContent = result.toFixed(2)+'%';
+}
+
+function saveCalc() {
+  const sofr = document.getElementById('sofrAvg').value;
+  const margin = document.getElementById('margin').value;
+  const result = document.getElementById('estResult').textContent;
+  const entry = { id:Date.now(), label:`SOFR ${sofr}% + Margin ${margin}%`, payment:`Est. rate: ${result}`, date:new Date().toLocaleDateString() };
+  savedNotes.unshift(entry);
+  if (savedNotes.length>5) savedNotes=savedNotes.slice(0,5);
+  localStorage.setItem('arm_sofr_saves',JSON.stringify(savedNotes));
+  renderSaved();
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');btn.textContent='✅ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},2000);
+  showToast('Estimate saved!');
+}
+function deleteSave(id){ savedNotes=savedNotes.filter(s=>s.id!==id); localStorage.setItem('arm_sofr_saves',JSON.stringify(savedNotes)); renderSaved(); }
+function renderSaved(){
+  const sec=document.getElementById('savedSection'); const list=document.getElementById('savedList');
+  if(!savedNotes.length){sec.classList.remove('has-saves');return;}
+  sec.classList.add('has-saves');
+  list.innerHTML=savedNotes.map(s=>`<div class="saved-item"><div class="si-info"><div class="si-title">${s.label}</div><div class="si-sub">${s.payment} · ${s.date}</div></div><div class="si-del" onclick="deleteSave(${s.id})">✕</div></div>`).join('');
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+renderSofrChart();
+estimate();
+renderSaved();
+</script>
+</body>
+</html>

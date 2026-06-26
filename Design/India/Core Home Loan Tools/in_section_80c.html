@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Section 80C – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --mg:#9333EA;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background-image:radial-gradient(circle at 10% 20%,rgba(147,51,234,0.04) 0%,transparent 50%),
+  radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#9333EA 82%,#6D28D9 100%);
+  padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);
+  position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:13px;font-weight:800;color:#fff;}
+.rs-v.yl{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .more{font-size:11px;font-weight:600;color:var(--saffron);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* REGIME TOGGLE */
+.regime-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:14px;
+  overflow:hidden;border:1.5px solid rgba(147,51,234,0.25);margin-bottom:14px;}
+.rt-opt{padding:12px;text-align:center;cursor:pointer;transition:all .15s;background:var(--card);}
+.rt-opt.active{background:linear-gradient(135deg,#9333EA,#6D28D9);color:#fff;}
+.rt-opt-title{font-size:12px;font-weight:800;}
+.rt-opt:not(.active) .rt-opt-title{color:var(--navy);}
+.rt-opt-sub{font-size:9px;font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+.rt-opt:not(.active) .rt-opt-sub{color:var(--muted);}
+.rt-opt.active .rt-opt-sub{color:rgba(255,255,255,0.70);}
+
+/* FORM */
+.fcard{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);
+  border:1px solid var(--border);margin-bottom:14px;}
+.field{margin-bottom:14px;}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.6px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field input{width:100%;background:#F5F3FF;border:1.5px solid rgba(147,51,234,0.20);
+  border-radius:12px;padding:12px 14px;font-size:14px;font-weight:700;color:var(--navy);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;}
+.field input:focus{border-color:var(--mg);box-shadow:0 0 0 3px rgba(147,51,234,0.10);}
+.input-note{font-size:9px;color:var(--muted);margin-top:4px;font-family:'Trebuchet MS',sans-serif;}
+
+.inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.inv-card{background:#F5F3FF;border:1.5px solid rgba(147,51,234,0.15);border-radius:12px;
+  padding:11px 12px;cursor:pointer;transition:all .15s;}
+.inv-card.selected{background:linear-gradient(135deg,#9333EA,#6D28D9);border-color:var(--mg);}
+.inv-icon{font-size:18px;margin-bottom:5px;}
+.inv-name{font-size:11px;font-weight:800;color:var(--navy);}
+.inv-card.selected .inv-name{color:#fff;}
+.inv-limit{font-size:9px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.inv-card.selected .inv-limit{color:rgba(255,255,255,0.70);}
+.inv-input{width:100%;background:rgba(255,255,255,0.20);border:1px solid rgba(255,255,255,0.30);
+  border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700;color:var(--navy);
+  font-family:'Book Antiqua',serif;outline:none;margin-top:5px;display:none;}
+.inv-card.selected .inv-input{display:block;color:#fff;}
+
+.calc-btn{width:100%;background:linear-gradient(135deg,#9333EA,#6D28D9);
+  border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;
+  color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(147,51,234,0.42);
+  font-family:'Book Antiqua',Georgia,serif;letter-spacing:.3px;margin-top:6px;}
+
+/* RESULT */
+.result-card{background:linear-gradient(148deg,#6D28D9,#9333EA);
+  border-radius:20px;padding:20px;box-shadow:var(--sh2);margin-bottom:14px;position:relative;overflow:hidden;}
+.result-card::after{content:'§';position:absolute;right:14px;bottom:8px;
+  font-size:70px;color:rgba(255,255,255,0.05);font-family:'Book Antiqua',serif;}
+.rc-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.rc-total{font-size:26px;font-weight:800;color:var(--ochre-lt);margin:6px 0 14px;}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rc-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);
+  border-radius:12px;padding:10px 12px;}
+.rc-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;
+  font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.5px;}
+.rc-box .v{font-size:14px;font-weight:800;color:#fff;}
+.rc-box .v.yl{color:#FDE68A;}
+.rc-box .v.grn{color:#86EFAC;}
+
+/* DEDUCTION PROGRESS */
+.dedn-visual{background:var(--card);border-radius:20px;padding:18px;
+  box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.dv-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;
+  display:flex;justify-content:space-between;}
+.dv-title span{font-size:10px;font-weight:600;color:var(--mg);font-family:'Trebuchet MS',sans-serif;}
+.limit-bar-wrap{margin-bottom:10px;}
+.lb-label{display:flex;justify-content:space-between;margin-bottom:5px;}
+.lb-label span{font-size:10px;font-weight:700;color:var(--navy);}
+.lb-label em{font-size:10px;font-weight:800;font-style:normal;font-family:'Trebuchet MS',sans-serif;}
+.lb-track{height:16px;background:#F5F3FF;border-radius:8px;overflow:hidden;position:relative;}
+.lb-fill{height:100%;border-radius:8px;transition:width .6s ease;position:relative;}
+.lb-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.20) 100%);}
+.lb-overflow{background:#FEF2F2 !important;}
+
+/* BREAKDOWN LIST */
+.breakdown-list{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+.bd-item{background:var(--card);border-radius:14px;padding:12px 14px;
+  box-shadow:var(--sh);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;}
+.bd-left{display:flex;align-items:center;gap:10px;}
+.bd-icon{font-size:16px;}
+.bd-name{font-size:11.5px;font-weight:700;color:var(--navy);}
+.bd-sub{font-size:9px;color:var(--muted);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.bd-amt{font-size:13px;font-weight:800;color:var(--mg);}
+
+.save-btn{width:100%;background:linear-gradient(135deg,var(--green),var(--green2));
+  border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;
+  color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(4,106,56,0.35);
+  font-family:'Book Antiqua',Georgia,serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  background:var(--green);color:#fff;padding:10px 22px;border-radius:30px;
+  font-size:13px;font-weight:700;box-shadow:var(--sh2);z-index:200;
+  opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);
+  display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ 80C Calculation Saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📋</div>
+      <div class="hdr-title">Section <span>80C</span></div>
+      <div class="hdr-sub">Tax Deductions · Home Loan Principal · Investments</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">80C Limit</div><div class="rs-v yl">₹1.5 L</div><div class="rs-n">Per year</div></div>
+    <div class="rs"><div class="rs-l">Old Regime</div><div class="rs-v yl">Applicable</div><div class="rs-n">With deductions</div></div>
+    <div class="rs"><div class="rs-l">New Regime</div><div class="rs-v yl">NA</div><div class="rs-n">No 80C</div></div>
+    <div class="rs"><div class="rs-l">Max Saving</div><div class="rs-v yl">₹46,800</div><div class="rs-n">At 30% slab</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Tax Regime <span class="more">Compare →</span></div>
+
+  <div class="regime-toggle fu1">
+    <div class="rt-opt active" id="regime-old" onclick="setRegime('old')">
+      <div class="rt-opt-title">Old Regime</div>
+      <div class="rt-opt-sub">Deductions allowed · 80C active</div>
+    </div>
+    <div class="rt-opt" id="regime-new" onclick="setRegime('new')">
+      <div class="rt-opt-title">New Regime</div>
+      <div class="rt-opt-sub">Lower slab · No 80C</div>
+    </div>
+  </div>
+
+  <div class="fcard fu1">
+    <div class="field">
+      <label>Annual Gross Income (₹)</label>
+      <input type="number" id="grossIncome" value="1200000" oninput="calc80C()"/>
+    </div>
+    <div class="field">
+      <label>Tax Slab</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;" id="slabGrid">
+        <div class="inv-card" id="slab5" onclick="setSlab(5,'5%')">
+          <div class="inv-name">5%</div><div class="inv-limit">₹2.5–5L</div></div>
+        <div class="inv-card" id="slab20" onclick="setSlab(20,'20%')">
+          <div class="inv-name">20%</div><div class="inv-limit">₹5–10L</div></div>
+        <div class="inv-card selected" id="slab30" onclick="setSlab(30,'30%')">
+          <div class="inv-name">30%</div><div class="inv-limit">Above ₹10L</div></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Home Loan Principal Repaid this Year (₹)</label>
+      <input type="number" id="hlPrincipal" value="120000" oninput="calc80C()"/>
+      <div class="input-note">Counts towards 80C limit · check your bank statement</div>
+    </div>
+  </div>
+
+  <div class="sec fu2">Investment Inputs <span class="more">Add More →</span></div>
+  <div class="inv-grid fu2">
+    <div class="inv-card selected" id="inv-ppf" onclick="toggleInv('ppf',this)">
+      <div class="inv-icon">🏦</div>
+      <div class="inv-name">PPF</div>
+      <div class="inv-limit">Max ₹1,50,000/yr</div>
+      <input class="inv-input" id="amt-ppf" type="number" placeholder="₹" value="50000" oninput="calc80C()"/>
+    </div>
+    <div class="inv-card selected" id="inv-elss" onclick="toggleInv('elss',this)">
+      <div class="inv-icon">📈</div>
+      <div class="inv-name">ELSS Fund</div>
+      <div class="inv-limit">3 yr lock-in</div>
+      <input class="inv-input" id="amt-elss" type="number" placeholder="₹" value="30000" oninput="calc80C()"/>
+    </div>
+    <div class="inv-card" id="inv-lic" onclick="toggleInv('lic',this)">
+      <div class="inv-icon">🛡️</div>
+      <div class="inv-name">LIC Premium</div>
+      <div class="inv-limit">Life insurance</div>
+      <input class="inv-input" id="amt-lic" type="number" placeholder="₹" value="20000" oninput="calc80C()"/>
+    </div>
+    <div class="inv-card" id="inv-nsc" onclick="toggleInv('nsc',this)">
+      <div class="inv-icon">📮</div>
+      <div class="inv-name">NSC</div>
+      <div class="inv-limit">5 yr tenure</div>
+      <input class="inv-input" id="amt-nsc" type="number" placeholder="₹" value="0" oninput="calc80C()"/>
+    </div>
+    <div class="inv-card" id="inv-epf" onclick="toggleInv('epf',this)">
+      <div class="inv-icon">💼</div>
+      <div class="inv-name">EPF</div>
+      <div class="inv-limit">Employee PF</div>
+      <input class="inv-input" id="amt-epf" type="number" placeholder="₹" value="0" oninput="calc80C()"/>
+    </div>
+    <div class="inv-card" id="inv-fd" onclick="toggleInv('fd',this)">
+      <div class="inv-icon">🏧</div>
+      <div class="inv-name">Tax Saver FD</div>
+      <div class="inv-limit">5 yr bank FD</div>
+      <input class="inv-input" id="amt-fd" type="number" placeholder="₹" value="0" oninput="calc80C()"/>
+    </div>
+  </div>
+
+  <button class="calc-btn fu2" onclick="calc80C()">☸ Calculate Tax Saving</button>
+
+  <div class="sec fu3">Tax Saving Result <span class="more">FY 2024–25</span></div>
+  <div class="result-card fu3">
+    <div class="rc-tag">Section 80C — Tax Deduction Summary</div>
+    <div class="rc-total" id="rcTaxSaving">₹46,800 Tax Saved</div>
+    <div class="rc-grid">
+      <div class="rc-box"><label>Total 80C</label><div class="v yl" id="rcTotal80c">₹2,00,000</div></div>
+      <div class="rc-box"><label>Eligible Deduction</label><div class="v" id="rcEligible">₹1,50,000</div></div>
+      <div class="rc-box"><label>Tax Slab</label><div class="v" id="rcSlab">30%</div></div>
+      <div class="rc-box"><label>Tax Saved</label><div class="v grn" id="rcTaxSaved2">₹46,800</div></div>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.15);">
+      <div style="display:flex;justify-content:space-between;">
+        <div><div style="font-size:9px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;">Taxable Income</div>
+          <div style="font-size:16px;font-weight:800;color:#FDE68A;" id="rcTaxable">₹10,50,000</div></div>
+        <div style="text-align:right;"><div style="font-size:9px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;">Remaining Room</div>
+          <div style="font-size:16px;font-weight:800;color:#86EFAC;" id="rcRemaining">₹0</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIMIT PROGRESS -->
+  <div class="dedn-visual fu3">
+    <div class="dv-title">80C Limit Utilisation <span>₹1,50,000 Max</span></div>
+    <div class="limit-bar-wrap">
+      <div class="lb-label"><span>Used</span><em id="usedPct" style="color:var(--mg)">100%</em></div>
+      <div class="lb-track">
+        <div class="lb-fill" style="background:linear-gradient(90deg,#9333EA,#6D28D9);" id="limitBar"></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:8px;">
+      <span style="font-weight:700;color:var(--navy);">Used: <span id="usedAmt" style="color:var(--mg)">₹1,50,000</span></span>
+      <span style="font-weight:700;color:var(--navy);">Limit: <span style="color:var(--muted)">₹1,50,000</span></span>
+    </div>
+  </div>
+
+  <!-- BREAKDOWN -->
+  <div class="sec fu4">Investment Breakdown <span class="more">Details</span></div>
+  <div class="breakdown-list fu4" id="breakdownList">
+    <!-- Populated by JS -->
+  </div>
+
+  <button class="save-btn fu5" onclick="saveCalc()">💾 Save Calculation</button>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let taxSlab=30, taxRegime='old';
+const invData={
+  ppf:{icon:'🏦',name:'PPF',limit:150000},
+  elss:{icon:'📈',name:'ELSS Fund',limit:150000},
+  lic:{icon:'🛡️',name:'LIC Premium',limit:150000},
+  nsc:{icon:'📮',name:'NSC',limit:150000},
+  epf:{icon:'💼',name:'EPF (Employee)',limit:150000},
+  fd:{icon:'🏧',name:'Tax Saver FD',limit:150000},
+};
+const activeInv=new Set(['ppf','elss']);
+
+function setRegime(r){
+  taxRegime=r;
+  document.getElementById('regime-old').classList.toggle('active',r==='old');
+  document.getElementById('regime-new').classList.toggle('active',r==='new');
+  calc80C();
+}
+function setSlab(v,lbl){
+  taxSlab=v;
+  ['slab5','slab20','slab30'].forEach(id=>document.getElementById(id).classList.remove('selected'));
+  document.getElementById('slab'+v).classList.add('selected');
+  calc80C();
+}
+function toggleInv(key,el){
+  if(activeInv.has(key)){activeInv.delete(key);el.classList.remove('selected');}
+  else{activeInv.add(key);el.classList.add('selected');}
+  calc80C();
+}
+function fmt(n){
+  if(n>=100000)return'₹'+(n/100000).toFixed(2)+' L';
+  return'₹'+Math.round(n).toLocaleString('en-IN');
+}
+function calc80C(){
+  if(taxRegime==='new'){
+    document.getElementById('rcTaxSaving').textContent='NIL — New Regime';
+    document.getElementById('rcTotal80c').textContent='N/A';
+    document.getElementById('rcEligible').textContent='₹0';
+    document.getElementById('rcTaxSaved2').textContent='₹0';
+    return;
+  }
+  const gross=parseFloat(document.getElementById('grossIncome').value)||1200000;
+  const hlPrincipal=parseFloat(document.getElementById('hlPrincipal').value)||0;
+  let total=hlPrincipal;
+  const items=[];
+  if(hlPrincipal>0)items.push({icon:'🏠',name:'Home Loan Principal',limit:150000,val:hlPrincipal});
+  activeInv.forEach(key=>{
+    const el=document.getElementById('amt-'+key);
+    const v=parseFloat(el&&el.value)||0;
+    if(v>0){total+=v;items.push({...invData[key],val:v});}
+  });
+  const eligible=Math.min(total,150000);
+  const taxSaved=Math.round(eligible*taxSlab/100);
+  const taxable=Math.max(0,gross-eligible);
+  const remaining=Math.max(0,150000-total);
+  const pct=Math.min(total/150000*100,100);
+
+  document.getElementById('rcTaxSaving').textContent=fmt(taxSaved)+' Tax Saved';
+  document.getElementById('rcTotal80c').textContent=fmt(total);
+  document.getElementById('rcEligible').textContent=fmt(eligible);
+  document.getElementById('rcSlab').textContent=taxSlab+'%';
+  document.getElementById('rcTaxSaved2').textContent=fmt(taxSaved);
+  document.getElementById('rcTaxable').textContent=fmt(taxable);
+  document.getElementById('rcRemaining').textContent=fmt(remaining);
+  document.getElementById('limitBar').style.width=pct+'%';
+  document.getElementById('usedPct').textContent=Math.round(pct)+'%';
+  document.getElementById('usedAmt').textContent=fmt(Math.min(total,150000));
+
+  // breakdown
+  const bl=document.getElementById('breakdownList');
+  bl.innerHTML=items.map(it=>`
+    <div class="bd-item">
+      <div class="bd-left">
+        <div class="bd-icon">${it.icon}</div>
+        <div><div class="bd-name">${it.name}</div>
+        <div class="bd-sub">Section 80C eligible</div></div>
+      </div>
+      <div class="bd-amt">${fmt(Math.min(it.val,it.limit))}</div>
+    </div>`).join('');
+  window._80cCalc={gross,taxSlab,taxRegime,total,eligible,taxSaved,taxable,remaining};
+}
+function saveCalc(){
+  const saved=JSON.parse(localStorage.getItem('80cSaved')||'[]');
+  saved.unshift({...window._80cCalc,date:new Date().toLocaleDateString('en-IN')});
+  localStorage.setItem('80cSaved',JSON.stringify(saved.slice(0,20)));
+  const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+calc80C();
+</script>
+</body>
+</html>

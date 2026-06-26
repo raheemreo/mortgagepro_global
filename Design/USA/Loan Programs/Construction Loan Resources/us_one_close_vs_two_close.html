@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One-Close vs. Two-Close | Construction Loan Calc</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --accent:#E84545;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#B91C1C 55%,#991B1B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🔁';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:'Playfair Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:13px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* CONTENT */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+
+  /* INPUTS */
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .inp-box{background:var(--card);border-radius:14px;padding:13px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:rgba(185,28,28,0.4);}
+  .inp-box label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:15px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:9px;color:var(--muted);margin-top:3px;}
+  .inp-full{grid-column:1/-1;}
+
+  /* RESULT HERO */
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#B91C1C);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:10px;}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:32px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.1;margin:6px 0 4px;}
+  .rh-amount span{font-size:14px;color:var(--gold-lt);}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.50);}
+  .rh-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;}
+  .save-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:8px 14px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(253,211,77,0.25);border-color:var(--gold-lt);color:var(--gold-lt);}
+  .save-count{background:rgba(255,255,255,0.15);border-radius:8px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,0.7);}
+
+  /* CHART CARD */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:10px;}
+
+  /* BREAKDOWN GRID */
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:14px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:20px;margin-bottom:6px;}
+  .bk-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:17px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;margin:3px 0;}
+  .bk-sub{font-size:9px;color:var(--muted);}
+
+  /* RISK ALERT */
+  .timeline-card{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border:1px solid #FCA5A5;border-radius:15px;padding:14px 15px;margin-bottom:10px;}
+  .tl-title{font-size:12px;font-weight:700;color:#7F1D1D;font-family:'Playfair Display',serif;margin-bottom:8px;}
+  .tl-body{font-size:10.5px;color:#991B1B;line-height:1.5;}
+  .tl-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(252,165,165,0.4);}
+  .tl-row:last-child{border-bottom:none;}
+  .tl-k{font-size:10px;color:#991B1B;font-weight:600;}
+  .tl-v{font-size:10px;font-weight:700;color:#B91C1C;}
+
+  /* COMPARISON CARDS */
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .compare-card{background:var(--card);border-radius:16px;padding:14px;border:1.5px solid var(--border);box-shadow:var(--sh);}
+  .compare-card.featured{border-color:var(--gold);background:linear-gradient(180deg,#FFFBEB,#FFFFFF);}
+  .cc-badge{display:inline-block;font-size:8px;font-weight:700;color:#fff;background:var(--gold);padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:7px;}
+  .cc-badge.muted{background:var(--muted);}
+  .cc-title{font-size:13px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:9px;}
+  .cc-row{display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--border);font-size:9.5px;color:var(--muted);line-height:1.35;}
+  .cc-row:last-child{border-bottom:none;}
+  .cc-ico{flex-shrink:0;font-size:10px;margin-top:1px;}
+
+  /* DECISION GUIDE */
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+  /* SAVED PANEL */
+  .saved-panel{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;display:none;}
+  .saved-panel.visible{display:block;}
+  .saved-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .saved-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;}
+  .clear-btn{font-size:10px;color:var(--red);font-weight:600;cursor:pointer;border:none;background:none;}
+  .saved-item{background:var(--bg);border-radius:11px;padding:10px 12px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;}
+  .si-left .si-name{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-left .si-detail{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-right{font-size:14px;font-weight:800;color:var(--red);font-family:'Playfair Display',serif;}
+  .si-del{font-size:14px;color:var(--muted);cursor:pointer;margin-left:8px;padding:2px;}
+
+  /* CALC BTN */
+  .calc-btn{width:100%;background:linear-gradient(135deg,#B91C1C,#991B1B);border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(185,28,28,0.35);font-family:'DM Sans',sans-serif;margin-top:4px;transition:transform .1s,box-shadow .1s;}
+  .calc-btn:active{transform:scale(0.98);box-shadow:0 2px 8px rgba(185,28,28,0.25);}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;border-radius:12px;padding:10px 18px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* BOTTOM NAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--red);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.chart-card,.breakdown-grid,.compare-grid,.timeline-card,.ilist{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔁</div>
+      <div class="hdr-title">One-Close vs. Two-Close</div>
+      <div class="hdr-sub">Construction Loan Structure Comparison</div>
+    </div>
+    <div class="icon-btn" onclick="toggleSaved()" title="Saved comparisons">🔖</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Closings</div><div class="rs-v">1×</div><div class="rs-n">one-close</div></div>
+    <div class="rs"><div class="rs-l">Vs.</div><div class="rs-v">2×</div><div class="rs-n">two-close</div></div>
+    <div class="rs"><div class="rs-l">Avg Cost/Close</div><div class="rs-v gold">2–5%</div><div class="rs-n">of loan amt</div></div>
+    <div class="rs"><div class="rs-l">Rate Lock</div><div class="rs-v">Upfront</div><div class="rs-n">one-close only</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <!-- SAVED PANEL -->
+  <div class="saved-panel" id="savedPanel">
+    <div class="saved-header">
+      <div class="saved-title">📌 Saved Comparisons</div>
+      <button class="clear-btn" onclick="clearAllSaved()">Clear All</button>
+    </div>
+    <div id="savedList"><div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No saved comparisons yet.</div></div>
+  </div>
+
+  <div class="sec" style="margin-top:0">Closing Cost Comparison</div>
+  <div class="input-grid">
+    <div class="inp-box">
+      <label>Construction Loan ($)</label>
+      <input type="number" id="constAmt" value="400000" step="5000" oninput="calculate()">
+      <div class="inp-hint">Build phase loan amount</div>
+    </div>
+    <div class="inp-box">
+      <label>Permanent Loan ($)</label>
+      <input type="number" id="permAmt" value="400000" step="5000" oninput="calculate()">
+      <div class="inp-hint">Take-out mortgage amount</div>
+    </div>
+    <div class="inp-box">
+      <label>Avg. Closing Cost (%)</label>
+      <input type="number" id="costRate" value="3" step="0.25" min="2" max="5" oninput="calculate()">
+      <div class="inp-hint">Typical range: 2%–5%</div>
+    </div>
+    <div class="inp-box">
+      <label>Rate Rise Risk (%)</label>
+      <input type="number" id="riskBps" value="0.5" step="0.125" min="0" oninput="calculate()">
+      <div class="inp-hint">Possible increase before 2nd closing</div>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calculate()">🔁 Compare Closing Structures</button>
+
+  <div class="sec">Potential Savings</div>
+  <div class="result-hero">
+    <div class="rh-label">One-Close Savings vs. Two-Close</div>
+    <div class="rh-amount" id="savingsAmt">$12,000 <span>saved</span></div>
+    <div class="rh-sub" id="savingsSub">One closing: $12,000 · Two closings: $24,000</div>
+    <div class="rh-save-row">
+      <div class="save-count" id="saveCount">0 saved</div>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save Comparison</button>
+    </div>
+  </div>
+
+  <div class="sec">Total Cost: Side by Side</div>
+  <div class="chart-card">
+    <div class="chart-title">📊 One-Close vs. Two-Close Total Closing Costs</div>
+    <svg width="100%" height="90" viewBox="0 0 360 90" id="costChart">
+      <defs>
+        <linearGradient id="gradGold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#D97706" stop-opacity="0.95"/>
+          <stop offset="100%" stop-color="#B45309" stop-opacity="0.75"/>
+        </linearGradient>
+        <linearGradient id="gradRed2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#B91C1C" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#991B1B" stop-opacity="0.7"/>
+        </linearGradient>
+      </defs>
+      <text x="2" y="14" font-size="8" fill="#4A5C7A" id="yTop2">$24K</text>
+      <text x="2" y="87" font-size="8" fill="#4A5C7A">$0</text>
+      <line x1="28" y1="10" x2="355" y2="10" stroke="#EEF2F8" stroke-width="1"/>
+      <line x1="28" y1="45" x2="355" y2="45" stroke="#EEF2F8" stroke-width="1"/>
+      <line x1="28" y1="80" x2="355" y2="80" stroke="#EEF2F8" stroke-width="1"/>
+      <rect id="barOne" x="80" y="20" width="100" height="60" rx="6" fill="url(#gradGold)"/>
+      <text id="labelOne" x="130" y="15" text-anchor="middle" font-size="9" fill="#D97706" font-weight="700">$12,000</text>
+      <text x="130" y="88" text-anchor="middle" font-size="8" fill="#4A5C7A">One-Close</text>
+      <rect id="barTwo" x="220" y="10" width="100" height="70" rx="6" fill="url(#gradRed2)"/>
+      <text id="labelTwo" x="270" y="8" text-anchor="middle" font-size="9" fill="#B91C1C" font-weight="700">$24,000</text>
+      <text x="270" y="88" text-anchor="middle" font-size="8" fill="#4A5C7A">Two-Close</text>
+    </svg>
+  </div>
+
+  <div class="sec">Cost Detail</div>
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">🏗️</div><div class="bk-label">Construction Closing</div><div class="bk-value" id="bkConst">$12,000</div><div class="bk-sub">Paid once, either way</div></div>
+    <div class="bk-card"><div class="bk-icon">🏠</div><div class="bk-label">Permanent Closing</div><div class="bk-value" id="bkPerm">$12,000</div><div class="bk-sub">Two-close only</div></div>
+    <div class="bk-card"><div class="bk-icon">📝</div><div class="bk-label">Modification Fee</div><div class="bk-value" id="bkMod">$500</div><div class="bk-sub">One-close conversion</div></div>
+    <div class="bk-card"><div class="bk-icon">💰</div><div class="bk-label">Total Savings</div><div class="bk-value" id="bkSavings">$11,500</div><div class="bk-sub">Choosing one-close</div></div>
+  </div>
+
+  <div class="timeline-card">
+    <div class="tl-title">⚠️ Two-Close Rate Risk</div>
+    <div class="tl-body" id="riskBody">If mortgage rates rise 0.50% between your construction closing and your permanent closing, that's roughly <strong id="riskMonthly">$167</strong>/mo more — about <strong id="riskTotal">$60,000</strong> in added interest over 30 years. One-close locks your permanent rate upfront, removing this risk entirely.</div>
+  </div>
+
+  <div class="sec">Side-by-Side Breakdown</div>
+  <div class="compare-grid">
+    <div class="compare-card featured">
+      <div class="cc-badge">Recommended for most</div>
+      <div class="cc-title">🔂 One-Time Close</div>
+      <div class="cc-row"><div class="cc-ico">✅</div><div>Single loan covers land, construction, and the permanent mortgage</div></div>
+      <div class="cc-row"><div class="cc-ico">✅</div><div>One closing = one set of closing costs and fees</div></div>
+      <div class="cc-row"><div class="cc-ico">✅</div><div>Permanent rate is locked before construction begins</div></div>
+      <div class="cc-row"><div class="cc-ico">✅</div><div>No re-qualification needed after the build is done</div></div>
+      <div class="cc-row"><div class="cc-ico">⚠️</div><div>Fewer lenders offer it; builder must be lender-approved upfront</div></div>
+      <div class="cc-row"><div class="cc-ico">⚠️</div><div>Harder to change scope, budget, or builder mid-project</div></div>
+    </div>
+    <div class="compare-card">
+      <div class="cc-badge muted">Two-Time Close</div>
+      <div class="cc-title">🔁 Two-Time Close</div>
+      <div class="cc-row"><div class="cc-ico">✅</div><div>More flexibility to shop the permanent mortgage separately</div></div>
+      <div class="cc-row"><div class="cc-ico">✅</div><div>Easier to change plans, budget or builder mid-build</div></div>
+      <div class="cc-row"><div class="cc-ico">✅</div><div>Wider lender pool for the construction-only phase</div></div>
+      <div class="cc-row"><div class="cc-ico">⚠️</div><div>Two full closings = two full sets of closing costs</div></div>
+      <div class="cc-row"><div class="cc-ico">⚠️</div><div>Permanent rate isn't locked — exposed to rate moves during build</div></div>
+      <div class="cc-row"><div class="cc-ico">⚠️</div><div>Must re-qualify (income, credit, appraisal) at the second closing</div></div>
+    </div>
+  </div>
+
+  <div class="sec">Which Should You Choose?</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🔂</div><div><div class="in">Choose One-Close if...</div><div class="is">You want rate certainty, fewer fees, and a simpler single-approval process from land to move-in.</div></div></div>
+    <div class="ic"><div class="ii">🔁</div><div><div class="in">Choose Two-Close if...</div><div class="is">Your builder isn't lender-approved for one-close programs, or you expect rates to fall and want to shop the permanent loan later.</div></div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Ask Every Lender</div><div class="is">Whether their one-close program locks the permanent rate at construction closing, and what the conversion/modification fee is.</div></div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni" onclick="toggleSaved()"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'const_loan_one_two_close_saves';
+let savedCalcs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+function fmtK(n){const v=Math.abs(n);return (n<0?'-':'')+'$'+(v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?Math.round(v/1000)+'K':Math.round(v));}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function calculate(){
+  const constAmt = parseFloat(document.getElementById('constAmt').value)||0;
+  const permAmt = parseFloat(document.getElementById('permAmt').value)||0;
+  const costRate = parseFloat(document.getElementById('costRate').value)/100||0;
+  const riskPct = parseFloat(document.getElementById('riskBps').value)/100||0;
+
+  const constClose = constAmt * costRate;
+  const permClose = permAmt * costRate;
+  const modFee = 500;
+
+  const oneCloseTotal = constClose + modFee;
+  const twoCloseTotal = constClose + permClose;
+  const savings = twoCloseTotal - oneCloseTotal;
+
+  document.getElementById('savingsAmt').innerHTML = fmt(Math.max(savings,0)) + ' <span>saved</span>';
+  document.getElementById('savingsSub').textContent = `One closing: ${fmt(oneCloseTotal)} · Two closings: ${fmt(twoCloseTotal)}`;
+  document.getElementById('bkConst').textContent = fmt(constClose);
+  document.getElementById('bkPerm').textContent = fmt(permClose);
+  document.getElementById('bkMod').textContent = fmt(modFee);
+  document.getElementById('bkSavings').textContent = fmt(Math.max(savings,0));
+
+  updateCostChart(oneCloseTotal, twoCloseTotal);
+
+  // Rate risk estimate on a 30-yr amortizing mortgage
+  const pmr = riskPct/100/12;
+  const months = 360;
+  let extraMonthly = 0;
+  if(permAmt > 0 && riskPct > 0){
+    const baseRate = 0.0682/12;
+    const basePI = permAmt*(baseRate*Math.pow(1+baseRate,months))/(Math.pow(1+baseRate,months)-1);
+    const higherRate = (0.0682+riskPct/100)/12;
+    const higherPI = permAmt*(higherRate*Math.pow(1+higherRate,months))/(Math.pow(1+higherRate,months)-1);
+    extraMonthly = higherPI - basePI;
+  }
+  const extraTotal = extraMonthly * months;
+  document.getElementById('riskMonthly').textContent = fmt(Math.round(extraMonthly));
+  document.getElementById('riskTotal').textContent = fmt(Math.round(extraTotal));
+  document.getElementById('riskBody').innerHTML = `If mortgage rates rise ${riskPct.toFixed(2)}% between your construction closing and your permanent closing, that's roughly <strong>${fmt(Math.round(extraMonthly))}</strong>/mo more — about <strong>${fmt(Math.round(extraTotal))}</strong> in added interest over 30 years. One-close locks your permanent rate upfront, removing this risk entirely.`;
+}
+
+function updateCostChart(oneClose, twoClose){
+  const maxVal = Math.max(oneClose, twoClose, 1);
+  const H = 70, topPad = 10;
+  function barH(v){ return Math.max(4,(v/maxVal)*H); }
+  function barY(v){ return topPad + H - barH(v); }
+  const bOne = document.getElementById('barOne');
+  const bTwo = document.getElementById('barTwo');
+  bOne.setAttribute('y', barY(oneClose)); bOne.setAttribute('height', barH(oneClose));
+  bTwo.setAttribute('y', barY(twoClose)); bTwo.setAttribute('height', barH(twoClose));
+  document.getElementById('labelOne').setAttribute('y', barY(oneClose)-3);
+  document.getElementById('labelOne').textContent = fmt(Math.round(oneClose));
+  document.getElementById('labelTwo').setAttribute('y', barY(twoClose)-3);
+  document.getElementById('labelTwo').textContent = fmt(Math.round(twoClose));
+  document.getElementById('yTop2').textContent = fmtK(maxVal);
+}
+
+function saveCalc(){
+  const constAmt = parseFloat(document.getElementById('constAmt').value)||0;
+  const permAmt = parseFloat(document.getElementById('permAmt').value)||0;
+  const costRate = parseFloat(document.getElementById('costRate').value)/100||0;
+  const oneCloseTotal = constAmt*costRate + 500;
+  const twoCloseTotal = constAmt*costRate + permAmt*costRate;
+  const savings = Math.max(twoCloseTotal - oneCloseTotal, 0);
+
+  const entry = {
+    id: Date.now(),
+    ts: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    label: `Loan ${fmtK(constAmt)} @ ${(costRate*100).toFixed(2)}% closing cost`,
+    savings: Math.round(savings),
+    inputs:{constAmt,permAmt,costRate:document.getElementById('costRate').value,riskBps:document.getElementById('riskBps').value}
+  };
+  savedCalcs.unshift(entry);
+  if(savedCalcs.length > 10) savedCalcs.pop();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCalcs));
+  updateSaveCount();
+  renderSaved();
+  showToast('✅ Comparison saved!');
+  document.getElementById('saveBtn').classList.add('saved');
+  setTimeout(()=>document.getElementById('saveBtn').classList.remove('saved'),2000);
+}
+
+function loadCalc(entry){
+  const i = entry.inputs;
+  document.getElementById('constAmt').value = i.constAmt;
+  document.getElementById('permAmt').value = i.permAmt;
+  document.getElementById('costRate').value = i.costRate;
+  document.getElementById('riskBps').value = i.riskBps;
+  calculate();
+  showToast('📂 Comparison loaded!');
+  document.getElementById('savedPanel').classList.remove('visible');
+}
+
+function deleteCalc(id){
+  savedCalcs = savedCalcs.filter(c=>c.id!==id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCalcs));
+  renderSaved();
+  updateSaveCount();
+}
+
+function clearAllSaved(){
+  savedCalcs=[];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCalcs));
+  renderSaved();
+  updateSaveCount();
+}
+
+function renderSaved(){
+  const el = document.getElementById('savedList');
+  if(savedCalcs.length===0){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No saved comparisons yet.</div>';return;}
+  el.innerHTML = savedCalcs.map(c=>`
+    <div class="saved-item" onclick='loadCalc(${JSON.stringify(c)})'>
+      <div class="si-left">
+        <div class="si-name">${c.label}</div>
+        <div class="si-detail">${c.ts}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <div class="si-right">${fmt(c.savings)}</div>
+        <div class="si-del" onclick="event.stopPropagation();deleteCalc(${c.id})">✕</div>
+      </div>
+    </div>`).join('');
+}
+
+function updateSaveCount(){
+  document.getElementById('saveCount').textContent = savedCalcs.length + ' saved';
+}
+
+function toggleSaved(){
+  const p = document.getElementById('savedPanel');
+  p.classList.toggle('visible');
+  if(p.classList.contains('visible')) renderSaved();
+}
+
+renderSaved();
+updateSaveCount();
+calculate();
+</script>
+</body>
+</html>

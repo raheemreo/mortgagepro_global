@@ -1,0 +1,3298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MortgagePro Global — Navigation Screens</title>
+  <style>
+    /* ═══════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════ */
+    :root {
+      --navy: #0B1D3A;
+      --royal: #1A3A8F;
+      --blue: #1B3F72;
+      --sky: #3B82F6;
+      --gold: #D97706;
+      --gold-lt: #FCD34D;
+      --red: #C0392B;
+      --teal: #0D9488;
+      --green: #15803D;
+      --bg: #F0F4FF;
+      --card: #FFFFFF;
+      --muted: #5B6E8F;
+      --border: rgba(27, 58, 143, 0.09);
+      --sh: 0 3px 16px rgba(11, 29, 58, 0.09);
+      --sh2: 0 8px 36px rgba(11, 29, 58, 0.17);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Palatino Linotype', Palatino, Georgia, serif;
+      background: var(--bg);
+      color: var(--navy);
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════════
+   PAGE SYSTEM
+═══════════════════════════════════════════ */
+    .page {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* ═══════════════════════════════════════════
+   SHARED HEADER PARTS
+═══════════════════════════════════════════ */
+    .hdr-icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════════
+   BOTTOM NAV
+═══════════════════════════════════════════ */
+    .bnav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 10px 0 20px;
+      box-shadow: 0 -4px 24px rgba(11, 29, 58, 0.09);
+      z-index: 1000;
+    }
+
+    .ni {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      transition: transform .15s;
+    }
+
+    .ni:active {
+      transform: scale(.92);
+    }
+
+    .ni-wrap {
+      position: relative;
+    }
+
+    .ni-ic {
+      font-size: 20px;
+      line-height: 1;
+      display: block;
+    }
+
+    .ni-lb {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      letter-spacing: .2px;
+    }
+
+    .ni.active .ni-lb {
+      color: var(--royal);
+    }
+
+    .ni.active .ni-ic {
+      filter: drop-shadow(0 0 6px rgba(26, 58, 143, 0.4));
+    }
+
+    .ni-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      position: absolute;
+      top: -2px;
+      right: -4px;
+    }
+
+    /* ═══════════════════════════════════════════
+   SHARED CONTENT UTILS
+═══════════════════════════════════════════ */
+    .content {
+      padding: 16px 15px 110px;
+    }
+
+    .sec {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 20px 0 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .sec .more {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--royal);
+      text-transform: none;
+      letter-spacing: 0;
+      cursor: pointer;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+    }
+
+    /* ═══════════════════════════════════════════
+   ████  HOME  ████
+═══════════════════════════════════════════ */
+    #home-header {
+      background: linear-gradient(155deg, #0B1D3A 0%, #1B3F72 55%, #B91C1C 100%);
+      padding: 48px 18px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #home-header::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: rgba(252, 211, 77, 0.05);
+    }
+
+    #home-header::after {
+      content: '🦅';
+      position: absolute;
+      right: 14px;
+      top: 55px;
+      font-size: 80px;
+      opacity: .06;
+    }
+
+    .home-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .home-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
+    }
+
+    .brand-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.3px;
+    }
+
+    .brand-name span {
+      color: var(--gold-lt);
+    }
+
+    .brand-tagline {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.50);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .home-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Country pills */
+    .region-pills {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .region-pills::-webkit-scrollbar {
+      display: none;
+    }
+
+    .rp {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 14px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .rp.active {
+      background: var(--gold);
+      color: var(--navy);
+    }
+
+    .rp:not(.active) {
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    /* Rate strip */
+    .rate-strip {
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 14px 14px 0 0;
+      padding: 11px 14px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      position: relative;
+      z-index: 2;
+      margin-top: 0;
+    }
+
+    .rs {
+      text-align: center;
+      position: relative;
+    }
+
+    .rs:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 15%;
+      height: 70%;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.13);
+    }
+
+    .rs-l {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.46);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .rs-v {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.15;
+    }
+
+    .rs-v.gold {
+      color: var(--gold-lt);
+    }
+
+    .rs-v.up::after {
+      content: '↑';
+      font-size: 9px;
+      color: #6EE7B7;
+    }
+
+    .rs-v.dn::after {
+      content: '↓';
+      font-size: 9px;
+      color: #FCA5A5;
+    }
+
+    .rs-n {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.36);
+      margin-top: 1px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Hero calc card */
+    .hero-calc {
+      background: linear-gradient(148deg, #0B1D3A, #1B3F72);
+      border-radius: 20px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--sh2);
+    }
+
+    .hero-calc::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: rgba(192, 57, 43, 0.14);
+    }
+
+    .hc-tag {
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.45);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .hc-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      margin: 4px 0 12px;
+      line-height: 1.2;
+    }
+
+    .hc-title span {
+      color: var(--gold-lt);
+    }
+
+    .hc-row {
+      display: flex;
+      gap: 7px;
+    }
+
+    .hc-box {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      padding: 8px 9px;
+    }
+
+    .hc-box label {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.45);
+      display: block;
+      margin-bottom: 2px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .hc-box .v {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .hc-btn {
+      margin-top: 11px;
+      width: 100%;
+      background: linear-gradient(135deg, #B91C1C, #991B1B);
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(192, 57, 43, 0.38);
+    }
+
+    /* Market ticker */
+    .mticker {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 15px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .mt-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mt-title span {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--teal);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .tick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .tick-item {
+      text-align: center;
+    }
+
+    .tick-nm {
+      font-size: 8.5px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .tick-v {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--navy);
+      margin: 2px 0;
+    }
+
+    .tick-c {
+      font-size: 9px;
+      font-weight: 700;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .up {
+      color: #15803D;
+    }
+
+    .dn {
+      color: #C0392B;
+    }
+
+    /* Tool grid */
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .tc {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 12px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform .15s;
+    }
+
+    .tc:active {
+      transform: scale(.97);
+    }
+
+    .tc.nv {
+      background: linear-gradient(140deg, #0B1D3A, #1B3F72);
+    }
+
+    .tc.rd {
+      background: linear-gradient(140deg, #B91C1C, #991B1B);
+    }
+
+    .tc.gd {
+      background: linear-gradient(140deg, #D97706, #B45309);
+    }
+
+    .tc.tl {
+      background: linear-gradient(140deg, #0D9488, #0F766E);
+    }
+
+    .tc.grn {
+      background: linear-gradient(140deg, #15803D, #166534);
+    }
+
+    .tc.sl {
+      background: linear-gradient(140deg, #334155, #1E293B);
+    }
+
+    .ti {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      margin-bottom: 9px;
+    }
+
+    .tc:not(.nv):not(.rd):not(.gd):not(.tl):not(.grn):not(.sl) .ti {
+      background: var(--bg);
+    }
+
+    .tc.nv .ti,
+    .tc.rd .ti,
+    .tc.gd .ti,
+    .tc.tl .ti,
+    .tc.grn .ti,
+    .tc.sl .ti {
+      background: rgba(255, 255, 255, 0.13);
+    }
+
+    .tn {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+
+    .tc.nv .tn,
+    .tc.rd .tn,
+    .tc.gd .tn,
+    .tc.tl .tn,
+    .tc.grn .tn,
+    .tc.sl .tn {
+      color: #fff;
+    }
+
+    .td {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .tc.nv .td,
+    .tc.rd .td,
+    .tc.gd .td,
+    .tc.tl .td,
+    .tc.grn .td,
+    .tc.sl .td {
+      color: rgba(255, 255, 255, 0.57);
+    }
+
+    .ta {
+      position: absolute;
+      bottom: 11px;
+      right: 11px;
+      font-size: 14px;
+      color: rgba(11, 29, 58, 0.16);
+    }
+
+    .tc.nv .ta,
+    .tc.rd .ta,
+    .tc.gd .ta,
+    .tc.tl .ta,
+    .tc.grn .ta,
+    .tc.sl .ta {
+      color: rgba(255, 255, 255, 0.22);
+    }
+
+    /* For one-off cards using an inline custom gradient
+       background instead of a named .tc variant — forces
+       the same white text/icon treatment as nv/rd/gd/etc. */
+    .tc.tc-custom .ti { background: rgba(255, 255, 255, 0.13); }
+    .tc.tc-custom .tn { color: #fff; }
+    .tc.tc-custom .td { color: rgba(255, 255, 255, 0.57); }
+    .tc.tc-custom .ta { color: rgba(255, 255, 255, 0.22); }
+
+    .bge {
+      display: inline-flex;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-size: 8.5px;
+      font-weight: 700;
+      margin-top: 5px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════
+   ████  TOOLS (ALL COUNTRIES)  ████
+═══════════════════════════════════════════ */
+    #tools-header {
+      background: linear-gradient(155deg, #0B1D3A 0%, #1B3F72 50%, #0D9488 100%);
+      padding: 48px 18px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #tools-header::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: rgba(252, 211, 77, 0.06);
+    }
+
+    #tools-header::after {
+      content: '🔧';
+      position: absolute;
+      right: 16px;
+      top: 56px;
+      font-size: 76px;
+      opacity: .07;
+    }
+
+    .tools-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .tools-title-wrap { text-align: left; }
+
+    .tools-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.3px;
+    }
+
+    .tools-title span { color: var(--gold-lt); }
+
+    .tools-sub {
+      font-size: 10.5px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 1px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .tools-search {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      border-radius: 13px;
+      padding: 11px 14px;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .tools-search-ic { font-size: 14px; opacity: .7; }
+
+    .tools-search-ph {
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.55);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Country jump-strip, reuses .rp visual language */
+    .country-jump {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .country-jump::-webkit-scrollbar { display: none; }
+
+    .cj {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 13px;
+      border-radius: 30px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .cj.active {
+      background: var(--gold);
+      color: var(--navy);
+      border-color: var(--gold);
+    }
+
+    /* Country group header within the tools list */
+    .cgroup {
+      margin: 26px 0 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      scroll-margin-top: 130px;
+    }
+
+    .cgroup:first-of-type { margin-top: 4px; }
+
+    .cgroup-l {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .cgroup-flag {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .cgroup-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+    }
+
+    .cgroup-meta {
+      font-size: 9.5px;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      margin-top: 1px;
+    }
+
+    .cgroup-rate {
+      text-align: right;
+    }
+
+    .cgroup-rate-v {
+      font-size: 15px;
+      font-weight: 800;
+      font-family: Georgia, serif;
+    }
+
+    .cgroup-rate-l {
+      font-size: 8.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Section divider line under each country group header */
+    .cgroup-line {
+      height: 1px;
+      background: var(--border);
+      margin: 10px 0 14px;
+    }
+
+    /* Country-flag accent backgrounds for group icon chips */
+    .cgroup-flag.f-us { background: linear-gradient(140deg, #0B1D3A, #1B3F72); }
+    .cgroup-flag.f-ca { background: linear-gradient(140deg, #C8102E, #8B0A1E); }
+    .cgroup-flag.f-uk { background: linear-gradient(140deg, #1a1a5e, #0D0D2B); }
+    .cgroup-flag.f-au { background: linear-gradient(140deg, #002868, #1A0A00); }
+    .cgroup-flag.f-nz { background: linear-gradient(140deg, #0D9488, #0F766E); }
+    .cgroup-flag.f-eu { background: linear-gradient(140deg, #003399, #1A0040); }
+    .cgroup-flag.f-in { background: linear-gradient(140deg, #FF6B00, #046A38); }
+
+    /* Smaller 4-col grid variant for dense country sections on Tools page */
+    .g2.tools-grid .tc {
+      padding: 13px 10px;
+    }
+
+    .g2.tools-grid .tn {
+      font-size: 11.8px;
+    }
+
+    /* "See all in <Country>" footer link under each group */
+    .cgroup-more {
+      display: block;
+      text-align: center;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--royal);
+      padding: 12px 0 4px;
+      cursor: pointer;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Back-to-top button */
+    .tools-totop {
+      position: fixed;
+      bottom: 96px;
+      right: 18px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: var(--sh2);
+      cursor: pointer;
+      z-index: 500;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .25s, transform .25s;
+      pointer-events: none;
+    }
+
+    .tools-totop.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Highlight pulse for deep-linked card arrival (see nav spec) */
+    .tc.card-focus {
+      animation: cardFocus 2s ease;
+    }
+
+    @keyframes cardFocus {
+      0% { box-shadow: var(--sh), 0 0 0 rgba(217, 119, 6, 0); }
+      50% { box-shadow: var(--sh), 0 0 0 4px rgba(217, 119, 6, .45); }
+      100% { box-shadow: var(--sh), 0 0 0 rgba(217, 119, 6, 0); }
+    }
+
+    .bge-b {
+      background: #EFF6FF;
+      color: #1D4ED8;
+    }
+
+    .bge-r {
+      background: #FEF2F2;
+      color: #B91C1C;
+    }
+
+    .bge-g {
+      background: #F0FDF4;
+      color: #15803D;
+    }
+
+    .bge-o {
+      background: #FFF7ED;
+      color: #C2410C;
+    }
+
+    /* Hscroll cards */
+    .hscroll {
+      display: flex;
+      gap: 9px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+    }
+
+    .hscroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mrc {
+      flex-shrink: 0;
+      width: 110px;
+      background: var(--card);
+      border-radius: 15px;
+      padding: 12px 11px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .mrc-icon {
+      font-size: 22px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .mrc-lbl {
+      font-size: 9px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .mrc-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy);
+      margin: 2px 0;
+    }
+
+    .mrc-sub {
+      font-size: 9px;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .mrc-chg {
+      font-size: 9px;
+      font-weight: 700;
+      margin-top: 4px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Info list */
+    .ilist {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .ic {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 13px 14px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .ii {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .in {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .is {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .ich {
+      font-size: 16px;
+      color: rgba(11, 29, 58, 0.18);
+      margin-left: auto;
+    }
+
+    /* AI Advisor Banner */
+    .ai-banner {
+      background: linear-gradient(135deg, #0B1D3A, #1B3F72);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--sh2);
+    }
+
+    .ai-icon {
+      font-size: 34px;
+    }
+
+    .ai-body .ai-lbl {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: rgba(255, 255, 255, 0.44);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .ai-body .ai-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin: 3px 0 5px;
+    }
+
+    .ai-body .ai-sub {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.55);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .ai-btn {
+      margin-left: auto;
+      background: var(--gold);
+      color: var(--navy);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 9px 13px;
+      border-radius: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════
+   ████  SAVED  ████
+═══════════════════════════════════════════ */
+    #saved-header {
+      background: linear-gradient(155deg, #1A0A00 0%, #7C2D12 60%, #D97706 100%);
+      padding: 48px 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #saved-header::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: rgba(252, 211, 77, 0.07);
+    }
+
+    .saved-hdr-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .saved-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .saved-sub {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.52);
+      margin-top: 2px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .saved-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .ss-box {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 13px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .ss-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .ss-lbl {
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.55);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      margin-top: 2px;
+    }
+
+    /* Saved calc cards */
+    .saved-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      margin-bottom: 11px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .saved-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 18px 0 0 18px;
+    }
+
+    .saved-card.usa::before {
+      background: linear-gradient(#B91C1C, #1B3F72);
+    }
+
+    .saved-card.ca::before {
+      background: linear-gradient(#C8102E, #1A5C35);
+    }
+
+    .saved-card.uk::before {
+      background: linear-gradient(#C8102E, #0D0D2B);
+    }
+
+    .saved-card.au::before {
+      background: linear-gradient(#002868, #7C2D12);
+    }
+
+    .saved-card.nz::before {
+      background: linear-gradient(#C0392B, #0D3B2E);
+    }
+
+    .saved-card.eu::before {
+      background: linear-gradient(#FFCC00, #003399);
+    }
+
+    .sc-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .sc-flag {
+      font-size: 24px;
+    }
+
+    .sc-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .sc-date {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 1px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .sc-badge {
+      margin-left: auto;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .sc-badge.m {
+      background: #EFF6FF;
+      color: #1D4ED8;
+    }
+
+    .sc-badge.i {
+      background: #F0FDF4;
+      color: #15803D;
+    }
+
+    .sc-nums {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .sc-n-box {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 9px 8px;
+      text-align: center;
+    }
+
+    .sc-n-lbl {
+      font-size: 8.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .sc-n-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-top: 2px;
+    }
+
+    .sc-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 11px;
+    }
+
+    .sc-btn {
+      flex: 1;
+      padding: 9px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .sc-btn.primary {
+      background: var(--royal);
+      color: #fff;
+    }
+
+    .sc-btn.secondary {
+      background: var(--bg);
+      color: var(--navy);
+      border: 1px solid var(--border);
+    }
+
+    .sc-btn.danger {
+      background: #FEF2F2;
+      color: #B91C1C;
+    }
+
+    /* ═══════════════════════════════════════════
+   ████  GLOBAL  ████
+═══════════════════════════════════════════ */
+    #global-header {
+      background: linear-gradient(155deg, #003399 0%, #1A0040 55%, #FFCC00 100%);
+      padding: 48px 18px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #global-header::before {
+      content: '🌍';
+      position: absolute;
+      right: 10px;
+      top: 44px;
+      font-size: 90px;
+      opacity: .07;
+    }
+
+    .global-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .global-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .global-sub {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.50);
+      margin-top: 1px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .global-rate-grid {
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 14px 14px 0 0;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .gr-item {
+      text-align: center;
+    }
+
+    .gr-flag {
+      font-size: 18px;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .gr-lbl {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.45);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .gr-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .gr-val.gold {
+      color: var(--gold-lt);
+    }
+
+    .gr-val.up::after {
+      content: '↑';
+      font-size: 9px;
+      color: #6EE7B7;
+    }
+
+    .gr-val.dn::after {
+      content: '↓';
+      font-size: 9px;
+      color: #FCA5A5;
+    }
+
+    .gr-n {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.36);
+      margin-top: 1px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Country cards */
+    .country-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--sh2);
+      border: 1px solid var(--border);
+      margin-bottom: 11px;
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .cc-left {
+      flex-shrink: 0;
+    }
+
+    .cc-flag {
+      font-size: 36px;
+      display: block;
+    }
+
+    .cc-body {
+      flex: 1;
+    }
+
+    .cc-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .cc-sub {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 1px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .cc-rates {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .cc-rate-pill {
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 9.5px;
+      font-weight: 700;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .pill-b {
+      background: #EFF6FF;
+      color: #1D4ED8;
+    }
+
+    .pill-g {
+      background: #F0FDF4;
+      color: #15803D;
+    }
+
+    .pill-r {
+      background: #FEF2F2;
+      color: #B91C1C;
+    }
+
+    .pill-o {
+      background: #FFF7ED;
+      color: #C2410C;
+    }
+
+    .pill-p {
+      background: #F5F3FF;
+      color: #6D28D9;
+    }
+
+    .pill-t {
+      background: #F0FDFA;
+      color: #0F766E;
+    }
+
+    .cc-arrow {
+      font-size: 20px;
+      color: rgba(11, 29, 58, 0.18);
+      margin-left: auto;
+    }
+
+    .cc-tools-count {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 3px 8px;
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Comparison table */
+    .comp-table {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 15px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      margin-bottom: 11px;
+      overflow-x: auto;
+    }
+
+    .comp-table table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 340px;
+    }
+
+    .comp-table th {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 6px 8px;
+      text-align: left;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comp-table td {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--navy);
+      padding: 8px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comp-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comp-table .flag-cell {
+      font-size: 16px;
+    }
+
+    .rate-badge {
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════
+   ████  SETTINGS  ████
+═══════════════════════════════════════════ */
+    #settings-header {
+      background: linear-gradient(155deg, #0B1D3A 0%, #1A3A8F 70%, #0D9488 100%);
+      padding: 48px 18px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #settings-header::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: rgba(13, 148, 136, 0.12);
+    }
+
+    .set-hdr-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .set-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .set-sub {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.50);
+      margin-top: 2px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Profile card */
+    .profile-card {
+      background: rgba(255, 255, 255, 0.13);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .profile-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), #B45309);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+      border: 2px solid rgba(255, 255, 255, 0.30);
+    }
+
+    .profile-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .profile-email {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 2px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .profile-plan {
+      margin-left: auto;
+      background: var(--gold);
+      color: var(--navy);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Settings groups */
+    .set-group {
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .set-item {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .set-item:last-child {
+      border-bottom: none;
+    }
+
+    .set-item:active {
+      background: var(--bg);
+    }
+
+    .set-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .si-blue {
+      background: #EFF6FF;
+    }
+
+    .si-green {
+      background: #F0FDF4;
+    }
+
+    .si-gold {
+      background: #FFF7ED;
+    }
+
+    .si-red {
+      background: #FEF2F2;
+    }
+
+    .si-teal {
+      background: #F0FDFA;
+    }
+
+    .si-purple {
+      background: #F5F3FF;
+    }
+
+    .si-gray {
+      background: var(--bg);
+    }
+
+    .set-body {
+      flex: 1;
+    }
+
+    .set-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .set-desc {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .set-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .set-arrow {
+      font-size: 16px;
+      color: rgba(11, 29, 58, 0.20);
+    }
+
+    .set-value {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--teal);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Toggle switch */
+    .toggle {
+      width: 44px;
+      height: 24px;
+      border-radius: 12px;
+      background: #E2E8F0;
+      position: relative;
+      cursor: pointer;
+      transition: background .2s;
+      flex-shrink: 0;
+    }
+
+    .toggle.on {
+      background: var(--teal);
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      background: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform .2s;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle.on::after {
+      transform: translateX(20px);
+    }
+
+    /* Subscription card */
+    .sub-card {
+      background: linear-gradient(145deg, #0B1D3A, #1B3F72);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: var(--sh2);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .sub-card::before {
+      content: '⭐';
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      font-size: 60px;
+      opacity: .06;
+    }
+
+    .sub-lbl {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: rgba(255, 255, 255, 0.44);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .sub-plan {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--gold-lt);
+      margin: 4px 0 6px;
+    }
+
+    .sub-desc {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.60);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .sub-perks {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+
+    .sub-perk {
+      font-size: 11px;
+      color: #fff;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .sub-perk::before {
+      content: '✓ ';
+      color: var(--gold-lt);
+      font-weight: 800;
+    }
+
+    .sub-btn {
+      width: 100%;
+      background: var(--gold);
+      border: none;
+      border-radius: 12px;
+      padding: 13px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--navy);
+      cursor: pointer;
+    }
+
+    /* App info */
+    .app-info {
+      text-align: center;
+      padding: 14px 0 6px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .app-info .ver {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .app-info .name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 3px;
+    }
+
+    /* ═══════ ANIMATIONS ═══════ */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .fade-up {
+      animation: fadeUp .35s ease both;
+    }
+
+    .d1 {
+      animation-delay: .04s;
+    }
+
+    .d2 {
+      animation-delay: .09s;
+    }
+
+    .d3 {
+      animation-delay: .14s;
+    }
+
+    .d4 {
+      animation-delay: .19s;
+    }
+
+    .d5 {
+      animation-delay: .24s;
+    }
+
+    .d6 {
+      animation-delay: .29s;
+    }
+
+    .d7 {
+      animation-delay: .34s;
+    }
+
+    .d8 {
+      animation-delay: .39s;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ════════════════════════════════════════
+     🏠  HOME
+════════════════════════════════════════ -->
+  <div class="page active" id="pg-home">
+
+    <div id="home-header">
+      <div class="home-top">
+        <div class="home-brand">
+          <div class="brand-icon">🏠</div>
+          <div>
+            <div class="brand-name">Mortgage<span>Pro</span></div>
+            <div class="brand-tagline">Global Calculator Suite</div>
+          </div>
+        </div>
+        <div class="home-actions">
+          <div class="hdr-icon-btn">🔍</div>
+          <div class="hdr-icon-btn">🔔</div>
+        </div>
+      </div>
+      <div class="region-pills">
+        <div class="rp active">🌍 Global</div>
+        <div class="rp">🇺🇸 USA</div>
+        <div class="rp">🇨🇦 Canada</div>
+        <div class="rp">🇬🇧 UK</div>
+        <div class="rp">🇦🇺 Australia</div>
+        <div class="rp">🇳🇿 NZ</div>
+        <div class="rp">🇪🇺 Europe</div>
+        <div class="rp">🇮🇳 India</div>
+      </div>
+      <div class="rate-strip">
+        <div class="rs">
+          <div class="rs-l">30-Yr Fixed</div>
+          <div class="rs-v up">6.82%</div>
+          <div class="rs-n">🇺🇸 USA</div>
+        </div>
+        <div class="rs">
+          <div class="rs-l">5-Yr Fixed</div>
+          <div class="rs-v dn">4.99%</div>
+          <div class="rs-n">🇨🇦 Canada</div>
+        </div>
+        <div class="rs">
+          <div class="rs-l">2-Yr Fixed</div>
+          <div class="rs-v up">4.75%</div>
+          <div class="rs-n">🇬🇧 UK</div>
+        </div>
+        <div class="rs">
+          <div class="rs-l">OCR Rate</div>
+          <div class="rs-v gold">5.50%</div>
+          <div class="rs-n">🇳🇿 RBNZ</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- AI Advisor Banner -->
+      <div class="ai-banner fade-up d1">
+        <div class="ai-icon">🤖</div>
+        <div class="ai-body">
+          <div class="ai-lbl">Powered by AI</div>
+          <div class="ai-title">Global Mortgage<br>AI Advisor</div>
+          <div class="ai-sub">Ask anything · 6 countries · instant answers</div>
+        </div>
+        <div class="ai-btn">Ask Now</div>
+      </div>
+
+      <!-- Quick Calculator -->
+      <div class="sec fade-up d1">Quick Estimate <span class="more">Advanced →</span></div>
+      <div class="hero-calc fade-up d2">
+        <div class="hc-tag">Instant Mortgage Calculator</div>
+        <div class="hc-title">How much is your <span>monthly payment?</span></div>
+        <div class="hc-row">
+          <div class="hc-box"><label>Home Price</label>
+            <div class="v">$450,000</div>
+          </div>
+          <div class="hc-box"><label>Down Pmt.</label>
+            <div class="v">20%</div>
+          </div>
+          <div class="hc-box"><label>Term</label>
+            <div class="v">30 yr</div>
+          </div>
+        </div>
+        <button class="hc-btn">⚡ Calculate Mortgage Payment</button>
+      </div>
+
+      <!-- Live Market -->
+      <div class="sec fade-up d2">Live Markets <span class="more">Dashboard →</span></div>
+      <div class="mticker fade-up d3">
+        <div class="mt-title">US Financial Indices <span>● Live</span></div>
+        <div class="tick-grid">
+          <div class="tick-item">
+            <div class="tick-nm">S&P 500</div>
+            <div class="tick-v">5,304</div>
+            <div class="tick-c up">+0.74%</div>
+          </div>
+          <div class="tick-item">
+            <div class="tick-nm">Dow Jones</div>
+            <div class="tick-v">38,886</div>
+            <div class="tick-c up">+0.51%</div>
+          </div>
+          <div class="tick-item">
+            <div class="tick-nm">NASDAQ</div>
+            <div class="tick-v">16,742</div>
+            <div class="tick-c dn">-0.21%</div>
+          </div>
+          <div class="tick-item">
+            <div class="tick-nm">Fed Rate</div>
+            <div class="tick-v">5.33%</div>
+            <div class="tick-c" style="color:var(--muted)">FOMC</div>
+          </div>
+          <div class="tick-item">
+            <div class="tick-nm">10-Yr Bond</div>
+            <div class="tick-v">4.47%</div>
+            <div class="tick-c dn">-0.03</div>
+          </div>
+          <div class="tick-item">
+            <div class="tick-nm">Gold</div>
+            <div class="tick-v">$2,352</div>
+            <div class="tick-c up">+0.32%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Tools -->
+      <div class="sec fade-up d3">Top Tools <span class="more">All 100+ →</span></div>
+      <div class="g2 fade-up d4">
+        <div class="tc nv">
+          <div class="ti">📊</div>
+          <div class="tn">PITI Calculator</div>
+          <div class="td">Full payment breakdown</div>
+          <div class="bge bge-b">United States</div>
+          <div class="ta">›</div>
+        </div>
+        <div class="tc">
+          <div class="ti">🛡️</div>
+          <div class="tn">CMHC Insurance</div>
+          <div class="td">Premium calculator</div>
+          <div class="bge bge-b">Canada</div>
+          <div class="ta">›</div>
+        </div>
+        <div class="tc">
+          <div class="ti">🏢</div>
+          <div class="tn">Stamp Duty (SDLT)</div>
+          <div class="td">Tax on purchase</div>
+          <div class="bge bge-b">United Kingdom</div>
+          <div class="ta">›</div>
+        </div>
+        <div class="tc tl">
+          <div class="ti">🥝</div>
+          <div class="tn">KiwiSaver Calc</div>
+          <div class="td">First-home withdrawal</div>
+          <div class="bge bge-b">New Zealand</div>
+          <div class="ta">›</div>
+        </div>
+        <div class="tc gd">
+          <div class="ti">🏠</div>
+          <div class="tn">Property Tax Calc</div>
+          <div class="td">Country-specific taxes</div>
+          <div class="bge bge-b">Europe</div>
+          <div class="ta">›</div>
+        </div>
+        <div class="tc rd">
+          <div class="ti">🏦</div>
+          <div class="tn">Offset Account</div>
+          <div class="td">Interest savings calc</div>
+          <div class="bge bge-b">Australia</div>
+          <div class="ta">›</div>
+        </div>
+      </div>
+
+      <!-- Rate Tracker scroll -->
+      <div class="sec fade-up d4">Global Rates Today <span class="more">Compare →</span></div>
+      <div class="hscroll fade-up d5">
+        <div class="mrc"><span class="mrc-icon">🇺🇸</span>
+          <div class="mrc-lbl">USA 30yr</div>
+          <div class="mrc-val">6.82%</div>
+          <div class="mrc-sub">Freddie Mac</div>
+          <div class="mrc-chg up">↑ +0.05</div>
+        </div>
+        <div class="mrc"><span class="mrc-icon">🇨🇦</span>
+          <div class="mrc-lbl">CA 5yr</div>
+          <div class="mrc-val">4.99%</div>
+          <div class="mrc-sub">BoC</div>
+          <div class="mrc-chg dn">↓ -0.10</div>
+        </div>
+        <div class="mrc"><span class="mrc-icon">🇬🇧</span>
+          <div class="mrc-lbl">UK 2yr</div>
+          <div class="mrc-val">4.75%</div>
+          <div class="mrc-sub">BoE</div>
+          <div class="mrc-chg up">↑ +0.05</div>
+        </div>
+        <div class="mrc"><span class="mrc-icon">🇦🇺</span>
+          <div class="mrc-lbl">AU Var</div>
+          <div class="mrc-val">6.09%</div>
+          <div class="mrc-sub">RBA</div>
+          <div class="mrc-chg dn">↓ -0.25</div>
+        </div>
+        <div class="mrc"><span class="mrc-icon">🇳🇿</span>
+          <div class="mrc-lbl">NZ 1yr</div>
+          <div class="mrc-val">6.59%</div>
+          <div class="mrc-sub">RBNZ</div>
+          <div class="mrc-chg dn">↓ -0.10</div>
+        </div>
+        <div class="mrc"><span class="mrc-icon">🇪🇺</span>
+          <div class="mrc-lbl">EU DE</div>
+          <div class="mrc-val">3.85%</div>
+          <div class="mrc-sub">ECB</div>
+          <div class="mrc-chg up">↑ +0.02</div>
+        </div>
+      </div>
+
+      <!-- Quick Access -->
+      <div class="sec fade-up d5">Quick Access <span class="more">All →</span></div>
+      <div class="ilist fade-up d6">
+        <div class="ic">
+          <div class="ii">🏛️</div>
+          <div>
+            <div class="in">Top Mortgage Lenders</div>
+            <div class="is">USA · Canada · UK · Australia · NZ</div>
+          </div>
+          <div class="ich">›</div>
+        </div>
+        <div class="ic">
+          <div class="ii">🏡</div>
+          <div>
+            <div class="in">Home Prices by Region</div>
+            <div class="is">Property values across 6 countries</div>
+          </div>
+          <div class="ich">›</div>
+        </div>
+        <div class="ic">
+          <div class="ii">📉</div>
+          <div>
+            <div class="in">Central Bank Rate Tracker</div>
+            <div class="is">Fed · BoC · BoE · RBA · RBNZ · ECB</div>
+          </div>
+          <div class="ich">›</div>
+        </div>
+        <div class="ic">
+          <div class="ii">💱</div>
+          <div>
+            <div class="in">Currency Converter</div>
+            <div class="is">USD · CAD · GBP · AUD · NZD · EUR · INR</div>
+          </div>
+          <div class="ich">›</div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- end home -->
+
+
+  <!-- ════════════════════════════════════════
+     🔧  TOOLS — ALL COUNTRIES
+════════════════════════════════════════ -->
+  <div class="page" id="pg-tools">
+
+    <div id="tools-header">
+      <div class="tools-top">
+        <div class="tools-title-wrap">
+          <div class="tools-title">All <span>Tools</span></div>
+          <div class="tools-sub">96 calculators · 7 countries · updated daily</div>
+        </div>
+        <div class="hdr-icon-btn">🔔</div>
+      </div>
+      <div class="tools-search">
+        <div class="tools-search-ic">🔍</div>
+        <div class="tools-search-ph">Search EMI, stamp duty, refinance…</div>
+      </div>
+      <div class="country-jump" id="countryJump">
+        <div class="cj active" data-jump="grp-usa">🇺🇸 USA</div>
+        <div class="cj" data-jump="grp-canada">🇨🇦 Canada</div>
+        <div class="cj" data-jump="grp-uk">🇬🇧 UK</div>
+        <div class="cj" data-jump="grp-australia">🇦🇺 Australia</div>
+        <div class="cj" data-jump="grp-nz">🇳🇿 New Zealand</div>
+        <div class="cj" data-jump="grp-europe">🇪🇺 Europe</div>
+        <div class="cj" data-jump="grp-india">🇮🇳 India</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════ USA ══════════ -->
+      <div class="cgroup" id="grp-usa">
+        <div class="cgroup-l">
+          <div class="cgroup-flag f-us">🇺🇸</div>
+          <div>
+            <div class="cgroup-name">United States</div>
+            <div class="cgroup-meta">USD · Freddie Mac PMMS</div>
+          </div>
+        </div>
+        <div class="cgroup-rate">
+          <div class="cgroup-rate-v" style="color:var(--royal)">6.47%</div>
+          <div class="cgroup-rate-l">30-Yr Fixed</div>
+        </div>
+      </div>
+      <div class="cgroup-line"></div>
+      <div class="g2 tools-grid">
+        <div class="tc nv" id="usa_core_mortgage_calc"><div class="ti">🧮</div><div class="tn">Mortgage Calc</div><div class="td">Monthly payment estimate</div><div class="ta">›</div></div>
+        <div class="tc" id="usa_core_piti_calculator"><div class="ti">📊</div><div class="tn">PITI Calculator</div><div class="td">Full payment breakdown</div><div class="bge bge-b">Popular</div><div class="ta">›</div></div>
+        <div class="tc" id="usa_core_dti_calculator"><div class="ti">📈</div><div class="tn">DTI Calculator</div><div class="td">28/36 rule check</div><div class="ta">›</div></div>
+        <div class="tc rd" id="usa_core_amortization"><div class="ti">📅</div><div class="tn">Amortization</div><div class="td">Full payment schedule</div><div class="ta">›</div></div>
+        <div class="tc" id="usa_core_affordability"><div class="ti">💰</div><div class="tn">Affordability</div><div class="td">How much house?</div><div class="ta">›</div></div>
+        <div class="tc gd" id="usa_core_down_payment"><div class="ti">🔑</div><div class="tn">Down Payment</div><div class="td">3% · 5% · 10% · 20%</div><div class="ta">›</div></div>
+        <div class="tc" id="usa_loan_fha"><div class="ti">🏦</div><div class="tn">FHA Loan Calc</div><div class="td">3.5% down · MIP incl.</div><div class="bge bge-g">580+ Score</div><div class="ta">›</div></div>
+        <div class="tc nv" id="usa_loan_va"><div class="ti">🎖️</div><div class="tn">VA Loan Calc</div><div class="td">0% down · Veterans</div><div class="ta">›</div></div>
+        <div class="tc" id="usa_insctax_pmi"><div class="ti">🛡️</div><div class="tn">PMI Calculator</div><div class="td">Private mortgage insurance</div><div class="ta">›</div></div>
+        <div class="tc sl" id="usa_insctax_property_tax"><div class="ti">🏛️</div><div class="tn">Property Tax</div><div class="td">By state & county</div><div class="ta">›</div></div>
+      </div>
+      <a class="cgroup-more" data-open="usa">See all 19 USA tools →</a>
+
+      <!-- ══════════ CANADA ══════════ -->
+      <div class="cgroup" id="grp-canada">
+        <div class="cgroup-l">
+          <div class="cgroup-flag f-ca">🇨🇦</div>
+          <div>
+            <div class="cgroup-name">Canada</div>
+            <div class="cgroup-meta">CAD · Bank of Canada</div>
+          </div>
+        </div>
+        <div class="cgroup-rate">
+          <div class="cgroup-rate-v" style="color:#15803D">3.99%</div>
+          <div class="cgroup-rate-l">5-Yr Fixed</div>
+        </div>
+      </div>
+      <div class="cgroup-line"></div>
+      <div class="g2 tools-grid">
+        <div class="tc tc-custom" id="canada_mortgage_calc" style="background:linear-gradient(140deg,#0A2E1A,#1A5C35)"><div class="ti">🏠</div><div class="tn">Mortgage Calc</div><div class="td">Monthly payment + CMHC</div><div class="ta">›</div></div>
+        <div class="tc" id="canada_cmhc"><div class="ti">🛡️</div><div class="tn">CMHC Insurance</div><div class="td">Premium calculator</div><div class="bge bge-r">&lt;20% down</div><div class="ta">›</div></div>
+        <div class="tc" id="canada_gds_tds"><div class="ti">📊</div><div class="tn">GDS / TDS Ratio</div><div class="td">Gross debt service</div><div class="ta">›</div></div>
+        <div class="tc rd" id="canada_stress_test"><div class="ti">🧪</div><div class="tn">Stress Test Calc</div><div class="td">Can you qualify?</div><div class="ta">›</div></div>
+        <div class="tc" id="canada_affordability"><div class="ti">💰</div><div class="tn">Affordability</div><div class="td">Max home price, CAD</div><div class="ta">›</div></div>
+        <div class="tc gd" id="canada_amortization"><div class="ti">📅</div><div class="tn">Amortization</div><div class="td">Bi-weekly schedule</div><div class="ta">›</div></div>
+        <div class="tc" id="canada_renewal_planner"><div class="ti">🔄</div><div class="tn">Renewal Planner</div><div class="td">Term renewal analysis</div><div class="ta">›</div></div>
+        <div class="tc" id="canada_prepayment_calc"><div class="ti">📈</div><div class="tn">Prepayment Calc</div><div class="td">Lump sum savings</div><div class="ta">›</div></div>
+      </div>
+      <a class="cgroup-more" data-open="canada">See all 8 Canada tools →</a>
+
+      <!-- ══════════ UK ══════════ -->
+      <div class="cgroup" id="grp-uk">
+        <div class="cgroup-l">
+          <div class="cgroup-flag f-uk">🇬🇧</div>
+          <div>
+            <div class="cgroup-name">United Kingdom</div>
+            <div class="cgroup-meta">GBP · Bank of England</div>
+          </div>
+        </div>
+        <div class="cgroup-rate">
+          <div class="cgroup-rate-v" style="color:#B45309">4.48%</div>
+          <div class="cgroup-rate-l">5-Yr Fixed</div>
+        </div>
+      </div>
+      <div class="cgroup-line"></div>
+      <div class="g2 tools-grid">
+        <div class="tc nv" id="uk_mortgage_calc"><div class="ti">🏠</div><div class="tn">Mortgage Calc</div><div class="td">Monthly repayment</div><div class="ta">›</div></div>
+        <div class="tc" id="uk_stamp_duty_sdlt"><div class="ti">🏛️</div><div class="tn">Stamp Duty (SDLT)</div><div class="td">Tax on purchase</div><div class="bge bge-r">FTB Relief</div><div class="ta">›</div></div>
+        <div class="tc tc-custom" style="background:linear-gradient(140deg,#4F46E5,#3730A3)" id="uk_ltv_calc"><div class="ti">📊</div><div class="tn">LTV Calculator</div><div class="td">Loan-to-value ratio</div><div class="ta">›</div></div>
+        <div class="tc" id="uk_remortgage_tool"><div class="ti">🔁</div><div class="tn">Remortgage Tool</div><div class="td">Switch & save calc</div><div class="ta">›</div></div>
+        <div class="tc" id="uk_affordability"><div class="ti">💷</div><div class="tn">Affordability</div><div class="td">Max borrowing GBP</div><div class="ta">›</div></div>
+        <div class="tc rd" id="uk_help_to_buy"><div class="ti">🏘️</div><div class="tn">Help to Buy</div><div class="td">Equity loan scheme</div><div class="ta">›</div></div>
+        <div class="tc" id="uk_amortization"><div class="ti">📅</div><div class="tn">Amortization</div><div class="td">Repayment schedule</div><div class="ta">›</div></div>
+        <div class="tc gd" id="uk_buy_to_let"><div class="ti">🏢</div><div class="tn">Buy-to-Let Calc</div><div class="td">Rental yield & BTL</div><div class="ta">›</div></div>
+      </div>
+      <a class="cgroup-more" data-open="uk">See all 10 UK tools →</a>
+
+      <!-- ══════════ AUSTRALIA ══════════ -->
+      <div class="cgroup" id="grp-australia">
+        <div class="cgroup-l">
+          <div class="cgroup-flag f-au">🇦🇺</div>
+          <div>
+            <div class="cgroup-name">Australia</div>
+            <div class="cgroup-meta">AUD · Reserve Bank of Australia</div>
+          </div>
+        </div>
+        <div class="cgroup-rate">
+          <div class="cgroup-rate-v" style="color:var(--gold)">4.35%</div>
+          <div class="cgroup-rate-l">RBA Cash Rate</div>
+        </div>
+      </div>
+      <div class="cgroup-line"></div>
+      <div class="g2 tools-grid">
+        <div class="tc nv" id="australia_mortgage_calc"><div class="ti">🏠</div><div class="tn">Mortgage Calc</div><div class="td">Variable & fixed rates</div><div class="bge bge-b">LMI Incl.</div><div class="ta">›</div></div>
+        <div class="tc" id="australia_lmi"><div class="ti">🛡️</div><div class="tn">LMI Calculator</div><div class="td">Insurance premium</div><div class="ta">›</div></div>
+        <div class="tc tl" id="australia_offset"><div class="ti">🏦</div><div class="tn">Offset Account</div><div class="td">Interest savings calc</div><div class="ta">›</div></div>
+        <div class="tc" id="australia_dti"><div class="ti">📊</div><div class="tn">DTI Ratio</div><div class="td">Debt-to-income AUS</div><div class="ta">›</div></div>
+        <div class="tc" id="australia_affordability"><div class="ti">💰</div><div class="tn">Affordability</div><div class="td">Borrowing capacity AUD</div><div class="ta">›</div></div>
+        <div class="tc tc-custom" style="background:linear-gradient(140deg,#002868,#1e3a8a)" id="australia_amortization"><div class="ti">📅</div><div class="tn">Amortization</div><div class="td">Fortnightly schedule</div><div class="ta">›</div></div>
+        <div class="tc gd" id="australia_stamp_duty"><div class="ti">🏘️</div><div class="tn">Stamp Duty (AUS)</div><div class="td">State-by-state calc</div><div class="ta">›</div></div>
+        <div class="tc" id="australia_refinance_tool"><div class="ti">🔄</div><div class="tn">Refinance Tool</div><div class="td">Switch lender savings</div><div class="ta">›</div></div>
+      </div>
+      <a class="cgroup-more" data-open="australia">See all 10 Australia tools →</a>
+
+      <!-- ══════════ NEW ZEALAND ══════════ -->
+      <div class="cgroup" id="grp-nz">
+        <div class="cgroup-l">
+          <div class="cgroup-flag f-nz">🇳🇿</div>
+          <div>
+            <div class="cgroup-name">New Zealand</div>
+            <div class="cgroup-meta">NZD · Reserve Bank of NZ</div>
+          </div>
+        </div>
+        <div class="cgroup-rate">
+          <div class="cgroup-rate-v" style="color:#0D9488">2.25%</div>
+          <div class="cgroup-rate-l">OCR</div>
+        </div>
+      </div>
+      <div class="cgroup-line"></div>
+      <div class="g2 tools-grid">
+        <div class="tc tc-custom" style="background:linear-gradient(140deg,#0D9488,#0F766E)" id="nz_core_mortgage_calc"><div class="ti">🏠</div><div class="tn">Mortgage Calc</div><div class="td">NZD monthly payment</div><div class="bge bge-g">Fixed & Float</div><div class="ta">›</div></div>
+        <div class="tc" id="nz_core_repayment_calc"><div class="ti">📊</div><div class="tn">Repayment Calc</div><div class="td">P&I vs interest only</div><div class="ta">›</div></div>
+        <div class="tc" id="nz_core_dti_calculator"><div class="ti">📈</div><div class="tn">DTI Calculator</div><div class="td">Debt-to-income NZ</div><div class="bge bge-r">6x Cap</div><div class="ta">›</div></div>
+        <div class="tc rd" id="nz_core_car_loan_calc"><div class="ti">🏎️</div><div class="tn">Car Loan Calc</div><div class="td">Vehicle financing NZD</div><div class="ta">›</div></div>
+        <div class="tc" id="nz_lvr_calculator"><div class="ti">🛡️</div><div class="tn">LVR Calculator</div><div class="td">Loan-to-value ratio</div><div class="bge bge-r">20% / 35%</div><div class="ta">›</div></div>
+        <div class="tc tc-custom" style="background:linear-gradient(140deg,#0B1D3A,#1B3F72)" id="nz_kiwisaver_calc"><div class="ti">🥝</div><div class="tn">KiwiSaver Calc</div><div class="td">First-home withdrawal</div><div class="bge bge-t">3yr min</div><div class="ta">›</div></div>
+        <div class="tc tl" id="nz_fhb_first_home_buyer"><div class="ti">🏡</div><div class="tn">First Home Buyer</div><div class="td">Full eligibility check</div><div class="ta">›</div></div>
+        <div class="tc" id="nz_tax_rental_yield_calc"><div class="ti">🏘️</div><div class="tn">Rental Yield Calc</div><div class="td">Gross & net yield NZD</div><div class="ta">›</div></div>
+      </div>
+      <a class="cgroup-more" data-open="nz">See all 20 New Zealand tools →</a>
+
+      <!-- ══════════ EUROPE ══════════ -->
+      <div class="cgroup" id="grp-europe">
+        <div class="cgroup-l">
+          <div class="cgroup-flag f-eu">🇪🇺</div>
+          <div>
+            <div class="cgroup-name">Europe</div>
+            <div class="cgroup-meta">EUR · 6 countries · ECB</div>
+          </div>
+        </div>
+        <div class="cgroup-rate">
+          <div class="cgroup-rate-v" style="color:#6D28D9">2.40%</div>
+          <div class="cgroup-rate-l">ECB Refi Rate</div>
+        </div>
+      </div>
+      <div class="cgroup-line"></div>
+      <div class="g2 tools-grid">
+        <div class="tc tc-custom" style="background:linear-gradient(140deg,#003399,#1A0040)" id="europe_mortgage_calc"><div class="ti">🏠</div><div class="tn">Mortgage Calc</div><div class="td">EUR monthly payment</div><div class="bge bge-b">6 countries</div><div class="ta">›</div></div>
+        <div class="tc" id="europe_dti"><div class="ti">📊</div><div class="tn">DTI Ratio EUR</div><div class="td">Debt-to-income Europe</div><div class="ta">›</div></div>
+        <div class="tc tc-custom" style="background:linear-gradient(140deg,#6D28D9,#4C1D95)" id="europe_property_tax_calc"><div class="ti">🏛️</div><div class="tn">Property Tax Calc</div><div class="td">Country-specific taxes</div><div class="ta">›</div></div>
+        <div class="tc" id="europe_affordability"><div class="ti">💶</div><div class="tn">Affordability EUR</div><div class="td">Borrowing capacity</div><div class="ta">›</div></div>
+        <div class="tc tc-custom" style="background:linear-gradient(140deg,#B45309,#78350F)" id="europe_euribor_tracker"><div class="ti">🔄</div><div class="tn">Euribor Tracker</div><div class="td">Variable rate index</div><div class="ta">›</div></div>
+        <div class="tc tl" id="europe_country_comparison"><div class="ti">🌍</div><div class="tn">Country Comparison</div><div class="td">Compare EU rates</div><div class="ta">›</div></div>
+        <div class="tc" id="europe_notary_fee_calc"><div class="ti">📜</div><div class="tn">Notary Fee Calc</div><div class="td">DE/FR/ES closing costs</div><div class="ta">›</div></div>
+        <div class="tc" id="europe_currency_converter"><div class="ti">💱</div><div class="tn">Currency Converter</div><div class="td">EUR · GBP · USD · CHF</div><div class="ta">›</div></div>
+      </div>
+      <a class="cgroup-more" data-open="europe">See all 10 Europe tools →</a>
+
+      <!-- ══════════ INDIA ══════════ -->
+      <div class="cgroup" id="grp-india">
+        <div class="cgroup-l">
+          <div class="cgroup-flag f-in">🇮🇳</div>
+          <div>
+            <div class="cgroup-name">India</div>
+            <div class="cgroup-meta">INR · Reserve Bank of India</div>
+          </div>
+        </div>
+        <div class="cgroup-rate">
+          <div class="cgroup-rate-v" style="color:#FF6B00">5.25%</div>
+          <div class="cgroup-rate-l">RBI Repo Rate</div>
+        </div>
+      </div>
+      <div class="cgroup-line"></div>
+      <div class="g2 tools-grid">
+        <div class="tc tc-custom" style="background:linear-gradient(140deg,#0B1F48,#1A3A8F)" id="india_core_emi_calculator"><div class="ti">🏠</div><div class="tn">EMI Calculator</div><div class="td">Monthly installment</div><div class="ta">›</div></div>
+        <div class="tc" id="india_core_amortization"><div class="ti">📊</div><div class="tn">Amortization</div><div class="td">Full repayment schedule</div><div class="ta">›</div></div>
+        <div class="tc" id="india_core_loan_eligibility"><div class="ti">💰</div><div class="tn">Loan Eligibility</div><div class="td">Max loan on salary</div><div class="ta">›</div></div>
+        <div class="tc sf tc-custom" style="background:linear-gradient(140deg,#FF6B00,#E05A00)" id="india_core_prepayment_calc"><div class="ti">📅</div><div class="tn">Prepayment Calc</div><div class="td">Part payment savings</div><div class="ta">›</div></div>
+        <div class="tc" id="india_govt_stamp_duty_calc"><div class="ti">🏛️</div><div class="tn">Stamp Duty Calc</div><div class="td">State-wise rates</div><div class="ta">›</div></div>
+        <div class="tc tc-custom" style="background:linear-gradient(140deg,#046A38,#07543A)" id="india_govt_pmay_subsidy"><div class="ti">🎁</div><div class="tn">PMAY Subsidy</div><div class="td">Govt. interest subsidy</div><div class="ta">›</div></div>
+        <div class="tc" id="india_govt_cibil_score_impact"><div class="ti">💳</div><div class="tn">CIBIL Score Impact</div><div class="td">Score-to-rate effect</div><div class="ta">›</div></div>
+        <div class="tc" id="india_nri_home_loan"><div class="ti">🌐</div><div class="tn">NRI Home Loan</div><div class="td">Full eligibility guide</div><div class="ta">›</div></div>
+      </div>
+      <a class="cgroup-more" data-open="india">See all 19 India tools →</a>
+
+    </div>
+
+  </div><!-- end tools -->
+
+
+  <!-- ════════════════════════════════════════
+     🔖  SAVED
+════════════════════════════════════════ -->
+  <div class="page" id="pg-saved">
+
+    <div id="saved-header">
+      <div class="saved-hdr-top">
+        <div>
+          <div class="saved-title">Saved Calculations</div>
+          <div class="saved-sub">Your mortgage history · 6 countries</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div class="hdr-icon-btn">🔍</div>
+          <div class="hdr-icon-btn">+</div>
+        </div>
+      </div>
+      <div class="saved-stats">
+        <div class="ss-box">
+          <div class="ss-val">12</div>
+          <div class="ss-lbl">Saved Calcs</div>
+        </div>
+        <div class="ss-box">
+          <div class="ss-val">6</div>
+          <div class="ss-lbl">Countries</div>
+        </div>
+        <div class="ss-box">
+          <div class="ss-val">3</div>
+          <div class="ss-lbl">Compared</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="sec fade-up d1">Recently Saved <span class="more">Sort ↓</span></div>
+
+      <!-- USA Saved Card -->
+      <div class="saved-card usa fade-up d1">
+        <div class="sc-top">
+          <span class="sc-flag">🇺🇸</span>
+          <div>
+            <div class="sc-name">USA · PITI Mortgage</div>
+            <div class="sc-date">Saved May 28, 2026 · 30yr Fixed</div>
+          </div>
+          <div class="sc-badge m">Mortgage</div>
+        </div>
+        <div class="sc-nums">
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Home Price</div>
+            <div class="sc-n-val">$450K</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Monthly</div>
+            <div class="sc-n-val">$2,387</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Rate</div>
+            <div class="sc-n-val">6.82%</div>
+          </div>
+        </div>
+        <div class="sc-actions">
+          <button class="sc-btn primary">View Details</button>
+          <button class="sc-btn secondary">Recalculate</button>
+          <button class="sc-btn danger">🗑</button>
+        </div>
+      </div>
+
+      <!-- Canada Saved Card -->
+      <div class="saved-card ca fade-up d2">
+        <div class="sc-top">
+          <span class="sc-flag">🇨🇦</span>
+          <div>
+            <div class="sc-name">Canada · CMHC Mortgage</div>
+            <div class="sc-date">Saved May 26, 2026 · 5yr Fixed</div>
+          </div>
+          <div class="sc-badge i">CMHC</div>
+        </div>
+        <div class="sc-nums">
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Home Price</div>
+            <div class="sc-n-val">CA$650K</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Monthly</div>
+            <div class="sc-n-val">$3,102</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Rate</div>
+            <div class="sc-n-val">4.99%</div>
+          </div>
+        </div>
+        <div class="sc-actions">
+          <button class="sc-btn primary">View Details</button>
+          <button class="sc-btn secondary">Recalculate</button>
+          <button class="sc-btn danger">🗑</button>
+        </div>
+      </div>
+
+      <!-- NZ Saved Card -->
+      <div class="saved-card nz fade-up d3">
+        <div class="sc-top">
+          <span class="sc-flag">🇳🇿</span>
+          <div>
+            <div class="sc-name">New Zealand · Home Loan</div>
+            <div class="sc-date">Saved May 24, 2026 · 2yr Fixed</div>
+          </div>
+          <div class="sc-badge m">Mortgage</div>
+        </div>
+        <div class="sc-nums">
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Property</div>
+            <div class="sc-n-val">NZ$850K</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Monthly</div>
+            <div class="sc-n-val">$4,210</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Rate</div>
+            <div class="sc-n-val">6.35%</div>
+          </div>
+        </div>
+        <div class="sc-actions">
+          <button class="sc-btn primary">View Details</button>
+          <button class="sc-btn secondary">Recalculate</button>
+          <button class="sc-btn danger">🗑</button>
+        </div>
+      </div>
+
+      <!-- UK Saved Card -->
+      <div class="saved-card uk fade-up d4">
+        <div class="sc-top">
+          <span class="sc-flag">🇬🇧</span>
+          <div>
+            <div class="sc-name">UK · Repayment + SDLT</div>
+            <div class="sc-date">Saved May 22, 2026 · 2yr Fixed</div>
+          </div>
+          <div class="sc-badge m">Mortgage</div>
+        </div>
+        <div class="sc-nums">
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Property</div>
+            <div class="sc-n-val">£380K</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Monthly</div>
+            <div class="sc-n-val">£1,847</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Rate</div>
+            <div class="sc-n-val">4.75%</div>
+          </div>
+        </div>
+        <div class="sc-actions">
+          <button class="sc-btn primary">View Details</button>
+          <button class="sc-btn secondary">Recalculate</button>
+          <button class="sc-btn danger">🗑</button>
+        </div>
+      </div>
+
+      <!-- Australia Saved Card -->
+      <div class="saved-card au fade-up d5">
+        <div class="sc-top">
+          <span class="sc-flag">🇦🇺</span>
+          <div>
+            <div class="sc-name">Australia · LMI Mortgage</div>
+            <div class="sc-date">Saved May 20, 2026 · Variable</div>
+          </div>
+          <div class="sc-badge i">LMI Incl.</div>
+        </div>
+        <div class="sc-nums">
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Property</div>
+            <div class="sc-n-val">AU$750K</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Monthly</div>
+            <div class="sc-n-val">$3,680</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Rate</div>
+            <div class="sc-n-val">6.09%</div>
+          </div>
+        </div>
+        <div class="sc-actions">
+          <button class="sc-btn primary">View Details</button>
+          <button class="sc-btn secondary">Recalculate</button>
+          <button class="sc-btn danger">🗑</button>
+        </div>
+      </div>
+
+      <!-- EU Saved Card -->
+      <div class="saved-card eu fade-up d6">
+        <div class="sc-top">
+          <span class="sc-flag">🇩🇪</span>
+          <div>
+            <div class="sc-name">Germany · Baufinanzierung</div>
+            <div class="sc-date">Saved May 18, 2026 · 10yr Fixed</div>
+          </div>
+          <div class="sc-badge m">Mortgage</div>
+        </div>
+        <div class="sc-nums">
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Property</div>
+            <div class="sc-n-val">€420K</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Monthly</div>
+            <div class="sc-n-val">€1,590</div>
+          </div>
+          <div class="sc-n-box">
+            <div class="sc-n-lbl">Rate</div>
+            <div class="sc-n-val">3.85%</div>
+          </div>
+        </div>
+        <div class="sc-actions">
+          <button class="sc-btn primary">View Details</button>
+          <button class="sc-btn secondary">Recalculate</button>
+          <button class="sc-btn danger">🗑</button>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- end saved -->
+
+
+  <!-- ════════════════════════════════════════
+     🌍  GLOBAL
+════════════════════════════════════════ -->
+  <div class="page" id="pg-global">
+
+    <div id="global-header">
+      <div class="global-top">
+        <div>
+          <div class="global-title">Global Markets</div>
+          <div class="global-sub">6 Countries · Live Rates · Central Banks</div>
+        </div>
+        <div class="hdr-icon-btn">📊</div>
+      </div>
+      <div class="global-rate-grid">
+        <div class="gr-item"><span class="gr-flag">🇺🇸</span>
+          <div class="gr-lbl">Fed Funds</div>
+          <div class="gr-val gold">5.33%</div>
+          <div class="gr-n">FOMC</div>
+        </div>
+        <div class="gr-item"><span class="gr-flag">🇨🇦</span>
+          <div class="gr-lbl">BoC Rate</div>
+          <div class="gr-val dn">4.75%</div>
+          <div class="gr-n">Bank of Canada</div>
+        </div>
+        <div class="gr-item"><span class="gr-flag">🇬🇧</span>
+          <div class="gr-lbl">BoE Base</div>
+          <div class="gr-val">5.00%</div>
+          <div class="gr-n">Bank of England</div>
+        </div>
+        <div class="gr-item"><span class="gr-flag">🇦🇺</span>
+          <div class="gr-lbl">RBA Cash</div>
+          <div class="gr-val dn">4.35%</div>
+          <div class="gr-n">Reserve Bank AU</div>
+        </div>
+        <div class="gr-item"><span class="gr-flag">🇳🇿</span>
+          <div class="gr-lbl">RBNZ OCR</div>
+          <div class="gr-val up">5.50%</div>
+          <div class="gr-n">Reserve Bank NZ</div>
+        </div>
+        <div class="gr-item"><span class="gr-flag">🇪🇺</span>
+          <div class="gr-lbl">ECB Rate</div>
+          <div class="gr-val dn">4.00%</div>
+          <div class="gr-n">Eurozone</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Rate Comparison Table -->
+      <div class="sec fade-up d1">Rate Comparison Table <span class="more">Export →</span></div>
+      <div class="comp-table fade-up d2">
+        <table>
+          <tr>
+            <th>Country</th>
+            <th>Best Rate</th>
+            <th>Type</th>
+            <th>Bank</th>
+          </tr>
+          <tr>
+            <td><span class="flag-cell">🇺🇸</span> USA</td>
+            <td><span class="rate-badge" style="background:#EFF6FF;color:#1D4ED8;">6.82%</span></td>
+            <td>30yr Fixed</td>
+            <td>Freddie Mac</td>
+          </tr>
+          <tr>
+            <td><span class="flag-cell">🇨🇦</span> Canada</td>
+            <td><span class="rate-badge" style="background:#F0FDF4;color:#15803D;">4.99%</span></td>
+            <td>5yr Fixed</td>
+            <td>ANZ/BoC</td>
+          </tr>
+          <tr>
+            <td><span class="flag-cell">🇬🇧</span> UK</td>
+            <td><span class="rate-badge" style="background:#EFF6FF;color:#1D4ED8;">4.35%</span></td>
+            <td>5yr Fixed</td>
+            <td>BoE</td>
+          </tr>
+          <tr>
+            <td><span class="flag-cell">🇦🇺</span> Australia</td>
+            <td><span class="rate-badge" style="background:#FEF2F2;color:#B91C1C;">6.09%</span></td>
+            <td>Variable</td>
+            <td>Big 4</td>
+          </tr>
+          <tr>
+            <td><span class="flag-cell">🇳🇿</span> New Zealand</td>
+            <td><span class="rate-badge" style="background:#FEF2F2;color:#B91C1C;">6.59%</span></td>
+            <td>1yr Fixed</td>
+            <td>Kiwibank</td>
+          </tr>
+          <tr>
+            <td><span class="flag-cell">🇩🇪</span> Germany</td>
+            <td><span class="rate-badge" style="background:#F0FDF4;color:#15803D;">3.85%</span></td>
+            <td>10yr Fixed</td>
+            <td>Baufi</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Country Cards -->
+      <div class="sec fade-up d2">Select a Country <span class="more">6 Available</span></div>
+
+      <div class="country-card fade-up d3">
+        <div class="cc-left"><span class="cc-flag">🇺🇸</span></div>
+        <div class="cc-body">
+          <div class="cc-name">United States</div>
+          <div class="cc-sub">USD · Federal Reserve · All 50 States</div>
+          <div class="cc-rates">
+            <span class="cc-rate-pill pill-b">30yr: 6.82%</span>
+            <span class="cc-rate-pill pill-r">Fed: 5.33%</span>
+            <span class="cc-rate-pill pill-g">FHA · VA · USDA</span>
+          </div>
+        </div>
+        <div class="cc-tools-count">25 tools</div>
+      </div>
+
+      <div class="country-card fade-up d3">
+        <div class="cc-left"><span class="cc-flag">🇨🇦</span></div>
+        <div class="cc-body">
+          <div class="cc-name">Canada</div>
+          <div class="cc-sub">CAD · Bank of Canada · CMHC</div>
+          <div class="cc-rates">
+            <span class="cc-rate-pill pill-g">5yr: 4.99%</span>
+            <span class="cc-rate-pill pill-r">Stress: 7.00%</span>
+            <span class="cc-rate-pill pill-o">GDS/TDS</span>
+          </div>
+        </div>
+        <div class="cc-tools-count">18 tools</div>
+      </div>
+
+      <div class="country-card fade-up d4">
+        <div class="cc-left"><span class="cc-flag">🇬🇧</span></div>
+        <div class="cc-body">
+          <div class="cc-name">United Kingdom</div>
+          <div class="cc-sub">GBP · Bank of England · SDLT</div>
+          <div class="cc-rates">
+            <span class="cc-rate-pill pill-b">2yr: 4.75%</span>
+            <span class="cc-rate-pill pill-r">SDLT</span>
+            <span class="cc-rate-pill pill-p">Help to Buy</span>
+          </div>
+        </div>
+        <div class="cc-tools-count">20 tools</div>
+      </div>
+
+      <div class="country-card fade-up d4">
+        <div class="cc-left"><span class="cc-flag">🇦🇺</span></div>
+        <div class="cc-body">
+          <div class="cc-name">Australia</div>
+          <div class="cc-sub">AUD · Reserve Bank of Australia · LMI</div>
+          <div class="cc-rates">
+            <span class="cc-rate-pill pill-r">Var: 6.09%</span>
+            <span class="cc-rate-pill pill-o">LMI</span>
+            <span class="cc-rate-pill pill-t">Offset Acct</span>
+          </div>
+        </div>
+        <div class="cc-tools-count">20 tools</div>
+      </div>
+
+      <div class="country-card fade-up d5">
+        <div class="cc-left"><span class="cc-flag">🇳🇿</span></div>
+        <div class="cc-body">
+          <div class="cc-name">New Zealand</div>
+          <div class="cc-sub">NZD · RBNZ · LVR · KiwiSaver</div>
+          <div class="cc-rates">
+            <span class="cc-rate-pill pill-r">1yr: 6.59%</span>
+            <span class="cc-rate-pill pill-o">LVR</span>
+            <span class="cc-rate-pill pill-t">KiwiSaver</span>
+          </div>
+        </div>
+        <div class="cc-tools-count">22 tools</div>
+      </div>
+
+      <div class="country-card fade-up d5">
+        <div class="cc-left"><span class="cc-flag">🇪🇺</span></div>
+        <div class="cc-body">
+          <div class="cc-name">Europe</div>
+          <div class="cc-sub">EUR · ECB · DE · FR · ES · IT · NL</div>
+          <div class="cc-rates">
+            <span class="cc-rate-pill pill-g">DE: 3.85%</span>
+            <span class="cc-rate-pill pill-g">FR: 3.60%</span>
+            <span class="cc-rate-pill pill-b">ECB: 4.00%</span>
+          </div>
+        </div>
+        <div class="cc-tools-count">18 tools</div>
+      </div>
+
+      <!-- Currency Converter -->
+      <div class="sec fade-up d6">Currency Rates <span class="more">Convert →</span></div>
+      <div class="ilist fade-up d7">
+        <div class="ic">
+          <div class="ii">💱</div>
+          <div>
+            <div class="in">USD → CAD, GBP, AUD, NZD, EUR, INR</div>
+            <div class="is">Live forex rates · XE powered</div>
+          </div>
+          <div class="ich">›</div>
+        </div>
+        <div class="ic">
+          <div class="ii">📊</div>
+          <div>
+            <div class="in">Central Bank Calendar</div>
+            <div class="is">Fed · BoC · BoE · RBA · RBNZ · ECB dates</div>
+          </div>
+          <div class="ich">›</div>
+        </div>
+        <div class="ic">
+          <div class="ii">🌐</div>
+          <div>
+            <div class="in">Global House Price Index</div>
+            <div class="is">IMF · BIS international data</div>
+          </div>
+          <div class="ich">›</div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- end global -->
+
+
+  <!-- ════════════════════════════════════════
+     ⚙️  SETTINGS
+════════════════════════════════════════ -->
+  <div class="page" id="pg-settings">
+
+    <div id="settings-header">
+      <div class="set-hdr-top">
+        <div>
+          <div class="set-title">Settings</div>
+          <div class="set-sub">Preferences · Account · App</div>
+        </div>
+        <div class="hdr-icon-btn">❓</div>
+      </div>
+      <div class="profile-card">
+        <div class="profile-avatar">👤</div>
+        <div>
+          <div class="profile-name">REO TECH User</div>
+          <div class="profile-email">user@reotech.app</div>
+        </div>
+        <div class="profile-plan">PRO</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Subscription Card -->
+      <div class="sub-card fade-up d1">
+        <div class="sub-lbl">Current Plan</div>
+        <div class="sub-plan">⭐ MortgagePro PRO</div>
+        <div class="sub-desc">Unlock all 120+ tools, live rates, AI advisor for all 6 countries, ad-free experience and
+          priority support.</div>
+        <div class="sub-perks">
+          <div class="sub-perk">All 7 country tool suites (USA, CA, UK, AU, NZ, EU, IN)</div>
+          <div class="sub-perk">Live FRED · BoC · BoE · RBA · RBNZ · ECB rates</div>
+          <div class="sub-perk">AI Mortgage Advisor - unlimited queries</div>
+          <div class="sub-perk">Unlimited saved calculations</div>
+          <div class="sub-perk">Ad-free experience</div>
+        </div>
+        <button class="sub-btn">Manage Subscription →</button>
+      </div>
+
+      <!-- General Settings -->
+      <div class="sec fade-up d2">General <span class="more"></span></div>
+      <div class="set-group fade-up d2">
+        <div class="set-item">
+          <div class="set-icon si-blue">🌍</div>
+          <div class="set-body">
+            <div class="set-name">Default Country</div>
+            <div class="set-desc">Primary country for calculations</div>
+          </div>
+          <div class="set-right">
+            <div class="set-value">🇺🇸 USA</div>
+            <div class="set-arrow">›</div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-gold">💵</div>
+          <div class="set-body">
+            <div class="set-name">Currency Display</div>
+            <div class="set-desc">Default currency for all results</div>
+          </div>
+          <div class="set-right">
+            <div class="set-value">USD $</div>
+            <div class="set-arrow">›</div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-purple">🎨</div>
+          <div class="set-body">
+            <div class="set-name">App Theme</div>
+            <div class="set-desc">Light, Dark or System default</div>
+          </div>
+          <div class="set-right">
+            <div class="set-value">Light</div>
+            <div class="set-arrow">›</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rates & Data -->
+      <div class="sec fade-up d3">Rates & Data <span class="more"></span></div>
+      <div class="set-group fade-up d3">
+        <div class="set-item">
+          <div class="set-icon si-green">📡</div>
+          <div class="set-body">
+            <div class="set-name">Live Rate Updates</div>
+            <div class="set-desc">Auto-refresh mortgage rates</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-blue">🏦</div>
+          <div class="set-body">
+            <div class="set-name">FRED Data Source</div>
+            <div class="set-desc">US Federal Reserve live feed</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-gold">💱</div>
+          <div class="set-body">
+            <div class="set-name">Forex Rate Source</div>
+            <div class="set-desc">Currency conversion provider</div>
+          </div>
+          <div class="set-right">
+            <div class="set-value">XE.com</div>
+            <div class="set-arrow">›</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="sec fade-up d4">Notifications <span class="more"></span></div>
+      <div class="set-group fade-up d4">
+        <div class="set-item">
+          <div class="set-icon si-blue">🔔</div>
+          <div class="set-body">
+            <div class="set-name">Rate Change Alerts</div>
+            <div class="set-desc">Notify when rates change ±0.10%</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-gold">🏛️</div>
+          <div class="set-body">
+            <div class="set-name">Central Bank Decisions</div>
+            <div class="set-desc">FOMC · BoC · BoE · RBA · RBNZ · ECB</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-green">📋</div>
+          <div class="set-body">
+            <div class="set-name">Mortgage Renewal Reminders</div>
+            <div class="set-desc">Alert 90 days before term ends</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-teal">📈</div>
+          <div class="set-body">
+            <div class="set-name">Market News</div>
+            <div class="set-desc">Daily housing market digest</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Countries Active -->
+      <div class="sec fade-up d5">Active Country Tools <span class="more"></span></div>
+      <div class="set-group fade-up d5">
+        <div class="set-item">
+          <div class="set-icon si-blue">🇺🇸</div>
+          <div class="set-body">
+            <div class="set-name">USA — 25 Tools</div>
+            <div class="set-desc">PITI · DTI · FHA · VA · USDA · FRED</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-green">🇨🇦</div>
+          <div class="set-body">
+            <div class="set-name">Canada — 18 Tools</div>
+            <div class="set-desc">CMHC · GDS/TDS · Stress Test · BoC</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-blue">🇬🇧</div>
+          <div class="set-body">
+            <div class="set-name">UK — 20 Tools</div>
+            <div class="set-desc">SDLT · LTV · Help to Buy · BoE</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-gold">🇦🇺</div>
+          <div class="set-body">
+            <div class="set-name">Australia — 20 Tools</div>
+            <div class="set-desc">LMI · Offset · Stamp Duty · RBA</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-green">🇳🇿</div>
+          <div class="set-body">
+            <div class="set-name">New Zealand — 22 Tools</div>
+            <div class="set-desc">LVR · KiwiSaver · Bright-Line · RBNZ</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-blue">🇪🇺</div>
+          <div class="set-body">
+            <div class="set-name">Europe — 18 Tools</div>
+            <div class="set-desc">ECB · Euribor · DE/FR/ES/IT/NL</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-gold">🇮🇳</div>
+          <div class="set-body">
+            <div class="set-name">India — 25+ Tools</div>
+            <div class="set-desc">EMI · FOIR · Income Tax · SIP</div>
+          </div>
+          <div class="set-right">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy & Legal -->
+      <div class="sec fade-up d6">Privacy & Legal <span class="more"></span></div>
+      <div class="set-group fade-up d6">
+        <div class="set-item">
+          <div class="set-icon si-gray">🔒</div>
+          <div class="set-body">
+            <div class="set-name">Privacy Policy</div>
+            <div class="set-desc">How we use your data</div>
+          </div>
+          <div class="set-right">
+            <div class="set-arrow">›</div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-gray">📄</div>
+          <div class="set-body">
+            <div class="set-name">Terms of Service</div>
+            <div class="set-desc">User agreement</div>
+          </div>
+          <div class="set-right">
+            <div class="set-arrow">›</div>
+          </div>
+        </div>
+        <div class="set-item">
+          <div class="set-icon si-red">🗑️</div>
+          <div class="set-body">
+            <div class="set-name">Delete Account</div>
+            <div class="set-desc">Permanently remove all data</div>
+          </div>
+          <div class="set-right">
+            <div class="set-arrow" style="color:#B91C1C">›</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-info fade-up d7">
+        <div class="name">MortgagePro Global</div>
+        <div class="ver">Version 1.0.0 · REO Technologies · © 2026</div>
+      </div>
+
+    </div>
+  </div><!-- end settings -->
+
+
+  <!-- ════════════════════════════════════════
+     BOTTOM NAV (shared)
+════════════════════════════════════════ -->
+  <div class="bnav" id="bnav">
+    <div class="ni active" onclick="switchPage('home',this)">
+      <div class="ni-ic">🏠</div>
+      <div class="ni-lb">Home</div>
+    </div>
+    <div class="ni" onclick="switchPage('tools',this)">
+      <div class="ni-wrap">
+        <div class="ni-ic">🔧</div>
+        <div class="ni-dot"></div>
+      </div>
+      <div class="ni-lb">Tools</div>
+    </div>
+    <div class="ni" onclick="switchPage('saved',this)">
+      <div class="ni-ic">🔖</div>
+      <div class="ni-lb">Saved</div>
+    </div>
+    <div class="ni" onclick="switchPage('global',this)">
+      <div class="ni-ic">🌍</div>
+      <div class="ni-lb">Global</div>
+    </div>
+    <div class="ni" onclick="switchPage('settings',this)">
+      <div class="ni-ic">⚙️</div>
+      <div class="ni-lb">Settings</div>
+    </div>
+  </div>
+
+  <script>
+    function switchPage(name, el) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+      el.classList.add('active');
+      const pg = document.getElementById('pg-' + name);
+      if (pg) { pg.classList.add('active'); window.scrollTo(0, 0); }
+    }
+    // Region pill interaction on home
+    document.querySelectorAll('.rp').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('.rp').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+      });
+    });
+    // Toggle interactions
+    document.querySelectorAll('.toggle').forEach(t => {
+      t.addEventListener('click', () => t.classList.toggle('on'));
+    });
+
+    /* ═══════════════════════════════════════
+       TOOLS PAGE — country jump-strip
+       Click a country pill -> smooth-scroll to that
+       country's group header inside the Tools page.
+    ═══════════════════════════════════════ */
+    document.querySelectorAll('.cj').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.cj').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const target = document.getElementById(pill.dataset.jump);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    /* Keep the jump-strip pill in sync as the user scrolls
+       manually through the Tools page (scroll-spy). */
+    const toolsPage = document.getElementById('pg-tools');
+    if (toolsPage) {
+      const groups = Array.from(toolsPage.querySelectorAll('.cgroup'));
+      const jumpPills = Array.from(document.querySelectorAll('.cj'));
+      window.addEventListener('scroll', () => {
+        if (!toolsPage.classList.contains('active')) return;
+        let current = groups[0];
+        for (const g of groups) {
+          if (g.getBoundingClientRect().top < 140) current = g;
+        }
+        jumpPills.forEach(p => p.classList.remove('active'));
+        const match = jumpPills.find(p => p.dataset.jump === current.id);
+        if (match) match.classList.add('active');
+      });
+    }
+
+    /* ═══════════════════════════════════════
+       UNIVERSAL DEEP-LINK NAVIGATION
+       navigateToTool(countryId, toolId) — per the
+       MortgagePro deep-link navigation spec. Opens the
+       country's dedicated screen and scrolls/highlights
+       the exact tool card. Falls back gracefully if the
+       target card can't be found.
+    ═══════════════════════════════════════ */
+    function navigateToTool(countryId, toolId) {
+      // In the full app this opens the country's own screen
+      // (screen_usa.html, screen_canada.html, etc.) with
+      // toolId passed as a route argument. Inside this combined
+      // prototype, the closest equivalent is staying on the
+      // Tools page and snapping straight to the card itself,
+      // which is what the code below does.
+      const card = document.getElementById(toolId);
+      if (!card) {
+        console.warn('navigateToTool: missing card for', countryId, toolId);
+        return;
+      }
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('card-focus');
+      setTimeout(() => card.classList.remove('card-focus'), 2000);
+    }
+
+    // Every tool card on the Tools page is itself a deep-link
+    // source AND destination — tapping one "arrives" with the
+    // same highlight a cross-screen deep link would produce.
+    document.querySelectorAll('#pg-tools .tc[id]').forEach(card => {
+      card.addEventListener('click', () => navigateToTool(null, card.id));
+    });
+
+    // "See all N <Country> tools" footer links jump back to
+    // that country's own full screen (screen_usa.html etc. in
+    // the real app); here they re-affirm the jump-strip target.
+    document.querySelectorAll('.cgroup-more').forEach(link => {
+      link.addEventListener('click', () => {
+        const id = 'grp-' + (link.dataset.open === 'usa' ? 'usa'
+          : link.dataset.open === 'nz' ? 'nz' : link.dataset.open);
+        const target = document.getElementById(id);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    /* Back-to-top button on the Tools page */
+    const toTop = document.createElement('div');
+    toTop.className = 'tools-totop';
+    toTop.innerHTML = '↑';
+    document.body.appendChild(toTop);
+    toTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    window.addEventListener('scroll', () => {
+      const onTools = toolsPage && toolsPage.classList.contains('active');
+      toTop.classList.toggle('show', onTools && window.scrollY > 600);
+    });
+  </script>
+
+</body>
+
+</html>

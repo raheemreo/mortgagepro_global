@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DTI Calculator – USA Financial Tools</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  /* HEADER */
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after { content:'📊'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.up::after { content:'↑'; font-size:9px; color:#6EE7B7; }
+  .rs-v.dn::after { content:'↓'; font-size:9px; color:#FCA5A5; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  /* CONTENT */
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* HERO RESULT CARD */
+  .result-hero { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:19px; position:relative; overflow:hidden; box-shadow:var(--sh2); margin-bottom:14px; }
+  .result-hero::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:rgba(185,28,28,0.14); }
+  .rh-tag { font-size:9.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.8px; }
+  .rh-dti-row { display:flex; align-items:flex-end; gap:10px; margin:8px 0 4px; }
+  .rh-dti-val { font-size:52px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1; }
+  .rh-dti-pct { font-size:22px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; padding-bottom:6px; }
+  .rh-status { display:inline-flex; align-items:center; gap:5px; background:rgba(34,197,94,0.22); border:1px solid rgba(34,197,94,0.35); border-radius:20px; padding:4px 11px; font-size:11px; font-weight:800; color:#6EE7B7; }
+  .rh-status.warn { background:rgba(251,191,36,0.22); border-color:rgba(251,191,36,0.35); color:var(--gold-lt); }
+  .rh-status.danger { background:rgba(239,68,68,0.22); border-color:rgba(239,68,68,0.35); color:#FCA5A5; }
+  .rh-sub { font-size:9.5px; color:rgba(255,255,255,0.45); margin-top:7px; }
+  .rh-bars { margin-top:12px; display:flex; flex-direction:column; gap:5px; }
+  .rh-bar-row { display:flex; align-items:center; gap:8px; }
+  .rh-bar-label { font-size:9px; color:rgba(255,255,255,0.50); width:60px; flex-shrink:0; }
+  .rh-bar-track { flex:1; height:6px; background:rgba(255,255,255,0.12); border-radius:10px; overflow:hidden; }
+  .rh-bar-fill { height:100%; border-radius:10px; }
+  .rh-bar-fill.green { background:linear-gradient(90deg,#22c55e,#16a34a); }
+  .rh-bar-fill.gold { background:linear-gradient(90deg,#f59e0b,#d97706); }
+  .rh-bar-fill.red { background:linear-gradient(90deg,#ef4444,#b91c1c); }
+  .rh-bar-pct { font-size:9px; font-weight:800; color:rgba(255,255,255,0.70); width:32px; text-align:right; }
+
+  /* INPUT CARD */
+  .card { background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .card-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:13px; display:flex; align-items:center; gap:7px; }
+  .card-title .emoji { font-size:16px; }
+  .field { margin-bottom:12px; }
+  .field:last-child { margin-bottom:0; }
+  .field label { font-size:9.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:5px; }
+  .field-row { display:flex; align-items:center; background:var(--bg); border:1.5px solid var(--border); border-radius:10px; overflow:hidden; transition:border-color .2s; }
+  .field-row:focus-within { border-color:var(--blue); }
+  .field-prefix { padding:10px 10px 10px 13px; font-size:14px; font-weight:800; color:var(--muted); }
+  .field-row input { flex:1; border:none; background:transparent; padding:10px 13px 10px 0; font-size:15px; font-weight:700; color:var(--navy); outline:none; font-family:'Helvetica Neue',Arial,sans-serif; }
+  .field-suffix { padding:10px 13px 10px 0; font-size:12px; font-weight:700; color:var(--muted); }
+  .field-hint { font-size:8.5px; color:var(--muted); margin-top:3px; opacity:0.75; }
+
+  .g2-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .add-btn { width:100%; background:var(--bg); border:1.5px dashed rgba(27,63,114,0.20); border-radius:10px; padding:9px; font-size:11px; font-weight:700; color:var(--blue); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; margin-top:4px; }
+
+  /* CALC BTN */
+  .calc-btn { width:100%; background:linear-gradient(135deg,#B91C1C,#991B1B); border:none; border-radius:12px; padding:15px; font-size:14px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(185,28,28,0.40); font-family:Georgia,serif; margin-top:4px; }
+
+  /* RULES CARD */
+  .rules-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .rule-box { border-radius:13px; padding:13px 12px; border:1px solid var(--border); }
+  .rule-box.ok { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); border-color:rgba(22,163,74,0.25); }
+  .rule-box.warn { background:linear-gradient(135deg,#FFFBEB,#FEF3C7); border-color:rgba(217,119,6,0.25); }
+  .rule-box.bad { background:linear-gradient(135deg,#FEF2F2,#FEE2E2); border-color:rgba(185,28,28,0.20); }
+  .rule-label { font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .rule-range { font-size:17px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin:3px 0 2px; }
+  .rule-desc { font-size:9px; color:var(--muted); }
+  .rule-status { font-size:8.5px; font-weight:800; margin-top:4px; }
+  .rule-box.ok .rule-status { color:#16a34a; }
+  .rule-box.warn .rule-status { color:#d97706; }
+  .rule-box.bad .rule-status { color:#b91c1c; }
+
+  /* INFO LIST */
+  .ilist { display:flex; flex-direction:column; gap:9px; }
+  .ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .is { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .ich { font-size:16px; color:rgba(11,29,58,0.18); margin-left:auto; }
+
+  /* BREAKDOWN TABLE */
+  .breakdown { background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .bk-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); }
+  .bk-row:last-child { border-bottom:none; }
+  .bk-label { font-size:12px; color:var(--muted); }
+  .bk-val { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .bk-val.highlight { color:var(--red); }
+  .bk-total { background:linear-gradient(135deg,var(--navy),var(--blue)); border-radius:11px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+  .bk-total .bk-label { color:rgba(255,255,255,0.60); font-size:11px; }
+  .bk-total .bk-val { color:#fff; font-size:16px; }
+
+  /* SAVE BUTTON */
+  .save-btn { width:100%; background:var(--card); border:1.5px solid var(--blue); border-radius:12px; padding:13px; font-size:13px; font-weight:800; color:var(--blue); cursor:pointer; font-family:Georgia,serif; margin-top:8px; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .save-btn:active { transform:scale(.98); background:var(--bg); }
+  .save-btn.saved { background:#DCFCE7; border-color:#15803D; color:#15803D; }
+  .toast { position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px); max-width:380px; width:90%; background:var(--navy); color:#fff; padding:12px 18px; border-radius:12px; font-size:12.5px; font-weight:700; text-align:center; box-shadow:var(--sh2); opacity:0; pointer-events:none; transition:all .3s ease; z-index:200; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* SAVED LIST */
+  .saved-card { background:var(--card); border-radius:16px; padding:14px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .saved-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .saved-row:last-child { border-bottom:none; }
+  .saved-info { display:flex; flex-direction:column; }
+  .saved-name { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .saved-meta { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .saved-del { font-size:13px; color:var(--red); cursor:pointer; padding:6px; }
+  .saved-empty { font-size:11px; color:var(--muted); text-align:center; padding:14px 0; }
+
+  /* INCOME ALLOCATION BAR */
+  .alloc-wrap { margin-top:14px; }
+  .alloc-bar { height:18px; border-radius:10px; overflow:hidden; display:flex; }
+  .alloc-legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+  .alloc-item { display:flex; align-items:center; gap:5px; font-size:9.5px; font-weight:700; color:rgba(255,255,255,0.65); }
+  .alloc-dot { width:8px; height:8px; border-radius:50%; }
+
+  /* BOTTOM NAV */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  .result-hero { animation:fadeUp .35s ease both .05s; }
+  .card { animation:fadeUp .35s ease both .10s; }
+  .rules-grid { animation:fadeUp .35s ease both .15s; }
+  .breakdown { animation:fadeUp .35s ease both .20s; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📊</div>
+      <div class="hdr-title">DTI Calculator</div>
+      <div class="hdr-sub">Debt-to-Income · 28/36 Rule · Fannie Mae Guidelines</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">30-Yr Fixed</div><div class="rs-v up">6.82%</div><div class="rs-n">Freddie Mac</div></div>
+    <div class="rs"><div class="rs-l">FHA Max DTI</div><div class="rs-v">43%</div><div class="rs-n">Standard</div></div>
+    <div class="rs"><div class="rs-l">Conv. Max DTI</div><div class="rs-v">45%</div><div class="rs-n">Fannie Mae</div></div>
+    <div class="rs"><div class="rs-l">VA Max DTI</div><div class="rs-v gold">41%</div><div class="rs-n">Guideline</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Live Result Hero -->
+  <div class="sec" style="margin-top:0">Your DTI Result <span class="more">What's Good? →</span></div>
+  <div class="result-hero">
+    <div class="rh-tag">Debt-to-Income Ratio · Front & Back End</div>
+    <div class="rh-dti-row">
+      <div class="rh-dti-val" id="dtiVal">28</div>
+      <div class="rh-dti-pct">%</div>
+    </div>
+    <div class="rh-status" id="dtiStatus">✅ Excellent — Lender Approved</div>
+    <div class="rh-sub" id="dtiSub">Front-end: 22% · Back-end: 28% · Conventional eligible</div>
+    <div class="rh-bars">
+      <div class="rh-bar-row">
+        <div class="rh-bar-label">Front DTI</div>
+        <div class="rh-bar-track"><div class="rh-bar-fill green" id="frontBar" style="width:55%"></div></div>
+        <div class="rh-bar-pct" id="frontPct">22%</div>
+      </div>
+      <div class="rh-bar-row">
+        <div class="rh-bar-label">Back DTI</div>
+        <div class="rh-bar-track"><div class="rh-bar-fill green" id="backBar" style="width:62%"></div></div>
+        <div class="rh-bar-pct" id="backPct">28%</div>
+      </div>
+      <div class="rh-bar-row">
+        <div class="rh-bar-label">Max Limit</div>
+        <div class="rh-bar-track"><div class="rh-bar-fill gold" style="width:100%"></div></div>
+        <div class="rh-bar-pct">45%</div>
+      </div>
+    </div>
+    <div class="alloc-wrap">
+      <div class="alloc-bar" id="allocBar">
+        <div id="allocHousing" style="background:linear-gradient(90deg,#1B3F72,#0B1D3A);width:22%;"></div>
+        <div id="allocDebts" style="background:linear-gradient(90deg,#D97706,#B45309);width:6%;"></div>
+        <div id="allocFree" style="background:rgba(255,255,255,0.10);flex:1;"></div>
+      </div>
+      <div class="alloc-legend">
+        <div class="alloc-item"><div class="alloc-dot" style="background:#1B3F72;"></div>Housing <span id="allocHousingVal" style="color:#fff;margin-left:2px;">22%</span></div>
+        <div class="alloc-item"><div class="alloc-dot" style="background:#D97706;"></div>Other Debts <span id="allocDebtsVal" style="color:#fff;margin-left:2px;">6%</span></div>
+        <div class="alloc-item"><div class="alloc-dot" style="background:rgba(255,255,255,0.4);"></div>Remaining Income <span id="allocFreeVal" style="color:#fff;margin-left:2px;">72%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Income Section -->
+  <div class="sec">Gross Monthly Income <span class="more">Before Tax</span></div>
+  <div class="card">
+    <div class="card-title"><span class="emoji">💵</span>Monthly Gross Income</div>
+    <div class="g2-fields">
+      <div class="field">
+        <label>Primary Income</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="primaryIncome" value="7500" placeholder="7500" oninput="calculate()">
+          <div class="field-suffix">/mo</div>
+        </div>
+        <div class="field-hint">Before taxes, $90K/yr</div>
+      </div>
+      <div class="field">
+        <label>Co-Borrower</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="coIncome" value="0" placeholder="0" oninput="calculate()">
+          <div class="field-suffix">/mo</div>
+        </div>
+        <div class="field-hint">Spouse / co-signer</div>
+      </div>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label>Other Income (Rental / Side / Alimony)</label>
+      <div class="field-row">
+        <div class="field-prefix">$</div>
+        <input type="number" id="otherIncome" value="0" placeholder="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+      <div class="field-hint">Fannie Mae allows 75% rental income · Must document 2-yr history</div>
+    </div>
+  </div>
+
+  <!-- Housing Costs (Front End) -->
+  <div class="sec">Housing Payment (Front-End) <span class="more">PITI</span></div>
+  <div class="card">
+    <div class="card-title"><span class="emoji">🏠</span>Monthly Housing Costs</div>
+    <div class="g2-fields">
+      <div class="field">
+        <label>P&I Payment</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="piPayment" value="1650" placeholder="1650" oninput="calculate()">
+        </div>
+        <div class="field-hint">Principal & Interest</div>
+      </div>
+      <div class="field">
+        <label>Property Tax</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="propTax" value="375" placeholder="375" oninput="calculate()">
+          <div class="field-suffix">/mo</div>
+        </div>
+        <div class="field-hint">US avg 1.07%/yr</div>
+      </div>
+      <div class="field">
+        <label>Homeowners Ins.</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="hoIns" value="150" placeholder="150" oninput="calculate()">
+          <div class="field-suffix">/mo</div>
+        </div>
+        <div class="field-hint">US avg ~$1,915/yr</div>
+      </div>
+      <div class="field">
+        <label>PMI / MIP</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="pmi" value="0" placeholder="0" oninput="calculate()">
+          <div class="field-suffix">/mo</div>
+        </div>
+        <div class="field-hint">If &lt; 20% down</div>
+      </div>
+    </div>
+    <div class="field" style="margin-top:4px">
+      <label>HOA Fee</label>
+      <div class="field-row">
+        <div class="field-prefix">$</div>
+        <input type="number" id="hoa" value="0" placeholder="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+      <div class="field-hint">Condo/community fees · US avg $331/mo where applicable</div>
+    </div>
+  </div>
+
+  <!-- Other Monthly Debts (Back End) -->
+  <div class="sec">Monthly Debts (Back-End) <span class="more">Min. Payments</span></div>
+  <div class="card">
+    <div class="card-title"><span class="emoji">💳</span>Recurring Monthly Obligations</div>
+    <div class="g2-fields">
+      <div class="field">
+        <label>Auto Loan(s)</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="autoLoan" value="450" placeholder="0" oninput="calculate()">
+          <div class="field-suffix">/mo</div>
+        </div>
+        <div class="field-hint">US avg $735/mo new</div>
+      </div>
+      <div class="field">
+        <label>Student Loans</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="studentLoan" value="200" placeholder="0" oninput="calculate()">
+          <div class="field-suffix">/mo</div>
+        </div>
+        <div class="field-hint">Avg $503/mo (2024)</div>
+      </div>
+      <div class="field">
+        <label>Credit Cards</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="creditCards" value="75" placeholder="0" oninput="calculate()">
+          <div class="field-suffix">/mo</div>
+        </div>
+        <div class="field-hint">Minimum payments only</div>
+      </div>
+      <div class="field">
+        <label>Personal Loan</label>
+        <div class="field-row">
+          <div class="field-prefix">$</div>
+          <input type="number" id="personalLoan" value="0" placeholder="0" oninput="calculate()">
+          <div class="field-suffix">/mo</div>
+        </div>
+        <div class="field-hint">Min. monthly payment</div>
+      </div>
+    </div>
+    <div class="field" style="margin-top:4px">
+      <label>Other Obligations (Child Support / Alimony / Other)</label>
+      <div class="field-row">
+        <div class="field-prefix">$</div>
+        <input type="number" id="otherDebts" value="0" placeholder="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">📊 Calculate My DTI Ratio</button>
+  <button class="save-btn" id="saveBtn" onclick="saveCalculation()">💾 Save This Calculation</button>
+
+  <!-- Breakdown -->
+  <div class="sec" style="margin-top:20px">Payment Breakdown <span class="more">PITI Detail</span></div>
+  <div class="breakdown">
+    <div class="bk-row"><span class="bk-label">Gross Monthly Income</span><span class="bk-val" id="bkIncome">$7,500</span></div>
+    <div class="bk-row"><span class="bk-label">Total Housing (PITI + HOA)</span><span class="bk-val" id="bkHousing">$2,175</span></div>
+    <div class="bk-row"><span class="bk-label">Other Monthly Debts</span><span class="bk-val" id="bkDebts">$725</span></div>
+    <div class="bk-row"><span class="bk-label">Total Monthly Obligations</span><span class="bk-val highlight" id="bkTotal">$2,900</span></div>
+    <div class="bk-total">
+      <span class="bk-label">Back-End DTI Ratio</span>
+      <span class="bk-val" id="bkDTI">28.0%</span>
+    </div>
+  </div>
+
+  <!-- DTI Rules Guide -->
+  <div class="sec" style="margin-top:20px">The 28/36 Rule – Lender Guidelines</div>
+  <div class="rules-grid">
+    <div class="rule-box ok">
+      <div class="rule-label">Excellent</div>
+      <div class="rule-range">≤ 28%</div>
+      <div class="rule-desc">Front-end ideal · All loan types</div>
+      <div class="rule-status">✅ Best rates available</div>
+    </div>
+    <div class="rule-box ok">
+      <div class="rule-label">Good</div>
+      <div class="rule-range">29–36%</div>
+      <div class="rule-desc">Back-end conventional limit</div>
+      <div class="rule-status">✅ Easily approved</div>
+    </div>
+    <div class="rule-box warn">
+      <div class="rule-label">Acceptable</div>
+      <div class="rule-range">37–43%</div>
+      <div class="rule-desc">FHA standard · Conv. w/ DU</div>
+      <div class="rule-status">⚠️ Compensating factors</div>
+    </div>
+    <div class="rule-box bad">
+      <div class="rule-label">High Risk</div>
+      <div class="rule-range">44–50%</div>
+      <div class="rule-desc">Conv. max w/ strong FICO</div>
+      <div class="rule-status">🔴 Limited lenders</div>
+    </div>
+  </div>
+
+  <!-- Lender Standards -->
+  <div class="sec" style="margin-top:20px">Lender DTI Limits (2025)</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🏠</div><div><div class="in">Conventional (Fannie/Freddie)</div><div class="is">Max 45% back-end · 50% with DU approval · 28% front preferred</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">FHA Loan</div><div class="is">Max 43% standard · Up to 57% with AUS · 31% front-end</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🎖️</div><div><div class="in">VA Loan</div><div class="is">41% guideline · No hard max · Residual income key qualifier</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🌾</div><div><div class="in">USDA Rural</div><div class="is">29% front · 41% back · GUS approval may allow more</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏢</div><div><div class="in">Jumbo Loan</div><div class="is">Max 43% · Stricter reserves required · 720+ FICO typical</div></div><div class="ich">›</div></div>
+  </div>
+
+  <!-- Saved Calculations -->
+  <div class="sec" style="margin-top:20px">Saved Calculations <span class="more" onclick="clearAllSaved()">Clear All</span></div>
+  <div class="saved-card">
+    <div id="savedList"><div class="saved-empty">No saved calculations yet. Tap "Save This Calculation" above.</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmt(n){ return n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function calculate(){
+  const primary = parseFloat(document.getElementById('primaryIncome').value)||0;
+  const co = parseFloat(document.getElementById('coIncome').value)||0;
+  const other = parseFloat(document.getElementById('otherIncome').value)||0;
+  const grossIncome = primary + co + (other * 0.75); // 75% rental per Fannie Mae
+
+  const pi = parseFloat(document.getElementById('piPayment').value)||0;
+  const tax = parseFloat(document.getElementById('propTax').value)||0;
+  const ins = parseFloat(document.getElementById('hoIns').value)||0;
+  const pmiAmt = parseFloat(document.getElementById('pmi').value)||0;
+  const hoa = parseFloat(document.getElementById('hoa').value)||0;
+  const housing = pi + tax + ins + pmiAmt + hoa;
+
+  const auto = parseFloat(document.getElementById('autoLoan').value)||0;
+  const student = parseFloat(document.getElementById('studentLoan').value)||0;
+  const cc = parseFloat(document.getElementById('creditCards').value)||0;
+  const personal = parseFloat(document.getElementById('personalLoan').value)||0;
+  const otherD = parseFloat(document.getElementById('otherDebts').value)||0;
+  const otherDebts = auto + student + cc + personal + otherD;
+
+  const totalObligations = housing + otherDebts;
+  const frontDTI = grossIncome > 0 ? (housing / grossIncome * 100) : 0;
+  const backDTI = grossIncome > 0 ? (totalObligations / grossIncome * 100) : 0;
+
+  document.getElementById('dtiVal').textContent = Math.round(backDTI);
+  document.getElementById('frontPct').textContent = frontDTI.toFixed(1) + '%';
+  document.getElementById('backPct').textContent = backDTI.toFixed(1) + '%';
+  document.getElementById('frontBar').style.width = Math.min(frontDTI / 45 * 100, 100) + '%';
+  document.getElementById('backBar').style.width = Math.min(backDTI / 45 * 100, 100) + '%';
+
+  // Color coding
+  const frontBar = document.getElementById('frontBar');
+  const backBar = document.getElementById('backBar');
+  frontBar.className = 'rh-bar-fill ' + (frontDTI <= 28 ? 'green' : frontDTI <= 36 ? 'gold' : 'red');
+  backBar.className = 'rh-bar-fill ' + (backDTI <= 36 ? 'green' : backDTI <= 43 ? 'gold' : 'red');
+
+  const statusEl = document.getElementById('dtiStatus');
+  if(backDTI <= 28){ statusEl.className='rh-status'; statusEl.textContent='✅ Excellent — All Loan Types'; }
+  else if(backDTI <= 36){ statusEl.className='rh-status'; statusEl.textContent='✅ Good — Conventional Eligible'; }
+  else if(backDTI <= 43){ statusEl.className='rh-status warn'; statusEl.textContent='⚠️ Acceptable — FHA Eligible'; }
+  else if(backDTI <= 50){ statusEl.className='rh-status warn'; statusEl.textContent='⚠️ High — Limited Loan Options'; }
+  else { statusEl.className='rh-status danger'; statusEl.textContent='🔴 Too High — Reduce Debts First'; }
+
+  document.getElementById('dtiSub').textContent = `Front-end: ${frontDTI.toFixed(1)}% · Back-end: ${backDTI.toFixed(1)}% · Income: $${fmt(grossIncome)}/mo`;
+  document.getElementById('bkIncome').textContent = '$' + fmt(grossIncome);
+  document.getElementById('bkHousing').textContent = '$' + fmt(housing);
+  document.getElementById('bkDebts').textContent = '$' + fmt(otherDebts);
+  document.getElementById('bkTotal').textContent = '$' + fmt(totalObligations);
+  document.getElementById('bkDTI').textContent = backDTI.toFixed(1) + '%';
+
+  // Income allocation bar
+  const housingPct = Math.min(frontDTI, 100);
+  const debtsPct = Math.min(backDTI - frontDTI, 100 - housingPct);
+  const freePct = Math.max(0, 100 - housingPct - debtsPct);
+  document.getElementById('allocHousing').style.width = housingPct + '%';
+  document.getElementById('allocDebts').style.width = debtsPct + '%';
+  document.getElementById('allocFree').style.flex = freePct;
+  document.getElementById('allocHousingVal').textContent = housingPct.toFixed(1) + '%';
+  document.getElementById('allocDebtsVal').textContent = debtsPct.toFixed(1) + '%';
+  document.getElementById('allocFreeVal').textContent = freePct.toFixed(1) + '%';
+}
+calculate();
+
+/* ===== SAVE / LOAD ===== */
+const SAVE_KEY='dti_saved';
+const FIELDS=['primaryIncome','coIncome','otherIncome','piPayment','propTax','hoIns','pmi','hoa','autoLoan','studentLoan','creditCards','personalLoan','otherDebts'];
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+function getSaved(){try{return JSON.parse(localStorage.getItem(SAVE_KEY))||[];}catch(e){return [];}}
+function setSaved(arr){localStorage.setItem(SAVE_KEY,JSON.stringify(arr));}
+
+function saveCalculation(){
+  const data={};
+  FIELDS.forEach(f=>data[f]=document.getElementById(f).value);
+  const dti=document.getElementById('dtiVal').textContent;
+  const status=document.getElementById('dtiStatus').textContent;
+
+  const entry={
+    id:Date.now(),
+    name:'DTI '+dti+'% · '+status.replace(/^[^\w]+/,''),
+    meta:'Income $'+Number(data.primaryIncome).toLocaleString()+'/mo · Housing $'+data.piPayment+' + tax/ins/HOA',
+    data
+  };
+  const arr=getSaved();
+  arr.unshift(entry);
+  if(arr.length>10) arr.pop();
+  setSaved(arr);
+  renderSaved();
+
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  btn.textContent='✓ Saved!';
+  showToast('Calculation saved');
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='💾 Save This Calculation';},1600);
+}
+
+function loadCalculation(id){
+  const entry=getSaved().find(e=>e.id===id);
+  if(!entry) return;
+  FIELDS.forEach(f=>{ if(entry.data[f]!==undefined) document.getElementById(f).value=entry.data[f]; });
+  calculate();
+  showToast('Calculation loaded');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function deleteSaved(id,evt){
+  evt.stopPropagation();
+  setSaved(getSaved().filter(e=>e.id!==id));
+  renderSaved();
+  showToast('Removed');
+}
+
+function clearAllSaved(){
+  if(getSaved().length===0) return;
+  setSaved([]);
+  renderSaved();
+  showToast('All saved calculations cleared');
+}
+
+function renderSaved(){
+  const arr=getSaved();
+  const list=document.getElementById('savedList');
+  if(arr.length===0){
+    list.innerHTML='<div class="saved-empty">No saved calculations yet. Tap "Save This Calculation" above.</div>';
+    return;
+  }
+  list.innerHTML=arr.map(e=>`
+    <div class="saved-row" onclick="loadCalculation(${e.id})">
+      <div class="saved-info">
+        <div class="saved-name">${e.name}</div>
+        <div class="saved-meta">${e.meta}</div>
+      </div>
+      <div class="saved-del" onclick="deleteSaved(${e.id},event)">🗑️</div>
+    </div>`).join('');
+}
+renderSaved();
+</script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHA Credit Score Requirements</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{
+  --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;
+  --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+  --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+  --green:#15803D;--green-dk:#166534;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 60%,#166534 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::after{content:'💳';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;}
+.hdr-flag{font-size:26px;}
+.hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+.rs-v.gold{color:var(--gold-lt);}
+.rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+.content{padding:14px 14px 110px;}
+.sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;display:flex;align-items:center;justify-content:space-between;}
+.sec .badge{font-size:9px;font-weight:700;background:#ECFDF5;color:#166534;padding:3px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+.hero{background:linear-gradient(140deg,#0B1D3A,#15803D);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:12px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.h-tag{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.h-title{font-size:17px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;margin:5px 0 6px;line-height:1.25;}
+.h-title span{color:var(--gold-lt);}
+.h-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-bottom:13px;line-height:1.5;}
+.tier-row{display:flex;gap:8px;}
+.tier-box{flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.15);border-radius:11px;padding:10px 8px;text-align:center;}
+.tier-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;}
+.tier-box .v{font-size:14px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;}
+.tier-box .v.gold{color:var(--gold-lt);}
+
+/* TIER VISUAL SCALE */
+.scale-card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.scale-card h3{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:14px;}
+.scale-track{position:relative;height:14px;border-radius:8px;background:linear-gradient(90deg,#FCA5A5 0%,#FCA5A5 19%, #FDE68A 19%, #FDE68A 36%, #BBF7D0 36%, #BBF7D0 64%, #86EFAC 64%, #86EFAC 100%);margin-bottom:8px;}
+.scale-marker{position:absolute;top:-6px;width:3px;height:26px;background:var(--navy);border-radius:2px;}
+.scale-labels{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);margin-bottom:14px;}
+.tier-legend{display:flex;flex-direction:column;gap:8px;}
+.tl-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;background:var(--bg);}
+.tl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.tl-text{flex:1;}
+.tl-range{font-size:11px;font-weight:700;color:var(--navy);}
+.tl-detail{font-size:9px;color:var(--muted);margin-top:1px;}
+.tl-down{font-size:11px;font-weight:700;color:var(--green);}
+
+/* INTERACTIVE CHECKER */
+.input-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.input-card h3{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+.score-slider-wrap{margin-bottom:14px;}
+.score-display{text-align:center;margin-bottom:10px;}
+.score-num{font-size:36px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+.score-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block;margin-top:4px;}
+input[type=range]{width:100%;height:8px;border-radius:8px;background:linear-gradient(90deg,#FCA5A5,#FDE68A,#BBF7D0,#86EFAC);-webkit-appearance:none;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:4px solid var(--navy);box-shadow:0 2px 8px rgba(0,0,0,0.25);cursor:pointer;}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.inp-box{background:var(--bg);border-radius:13px;padding:11px 13px;border:1.5px solid var(--border);}
+.inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.inp-box input{width:100%;border:none;outline:none;font-size:14px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;background:transparent;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(21,128,61,0.32);font-family:'DM Serif Display',serif;}
+
+/* RESULT */
+.result-card{border-radius:16px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;display:none;}
+.result-card.show{display:block;animation:fadeUp .32s ease both;}
+.result-card.pass{background:linear-gradient(140deg,#0B1D3A,#15803D);}
+.result-card.fail{background:linear-gradient(140deg,#7F1D1D,#B91C1C);}
+.rc-icon{font-size:32px;margin-bottom:8px;}
+.rc-title{font-size:18px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;}
+.rc-sub{font-size:10.5px;color:rgba(255,255,255,0.65);margin-top:3px;margin-bottom:13px;}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rc-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.rc-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:2px;}
+.rc-box .v{font-size:13px;font-weight:700;color:#fff;}
+.save-btn-inline{width:100%;margin-top:12px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:10px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;}
+.save-btn-inline.saved{background:rgba(21,128,61,0.4);border-color:rgba(21,128,61,0.6);}
+
+/* BAR CHART: Score Distribution */
+.chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:13px;}
+.bar-group{margin-bottom:10px;}
+.bar-label{font-size:9.5px;font-weight:600;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between;}
+.bar-track{background:#EEF2F8;border-radius:8px;height:22px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:10px;font-size:9px;font-weight:700;color:#fff;}
+
+.ilist{display:flex;flex-direction:column;gap:8px;}
+.ic{background:var(--card);border-radius:13px;padding:12px 13px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+.ii{width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.in{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+.is{font-size:9px;color:var(--muted);margin-top:2px;}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:18px;}
+.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+.ni.active .ni-lb{color:var(--green);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.hero,.scale-card,.input-card,.chart-card{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">💳</div>
+      <div class="hdr-title">Credit Score Requirements</div>
+      <div class="hdr-sub">FHA Minimum FICO · Down Payment Tiers</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Absolute Min</div><div class="rs-v">500</div><div class="rs-n">10% down</div></div>
+    <div class="rs"><div class="rs-l">Standard Min</div><div class="rs-v gold">580</div><div class="rs-n">3.5% down</div></div>
+    <div class="rs"><div class="rs-l">Lender Min (Most)</div><div class="rs-v">620</div><div class="rs-n">Common floor</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">FHA Credit Tiers <span class="badge">HUD Handbook 4000.1</span></div>
+  <div class="hero">
+    <div class="h-tag">FHA Single Family Housing Policy Handbook</div>
+    <div class="h-title">Two FICO tiers decide your <span>minimum down payment</span></div>
+    <div class="h-sub">FHA itself only requires 500+ to insure a loan, but most lenders set their own higher overlay — commonly 620 — due to risk tolerance and investor requirements.</div>
+    <div class="tier-row">
+      <div class="tier-box"><label>580+ FICO</label><div class="v gold">3.5% Down</div></div>
+      <div class="tier-box"><label>500–579 FICO</label><div class="v">10% Down</div></div>
+      <div class="tier-box"><label>Below 500</label><div class="v" style="color:#FCA5A5">Not Eligible</div></div>
+    </div>
+  </div>
+
+  <!-- Visual Scale -->
+  <div class="sec">Credit Score Scale</div>
+  <div class="scale-card">
+    <h3>📊 Where You Stand</h3>
+    <div class="scale-track">
+      <div class="scale-marker" style="left:32%;" id="scaleMarker"></div>
+    </div>
+    <div class="scale-labels"><span>300</span><span>500</span><span>580</span><span>670</span><span>740</span><span>850</span></div>
+    <div class="tier-legend">
+      <div class="tl-row"><div class="tl-dot" style="background:#FCA5A5"></div><div class="tl-text"><div class="tl-range">Below 500 — Not Eligible</div><div class="tl-detail">FHA will not insure the loan at any down payment</div></div></div>
+      <div class="tl-row"><div class="tl-dot" style="background:#FDE68A"></div><div class="tl-text"><div class="tl-range">500–579 — Fair</div><div class="tl-detail">Eligible with 10% minimum down payment</div></div><div class="tl-down">10%</div></div>
+      <div class="tl-row"><div class="tl-dot" style="background:#BBF7D0"></div><div class="tl-text"><div class="tl-range">580–669 — Fair/Good</div><div class="tl-detail">Eligible with 3.5% minimum down payment</div></div><div class="tl-down">3.5%</div></div>
+      <div class="tl-row"><div class="tl-dot" style="background:#86EFAC"></div><div class="tl-text"><div class="tl-range">670+ — Good/Excellent</div><div class="tl-detail">Best rates, easiest approval, 3.5% down</div></div><div class="tl-down">3.5%</div></div>
+    </div>
+  </div>
+
+  <!-- Eligibility Checker -->
+  <div class="sec">Check Your Eligibility</div>
+  <div class="input-card">
+    <h3>🔍 Credit Score Eligibility Checker</h3>
+    <div class="score-slider-wrap">
+      <div class="score-display">
+        <div class="score-num" id="scoreNum">620</div>
+        <div class="score-tag" id="scoreTag" style="background:#BBF7D0;color:#166534;">Fair/Good</div>
+      </div>
+      <input type="range" min="300" max="850" value="620" id="scoreSlider" oninput="updateSlider()">
+    </div>
+    <div class="input-grid">
+      <div class="inp-box">
+        <label>Home Price ($)</label>
+        <input type="number" id="homePrice" value="350000" step="5000">
+      </div>
+      <div class="inp-box">
+        <label>Existing Bankruptcy?</label>
+        <select id="bankruptcy" style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;">
+          <option value="no">No</option>
+          <option value="ch7">Ch. 7 (2+ yrs ago)</option>
+          <option value="ch13">Ch. 13 (1+ yr, on-time)</option>
+        </select>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="checkEligibility()">💳 Check My Eligibility</button>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="rc-icon" id="rcIcon">✅</div>
+    <div class="rc-title" id="rcTitle">You're Eligible!</div>
+    <div class="rc-sub" id="rcSub">620 FICO qualifies for 3.5% down payment</div>
+    <div class="rc-grid">
+      <div class="rc-box"><label>Min. Down Payment</label><div class="v" id="rcDownPct">3.5%</div></div>
+      <div class="rc-box"><label>Down Payment $</label><div class="v" id="rcDownAmt">$12,250</div></div>
+      <div class="rc-box"><label>Loan Amount Needed</label><div class="v" id="rcLoanAmt">$337,750</div></div>
+      <div class="rc-box"><label>Lender Overlay Risk</label><div class="v" id="rcOverlay">Low</div></div>
+    </div>
+    <button class="save-btn-inline" id="saveBtn" onclick="saveCalc()">🔖 Save This Check</button>
+  </div>
+
+  <!-- Distribution -->
+  <div class="sec">Why Lenders Set Higher Minimums</div>
+  <div class="chart-card">
+    <div class="chart-title">📈 Where Most Approved Lenders Set Their Floor</div>
+    <div class="bar-group">
+      <div class="bar-label"><span>FHA Statutory Minimum</span><span>500 (10% down)</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:59%;background:linear-gradient(90deg,#94A3B8,#64748B);">500</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>FHA Standard Minimum</span><span>580 (3.5% down)</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:68%;background:linear-gradient(90deg,#D97706,#B45309);">580</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Most Common Lender Overlay</span><span>620</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:73%;background:linear-gradient(90deg,#1B3F72,#0B1D3A);">620</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Best Rate Tier</span><span>680+</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:80%;background:linear-gradient(90deg,#15803D,#166534);">680+</div></div>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div class="sec">Improve Your Approval Odds</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📉</div><div><div class="in">Lower Credit Utilization</div><div class="is">Keep balances under 30% of credit limits</div></div></div>
+    <div class="ic"><div class="ii">⏱️</div><div><div class="in">Wait Out Recent Late Payments</div><div class="is">Late payments hurt score most in last 12 months</div></div></div>
+    <div class="ic"><div class="ii">🤝</div><div><div class="in">Add a Co-Borrower</div><div class="is">Combine credit profiles for stronger approval</div></div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Shop Multiple FHA Lenders</div><div class="is">Overlays vary — some accept 580, others need 620+</div></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function updateSlider(){
+  const score = parseInt(document.getElementById('scoreSlider').value);
+  document.getElementById('scoreNum').textContent = score;
+  const pct = ((score-300)/(850-300))*100;
+  document.getElementById('scaleMarker').style.left = pct+'%';
+
+  const tag = document.getElementById('scoreTag');
+  if(score < 500){ tag.textContent='Not Eligible'; tag.style.background='#FCA5A5'; tag.style.color='#7F1D1D'; }
+  else if(score < 580){ tag.textContent='Fair'; tag.style.background='#FDE68A'; tag.style.color='#92400E'; }
+  else if(score < 670){ tag.textContent='Fair/Good'; tag.style.background='#BBF7D0'; tag.style.color='#166534'; }
+  else { tag.textContent='Good/Excellent'; tag.style.background='#86EFAC'; tag.style.color='#166534'; }
+}
+
+function checkEligibility(){
+  const score = parseInt(document.getElementById('scoreSlider').value);
+  const price = parseFloat(document.getElementById('homePrice').value)||0;
+  const bk = document.getElementById('bankruptcy').value;
+
+  const card = document.getElementById('resultCard');
+  card.classList.remove('pass','fail');
+
+  if(score < 500){
+    card.classList.add('fail','show');
+    document.getElementById('rcIcon').textContent = '❌';
+    document.getElementById('rcTitle').textContent = 'Not Currently Eligible';
+    document.getElementById('rcSub').textContent = 'FHA requires a minimum 500 FICO score to insure any loan';
+    document.getElementById('rcDownPct').textContent = 'N/A';
+    document.getElementById('rcDownAmt').textContent = 'N/A';
+    document.getElementById('rcLoanAmt').textContent = 'N/A';
+    document.getElementById('rcOverlay').textContent = 'High';
+    return;
+  }
+
+  const downPct = score >= 580 ? 0.035 : 0.10;
+  const downAmt = price * downPct;
+  const loanAmt = price - downAmt;
+  let overlayRisk = score >= 660 ? 'Low' : score >= 620 ? 'Moderate' : 'Higher (shop lenders)';
+
+  let bkNote = '';
+  if(bk === 'ch7') bkNote = ' Chapter 7 needs 2+ yrs since discharge with re-established credit.';
+  if(bk === 'ch13') bkNote = ' Chapter 13 may qualify after 1 yr of on-time plan payments + trustee approval.';
+
+  card.classList.add('pass','show');
+  document.getElementById('rcIcon').textContent = '✅';
+  document.getElementById('rcTitle').textContent = "You're Eligible!";
+  document.getElementById('rcSub').textContent = score+' FICO qualifies for '+(downPct*100).toFixed(1)+'% down.'+bkNote;
+  document.getElementById('rcDownPct').textContent = (downPct*100).toFixed(1)+'%';
+  document.getElementById('rcDownAmt').textContent = '$'+Math.round(downAmt).toLocaleString();
+  document.getElementById('rcLoanAmt').textContent = '$'+Math.round(loanAmt).toLocaleString();
+  document.getElementById('rcOverlay').textContent = overlayRisk;
+}
+
+function saveCalc(){
+  const data = {
+    date: new Date().toLocaleDateString(),
+    score: document.getElementById('scoreSlider').value,
+    down: document.getElementById('rcDownAmt').textContent,
+    loan: document.getElementById('rcLoanAmt').textContent
+  };
+  const saves = JSON.parse(localStorage.getItem('fha_credit_saves')||'[]');
+  saves.unshift(data);
+  if(saves.length>5) saves.length=5;
+  localStorage.setItem('fha_credit_saves', JSON.stringify(saves));
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved'); btn.textContent='✅ Saved';
+  showToast('Eligibility check saved!');
+  setTimeout(()=>{btn.classList.remove('saved'); btn.textContent='🔖 Save This Check';}, 2000);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+updateSlider();
+</script>
+</body>
+</html>

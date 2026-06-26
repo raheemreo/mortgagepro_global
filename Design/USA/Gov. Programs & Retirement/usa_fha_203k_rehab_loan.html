@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHA 203(k) Rehab Loan</title>
+<style>
+:root{
+  --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--crimson:#991B1B;
+  --gold:#D97706;--gold-lt:#FCD34D;--bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+  --border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);
+  --teal:#0F766E;--teal-dk:#0D9488;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+/* ── HEADER ── */
+.header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 50%,#B91C1C 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'🏗️';position:absolute;right:10px;top:44px;font-size:70px;opacity:0.08;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;}
+.hdr-flag{font-size:26px;}
+.hdr-title{font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-v{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+.rs-v.gold{color:var(--gold-lt);}
+.rs-v.grn{color:#6EE7B7;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+/* ── CONTENT ── */
+.content{padding:15px 15px 110px;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.tag{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.tag-r{background:#FEF2F2;color:#B91C1C;}
+.tag-b{background:#EFF6FF;color:#1D4ED8;}
+.tag-g{background:#F0FDF4;color:#15803D;}
+.tag-o{background:#FFF7ED;color:#C2410C;}
+
+/* ── HERO ── */
+.hero-203k{background:linear-gradient(148deg,#0B1D3A,#991B1B);border-radius:20px;padding:18px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:4px;}
+.hero-203k::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.htag{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.8px;}
+.htitle{font-size:17px;font-weight:800;color:#fff;margin:4px 0 10px;font-family:Georgia,serif;line-height:1.25;}
+.htitle span{color:var(--gold-lt);}
+.hrow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.hbox{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px;text-align:center;}
+.hbox .l{font-size:7.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;}
+.hbox .v{font-size:12px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.hbox .v.gold{color:var(--gold-lt);}
+
+/* ── TYPE TOGGLE ── */
+.type-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+.type-card{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:2px solid var(--border);cursor:pointer;transition:all .2s;}
+.type-card.active{border-color:var(--red);background:#FEF2F2;}
+.tc-ico{font-size:22px;margin-bottom:5px;}
+.tc-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+.tc-sub{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.35;}
+.tc-badge{display:inline-flex;margin-top:6px;font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;background:#FEF2F2;color:var(--red);}
+
+/* ── CALC ── */
+.calc-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.calc-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.calc-ico{width:32px;height:32px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:15px;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px;}
+.field label{font-size:9.5px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;}
+.field input,.field select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--navy);outline:none;font-family:inherit;}
+.field input:focus,.field select:focus{border-color:var(--red);background:#fff;}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--red),var(--crimson));border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:Georgia,serif;margin-top:4px;}
+.save-btn{width:100%;background:transparent;border:1.5px solid var(--blue);border-radius:12px;padding:11px;font-size:12px;font-weight:800;color:var(--blue);cursor:pointer;margin-top:8px;}
+
+/* ── RESULT BOX ── */
+.result-box{background:linear-gradient(135deg,#0B1D3A,#991B1B);border-radius:16px;padding:14px;margin-top:12px;display:none;}
+.result-box.show{display:block;}
+.rb-title{font-size:10px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;}
+.rb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rbi{background:rgba(255,255,255,0.08);border-radius:10px;padding:10px;}
+.rbi .rl{font-size:8.5px;color:rgba(255,255,255,0.50);margin-bottom:3px;}
+.rbi .rv{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rbi .rv.gold{color:var(--gold-lt);}
+.rbi .rv.grn{color:#6EE7B7;}
+.rbi .rv.red{color:#FCA5A5;}
+.rbi.full{grid-column:1/-1;}
+.rb-note{background:rgba(252,211,77,0.12);border:1px solid rgba(252,211,77,0.3);border-radius:10px;padding:10px;margin-top:8px;}
+.rb-note .nl{font-size:9px;color:rgba(255,255,255,0.50);margin-bottom:3px;}
+.rb-note .nv{font-size:11.5px;font-weight:800;color:var(--gold-lt);line-height:1.4;}
+
+/* ── SVG LINE CHART ── */
+.chart-wrap{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.chart-title{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:4px;}
+.chart-sub{font-size:9px;color:var(--muted);margin-bottom:12px;}
+
+/* ── RENO CATEGORIES ── */
+.reno-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+.reno-card{background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--sh);border:1px solid var(--border);}
+.reno-ico{font-size:20px;margin-bottom:6px;}
+.reno-name{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+.reno-range{font-size:10px;color:var(--gold);font-weight:700;margin-top:2px;}
+.reno-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+
+/* ── TIMELINE ── */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:12px;padding-bottom:16px;position:relative;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:32px;flex-shrink:0;}
+.tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;z-index:1;}
+.tl-line{width:2px;flex:1;background:var(--border);margin-top:4px;}
+.tl-item:last-child .tl-line{display:none;}
+.tl-body{flex:1;padding-top:4px;}
+.tl-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+.tl-sub{font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+.tl-sub strong{color:var(--navy);}
+.tl-dur{font-size:9px;font-weight:700;color:var(--gold);margin-top:4px;}
+
+/* ── INFO LIST ── */
+.ilist{display:flex;flex-direction:column;gap:9px;}
+.ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;}
+.ii{width:36px;height:36px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;}
+.ib .in{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+.ib .is{font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+.ib .is strong{color:var(--navy);}
+
+/* ── SAVED ── */
+.saved-list{display:flex;flex-direction:column;gap:8px;}
+.saved-item{background:var(--card);border-radius:12px;padding:11px 13px;border:1px solid var(--border);box-shadow:var(--sh);display:flex;align-items:center;justify-content:space-between;}
+.si-name{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+.si-meta{font-size:9px;color:var(--muted);margin-top:2px;}
+.si-amt{font-size:14px;font-weight:800;color:var(--red);font-family:Georgia,serif;}
+.si-del{font-size:16px;cursor:pointer;color:var(--muted);padding:4px;}
+
+/* ── TOAST / NAV ── */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}
+.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+.ni.active .ni-lb{color:var(--blue);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.calc-card,.chart-wrap,.reno-grid,.timeline,.ilist{animation:fadeUp .35s ease both;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏗️</div>
+      <div class="hdr-title">FHA 203(k) Rehab Loan</div>
+      <div class="hdr-sub">Purchase + Renovation · One Loan · 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">203k Rate</div><div class="rs-v gold">6.75%</div><div class="rs-n">Avg 2025</div></div>
+    <div class="rs"><div class="rs-l">Min Down</div><div class="rs-v">3.5%</div><div class="rs-n">580+ FICO</div></div>
+    <div class="rs"><div class="rs-l">Max Reno</div><div class="rs-v grn">$35K Std</div><div class="rs-n">Limited</div></div>
+    <div class="rs"><div class="rs-l">Loan Limit</div><div class="rs-v">$524,225</div><div class="rs-n">Most Areas</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- HERO -->
+  <div class="sec" style="margin-top:0">Program Overview <span class="tag tag-r">FHA · HUD 2025</span></div>
+  <div class="hero-203k">
+    <div class="htag">HUD FHA Section 203(k) · Purchase + Rehab in One Loan</div>
+    <div class="htitle">Buy &amp; <span>Renovate</span> with<br>One FHA-Insured Loan</div>
+    <div class="hrow">
+      <div class="hbox"><div class="l">Min Down</div><div class="v gold">3.5%</div></div>
+      <div class="hbox"><div class="l">Min Score</div><div class="v">580</div></div>
+      <div class="hbox"><div class="l">Reno Incl.</div><div class="v grn">Yes</div></div>
+      <div class="hbox"><div class="l">MIP</div><div class="v">0.55%</div></div>
+    </div>
+  </div>
+
+  <!-- TYPE SELECTOR -->
+  <div class="sec">Loan Type <span class="tag tag-b">Choose One</span></div>
+  <div class="type-row">
+    <div class="type-card active" id="tt-limited" onclick="setType('limited')">
+      <div class="tc-ico">🔧</div>
+      <div class="tc-name">203(k) Limited</div>
+      <div class="tc-sub">Non-structural repairs only. No HUD consultant required.</div>
+      <div class="tc-badge">Max $35,000 Reno</div>
+    </div>
+    <div class="type-card" id="tt-standard" onclick="setType('standard')">
+      <div class="tc-ico">🏠</div>
+      <div class="tc-name">203(k) Standard</div>
+      <div class="tc-sub">Structural & major rehab. HUD consultant required.</div>
+      <div class="tc-badge">$5K–$500K Reno</div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR -->
+  <div class="sec">203(k) Loan Calculator <span class="tag tag-r">Save Results</span></div>
+  <div class="calc-card">
+    <div class="calc-title"><div class="calc-ico">🧮</div>Purchase + Rehab Cost Estimator</div>
+
+    <div class="fr">
+      <div class="field"><label>Purchase Price ($)</label><input type="number" id="purchasePrice" value="250000" oninput="updateLoan()"></div>
+      <div class="field"><label>Renovation Cost ($)</label><input type="number" id="renoAmt" value="40000" oninput="updateLoan()"></div>
+    </div>
+    <div class="fr">
+      <div class="field"><label>Down Payment (%)</label>
+        <select id="downPct" oninput="updateLoan()">
+          <option value="3.5" selected>3.5% (580+ FICO)</option>
+          <option value="5">5% (620+ FICO)</option>
+          <option value="10">10% (500–579 FICO)</option>
+        </select>
+      </div>
+      <div class="field"><label>Loan Term</label>
+        <select id="loanTerm">
+          <option value="30" selected>30 Years</option>
+          <option value="15">15 Years</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="field"><label>Annual Income ($)</label><input type="number" id="income" value="85000"></div>
+      <div class="field"><label>Monthly Debts ($)</label><input type="number" id="debts" value="600"></div>
+    </div>
+    <div class="fr">
+      <div class="field"><label>State</label>
+        <select id="state">
+          <option value="AL">Alabama</option><option value="AZ">Arizona</option>
+          <option value="CA">California</option><option value="CO">Colorado</option>
+          <option value="FL">Florida</option><option value="GA" selected>Georgia</option>
+          <option value="IL">Illinois</option><option value="NC">North Carolina</option>
+          <option value="NY">New York</option><option value="OH">Ohio</option>
+          <option value="TX">Texas</option><option value="WA">Washington</option>
+        </select>
+      </div>
+      <div class="field"><label>Contingency Reserve</label>
+        <select id="contingency">
+          <option value="0.10">10% (Limited)</option>
+          <option value="0.15" selected>15% (Standard)</option>
+          <option value="0.20">20% (Complex)</option>
+        </select>
+      </div>
+    </div>
+    <div id="loanPreview" style="background:var(--bg);border-radius:10px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--muted);">
+      Total Base Loan: <strong id="lp-total" style="color:var(--navy)">—</strong> &nbsp;|&nbsp; Down Payment: <strong id="lp-down" style="color:var(--navy)">—</strong>
+    </div>
+    <button class="calc-btn" onclick="calc203k()">🏗️ Calculate 203(k) Loan</button>
+
+    <div class="result-box" id="resultBox">
+      <div class="rb-title">📊 FHA 203(k) Full Breakdown · 2025</div>
+      <div class="rb-grid">
+        <div class="rbi"><div class="rl">Total Project Cost</div><div class="rv gold" id="r-total">—</div></div>
+        <div class="rbi"><div class="rl">Down Payment (3.5%)</div><div class="rv" id="r-down">—</div></div>
+        <div class="rbi"><div class="rl">Base Loan Amount</div><div class="rv" id="r-base">—</div></div>
+        <div class="rbi"><div class="rl">MIP Upfront (1.75%)</div><div class="rv red" id="r-mip">—</div></div>
+        <div class="rbi"><div class="rl">Total FHA Loan</div><div class="rv gold" id="r-loan">—</div></div>
+        <div class="rbi"><div class="rl">Monthly Payment</div><div class="rv grn" id="r-monthly">—</div></div>
+        <div class="rbi"><div class="rl">Monthly MIP (0.55%)</div><div class="rv red" id="r-mmip">—</div></div>
+        <div class="rbi"><div class="rl">Contingency Reserve</div><div class="rv" id="r-cont">—</div></div>
+        <div class="rbi"><div class="rl">Front-End DTI</div><div class="rv" id="r-fdti">—</div></div>
+        <div class="rbi"><div class="rl">Back-End DTI</div><div class="rv" id="r-bdti">—</div></div>
+        <div class="rbi full"><div class="rl">After-Renovation Value Estimate (ARV +15%)</div><div class="rv grn" id="r-arv">—</div></div>
+      </div>
+      <div class="rb-note">
+        <div class="nl">🏗️ Renovation Escrow Account</div>
+        <div class="nv" id="r-escrow">Funds held in escrow and disbursed to licensed contractors in draws upon inspection milestones.</div>
+      </div>
+      <button class="save-btn" onclick="saveCalc()">🔖 Save This Calculation</button>
+    </div>
+  </div>
+
+  <!-- COST BREAKDOWN CHART -->
+  <div class="chart-wrap" id="chartWrap" style="display:none">
+    <div class="chart-title">📊 Total Loan Cost Breakdown</div>
+    <div class="chart-sub">Where every dollar of your 203(k) loan goes</div>
+    <svg id="breakdownSVG" viewBox="0 0 380 160" style="width:100%;height:160px;"></svg>
+    <div id="chartLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+  </div>
+
+  <!-- RENOVATION CATEGORIES -->
+  <div class="sec">Eligible Renovation Categories <span class="tag tag-b">2025</span></div>
+  <div class="reno-grid">
+    <div class="reno-card"><div class="reno-ico">🔌</div><div class="reno-name">Electrical & Plumbing</div><div class="reno-range">$5,000–$25,000</div><div class="reno-sub">Wiring updates, panel, pipes, HVAC</div></div>
+    <div class="reno-card"><div class="reno-ico">🍳</div><div class="reno-name">Kitchen & Bath</div><div class="reno-range">$10,000–$60,000</div><div class="reno-sub">Cabinets, fixtures, countertops</div></div>
+    <div class="reno-card"><div class="reno-ico">🏠</div><div class="reno-name">Roof & Structure</div><div class="reno-range">$8,000–$40,000</div><div class="reno-sub">Roof replacement, foundation (Standard only)</div></div>
+    <div class="reno-card"><div class="reno-ico">🪟</div><div class="reno-name">Windows & Doors</div><div class="reno-range">$3,000–$20,000</div><div class="reno-sub">Energy-efficient upgrades</div></div>
+    <div class="reno-card"><div class="reno-ico">🌿</div><div class="reno-name">Energy Efficiency</div><div class="reno-range">$2,000–$15,000</div><div class="reno-sub">Insulation, solar-ready, HVAC</div></div>
+    <div class="reno-card"><div class="reno-ico">🎨</div><div class="reno-name">Interior Finishing</div><div class="reno-range">$5,000–$30,000</div><div class="reno-sub">Flooring, paint, drywall</div></div>
+  </div>
+
+  <!-- PROCESS TIMELINE -->
+  <div class="sec">203(k) Process Timeline <span class="tag tag-o">~60–90 Days</span></div>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="background:var(--blue);">1</div><div class="tl-line"></div></div>
+      <div class="tl-body"><div class="tl-name">Find Property &amp; 203(k) Lender</div><div class="tl-sub">Not all FHA lenders offer 203(k). Use HUD's lender search at <strong>hud.gov</strong>. Identify needed repairs before making offer.</div><div class="tl-dur">⏱ Days 1–7</div></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="background:var(--red);">2</div><div class="tl-line"></div></div>
+      <div class="tl-body"><div class="tl-name">HUD Consultant Inspection (Standard only)</div><div class="tl-sub">Licensed HUD 203(k) consultant inspects property, creates <strong>Work Write-Up</strong> and cost estimate. Fee: <strong>$400–$1,000</strong>.</div><div class="tl-dur">⏱ Days 7–14</div></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="background:var(--gold);">3</div><div class="tl-line"></div></div>
+      <div class="tl-body"><div class="tl-name">Get Contractor Bids &amp; Appraisal</div><div class="tl-sub">Obtain bids from licensed contractors. FHA appraisal based on <strong>After Improved Value (AIV)</strong>. Bids + plans submitted to lender.</div><div class="tl-dur">⏱ Days 14–30</div></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="background:#0F766E;">4</div><div class="tl-line"></div></div>
+      <div class="tl-body"><div class="tl-name">Loan Underwriting &amp; Approval</div><div class="tl-sub">Lender reviews all docs, appraisal, contractor bids. Standard 203(k) may take <strong>45–60 days</strong>; Limited typically <strong>30–45 days</strong>.</div><div class="tl-dur">⏱ Days 30–60</div></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="background:#15803D;">5</div></div>
+      <div class="tl-body"><div class="tl-name">Close &amp; Renovation Begins</div><div class="tl-sub">Funds held in renovation escrow account. Contractor draws released after <strong>HUD inspection milestones</strong>. Work must be completed within <strong>6 months</strong>.</div><div class="tl-dur">⏱ Days 60–90 → Closing</div></div>
+    </div>
+  </div>
+
+  <!-- KEY RULES -->
+  <div class="sec">Key Rules &amp; Requirements <span class="tag tag-r">HUD 2025</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🏦</div><div class="ib"><div class="in">FHA Loan Limits · 2025</div><div class="is">Standard limit: <strong>$524,225</strong> (most US counties). High-cost areas: up to <strong>$1,209,750</strong>. Includes purchase + renovation. Property must be 1–4 unit owner-occupied.</div></div></div>
+    <div class="ic"><div class="ii">💳</div><div class="ib"><div class="in">Credit &amp; Income Requirements</div><div class="is">Minimum <strong>580 FICO</strong> for 3.5% down. 500–579 requires 10% down. Debt-to-income limit: <strong>31% front / 43% back</strong>. 2 years employment history required.</div></div></div>
+    <div class="ic"><div class="ii">🔒</div><div class="ib"><div class="in">What's NOT Eligible</div><div class="is">Luxury items (pools, hot tubs, tennis courts), new construction, work started before closing, repairs not approved by HUD consultant, or work done by the borrower themselves.</div></div></div>
+    <div class="ic"><div class="ii">📋</div><div class="ib"><div class="in">MIP — Mortgage Insurance Premium</div><div class="is">Upfront MIP: <strong>1.75%</strong> of loan (rolled in). Annual MIP: <strong>0.55%/yr</strong> ÷ 12 for loans with ≥10% down with 11-year cancellation, or life-of-loan for &lt;10% down as of 2024 rules.</div></div></div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="sec">Saved Calculations <span class="tag tag-b" id="savedCount">0 Saved</span></div>
+  <div class="saved-list" id="savedList">
+    <div style="font-size:11px;color:var(--muted);text-align:center;padding:12px;">No saved calculations yet. Run the calculator above.</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let loanType = 'limited';
+function setType(t){
+  loanType = t;
+  document.getElementById('tt-limited').classList.toggle('active', t==='limited');
+  document.getElementById('tt-standard').classList.toggle('active', t==='standard');
+}
+
+function fmt(n){ return '$' + Math.round(n).toLocaleString(); }
+
+function updateLoan(){
+  const pp = parseFloat(document.getElementById('purchasePrice').value)||0;
+  const ra = parseFloat(document.getElementById('renoAmt').value)||0;
+  const dpPct = parseFloat(document.getElementById('downPct').value)||3.5;
+  const base = pp + ra;
+  const down = base * dpPct/100;
+  document.getElementById('lp-total').textContent = fmt(base);
+  document.getElementById('lp-down').textContent = fmt(down);
+}
+
+function calc203k(){
+  const pp   = parseFloat(document.getElementById('purchasePrice').value)||250000;
+  const reno = parseFloat(document.getElementById('renoAmt').value)||40000;
+  const dpPct= parseFloat(document.getElementById('downPct').value)||3.5;
+  const term = parseInt(document.getElementById('loanTerm').value)||30;
+  const inc  = parseFloat(document.getElementById('income').value)||85000;
+  const debts= parseFloat(document.getElementById('debts').value)||600;
+  const contPct = parseFloat(document.getElementById('contingency').value)||0.15;
+
+  // Validate Limited cap
+  if(loanType==='limited' && reno > 35000){
+    showToast('⚠️ Limited 203(k) caps renovation at $35,000');
+    return;
+  }
+
+  const contingency = reno * contPct;
+  const totalProject = pp + reno + contingency;
+  const downAmt = totalProject * (dpPct/100);
+  const baseLoan = totalProject - downAmt;
+  const mipUpfront = baseLoan * 0.0175;
+  const totalLoan = baseLoan + mipUpfront;
+  const rate = 0.0675;
+  const mr = rate/12;
+  const n = term * 12;
+  const payment = totalLoan * (mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1);
+  const mmip = baseLoan * 0.0055 / 12;
+  const totalMonthly = payment + mmip;
+  const monthlyInc = inc/12;
+  const fdti = (totalMonthly/monthlyInc*100).toFixed(1);
+  const bdti = ((totalMonthly+debts)/monthlyInc*100).toFixed(1);
+  const arv = (pp + reno) * 1.15;
+
+  document.getElementById('r-total').textContent = fmt(totalProject);
+  document.getElementById('r-down').textContent = fmt(downAmt);
+  document.getElementById('r-base').textContent = fmt(baseLoan);
+  document.getElementById('r-mip').textContent = fmt(mipUpfront);
+  document.getElementById('r-loan').textContent = fmt(totalLoan);
+  document.getElementById('r-monthly').textContent = fmt(totalMonthly)+'/mo';
+  document.getElementById('r-mmip').textContent = fmt(mmip)+'/mo';
+  document.getElementById('r-cont').textContent = fmt(contingency);
+  document.getElementById('r-fdti').textContent = fdti+'% '+(parseFloat(fdti)<=31?'✅':'⚠️');
+  document.getElementById('r-bdti').textContent = bdti+'% '+(parseFloat(bdti)<=43?'✅':'⚠️');
+  document.getElementById('r-arv').textContent = fmt(arv)+' (est. at +15%)';
+  document.getElementById('r-escrow').textContent = fmt(reno+contingency)+' held in escrow, disbursed to contractors in draws upon HUD inspection. Work must be complete in 6 months.';
+  document.getElementById('resultBox').classList.add('show');
+
+  drawChart(pp, reno, contingency, mipUpfront, downAmt);
+  document.getElementById('chartWrap').style.display='block';
+
+  window._lastCalc = {pp,reno,contingency,dpPct,totalProject,downAmt,baseLoan,totalLoan,totalMonthly,fdti,bdti,arv,loanType};
+}
+
+function drawChart(pp, reno, contingency, mip, down){
+  const items = [
+    {l:'Purchase Price', v:pp,   c:'#1B3F72'},
+    {l:'Renovation',     v:reno, c:'#B91C1C'},
+    {l:'Contingency',    v:contingency, c:'#D97706'},
+    {l:'MIP Upfront',    v:mip,  c:'#0F766E'},
+    {l:'Down Payment',   v:down, c:'#15803D'},
+  ];
+  const total = items.reduce((a,i)=>a+i.v,0);
+  const W=380, H=160, pad=14;
+  let x = pad;
+  const bH = 36, bY = (H-bH)/2;
+  let paths='', labels='';
+  items.forEach(it=>{
+    const w = (it.v/total)*(W-pad*2);
+    paths += `<rect x="${x}" y="${bY}" width="${w}" height="${bH}" fill="${it.c}" rx="4"/>`;
+    if(w>22) labels += `<text x="${x+w/2}" y="${bY+bH/2+4}" text-anchor="middle" font-size="9" font-weight="800" fill="white">${Math.round(it.v/1000)}K</text>`;
+    x += w;
+  });
+  document.getElementById('breakdownSVG').innerHTML = paths+labels;
+  document.getElementById('chartLegend').innerHTML = items.map(i=>`
+    <div style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);font-weight:600;">
+      <div style="width:9px;height:9px;border-radius:3px;background:${i.c};flex-shrink:0;"></div>${i.l}: ${fmt(i.v)}</div>`).join('');
+}
+
+function saveCalc(){
+  if(!window._lastCalc) return;
+  const saves = JSON.parse(localStorage.getItem('k203saves')||'[]');
+  const c = window._lastCalc;
+  saves.unshift({id:Date.now(), name:`203(k) ${c.loanType==='limited'?'Limited':'Standard'} · ${fmt(c.pp)}`, meta:`Reno: ${fmt(c.reno)} · Payment: ${fmt(c.totalMonthly)}/mo`, amt:fmt(c.totalLoan), date:new Date().toLocaleDateString()});
+  localStorage.setItem('k203saves', JSON.stringify(saves.slice(0,10)));
+  renderSaved(); showToast('✅ Calculation saved!');
+}
+
+function renderSaved(){
+  const saves = JSON.parse(localStorage.getItem('k203saves')||'[]');
+  document.getElementById('savedCount').textContent = saves.length+' Saved';
+  const el = document.getElementById('savedList');
+  if(!saves.length){ el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px;">No saved calculations yet.</div>'; return; }
+  el.innerHTML = saves.map(s=>`
+    <div class="saved-item">
+      <div><div class="si-name">${s.name}</div><div class="si-meta">${s.meta} · ${s.date}</div></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div class="si-amt">${s.amt}</div><div class="si-del" onclick="delSave(${s.id})">🗑</div></div>
+    </div>`).join('');
+}
+
+function delSave(id){
+  const saves = JSON.parse(localStorage.getItem('k203saves')||'[]').filter(s=>s.id!==id);
+  localStorage.setItem('k203saves', JSON.stringify(saves));
+  renderSaved(); showToast('🗑 Deleted');
+}
+
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+
+updateLoan();
+renderSaved();
+</script>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jumbo vs. Conforming</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);
+    --slate:#334155;--slate2:#1E293B;--green:#15803D;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#334155 55%,#1E293B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'⚖️';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:'Playfair Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec-badge{font-size:9px;font-weight:700;color:var(--gold);background:#FEF3C7;border-radius:6px;padding:2px 8px;}
+
+  /* LOAN TYPE HERO */
+  .type-hero{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .type-card{border-radius:18px;padding:16px;text-align:center;position:relative;overflow:hidden;}
+  .type-card.jumbo{background:linear-gradient(140deg,#0B1D3A,#334155);box-shadow:var(--sh2);}
+  .type-card.conforming{background:linear-gradient(140deg,#1E3A5F,#2563EB);box-shadow:var(--sh2);}
+  .tc-badge{font-size:8px;font-weight:800;padding:3px 9px;border-radius:6px;display:inline-block;margin-bottom:8px;letter-spacing:0.5px;}
+  .type-card.jumbo .tc-badge{background:rgba(253,211,77,0.25);color:var(--gold-lt);}
+  .type-card.conforming .tc-badge{background:rgba(255,255,255,0.18);color:#fff;}
+  .tc-label{font-size:8.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;}
+  .tc-rate{font-size:26px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1;}
+  .tc-sub{font-size:9px;color:rgba(255,255,255,0.55);margin-top:4px;}
+  .tc-limit{font-size:10.5px;font-weight:700;margin-top:8px;}
+  .type-card.jumbo .tc-limit{color:var(--gold-lt);}
+  .type-card.conforming .tc-limit{color:rgba(255,255,255,0.8);}
+
+  /* INPUTS */
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .inp-box{background:var(--card);border-radius:14px;padding:13px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:rgba(51,65,85,0.4);}
+  .inp-box label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:15px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:9px;color:var(--muted);margin-top:3px;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#334155,#1E293B);border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(51,65,85,0.35);font-family:'DM Sans',sans-serif;margin-bottom:4px;transition:transform .1s;}
+  .calc-btn:active{transform:scale(0.98);}
+
+  /* RESULT HERO */
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#334155);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:10px;}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+  .rh-compare-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+  .rh-col{text-align:center;}
+  .rh-col-label{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;}
+  .rh-col-val{font-size:22px;font-weight:800;font-family:'Playfair Display',serif;line-height:1;}
+  .rh-col.jumbo-col .rh-col-val{color:var(--gold-lt);}
+  .rh-col.conf-col .rh-col-val{color:#86EFAC;}
+  .rh-col-sub{font-size:9px;color:rgba(255,255,255,0.45);margin-top:2px;}
+  .vs-badge{background:rgba(255,255,255,0.15);border-radius:10px;padding:8px;text-align:center;}
+  .vs-text{font-size:11px;font-weight:800;color:#fff;}
+  .vs-diff{font-size:9px;color:rgba(255,255,255,0.55);margin-top:2px;}
+  .rh-insight{margin-top:12px;background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;font-size:10px;color:rgba(255,255,255,0.70);line-height:1.5;}
+  .rh-insight strong{color:#fff;}
+  .rh-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+  .save-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:8px 14px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(253,211,77,0.25);border-color:var(--gold-lt);color:var(--gold-lt);}
+  .save-count{background:rgba(255,255,255,0.15);border-radius:8px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,0.7);}
+
+  /* VISUAL BAR COMPARISON */
+  .chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:4px;}
+  .chart-sub{font-size:9.5px;color:var(--muted);margin-bottom:12px;}
+  .dual-bar{margin-bottom:12px;}
+  .db-header{display:flex;justify-content:space-between;margin-bottom:5px;}
+  .db-label{font-size:10px;font-weight:700;color:var(--navy);}
+  .db-vals{font-size:10px;font-weight:700;color:var(--muted);}
+  .db-track{height:28px;background:var(--bg);border-radius:7px;overflow:hidden;position:relative;display:flex;}
+  .db-fill-j{height:100%;border-radius:7px 0 0 7px;display:flex;align-items:center;padding-left:8px;transition:width .8s ease;}
+  .db-fill-c{height:100%;flex:1;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;transition:width .8s ease;}
+  .db-text{font-size:10px;font-weight:800;color:#fff;}
+  .db-legend{display:flex;gap:12px;margin-top:6px;}
+  .dbl-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);}
+  .dbl-dot{width:10px;height:10px;border-radius:3px;}
+
+  /* FEATURE TABLE */
+  .compare-table{background:var(--card);border-radius:18px;overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .ct-header{display:grid;grid-template-columns:1.4fr 1fr 1fr;background:var(--navy);padding:10px 14px;}
+  .ct-head{font-size:9px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.4px;}
+  .ct-head.jumbo{color:var(--gold-lt);}
+  .ct-head.conf{color:#86EFAC;}
+  .ct-row{display:grid;grid-template-columns:1.4fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid var(--border);align-items:start;}
+  .ct-row:last-child{border-bottom:none;}
+  .ct-row:nth-child(even){background:rgba(240,244,255,0.5);}
+  .ct-feature{font-size:10.5px;font-weight:700;color:var(--navy);}
+  .ct-feature-sub{font-size:8.5px;color:var(--muted);margin-top:1px;}
+  .ct-val{font-size:10px;font-weight:700;color:var(--navy);text-align:center;}
+  .ct-val.gold{color:var(--gold);}
+  .ct-val.green{color:var(--green);}
+  .ct-val.red{color:var(--red);}
+  .ct-val.muted{color:var(--muted);}
+
+  /* COUNTY LIMITS */
+  .limit-card{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:14px 15px;margin-bottom:10px;}
+  .lc-title{font-size:12px;font-weight:700;color:#92400E;font-family:'Playfair Display',serif;margin-bottom:10px;}
+  .lc-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(245,158,11,0.25);}
+  .lc-row:last-child{border-bottom:none;}
+  .lc-k{font-size:10px;color:#92400E;font-weight:600;}
+  .lc-v{font-size:10px;font-weight:800;color:#B45309;}
+
+  /* DECISION HELPER */
+  .decision-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .dc-title{font-size:12px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:12px;}
+  .dc-scenario{display:flex;gap:10px;margin-bottom:10px;padding:10px;border-radius:12px;}
+  .dc-scenario.jumbo-rec{background:#FEF3C7;border:1px solid #F59E0B;}
+  .dc-scenario.conf-rec{background:#F0FDF4;border:1px solid #BBF7D0;}
+  .dc-icon{font-size:24px;flex-shrink:0;}
+  .dc-info{}
+  .dc-rec{font-size:10.5px;font-weight:800;color:var(--navy);}
+  .dc-desc{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+  /* SAVED PANEL */
+  .saved-panel{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;display:none;}
+  .saved-panel.visible{display:block;}
+  .saved-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .saved-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;}
+  .clear-btn{font-size:10px;color:var(--red);font-weight:600;cursor:pointer;border:none;background:none;}
+  .saved-item{background:var(--bg);border-radius:11px;padding:10px 12px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .si-name{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-detail{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-right{font-size:13px;font-weight:800;color:var(--slate);font-family:'Playfair Display',serif;}
+  .si-del{font-size:14px;color:var(--muted);cursor:pointer;margin-left:6px;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;border-radius:12px;padding:10px 18px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .type-hero,.result-hero,.chart-card,.compare-table,.limit-card,.decision-card{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">⚖️</div>
+      <div class="hdr-title">Jumbo vs. Conforming</div>
+      <div class="hdr-sub">Side-by-Side Loan Comparison · 2025</div>
+    </div>
+    <div class="icon-btn" onclick="toggleSaved()">🔖</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Jumbo 30-Yr</div><div class="rs-v gold">7.04%</div><div class="rs-n">Jun 2025</div></div>
+    <div class="rs"><div class="rs-l">Conf. 30-Yr</div><div class="rs-v">6.74%</div><div class="rs-n">Jun 2025</div></div>
+    <div class="rs"><div class="rs-l">Rate Spread</div><div class="rs-v">+0.30%</div><div class="rs-n">Jumbo-Conf</div></div>
+    <div class="rs"><div class="rs-l">Conf. Limit</div><div class="rs-v">$766K</div><div class="rs-n">2025 FHFA</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- SAVED PANEL -->
+  <div class="saved-panel" id="savedPanel">
+    <div class="saved-header">
+      <div class="saved-title">📌 Saved Comparisons</div>
+      <button class="clear-btn" onclick="clearAllSaved()">Clear All</button>
+    </div>
+    <div id="savedList"><div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No saved comparisons yet.</div></div>
+  </div>
+
+  <!-- CURRENT RATES AT A GLANCE -->
+  <div class="sec" style="margin-top:0">June 2025 Rates</div>
+  <div class="type-hero">
+    <div class="type-card jumbo">
+      <div class="tc-badge">JUMBO</div>
+      <div class="tc-label">30-Yr Fixed</div>
+      <div class="tc-rate">7.04%</div>
+      <div class="tc-sub">Above $766,550 (standard)<br>Above $1,149,825 (high-cost)</div>
+      <div class="tc-limit">Non-GSE · Portfolio Loan</div>
+    </div>
+    <div class="type-card conforming">
+      <div class="tc-badge">CONFORMING</div>
+      <div class="tc-label">30-Yr Fixed</div>
+      <div class="tc-rate">6.74%</div>
+      <div class="tc-sub">Up to $766,550 (standard)<br>Fannie/Freddie backed</div>
+      <div class="tc-limit">GSE-Backed · Tradeable</div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR INPUTS -->
+  <div class="sec">Interactive Calculator</div>
+  <div class="input-grid">
+    <div class="inp-box">
+      <label>Home Price ($)</label>
+      <input type="number" id="homePrice" value="1200000" step="25000" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>Down Payment (%)</label>
+      <input type="number" id="downPct" value="20" step="1" min="3" max="60" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>Jumbo Rate (%)</label>
+      <input type="number" id="jumboRate" value="7.04" step="0.05" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>Conf. Rate (%)</label>
+      <input type="number" id="confRate" value="6.74" step="0.05" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>Loan Term</label>
+      <select id="term" onchange="calculate()">
+        <option value="30" selected>30 Years</option>
+        <option value="20">20 Years</option>
+        <option value="15">15 Years</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>Annual Income ($)</label>
+      <input type="number" id="income" value="350000" step="5000" oninput="calculate()">
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calculate()">⚖️ Compare Loan Types</button>
+
+  <!-- RESULT HERO -->
+  <div class="sec">Payment Comparison</div>
+  <div class="result-hero">
+    <div class="rh-label">Monthly Principal & Interest</div>
+    <div class="rh-compare-grid">
+      <div class="rh-col jumbo-col">
+        <div class="rh-col-label">🏢 Jumbo</div>
+        <div class="rh-col-val" id="jumboPmt">$7,992</div>
+        <div class="rh-col-sub" id="jumboLoan">$960K loan</div>
+      </div>
+      <div class="vs-badge">
+        <div class="vs-text">VS</div>
+        <div class="vs-diff" id="vsDiff">+$322/mo</div>
+      </div>
+      <div class="rh-col conf-col">
+        <div class="rh-col-label">🏠 Conforming</div>
+        <div class="rh-col-val" id="confPmt">$5,023</div>
+        <div class="rh-col-sub" id="confLoan">$766K loan</div>
+      </div>
+    </div>
+    <div class="rh-insight" id="rhInsight">
+      <strong>Your situation:</strong> Loan of $960K qualifies as jumbo. To use conforming loan, you'd need to increase down payment by <span id="extraDown">$193,450</span> or split into a piggyback structure (80-10-10).
+    </div>
+    <div class="rh-save-row">
+      <div class="save-count" id="saveCount">0 saved</div>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save Comparison</button>
+    </div>
+  </div>
+
+  <!-- LIFETIME COST COMPARISON -->
+  <div class="chart-card">
+    <div class="chart-title">💸 Lifetime Cost Analysis</div>
+    <div class="chart-sub">Total paid over full loan term (P+I only)</div>
+
+    <div class="dual-bar" style="margin-bottom:16px;">
+      <div class="db-header">
+        <div class="db-label">Total Interest Paid</div>
+        <div class="db-vals"><span style="color:var(--gold);" id="jumboIntLabel">$1.92M</span> vs <span style="color:var(--green);" id="confIntLabel">$1.04M</span></div>
+      </div>
+      <div class="db-track">
+        <div class="db-fill-j" id="interestJBar" style="background:linear-gradient(90deg,#D97706,#B45309);width:65%"><span class="db-text" id="interestJPct">65%</span></div>
+        <div style="height:100%;flex:1;background:linear-gradient(90deg,#15803D,#166534);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;" id="interestCBar"><span class="db-text" id="interestCPct">35%</span></div>
+      </div>
+      <div class="db-legend">
+        <div class="dbl-item"><div class="dbl-dot" style="background:#D97706"></div>Jumbo Interest</div>
+        <div class="dbl-item"><div class="dbl-dot" style="background:#15803D"></div>Conforming Interest</div>
+      </div>
+    </div>
+
+    <div class="dual-bar">
+      <div class="db-header">
+        <div class="db-label">Monthly Payment</div>
+        <div class="db-vals"><span style="color:var(--gold);" id="jumboMoLabel">$7,992</span> vs <span style="color:var(--green);" id="confMoLabel">$5,023</span></div>
+      </div>
+      <div class="db-track">
+        <div class="db-fill-j" id="pmtJBar" style="background:linear-gradient(90deg,#0B1D3A,#334155);width:61%"><span class="db-text" id="pmtJPct">61%</span></div>
+        <div style="height:100%;flex:1;background:linear-gradient(90deg,#1B3F72,#2563EB);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;" id="pmtCBar"><span class="db-text" id="pmtCPct">39%</span></div>
+      </div>
+      <div class="db-legend">
+        <div class="dbl-item"><div class="dbl-dot" style="background:#0B1D3A"></div>Jumbo Monthly P&I</div>
+        <div class="dbl-item"><div class="dbl-dot" style="background:#1B3F72"></div>Conforming Monthly P&I</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL FEATURE COMPARISON TABLE -->
+  <div class="sec">Full Feature Comparison</div>
+  <div class="compare-table">
+    <div class="ct-header">
+      <div class="ct-head">Feature</div>
+      <div class="ct-head jumbo">🏢 Jumbo</div>
+      <div class="ct-head conf">🏠 Conforming</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">Loan Limit</div><div class="ct-feature-sub">2025 FHFA</div></div>
+      <div class="ct-val gold">>$766,550</div>
+      <div class="ct-val green">≤$766,550</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">High-Cost Limit</div><div class="ct-feature-sub">CA, NY, DC, HI</div></div>
+      <div class="ct-val gold">>$1,149,825</div>
+      <div class="ct-val green">≤$1,149,825</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">GSE Backing</div><div class="ct-feature-sub">Fannie/Freddie</div></div>
+      <div class="ct-val red">❌ None</div>
+      <div class="ct-val green">✅ Yes</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">Min. Credit Score</div><div class="ct-feature-sub">Most lenders</div></div>
+      <div class="ct-val gold">700–720+</div>
+      <div class="ct-val green">620+</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">Min. Down Payment</div><div class="ct-feature-sub">Typical</div></div>
+      <div class="ct-val gold">10–20%</div>
+      <div class="ct-val green">3–5%</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">PMI Required</div><div class="ct-feature-sub">Below 20% down</div></div>
+      <div class="ct-val green">Rarely</div>
+      <div class="ct-val red">Yes (&lt;20%)</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">DTI Maximum</div><div class="ct-feature-sub">Debt-to-income</div></div>
+      <div class="ct-val gold">43%</div>
+      <div class="ct-val green">45–50%</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">Cash Reserves</div><div class="ct-feature-sub">PITI months</div></div>
+      <div class="ct-val gold">12–18 Mo</div>
+      <div class="ct-val green">2–6 Mo</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">Appraisals</div><div class="ct-feature-sub">Required</div></div>
+      <div class="ct-val gold">1–2 (>$2M)</div>
+      <div class="ct-val green">1 (standard)</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">Rate vs Conforming</div><div class="ct-feature-sub">Jun 2025</div></div>
+      <div class="ct-val red">+0.30%</div>
+      <div class="ct-val green">Benchmark</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">Self-Employed OK</div><div class="ct-feature-sub">With bank stmts</div></div>
+      <div class="ct-val green">✅ Yes</div>
+      <div class="ct-val gold">Limited</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">Closing Timeline</div><div class="ct-feature-sub">Average</div></div>
+      <div class="ct-val gold">38–45 days</div>
+      <div class="ct-val green">28–35 days</div>
+    </div>
+    <div class="ct-row">
+      <div><div class="ct-feature">Lender Holds Loan</div><div class="ct-feature-sub">Portfolio vs sold</div></div>
+      <div class="ct-val green">✅ Portfolio</div>
+      <div class="ct-val muted">Sold to GSE</div>
+    </div>
+  </div>
+
+  <!-- 2025 CONFORMING LIMITS -->
+  <div class="sec">2025 FHFA Loan Limits <span class="sec-badge">Official</span></div>
+  <div class="limit-card">
+    <div class="lc-title">📋 FHFA 2025 Conforming Limits — Where Jumbo Begins</div>
+    <div class="lc-row"><div class="lc-k">Standard 1-Unit (most counties)</div><div class="lc-v">$766,550</div></div>
+    <div class="lc-row"><div class="lc-k">High-Cost 1-Unit (CA, NY, DC, HI)</div><div class="lc-v">$1,149,825</div></div>
+    <div class="lc-row"><div class="lc-k">Standard 2-Unit (duplex)</div><div class="lc-v">$981,500</div></div>
+    <div class="lc-row"><div class="lc-k">Standard 3-Unit (triplex)</div><div class="lc-v">$1,186,350</div></div>
+    <div class="lc-row"><div class="lc-k">Standard 4-Unit (fourplex)</div><div class="lc-v">$1,474,400</div></div>
+    <div class="lc-row"><div class="lc-k">Alaska / Hawaii 1-Unit</div><div class="lc-v">$1,149,825</div></div>
+    <div class="lc-row"><div class="lc-k">Anything above → Jumbo</div><div class="lc-v">Non-conforming</div></div>
+  </div>
+
+  <!-- DECISION HELPER -->
+  <div class="sec">Which Loan Is Right for You?</div>
+  <div class="decision-card">
+    <div class="dc-title">🎯 Decision Guide</div>
+    <div class="dc-scenario jumbo-rec">
+      <div class="dc-icon">🏢</div>
+      <div class="dc-info">
+        <div class="dc-rec">Choose Jumbo When…</div>
+        <div class="dc-desc">Loan exceeds $766,550 · Strong income (>$200K) · Excellent credit (720+) · Large liquid reserves · Buying in high-cost market (CA, NY, WA) · Self-employed with 2+ yrs returns</div>
+      </div>
+    </div>
+    <div class="dc-scenario conf-rec">
+      <div class="dc-icon">🏠</div>
+      <div class="dc-info">
+        <div class="dc-rec">Choose Conforming When…</div>
+        <div class="dc-desc">Loan below $766,550 · Building credit (620–720 range) · Lower down payment available (3–5%) · Prefer simpler underwriting · Want faster closing (28–35 days) · Piggyback loan available to stay conforming</div>
+      </div>
+    </div>
+    <div style="background:var(--bg);border-radius:12px;padding:11px 13px;margin-top:4px;">
+      <div style="font-size:11px;font-weight:800;color:var(--navy);margin-bottom:4px;">💡 Piggyback Strategy</div>
+      <div style="font-size:9.5px;color:var(--muted);line-height:1.5;">If your loan is close to the conforming limit, consider an 80-10-10 split: 80% conforming first mortgage + 10% HELOC or second mortgage + 10% down payment. This avoids jumbo pricing, PMI, and stricter underwriting.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni" onclick="toggleSaved()"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY='jumbo_vs_conf_saves';
+let savedCalcs=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+const CONF_LIMIT=766550;
+
+function fmt(n){return'$'+Math.round(n).toLocaleString();}
+function fmtK(n){const v=Math.abs(n);return(n<0?'-':'')+'$'+(v>=1000000?(v/1000000).toFixed(2)+'M':v>=1000?Math.round(v/1000)+'K':Math.round(v));}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function pmt(r,n,pv){if(r===0)return pv/n;return pv*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
+
+function calculate(){
+  const price=parseFloat(document.getElementById('homePrice').value)||1200000;
+  const down=parseFloat(document.getElementById('downPct').value)/100||0.20;
+  const jr=parseFloat(document.getElementById('jumboRate').value)/100||0.0704;
+  const cr=parseFloat(document.getElementById('confRate').value)/100||0.0674;
+  const term=parseInt(document.getElementById('term').value)||30;
+  const months=term*12;
+
+  const loanAmt=price*(1-down);
+  const isJumbo=loanAmt>CONF_LIMIT;
+
+  // Jumbo scenario
+  const jumboPmtVal=pmt(jr/12,months,loanAmt);
+  const jumboTotalInt=(jumboPmtVal*months)-loanAmt;
+
+  // Conforming scenario — max loan = CONF_LIMIT, rest as bigger down payment
+  const confLoan=Math.min(loanAmt,CONF_LIMIT);
+  const confPmtVal=pmt(cr/12,months,confLoan);
+  const confTotalInt=(confPmtVal*months)-confLoan;
+
+  const diff=jumboPmtVal-confPmtVal;
+  const extraDown=loanAmt-CONF_LIMIT;
+
+  document.getElementById('jumboPmt').textContent=fmt(Math.round(jumboPmtVal));
+  document.getElementById('confPmt').textContent=fmt(Math.round(confPmtVal));
+  document.getElementById('jumboLoan').textContent=fmtK(Math.round(loanAmt))+' loan';
+  document.getElementById('confLoan').textContent=fmtK(Math.round(confLoan))+' loan';
+  document.getElementById('vsDiff').textContent=(diff>=0?'+':'')+fmt(Math.round(diff))+'/mo';
+  document.getElementById('extraDown').textContent=fmtK(Math.round(Math.max(0,extraDown)));
+
+  const insight = isJumbo
+    ? `Loan of ${fmtK(Math.round(loanAmt))} qualifies as jumbo. To use conforming, increase down payment by ${fmtK(Math.round(Math.max(0,extraDown)))} or consider an 80-10-10 piggyback structure.`
+    : `Loan of ${fmtK(Math.round(loanAmt))} is within conforming limit. Conforming loan available — no jumbo pricing.`;
+  document.getElementById('rhInsight').innerHTML=`<strong>Your situation:</strong> ${insight}`;
+
+  // Update chart labels
+  document.getElementById('jumboMoLabel').textContent=fmt(Math.round(jumboPmtVal));
+  document.getElementById('confMoLabel').textContent=fmt(Math.round(confPmtVal));
+  document.getElementById('jumboIntLabel').textContent=fmtK(Math.round(jumboTotalInt));
+  document.getElementById('confIntLabel').textContent=fmtK(Math.round(confTotalInt));
+
+  // Interest bar widths
+  const maxInt=Math.max(jumboTotalInt,confTotalInt);
+  const jIntW=Math.round((jumboTotalInt/maxInt)*100);
+  const cIntW=100-jIntW;
+  document.getElementById('interestJBar').style.width=jIntW+'%';
+  document.getElementById('interestJPct').textContent=jIntW+'%';
+  document.getElementById('interestCPct').textContent=cIntW+'%';
+
+  // Payment bar widths
+  const maxPmt=Math.max(jumboPmtVal,confPmtVal);
+  const jPmtW=Math.round((jumboPmtVal/maxPmt)*100);
+  const cPmtW=100-jPmtW;
+  document.getElementById('pmtJBar').style.width=jPmtW+'%';
+  document.getElementById('pmtJPct').textContent=jPmtW+'%';
+  document.getElementById('pmtCPct').textContent=cPmtW+'%';
+}
+
+function saveCalc(){
+  const price=parseFloat(document.getElementById('homePrice').value)||1200000;
+  const down=parseFloat(document.getElementById('downPct').value)||20;
+  const jr=parseFloat(document.getElementById('jumboRate').value)||7.04;
+  const cr=parseFloat(document.getElementById('confRate').value)||6.74;
+  const loanAmt=price*(1-down/100);
+  const jPmt=pmt(jr/100/12,30*12,loanAmt);
+  const cPmt=pmt(cr/100/12,30*12,Math.min(loanAmt,CONF_LIMIT));
+  const entry={id:Date.now(),ts:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    label:`$${Math.round(price/1000)}K home · ${down}% down · ${jr}% vs ${cr}%`,
+    jPmt:Math.round(jPmt),cPmt:Math.round(cPmt),diff:Math.round(jPmt-cPmt)};
+  savedCalcs.unshift(entry);if(savedCalcs.length>10)savedCalcs.pop();
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(savedCalcs));
+  updateSaveCount();renderSaved();
+  showToast('✅ Comparison saved!');
+  const btn=document.getElementById('saveBtn');btn.classList.add('saved');
+  setTimeout(()=>btn.classList.remove('saved'),2000);
+}
+
+function renderSaved(){
+  const el=document.getElementById('savedList');
+  if(savedCalcs.length===0){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No saved comparisons yet.</div>';return;}
+  el.innerHTML=savedCalcs.map(c=>`<div class="saved-item">
+    <div><div class="si-name">${c.label}</div><div class="si-detail">${c.ts} · Jumbo: ${fmt(c.jPmt)} vs Conf: ${fmt(c.cPmt)}</div></div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <div class="si-right">+${fmt(c.diff)}/mo</div>
+      <div class="si-del" onclick="event.stopPropagation();deleteCalc(${c.id})">✕</div>
+    </div></div>`).join('');
+}
+
+function deleteCalc(id){savedCalcs=savedCalcs.filter(c=>c.id!==id);localStorage.setItem(STORAGE_KEY,JSON.stringify(savedCalcs));renderSaved();updateSaveCount();}
+function clearAllSaved(){savedCalcs=[];localStorage.setItem(STORAGE_KEY,JSON.stringify(savedCalcs));renderSaved();updateSaveCount();}
+function updateSaveCount(){document.getElementById('saveCount').textContent=savedCalcs.length+' saved';}
+function toggleSaved(){const p=document.getElementById('savedPanel');p.classList.toggle('visible');if(p.classList.contains('visible'))renderSaved();}
+
+renderSaved();updateSaveCount();calculate();
+</script>
+</body>
+</html>

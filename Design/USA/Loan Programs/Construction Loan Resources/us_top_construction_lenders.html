@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top Construction Lenders | Construction Loan Calc</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --accent:#E84545;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#B91C1C 55%,#991B1B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🏦';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:'Playfair Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:13px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* CONTENT */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+
+  /* FILTER CHIPS */
+  .chip-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;margin-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .chip-row::-webkit-scrollbar{display:none;}
+  .chip{flex-shrink:0;background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:7px 14px;font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .2s;}
+  .chip.active{background:linear-gradient(135deg,#B91C1C,#991B1B);border-color:#B91C1C;color:#fff;}
+
+  /* CHART CARD */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:10px;}
+
+  /* LENDER CARDS */
+  .lend-card{background:var(--card);border-radius:16px;padding:14px 15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .lend-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;}
+  .lend-name{font-size:13px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;}
+  .lend-nmls{font-size:8.5px;color:var(--muted);margin-top:1px;}
+  .lend-stars{font-size:10.5px;color:var(--gold);font-weight:700;white-space:nowrap;}
+  .lend-tag{display:inline-block;font-size:8.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,#0B1D3A,#1B3F72);padding:3px 9px;border-radius:7px;margin:7px 0 9px;}
+  .lend-stats{display:flex;gap:8px;margin-bottom:9px;}
+  .lend-stat{flex:1;background:var(--bg);border-radius:9px;padding:7px 6px;text-align:center;}
+  .lend-stat-v{font-size:13px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;}
+  .lend-stat-l{font-size:7.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;margin-top:1px;}
+  .lend-desc{font-size:9.5px;color:var(--muted);line-height:1.45;margin-bottom:10px;}
+  .lend-actions{display:flex;gap:8px;}
+  .lend-save{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px;font-size:10px;font-weight:700;color:var(--navy);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+  .lend-save.saved{background:linear-gradient(135deg,#FCD34D,#D97706);border-color:#D97706;color:#fff;}
+
+  /* SAVED / SHORTLIST PANEL */
+  .saved-panel{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;display:none;}
+  .saved-panel.visible{display:block;}
+  .saved-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .saved-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;}
+  .clear-btn{font-size:10px;color:var(--red);font-weight:600;cursor:pointer;border:none;background:none;}
+  .saved-item{background:var(--bg);border-radius:11px;padding:10px 12px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;}
+  .si-left .si-name{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-left .si-detail{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-right{font-size:11px;font-weight:700;color:var(--red);}
+  .si-del{font-size:14px;color:var(--muted);cursor:pointer;margin-left:8px;padding:2px;}
+
+  .save-count-pill{display:inline-flex;align-items:center;gap:5px;background:var(--bg);border-radius:8px;padding:5px 10px;font-size:10px;color:var(--muted);font-weight:600;margin-bottom:10px;}
+
+  .disclaimer{font-size:8.5px;color:var(--muted);line-height:1.5;text-align:center;padding:10px 6px;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;border-radius:12px;padding:10px 18px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* BOTTOM NAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--red);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .chart-card,#lenderList{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏦</div>
+      <div class="hdr-title">Top Construction Lenders</div>
+      <div class="hdr-sub">Ranked U.S. Lenders · Updated June 2026</div>
+    </div>
+    <div class="icon-btn" onclick="toggleSaved()" title="My shortlist">🔖</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Reviewed</div><div class="rs-v">40+</div><div class="rs-n">lenders</div></div>
+    <div class="rs"><div class="rs-l">Avg Min Credit</div><div class="rs-v gold">~610</div><div class="rs-n">top 10</div></div>
+    <div class="rs"><div class="rs-l">Avg Min Down</div><div class="rs-v">3%</div><div class="rs-n">most lenders</div></div>
+    <div class="rs"><div class="rs-l">Top Rated</div><div class="rs-v">5.0★</div><div class="rs-n">4 lenders</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <!-- SHORTLIST PANEL -->
+  <div class="saved-panel" id="savedPanel">
+    <div class="saved-header">
+      <div class="saved-title">📌 My Lender Shortlist</div>
+      <button class="clear-btn" onclick="clearAllSaved()">Clear All</button>
+    </div>
+    <div id="savedList"><div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No lenders saved yet.</div></div>
+  </div>
+
+  <div class="sec" style="margin-top:0">Filter Lenders</div>
+  <div class="chip-row" id="chipRow"></div>
+
+  <div class="sec">Min. Credit Score Comparison</div>
+  <div class="chart-card">
+    <div class="chart-title">📊 Lowest Minimum Credit Score Required</div>
+    <svg width="100%" height="150" viewBox="0 0 360 150" id="creditChart"></svg>
+  </div>
+
+  <div class="sec">Lender Directory <span class="more" id="resultCount" style="font-size:9px;color:var(--muted);"></span></div>
+  <div class="save-count-pill" id="saveCount">🔖 0 in shortlist</div>
+  <div id="lenderList"></div>
+
+  <div class="disclaimer">Ratings, NMLS IDs and qualification minimums reflect NerdWallet's June 2026 construction-lender rankings and individual lender disclosures. Rates and terms change — confirm current details directly with each lender, and verify license status at nmlsconsumeraccess.org.</div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni" onclick="toggleSaved()"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'const_loan_top_lenders_favs';
+let savedFavs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+const LENDERS = [
+  {id:'naf', name:'New American Funding', nmls:'6606', rating:4.0, credit:null, down:null, tag:'Best for flexible requirements', cat:['flex'], desc:'Wide menu of purchase, refinance and buyer-assistance programs, including a HELOC usable on a second home.'},
+  {id:'truist', name:'Truist', nmls:'399803', rating:5.0, credit:620, down:3, tag:'Best for renovation loans', cat:['low-down','renovation'], desc:'Broad range of affordability-focused mortgage options with generous grants for qualifying buyers in select areas.'},
+  {id:'flagstar', name:'Flagstar Bank', nmls:'417490', rating:5.0, credit:600, down:3, tag:'Best for jumbo construction loans', cat:['low-credit','low-down'], desc:'Wide variety of home loan options including harder-to-find products; reported average close in 25 days.'},
+  {id:'usbank', name:'U.S. Bank', nmls:'402761', rating:4.5, credit:620, down:3, tag:'Best for variety of loan types', cat:['low-down'], desc:'Broad mortgage selection with deep construction and renovation loan experience, plus up to $17,500 in assistance.'},
+  {id:'guild', name:'Guild Mortgage', nmls:'3274', rating:4.0, credit:600, down:3, tag:'Best for online convenience', cat:['low-credit','low-down'], desc:'Wide range of loans including 0%–1% down options; builder interest buy-down programs available via StrongStart.'},
+  {id:'rate', name:'Rate', nmls:'2611', rating:4.0, credit:580, down:3, tag:'Best for renovation loans', cat:['low-credit','low-down','renovation'], desc:'Streamlined process with full underwriting in as little as one business day; government-backed and renovation loans.'},
+  {id:'prime', name:'PrimeLending', nmls:'13649', rating:4.0, credit:620, down:3, tag:'Best for custom homes', cat:['renovation'], desc:'Strong fit for fixer-uppers and custom builds, including financing for manufactured and 3D-printed homes.'},
+  {id:'alliant', name:'Alliant Credit Union', nmls:'197185', rating:5.0, credit:620, down:3, tag:'Best for credit union lending', cat:['credit-union','low-down'], desc:'Competitive rate-and-fee combination; membership only required once you reach closing, not at application.'},
+  {id:'pnc', name:'PNC Bank', nmls:'446303', rating:5.0, credit:620, down:3, tag:'Best for borrowers in eligible states', cat:['low-down'], desc:'Down payment grants and no-PMI options. Construction loans limited to AL, AZ, CA, CO, FL, GA, NJ, NM, NC, OH, PA, SC, TN, TX, VA, WA.'},
+  {id:'north', name:'Northpointe Bank', nmls:'447490', rating:4.5, credit:620, down:3, tag:'Best for all-in-one financing', cat:['low-down'], desc:'Niche offerings like doctor loans, condo loans and investment-property loans alongside standard construction financing.'},
+];
+
+const FILTERS = [
+  {id:'all', label:'All Lenders'},
+  {id:'low-credit', label:'Lowest Credit Score'},
+  {id:'low-down', label:'Low Down Payment'},
+  {id:'credit-union', label:'Credit Unions'},
+  {id:'renovation', label:'Renovation-Friendly'},
+];
+let activeFilter = 'all';
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function renderChips(){
+  const el = document.getElementById('chipRow');
+  el.innerHTML = FILTERS.map(f=>`<div class="chip ${activeFilter===f.id?'active':''}" onclick="setFilter('${f.id}')">${f.label}</div>`).join('');
+}
+
+function setFilter(id){
+  activeFilter = id;
+  renderChips();
+  renderLenders();
+}
+
+function stars(rating){
+  const full = Math.round(rating);
+  return '★'.repeat(full) + '☆'.repeat(5-full) + ' ' + rating.toFixed(1);
+}
+
+function renderLenders(){
+  const list = activeFilter==='all' ? LENDERS : LENDERS.filter(l=>l.cat.includes(activeFilter));
+  document.getElementById('resultCount').textContent = `(${list.length})`;
+  const el = document.getElementById('lenderList');
+  el.innerHTML = list.map(l=>`
+    <div class="lend-card">
+      <div class="lend-top">
+        <div>
+          <div class="lend-name">${l.name}</div>
+          <div class="lend-nmls">NMLS #${l.nmls}</div>
+        </div>
+        <div class="lend-stars">${stars(l.rating)}</div>
+      </div>
+      <div class="lend-tag">${l.tag}</div>
+      <div class="lend-stats">
+        <div class="lend-stat"><div class="lend-stat-v">${l.credit ?? 'N/A'}</div><div class="lend-stat-l">Min. Credit</div></div>
+        <div class="lend-stat"><div class="lend-stat-v">${l.down!==null ? l.down+'%' : 'N/A'}</div><div class="lend-stat-l">Min. Down</div></div>
+        <div class="lend-stat"><div class="lend-stat-v">${l.rating.toFixed(1)}</div><div class="lend-stat-l">NW Rating</div></div>
+      </div>
+      <div class="lend-desc">${l.desc}</div>
+      <div class="lend-actions">
+        <button class="lend-save ${savedFavs.includes(l.id)?'saved':''}" onclick="toggleFav('${l.id}')">${savedFavs.includes(l.id)?'✓ In Shortlist':'🔖 Save Lender'}</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleFav(id){
+  if(savedFavs.includes(id)){
+    savedFavs = savedFavs.filter(f=>f!==id);
+    showToast('Removed from shortlist');
+  } else {
+    savedFavs.push(id);
+    showToast('✅ Added to shortlist!');
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedFavs));
+  renderLenders();
+  renderSaved();
+  updateSaveCount();
+}
+
+function renderSaved(){
+  const el = document.getElementById('savedList');
+  const items = LENDERS.filter(l=>savedFavs.includes(l.id));
+  if(items.length===0){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No lenders saved yet.</div>';return;}
+  el.innerHTML = items.map(l=>`
+    <div class="saved-item">
+      <div class="si-left">
+        <div class="si-name">${l.name}</div>
+        <div class="si-detail">NMLS #${l.nmls} · ${l.tag}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <div class="si-right">${l.credit ?? 'N/A'} score</div>
+        <div class="si-del" onclick="toggleFav('${l.id}')">✕</div>
+      </div>
+    </div>`).join('');
+}
+
+function clearAllSaved(){
+  savedFavs = [];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedFavs));
+  renderLenders();
+  renderSaved();
+  updateSaveCount();
+}
+
+function updateSaveCount(){
+  document.getElementById('saveCount').textContent = `🔖 ${savedFavs.length} in shortlist`;
+}
+
+function toggleSaved(){
+  const p = document.getElementById('savedPanel');
+  p.classList.toggle('visible');
+  if(p.classList.contains('visible')) renderSaved();
+}
+
+function renderCreditChart(){
+  const data = LENDERS.filter(l=>l.credit!==null).sort((a,b)=>a.credit-b.credit);
+  const W = 360, rowH = 16, gap = 6, leftPad = 92;
+  const maxScore = 680;
+  const svg = document.getElementById('creditChart');
+  svg.setAttribute('viewBox', `0 0 ${W} ${data.length*(rowH+gap)}`);
+  svg.setAttribute('height', data.length*(rowH+gap));
+  let out = '';
+  data.forEach((l,i)=>{
+    const y = i*(rowH+gap);
+    const barMax = W - leftPad - 36;
+    const barW = Math.max(6,(l.credit/maxScore)*barMax);
+    out += `<text x="0" y="${y+rowH-4}" font-size="8.5" fill="#4A5C7A" font-weight="600">${l.name.split(' ')[0]}</text>`;
+    out += `<rect x="${leftPad}" y="${y}" width="${barMax}" height="${rowH}" rx="5" fill="#EEF2F8"/>`;
+    out += `<rect x="${leftPad}" y="${y}" width="${barW}" height="${rowH}" rx="5" fill="${i<2?'#D97706':'#B91C1C'}"/>`;
+    out += `<text x="${leftPad+barW+5}" y="${y+rowH-4}" font-size="8.5" fill="#0B1D3A" font-weight="700">${l.credit}</text>`;
+  });
+  svg.innerHTML = out;
+}
+
+renderChips();
+renderLenders();
+renderSaved();
+updateSaveCount();
+renderCreditChart();
+</script>
+</body>
+</html>

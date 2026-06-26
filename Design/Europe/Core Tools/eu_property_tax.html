@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Property Tax Calc – Europe</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F0F4FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+
+/* HEADER */
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;flex-shrink:0;}
+.hdr-title-wrap{text-align:center;flex:1;}
+.hdr-flag{font-size:22px;display:block;}
+.hdr-title{font-size:17px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;}
+.rs-val{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:26px;background:rgba(255,255,255,0.15);}
+
+/* CONTENT */
+.content{padding:16px 16px 110px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.f1{animation:fadeUp 0.38s ease both;}.f2{animation:fadeUp 0.38s 0.07s ease both;}.f3{animation:fadeUp 0.38s 0.14s ease both;}.f4{animation:fadeUp 0.38s 0.21s ease both;}.f5{animation:fadeUp 0.38s 0.28s ease both;}
+
+/* COUNTRY GRID */
+.country-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.cgcard{background:#fff;border:2px solid transparent;border-radius:14px;padding:11px 8px;text-align:center;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,51,153,0.06);}
+.cgcard.active{border-color:#003399;background:#EEF2FF;transform:scale(1.03);}
+.cgcard .cflag{font-size:22px;}
+.cgcard .cname{font-size:11px;font-weight:700;color:#1A0040;margin-top:4px;}
+.cgcard .ctax{font-size:12px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.cgcard.active .cname,.cgcard.active .ctax{color:#003399;}
+
+/* CARDS */
+.card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(0,51,153,0.09);border:1px solid rgba(0,51,153,0.07);margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:800;color:#1A0040;margin-bottom:14px;font-family:Georgia,serif;}
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px;}
+.field-row{margin-bottom:13px;}
+.field-label{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;justify-content:space-between;}
+.field-val{font-size:14px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.slider{width:100%;-webkit-appearance:none;height:5px;border-radius:3px;background:linear-gradient(to right,#003399 0%,#003399 var(--pct,30%),#E0E7FF var(--pct,30%),#E0E7FF 100%);outline:none;cursor:pointer;}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#003399;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,51,153,0.3);cursor:pointer;}
+.seg-row{display:flex;gap:6px;}
+.seg{flex:1;padding:8px;border-radius:10px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;border:1.5px solid rgba(0,51,153,0.15);color:#6B21A8;background:#fff;transition:all 0.2s;}
+.seg.active{background:#003399;color:#FFCC00;border-color:#003399;}
+
+/* ACTION BUTTONS ROW */
+.action-row{display:flex;gap:10px;margin-bottom:14px;}
+.calc-btn{flex:1;background:linear-gradient(135deg,#003399,#1A0040);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#FFCC00;cursor:pointer;box-shadow:0 4px 16px rgba(0,51,153,0.3);transition:transform 0.15s,box-shadow 0.15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.calc-btn:active{transform:scale(0.97);box-shadow:0 2px 8px rgba(0,51,153,0.2);}
+.save-btn-main{flex-shrink:0;width:54px;background:#fff;border:2px solid #003399;border-radius:14px;padding:15px 0;font-size:13px;font-weight:800;color:#003399;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.save-btn-main:active{background:#EEF2FF;}
+.save-btn-main.saved{background:#003399;color:#FFCC00;border-color:#003399;}
+
+/* RESULT HERO */
+.result-hero{background:linear-gradient(145deg,#003399,#1A0040);border-radius:20px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;transition:all 0.4s;}
+.result-hero::before{content:'🏛️';position:absolute;right:10px;top:5px;font-size:60px;opacity:0.08;}
+.rh-lbl{font-size:11px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;}
+.rh-val{font-size:36px;font-weight:900;color:#FFCC00;font-family:Georgia,serif;line-height:1;margin:5px 0 2px;transition:all 0.3s;}
+.rh-sub{font-size:11px;color:rgba(255,255,255,0.5);}
+.rh-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.rh-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;transition:all 0.3s;}
+.rh-box .l{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;}
+.rh-box .v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rh-pct{font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;}
+
+/* DONUT CHART */
+.donut-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0;}
+.donut-svg{display:block;}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.donut-container{position:relative;width:160px;height:160px;}
+.donut-total-lbl{font-size:10px;color:#6B21A8;text-align:center;margin-top:6px;}
+.donut-total-val{font-size:16px;font-weight:900;color:#003399;font-family:Georgia,serif;text-align:center;}
+.donut-legend{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px;width:100%;}
+.dl-item{display:flex;align-items:center;gap:7px;background:#F7F3FF;border-radius:9px;padding:8px;}
+.dl-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;}
+.dl-name{font-size:10px;font-weight:700;color:#1A0040;flex:1;line-height:1.2;}
+.dl-val{font-size:11px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.dl-pct{font-size:9px;color:#6B21A8;}
+
+/* TAX TIMELINE */
+.tax-timeline{margin-top:4px;}
+.tt-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(0,51,153,0.07);}
+.tt-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.tt-phase{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.tt-name{font-size:13px;font-weight:800;color:#1A0040;}
+.tt-desc{font-size:10px;color:#6B21A8;margin-top:2px;}
+.tt-amt{font-size:15px;font-weight:800;color:#003399;font-family:Georgia,serif;margin-left:auto;flex-shrink:0;}
+
+/* BAR COMPARE */
+.bar-compare{margin-top:6px;}
+.bc-item{margin-bottom:10px;}
+.bc-hdr{display:flex;justify-content:space-between;margin-bottom:4px;align-items:center;}
+.bc-country{font-size:11px;font-weight:700;color:#1A0040;display:flex;align-items:center;gap:4px;}
+.bc-pct{font-size:11px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.bc-track{height:10px;background:#E0E7FF;border-radius:5px;overflow:hidden;}
+.bc-fill{height:100%;border-radius:5px;transition:width 0.7s cubic-bezier(0.4,0,0.2,1);}
+.bc-active-badge{font-size:9px;background:#003399;color:#FFCC00;border-radius:4px;padding:1px 5px;font-weight:800;}
+
+/* INSIGHT CARD */
+.insight-card{background:linear-gradient(135deg,#6B21A8,#1A0040);border-radius:16px;padding:14px 16px;margin-top:14px;display:flex;gap:12px;align-items:flex-start;}
+.insight-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
+.insight-title{font-size:12px;font-weight:800;color:#FFCC00;}
+.insight-text{font-size:11px;color:rgba(255,255,255,0.75);margin-top:3px;line-height:1.5;}
+
+/* STAT ROW */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.stat-box{background:#fff;border-radius:14px;padding:12px 10px;text-align:center;box-shadow:0 2px 10px rgba(0,51,153,0.07);border:1px solid rgba(0,51,153,0.06);}
+.stat-val{font-size:17px;font-weight:900;color:#003399;font-family:Georgia,serif;}
+.stat-lbl{font-size:9px;color:#6B21A8;font-weight:700;text-transform:uppercase;margin-top:3px;}
+
+/* RESULTS HIDDEN STATE */
+.results-section{transition:opacity 0.3s;}
+.results-section.pending{opacity:0.35;pointer-events:none;}
+.pending-overlay{display:none;text-align:center;padding:20px 0 8px;color:#6B21A8;font-size:12px;font-weight:700;}
+.results-section.pending .pending-overlay{display:block;}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1A0040;color:#FFCC00;font-size:13px;font-weight:700;padding:12px 22px;border-radius:50px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+/* PULSE on Calculate */
+@keyframes pulse{0%{box-shadow:0 4px 16px rgba(0,51,153,0.3);}50%{box-shadow:0 4px 28px rgba(0,51,153,0.55);}100%{box-shadow:0 4px 16px rgba(0,51,153,0.3);}}
+.calc-btn.pulse{animation:pulse 0.6s ease;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ Calculation saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">🏛️</span>
+      <div class="hdr-title">Property Tax Calc</div>
+      <div class="hdr-sub">Country-Specific EU Taxes · 2025 Rates</div>
+    </div>
+    <div style="width:36px;"></div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">🇩🇪 GrESt</div><div class="rs-val grn">3.5–6.5%</div><div class="rs-note">Transfer Tax</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇫🇷 Notaire</div><div class="rs-val">7–8%</div><div class="rs-note">Old Build</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇪🇸 ITP</div><div class="rs-val gold">6–10%</div><div class="rs-note">Resale</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇳🇱 Overdracht</div><div class="rs-val">2%</div><div class="rs-note">Transfer</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl f1" style="margin-top:0;">Select Country</div>
+  <div class="country-grid f1">
+    <div class="cgcard active" onclick="setCountry(this,'DE')"><div class="cflag">🇩🇪</div><div class="cname">Germany</div><div class="ctax">3.5–6.5%</div></div>
+    <div class="cgcard" onclick="setCountry(this,'FR')"><div class="cflag">🇫🇷</div><div class="cname">France</div><div class="ctax">2–8%</div></div>
+    <div class="cgcard" onclick="setCountry(this,'ES')"><div class="cflag">🇪🇸</div><div class="cname">Spain</div><div class="ctax">6–10%</div></div>
+    <div class="cgcard" onclick="setCountry(this,'IT')"><div class="cflag">🇮🇹</div><div class="cname">Italy</div><div class="ctax">2–9%</div></div>
+    <div class="cgcard" onclick="setCountry(this,'NL')"><div class="cflag">🇳🇱</div><div class="cname">Netherlands</div><div class="ctax">2%</div></div>
+    <div class="cgcard" onclick="setCountry(this,'PT')"><div class="cflag">🇵🇹</div><div class="cname">Portugal</div><div class="ctax">0.8%</div></div>
+  </div>
+
+  <div class="card f2">
+    <div class="card-title">🏠 Property Details</div>
+    <div class="field-row">
+      <div class="field-label"><span>Purchase Price</span><span class="field-val" id="price-lbl">€ 420,000</span></div>
+      <input type="range" class="slider" id="price" min="50000" max="3000000" step="5000" value="420000" oninput="updSlider(this,'price-lbl');markDirty();">
+    </div>
+    <div class="field-row">
+      <div class="field-label">Property Type</div>
+      <div class="seg-row">
+        <div class="seg active" onclick="setSeg(this,'new')">New Build</div>
+        <div class="seg" onclick="setSeg(this,'resale')">Resale</div>
+        <div class="seg" onclick="setSeg(this,'land')">Land</div>
+      </div>
+    </div>
+    <div class="field-row" style="margin-bottom:0;">
+      <div class="field-label">Buyer Type</div>
+      <div class="seg-row">
+        <div class="seg active" onclick="setBuyer(this,'resident')">Resident</div>
+        <div class="seg" onclick="setBuyer(this,'nonresident')">Non-Resident</div>
+        <div class="seg" onclick="setBuyer(this,'investor')">Investor</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="action-row f3">
+    <button class="calc-btn" id="calcBtn" onclick="runCalc()">
+      <span>🧮</span> Calculate Tax
+    </button>
+    <button class="save-btn-main" id="saveBtn" onclick="saveCalc()" title="Save calculation">💾</button>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div class="results-section pending" id="resultsSection">
+    <div class="pending-overlay">⬆️ Tap Calculate to see results</div>
+
+    <!-- HERO RESULT -->
+    <div class="result-hero f3">
+      <div class="rh-lbl">Total Tax &amp; Fees</div>
+      <div class="rh-val" id="totalTax">€ 0</div>
+      <div class="rh-sub" id="res-sub">Germany · New Build · Resident</div>
+      <div class="rh-grid">
+        <div class="rh-box"><div class="l">Transfer Tax</div><div class="v" id="r-transfer">—</div><div class="rh-pct" id="r-transfer-pct"></div></div>
+        <div class="rh-box"><div class="l">Notary/Legal</div><div class="v" id="r-notary">—</div><div class="rh-pct" id="r-notary-pct"></div></div>
+        <div class="rh-box"><div class="l">Land Registry</div><div class="v" id="r-registry">—</div><div class="rh-pct" id="r-registry-pct"></div></div>
+        <div class="rh-box"><div class="l">Agent Fee</div><div class="v" id="r-agent">—</div><div class="rh-pct" id="r-agent-pct"></div></div>
+      </div>
+    </div>
+
+    <!-- STAT SUMMARY -->
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-val" id="stat-pct">—</div><div class="stat-lbl">of Price</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-monthly">—</div><div class="stat-lbl">Spread / mo</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-rank">—</div><div class="stat-lbl">EU Rank</div></div>
+    </div>
+
+    <!-- DONUT CHART -->
+    <div class="card f4">
+      <div class="card-title">🥧 Fee Composition</div>
+      <div class="donut-wrap">
+        <div class="donut-container">
+          <svg class="donut-svg" width="160" height="160" viewBox="0 0 160 160" id="donutSvg">
+            <circle cx="80" cy="80" r="60" fill="none" stroke="#E0E7FF" stroke-width="22"/>
+          </svg>
+          <div class="donut-center" style="pointer-events:none;">
+            <div style="font-size:11px;color:#6B21A8;font-weight:700;">TOTAL</div>
+            <div style="font-size:15px;font-weight:900;color:#003399;font-family:Georgia,serif;" id="donut-total">€0</div>
+          </div>
+        </div>
+        <div class="donut-legend" id="donutLegend"></div>
+      </div>
+    </div>
+
+    <!-- BREAKDOWN TIMELINE -->
+    <div class="card f4">
+      <div class="card-title">📋 Tax Breakdown Timeline</div>
+      <div class="tax-timeline" id="taxTimeline"></div>
+    </div>
+
+    <!-- INSIGHT -->
+    <div class="insight-card f4" id="insightCard">
+      <div class="insight-icon">💡</div>
+      <div>
+        <div class="insight-title" id="insight-title">Smart Insight</div>
+        <div class="insight-text" id="insight-text">Run the calculation to see personalised insights.</div>
+      </div>
+    </div>
+
+    <!-- EU BAR COMPARE -->
+    <div class="card f4" style="margin-top:14px;">
+      <div class="card-title">📊 EU Transfer Tax Comparison</div>
+      <div class="bar-compare" id="compareChart"></div>
+    </div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const countries={
+  DE:{name:'Germany',flag:'🇩🇪',taxes:{
+    new:{transfer:0.035,notary:0.012,registry:0.005,agent:0.012},
+    resale:{transfer:0.065,notary:0.012,registry:0.005,agent:0.035},
+    land:{transfer:0.065,notary:0.012,registry:0.005,agent:0.015}
+  },transferName:'Grunderwerbsteuer',avgTransfer:5.0,euRank:3,
+  timeline:[{icon:'📝',phase:'Notarvertrag (Notary)',desc:'Notary drafts & signs contract',when:'Week 1–2'},{icon:'💰',phase:'Grunderwerbsteuer',desc:'Land Transfer Tax to state',when:'4–6 weeks'},{icon:'📜',phase:'Land Registry (Grundbuch)',desc:'Ownership registration',when:'6–12 weeks'}]},
+  FR:{name:'France',flag:'🇫🇷',taxes:{
+    new:{transfer:0.02,notary:0.025,registry:0.005,agent:0.03},
+    resale:{transfer:0.058,notary:0.025,registry:0.01,agent:0.03},
+    land:{transfer:0.058,notary:0.025,registry:0.01,agent:0.025}
+  },transferName:'Droits de Mutation',avgTransfer:7.0,euRank:5,
+  timeline:[{icon:'📋',phase:'Compromis de Vente',desc:'Preliminary sale agreement',when:'Day 1'},{icon:'🏛️',phase:'Frais de Notaire',desc:'Notary fees + state taxes',when:'At completion'},{icon:'📜',phase:'Acte Authentique',desc:'Final deed & registration',when:'3–4 months'}]},
+  ES:{name:'Spain',flag:'🇪🇸',taxes:{
+    new:{transfer:0.01,notary:0.008,registry:0.004,agent:0.03},
+    resale:{transfer:0.07,notary:0.008,registry:0.004,agent:0.03},
+    land:{transfer:0.08,notary:0.008,registry:0.004,agent:0.02}
+  },transferName:'ITP / AJD',avgTransfer:8.5,euRank:6,
+  timeline:[{icon:'📝',phase:'Contrato de Arras',desc:'Reservation deposit (10%)',when:'Day 1'},{icon:'💰',phase:'ITP Tax Payment',desc:'Transfer tax to Hacienda',when:'30 days'},{icon:'📜',phase:'Escritura Pública',desc:'Final deed at Notary',when:'4–8 weeks'}]},
+  IT:{name:'Italy',flag:'🇮🇹',taxes:{
+    new:{transfer:0.04,notary:0.015,registry:0.002,agent:0.03},
+    resale:{transfer:0.09,notary:0.015,registry:0.002,agent:0.03},
+    land:{transfer:0.09,notary:0.015,registry:0.002,agent:0.02}
+  },transferName:'Imposta Registro',avgTransfer:9.0,euRank:6,
+  timeline:[{icon:'📋',phase:'Proposta Irrevocabile',desc:'Irrevocable offer',when:'Week 1'},{icon:'🏛️',phase:'Rogito Notarile',desc:'Final notarial deed',when:'4–8 weeks'},{icon:'💰',phase:'Imposta di Registro',desc:'Registration/transfer tax',when:'At closing'}]},
+  NL:{name:'Netherlands',flag:'🇳🇱',taxes:{
+    new:{transfer:0.0,notary:0.01,registry:0.003,agent:0.01},
+    resale:{transfer:0.02,notary:0.01,registry:0.003,agent:0.01},
+    land:{transfer:0.08,notary:0.01,registry:0.003,agent:0.01}
+  },transferName:'Overdrachtsbelasting',avgTransfer:2.0,euRank:1,
+  timeline:[{icon:'📝',phase:'Koopovereenkomst',desc:'Purchase agreement signed',when:'Day 1'},{icon:'💰',phase:'Overdrachtsbelasting',desc:'Transfer tax (2% resale)',when:'At notary'},{icon:'📜',phase:'Akte van Levering',desc:'Transfer deed at notary',when:'4–6 weeks'}]},
+  PT:{name:'Portugal',flag:'🇵🇹',taxes:{
+    new:{transfer:0.008,notary:0.012,registry:0.003,agent:0.03},
+    resale:{transfer:0.065,notary:0.012,registry:0.003,agent:0.03},
+    land:{transfer:0.065,notary:0.012,registry:0.003,agent:0.025}
+  },transferName:'IMT Tax',avgTransfer:6.5,euRank:4,
+  timeline:[{icon:'📋',phase:'Contrato Promessa',desc:'Promissory purchase contract',when:'Week 1'},{icon:'💰',phase:'IMT Payment',desc:'Municipal property transfer tax',when:'Before deeds'},{icon:'📜',phase:'Escritura Pública',desc:'Final deed at Notary/IRN',when:'4–8 weeks'}]}
+};
+
+let selectedCountry='DE', propType='new', buyerType='resident', isDirty=true;
+
+function setCountry(el,code){
+  document.querySelectorAll('.cgcard').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); selectedCountry=code; markDirty();
+}
+function setSeg(el,type){
+  el.parentElement.querySelectorAll('.seg').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active'); propType=type; markDirty();
+}
+function setBuyer(el,type){
+  el.parentElement.querySelectorAll('.seg').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active'); buyerType=type; markDirty();
+}
+function markDirty(){
+  isDirty=true;
+  document.getElementById('resultsSection').classList.add('pending');
+}
+function fmt(n){return new Intl.NumberFormat('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.round(n));}
+function fmtK(n){return n>=1000?'€'+(n/1000).toFixed(1)+'k':'€'+fmt(n);}
+function updSlider(el,lblId){
+  const v=parseFloat(el.value);
+  const pct=(v-el.min)/(el.max-el.min)*100;
+  el.style.setProperty('--pct',pct+'%');
+  document.getElementById(lblId).textContent='€ '+fmt(v);
+}
+
+function drawDonut(segments){
+  const svg=document.getElementById('donutSvg');
+  const r=60, cx=80, cy=80, strokeW=22;
+  const circ=2*Math.PI*r;
+  // clear old segments
+  while(svg.children.length>1) svg.removeChild(svg.lastChild);
+  let offset=0;
+  const total=segments.reduce((s,seg)=>s+seg.val,0);
+  segments.forEach(seg=>{
+    if(seg.val<=0) return;
+    const pct=seg.val/total;
+    const dash=pct*circ;
+    const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx',cx); circle.setAttribute('cy',cy); circle.setAttribute('r',r);
+    circle.setAttribute('fill','none');
+    circle.setAttribute('stroke',seg.color);
+    circle.setAttribute('stroke-width',strokeW);
+    circle.setAttribute('stroke-dasharray',`${dash} ${circ-dash}`);
+    circle.setAttribute('stroke-dashoffset',circ/4 - offset);
+    circle.style.transition='stroke-dasharray 0.5s ease';
+    svg.appendChild(circle);
+    offset+=dash;
+  });
+}
+
+function runCalc(){
+  const btn=document.getElementById('calcBtn');
+  btn.classList.add('pulse');
+  setTimeout(()=>btn.classList.remove('pulse'),600);
+
+  const price=parseFloat(document.getElementById('price').value);
+  const c=countries[selectedCountry];
+  const t=c.taxes[propType]||c.taxes.resale;
+  let transfer=price*t.transfer;
+  if(buyerType==='nonresident') transfer*=1.2;
+  if(buyerType==='investor') transfer*=1.35;
+  const notary=price*t.notary;
+  const registry=price*t.registry;
+  const agent=price*t.agent;
+  const total=transfer+notary+registry+agent;
+  const totalPct=((total/price)*100).toFixed(1);
+  const monthlySpread=total/360; // 30-year spread
+
+  // Hero
+  document.getElementById('totalTax').textContent='€ '+fmt(total);
+  document.getElementById('res-sub').textContent=`${c.flag} ${c.name} · ${propType.charAt(0).toUpperCase()+propType.slice(1)} · ${buyerType.charAt(0).toUpperCase()+buyerType.slice(1)}`;
+  document.getElementById('r-transfer').textContent='€ '+fmt(transfer);
+  document.getElementById('r-transfer-pct').textContent=((transfer/total)*100).toFixed(1)+'% of total';
+  document.getElementById('r-notary').textContent='€ '+fmt(notary);
+  document.getElementById('r-notary-pct').textContent=((notary/total)*100).toFixed(1)+'% of total';
+  document.getElementById('r-registry').textContent='€ '+fmt(registry);
+  document.getElementById('r-registry-pct').textContent=((registry/total)*100).toFixed(1)+'% of total';
+  document.getElementById('r-agent').textContent='€ '+fmt(agent);
+  document.getElementById('r-agent-pct').textContent=((agent/total)*100).toFixed(1)+'% of total';
+
+  // Stats
+  document.getElementById('stat-pct').textContent=totalPct+'%';
+  document.getElementById('stat-monthly').textContent=fmtK(monthlySpread);
+  const rankLabels=['1st','2nd','3rd','4th','5th','6th'];
+  document.getElementById('stat-rank').textContent=rankLabels[(c.euRank||3)-1]||'—';
+
+  // Donut
+  const segs=[
+    {label:'Transfer Tax',val:transfer,color:'#003399'},
+    {label:'Notary/Legal',val:notary,color:'#6D28D9'},
+    {label:'Land Registry',val:registry,color:'#0F766E'},
+    {label:'Agent Fee',val:agent,color:'#D97706'},
+  ];
+  drawDonut(segs);
+  document.getElementById('donut-total').textContent='€'+fmt(total);
+  const legend=document.getElementById('donutLegend');
+  legend.innerHTML='';
+  segs.forEach(s=>{
+    const pct=((s.val/total)*100).toFixed(1);
+    legend.innerHTML+=`<div class="dl-item"><div class="dl-dot" style="background:${s.color}"></div><div><div class="dl-name">${s.label}</div><div class="dl-pct">${pct}%</div></div><div class="dl-val">€${fmt(s.val)}</div></div>`;
+  });
+
+  // Timeline
+  const tl=document.getElementById('taxTimeline');
+  tl.innerHTML='';
+  const phases=[
+    {icon:'📅',name:c.transferName,desc:'Transfer / purchase tax',amt:transfer,color:'#003399'},
+    {icon:'🏛️',name:'Notary Fees',desc:'Legal deed drafting',amt:notary,color:'#6D28D9'},
+    {icon:'📜',name:'Land Registry',desc:'Title registration',amt:registry,color:'#0F766E'},
+    {icon:'🤝',name:'Agency Fee',desc:'Real estate agent commission',amt:agent,color:'#B45309'},
+  ];
+  phases.forEach(p=>{
+    tl.innerHTML+=`<div class="tt-item"><div class="tt-phase" style="background:${p.color}20">${p.icon}</div><div><div class="tt-name">${p.name}</div><div class="tt-desc">${p.desc}</div></div><div class="tt-amt" style="color:${p.color}">€${fmt(p.amt)}</div></div>`;
+  });
+
+  // Insight
+  let insightTitle='', insightText='';
+  if(parseFloat(totalPct)<=3.5){insightTitle='🟢 Low Tax Burden';insightText=`At ${totalPct}% of purchase price, ${c.name} is one of Europe's most buyer-friendly markets for this property type.`;}
+  else if(parseFloat(totalPct)<=6){insightTitle='🟡 Moderate Cost';insightText=`${totalPct}% total tax burden is typical for ${c.name}. Budget €${fmt(total)} on top of your purchase price.`;}
+  else{insightTitle='🔴 High Tax Load';insightText=`At ${totalPct}%, your upfront costs are significant. Consider factoring this into your financing plan from day one.`;}
+  if(buyerType==='nonresident') insightText+=' Non-resident surcharge of 20% applies to transfer tax.';
+  if(buyerType==='investor') insightText+=' Investor bracket attracts a 35% transfer tax premium.';
+  document.getElementById('insight-title').textContent=insightTitle;
+  document.getElementById('insight-text').textContent=insightText;
+
+  // Compare chart
+  const chart=document.getElementById('compareChart');
+  chart.innerHTML='';
+  const compData=[
+    {flag:'🇩🇪',name:'Germany',pct:5.0,color:'#003399'},
+    {flag:'🇫🇷',name:'France',pct:7.5,color:'#1e3a8a'},
+    {flag:'🇪🇸',name:'Spain',pct:8.5,color:'#DC2626'},
+    {flag:'🇮🇹',name:'Italy',pct:9.0,color:'#166534'},
+    {flag:'🇳🇱',name:'Netherlands',pct:2.0,color:'#9A3412'},
+    {flag:'🇵🇹',name:'Portugal',pct:6.5,color:'#4338CA'},
+  ];
+  const maxPct=10;
+  const isActive=(name)=>name===c.name;
+  compData.sort((a,b)=>a.pct-b.pct).forEach(d=>{
+    const active=isActive(d.name);
+    chart.innerHTML+=`<div class="bc-item"><div class="bc-hdr"><div class="bc-country" style="${active?'font-weight:900;color:#003399':''}">${d.flag} ${d.name}${active?` <span class="bc-active-badge">YOU</span>`:''}</div><div class="bc-pct" style="${active?'color:#003399':''}">${d.pct}%</div></div><div class="bc-track"><div class="bc-fill" style="width:${(d.pct/maxPct)*100}%;background:${active?'#003399':d.color+'60'}"></div></div></div>`;
+  });
+
+  // Show results
+  isDirty=false;
+  document.getElementById('resultsSection').classList.remove('pending');
+}
+
+function saveCalc(){
+  if(isDirty){
+    const t=document.getElementById('toast');
+    t.textContent='⚠️ Calculate first, then save!';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2200);
+    return;
+  }
+  // Save to localStorage
+  const price=parseFloat(document.getElementById('price').value);
+  const total=document.getElementById('totalTax').textContent;
+  const saved={country:selectedCountry,propType,buyerType,price,total,date:new Date().toLocaleDateString('en-GB')};
+  const existing=JSON.parse(localStorage.getItem('ptax_saves')||'[]');
+  existing.unshift(saved);
+  localStorage.setItem('ptax_saves',JSON.stringify(existing.slice(0,10)));
+
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved'); btn.textContent='✅';
+  setTimeout(()=>{btn.classList.remove('saved');btn.textContent='💾';},2000);
+
+  const t=document.getElementById('toast');
+  t.textContent='✅ Calculation saved!';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// Init slider display
+const priceEl=document.getElementById('price');
+priceEl.style.setProperty('--pct',((420000-50000)/(3000000-50000)*100)+'%');
+</script>
+</body>
+</html>

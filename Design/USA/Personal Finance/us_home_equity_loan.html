@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Equity Loan Calculator</title>
+<style>
+  :root{--navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;--bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;--border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);--grn:#15803D;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#15803D 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'💵';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+  .content{padding:15px 15px 120px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--grn);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* Toast */
+  .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:9999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .input-group{margin-bottom:13px;}
+  .input-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+  .input-row{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;}
+  .input-prefix{padding:12px 11px;font-size:14px;font-weight:700;color:var(--muted);background:rgba(27,63,114,0.05);border-right:1px solid var(--border);}
+  .input-row input{flex:1;border:none;background:transparent;padding:12px 12px;font-size:15px;font-weight:700;color:var(--navy);font-family:Georgia,serif;outline:none;}
+  .input-suffix{padding:12px 11px;font-size:11px;font-weight:700;color:var(--muted);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .term-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+  .term-opt{text-align:center;padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+
+  /* Action Buttons */
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:6px;}
+  .calc-btn{background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(21,128,61,0.40);font-family:Georgia,serif;transition:transform .1s;}
+  .calc-btn:active{transform:scale(0.97);}
+  .save-btn{background:linear-gradient(135deg,#D97706,#B45309);border:none;border-radius:13px;padding:14px 16px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(217,119,6,0.35);white-space:nowrap;transition:transform .1s;}
+  .save-btn:active{transform:scale(0.97);}
+
+  .result-hero{background:linear-gradient(148deg,#15803D,#166534);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.07);}
+  .rh-label{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.7px;}
+  .rh-val{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:6px 0 2px;}
+  .rh-sub{font-size:11px;color:rgba(255,255,255,0.65);}
+  .rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-item{background:rgba(255,255,255,0.12);border-radius:11px;padding:9px 8px;text-align:center;}
+  .rh-item-l{font-size:8.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;}
+  .rh-item-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+  .rh-item-v.gold{color:var(--gold-lt);}
+
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .stat-card{background:var(--card);border-radius:16px;padding:15px 13px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .sc-icon{font-size:22px;margin-bottom:6px;}
+  .sc-label{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .sc-val{font-size:18px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .sc-sub{font-size:9px;color:var(--muted);}
+
+  /* Amortization SVG Chart */
+  .amort-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .amort-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:4px;}
+  .amort-sub{font-size:9.5px;color:var(--muted);margin-bottom:12px;}
+  .amort-chart-wrap{width:100%;}
+  .amort-bar-legend{display:flex;gap:12px;margin-top:8px;font-size:9px;color:var(--muted);}
+  .al-dot{width:10px;height:10px;border-radius:3px;margin-right:4px;display:inline-block;}
+
+  /* Table rows */
+  .amort-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
+  .amort-row:last-child{border-bottom:none;}
+  .amort-yr{font-size:10px;font-weight:700;color:var(--muted);width:32px;}
+  .amort-bar-wrap{flex:1;background:#EEF2F8;border-radius:100px;height:7px;margin:0 10px;overflow:hidden;display:flex;}
+  .amort-bar-p{height:100%;background:var(--grn);}
+  .amort-bar-i{height:100%;background:#D97706;}
+  .amort-bal{font-size:10px;font-weight:700;color:var(--navy);font-family:Georgia,serif;}
+
+  .use-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+  .use-card{background:var(--card);border-radius:13px;padding:11px 9px;text-align:center;box-shadow:var(--sh);border:1px solid var(--border);}
+  .use-icon{font-size:20px;margin-bottom:5px;}
+  .use-label{font-size:9.5px;font-weight:700;color:var(--navy);font-family:Georgia,serif;line-height:1.3;}
+  .use-sub{font-size:8.5px;color:var(--muted);margin-top:2px;}
+
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--grn);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .calc-card{animation:fadeUp .35s ease both .05s;}.result-hero{animation:fadeUp .35s ease both .10s;}.g2{animation:fadeUp .35s ease both .15s;}.amort-card{animation:fadeUp .35s ease both .20s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">💾 Saved!</div>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div style="font-size:28px">💵</div>
+      <div class="hdr-title">Home Equity Loan</div>
+      <div class="hdr-sub">Fixed Rate · Lump Sum · 2nd Mortgage</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">HEL 10yr Avg</div><div class="rs-v gold">8.36%</div><div class="rs-n">Bankrate</div></div>
+    <div class="rs"><div class="rs-l">HEL 15yr Avg</div><div class="rs-v">8.41%</div><div class="rs-n">National</div></div>
+    <div class="rs"><div class="rs-l">Max CLTV</div><div class="rs-v">85%</div><div class="rs-n">Standard</div></div>
+    <div class="rs"><div class="rs-l">Min Score</div><div class="rs-v gold">620</div><div class="rs-n">FICO</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec" style="margin-top:0">Loan Details <span class="more" onclick="resetForm()">Reset</span></div>
+  <div class="calc-card">
+    <div class="row2">
+      <div class="input-group"><label class="input-label">Home Value</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="hv" value="550000"></div></div>
+      <div class="input-group"><label class="input-label">Mortgage Balance</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="mb" value="310000"></div></div>
+    </div>
+    <div class="row2">
+      <div class="input-group"><label class="input-label">Loan Amount</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="loanAmt" value="60000"></div></div>
+      <div class="input-group"><label class="input-label">Interest Rate</label><div class="input-row"><input type="number" id="rate" value="8.36" step="0.01"><span class="input-suffix">%</span></div></div>
+    </div>
+    <div class="input-group"><label class="input-label">Loan Term</label>
+      <div class="term-btns" id="termBtns">
+        <div class="term-opt" data-val="5" onclick="setTerm(5)" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)">5 yr</div>
+        <div class="term-opt" data-val="10" onclick="setTerm(10)" style="background:linear-gradient(135deg,#15803D,#166534);border:1.5px solid #15803D;color:#fff">10 yr</div>
+        <div class="term-opt" data-val="15" onclick="setTerm(15)" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)">15 yr</div>
+      </div>
+      <input type="hidden" id="term" value="10">
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">💵 Calculate Home Equity Loan</button>
+      <button class="save-btn" onclick="saveCalc()">💾 Save</button>
+    </div>
+  </div>
+
+  <div class="result-hero">
+    <div class="rh-label">Monthly Payment (Fixed)</div>
+    <div class="rh-val" id="moPayment">—</div>
+    <div class="rh-sub" id="heroSub">Press Calculate to see your results</div>
+    <div class="rh-grid">
+      <div class="rh-item"><div class="rh-item-l">Max Available</div><div class="rh-item-v" id="maxAvail">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">Total Interest</div><div class="rh-item-v gold" id="totalInt">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">CLTV</div><div class="rh-item-v" id="cltv">—</div></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="stat-card">
+      <div class="sc-icon">🏦</div>
+      <div class="sc-label">Total Repaid</div>
+      <div class="sc-val" id="totalRepaid">—</div>
+      <div class="sc-sub">Principal + interest</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon">📉</div>
+      <div class="sc-label">Effective APR</div>
+      <div class="sc-val" id="effRate">—</div>
+      <div class="sc-sub">Fixed for full term</div>
+    </div>
+  </div>
+
+  <!-- Amortization Chart -->
+  <div class="sec">Payoff Progress by Year</div>
+  <div class="amort-card">
+    <div class="amort-title">Balance Reduction Over Time</div>
+    <div class="amort-sub">Green = principal paid · Gold = interest paid</div>
+    <div id="amortRows"></div>
+    <div class="amort-bar-legend">
+      <span><span class="al-dot" style="background:#15803D"></span>Principal</span>
+      <span><span class="al-dot" style="background:#D97706"></span>Interest</span>
+    </div>
+  </div>
+
+  <!-- Principal vs Interest Donut -->
+  <div class="sec">Payment Composition</div>
+  <div class="amort-card" style="margin-bottom:12px;">
+    <div class="amort-title">Where Your Money Goes</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-top:12px;">
+      <svg width="90" height="90" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="35" fill="none" stroke="#EEF2F8" stroke-width="16"/>
+        <circle id="donutPrin" cx="45" cy="45" r="35" fill="none" stroke="#15803D" stroke-width="16" stroke-dasharray="220 0" stroke-dashoffset="55" transform="rotate(-90 45 45)" stroke-linecap="round"/>
+        <circle id="donutInt" cx="45" cy="45" r="35" fill="none" stroke="#D97706" stroke-width="16" stroke-dasharray="0 220" stroke-dashoffset="55" transform="rotate(-90 45 45)" stroke-linecap="round" style="opacity:0"/>
+      </svg>
+      <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+        <div><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;">Principal</div><div id="dPrin" style="font-size:18px;font-weight:800;color:#15803D;font-family:Georgia,serif;">—</div></div>
+        <div><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;">Interest</div><div id="dInt" style="font-size:18px;font-weight:800;color:#D97706;font-family:Georgia,serif;">—</div></div>
+        <div><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;">Total Repaid</div><div id="dTotal" style="font-size:18px;font-weight:800;color:var(--navy);font-family:Georgia,serif;">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Use Cases -->
+  <div class="sec">Common Uses</div>
+  <div class="use-grid">
+    <div class="use-card"><div class="use-icon">🔨</div><div class="use-label">Home Renovation</div><div class="use-sub">Kitchen · Bath</div></div>
+    <div class="use-card"><div class="use-icon">🎓</div><div class="use-label">Education</div><div class="use-sub">Tuition · Fees</div></div>
+    <div class="use-card"><div class="use-icon">💳</div><div class="use-label">Debt Consolidation</div><div class="use-sub">Pay off cards</div></div>
+    <div class="use-card"><div class="use-icon">🏥</div><div class="use-label">Medical Bills</div><div class="use-sub">Emergency costs</div></div>
+    <div class="use-card"><div class="use-icon">🚘</div><div class="use-label">Vehicle</div><div class="use-sub">Lower than auto</div></div>
+    <div class="use-card"><div class="use-icon">🏖️</div><div class="use-label">Investment</div><div class="use-sub">Down payment</div></div>
+  </div>
+
+  <div class="sec">HEL vs HELOC</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🔒</div><div><div class="in">Fixed Rate Security</div><div class="is">Home equity loan rate never changes · great for budgeting</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">💰</div><div><div class="in">Lump Sum Disbursement</div><div class="is">Receive full amount upfront · ideal for large known expenses</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏛️</div><div><div class="in">Possible Tax Deduction</div><div class="is">Interest deductible if used for home improvement · IRS Pub. 936</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+function fmt(n){return'$'+Math.round(n).toLocaleString();}
+let currentTerm=10;
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+function resetForm(){
+  document.getElementById('hv').value=550000;
+  document.getElementById('mb').value=310000;
+  document.getElementById('loanAmt').value=60000;
+  document.getElementById('rate').value=8.36;
+  setTerm(10);
+}
+
+function setTerm(t){
+  currentTerm=t;
+  document.getElementById('term').value=t;
+  document.querySelectorAll('.term-opt').forEach(el=>{
+    const v=parseInt(el.dataset.val);
+    if(v===t){el.style.background='linear-gradient(135deg,#15803D,#166534)';el.style.color='#fff';el.style.borderColor='#15803D';}
+    else{el.style.background='var(--bg)';el.style.color='var(--muted)';el.style.borderColor='var(--border)';}
+  });
+}
+
+function calculate(){
+  const hv=parseFloat(document.getElementById('hv').value)||550000;
+  const mb=parseFloat(document.getElementById('mb').value)||310000;
+  const loan=parseFloat(document.getElementById('loanAmt').value)||60000;
+  const rate=parseFloat(document.getElementById('rate').value)||8.36;
+  const term=currentTerm;
+
+  if(mb>=hv){showToast('⚠️ Mortgage balance must be less than home value');return;}
+  if(loan<=0){showToast('⚠️ Loan amount must be greater than 0');return;}
+
+  const mo=rate/100/12,n=term*12;
+  const pmt=mo===0?loan/n:loan*mo*Math.pow(1+mo,n)/(Math.pow(1+mo,n)-1);
+  const totalInt=pmt*n-loan;
+  const maxLine=Math.max(0,0.85*hv-mb);
+  const cltv=((mb+loan)/hv*100).toFixed(1);
+  const totalRepaid=pmt*n;
+  const cltvWarn=parseFloat(cltv)>85;
+
+  document.getElementById('moPayment').textContent=fmt(pmt);
+  document.getElementById('heroSub').textContent=`Fixed rate ${rate}% · ${term}-year term${cltvWarn?' ⚠️ CLTV exceeds 85%':''}`;
+  document.getElementById('maxAvail').textContent=fmt(maxLine);
+  document.getElementById('totalInt').textContent=fmt(totalInt);
+  document.getElementById('cltv').textContent=cltv+'%'+(cltvWarn?' ⚠️':'');
+  document.getElementById('totalRepaid').textContent=fmt(totalRepaid);
+  document.getElementById('effRate').textContent=rate+'%';
+
+  // Donut
+  const circ=220;
+  const prinFrac=loan/totalRepaid;
+  const intFrac=totalInt/totalRepaid;
+  const pd=document.getElementById('donutPrin');
+  const id=document.getElementById('donutInt');
+  pd.setAttribute('stroke-dasharray',`${circ*prinFrac} ${circ}`);pd.style.opacity='1';
+  id.setAttribute('stroke-dasharray',`${circ*intFrac} ${circ}`);
+  id.setAttribute('stroke-dashoffset',`${55-circ*prinFrac}`);id.style.opacity='1';
+  document.getElementById('dPrin').textContent=fmt(loan);
+  document.getElementById('dInt').textContent=fmt(totalInt);
+  document.getElementById('dTotal').textContent=fmt(totalRepaid);
+
+  // Amortization rows
+  let bal=loan;
+  const rows=[];
+  for(let yr=1;yr<=term;yr++){
+    let intYr=0,prinYr=0;
+    for(let m=0;m<12;m++){const intM=bal*mo;const prinM=pmt-intM;intYr+=intM;prinYr+=prinM;bal=Math.max(0,bal-prinM);}
+    rows.push({yr,bal:Math.max(0,bal),prin:prinYr,int:intYr});
+  }
+  const step=Math.max(1,Math.floor(term/5));
+  const display=rows.filter((_,i)=>i===0||(i+1)%step===0||i===term-1).slice(0,6);
+  const html=display.map(r=>{
+    const tot=r.prin+r.int;
+    const pp=(r.prin/tot*100).toFixed(0);
+    const ip=(r.int/tot*100).toFixed(0);
+    return`<div class="amort-row">
+      <div class="amort-yr">Yr ${r.yr}</div>
+      <div class="amort-bar-wrap"><div class="amort-bar-p" style="width:${pp}%"></div><div class="amort-bar-i" style="width:${ip}%"></div></div>
+      <div class="amort-bal">${fmt(r.bal)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('amortRows').innerHTML=html;
+}
+
+function saveCalc(){
+  const data={
+    hv:document.getElementById('hv').value,
+    mb:document.getElementById('mb').value,
+    loanAmt:document.getElementById('loanAmt').value,
+    rate:document.getElementById('rate').value,
+    term:currentTerm,
+    moPayment:document.getElementById('moPayment').textContent,
+    totalInt:document.getElementById('totalInt').textContent,
+    savedAt:new Date().toLocaleString()
+  };
+  try{localStorage.setItem('homeEquityLoanSave',JSON.stringify(data));}catch(e){}
+  showToast('💾 Loan details saved!');
+}
+
+calculate();
+</script>
+</body>
+</html>

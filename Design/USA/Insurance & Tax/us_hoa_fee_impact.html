@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOA Fee Impact Calculator</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --gold:#D97706; --gold-lt:#FCD34D;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A; --border:rgba(27,63,114,0.09);
+    --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --vt:#6D28D9; --vt2:#4C1D95;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#4C1D95 55%,#6D28D9 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🏘️';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  .calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .calc-card-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .calc-card-icon{width:42px;height:42px;border-radius:13px;background:linear-gradient(140deg,#6D28D9,#4C1D95);display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .calc-card-title{font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .calc-card-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+
+  .input-group{margin-bottom:14px;}
+  .input-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+  .input-row{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;}
+  .input-row:focus-within{border-color:var(--vt);background:#faf5ff;}
+  .input-prefix{padding:12px 11px;font-size:14px;font-weight:700;color:var(--muted);background:rgba(27,63,114,0.05);border-right:1px solid var(--border);}
+  .input-row input{flex:1;border:none;background:transparent;padding:12px;font-size:15px;font-weight:700;color:var(--navy);font-family:Georgia,serif;outline:none;}
+  .input-suffix{padding:12px 11px;font-size:11px;font-weight:700;color:var(--muted);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:8px;}
+  .calc-btn{background:linear-gradient(135deg,#6D28D9,#4C1D95);border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(109,40,217,0.40);font-family:Georgia,serif;transition:transform .12s,box-shadow .12s;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .calc-btn:active{transform:scale(.98);box-shadow:0 2px 8px rgba(109,40,217,0.30);}
+  .save-btn{background:var(--card);border:2px solid var(--vt);border-radius:13px;padding:14px 16px;font-size:12px;font-weight:800;color:var(--vt);cursor:pointer;font-family:Georgia,serif;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;}
+  .save-btn:active{background:#f3e8ff;}
+  .save-btn.saved{background:#f3e8ff;border-color:#6D28D9;}
+
+  /* Toast */
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .result-hero{background:linear-gradient(148deg,#6D28D9,#4C1D95);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.07);}
+  .rh-label{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.7px;}
+  .rh-val{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:6px 0 2px;}
+  .rh-sub{font-size:11px;color:rgba(255,255,255,0.65);}
+  .rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-item{background:rgba(255,255,255,0.12);border-radius:11px;padding:9px 8px;text-align:center;}
+  .rh-item-l{font-size:8.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.4px;}
+  .rh-item-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+
+  /* Chart Card */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  canvas{width:100%!important;display:block;}
+
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stat-card{background:var(--card);border-radius:16px;padding:15px 13px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .stat-card.warn{border-color:rgba(185,28,28,0.20);background:#FFF5F5;}
+  .stat-card.ok{border-color:rgba(21,128,61,0.20);background:#F0FFF4;}
+  .sc-icon{font-size:22px;margin-bottom:6px;}
+  .sc-label{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .sc-val{font-size:20px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .stat-card.warn .sc-val{color:#B91C1C;}
+  .stat-card.ok .sc-val{color:#15803D;}
+  .sc-sub{font-size:9px;color:var(--muted);}
+
+  .dti-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .dti-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .dti-bar-wrap{background:#EEF2F8;border-radius:100px;height:10px;overflow:hidden;margin-bottom:6px;}
+  .dti-bar{height:100%;border-radius:100px;background:linear-gradient(90deg,#15803D,#D97706,#B91C1C);transition:width 0.6s ease;}
+  .dti-bar-labels{display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted);font-weight:700;}
+  .dti-zones{display:flex;gap:8px;margin-top:10px;}
+  .dtz{flex:1;text-align:center;padding:6px 4px;border-radius:8px;}
+  .dtz.green{background:#F0FDF4;} .dtz.yellow{background:#FFFBEB;} .dtz.red{background:#FEF2F2;}
+  .dtz-l{font-size:8px;font-weight:700;color:var(--muted);}
+  .dtz-v{font-size:11px;font-weight:800;font-family:Georgia,serif;}
+  .dtz.green .dtz-v{color:#15803D;} .dtz.yellow .dtz-v{color:#D97706;} .dtz.red .dtz-v{color:#B91C1C;}
+
+  .breakdown{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .bk-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+  .bk-row:last-child{border-bottom:none;}
+  .bk-row.total{padding-top:11px;}
+  .bk-label{font-size:12px;color:var(--navy);font-weight:600;display:flex;align-items:center;gap:7px;}
+  .bk-label .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .bk-val{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .bk-row.total .bk-label{font-weight:800;font-size:13px;}
+  .bk-row.total .bk-val{font-size:16px;color:var(--vt);}
+
+  .avg-banner{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 15px;margin-bottom:10px;}
+  .avg-title{font-size:12px;font-weight:800;color:#92400E;font-family:Georgia,serif;margin-bottom:8px;}
+  .avg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  .avg-item{background:rgba(255,255,255,0.55);border-radius:8px;padding:7px;text-align:center;}
+  .avg-l{font-size:8px;color:#92400E;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
+  .avg-v{font-size:13px;font-weight:800;color:#7C2D12;font-family:Georgia,serif;margin-top:1px;}
+
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--vt);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .results-section{animation:fadeUp .35s ease both;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ Calculation saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📝</div>
+      <div class="hdr-title">HOA Fee Impact</div>
+      <div class="hdr-sub">DTI · Payment · Buying Power</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Nat'l Avg HOA</div><div class="rs-v gold">$291</div><div class="rs-n">Per Month</div></div>
+    <div class="rs"><div class="rs-l">Max DTI</div><div class="rs-v">43%</div><div class="rs-n">FHA/Conv.</div></div>
+    <div class="rs"><div class="rs-l">30-Yr Rate</div><div class="rs-v">6.82%</div><div class="rs-n">Freddie Mac</div></div>
+    <div class="rs"><div class="rs-l">Front-End</div><div class="rs-v gold">28%</div><div class="rs-n">Max Rule</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">Calculator <span class="more" onclick="resetForm()">Reset</span></div>
+  <div class="calc-card">
+    <div class="calc-card-header">
+      <div class="calc-card-icon">📝</div>
+      <div>
+        <div class="calc-card-title">HOA Fee Impact</div>
+        <div class="calc-card-sub">See how HOA fees affect your DTI &amp; buying power</div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Home Purchase Price</label>
+      <div class="input-row"><span class="input-prefix">$</span><input type="number" id="homePrice" value="450000" min="50000" max="5000000"></div>
+    </div>
+    <div class="row2">
+      <div class="input-group">
+        <label class="input-label">Down Payment</label>
+        <div class="input-row"><input type="number" id="downPct" value="10" min="3" max="50" step="0.5"><span class="input-suffix">%</span></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Interest Rate</label>
+        <div class="input-row"><input type="number" id="rate" value="6.82" step="0.01" min="1" max="20"><span class="input-suffix">%</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="input-group">
+        <label class="input-label">Monthly HOA Fee</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="hoa" value="350" min="0" max="5000"></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Gross Income/Mo</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="income" value="8500" min="1000"></div>
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Other Monthly Debts (car, student loans, cards)</label>
+      <div class="input-row"><span class="input-prefix">$</span><input type="number" id="otherDebts" value="500" min="0"></div>
+    </div>
+    <div class="row2">
+      <div class="input-group">
+        <label class="input-label">Annual Property Tax</label>
+        <div class="input-row"><input type="number" id="taxRate" value="1.10" step="0.01" min="0" max="5"><span class="input-suffix">%</span></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Annual Insurance</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="insurance" value="1800" min="0"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">🧮 Calculate HOA Impact</button>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+    </div>
+  </div>
+
+  <!-- Results (hidden until first calculate) -->
+  <div id="resultsSection" style="display:none">
+
+    <!-- Result Hero -->
+    <div class="result-hero results-section">
+      <div class="rh-label">Total Monthly PITI + HOA</div>
+      <div class="rh-val" id="totalPayment">—</div>
+      <div class="rh-sub" id="resultSub">Including all housing costs</div>
+      <div class="rh-grid">
+        <div class="rh-item"><div class="rh-item-l">Without HOA</div><div class="rh-item-v" id="withoutHoa">—</div></div>
+        <div class="rh-item"><div class="rh-item-l">HOA Adds</div><div class="rh-item-v" id="hoaImpact">—</div></div>
+        <div class="rh-item"><div class="rh-item-l">Back-End DTI</div><div class="rh-item-v" id="dtiVal">—</div></div>
+      </div>
+    </div>
+
+    <!-- Payment Donut Chart -->
+    <div class="sec">Payment Breakdown</div>
+    <div class="chart-card results-section">
+      <div class="chart-title">Monthly Cost Composition</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:130px;height:130px;flex-shrink:0;position:relative;">
+          <canvas id="donutChart" width="130" height="130"></canvas>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+            <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;">Total</div>
+            <div id="donutCenter" style="font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;">—</div>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div class="bk-row" style="padding:7px 0;"><div class="bk-label"><span class="dot" style="background:#1B3F72"></span>P&amp;I</div><div class="bk-val" id="pi">—</div></div>
+          <div class="bk-row" style="padding:7px 0;"><div class="bk-label"><span class="dot" style="background:#D97706"></span>Tax</div><div class="bk-val" id="taxMo">—</div></div>
+          <div class="bk-row" style="padding:7px 0;"><div class="bk-label"><span class="dot" style="background:#15803D"></span>Insurance</div><div class="bk-val" id="insMo">—</div></div>
+          <div class="bk-row" style="padding:7px 0;border-bottom:none;"><div class="bk-label"><span class="dot" style="background:#6D28D9"></span>HOA</div><div class="bk-val" id="hoaDisplay">—</div></div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;"><span style="font-size:12px;font-weight:800;color:var(--navy);">Total</span><span id="totalDisp" style="font-size:14px;font-weight:800;color:var(--vt);font-family:Georgia,serif;">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DTI Bar Chart -->
+    <div class="sec">DTI Analysis <span class="more">Guidelines</span></div>
+    <div class="dti-card results-section">
+      <div class="dti-title">Back-End DTI: <span id="dtiDisplay" style="color:var(--vt)">—</span> <span style="font-size:10px;color:var(--muted);font-weight:500">(with HOA)</span></div>
+      <div class="dti-bar-wrap"><div class="dti-bar" id="dtiBar" style="width:0%"></div></div>
+      <div class="dti-bar-labels"><span>0%</span><span>28%</span><span>36%</span><span>43%</span><span>50%+</span></div>
+      <div class="dti-zones" style="margin-top:12px">
+        <div class="dtz green"><div class="dtz-l">Excellent</div><div class="dtz-v">≤36%</div></div>
+        <div class="dtz yellow"><div class="dtz-l">Acceptable</div><div class="dtz-v">37–43%</div></div>
+        <div class="dtz red"><div class="dtz-l">High Risk</div><div class="dtz-v">&gt;43%</div></div>
+      </div>
+      <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--navy);" id="dtiStatus"></div>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px;" id="dtiNote"></div>
+      </div>
+    </div>
+
+    <!-- Buying Power Bar Chart -->
+    <div class="sec">Buying Power Impact <span class="more">Compare</span></div>
+    <div class="chart-card results-section">
+      <div class="chart-title">Max Purchase Price at 43% DTI</div>
+      <canvas id="barChart" height="100"></canvas>
+      <div class="g2" style="margin-top:12px;">
+        <div class="stat-card ok"><div class="sc-icon">🏡</div><div class="sc-label">Max Price (No HOA)</div><div class="sc-val" id="maxNoHoa">—</div><div class="sc-sub">Based on 43% DTI</div></div>
+        <div class="stat-card warn"><div class="sc-icon">📉</div><div class="sc-label">Max Price (With HOA)</div><div class="sc-val" id="maxWithHoa">—</div><div class="sc-sub">Reduced by HOA</div></div>
+      </div>
+    </div>
+
+    <div style="background:#F3E8FF;border:1px solid rgba(109,40,217,0.20);border-radius:12px;padding:12px;margin-top:10px;margin-bottom:4px;">
+      <div style="font-size:11px;font-weight:800;color:#4C1D95;font-family:Georgia,serif;" id="buyingPowerLoss">—</div>
+      <div style="font-size:9.5px;color:#6D28D9;margin-top:3px;">Each $100/mo in HOA fees typically reduces max purchase price by ~$16,500</div>
+    </div>
+
+  </div><!-- /resultsSection -->
+
+  <!-- National HOA Data -->
+  <div class="sec">National HOA Averages (2025)</div>
+  <div class="avg-banner">
+    <div class="avg-title">🏘️ HOA Fees by Community Type</div>
+    <div class="avg-grid">
+      <div class="avg-item"><div class="avg-l">Condo</div><div class="avg-v">$415</div></div>
+      <div class="avg-item"><div class="avg-l">Townhouse</div><div class="avg-v">$305</div></div>
+      <div class="avg-item"><div class="avg-l">SFR HOA</div><div class="avg-v">$188</div></div>
+      <div class="avg-item"><div class="avg-l">High-Rise</div><div class="avg-v">$812</div></div>
+      <div class="avg-item"><div class="avg-l">Luxury</div><div class="avg-v">$1,200+</div></div>
+      <div class="avg-item"><div class="avg-l">National</div><div class="avg-v">$291</div></div>
+    </div>
+  </div>
+
+  <div class="sec">HOA Considerations</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📋</div><div><div class="in">What HOA Fees Cover</div><div class="is">Exterior maintenance · amenities · landscaping · insurance</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">⚠️</div><div><div class="in">HOA Reserve Fund Health</div><div class="is">Check reserve study · underfunded HOAs = special assessments</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📈</div><div><div class="in">HOA Fee Increases</div><div class="is">Average 3–5% annual increase · factor into long-term budget</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Lender Treatment</div><div class="is">Counted in back-end DTI · FHA/VA/Conv. all include HOA</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+function fmtK(n){return '$'+Math.round(n/1000)+'K';}
+
+let lastResult=null;
+let donutCtx=null, barCtx=null;
+
+function resetForm(){
+  document.getElementById('homePrice').value=450000;
+  document.getElementById('downPct').value=10;
+  document.getElementById('rate').value=6.82;
+  document.getElementById('hoa').value=350;
+  document.getElementById('income').value=8500;
+  document.getElementById('otherDebts').value=500;
+  document.getElementById('taxRate').value=1.10;
+  document.getElementById('insurance').value=1800;
+  document.getElementById('resultsSection').style.display='none';
+}
+
+function drawDonut(vals, colors, labels){
+  const canvas=document.getElementById('donutChart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const total=vals.reduce((a,b)=>a+b,0);
+  const cx=65,cy=65,R=55,r=35;
+  ctx.clearRect(0,0,130,130);
+  let angle=-Math.PI/2;
+  vals.forEach((v,i)=>{
+    const sweep=2*Math.PI*(v/total);
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,R,angle,angle+sweep);
+    ctx.closePath();ctx.fillStyle=colors[i];ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();
+    angle+=sweep;
+  });
+}
+
+function drawBar(noHoa, withHoa){
+  const canvas=document.getElementById('barChart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||350, H=100;
+  canvas.width=W;canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+  const maxV=noHoa*1.1;
+  const barH=32,gap=18,y1=10,y2=y1+barH+gap;
+  const bw1=Math.min((noHoa/maxV)*(W-90),W-90);
+  const bw2=Math.min((withHoa/maxV)*(W-90),W-90);
+  // No HOA bar
+  ctx.fillStyle='#15803D';ctx.beginPath();ctx.roundRect(70,y1,bw1,barH,6);ctx.fill();
+  ctx.fillStyle='#0B1D3A';ctx.font='bold 9px Helvetica Neue';ctx.textBaseline='middle';ctx.fillText('No HOA',2,y1+barH/2);
+  ctx.fillStyle='#fff';ctx.font='bold 10px Georgia';ctx.fillText(fmtK(noHoa),76,y1+barH/2);
+  // With HOA bar
+  ctx.fillStyle='#B91C1C';ctx.beginPath();ctx.roundRect(70,y2,bw2,barH,6);ctx.fill();
+  ctx.fillStyle='#0B1D3A';ctx.font='bold 9px Helvetica Neue';ctx.textBaseline='middle';ctx.fillText('With HOA',2,y2+barH/2);
+  ctx.fillStyle='#fff';ctx.font='bold 10px Georgia';ctx.fillText(fmtK(withHoa),76,y2+barH/2);
+}
+
+function calculate(){
+  const price=parseFloat(document.getElementById('homePrice').value)||450000;
+  const downPct=parseFloat(document.getElementById('downPct').value)||10;
+  const rate=parseFloat(document.getElementById('rate').value)||6.82;
+  const hoa=parseFloat(document.getElementById('hoa').value)||350;
+  const income=parseFloat(document.getElementById('income').value)||8500;
+  const otherDebts=parseFloat(document.getElementById('otherDebts').value)||500;
+  const taxRate=parseFloat(document.getElementById('taxRate').value)||1.10;
+  const annualIns=parseFloat(document.getElementById('insurance').value)||1800;
+
+  const loan=price*(1-downPct/100);
+  const mo=rate/100/12;
+  const n=360;
+  const pi=mo===0?loan/n:loan*mo*Math.pow(1+mo,n)/(Math.pow(1+mo,n)-1);
+  const taxMo=price*taxRate/100/12;
+  const insMo=annualIns/12;
+  const withoutHoa=pi+taxMo+insMo;
+  const total=withoutHoa+hoa;
+  const dti=(total+otherDebts)/income*100;
+  const dtiNoHoa=(withoutHoa+otherDebts)/income*100;
+
+  const maxHousing=0.43*income-otherDebts;
+  const down=downPct/100;
+  const factor=mo===0?(1-down)/n:(1-down)*mo*Math.pow(1+mo,n)/(Math.pow(1+mo,n)-1);
+  const taxFactor=taxRate/100/12;
+  const insConst=insMo;
+  function maxPrice(maxPITI){return(maxPITI-insConst)/(factor+taxFactor);}
+  const mxNoHoa=maxPrice(maxHousing);
+  const mxWithHoa=maxPrice(maxHousing-hoa);
+  const bpLoss=mxNoHoa-mxWithHoa;
+
+  // Show results
+  document.getElementById('resultsSection').style.display='block';
+  document.getElementById('resultsSection').classList.remove('results-section');
+  void document.getElementById('resultsSection').offsetWidth;
+  document.getElementById('resultsSection').classList.add('results-section');
+
+  document.getElementById('totalPayment').textContent=fmt(total);
+  document.getElementById('withoutHoa').textContent=fmt(withoutHoa);
+  document.getElementById('hoaImpact').textContent='+'+fmt(hoa);
+  document.getElementById('dtiVal').textContent=dti.toFixed(1)+'%';
+  document.getElementById('dtiDisplay').textContent=dti.toFixed(1)+'%';
+  document.getElementById('pi').textContent=fmt(pi);
+  document.getElementById('taxMo').textContent=fmt(taxMo);
+  document.getElementById('insMo').textContent=fmt(insMo);
+  document.getElementById('hoaDisplay').textContent=fmt(hoa);
+  document.getElementById('totalDisp').textContent=fmt(total);
+  document.getElementById('donutCenter').textContent=fmt(total);
+  document.getElementById('maxNoHoa').textContent=fmtK(mxNoHoa);
+  document.getElementById('maxWithHoa').textContent=fmtK(mxWithHoa);
+
+  const barW=Math.min(dti,50)/50*100;
+  document.getElementById('dtiBar').style.width=barW+'%';
+
+  const dtiIncrease=(dti-dtiNoHoa).toFixed(1);
+  if(dti<=36){
+    document.getElementById('dtiStatus').textContent='✅ Excellent DTI — strong approval likelihood';
+    document.getElementById('dtiBar').style.background='#15803D';
+  }else if(dti<=43){
+    document.getElementById('dtiStatus').textContent='⚠️ Acceptable range — lenders may require compensating factors';
+    document.getElementById('dtiBar').style.background='linear-gradient(90deg,#15803D,#D97706)';
+  }else{
+    document.getElementById('dtiStatus').textContent='🚨 High DTI — approval unlikely without large down or co-borrower';
+    document.getElementById('dtiBar').style.background='linear-gradient(90deg,#15803D,#D97706,#B91C1C)';
+  }
+  document.getElementById('dtiNote').textContent=`HOA adds ${fmt(hoa)}/mo which increases your DTI by ${dtiIncrease} percentage points`;
+
+  const lossAmt=Math.abs(Math.round(bpLoss/1000));
+  document.getElementById('buyingPowerLoss').textContent=`HOA reduces buying power by ~$${lossAmt.toLocaleString()},000`;
+  const dtiFmt=dti.toFixed(1);
+  document.getElementById('resultSub').textContent=dti<=43?`✅ DTI ${dtiFmt}% — within lender guidelines`:`🚨 DTI ${dtiFmt}% — exceeds 43% max`;
+
+  // Draw charts
+  setTimeout(()=>{
+    drawDonut([pi,taxMo,insMo,hoa],['#1B3F72','#D97706','#15803D','#6D28D9'],['P&I','Tax','Ins','HOA']);
+    drawBar(mxNoHoa,mxWithHoa);
+  },50);
+
+  lastResult={price,downPct,rate,hoa,income,otherDebts,taxRate,annualIns,total,dti,mxNoHoa,mxWithHoa};
+}
+
+function saveCalc(){
+  if(!lastResult){calculate();}
+  const btn=document.getElementById('saveBtn');
+  const saves=JSON.parse(localStorage.getItem('hoa_saves')||'[]');
+  saves.unshift({...lastResult,date:new Date().toLocaleDateString()});
+  if(saves.length>10)saves.pop();
+  localStorage.setItem('hoa_saves',JSON.stringify(saves));
+  btn.classList.add('saved');btn.textContent='✅ Saved';
+  const t=document.getElementById('toast');t.classList.add('show');
+  setTimeout(()=>{t.classList.remove('show');},2500);
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},3000);
+}
+
+// CanvasRenderingContext2D.roundRect polyfill
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    this.beginPath();this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.quadraticCurveTo(x+w,y,x+w,y+r);
+    this.lineTo(x+w,y+h-r);this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);this.lineTo(x+r,y+h);
+    this.quadraticCurveTo(x,y+h,x,y+h-r);this.lineTo(x,y+r);this.quadraticCurveTo(x,y,x+r,y);this.closePath();
+  };
+}
+</script>
+</body>
+</html>

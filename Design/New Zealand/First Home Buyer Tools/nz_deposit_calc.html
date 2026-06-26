@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NZ Deposit Calculator</title>
+<style>
+  :root {
+    --black:#0A0F0D;--forest:#0D3B2E;--fern:#1A6B4A;--silver:#C0C8C1;
+    --teal:#0D9488;--sky:#0EA5E9;--red:#C0392B;--gold:#D4A017;--gold-lt:#F5D060;
+    --bg:#EDF5F2;--card:#FFFFFF;--muted:#4A6358;--border:rgba(13,59,46,0.09);
+    --sh:0 4px 20px rgba(10,15,13,0.09);--sh2:0 8px 36px rgba(10,15,13,0.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--black);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(158deg,#0A0F0D 0%,#0D3B2E 45%,#0EA5E9 80%,#0D9488 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(14,165,233,0.1);}
+  .header::after{content:'🔑';position:absolute;right:12px;top:44px;font-size:78px;opacity:0.09;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.11);border:1px solid rgba(255,255,255,0.19);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;display:block;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:0.4px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .sec .badge{font-size:9px;font-weight:700;color:#1D4ED8;background:#EFF6FF;border:1px solid #93C5FD;padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+  /* Hero */
+  .result-hero{background:linear-gradient(148deg,#0A0F0D,#0D3B2E);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:14px;}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(14,165,233,0.18);}
+  .rh-tag{font-size:9.5px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.8px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rh-big{font-size:38px;font-weight:800;color:var(--gold-lt);line-height:1.1;margin:6px 0 4px;}
+  .rh-sub{font-size:11px;color:rgba(255,255,255,0.55);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.13);border-radius:10px;padding:9px 10px;}
+  .rh-box label{font-size:7.5px;color:rgba(255,255,255,0.42);display:block;margin-bottom:2px;font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;letter-spacing:0.3px;}
+  .rh-box .v{font-size:13px;font-weight:800;color:#fff;}
+  .rh-box .v.sky{color:#7DD3FC;}
+  .rh-box .v.gold{color:var(--gold-lt);}
+  .rh-box .v.teal{color:#5EEAD4;}
+
+  /* Progress Ring */
+  .progress-section{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;text-align:center;}
+  .progress-section h3{font-size:13px;font-weight:800;color:var(--black);margin-bottom:12px;text-align:left;}
+  .ring-wrap{position:relative;width:120px;height:120px;margin:0 auto 12px;}
+  .ring-wrap svg{width:100%;height:100%;}
+  .ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+  .ring-center .rp{font-size:22px;font-weight:800;color:var(--sky);}
+  .ring-center .rl{font-size:9px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .progress-detail{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;}
+  .pd-item{padding:10px 12px;background:var(--bg);border-radius:10px;}
+  .pd-label{font-size:9px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+  .pd-val{font-size:14px;font-weight:800;color:var(--black);}
+
+  /* Input Card */
+  .input-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .input-card h3{font-size:13px;font-weight:800;color:var(--black);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .field input,.field select{width:100%;padding:11px 13px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);font-size:14px;font-weight:700;color:var(--black);font-family:'Palatino Linotype',Palatino,Georgia,serif;outline:none;transition:border-color .2s;appearance:none;}
+  .field input:focus,.field select:focus{border-color:var(--sky);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .dep-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+  .dbtn{padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;background:var(--bg);border:1.5px solid var(--border);cursor:pointer;color:var(--black);font-family:'Helvetica Neue',Arial,sans-serif;transition:all .15s;}
+  .dbtn.active{background:var(--sky);color:#fff;border-color:var(--sky);}
+  .calc-btn{width:100%;padding:14px;border-radius:13px;border:none;background:linear-gradient(135deg,var(--sky),#0369A1);font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(14,165,233,0.38);font-family:'Palatino Linotype',Palatino,Georgia,serif;margin-top:4px;transition:transform .12s;}
+  .calc-btn:active{transform:scale(.98);}
+  .save-btn{width:100%;padding:12px;border-radius:13px;border:1.5px solid var(--fern);background:transparent;font-size:13px;font-weight:800;color:var(--fern);cursor:pointer;font-family:'Palatino Linotype',Palatino,Georgia,serif;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;}
+  .save-btn.saved{background:#ECFDF5;color:#065F46;border-color:#065F46;}
+
+  /* Savings chart */
+  .chart-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .chart-card h3{font-size:13px;font-weight:800;color:var(--black);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+  .chart-card h3 span{font-size:10px;font-weight:600;color:var(--sky);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .chart-wrap{height:140px;}
+  .chart-wrap svg{width:100%;height:100%;}
+
+  /* Scenarios */
+  .scen-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .scen-card{background:var(--card);border-radius:14px;padding:14px 12px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .scen-card.highlight{background:linear-gradient(140deg,#0A0F0D,#0D3B2E);}
+  .sc-label{font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-family:'Helvetica Neue',Arial,sans-serif;margin-bottom:5px;}
+  .scen-card.highlight .sc-label{color:rgba(255,255,255,0.5);}
+  .sc-years{font-size:22px;font-weight:800;color:var(--black);line-height:1.1;}
+  .scen-card.highlight .sc-years{color:var(--gold-lt);}
+  .sc-sub{font-size:9.5px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;margin-top:3px;}
+  .scen-card.highlight .sc-sub{color:rgba(255,255,255,0.5);}
+  .sc-extra{font-size:10px;color:var(--fern);font-weight:700;margin-top:6px;}
+
+  /* Tip box */
+  .tip-card{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:14px;padding:13px 14px;margin-bottom:10px;}
+  .tip-card h4{font-size:12px;font-weight:800;color:#1E40AF;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .tip-item{font-size:10px;color:#1D4ED8;font-family:'Helvetica Neue',Arial,sans-serif;padding:3px 0;}
+  .tip-item::before{content:'💡 ';}
+
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--fern);color:#fff;font-size:12px;font-weight:700;padding:10px 20px;border-radius:30px;box-shadow:var(--sh2);font-family:'Helvetica Neue',Arial,sans-serif;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,15,13,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ni.active .ni-lb{color:var(--fern);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero{animation:fadeUp .35s ease both .04s;}
+  .progress-section{animation:fadeUp .35s ease both .08s;}
+  .input-card{animation:fadeUp .35s ease both .12s;}
+  .chart-card{animation:fadeUp .35s ease both .16s;}
+  .scen-grid{animation:fadeUp .35s ease both .20s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="screen_newzealand.html" style="text-decoration:none">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔑</div>
+      <div class="hdr-title">Deposit Calculator</div>
+      <div class="hdr-sub">How Long to Save Your Deposit · NZD 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Min Deposit</div><div class="rs-v">20%</div><div class="rs-n">Owner-occ</div></div>
+    <div class="rs"><div class="rs-l">FHB Low Eq</div><div class="rs-v">10%</div><div class="rs-n">LVR allowance</div></div>
+    <div class="rs"><div class="rs-l">Savings Rate</div><div class="rs-v gold">4.80%</div><div class="rs-n">Best NZ bank</div></div>
+    <div class="rs"><div class="rs-l">Inflation</div><div class="rs-v">4.0%</div><div class="rs-n">CPI 2025</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Your Goal <span class="badge">Live Estimate</span></div>
+  <div class="result-hero">
+    <div class="rh-tag">Deposit Savings Goal · NZD</div>
+    <div class="rh-big" id="heroYears">4.2 years</div>
+    <div class="rh-sub" id="heroSub">to save $160,000 (20% of $800,000)</div>
+    <div class="rh-grid">
+      <div class="rh-box"><label>Target Deposit</label><div class="v gold" id="h1">$160,000</div></div>
+      <div class="rh-box"><label>Monthly Saving</label><div class="v sky" id="h2">$2,800</div></div>
+      <div class="rh-box"><label>Total with Interest</label><div class="v teal" id="h3">$163,400</div></div>
+    </div>
+  </div>
+
+  <!-- Progress Ring -->
+  <div class="progress-section">
+    <h3>💰 Current Progress</h3>
+    <div class="ring-wrap">
+      <svg viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#E5EDE9" stroke-width="10"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#0EA5E9" stroke-width="10" stroke-linecap="round"
+          stroke-dasharray="314" id="progressArc" stroke-dashoffset="314" transform="rotate(-90 60 60)"/>
+      </svg>
+      <div class="ring-center">
+        <div class="rp" id="progressPct">0%</div>
+        <div class="rl">Saved</div>
+      </div>
+    </div>
+    <div class="progress-detail">
+      <div class="pd-item"><div class="pd-label">Current Savings</div><div class="pd-val" id="pdCur">$0</div></div>
+      <div class="pd-item"><div class="pd-label">Still Needed</div><div class="pd-val" id="pdNeed">$160,000</div></div>
+      <div class="pd-item"><div class="pd-label">KiwiSaver Est.</div><div class="pd-val" id="pdKs">$28,000</div></div>
+      <div class="pd-item"><div class="pd-label">With KiwiSaver</div><div class="pd-val" id="pdWith">$132,000</div></div>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="sec">Your Savings Plan</div>
+  <div class="input-card">
+    <h3><span>🏦</span> Property & Savings</h3>
+    <div class="field">
+      <label>Target Property Price (NZD)</label>
+      <input type="number" id="propPrice" value="800000" oninput="calculate()">
+    </div>
+    <div class="field">
+      <label>Deposit Target</label>
+      <div class="dep-btns">
+        <button class="dbtn" onclick="setDep(10)">10%</button>
+        <button class="dbtn active" onclick="setDep(20)">20%</button>
+        <button class="dbtn" onclick="setDep(25)">25%</button>
+        <button class="dbtn" onclick="setDep(30)">30%</button>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Current Savings (NZD)</label>
+        <input type="number" id="currentSavings" value="22000" oninput="calculate()">
+      </div>
+      <div class="field">
+        <label>KiwiSaver Balance</label>
+        <input type="number" id="ksBalance" value="28000" oninput="calculate()">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Monthly Savings ($)</label>
+        <input type="number" id="monthlySaving" value="2800" oninput="calculate()">
+      </div>
+      <div class="field">
+        <label>Savings Interest Rate</label>
+        <select id="savingsRate" onchange="calculate()">
+          <option value="4.5">4.50% (ANZ/ASB)</option>
+          <option value="4.8" selected>4.80% (Best rate)</option>
+          <option value="5.0">5.00% (Term deposit)</option>
+          <option value="5.5">5.50% (Online saver)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Include KiwiSaver Withdrawal?</label>
+      <select id="includeKs" onchange="calculate()">
+        <option value="yes" selected>Yes — use KiwiSaver as part of deposit</option>
+        <option value="no">No — savings only</option>
+      </select>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🔑 Calculate Savings Timeline</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save This Calculation</button>
+  </div>
+
+  <!-- Savings chart -->
+  <div class="sec">Savings Trajectory</div>
+  <div class="chart-card">
+    <h3>Projected Balance <span id="chartTitle">Monthly View</span></h3>
+    <div class="chart-wrap"><svg id="savingsChart" viewBox="0 0 380 140" preserveAspectRatio="xMidYMid meet"></svg></div>
+  </div>
+
+  <!-- Scenarios -->
+  <div class="sec">Savings Scenarios</div>
+  <div class="scen-grid" id="scenGrid">
+    <!-- populated by JS -->
+  </div>
+
+  <!-- Tips -->
+  <div class="tip-card">
+    <h4>💡 NZ First Home Saver Tips</h4>
+    <div class="tip-item">Open a First Home Saver account (ASB, ANZ, BNZ) for higher interest rates</div>
+    <div class="tip-item">Maximise KiwiSaver contributions — it counts toward your deposit</div>
+    <div class="tip-item">Apply for the KiwiSaver HomeStart Grant (up to $10K new / $5K existing)</div>
+    <div class="tip-item">Consider a 10% deposit with LVR exemption for first-home buyers</div>
+    <div class="tip-item">Check Kāinga Ora's First Home Partner scheme for shared equity</div>
+    <div class="tip-item">Interest on NZ savings is taxed at your PIE/RWT rate (typically 17.5–28%)</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🌿</div><div class="ni-lb">New Zealand</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">✅ Calculation saved successfully!</div>
+
+<script>
+  let depPct = 20;
+
+  function setDep(p) {
+    depPct = p;
+    document.querySelectorAll('.dep-btns .dbtn').forEach(b => b.classList.toggle('active', parseInt(b.textContent) === p));
+    calculate();
+  }
+
+  function fmt(n) { return '$' + Math.round(n).toLocaleString('en-NZ'); }
+
+  function calcMonthsToGoal(target, current, monthly, annualRate) {
+    if (current >= target) return 0;
+    const r = annualRate / 12 / 100;
+    if (r === 0) return Math.ceil((target - current) / monthly);
+    let bal = current, months = 0;
+    while (bal < target && months < 600) { bal = bal * (1 + r) + monthly; months++; }
+    return months;
+  }
+
+  function calculate() {
+    const price = parseFloat(document.getElementById('propPrice').value) || 800000;
+    const curSav = parseFloat(document.getElementById('currentSavings').value) || 0;
+    const ksBal = parseFloat(document.getElementById('ksBalance').value) || 0;
+    const monthly = parseFloat(document.getElementById('monthlySaving').value) || 0;
+    const savRate = parseFloat(document.getElementById('savingsRate').value);
+    const inclKs = document.getElementById('includeKs').value === 'yes';
+
+    const deposit = price * depPct / 100;
+    const startSav = curSav + (inclKs ? ksBal : 0);
+    const needed = Math.max(0, deposit - startSav);
+    const months = calcMonthsToGoal(deposit, startSav, monthly, savRate);
+    const yrs = months / 12;
+
+    // Total with interest (approx)
+    const r = savRate / 12 / 100;
+    let bal = startSav;
+    for (let m = 0; m < months; m++) bal = bal * (1 + r) + monthly;
+
+    document.getElementById('heroYears').textContent = months === 0 ? '🎉 Ready Now!' : (yrs < 1 ? months + ' months' : yrs.toFixed(1) + ' years');
+    document.getElementById('heroSub').textContent = `to save ${fmt(deposit)} (${depPct}% of ${fmt(price)})`;
+    document.getElementById('h1').textContent = fmt(deposit);
+    document.getElementById('h2').textContent = fmt(monthly) + '/mo';
+    document.getElementById('h3').textContent = fmt(bal);
+
+    // Progress ring
+    const pct = Math.min(100, Math.round(startSav / deposit * 100));
+    document.getElementById('progressPct').textContent = pct + '%';
+    const arc = document.getElementById('progressArc');
+    arc.setAttribute('stroke-dashoffset', 314 - (pct / 100) * 314);
+    document.getElementById('pdCur').textContent = fmt(curSav);
+    document.getElementById('pdNeed').textContent = fmt(Math.max(0, deposit - curSav));
+    document.getElementById('pdKs').textContent = fmt(ksBal);
+    document.getElementById('pdWith').textContent = fmt(Math.max(0, deposit - curSav - ksBal));
+
+    // Chart
+    drawChart(startSav, monthly, deposit, savRate, months);
+
+    // Scenarios
+    const scenarios = [
+      { label: 'Save $1K/mo', monthly: 1000 },
+      { label: 'Save $2K/mo', monthly: 2000 },
+      { label: 'Current', monthly: monthly, highlight: true },
+      { label: 'Save $5K/mo', monthly: 5000 },
+    ];
+    document.getElementById('scenGrid').innerHTML = scenarios.map(s => {
+      const m = calcMonthsToGoal(deposit, startSav, s.monthly, savRate);
+      const y = (m / 12).toFixed(1);
+      const diff = m - months;
+      return `<div class="scen-card ${s.highlight ? 'highlight' : ''}">
+        <div class="sc-label">${s.label}</div>
+        <div class="sc-years">${m === 0 ? '✅ Done' : y + ' yrs'}</div>
+        <div class="sc-sub">${m === 0 ? 'Already saved' : m + ' months'}</div>
+        ${!s.highlight && months > 0 ? `<div class="sc-extra">${diff > 0 ? '↑ ' + Math.round(diff/12*10)/10 + ' yrs slower' : '↓ ' + Math.round(-diff/12*10)/10 + ' yrs faster'}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  function drawChart(start, monthly, target, annualRate, totalMonths) {
+    const svg = document.getElementById('savingsChart');
+    const W = 380, H = 130, pad = { t: 10, r: 10, b: 25, l: 52 };
+    const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
+    const r = annualRate / 12 / 100;
+    const points = [];
+    let bal = start;
+    const step = Math.max(1, Math.floor(totalMonths / 30));
+    for (let m = 0; m <= totalMonths; m += step) {
+      points.push({ m, bal: Math.min(bal, target * 1.05) });
+      for (let i = 0; i < step && m + i < totalMonths; i++) bal = bal * (1 + r) + monthly;
+    }
+    if (points[points.length - 1].m < totalMonths) points.push({ m: totalMonths, bal: target });
+
+    const xS = d => pad.l + (d.m / (totalMonths || 1)) * cW;
+    const yS = d => pad.t + cH - (d.bal / (target * 1.05)) * cH;
+
+    let html = `<defs>
+      <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="#0EA5E9" stop-opacity="0.02"/>
+      </linearGradient></defs>`;
+
+    // target line
+    const ty = pad.t + cH - (target / (target * 1.05)) * cH;
+    html += `<line x1="${pad.l}" y1="${ty}" x2="${W - pad.r}" y2="${ty}" stroke="#D4A017" stroke-width="1.5" stroke-dasharray="5,4"/>`;
+    html += `<text x="${W - pad.r - 2}" y="${ty - 4}" text-anchor="end" font-size="8" fill="#D4A017" font-family="Helvetica Neue,Arial,sans-serif">Goal</text>`;
+
+    // area
+    let area = `M${xS(points[0])},${H - pad.b}`;
+    points.forEach(d => area += ` L${xS(d)},${yS(d)}`);
+    area += ` L${xS(points[points.length-1])},${H - pad.b} Z`;
+    html += `<path d="${area}" fill="url(#sg)"/>`;
+
+    // line
+    let line = `M${xS(points[0])},${yS(points[0])}`;
+    points.slice(1).forEach(d => line += ` L${xS(d)},${yS(d)}`);
+    html += `<path d="${line}" fill="none" stroke="#0EA5E9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+    // Dots
+    [points[0], points[Math.floor(points.length / 2)], points[points.length - 1]].forEach(d => {
+      html += `<circle cx="${xS(d)}" cy="${yS(d)}" r="3.5" fill="#0EA5E9" stroke="white" stroke-width="1.5"/>`;
+    });
+
+    // x labels
+    [0, 0.5, 1].forEach(f => {
+      const m = Math.round(f * totalMonths);
+      const yr = 2025 + Math.floor(m / 12);
+      html += `<text x="${pad.l + f * cW}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#4A6358" font-family="Helvetica Neue,Arial,sans-serif">${yr}</text>`;
+    });
+
+    // y labels
+    [0, 0.5, 1].forEach(f => {
+      const val = target * 1.05 * f;
+      const y = pad.t + cH - f * cH;
+      const lbl = val >= 1000000 ? (val / 1000000).toFixed(1) + 'M' : (val / 1000).toFixed(0) + 'K';
+      html += `<text x="${pad.l - 5}" y="${y + 3}" text-anchor="end" font-size="8" fill="#4A6358" font-family="Helvetica Neue,Arial,sans-serif">$${lbl}</text>`;
+      if (f > 0) html += `<line x1="${pad.l}" y1="${y}" x2="${W - pad.r}" y2="${y}" stroke="#E5EDE9" stroke-width="1" stroke-dasharray="3,3"/>`;
+    });
+
+    svg.innerHTML = html;
+  }
+
+  function saveCalc() {
+    const btn = document.getElementById('saveBtn');
+    btn.classList.add('saved'); btn.textContent = '✅ Saved!';
+    document.getElementById('toast').classList.add('show');
+    setTimeout(() => document.getElementById('toast').classList.remove('show'), 2500);
+    setTimeout(() => { btn.classList.remove('saved'); btn.textContent = '🔖 Save This Calculation'; }, 3000);
+  }
+
+  calculate();
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Income Multiples – UK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;}
+.card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.inp-group{margin-bottom:12px;}
+.inp-label{font-size:11px;font-weight:700;color:#5C5C8A;margin-bottom:5px;display:block;}
+.inp-wrap{position:relative;}
+.inp-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#1a1a5e;}
+.inp-suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#5C5C8A;}
+input[type=number]{width:100%;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:11px;padding:11px 36px 11px 28px;font-size:15px;font-weight:700;color:#0D0D2B;outline:none;-moz-appearance:textfield;}
+input[type=number]:focus{border-color:#1a1a5e;}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+.radio-group{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.radio-btn{background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:10px;padding:9px;text-align:center;cursor:pointer;font-size:12px;font-weight:700;color:#5C5C8A;transition:all .2s;}
+.radio-btn.active{background:#0D0D2B;border-color:#0D0D2B;color:#fff;}
+.btn-calc{width:100%;background:linear-gradient(135deg,#C8102E,#8B0A1E);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(200,16,46,0.35);margin-top:4px;}
+.result-hero{background:linear-gradient(145deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:20px;position:relative;overflow:hidden;margin-bottom:10px;}
+.result-hero::before{content:'📋';position:absolute;right:8px;top:-4px;font-size:65px;opacity:0.07;}
+.rh-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.7px;}
+.rh-val{font-size:32px;font-weight:800;color:#fff;font-family:Georgia,serif;margin:4px 0;}
+.rh-sub{font-size:12px;color:rgba(255,255,255,0.6);}
+.rh-row{display:flex;gap:10px;margin-top:10px;}
+.rh-box{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px;text-align:center;}
+.rh-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.rh-box .v{font-size:14px;font-weight:800;color:#fff;}
+/* Lender cards */
+.lender-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.lc{background:#fff;border-radius:15px;padding:13px;box-shadow:0 3px 10px rgba(13,13,43,0.07);border:2px solid transparent;}
+.lc.top{border-color:#059669;background:#F0FDF4;}
+.lc-name{font-size:12px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.lc-mult{font-size:11px;color:#5C5C8A;margin-top:2px;}
+.lc-amt{font-size:18px;font-weight:800;font-family:Georgia,serif;margin-top:4px;}
+.lc-amt.grn{color:#059669;}.lc-amt.std{color:#1a1a5e;}.lc-amt.red{color:#C8102E;}
+.lc-note{font-size:9px;color:#5C5C8A;margin-top:3px;}
+.lc-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;display:inline-block;margin-top:4px;}
+.badge-top{background:#D1FAE5;color:#065F46;}
+.badge-cond{background:#FEF3C7;color:#78350F;}
+.badge-std{background:#EEF2FF;color:#3730A3;}
+/* Stress test bar */
+.stress-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.sc-title{font-size:12px;font-weight:800;color:#0D0D2B;margin-bottom:12px;font-family:Georgia,serif;}
+.sc-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.sc-row:last-child{margin-bottom:0;}
+.sc-label{font-size:11px;color:#5C5C8A;width:80px;flex-shrink:0;}
+.sc-bar-wrap{flex:1;height:20px;background:#F5F5F8;border-radius:5px;overflow:hidden;}
+.sc-bar{height:100%;border-radius:5px;transition:width 1s ease;}
+.sc-num{font-size:11px;font-weight:800;color:#0D0D2B;width:56px;text-align:right;flex-shrink:0;}
+.hidden{display:none;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇬🇧</span><div class="hdr-title">Income Multiples</div><div class="hdr-sub">Salary × Lender Bands</div></div>
+    <div style="width:36px"></div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Standard</div><div class="rs-val">4–4.5×</div><div class="rs-note">Most lenders</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Higher LTI</div><div class="rs-val">4.5–5×</div><div class="rs-note">FCA limit</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Maximum</div><div class="rs-val">5–5.5×</div><div class="rs-note">Specialist</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">LTI Limit</div><div class="rs-val">15%</div><div class="rs-note">FCA cap >4.5×</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Income Details</div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">Application Type</label>
+      <div class="radio-group">
+        <div class="radio-btn active" id="rb-solo" onclick="setType('solo')">👤 Solo</div>
+        <div class="radio-btn" id="rb-joint" onclick="setType('joint')">👫 Joint</div>
+      </div>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">Salary 1</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="sal1" value="60000" min="0"></div>
+    </div>
+    <div class="inp-group" id="sal2wrap" style="display:none">
+      <label class="inp-label">Salary 2</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="sal2" value="40000" min="0"></div>
+    </div>
+    <div class="inp-group" style="margin-bottom:0">
+      <label class="inp-label">Bonus / Other (50% counted)</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="bonus" value="10000" min="0"></div>
+    </div>
+  </div>
+  <div class="sec-lbl">Property & Deposit</div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">Target Property Price</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="targetPrice" value="350000" min="0"></div>
+    </div>
+    <div class="inp-group" style="margin-bottom:0">
+      <label class="inp-label">Deposit Available</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="dep" value="50000" min="0"></div>
+    </div>
+  </div>
+  <button class="btn-calc" onclick="calculate()">📋 Check Income Multiples</button>
+
+  <div id="results" class="hidden" style="margin-top:16px">
+    <div class="result-hero">
+      <div class="rh-lbl">Standard Borrowing (4.5×)</div>
+      <div class="rh-val" id="stdBorrow">—</div>
+      <div class="rh-sub" id="stdSub">—</div>
+      <div class="rh-row">
+        <div class="rh-box"><label>Required</label><div class="v" id="reqBorrow">—</div></div>
+        <div class="rh-box"><label>Shortfall</label><div class="v" id="shortfall">—</div></div>
+        <div class="rh-box"><label>Multiple Used</label><div class="v" id="multUsed">—</div></div>
+      </div>
+    </div>
+
+    <div class="sec-lbl" style="margin-top:0">All Lender Bands</div>
+    <div class="lender-grid" id="lenderGrid"></div>
+
+    <div class="stress-card">
+      <div class="sc-title">Borrowing Capacity by Multiple</div>
+      <div id="stressBars"></div>
+    </div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+let appType='solo';
+function fmt(n){return'£'+Math.round(n).toLocaleString('en-GB');}
+function setType(t){appType=t;document.getElementById('rb-solo').classList.toggle('active',t==='solo');document.getElementById('rb-joint').classList.toggle('active',t==='joint');document.getElementById('sal2wrap').style.display=t==='joint'?'block':'none';}
+
+const lenders=[
+  {name:'Halifax',multiple:4.75,note:'Standard applicants',badge:'badge-std',type:'std'},
+  {name:'Nationwide',multiple:4.5,note:'Standard',badge:'badge-std',type:'std'},
+  {name:'Barclays',multiple:4.75,note:'Mortgage Plus',badge:'badge-std',type:'std'},
+  {name:'NatWest',multiple:4.5,note:'Standard',badge:'badge-std',type:'std'},
+  {name:'HSBC',multiple:4.75,note:'Standard',badge:'badge-std',type:'std'},
+  {name:'Santander',multiple:4.45,note:'Standard',badge:'badge-std',type:'std'},
+  {name:'Lloyds',multiple:5.0,note:'>£50k income',badge:'badge-cond',type:'cond'},
+  {name:'Virgin Money',multiple:5.0,note:'Salary conditions',badge:'badge-cond',type:'cond'},
+  {name:'Kensington',multiple:5.5,note:'Specialist lender',badge:'badge-top',type:'top'},
+  {name:'Accord',multiple:5.5,note:'Broker only',badge:'badge-top',type:'top'},
+];
+
+function calculate(){
+  const s1=parseFloat(document.getElementById('sal1').value)||0;
+  const s2=appType==='joint'?(parseFloat(document.getElementById('sal2').value)||0):0;
+  const bonus=(parseFloat(document.getElementById('bonus').value)||0)*0.5;
+  const targetPrice=parseFloat(document.getElementById('targetPrice').value)||0;
+  const dep=parseFloat(document.getElementById('dep').value)||0;
+  const totalIncome=s1+s2+bonus;
+  const reqBorrow=targetPrice-dep;
+  const stdBorrow=totalIncome*4.5;
+  const shortfall=reqBorrow-stdBorrow;
+  const multUsed=reqBorrow/totalIncome;
+
+  document.getElementById('stdBorrow').textContent=fmt(stdBorrow);
+  document.getElementById('stdSub').textContent='Combined income: '+fmt(totalIncome)+' p.a.';
+  document.getElementById('reqBorrow').textContent=fmt(reqBorrow);
+  document.getElementById('shortfall').textContent=shortfall>0?'-'+fmt(shortfall):'+'+fmt(Math.abs(shortfall));
+  document.getElementById('multUsed').textContent=multUsed.toFixed(2)+'×';
+
+  const maxBorrow=totalIncome*5.5;
+  const grid=document.getElementById('lenderGrid');
+  grid.innerHTML=lenders.map(l=>{
+    const amt=totalIncome*l.multiple;
+    const ok=amt>=reqBorrow;
+    return`<div class="lc ${l.type==='top'&&ok?'top':''}">
+      <div class="lc-name">${l.name}</div>
+      <div class="lc-mult">${l.multiple}× income</div>
+      <div class="lc-amt ${ok?'grn':'red'}">${fmt(amt)}</div>
+      <div class="lc-note">${l.note}</div>
+      <span class="lc-badge ${l.badge}">${ok?'✓ Sufficient':'✗ Short'}</span>
+    </div>`;
+  }).join('');
+
+  const bars=document.getElementById('stressBars');
+  const multiples=[3.5,4,4.5,5,5.5];
+  bars.innerHTML=multiples.map(m=>{
+    const amt=totalIncome*m;
+    const pct=(amt/maxBorrow*100).toFixed(0);
+    const color=m<=4?'#C8102E':m<=4.5?'#B45309':'#059669';
+    return`<div class="sc-row"><div class="sc-label">${m}× salary</div><div class="sc-bar-wrap"><div class="sc-bar" style="width:0%;background:${color}" data-w="${pct}"></div></div><div class="sc-num">${fmt(amt)}</div></div>`;
+  }).join('');
+  setTimeout(()=>{document.querySelectorAll('.sc-bar[data-w]').forEach(b=>{b.style.width=b.dataset.w+'%';});},50);
+
+  document.getElementById('results').classList.remove('hidden');
+}
+</script>
+</body>
+</html>

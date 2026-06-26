@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rental Yield Calculator</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+    --grn: #15803D;
+    --grn-lt: #6EE7B7;
+    --grn2: #166534;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  /* ── HEADER ── */
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#15803D 55%,#0F766E 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after { content:'🏘️'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  /* ── CONTENT ── */
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* ── CALC CARD ── */
+  .calc-card { background:var(--card); border-radius:20px; padding:18px; box-shadow:var(--sh2); border:1px solid var(--border); margin-bottom:12px; }
+  .calc-card-hdr { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .calc-card-icon { width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#15803D,#166534); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .calc-card-title { font-size:14px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .calc-card-sub { font-size:9.5px; color:var(--muted); margin-top:1px; }
+
+  .field { margin-bottom:13px; }
+  .field label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:5px; }
+  .field input, .field select { width:100%; background:var(--bg); border:1.5px solid var(--border); border-radius:11px; padding:11px 13px; font-size:14px; font-weight:700; color:var(--navy); font-family:'Helvetica Neue',Arial,sans-serif; outline:none; transition:border-color .2s, box-shadow .2s; }
+  .field input:focus { border-color:var(--grn); box-shadow: 0 0 0 3px rgba(21,128,61,0.12); }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* ── BUTTON ROW ── */
+  .btn-row { display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:6px; }
+  .calc-btn { background:linear-gradient(135deg,#15803D,#166534); border:none; border-radius:12px; padding:14px; font-size:13px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(21,128,61,0.40); font-family:Georgia,serif; transition:transform .15s, box-shadow .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .calc-btn:active { transform:scale(0.97); box-shadow:0 2px 8px rgba(21,128,61,0.30); }
+  .save-btn { background:linear-gradient(135deg,#1B3F72,#0B1D3A); border:none; border-radius:12px; padding:14px 16px; font-size:13px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(11,29,58,0.30); font-family:Georgia,serif; transition:transform .15s, box-shadow .15s; display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; }
+  .save-btn:active { transform:scale(0.97); }
+  .save-btn.saved { background:linear-gradient(135deg,#D97706,#B45309); }
+
+  /* ── TOAST ── */
+  .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff; padding:10px 20px; border-radius:30px; font-size:12px; font-weight:700; opacity:0; transition:all .3s ease; pointer-events:none; z-index:999; white-space:nowrap; box-shadow:var(--sh2); }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ── RESULTS ── */
+  .result-card { background:linear-gradient(148deg,#15803D,#166534); border-radius:20px; padding:18px; box-shadow:var(--sh2); position:relative; overflow:hidden; margin-bottom:12px; }
+  .result-card::before { content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.07); }
+  .result-top-row { display:flex; align-items:flex-start; justify-content:space-between; }
+  .result-lbl { font-size:10px; color:rgba(255,255,255,0.50); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:4px; }
+  .result-big { font-size:42px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; line-height:1; }
+  .result-sub { font-size:11px; color:rgba(255,255,255,0.60); margin-top:4px; }
+  .result-save-btn { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:10px; padding:8px 12px; font-size:11px; font-weight:700; color:#fff; cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0; transition:background .2s; }
+  .result-save-btn:hover { background:rgba(255,255,255,0.25); }
+  .result-save-btn.saved { background:rgba(252,211,77,0.25); border-color:rgba(252,211,77,0.5); color:var(--gold-lt); }
+  .result-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .rg-item { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:11px 12px; }
+  .rg-lbl { font-size:9px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; }
+  .rg-val { font-size:16px; font-weight:800; color:#fff; font-family:Georgia,serif; }
+  .rg-val.gold { color:var(--gold-lt); }
+  .rg-val.grn { color:#BBF7D0; }
+  .rg-val.red { color:#FCA5A5; }
+
+  /* ── RATING BAR ── */
+  .rating-bar { background:var(--card); border-radius:16px; padding:15px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .rb-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:10px; }
+  .rb-track { height:12px; background:linear-gradient(90deg,#B91C1C 0%,#D97706 30%,#15803D 60%,#0F766E 100%); border-radius:20px; position:relative; }
+  .rb-marker { position:absolute; top:-4px; width:20px; height:20px; background:#fff; border:3px solid var(--navy); border-radius:50%; transform:translateX(-50%); transition:left .5s ease; box-shadow:0 2px 8px rgba(11,29,58,0.20); }
+  .rb-labels { display:flex; justify-content:space-between; margin-top:6px; font-size:9px; font-weight:700; color:var(--muted); }
+  .rb-verdict { text-align:center; margin-top:10px; }
+  .rb-badge { display:inline-block; padding:5px 14px; border-radius:20px; font-size:11px; font-weight:800; }
+  .badge-poor { background:#FEE2E2; color:#B91C1C; }
+  .badge-fair { background:#FEF3C7; color:#92400E; }
+  .badge-good { background:#D1FAE5; color:#15803D; }
+  .badge-great { background:#CCFBF1; color:#0F766E; }
+
+  /* ── DONUT CHART ── */
+  .donut-section { background:var(--card); border-radius:20px; padding:18px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .donut-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+  .donut-wrap { display:flex; align-items:center; gap:16px; }
+  .donut-svg { flex-shrink:0; }
+  .donut-legend { flex:1; display:flex; flex-direction:column; gap:8px; }
+  .dl-item { display:flex; align-items:center; gap:8px; }
+  .dl-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .dl-name { font-size:10.5px; color:var(--muted); flex:1; }
+  .dl-val { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+
+  /* ── BAR CHART ── */
+  .bar-chart-section { background:var(--card); border-radius:20px; padding:18px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .bar-chart-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+  .bar-rows { display:flex; flex-direction:column; gap:9px; }
+  .bar-row { display:flex; align-items:center; gap:8px; }
+  .bar-label { font-size:10px; color:var(--muted); width:72px; flex-shrink:0; text-align:right; }
+  .bar-track { flex:1; background:var(--bg); border-radius:20px; height:10px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:20px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+  .bar-amount { font-size:10px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:54px; flex-shrink:0; text-align:right; }
+
+  /* ── KPI STRIP ── */
+  .kpi-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; }
+  .kpi-card { background:var(--card); border-radius:16px; padding:13px 10px; box-shadow:var(--sh); border:1px solid var(--border); text-align:center; }
+  .kpi-icon { font-size:18px; margin-bottom:4px; }
+  .kpi-val { font-size:17px; font-weight:800; font-family:Georgia,serif; color:var(--navy); line-height:1; }
+  .kpi-val.pos { color:#15803D; }
+  .kpi-val.neg { color:#B91C1C; }
+  .kpi-lbl { font-size:8.5px; color:var(--muted); margin-top:3px; text-transform:uppercase; letter-spacing:0.4px; }
+
+  /* ── CASH FLOW ── */
+  .cf-card { background:var(--card); border-radius:16px; padding:15px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .cf-card-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .cf-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .cf-save-btn { background:var(--bg); border:1.5px solid var(--border); border-radius:9px; padding:5px 11px; font-size:10px; font-weight:700; color:var(--blue); cursor:pointer; display:flex; align-items:center; gap:4px; transition:all .2s; }
+  .cf-save-btn:hover { background:var(--blue); color:#fff; }
+  .cf-save-btn.saved { background:#D1FAE5; border-color:#15803D; color:#15803D; }
+  .cf-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); }
+  .cf-row:last-child { border-bottom:none; }
+  .cf-name { font-size:11.5px; color:var(--muted); }
+  .cf-amt { font-size:13px; font-weight:800; font-family:Georgia,serif; }
+  .cf-pos { color:#15803D; }
+  .cf-neg { color:#B91C1C; }
+  .cf-net { background:linear-gradient(135deg,#15803D,#166534); border-radius:10px; padding:10px 13px; display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+  .cf-net-lbl { font-size:11px; font-weight:800; color:rgba(255,255,255,0.70); }
+  .cf-net-amt { font-size:16px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; }
+
+  /* ── SAVED CALCULATIONS ── */
+  .saved-section { margin-bottom:12px; }
+  .saved-empty { background:var(--card); border-radius:16px; padding:20px; text-align:center; border:2px dashed var(--border); }
+  .saved-empty-icon { font-size:32px; margin-bottom:8px; }
+  .saved-empty-txt { font-size:12px; color:var(--muted); }
+  .saved-item { background:var(--card); border-radius:16px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:8px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:box-shadow .2s; }
+  .saved-item:hover { box-shadow:var(--sh2); }
+  .saved-icon { width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,#15803D,#166534); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .saved-info { flex:1; min-width:0; }
+  .saved-name { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .saved-meta { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .saved-cap { font-size:14px; font-weight:800; font-family:Georgia,serif; }
+  .cap-great { color:#0F766E; }
+  .cap-good { color:#15803D; }
+  .cap-fair { color:#D97706; }
+  .cap-poor { color:#B91C1C; }
+  .saved-del { width:28px; height:28px; border-radius:8px; background:#FEE2E2; border:none; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  /* ── MARKETS ── */
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tc { background:var(--card); border-radius:16px; padding:14px 12px; box-shadow:var(--sh); border:1px solid var(--border); cursor:pointer; }
+  .tc.grn { background:linear-gradient(140deg,#15803D,#166534); }
+  .tc.tl  { background:linear-gradient(140deg,#0F766E,#0D9488); }
+  .tc.nv  { background:linear-gradient(140deg,#0B1D3A,#1B3F72); }
+  .tc.gd  { background:linear-gradient(140deg,#D97706,#B45309); }
+  .ti { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; margin-bottom:9px; }
+  .tc:not(.grn):not(.tl):not(.nv):not(.gd) .ti { background:var(--bg); }
+  .tc.grn .ti,.tc.tl .ti,.tc.nv .ti,.tc.gd .ti { background:rgba(255,255,255,0.14); }
+  .tn { font-size:12.5px; font-weight:800; color:var(--navy); line-height:1.2; font-family:Georgia,serif; }
+  .tc.grn .tn,.tc.tl .tn,.tc.nv .tn,.tc.gd .tn { color:#fff; }
+  .td { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .tc.grn .td,.tc.tl .td,.tc.nv .td,.tc.gd .td { color:rgba(255,255,255,0.58); }
+
+  /* ── INVESTOR TIPS ── */
+  .ilist { display:flex; flex-direction:column; gap:9px; }
+  .ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .is { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .ich { font-size:16px; color:rgba(11,29,58,0.18); margin-left:auto; }
+
+  /* ── NAV ── */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  /* ── SCREEN VISIBILITY ── */
+  .screen { display:none; }
+  .screen.active { display:block; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  @keyframes pulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.04);} }
+  .calc-card { animation:fadeUp .35s ease both .05s; }
+  .result-card { animation:fadeUp .35s ease both .12s; }
+  .rating-bar { animation:fadeUp .35s ease both .18s; }
+  .donut-section { animation:fadeUp .35s ease both .20s; }
+  .bar-chart-section { animation:fadeUp .35s ease both .22s; }
+  .kpi-strip { animation:fadeUp .35s ease both .24s; }
+  .cf-card { animation:fadeUp .35s ease both .26s; }
+  .ilist { animation:fadeUp .35s ease both .28s; }
+
+  /* ── SCREEN TRANSITIONS ── */
+  .screen { animation:fadeUp .3s ease both; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="goBack()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏘️</div>
+      <div class="hdr-title" id="screenTitle">Rental Yield Calc</div>
+      <div class="hdr-sub">Cap Rate · GRM · NOI · Cash Flow · USA 2024</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Avg Cap Rate</div><div class="rs-v gold">5.1%</div><div class="rs-n">US Avg 2024</div></div>
+    <div class="rs"><div class="rs-l">Sun Belt</div><div class="rs-v">6.2%</div><div class="rs-n">High yield</div></div>
+    <div class="rs"><div class="rs-l">NYC/SF</div><div class="rs-v">3.8%</div><div class="rs-n">Gateway mkt</div></div>
+    <div class="rs"><div class="rs-l">Good GRM</div><div class="rs-v">&lt;100</div><div class="rs-n">Gross Rent</div></div>
+  </div>
+</div>
+
+<!-- ══════════ TOAST ══════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════ -->
+<!--  SCREEN 1 — HOME (Calculator)         -->
+<!-- ══════════════════════════════════════ -->
+<div class="content screen active" id="screen-home">
+
+  <div class="sec" style="margin-top:0">Property Details <span class="more">CBRE Data →</span></div>
+
+  <!-- Input Card -->
+  <div class="calc-card">
+    <div class="calc-card-hdr">
+      <div class="calc-card-icon">🏘️</div>
+      <div>
+        <div class="calc-card-title">Rental Yield Analyzer</div>
+        <div class="calc-card-sub">Cap Rate · GRM · NOI · Cash-on-Cash</div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>Purchase Price</label><input type="number" id="price" value="380000" placeholder="$380,000"></div>
+      <div class="field"><label>Monthly Rent</label><input type="number" id="monthlyRent" value="2600" placeholder="$2,600"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Down Payment (%)</label><input type="number" id="down" value="25" step="5" placeholder="25%"></div>
+      <div class="field"><label>Mortgage Rate (%)</label><input type="number" id="mRate" value="7.25" step="0.01" placeholder="7.25%"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Property Tax/yr</label><input type="number" id="propTax" value="4500" placeholder="$4,500"></div>
+      <div class="field"><label>Insurance/yr</label><input type="number" id="insurance" value="1800" placeholder="$1,800"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Mgmt Fee (%/rent)</label><input type="number" id="mgmtPct" value="8" step="1" placeholder="8%"></div>
+      <div class="field"><label>Vacancy Rate (%)</label><input type="number" id="vacancy" value="7" step="1" placeholder="7%"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Maintenance/yr</label><input type="number" id="maintenance" value="3000" placeholder="$3,000"></div>
+      <div class="field"><label>Other Expenses/yr</label><input type="number" id="other" value="500" placeholder="$500"></div>
+    </div>
+
+    <!-- Calculate + Save buttons -->
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">🏘️ Calculate Returns</button>
+      <button class="save-btn" id="calcSaveBtn" onclick="saveFromCalc()">🔖 Save</button>
+    </div>
+  </div>
+
+  <!-- Result Card -->
+  <div class="result-card" id="resultCard">
+    <div class="result-top-row">
+      <div>
+        <div class="result-lbl">Cap Rate (Net)</div>
+        <div class="result-big" id="capRate">—</div>
+        <div class="result-sub" id="resultSub">Enter values and tap Calculate</div>
+      </div>
+      <button class="result-save-btn" id="resultSaveBtn" onclick="saveFromResult()">🔖 Save Result</button>
+    </div>
+    <div class="result-grid">
+      <div class="rg-item"><div class="rg-lbl">Gross Yield</div><div class="rg-val gold" id="grossYield">—</div></div>
+      <div class="rg-item"><div class="rg-lbl">NOI (Annual)</div><div class="rg-val grn" id="noi">—</div></div>
+      <div class="rg-item"><div class="rg-lbl">Monthly Cash Flow</div><div class="rg-val" id="cashFlow">—</div></div>
+      <div class="rg-item"><div class="rg-lbl">GRM</div><div class="rg-val" id="grm">—</div></div>
+    </div>
+  </div>
+
+  <!-- Rating Bar -->
+  <div class="rating-bar">
+    <div class="rb-title">Cap Rate vs Market Benchmark</div>
+    <div class="rb-track"><div class="rb-marker" id="rbMarker" style="left:50%"></div></div>
+    <div class="rb-labels"><span>Poor &lt;3%</span><span>Fair 3–5%</span><span>Good 5–7%</span><span>Great 7%+</span></div>
+    <div class="rb-verdict"><span class="rb-badge badge-fair" id="rbBadge">Calculate to rate</span></div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip" id="kpiStrip">
+    <div class="kpi-card"><div class="kpi-icon">💵</div><div class="kpi-val" id="kpiCoc">—</div><div class="kpi-lbl">Cash-on-Cash</div></div>
+    <div class="kpi-card"><div class="kpi-icon">📐</div><div class="kpi-val" id="kpiRule">—</div><div class="kpi-lbl">1% Rule</div></div>
+    <div class="kpi-card"><div class="kpi-icon">📊</div><div class="kpi-val" id="kpiDscr">—</div><div class="kpi-lbl">DSCR Ratio</div></div>
+  </div>
+
+  <!-- Expense Donut Chart -->
+  <div class="donut-section">
+    <div class="donut-title">🥧 Expense Breakdown</div>
+    <div class="donut-wrap">
+      <svg class="donut-svg" id="donutSvg" width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="45" fill="none" stroke="#E5E7EB" stroke-width="18"/>
+        <g id="donutSlices"></g>
+        <text x="60" y="56" text-anchor="middle" font-size="11" font-weight="800" font-family="Georgia,serif" fill="#0B1D3A" id="donutCenter">—</text>
+        <text x="60" y="70" text-anchor="middle" font-size="9" fill="#4A5C7A">Expenses</text>
+      </svg>
+      <div class="donut-legend" id="donutLegend">
+        <div class="dl-item"><div class="dl-dot" style="background:#B91C1C"></div><span class="dl-name">Debt Service</span><span class="dl-val" id="dl_debt">—</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#D97706"></div><span class="dl-name">Property Tax</span><span class="dl-val" id="dl_ptax">—</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#1B3F72"></div><span class="dl-name">Insurance</span><span class="dl-val" id="dl_ins">—</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#15803D"></div><span class="dl-name">Management</span><span class="dl-val" id="dl_mgmt">—</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#0F766E"></div><span class="dl-name">Maintenance</span><span class="dl-val" id="dl_maint">—</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#9333EA"></div><span class="dl-name">Other / Vacancy</span><span class="dl-val" id="dl_other">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Income vs Expense Bar Chart -->
+  <div class="bar-chart-section">
+    <div class="bar-chart-title">📊 Income vs Expense Comparison</div>
+    <div class="bar-rows" id="barRows">
+      <div class="bar-row"><span class="bar-label">Gross Income</span><div class="bar-track"><div class="bar-fill" style="background:#15803D;width:0%" id="bar_gross"></div></div><span class="bar-amount" id="bv_gross">—</span></div>
+      <div class="bar-row"><span class="bar-label">Total Expenses</span><div class="bar-track"><div class="bar-fill" style="background:#B91C1C;width:0%" id="bar_opex"></div></div><span class="bar-amount" id="bv_opex">—</span></div>
+      <div class="bar-row"><span class="bar-label">Debt Service</span><div class="bar-track"><div class="bar-fill" style="background:#D97706;width:0%" id="bar_debt"></div></div><span class="bar-amount" id="bv_debt">—</span></div>
+      <div class="bar-row"><span class="bar-label">Net Cash Flow</span><div class="bar-track"><div class="bar-fill" style="background:#0F766E;width:0%" id="bar_cf"></div></div><span class="bar-amount" id="bv_cf">—</span></div>
+    </div>
+  </div>
+
+  <!-- Cash Flow Statement -->
+  <div class="cf-card">
+    <div class="cf-card-hdr">
+      <div class="cf-title">📋 Annual Cash Flow Statement</div>
+      <button class="cf-save-btn" id="cfSaveBtn" onclick="saveFromCF()">🔖 Save Statement</button>
+    </div>
+    <div class="cf-row"><span class="cf-name">Gross Rental Income</span><span class="cf-amt cf-pos" id="cf_gross">—</span></div>
+    <div class="cf-row"><span class="cf-name">(-) Vacancy Loss</span><span class="cf-amt cf-neg" id="cf_vac">—</span></div>
+    <div class="cf-row"><span class="cf-name">Effective Gross Income</span><span class="cf-amt cf-pos" id="cf_egi">—</span></div>
+    <div class="cf-row"><span class="cf-name">(-) Property Tax</span><span class="cf-amt cf-neg" id="cf_ptax">—</span></div>
+    <div class="cf-row"><span class="cf-name">(-) Insurance</span><span class="cf-amt cf-neg" id="cf_ins">—</span></div>
+    <div class="cf-row"><span class="cf-name">(-) Mgmt Fee</span><span class="cf-amt cf-neg" id="cf_mgmt">—</span></div>
+    <div class="cf-row"><span class="cf-name">(-) Maintenance</span><span class="cf-amt cf-neg" id="cf_maint">—</span></div>
+    <div class="cf-row"><span class="cf-name">(-) Other Expenses</span><span class="cf-amt cf-neg" id="cf_other">—</span></div>
+    <div class="cf-row"><span class="cf-name" style="font-weight:800;color:var(--navy);">NOI (Net Operating Income)</span><span class="cf-amt cf-pos" id="cf_noi" style="font-size:15px">—</span></div>
+    <div class="cf-row"><span class="cf-name">(-) Annual Debt Service</span><span class="cf-amt cf-neg" id="cf_debt">—</span></div>
+    <div class="cf-net"><div class="cf-net-lbl">Annual Cash Flow</div><div class="cf-net-amt" id="cf_net">—</div></div>
+  </div>
+
+  <div class="sec">Top Rental Markets 2024 <span class="more">All Markets →</span></div>
+  <div class="g2">
+    <div class="tc grn"><div class="ti">🌇</div><div class="tn">Austin, TX</div><div class="td">Cap 5.8% · Rent $2,140</div></div>
+    <div class="tc"><div class="ti">🌴</div><div class="tn">Tampa, FL</div><div class="td">Cap 6.1% · Rent $2,020</div></div>
+    <div class="tc"><div class="ti">☀️</div><div class="tn">Phoenix, AZ</div><div class="td">Cap 5.9% · Rent $1,980</div></div>
+    <div class="tc tl"><div class="ti">🏔️</div><div class="tn">Charlotte, NC</div><div class="td">Cap 6.3% · Rent $1,850</div></div>
+    <div class="tc nv"><div class="ti">🎭</div><div class="tn">Nashville, TN</div><div class="td">Cap 5.5% · Rent $2,200</div></div>
+    <div class="tc gd"><div class="ti">🌻</div><div class="tn">Indianapolis, IN</div><div class="td">Cap 7.1% · Rent $1,450</div></div>
+  </div>
+
+  <div class="sec">Investor Tips <span class="more">BiggerPockets →</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📏</div><div><div class="in">1% Rule Quick Check</div><div class="is">Monthly rent ≥ 1% of purchase price signals good deal</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">DSCR Loans for Investors</div><div class="is">Qualify on rent income, not W-2 · Min 1.25x DSCR ratio</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📉</div><div><div class="in">Depreciation Tax Shield</div><div class="is">Deduct 1/27.5 of building value per year · IRS Schedule E</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🔍</div><div><div class="in">Due Diligence Checklist</div><div class="is">Inspection · title · rent rolls · leases · utility bills</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!--  SCREEN 2 — USA                       -->
+<!-- ══════════════════════════════════════ -->
+<div class="content screen" id="screen-usa">
+  <div class="sec" style="margin-top:0">US Market Overview <span class="more">CBRE Data →</span></div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="tc grn"><div class="ti">🌇</div><div class="tn">Austin, TX</div><div class="td">Cap 5.8% · Rent $2,140</div></div>
+    <div class="tc"><div class="ti">🌴</div><div class="tn">Tampa, FL</div><div class="td">Cap 6.1% · Rent $2,020</div></div>
+    <div class="tc"><div class="ti">☀️</div><div class="tn">Phoenix, AZ</div><div class="td">Cap 5.9% · Rent $1,980</div></div>
+    <div class="tc tl"><div class="ti">🏔️</div><div class="tn">Charlotte, NC</div><div class="td">Cap 6.3% · Rent $1,850</div></div>
+    <div class="tc nv"><div class="ti">🎭</div><div class="tn">Nashville, TN</div><div class="td">Cap 5.5% · Rent $2,200</div></div>
+    <div class="tc gd"><div class="ti">🌻</div><div class="tn">Indianapolis, IN</div><div class="td">Cap 7.1% · Rent $1,450</div></div>
+    <div class="tc"><div class="ti">🌞</div><div class="tn">Dallas, TX</div><div class="td">Cap 6.0% · Rent $1,950</div></div>
+    <div class="tc"><div class="ti">🏙️</div><div class="tn">Atlanta, GA</div><div class="td">Cap 5.7% · Rent $1,900</div></div>
+  </div>
+  <div class="sec">Market Benchmarks <span class="more">View All →</span></div>
+  <div class="bar-chart-section">
+    <div class="bar-chart-title">📊 Cap Rates by Market Type</div>
+    <div class="bar-rows">
+      <div class="bar-row"><span class="bar-label">Indianapolis</span><div class="bar-track"><div class="bar-fill" style="background:#15803D;width:71%"></div></div><span class="bar-amount">7.1%</span></div>
+      <div class="bar-row"><span class="bar-label">Charlotte</span><div class="bar-track"><div class="bar-fill" style="background:#15803D;width:63%"></div></div><span class="bar-amount">6.3%</span></div>
+      <div class="bar-row"><span class="bar-label">Tampa</span><div class="bar-track"><div class="bar-fill" style="background:#15803D;width:61%"></div></div><span class="bar-amount">6.1%</span></div>
+      <div class="bar-row"><span class="bar-label">Dallas</span><div class="bar-track"><div class="bar-fill" style="background:#D97706;width:60%"></div></div><span class="bar-amount">6.0%</span></div>
+      <div class="bar-row"><span class="bar-label">Phoenix</span><div class="bar-track"><div class="bar-fill" style="background:#D97706;width:59%"></div></div><span class="bar-amount">5.9%</span></div>
+      <div class="bar-row"><span class="bar-label">Austin</span><div class="bar-track"><div class="bar-fill" style="background:#D97706;width:58%"></div></div><span class="bar-amount">5.8%</span></div>
+      <div class="bar-row"><span class="bar-label">US Average</span><div class="bar-track"><div class="bar-fill" style="background:#1B3F72;width:51%"></div></div><span class="bar-amount">5.1%</span></div>
+      <div class="bar-row"><span class="bar-label">NYC/SF/LA</span><div class="bar-track"><div class="bar-fill" style="background:#B91C1C;width:38%"></div></div><span class="bar-amount">3.8%</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!--  SCREEN 3 — SAVED                     -->
+<!-- ══════════════════════════════════════ -->
+<div class="content screen" id="screen-saved">
+  <div class="sec" style="margin-top:0">Saved Calculations <span class="more" onclick="clearAllSaved()">Clear All</span></div>
+  <div class="saved-section" id="savedList">
+    <!-- Populated by JS -->
+  </div>
+
+  <div class="sec">Summary Analytics</div>
+  <div class="kpi-strip" id="savedKpi" style="display:none">
+    <div class="kpi-card"><div class="kpi-icon">📦</div><div class="kpi-val" id="sk_count">0</div><div class="kpi-lbl">Saved Deals</div></div>
+    <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-val pos" id="sk_best">—</div><div class="kpi-lbl">Best Cap Rate</div></div>
+    <div class="kpi-card"><div class="kpi-icon">💵</div><div class="kpi-val pos" id="sk_cf">—</div><div class="kpi-lbl">Avg Cash Flow</div></div>
+  </div>
+  <div class="bar-chart-section" id="savedBarSection" style="display:none; margin-top:12px">
+    <div class="bar-chart-title">📊 Saved Deals — Cap Rate Comparison</div>
+    <div class="bar-rows" id="savedCompareRows"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!--  SCREEN 4 — GLOBAL                    -->
+<!-- ══════════════════════════════════════ -->
+<div class="content screen" id="screen-global">
+  <div class="sec" style="margin-top:0">Global Rental Markets <span class="more">View All →</span></div>
+  <div class="bar-chart-section">
+    <div class="bar-chart-title">🌍 Cap Rates by Country (2024)</div>
+    <div class="bar-rows">
+      <div class="bar-row"><span class="bar-label">Turkey</span><div class="bar-track"><div class="bar-fill" style="background:#15803D;width:100%"></div></div><span class="bar-amount">9.8%</span></div>
+      <div class="bar-row"><span class="bar-label">South Africa</span><div class="bar-track"><div class="bar-fill" style="background:#15803D;width:88%"></div></div><span class="bar-amount">8.6%</span></div>
+      <div class="bar-row"><span class="bar-label">Mexico</span><div class="bar-track"><div class="bar-fill" style="background:#15803D;width:72%"></div></div><span class="bar-amount">7.1%</span></div>
+      <div class="bar-row"><span class="bar-label">India</span><div class="bar-track"><div class="bar-fill" style="background:#D97706;width:62%"></div></div><span class="bar-amount">6.1%</span></div>
+      <div class="bar-row"><span class="bar-label">USA</span><div class="bar-track"><div class="bar-fill" style="background:#1B3F72;width:51%"></div></div><span class="bar-amount">5.1%</span></div>
+      <div class="bar-row"><span class="bar-label">Canada</span><div class="bar-track"><div class="bar-fill" style="background:#D97706;width:46%"></div></div><span class="bar-amount">4.5%</span></div>
+      <div class="bar-row"><span class="bar-label">Australia</span><div class="bar-track"><div class="bar-fill" style="background:#D97706;width:43%"></div></div><span class="bar-amount">4.2%</span></div>
+      <div class="bar-row"><span class="bar-label">UK</span><div class="bar-track"><div class="bar-fill" style="background:#B91C1C;width:40%"></div></div><span class="bar-amount">3.9%</span></div>
+      <div class="bar-row"><span class="bar-label">Germany</span><div class="bar-track"><div class="bar-fill" style="background:#B91C1C;width:33%"></div></div><span class="bar-amount">3.2%</span></div>
+      <div class="bar-row"><span class="bar-label">Japan</span><div class="bar-track"><div class="bar-fill" style="background:#B91C1C;width:32%"></div></div><span class="bar-amount">3.1%</span></div>
+    </div>
+  </div>
+  <div class="sec">Key Insights</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🌎</div><div><div class="in">Emerging Markets Edge</div><div class="is">Turkey &amp; Africa offer 8–10% yields but with higher political risk</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🇺🇸</div><div><div class="in">USA Best Risk-Adjusted</div><div class="is">5.1% avg with strong rule of law and liquid exit markets</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🇩🇪</div><div><div class="in">Europe Compressing</div><div class="is">Germany &amp; Japan yields near historic lows due to low-rate legacy</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!--  SCREEN 5 — SETTINGS                  -->
+<!-- ══════════════════════════════════════ -->
+<div class="content screen" id="screen-settings">
+  <div class="sec" style="margin-top:0">Settings</div>
+  <div class="calc-card">
+    <div class="calc-card-hdr">
+      <div class="calc-card-icon">⚙️</div>
+      <div><div class="calc-card-title">App Preferences</div><div class="calc-card-sub">Customize your experience</div></div>
+    </div>
+    <div class="field"><label>Default Down Payment (%)</label><input type="number" id="s_down" value="25" step="5"></div>
+    <div class="field"><label>Default Vacancy Rate (%)</label><input type="number" id="s_vacancy" value="7" step="1"></div>
+    <div class="field"><label>Default Mgmt Fee (%)</label><input type="number" id="s_mgmt" value="8" step="1"></div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="applySettings()">✅ Apply Defaults</button>
+      <button class="save-btn" onclick="clearAllSaved()">🗑️ Clear Saved</button>
+    </div>
+  </div>
+  <div class="sec">About</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📱</div><div><div class="in">Rental Yield Calc v2.0</div><div class="is">Cap Rate · GRM · NOI · Cash Flow · DSCR · USA 2024</div></div></div>
+    <div class="ic"><div class="ii">📊</div><div><div class="in">Data Sources</div><div class="is">CBRE · CoStar · BiggerPockets · Federal Reserve 2024</div></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!--  BOTTOM NAV                           -->
+<!-- ══════════════════════════════════════ -->
+<div class="bnav">
+  <div class="ni active" id="nav-home" onclick="switchScreen('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni" id="nav-usa" onclick="switchScreen('usa')"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni" id="nav-saved" onclick="switchScreen('saved')"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni" id="nav-global" onclick="switchScreen('global')"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni" id="nav-settings" onclick="switchScreen('settings')"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function fmt(n) { return (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString(); }
+function fmtK(n) { if (Math.abs(n) >= 1000) return (n < 0 ? '-$' : '$') + (Math.abs(n)/1000).toFixed(1) + 'k'; return fmt(n); }
+function pct(n) { return n.toFixed(1) + '%'; }
+
+// ═══════════════════════════════════════
+//  SCREEN NAVIGATION
+// ═══════════════════════════════════════
+let currentScreen = 'home';
+const screenTitles = { home:'Rental Yield Calc', usa:'USA Markets', saved:'Saved Deals', global:'Global Markets', settings:'Settings' };
+
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  document.getElementById('screenTitle').textContent = screenTitles[name];
+  currentScreen = name;
+  if (name === 'saved') renderSavedScreen();
+}
+
+function goBack() { if (currentScreen !== 'home') switchScreen('home'); }
+
+// ═══════════════════════════════════════
+//  CALCULATE
+// ═══════════════════════════════════════
+let lastResult = null;
+
+function calculate() {
+  const price        = parseFloat(document.getElementById('price').value)       || 380000;
+  const monthlyRent  = parseFloat(document.getElementById('monthlyRent').value) || 2600;
+  const downPct      = parseFloat(document.getElementById('down').value)  / 100 || 0.25;
+  const mRate        = parseFloat(document.getElementById('mRate').value) / 100 || 0.0725;
+  const propTax      = parseFloat(document.getElementById('propTax').value)      || 4500;
+  const insurance    = parseFloat(document.getElementById('insurance').value)    || 1800;
+  const mgmtPct      = parseFloat(document.getElementById('mgmtPct').value) / 100 || 0.08;
+  const vacancyPct   = parseFloat(document.getElementById('vacancy').value) / 100 || 0.07;
+  const maintenance  = parseFloat(document.getElementById('maintenance').value)  || 3000;
+  const other        = parseFloat(document.getElementById('other').value)         || 500;
+
+  const down         = price * downPct;
+  const loan         = price - down;
+  const mRateM       = mRate / 12;
+  const n            = 30 * 12;
+  const pi           = loan * mRateM * Math.pow(1+mRateM,n) / (Math.pow(1+mRateM,n)-1);
+  const annualDebt   = pi * 12;
+
+  const grossIncome  = monthlyRent * 12;
+  const vacancyLoss  = grossIncome * vacancyPct;
+  const egi          = grossIncome - vacancyLoss;
+  const mgmtFee      = egi * mgmtPct;
+  const totalOpEx    = propTax + insurance + mgmtFee + maintenance + other;
+  const noi          = egi - totalOpEx;
+  const annualCF     = noi - annualDebt;
+  const monthlyCF    = annualCF / 12;
+
+  const capRate      = noi / price * 100;
+  const grossYield   = grossIncome / price * 100;
+  const grm          = price / grossIncome;
+  const coc          = (annualCF / down) * 100;
+  const ruleCheck    = (monthlyRent / price) * 100;
+  const dscr         = noi / annualDebt;
+
+  // Store result
+  lastResult = { price, monthlyRent, downPct, mRate, propTax, insurance, mgmtPct, vacancyPct, maintenance, other,
+    down, loan, annualDebt, grossIncome, vacancyLoss, egi, mgmtFee, totalOpEx, noi, annualCF, monthlyCF,
+    capRate, grossYield, grm, coc, ruleCheck, dscr };
+
+  // Reset save button states
+  ['resultSaveBtn','cfSaveBtn','calcSaveBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (id === 'resultSaveBtn') { el.textContent = '🔖 Save Result'; el.classList.remove('saved'); }
+    else if (id === 'cfSaveBtn') { el.textContent = '🔖 Save Statement'; el.classList.remove('saved'); }
+    else { el.textContent = '🔖 Save'; el.classList.remove('saved'); }
+  });
+
+  // ── Result Card ──
+  document.getElementById('capRate').textContent  = pct(capRate);
+  document.getElementById('resultSub').textContent =
+    capRate >= 7 ? '🌟 Great · Strong investor return' :
+    capRate >= 5 ? '✓ Good · Above US average of 5.1%' :
+    capRate >= 3 ? '⚠️ Fair · Below average — negotiate price' :
+                   '✗ Poor · Reconsider or renegotiate';
+  document.getElementById('grossYield').textContent = pct(grossYield);
+  document.getElementById('noi').textContent        = fmt(noi);
+  document.getElementById('cashFlow').textContent   = fmt(monthlyCF) + '/mo';
+  document.getElementById('cashFlow').className     = 'rg-val ' + (monthlyCF >= 0 ? 'grn' : 'red');
+  document.getElementById('grm').textContent        = grm.toFixed(1);
+
+  // ── Rating Bar ──
+  const markerPct = Math.min(95, Math.max(5, (capRate / 10) * 100));
+  document.getElementById('rbMarker').style.left = markerPct + '%';
+  const badge = document.getElementById('rbBadge');
+  if      (capRate >= 7) { badge.className='rb-badge badge-great'; badge.textContent='🌟 Great Cap Rate'; }
+  else if (capRate >= 5) { badge.className='rb-badge badge-good';  badge.textContent='✓ Good Cap Rate'; }
+  else if (capRate >= 3) { badge.className='rb-badge badge-fair';  badge.textContent='⚠️ Fair Cap Rate'; }
+  else                   { badge.className='rb-badge badge-poor';  badge.textContent='✗ Poor Cap Rate'; }
+
+  // ── KPI Strip ──
+  const kpiCoc  = document.getElementById('kpiCoc');
+  kpiCoc.textContent = pct(coc);
+  kpiCoc.className   = 'kpi-val ' + (coc >= 8 ? 'pos' : coc >= 4 ? '' : 'neg');
+  document.getElementById('kpiRule').textContent  = pct(ruleCheck);
+  document.getElementById('kpiRule').className    = 'kpi-val ' + (ruleCheck >= 1 ? 'pos' : 'neg');
+  const dscrEl  = document.getElementById('kpiDscr');
+  dscrEl.textContent = dscr.toFixed(2) + 'x';
+  dscrEl.className   = 'kpi-val ' + (dscr >= 1.25 ? 'pos' : dscr >= 1 ? '' : 'neg');
+
+  // ── Cash Flow Statement ──
+  document.getElementById('cf_gross').textContent = fmt(grossIncome);
+  document.getElementById('cf_vac').textContent   = '-' + fmt(vacancyLoss);
+  document.getElementById('cf_egi').textContent   = fmt(egi);
+  document.getElementById('cf_ptax').textContent  = '-' + fmt(propTax);
+  document.getElementById('cf_ins').textContent   = '-' + fmt(insurance);
+  document.getElementById('cf_mgmt').textContent  = '-' + fmt(mgmtFee);
+  document.getElementById('cf_maint').textContent = '-' + fmt(maintenance);
+  document.getElementById('cf_other').textContent = '-' + fmt(other);
+  document.getElementById('cf_noi').textContent   = fmt(noi);
+  document.getElementById('cf_debt').textContent  = '-' + fmt(annualDebt);
+  document.getElementById('cf_net').textContent   = fmt(annualCF);
+  document.getElementById('cf_net').style.color   = annualCF >= 0 ? 'var(--gold-lt)' : '#FCA5A5';
+
+  // ── Donut Chart ──
+  const expenseData = [
+    { label:'Debt Service', val: annualDebt,  color:'#B91C1C' },
+    { label:'Property Tax', val: propTax,      color:'#D97706' },
+    { label:'Insurance',    val: insurance,    color:'#1B3F72' },
+    { label:'Management',   val: mgmtFee,      color:'#15803D' },
+    { label:'Maintenance',  val: maintenance,  color:'#0F766E' },
+    { label:'Other/Vacancy',val: other + vacancyLoss, color:'#9333EA' }
+  ];
+  drawDonut(expenseData);
+  document.getElementById('dl_debt').textContent  = fmtK(annualDebt);
+  document.getElementById('dl_ptax').textContent  = fmtK(propTax);
+  document.getElementById('dl_ins').textContent   = fmtK(insurance);
+  document.getElementById('dl_mgmt').textContent  = fmtK(mgmtFee);
+  document.getElementById('dl_maint').textContent = fmtK(maintenance);
+  document.getElementById('dl_other').textContent = fmtK(other + vacancyLoss);
+
+  // ── Bar Chart ──
+  const maxVal = grossIncome;
+  function setBar(id, amt, max) {
+    const w = Math.max(0, Math.min(100, (Math.abs(amt)/max)*100));
+    document.getElementById('bar_' + id).style.width = w + '%';
+    document.getElementById('bv_' + id).textContent = fmtK(amt);
+  }
+  setBar('gross', grossIncome, maxVal);
+  setBar('opex',  totalOpEx,   maxVal);
+  setBar('debt',  annualDebt,  maxVal);
+  const cfAbs = Math.abs(annualCF);
+  document.getElementById('bar_cf').style.width   = Math.max(0, Math.min(100, (cfAbs/maxVal)*100)) + '%';
+  document.getElementById('bar_cf').style.background = annualCF >= 0 ? '#0F766E' : '#B91C1C';
+  document.getElementById('bv_cf').textContent    = fmtK(annualCF);
+}
+
+// ═══════════════════════════════════════
+//  DONUT CHART
+// ═══════════════════════════════════════
+function drawDonut(data) {
+  const r = 45, cx = 60, cy = 60;
+  const total = data.reduce((s,d) => s + d.val, 0);
+  const circumference = 2 * Math.PI * r;
+  let offset = 0;
+  const slicesEl = document.getElementById('donutSlices');
+  slicesEl.innerHTML = '';
+  data.forEach(item => {
+    const frac    = item.val / total;
+    const dash    = frac * circumference;
+    const gap     = circumference - dash;
+    const circle  = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', r);
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', item.color);
+    circle.setAttribute('stroke-width', '18');
+    circle.setAttribute('stroke-dasharray', dash + ' ' + gap);
+    circle.setAttribute('stroke-dashoffset', -offset * circumference);
+    circle.style.transform = 'rotate(-90deg)';
+    circle.style.transformOrigin = cx + 'px ' + cy + 'px';
+    slicesEl.appendChild(circle);
+    offset += frac;
+  });
+  document.getElementById('donutCenter').textContent = fmtK(total);
+}
+
+// ═══════════════════════════════════════
+//  SAVE LOGIC
+// ═══════════════════════════════════════
+function getSaved() {
+  try { return JSON.parse(localStorage.getItem('rentalSaves') || '[]'); } catch(e) { return []; }
+}
+function setSaved(arr) { localStorage.setItem('rentalSaves', JSON.stringify(arr)); }
+
+function doSave(source) {
+  if (!lastResult) { showToast('⚠️ Calculate first!'); return; }
+  const r = lastResult;
+  const label = '$' + Math.round(r.price/1000) + 'k · ' + pct(r.capRate) + ' cap';
+  const entry = {
+    id: Date.now(),
+    label,
+    price: r.price,
+    monthlyRent: r.monthlyRent,
+    capRate: r.capRate,
+    grossYield: r.grossYield,
+    noi: r.noi,
+    monthlyCF: r.monthlyCF,
+    coc: r.coc,
+    dscr: r.dscr,
+    ts: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' })
+  };
+  const saves = getSaved();
+  saves.unshift(entry);
+  setSaved(saves);
+  showToast('✅ Saved: ' + label);
+
+  // Update button states
+  if (source === 'result' || source === 'calc') {
+    const btn1 = document.getElementById('resultSaveBtn');
+    btn1.textContent = '✅ Saved'; btn1.classList.add('saved');
+    const btn2 = document.getElementById('calcSaveBtn');
+    btn2.textContent = '✅ Saved'; btn2.classList.add('saved');
+  }
+  if (source === 'cf') {
+    const btn = document.getElementById('cfSaveBtn');
+    btn.textContent = '✅ Saved'; btn.classList.add('saved');
+  }
+}
+
+function saveFromResult() { doSave('result'); }
+function saveFromCalc()   { doSave('calc'); }
+function saveFromCF()     { doSave('cf'); }
+
+function deleteSaved(id) {
+  setSaved(getSaved().filter(s => s.id !== id));
+  renderSavedScreen();
+}
+
+function clearAllSaved() {
+  if (!getSaved().length) { showToast('No saved calculations.'); return; }
+  setSaved([]);
+  renderSavedScreen();
+  showToast('🗑️ All saves cleared');
+}
+
+function loadSaved(entry) {
+  // Pre-fill inputs from saved entry
+  document.getElementById('price').value       = entry.price;
+  document.getElementById('monthlyRent').value = entry.monthlyRent;
+  switchScreen('home');
+  calculate();
+  showToast('📂 Loaded: ' + entry.label);
+}
+
+function renderSavedScreen() {
+  const saves = getSaved();
+  const list  = document.getElementById('savedList');
+  const kpi   = document.getElementById('savedKpi');
+  const bar   = document.getElementById('savedBarSection');
+
+  if (!saves.length) {
+    list.innerHTML = '<div class="saved-empty"><div class="saved-empty-icon">🔖</div><div class="saved-empty-txt">No saved calculations yet.<br>Calculate a property and tap Save.</div></div>';
+    kpi.style.display = 'none';
+    bar.style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = saves.map(s => `
+    <div class="saved-item" onclick="loadSaved(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+      <div class="saved-icon">🏘️</div>
+      <div class="saved-info">
+        <div class="saved-name">${s.label}</div>
+        <div class="saved-meta">${s.ts} · Rent ${fmt(s.monthlyRent)}/mo · GY ${pct(s.grossYield)}</div>
+      </div>
+      <div class="saved-cap ${s.capRate>=7?'cap-great':s.capRate>=5?'cap-good':s.capRate>=3?'cap-fair':'cap-poor'}">${pct(s.capRate)}</div>
+      <button class="saved-del" onclick="event.stopPropagation();deleteSaved(${s.id})">✕</button>
+    </div>
+  `).join('');
+
+  // KPI summary
+  kpi.style.display = 'grid';
+  const bestCap = Math.max(...saves.map(s => s.capRate));
+  const avgCF   = saves.reduce((a,s) => a + s.monthlyCF, 0) / saves.length;
+  document.getElementById('sk_count').textContent = saves.length;
+  document.getElementById('sk_best').textContent  = pct(bestCap);
+  document.getElementById('sk_cf').textContent    = fmtK(avgCF) + '/mo';
+
+  // Comparison bar chart
+  bar.style.display = 'block';
+  const maxCap = bestCap || 10;
+  document.getElementById('savedCompareRows').innerHTML = saves.slice(0,6).map(s => `
+    <div class="bar-row">
+      <span class="bar-label" style="font-size:9.5px">${s.ts} deal</span>
+      <div class="bar-track"><div class="bar-fill" style="background:${s.capRate>=7?'#15803D':s.capRate>=5?'#D97706':'#B91C1C'};width:${(s.capRate/maxCap*100).toFixed(1)}%"></div></div>
+      <span class="bar-amount">${pct(s.capRate)}</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════
+function applySettings() {
+  const d = parseFloat(document.getElementById('s_down').value);
+  const v = parseFloat(document.getElementById('s_vacancy').value);
+  const m = parseFloat(document.getElementById('s_mgmt').value);
+  if (!isNaN(d)) document.getElementById('down').value    = d;
+  if (!isNaN(v)) document.getElementById('vacancy').value = v;
+  if (!isNaN(m)) document.getElementById('mgmtPct').value = m;
+  showToast('✅ Defaults applied!');
+  switchScreen('home');
+}
+
+// ═══════════════════════════════════════
+//  INIT — run calc on load with defaults
+// ═══════════════════════════════════════
+calculate();
+</script>
+</body>
+</html>

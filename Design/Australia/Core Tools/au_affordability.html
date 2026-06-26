@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affordability Calculator – Australia</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.gold{color:#FFD700;}.rs-val.grn{color:#BBF7D0;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:12px;}
+.input-row{margin-bottom:14px;}
+.input-row label{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+.input-wrap{position:relative;}
+.input-wrap .prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#7C2D12;}
+.input-wrap input,.input-wrap select{width:100%;padding:11px 12px 11px 28px;border:1.5px solid rgba(124,45,18,0.2);border-radius:11px;font-size:15px;font-weight:700;color:#1A0A00;background:#FFF8F0;outline:none;font-family:inherit;}
+.input-wrap.no-prefix input,.input-wrap.no-prefix select{padding-left:12px;}
+.input-wrap input:focus,.input-wrap select:focus{border-color:#7C2D12;background:#fff;}
+.slider-wrap{margin-top:6px;}
+.slider-wrap input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:3px;background:linear-gradient(to right,#7C2D12 0%,#7C2D12 var(--pct,50%),rgba(124,45,18,0.2) var(--pct,50%));outline:none;}
+.slider-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#7C2D12;box-shadow:0 2px 6px rgba(124,45,18,0.4);cursor:pointer;}
+.slider-val{display:flex;justify-content:space-between;font-size:10px;color:#92400E;margin-top:4px;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#7C2D12,#1A0A00);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;margin-top:4px;letter-spacing:0.3px;}
+/* Result Card */
+.result-card{background:linear-gradient(145deg,#1A0A00,#7C2D12);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,10,0,0.28);margin-bottom:12px;display:none;}
+.result-card.show{display:block;}
+.result-card::before{content:'💰';position:absolute;right:10px;top:8px;font-size:60px;opacity:0.1;}
+.rc-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.rc-amount{font-size:36px;font-weight:800;color:#FFD700;font-family:Georgia,serif;margin:6px 0 4px;}
+.rc-sub{font-size:12px;color:rgba(255,255,255,0.6);}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+.rc-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px;}
+.rc-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;text-transform:uppercase;}
+.rc-box .v{font-size:14px;font-weight:800;color:#fff;}
+.rc-box .v.grn{color:#BBF7D0;}.rc-box .v.gold{color:#FFD700;}.rc-box .v.red{color:#FF8A9A;}
+.save-btn{width:100%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:11px;padding:11px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px;}
+/* Donut Chart */
+.donut-wrap{display:flex;flex-direction:column;align-items:center;margin:14px 0 4px;}
+svg.donut{transform:rotate(-90deg);}
+.donut-legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;justify-content:center;}
+.dl-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#92400E;}
+.dl-dot{width:10px;height:10px;border-radius:3px;}
+/* DTI bar */
+.dti-bar-wrap{margin-top:8px;}
+.dti-track{height:10px;background:rgba(124,45,18,0.12);border-radius:5px;overflow:hidden;}
+.dti-fill{height:100%;border-radius:5px;transition:width 0.8s ease;}
+.dti-labels{display:flex;justify-content:space-between;font-size:10px;color:#92400E;margin-top:4px;}
+/* affordability meter */
+.meter-wrap{text-align:center;padding:10px 0;}
+.meter-label{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:4px;}
+.meter-sub{font-size:10px;color:#92400E;}
+/* info tip */
+.info-tip{background:#FFF7ED;border:1px solid #FCA5A5;border-radius:12px;padding:11px 13px;font-size:11px;color:#92400E;margin-top:8px;line-height:1.5;}
+.info-tip strong{color:#7C2D12;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1A0A00;color:#FFD700;padding:10px 22px;border-radius:20px;font-size:13px;font-weight:700;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇦🇺</span><div class="hdr-title">Affordability</div><div class="hdr-sub">Borrowing Capacity · AUD</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Avg Variable</div><div class="rs-val" style="color:#FF8A9A">6.09%</div><div class="rs-note">↓ RBA cut</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">DTI Cap</div><div class="rs-val gold">6×</div><div class="rs-note">APRA limit</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Buffer Rate</div><div class="rs-val grn">+3%</div><div class="rs-note">APRA 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">RBA Cash</div><div class="rs-val gold">4.35%</div><div class="rs-note">Current</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Your Finances</div>
+  <div class="card">
+    <div class="input-row">
+      <label>Gross Annual Income</label>
+      <div class="input-wrap"><span class="prefix">$</span><input type="number" id="income" value="120000" min="0" oninput="updateSlider('incSlider',this.value,50000,400000)"></div>
+      <div class="slider-wrap"><input type="range" id="incSlider" min="50000" max="400000" value="120000" oninput="syncInput('income',this.value,50000,400000)"><div class="slider-val"><span>$50K</span><span>$400K</span></div></div>
+    </div>
+    <div class="input-row">
+      <label>Partner Income (optional)</label>
+      <div class="input-wrap"><span class="prefix">$</span><input type="number" id="income2" value="0" min="0" oninput="updateSlider('inc2Slider',this.value,0,300000)"></div>
+      <div class="slider-wrap"><input type="range" id="inc2Slider" min="0" max="300000" value="0" oninput="syncInput('income2',this.value,0,300000)"><div class="slider-val"><span>$0</span><span>$300K</span></div></div>
+    </div>
+    <div class="input-row">
+      <label>Monthly Living Expenses</label>
+      <div class="input-wrap"><span class="prefix">$</span><input type="number" id="expenses" value="3500" min="0" oninput="updateSlider('expSlider',this.value,1000,15000)"></div>
+      <div class="slider-wrap"><input type="range" id="expSlider" min="1000" max="15000" value="3500" oninput="syncInput('expenses',this.value,1000,15000)"><div class="slider-val"><span>$1K</span><span>$15K</span></div></div>
+    </div>
+    <div class="input-row">
+      <label>Existing Monthly Debts (car/personal loans)</label>
+      <div class="input-wrap"><span class="prefix">$</span><input type="number" id="debts" value="0" min="0"></div>
+    </div>
+    <div class="input-row">
+      <label>Deposit Saved</label>
+      <div class="input-wrap"><span class="prefix">$</span><input type="number" id="deposit" value="80000" min="0" oninput="updateSlider('depSlider',this.value,0,500000)"></div>
+      <div class="slider-wrap"><input type="range" id="depSlider" min="0" max="500000" value="80000" oninput="syncInput('deposit',this.value,0,500000)"><div class="slider-val"><span>$0</span><span>$500K</span></div></div>
+    </div>
+    <div class="input-row">
+      <label>Loan Term</label>
+      <div class="input-wrap no-prefix"><select id="term"><option value="30">30 years</option><option value="25">25 years</option><option value="20">20 years</option></select></div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">💰 Calculate Borrowing Capacity</button>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="rc-tag">Maximum Borrowing Capacity</div>
+    <div class="rc-amount" id="rcAmount">$0</div>
+    <div class="rc-sub" id="rcSub">Based on APRA serviceability buffer of 3%</div>
+    <div class="rc-grid">
+      <div class="rc-box"><label>Max Property</label><div class="v gold" id="rcProp">$0</div></div>
+      <div class="rc-box"><label>Monthly Repayment</label><div class="v" id="rcRepay">$0</div></div>
+      <div class="rc-box"><label>Serviceability Rate</label><div class="v grn" id="rcRate">9.09%</div></div>
+      <div class="rc-box"><label>DTI Ratio</label><div class="v" id="rcDTI">0×</div></div>
+    </div>
+    <div style="margin-top:14px">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Income Allocation</div>
+      <div style="height:10px;background:rgba(255,255,255,0.1);border-radius:5px;overflow:hidden;display:flex;">
+        <div id="allocRepay" style="height:100%;background:#FFD700;transition:width 0.8s ease;"></div>
+        <div id="allocExpense" style="height:100%;background:#60A5FA;transition:width 0.8s ease;"></div>
+        <div id="allocFree" style="height:100%;background:#BBF7D0;transition:width 0.8s ease;"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:7px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(255,255,255,0.7);"><div style="width:8px;height:8px;border-radius:2px;background:#FFD700;"></div>Repayment</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(255,255,255,0.7);"><div style="width:8px;height:8px;border-radius:2px;background:#60A5FA;"></div>Expenses</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(255,255,255,0.7);"><div style="width:8px;height:8px;border-radius:2px;background:#BBF7D0;"></div>Surplus</div>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveCalc()">🔖 Save This Calculation</button>
+  </div>
+
+  <div class="card" id="donutCard" style="display:none;">
+    <div class="sec-lbl" style="margin-top:0">Repayment Breakdown</div>
+    <div class="donut-wrap">
+      <svg class="donut" width="160" height="160" viewBox="0 0 160 160">
+        <circle cx="80" cy="80" r="60" fill="none" stroke="rgba(124,45,18,0.1)" stroke-width="22"/>
+        <circle id="donutPrincipal" cx="80" cy="80" r="60" fill="none" stroke="#7C2D12" stroke-width="22" stroke-dasharray="0 377" stroke-linecap="round"/>
+        <circle id="donutInterest" cx="80" cy="80" r="60" fill="none" stroke="#002868" stroke-width="22" stroke-dasharray="0 377" stroke-linecap="round"/>
+      </svg>
+      <div style="margin-top:6px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;color:#92400E;">Total Repayable</div>
+        <div id="totalRepay" style="font-size:22px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;">$0</div>
+      </div>
+      <div class="donut-legend">
+        <div class="dl-item"><div class="dl-dot" style="background:#7C2D12;"></div>Principal <span id="legPrincipal" style="font-weight:800;"></span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#002868;"></div>Interest <span id="legInterest" style="font-weight:800;"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-tip">
+    <strong>🏦 APRA Serviceability Buffer:</strong> As of 2025, Australian lenders must assess your ability to repay at your actual rate <strong>+ 3%</strong> (up from 2.5%). This means on a 6.09% loan, you'll be assessed at ~9.09%. Your borrowing power is calculated on net income after tax using the <strong>HEM (Household Expenditure Measure)</strong>.
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">✅ Calculation Saved!</div>
+
+<script>
+function fmt(n){return'$'+Math.round(n).toLocaleString('en-AU');}
+function fmtM(n){return'$'+Math.round(n/1000000*100)/100+'M';}
+
+function updateSlider(sliderId, val, min, max){
+  const s=document.getElementById(sliderId);
+  s.value=val;
+  const pct=((val-min)/(max-min)*100);
+  s.style.setProperty('--pct',pct+'%');
+}
+function syncInput(inputId, val, min, max){
+  document.getElementById(inputId).value=val;
+  const s=document.getElementById(inputId.replace('','')+'');
+  const pct=((val-min)/(max-min)*100);
+  event.target.style.setProperty('--pct',pct+'%');
+}
+
+function netIncome(gross){
+  // 2024-25 ATO tax brackets
+  let tax=0;
+  if(gross<=18200) tax=0;
+  else if(gross<=45000) tax=(gross-18200)*0.19;
+  else if(gross<=135000) tax=5092+(gross-45000)*0.325;
+  else if(gross<=190000) tax=34342+(gross-135000)*0.37;
+  else tax=54682+(gross-190000)*0.45;
+  // Medicare levy 2%
+  tax+=gross*0.02;
+  return gross-tax;
+}
+
+function calculate(){
+  const inc1=parseFloat(document.getElementById('income').value)||0;
+  const inc2=parseFloat(document.getElementById('income2').value)||0;
+  const expenses=parseFloat(document.getElementById('expenses').value)||0;
+  const debts=parseFloat(document.getElementById('debts').value)||0;
+  const deposit=parseFloat(document.getElementById('deposit').value)||0;
+  const term=parseInt(document.getElementById('term').value)||30;
+
+  const totalGross=inc1+inc2;
+  const netMthly=(netIncome(inc1)+netIncome(inc2))/12;
+
+  // APRA buffer: assess at 6.09% + 3% = 9.09%
+  const assessRate=0.0609+0.03;
+  const r=assessRate/12;
+  const n=term*12;
+
+  // Max monthly repayment = netMthly - expenses - debts (keep 20% buffer for living)
+  const availRepay=netMthly-expenses-debts;
+  if(availRepay<=0){alert('Expenses exceed income. Please review your inputs.');return;}
+
+  // Loan amount from annuity formula
+  const loanAmt=availRepay*(1-Math.pow(1+r,-n))/r;
+
+  // Actual repayment at real rate
+  const realRate=0.0609/12;
+  const realRepay=loanAmt*realRate/(1-Math.pow(1+realRate,-n));
+
+  const maxProp=loanAmt+deposit;
+  const totalRepay=realRepay*n;
+  const totalInterest=totalRepay-loanAmt;
+  const dti=loanAmt/(totalGross||1);
+
+  document.getElementById('rcAmount').textContent=fmt(loanAmt);
+  document.getElementById('rcProp').textContent=fmt(maxProp);
+  document.getElementById('rcRepay').textContent=fmt(realRepay)+'/mo';
+  document.getElementById('rcRate').textContent='9.09%';
+  const dtiEl=document.getElementById('rcDTI');
+  dtiEl.textContent=(dti).toFixed(1)+'×';
+  dtiEl.className='v'+(dti>6?' red':dti>4.5?' gold':' grn');
+
+  // Alloc bar
+  const repayPct=Math.min((realRepay/netMthly)*100,100);
+  const expPct=Math.min((expenses/netMthly)*100,100-repayPct);
+  const freePct=Math.max(100-repayPct-expPct,0);
+  document.getElementById('allocRepay').style.width=repayPct+'%';
+  document.getElementById('allocExpense').style.width=expPct+'%';
+  document.getElementById('allocFree').style.width=freePct+'%';
+
+  document.getElementById('resultCard').classList.add('show');
+  document.getElementById('donutCard').style.display='block';
+
+  // Donut
+  const circ=2*Math.PI*60;
+  const principalDash=(loanAmt/totalRepay)*circ;
+  const interestDash=(totalInterest/totalRepay)*circ;
+  document.getElementById('donutPrincipal').setAttribute('stroke-dasharray',principalDash+' '+circ);
+  document.getElementById('donutInterest').setAttribute('stroke-dasharray',interestDash+' '+circ);
+  document.getElementById('donutInterest').setAttribute('stroke-dashoffset',-principalDash);
+  document.getElementById('totalRepay').textContent=fmt(totalRepay);
+  document.getElementById('legPrincipal').textContent=fmt(loanAmt);
+  document.getElementById('legInterest').textContent=fmt(totalInterest);
+}
+
+function saveCalc(){
+  const toast=document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2500);
+}
+
+// Init sliders
+['incSlider','inc2Slider','expSlider','depSlider'].forEach(id=>{
+  const el=document.getElementById(id);
+  const min=parseFloat(el.min),max=parseFloat(el.max),val=parseFloat(el.value);
+  el.style.setProperty('--pct',((val-min)/(max-min)*100)+'%');
+});
+</script>
+</body>
+</html>

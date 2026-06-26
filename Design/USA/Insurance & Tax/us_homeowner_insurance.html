@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homeowner Insurance</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  .header { background:linear-gradient(155deg,#7C2D12 0%,#D97706 55%,#B45309 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after { content:'🔥'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.08; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.55); margin-top:1px; }
+  .rate-strip { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.18); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.52); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.40); margin-top:1px; }
+
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* RESULT HERO */
+  .result-hero { background:linear-gradient(135deg,#D97706,#B45309); border-radius:18px; padding:18px; box-shadow:0 8px 28px rgba(217,119,6,0.35); margin-bottom:10px; position:relative; overflow:hidden; }
+  .result-hero::before { content:''; position:absolute; top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.08); }
+  .rh-label { font-size:9.5px; color:rgba(255,255,255,0.58); text-transform:uppercase; letter-spacing:0.8px; }
+  .rh-amount { font-size:34px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1; margin:4px 0 2px; }
+  .rh-sub { font-size:10px; color:rgba(255,255,255,0.62); }
+  .rh-row { display:flex; gap:8px; margin-top:14px; }
+  .rh-box { flex:1; background:rgba(255,255,255,0.14); border-radius:10px; padding:9px 10px; }
+  .rh-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.52); }
+  .rh-box-val { font-size:13px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+
+  /* INPUT CARD */
+  .input-card { background:var(--card); border-radius:18px; padding:18px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .inp-group { margin-bottom:15px; }
+  .inp-group:last-child { margin-bottom:0; }
+  .inp-label { font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; }
+  .inp-label .hint { font-size:10px; font-weight:700; color:var(--gold); text-transform:none; letter-spacing:0; }
+  input[type=range] { width:100%; -webkit-appearance:none; height:6px; border-radius:3px; background:linear-gradient(to right,#D97706 0%,#D97706 50%,#CBD5E1 50%,#CBD5E1 100%); outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#7C2D12;border:3px solid #fff;box-shadow:0 2px 8px rgba(124,45,18,0.3); }
+  .range-labels { display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px;font-weight:600; }
+  .choice-row { display:flex;gap:7px;flex-wrap:wrap; }
+  .choice-btn { flex:1;min-width:60px;padding:8px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;text-align:center;transition:all .15s; }
+  .choice-btn.sel { border-color:var(--gold);background:#FFF7ED;color:#92400E; }
+
+  /* COVERAGE BREAKDOWN */
+  .cov-card { background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .cov-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .cov-row:last-child { border-bottom:none; }
+  .cov-left { display:flex; align-items:center; gap:10px; }
+  .cov-icon { width:32px; height:32px; border-radius:9px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .cov-name { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .cov-desc { font-size:9.5px; color:var(--muted); margin-top:1px; }
+  .cov-amt { font-size:14px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .cov-pct { font-size:9px; color:var(--muted); text-align:right; margin-top:1px; }
+
+  /* STATE RATES TABLE */
+  .state-scroll { display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; }
+  .state-scroll::-webkit-scrollbar { display:none; }
+  .state-card { flex-shrink:0; width:100px; background:var(--card); border-radius:14px; padding:12px 10px; box-shadow:var(--sh); border:1px solid var(--border); cursor:pointer; text-align:center; }
+  .sc-state { font-size:17px; margin-bottom:4px; }
+  .sc-name { font-size:9.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .sc-rate { font-size:15px; font-weight:800; color:var(--gold); font-family:Georgia,serif; margin:2px 0; }
+  .sc-lbl { font-size:8.5px; color:var(--muted); }
+
+  /* GRIDS */
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tc { background:var(--card); border-radius:16px; padding:14px 12px; box-shadow:var(--sh); border:1px solid var(--border); cursor:pointer; position:relative; overflow:hidden; transition:transform .15s; }
+  .tc:active { transform:scale(.97); }
+  .tc.gd { background:linear-gradient(140deg,#D97706,#B45309); }
+  .tc.rd { background:linear-gradient(140deg,#B91C1C,#991B1B); }
+  .tc.nv { background:linear-gradient(140deg,#0B1D3A,#1B3F72); }
+  .ti { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; margin-bottom:9px; }
+  .tc:not(.gd):not(.rd):not(.nv) .ti { background:var(--bg); }
+  .tc.gd .ti,.tc.rd .ti,.tc.nv .ti { background:rgba(255,255,255,0.15); }
+  .tn { font-size:12.5px; font-weight:800; color:var(--navy); line-height:1.2; font-family:Georgia,serif; }
+  .tc.gd .tn,.tc.rd .tn,.tc.nv .tn { color:#fff; }
+  .td { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .tc.gd .td,.tc.rd .td,.tc.nv .td { color:rgba(255,255,255,0.58); }
+  .ta { position:absolute; bottom:11px; right:11px; font-size:14px; color:rgba(11,29,58,0.16); }
+  .tc.gd .ta,.tc.rd .ta,.tc.nv .ta { color:rgba(255,255,255,0.22); }
+  .bge { display:inline-flex; padding:2px 7px; border-radius:20px; font-size:8.5px; font-weight:700; margin-top:5px; }
+  .bge-o { background:#FFF7ED; color:#C2410C; }
+  .bge-g { background:#F0FDF4; color:#15803D; }
+  .bge-b { background:#EFF6FF; color:#1D4ED8; }
+
+  /* CALC / SAVE BUTTONS */
+  .btn-row { display:flex; gap:10px; margin-top:14px; }
+  .calc-btn { flex:1; background:linear-gradient(135deg,#D97706,#B45309); border:none; border-radius:14px; padding:14px; font-size:14px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(217,119,6,0.35); font-family:Georgia,serif; letter-spacing:0.3px; transition:transform .12s,box-shadow .12s; }
+  .calc-btn:active { transform:scale(.98); box-shadow:0 2px 8px rgba(217,119,6,0.30); }
+  .save-btn { flex:0 0 52px; background:var(--card); border:1.5px solid var(--gold); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; transition:transform .12s; color:var(--gold); }
+  .save-btn:active { transform:scale(.94); }
+  .save-btn.saved { background:#FFF7ED; }
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff; padding:10px 18px; border-radius:30px; font-size:12px; font-weight:700; box-shadow:var(--sh2); opacity:0; transition:all .25s; z-index:200; pointer-events:none; white-space:nowrap; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* CHART */
+  .chart-card { background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:11px; }
+  .bar-row:last-child { margin-bottom:0; }
+  .bar-lbl { font-size:10px; font-weight:700; color:var(--muted); width:78px; flex-shrink:0; }
+  .bar-track { flex:1; height:14px; background:var(--bg); border-radius:7px; overflow:hidden; position:relative; }
+  .bar-fill { height:100%; border-radius:7px; transition:width .5s ease; background:linear-gradient(90deg,#D97706,#FCD34D); }
+  .bar-val { font-size:11px; font-weight:800; color:var(--navy); width:62px; text-align:right; flex-shrink:0; font-family:Georgia,serif; }
+
+  /* SAVED LIST */
+  .saved-card { background:var(--card); border-radius:14px; padding:12px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+  .saved-card .sd-amt { font-size:14px; font-weight:800; color:var(--gold); font-family:Georgia,serif; }
+  .saved-card .sd-meta { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .saved-del { margin-left:auto; font-size:16px; color:#B91C1C; cursor:pointer; padding:4px; }
+  .saved-empty { font-size:11px; color:var(--muted); text-align:center; padding:18px 0; }
+
+  .ilist { display:flex; flex-direction:column; gap:9px; }
+  .ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:justify; font-size:17px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .is { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .ich { font-size:16px; color:rgba(11,29,58,0.18); margin-left:auto; }
+
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  .result-hero { animation:fadeUp .35s ease both .05s; }
+  .input-card { animation:fadeUp .35s ease both .10s; }
+  .cov-card,.state-scroll { animation:fadeUp .35s ease both .15s; }
+  .g2,.ilist { animation:fadeUp .35s ease both .20s; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔥</div>
+      <div class="hdr-title">Homeowner Insurance</div>
+      <div class="hdr-sub">HO-3 Policy · Coverage Estimator · All 50 States</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Nat'l Avg/yr</div><div class="rs-v gold">$2,285</div><div class="rs-n">2025 Avg</div></div>
+    <div class="rs"><div class="rs-l">$/Mo Avg</div><div class="rs-v">$190</div><div class="rs-n">Per Month</div></div>
+    <div class="rs"><div class="rs-l">Highest</div><div class="rs-v">Oklahoma</div><div class="rs-n">$5,979/yr</div></div>
+    <div class="rs"><div class="rs-l">Lowest</div><div class="rs-v">Hawaii</div><div class="rs-n">$499/yr</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Your Estimate <span class="more">Customize →</span></div>
+  <div class="result-hero">
+    <div class="rh-label">Annual Premium Estimate</div>
+    <div class="rh-amount" id="annualPremium">$2,040</div>
+    <div class="rh-sub" id="premiumSub">HO-3 · $300K dwelling · $150K personal property</div>
+    <div class="rh-row">
+      <div class="rh-box"><div class="rh-box-lbl">Monthly</div><div class="rh-box-val" id="monthlyPremium">$170</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">Deductible</div><div class="rh-box-val" id="deductibleDisplay">$1,000</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">Coverage/Val</div><div class="rh-box-val" id="covRatio">68%</div></div>
+    </div>
+  </div>
+
+  <div class="sec">Your Home Details <span class="more">Reset</span></div>
+  <div class="input-card">
+    <div class="inp-group">
+      <div class="inp-label">Home Replacement Value <span class="hint" id="dwellingDisplay">$300,000</span></div>
+      <input type="range" id="dwellingSlider" min="100000" max="1000000" step="10000" value="300000" oninput="updateCalc()">
+      <div class="range-labels"><span>$100K</span><span>$300K</span><span>$600K</span><span>$1M</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Home Age (Years) <span class="hint" id="ageDisplay">15 yrs</span></div>
+      <input type="range" id="ageSlider" min="0" max="80" step="5" value="15" oninput="updateCalc()">
+      <div class="range-labels"><span>New</span><span>20 yr</span><span>40 yr</span><span>80 yr</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Deductible</div>
+      <div class="choice-row">
+        <div class="choice-btn sel" onclick="setDeductible(500,this)">$500</div>
+        <div class="choice-btn" onclick="setDeductible(1000,this)">$1,000</div>
+        <div class="choice-btn" onclick="setDeductible(2000,this)">$2,000</div>
+        <div class="choice-btn" onclick="setDeductible(5000,this)">$5,000</div>
+      </div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">State / Risk Level</div>
+      <div class="choice-row">
+        <div class="choice-btn" onclick="setRisk('low',this)">Low Risk</div>
+        <div class="choice-btn sel" onclick="setRisk('medium',this)">Medium</div>
+        <div class="choice-btn" onclick="setRisk('high',this)">High Risk</div>
+        <div class="choice-btn" onclick="setRisk('extreme',this)">Tornado/Gulf</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="updateCalc(true)">Calculate Premium</button>
+      <div class="save-btn" id="saveBtn" onclick="saveCalc()">💾</div>
+    </div>
+  </div>
+
+  <!-- COVERAGE CHART -->
+  <div class="sec">Coverage Breakdown Chart <span class="more">Visual</span></div>
+  <div class="chart-card" id="chartCard">
+    <div class="bar-row"><div class="bar-lbl">Dwelling (A)</div><div class="bar-track"><div class="bar-fill" id="barA" style="width:100%"></div></div><div class="bar-val" id="barAval">$300,000</div></div>
+    <div class="bar-row"><div class="bar-lbl">Other Struct (B)</div><div class="bar-track"><div class="bar-fill" id="barB" style="width:10%"></div></div><div class="bar-val" id="barBval">$30,000</div></div>
+    <div class="bar-row"><div class="bar-lbl">Personal Prop (C)</div><div class="bar-track"><div class="bar-fill" id="barC" style="width:50%"></div></div><div class="bar-val" id="barCval">$150,000</div></div>
+    <div class="bar-row"><div class="bar-lbl">Loss of Use (D)</div><div class="bar-track"><div class="bar-fill" id="barD" style="width:20%"></div></div><div class="bar-val" id="barDval">$60,000</div></div>
+  </div>
+
+  <!-- COVERAGE BREAKDOWN -->
+  <div class="sec">HO-3 Coverage Breakdown <span class="more">Full Policy →</span></div>
+  <div class="cov-card">
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🏠</div><div><div class="cov-name">Coverage A – Dwelling</div><div class="cov-desc">Structure of your home</div></div></div>
+      <div><div class="cov-amt" id="covA">$300,000</div><div class="cov-pct">100%</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🏚️</div><div><div class="cov-name">Coverage B – Other Structures</div><div class="cov-desc">Fence, garage, shed</div></div></div>
+      <div><div class="cov-amt" id="covB">$30,000</div><div class="cov-pct">10%</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🛋️</div><div><div class="cov-name">Coverage C – Personal Property</div><div class="cov-desc">Furniture, electronics, clothing</div></div></div>
+      <div><div class="cov-amt" id="covC">$150,000</div><div class="cov-pct">50%</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🏨</div><div><div class="cov-name">Coverage D – Loss of Use</div><div class="cov-desc">Temp housing while repairs done</div></div></div>
+      <div><div class="cov-amt" id="covD">$60,000</div><div class="cov-pct">20%</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">⚖️</div><div><div class="cov-name">Coverage E – Liability</div><div class="cov-desc">Personal liability protection</div></div></div>
+      <div><div class="cov-amt">$300,000</div><div class="cov-pct">Standard</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🚑</div><div><div class="cov-name">Coverage F – Medical</div><div class="cov-desc">Guest medical payments</div></div></div>
+      <div><div class="cov-amt">$5,000</div><div class="cov-pct">Standard</div></div>
+    </div>
+  </div>
+
+  <!-- STATE RATES -->
+  <div class="sec">Avg Premium by State <span class="more">All States →</span></div>
+  <div class="state-scroll">
+    <div class="state-card"><div class="sc-state">🌪️</div><div class="sc-name">Oklahoma</div><div class="sc-rate">$5,979</div><div class="sc-lbl">Highest/yr</div></div>
+    <div class="state-card"><div class="sc-state">🌀</div><div class="sc-name">Kansas</div><div class="sc-rate">$4,652</div><div class="sc-lbl">Per year</div></div>
+    <div class="state-card"><div class="sc-state">🌩️</div><div class="sc-name">Texas</div><div class="sc-rate">$4,043</div><div class="sc-lbl">Per year</div></div>
+    <div class="state-card"><div class="sc-state">🌊</div><div class="sc-name">Florida</div><div class="sc-rate">$3,878</div><div class="sc-lbl">Per year</div></div>
+    <div class="state-card"><div class="sc-state">🏔️</div><div class="sc-name">Colorado</div><div class="sc-rate">$3,383</div><div class="sc-lbl">Per year</div></div>
+    <div class="state-card"><div class="sc-state">🌴</div><div class="sc-name">California</div><div class="sc-rate">$1,380</div><div class="sc-lbl">Per year</div></div>
+    <div class="state-card"><div class="sc-state">🌺</div><div class="sc-name">Hawaii</div><div class="sc-rate">$499</div><div class="sc-lbl">Lowest/yr</div></div>
+  </div>
+
+  <!-- POLICY TYPES -->
+  <div class="sec">Policy Types <span class="more">Compare →</span></div>
+  <div class="g2">
+    <div class="tc gd"><div class="ti">🏠</div><div class="tn">HO-3 Standard</div><div class="td">Open perils on dwelling</div><div class="bge bge-o">Most Common</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">💎</div><div class="tn">HO-5 Premium</div><div class="td">Open perils – all coverage</div><div class="bge bge-g">Best Coverage</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">📦</div><div class="tn">HO-1 Basic</div><div class="td">Named perils only (limited)</div><div class="ta">›</div></div>
+    <div class="tc nv"><div class="ti">🏘️</div><div class="tn">HO-6 Condo</div><div class="td">Walls-in coverage</div><div class="ta">›</div></div>
+    <div class="tc rd"><div class="ti">🔥</div><div class="tn">Wildfire Rider</div><div class="td">CA, OR, WA add-on</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🌀</div><div class="tn">Hurricane Rider</div><div class="td">FL, TX, Gulf states</div><div class="ta">›</div></div>
+  </div>
+
+  <!-- TOP INSURERS -->
+  <div class="sec">Top US Insurers 2025 <span class="more">Get Quotes →</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🏆</div><div><div class="in">State Farm – #1 Market Share</div><div class="is">AM Best A++ · avg $1,854/yr · 19,000+ agents</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🦷</div><div><div class="in">Allstate – Nationwide Coverage</div><div class="is">AM Best A+ · avg $2,070/yr · online claims</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏛️</div><div><div class="in">USAA – Military Families</div><div class="is">AM Best A++ · avg $1,640/yr · members only</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">💻</div><div><div class="in">Lemonade – Digital-First</div><div class="is">Fast claims AI · from $25/mo · renters+home</div></div><div class="ich">›</div></div>
+  </div>
+
+  <!-- SAVED ESTIMATES -->
+  <div class="sec">Saved Estimates <span class="more" onclick="clearSaved()">Clear All</span></div>
+  <div class="ilist" id="savedList">
+    <div class="saved-empty">No saved estimates yet. Tap 💾 to save your current calculation.</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let deductible = 500;
+let riskLevel = 'medium';
+
+const RISK_MULT = {low:0.75, medium:1.0, high:1.45, extreme:1.95};
+const DED_DISC = {500:0, 1000:-0.05, 2000:-0.12, 5000:-0.20};
+
+function fmt(n){return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0});}
+
+function setDeductible(d, btn){
+  deductible = d;
+  document.querySelectorAll('.choice-btn').forEach(b=>{ if([500,1000,2000,5000].includes(+b.textContent.replace('$','').replace(',',''))){ b.classList.remove('sel'); } });
+  btn.classList.add('sel');
+  updateCalc();
+}
+
+function setRisk(r, btn){
+  riskLevel = r;
+  const riskBtns = ['Low Risk','Medium','High Risk','Tornado/Gulf'];
+  document.querySelectorAll('.choice-btn').forEach(b=>{ if(riskBtns.includes(b.textContent)){ b.classList.remove('sel'); } });
+  btn.classList.add('sel');
+  updateCalc();
+}
+
+function updateCalc(showToast){
+  const dwelling = +document.getElementById('dwellingSlider').value;
+  const age = +document.getElementById('ageSlider').value;
+  document.getElementById('dwellingDisplay').textContent = fmt(dwelling);
+  document.getElementById('ageDisplay').textContent = age+' yrs';
+
+  // Base rate: ~0.57% of dwelling value nationally
+  let baseRate = 0.0057;
+  // Age factor
+  if(age>50) baseRate *= 1.35;
+  else if(age>30) baseRate *= 1.18;
+  else if(age>15) baseRate *= 1.08;
+
+  const riskMult = RISK_MULT[riskLevel];
+  const dedDisc = DED_DISC[deductible];
+  let annualPremium = dwelling * baseRate * riskMult * (1 + dedDisc);
+  annualPremium = Math.round(annualPremium / 10) * 10;
+
+  document.getElementById('annualPremium').textContent = fmt(annualPremium);
+  document.getElementById('monthlyPremium').textContent = fmt(Math.round(annualPremium/12));
+  document.getElementById('deductibleDisplay').textContent = fmt(deductible);
+
+  const covRatioVal = Math.round((annualPremium / dwelling) * 1000) / 10;
+  document.getElementById('covRatio').textContent = '0.'+Math.round(covRatioVal*10)+'%';
+
+  // Coverage amounts
+  const covA = dwelling, covB = Math.round(dwelling*0.10), covC = Math.round(dwelling*0.50), covD = Math.round(dwelling*0.20);
+  document.getElementById('covA').textContent = fmt(covA);
+  document.getElementById('covB').textContent = fmt(covB);
+  document.getElementById('covC').textContent = fmt(covC);
+  document.getElementById('covD').textContent = fmt(covD);
+
+  // Chart bars (relative to covA = 100%)
+  document.getElementById('barA').style.width = '100%';
+  document.getElementById('barAval').textContent = fmt(covA);
+  document.getElementById('barB').style.width = Math.round((covB/covA)*100)+'%';
+  document.getElementById('barBval').textContent = fmt(covB);
+  document.getElementById('barC').style.width = Math.round((covC/covA)*100)+'%';
+  document.getElementById('barCval').textContent = fmt(covC);
+  document.getElementById('barD').style.width = Math.round((covD/covA)*100)+'%';
+  document.getElementById('barDval').textContent = fmt(covD);
+
+  const riskLabels = {low:'Low-risk state · standard HO-3',medium:'Medium-risk · standard HO-3',high:'High-risk state · elevated rates',extreme:'Tornado/Gulf Coast · windstorm add-on'};
+  document.getElementById('premiumSub').textContent = 'HO-3 · '+fmt(dwelling)+' dwelling · '+riskLabels[riskLevel];
+
+  if(showToast) showMsg('Premium calculated ✓');
+}
+
+function showMsg(text){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function saveCalc(){
+  try{
+    const dwelling = +document.getElementById('dwellingSlider').value;
+    const age = +document.getElementById('ageSlider').value;
+    const annual = document.getElementById('annualPremium').textContent;
+    const monthly = document.getElementById('monthlyPremium').textContent;
+    const entry = {
+      id: Date.now(),
+      annual, monthly,
+      dwelling: fmt(dwelling),
+      age: age+' yrs',
+      deductible: fmt(deductible),
+      risk: riskLevel,
+      date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+    };
+    const list = JSON.parse(localStorage.getItem('homeownerSaves')||'[]');
+    list.unshift(entry);
+    localStorage.setItem('homeownerSaves', JSON.stringify(list.slice(0,10)));
+    renderSaved();
+    const btn = document.getElementById('saveBtn');
+    btn.classList.add('saved');
+    setTimeout(()=>btn.classList.remove('saved'), 600);
+    showMsg('Estimate saved 💾');
+  }catch(e){ showMsg('Could not save'); }
+}
+
+function deleteSaved(id){
+  let list = JSON.parse(localStorage.getItem('homeownerSaves')||'[]');
+  list = list.filter(x=>x.id!==id);
+  localStorage.setItem('homeownerSaves', JSON.stringify(list));
+  renderSaved();
+}
+
+function clearSaved(){
+  localStorage.removeItem('homeownerSaves');
+  renderSaved();
+}
+
+const RISK_ICON = {low:'🟢',medium:'🟡',high:'🟠',extreme:'🌀'};
+
+function renderSaved(){
+  const list = JSON.parse(localStorage.getItem('homeownerSaves')||'[]');
+  const el = document.getElementById('savedList');
+  if(list.length===0){
+    el.innerHTML = '<div class="saved-empty">No saved estimates yet. Tap 💾 to save your current calculation.</div>';
+    return;
+  }
+  el.innerHTML = list.map(e=>`
+    <div class="saved-card">
+      <div class="ii">${RISK_ICON[e.risk]||'🏠'}</div>
+      <div>
+        <div class="sd-amt">${e.annual}/yr · ${e.monthly}/mo</div>
+        <div class="sd-meta">${e.dwelling} dwelling · ${e.age} · ${e.deductible} ded · ${e.date}</div>
+      </div>
+      <div class="saved-del" onclick="deleteSaved(${e.id})">🗑️</div>
+    </div>
+  `).join('');
+}
+
+updateCalc();
+renderSaved();
+
+</script>
+</body>
+</html>

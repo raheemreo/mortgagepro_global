@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FedWatch Tool · CME Probabilities</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+    --green: #15803D;
+    --green-lt: #6EE7B7;
+    --red-lt: #FCA5A5;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  /* HEADER */
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after  { content:'🎯'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; text-decoration:none; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-v.grn { color:#6EE7B7; }
+  .rs-v.red { color:#FCA5A5; }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  /* CONTENT */
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* HERO PROBABILITY CARD */
+  .hero-prob { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:20px; position:relative; overflow:hidden; box-shadow:var(--sh2); animation:fadeUp .35s ease both .05s; }
+  .hero-prob::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:rgba(185,28,28,0.14); }
+  .hp-tag { font-size:9.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.8px; }
+  .hp-row { display:flex; align-items:center; gap:12px; margin:12px 0; }
+  .hp-prob-big { font-size:54px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; line-height:1; }
+  .hp-prob-label { }
+  .hp-prob-action { font-size:16px; font-weight:800; color:#fff; }
+  .hp-prob-meet { font-size:10px; color:rgba(255,255,255,0.55); margin-top:3px; }
+  .hp-gauge-wrap { height:10px; background:rgba(255,255,255,0.15); border-radius:10px; overflow:hidden; margin:6px 0 14px; }
+  .hp-gauge { height:100%; border-radius:10px; background:linear-gradient(90deg,var(--gold),var(--gold-lt)); transition:width 1s ease; }
+  .hp-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .hp-box { background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:9px 10px; text-align:center; }
+  .hp-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.3px; }
+  .hp-box-val { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+  .hp-box-val.grn { color:#6EE7B7; }
+  .hp-box-val.red { color:#FCA5A5; }
+  .hp-box-val.gold { color:var(--gold-lt); }
+
+  /* MEETING PROBABILITY CARDS */
+  .meet-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .12s; }
+  .meet-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .meet-date { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .meet-badge { font-size:8.5px; font-weight:800; padding:3px 8px; border-radius:20px; }
+  .badge-next { background:#DCFCE7; color:#15803D; }
+  .badge-sep { background:#EFF6FF; color:#1D4ED8; }
+  .badge-past { background:#F1F5F9; color:#64748B; }
+  .meet-sub { font-size:9px; color:var(--muted); margin-bottom:12px; }
+
+  .prob-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .prob-action { font-size:10px; font-weight:700; width:48px; flex-shrink:0; }
+  .prob-action.cut { color:var(--green); }
+  .prob-action.hold { color:var(--gold); }
+  .prob-action.hike { color:var(--red); }
+  .prob-bar-wrap { flex:1; height:7px; background:#F1F5F9; border-radius:10px; overflow:hidden; }
+  .prob-bar { height:100%; border-radius:10px; transition:width .8s ease; }
+  .bar-cut { background:linear-gradient(90deg,#15803D,#22C55E); }
+  .bar-hold { background:linear-gradient(90deg,#D97706,#FCD34D); }
+  .bar-hike { background:linear-gradient(90deg,#B91C1C,#F87171); }
+  .prob-pct { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:36px; text-align:right; flex-shrink:0; }
+  .prob-bps { font-size:8.5px; color:var(--muted); width:40px; flex-shrink:0; }
+
+  /* CUMULATIVE TABLE */
+  .cum-card { background:linear-gradient(135deg,#0B1D3A,#1B3F72); border-radius:18px; padding:16px; box-shadow:var(--sh2); margin-bottom:10px; animation:fadeUp .35s ease both .18s; }
+  .cum-title { font-size:12px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-bottom:3px; }
+  .cum-sub { font-size:9.5px; color:rgba(255,255,255,0.45); margin-bottom:12px; }
+  .cum-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .cum-col { text-align:center; background:rgba(255,255,255,0.08); border-radius:10px; padding:10px 6px; border:1px solid rgba(255,255,255,0.12); }
+  .cum-meet { font-size:8px; color:rgba(255,255,255,0.50); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:6px; }
+  .cum-rate { font-size:17px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; }
+  .cum-cuts { font-size:8.5px; color:rgba(255,255,255,0.45); margin-top:2px; }
+
+  /* CHART AREA */
+  .chart-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .12s; }
+  .chart-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between; }
+  .chart-title span { font-size:10px; font-weight:500; color:var(--blue); }
+  .chart-sub { font-size:9.5px; color:var(--muted); margin-bottom:14px; }
+  .chart-wrap { position:relative; height:130px; }
+
+  /* TERMINAL RATE TRACKER */
+  .terminal-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .22s; }
+  .tc-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:12px; }
+  .tr-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .tr-row:last-child { margin-bottom:0; }
+  .tr-lbl { font-size:10px; font-weight:700; color:var(--muted); width:90px; flex-shrink:0; }
+  .tr-bar-wrap { flex:1; height:8px; background:#F1F5F9; border-radius:10px; overflow:hidden; }
+  .tr-bar { height:100%; border-radius:10px; }
+  .tr-val { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:36px; text-align:right; flex-shrink:0; }
+
+  /* BOTTOM NAV */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  /* LIVE PULSE */
+  .live-dot { width:7px; height:7px; border-radius:50%; background:#22C55E; display:inline-block; margin-right:5px; animation:pulse 1.6s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+
+  /* PILL */
+  .pill { padding:4px 10px; border-radius:20px; font-size:9.5px; font-weight:800; }
+  .pill-hold { background:rgba(217,119,6,0.22); color:var(--gold-lt); border:1px solid rgba(217,119,6,0.38); }
+  .pill-cut { background:rgba(21,128,61,0.20); color:#6EE7B7; border:1px solid rgba(21,128,61,0.35); }
+
+  .divider { height:1px; background:var(--border); margin:12px 0; }
+
+  /* source note */
+  .src-note { font-size:9px; color:var(--muted); text-align:center; padding:6px 0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_fed_funds_rate_fred.html" class="icon-btn">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🎯</div>
+      <div class="hdr-title">FedWatch Tool</div>
+      <div class="hdr-sub">CME Group · FOMC Meeting Probabilities · 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Current</div><div class="rs-v gold">4.33%</div><div class="rs-n">Fed Funds</div></div>
+    <div class="rs"><div class="rs-l">Jun Cut?</div><div class="rs-v red">~22%</div><div class="rs-n">Probability</div></div>
+    <div class="rs"><div class="rs-l">Hold Prob</div><div class="rs-v grn">~78%</div><div class="rs-n">Jun 17–18</div></div>
+    <div class="rs"><div class="rs-l">Year-End</div><div class="rs-v">4.00%</div><div class="rs-n">Mkt Implied</div></div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- Hero Probability -->
+  <div class="sec" style="margin-top:0">Next Meeting Odds <span class="more"><span class="live-dot"></span>CME Live</span></div>
+  <div class="hero-prob">
+    <div class="hp-tag">Jun 17–18, 2025 · FOMC Meeting 4 + SEP Update</div>
+    <div class="hp-row">
+      <div class="hp-prob-big">78%</div>
+      <div class="hp-prob-label">
+        <div class="hp-prob-action">⏸ HOLD</div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <span class="pill pill-hold">Hold: 4.25–4.50%</span>
+        </div>
+        <div class="hp-prob-meet">Cut: 22% · Hike: &lt;1% · Source: CME FedWatch</div>
+      </div>
+    </div>
+    <div class="hp-gauge-wrap">
+      <div class="hp-gauge" style="width:78%"></div>
+    </div>
+    <div class="hp-grid">
+      <div class="hp-box">
+        <div class="hp-box-lbl">Hold</div>
+        <div class="hp-box-val gold">78%</div>
+      </div>
+      <div class="hp-box">
+        <div class="hp-box-lbl">-25 bps Cut</div>
+        <div class="hp-box-val grn">21%</div>
+      </div>
+      <div class="hp-box">
+        <div class="hp-box-lbl">-50 bps Cut</div>
+        <div class="hp-box-val grn">1%</div>
+      </div>
+      <div class="hp-box">
+        <div class="hp-box-lbl">Hike</div>
+        <div class="hp-box-val red">&lt;1%</div>
+      </div>
+      <div class="hp-box">
+        <div class="hp-box-lbl">SEP Release</div>
+        <div class="hp-box-val">Yes</div>
+      </div>
+      <div class="hp-box">
+        <div class="hp-box-lbl">Updated</div>
+        <div class="hp-box-val">Jun 16</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Probability Chart SVG -->
+  <div class="sec">Probability History — Jun Meeting <span class="more">Expand →</span></div>
+  <div class="chart-card">
+    <div class="chart-title">Cut Probability Trend — Jun 17–18 Meeting <span>CME FedWatch</span></div>
+    <div class="chart-sub">30-day rolling probability of ≥25bps rate cut at June FOMC</div>
+    <div class="chart-wrap">
+      <svg viewBox="0 0 380 120" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="cutGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#15803D" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#15803D" stop-opacity="0.02"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid -->
+        <line x1="0" y1="20" x2="380" y2="20" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="50" x2="380" y2="50" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="80" x2="380" y2="80" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="110" x2="380" y2="110" stroke="#E2E8F0" stroke-width="1"/>
+        <!-- Y labels -->
+        <text x="4" y="18" font-size="8" fill="#94A3B8">80%</text>
+        <text x="4" y="48" font-size="8" fill="#94A3B8">60%</text>
+        <text x="4" y="78" font-size="8" fill="#94A3B8">40%</text>
+        <text x="4" y="108" font-size="8" fill="#94A3B8">20%</text>
+        <!-- Cut prob line: started high ~65%, dropped to ~22% -->
+        <polygon points="30,38 70,25 110,32 150,45 190,60 230,68 270,75 310,82 350,90 380,93 380,120 30,120" fill="url(#cutGrad)"/>
+        <polyline points="30,38 70,25 110,32 150,45 190,60 230,68 270,75 310,82 350,90 380,93" fill="none" stroke="#15803D" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- Current dot -->
+        <circle cx="380" cy="93" r="5" fill="#15803D"/>
+        <circle cx="380" cy="93" r="9" fill="none" stroke="#15803D" stroke-width="1.5" opacity="0.4"/>
+        <!-- X labels -->
+        <text x="22" y="118" font-size="8" fill="#94A3B8">May 7</text>
+        <text x="100" y="118" font-size="8" fill="#94A3B8">May 15</text>
+        <text x="185" y="118" font-size="8" fill="#94A3B8">May 22</text>
+        <text x="265" y="118" font-size="8" fill="#94A3B8">Jun 1</text>
+        <text x="345" y="118" font-size="8" fill="#94A3B8">Jun 16</text>
+        <!-- 22% annotation -->
+        <text x="310" y="89" font-size="8" fill="#15803D" font-weight="bold">22%</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- All 2025 Meetings Probabilities -->
+  <div class="sec">2025 FOMC Meeting Probabilities <span class="more">CME Source →</span></div>
+
+  <!-- Jun 17-18 -->
+  <div class="meet-card">
+    <div class="meet-header">
+      <div class="meet-date">📅 Jun 17–18, 2025</div>
+      <span class="meet-badge badge-next">NEXT · SEP</span>
+    </div>
+    <div class="meet-sub">Meeting 4 · SEP + Dot Plot Released · Fed Chair Press Conference</div>
+    <div class="prob-row">
+      <div class="prob-action hold">Hold</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-hold" style="width:78%"></div></div>
+      <div class="prob-pct">78%</div>
+      <div class="prob-bps">4.25–4.50%</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-25bps</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:21%"></div></div>
+      <div class="prob-pct">21%</div>
+      <div class="prob-bps">4.00–4.25%</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-50bps</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:1%"></div></div>
+      <div class="prob-pct">1%</div>
+      <div class="prob-bps">3.75–4.00%</div>
+    </div>
+  </div>
+
+  <!-- Jul 29-30 -->
+  <div class="meet-card">
+    <div class="meet-header">
+      <div class="meet-date">📅 Jul 29–30, 2025</div>
+      <span class="meet-badge badge-sep" style="background:#FFF7ED;color:#C2410C;">No SEP</span>
+    </div>
+    <div class="meet-sub">Meeting 5 · No Summary of Economic Projections</div>
+    <div class="prob-row">
+      <div class="prob-action hold">Hold</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-hold" style="width:52%"></div></div>
+      <div class="prob-pct">52%</div>
+      <div class="prob-bps">4.25–4.50%</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-25bps</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:38%"></div></div>
+      <div class="prob-pct">38%</div>
+      <div class="prob-bps">4.00–4.25%</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-50bps</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:10%"></div></div>
+      <div class="prob-pct">10%</div>
+      <div class="prob-bps">3.75–4.00%</div>
+    </div>
+  </div>
+
+  <!-- Sep 16-17 -->
+  <div class="meet-card">
+    <div class="meet-header">
+      <div class="meet-date">📅 Sep 16–17, 2025</div>
+      <span class="meet-badge badge-sep">SEP</span>
+    </div>
+    <div class="meet-sub">Meeting 6 · SEP Released · Most likely first cut window per analysts</div>
+    <div class="prob-row">
+      <div class="prob-action hold">Hold</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-hold" style="width:28%"></div></div>
+      <div class="prob-pct">28%</div>
+      <div class="prob-bps">4.25–4.50%</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-25bps</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:50%"></div></div>
+      <div class="prob-pct">50%</div>
+      <div class="prob-bps">4.00–4.25%</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-50bps</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:22%"></div></div>
+      <div class="prob-pct">22%</div>
+      <div class="prob-bps">3.75–4.00%</div>
+    </div>
+  </div>
+
+  <!-- Oct 28-29 -->
+  <div class="meet-card">
+    <div class="meet-header">
+      <div class="meet-date">📅 Oct 28–29, 2025</div>
+      <span class="meet-badge badge-sep" style="background:#FFF7ED;color:#C2410C;">No SEP</span>
+    </div>
+    <div class="meet-sub">Meeting 7 · No SEP · Pre-election meeting</div>
+    <div class="prob-row">
+      <div class="prob-action hold">Hold</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-hold" style="width:22%"></div></div>
+      <div class="prob-pct">22%</div>
+      <div class="prob-bps">4.00–4.25%</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-25bps</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:58%"></div></div>
+      <div class="prob-pct">58%</div>
+      <div class="prob-bps">3.75–4.00%</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-50bps+</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:20%"></div></div>
+      <div class="prob-pct">20%</div>
+      <div class="prob-bps">≤3.75%</div>
+    </div>
+  </div>
+
+  <!-- Dec 9-10 -->
+  <div class="meet-card">
+    <div class="meet-header">
+      <div class="meet-date">📅 Dec 9–10, 2025</div>
+      <span class="meet-badge badge-sep">SEP</span>
+    </div>
+    <div class="meet-sub">Meeting 8 · Year-End SEP · 2026 projections released</div>
+    <div class="prob-row">
+      <div class="prob-action hold">Hold</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-hold" style="width:12%"></div></div>
+      <div class="prob-pct">12%</div>
+      <div class="prob-bps">4.00%+</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-25bps</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:55%"></div></div>
+      <div class="prob-pct">55%</div>
+      <div class="prob-bps">3.75–4.00%</div>
+    </div>
+    <div class="prob-row">
+      <div class="prob-action cut">-50bps+</div>
+      <div class="prob-bar-wrap"><div class="prob-bar bar-cut" style="width:33%"></div></div>
+      <div class="prob-pct">33%</div>
+      <div class="prob-bps">≤3.75%</div>
+    </div>
+  </div>
+
+  <!-- Cumulative End-of-Year Rate Projection -->
+  <div class="sec">Market Implied Year-End Rate <span class="more">Futures →</span></div>
+  <div class="cum-card">
+    <div class="cum-title">Cumulative Rate Projections — 2025</div>
+    <div class="cum-sub">Fed Funds Futures implied rate by meeting · CME Group</div>
+    <div class="cum-grid">
+      <div class="cum-col">
+        <div class="cum-meet">Jun '25</div>
+        <div class="cum-rate">4.25%</div>
+        <div class="cum-cuts">0–1 cut</div>
+      </div>
+      <div class="cum-col">
+        <div class="cum-meet">Sep '25</div>
+        <div class="cum-rate">4.00%</div>
+        <div class="cum-cuts">1–2 cuts</div>
+      </div>
+      <div class="cum-col">
+        <div class="cum-meet">Oct '25</div>
+        <div class="cum-rate">3.85%</div>
+        <div class="cum-cuts">2 cuts</div>
+      </div>
+      <div class="cum-col">
+        <div class="cum-meet">Dec '25</div>
+        <div class="cum-rate">3.75%</div>
+        <div class="cum-cuts">2–3 cuts</div>
+      </div>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,0.10);margin:12px 0;"></div>
+    <div style="font-size:9px;color:rgba(255,255,255,0.40);text-align:center;">Source: CME FedWatch · Fed Funds Futures · Updated Jun 16, 2025</div>
+  </div>
+
+  <!-- Terminal Rate -->
+  <div class="sec">Terminal Rate Projections <span class="more">2026+ →</span></div>
+  <div class="terminal-card">
+    <div class="tc-title">📉 Where Markets See Rates Landing</div>
+    <div class="tr-row">
+      <div class="tr-lbl">End 2025</div>
+      <div class="tr-bar-wrap"><div class="tr-bar" style="width:52%;background:linear-gradient(90deg,#1B3F72,#0B1D3A)"></div></div>
+      <div class="tr-val">3.75%</div>
+    </div>
+    <div class="tr-row">
+      <div class="tr-lbl">End 2026</div>
+      <div class="tr-bar-wrap"><div class="tr-bar" style="width:45%;background:linear-gradient(90deg,#D97706,#B45309)"></div></div>
+      <div class="tr-val">3.25%</div>
+    </div>
+    <div class="tr-row">
+      <div class="tr-lbl">FOMC Median</div>
+      <div class="tr-bar-wrap"><div class="tr-bar" style="width:54%;background:linear-gradient(90deg,#B91C1C,#991B1B)"></div></div>
+      <div class="tr-val">3.88%</div>
+    </div>
+    <div class="tr-row">
+      <div class="tr-lbl">Neutral Rate</div>
+      <div class="tr-bar-wrap"><div class="tr-bar" style="width:42%;background:linear-gradient(90deg,#0F766E,#0D9488)"></div></div>
+      <div class="tr-val">3.00%</div>
+    </div>
+    <div class="divider"></div>
+    <div class="src-note">Fed Funds Futures · OIS Swaps · CME FedWatch · Jun 16, 2025</div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+</body>
+</html>

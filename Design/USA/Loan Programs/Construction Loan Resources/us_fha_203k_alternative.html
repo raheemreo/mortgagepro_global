@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHA 203(k) Alternative | Construction Loan Calc</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --accent:#E84545;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#B91C1C 55%,#991B1B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🔄';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:'Playfair Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:12.5px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* CONTENT */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+
+  /* INPUTS */
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .inp-box{background:var(--card);border-radius:14px;padding:13px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:rgba(185,28,28,0.4);}
+  .inp-box label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:15px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:9px;color:var(--muted);margin-top:3px;}
+  .inp-full{grid-column:1/-1;}
+
+  /* RESULT HERO */
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#B91C1C);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:10px;}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:32px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.1;margin:6px 0 4px;}
+  .rh-amount span{font-size:14px;color:var(--gold-lt);}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.50);}
+  .rh-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;}
+  .save-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:8px 14px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(253,211,77,0.25);border-color:var(--gold-lt);color:var(--gold-lt);}
+  .save-count{background:rgba(255,255,255,0.15);border-radius:8px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,0.7);}
+
+  /* WARNING CHIP */
+  .warn-chip{display:none;background:rgba(255,255,255,0.15);border:1px solid var(--gold-lt);border-radius:10px;padding:8px 10px;margin-top:10px;font-size:9.5px;color:var(--gold-lt);line-height:1.4;}
+  .warn-chip.show{display:block;}
+
+  /* DONUT CHART */
+  .donut-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .donut-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:12px;}
+  .donut-wrap{display:flex;align-items:center;gap:16px;}
+  .donut-svg{flex-shrink:0;}
+  .donut-legend{display:flex;flex-direction:column;gap:8px;flex:1;}
+  .dl-item{display:flex;align-items:center;gap:8px;}
+  .dl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .dl-label{font-size:9.5px;color:var(--muted);flex:1;}
+  .dl-val{font-size:11px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;}
+
+  /* BREAKDOWN GRID */
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:14px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:20px;margin-bottom:6px;}
+  .bk-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:16px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;margin:3px 0;}
+  .bk-sub{font-size:9px;color:var(--muted);}
+
+  /* CHART CARD */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:10px;}
+
+  /* LOAN LIMIT GAUGE */
+  .gauge-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .gauge-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:10px;}
+  .gauge-track{height:14px;background:#EEF2F8;border-radius:7px;position:relative;overflow:hidden;margin-bottom:6px;}
+  .gauge-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#D97706,#B91C1C);width:0;transition:width .6s ease;}
+  .gauge-labels{display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted);}
+
+  /* COMPARISON TABLE */
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .compare-card{background:var(--card);border-radius:16px;padding:14px;border:1.5px solid var(--border);box-shadow:var(--sh);}
+  .compare-card.featured{border-color:var(--gold);background:linear-gradient(180deg,#FFFBEB,#FFFFFF);}
+  .cc-badge{display:inline-block;font-size:8px;font-weight:700;color:#fff;background:var(--gold);padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:7px;}
+  .cc-badge.muted{background:var(--muted);}
+  .cc-title{font-size:13px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:9px;}
+  .cc-row{display:flex;justify-content:space-between;gap:6px;padding:6px 0;border-bottom:1px solid var(--border);font-size:9.5px;}
+  .cc-row:last-child{border-bottom:none;}
+  .cc-k{color:var(--muted);}
+  .cc-v{color:var(--navy);font-weight:700;text-align:right;}
+
+  /* TIMELINE */
+  .timeline-card{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border:1px solid #FCA5A5;border-radius:15px;padding:14px 15px;margin-bottom:10px;}
+  .tl-title{font-size:12px;font-weight:700;color:#7F1D1D;font-family:'Playfair Display',serif;margin-bottom:10px;}
+  .tl-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(252,165,165,0.4);}
+  .tl-row:last-child{border-bottom:none;}
+  .tl-k{font-size:10px;color:#991B1B;font-weight:600;}
+  .tl-v{font-size:10px;font-weight:700;color:#B91C1C;}
+
+  /* RESOURCE / ALT NOTE */
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+  /* SAVED PANEL */
+  .saved-panel{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;display:none;}
+  .saved-panel.visible{display:block;}
+  .saved-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .saved-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;}
+  .clear-btn{font-size:10px;color:var(--red);font-weight:600;cursor:pointer;border:none;background:none;}
+  .saved-item{background:var(--bg);border-radius:11px;padding:10px 12px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .si-left .si-name{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-left .si-detail{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-right{font-size:14px;font-weight:800;color:var(--red);font-family:'Playfair Display',serif;}
+  .si-del{font-size:14px;color:var(--muted);cursor:pointer;margin-left:8px;padding:2px;}
+
+  /* CALC BTN */
+  .calc-btn{width:100%;background:linear-gradient(135deg,#B91C1C,#991B1B);border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(185,28,28,0.35);font-family:'DM Sans',sans-serif;margin-top:4px;transition:transform .1s,box-shadow .1s;}
+  .calc-btn:active{transform:scale(0.98);box-shadow:0 2px 8px rgba(185,28,28,0.25);}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;border-radius:12px;padding:10px 18px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* BOTTOM NAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--red);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.donut-card,.breakdown-grid,.chart-card,.gauge-card,.compare-grid,.timeline-card,.ilist{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔄</div>
+      <div class="hdr-title">FHA 203(k) Loan</div>
+      <div class="hdr-sub">Renovation + Purchase Financing Alternative</div>
+    </div>
+    <div class="icon-btn" onclick="toggleSaved()" title="Saved calculations">🔖</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Min. Down</div><div class="rs-v">3.5%</div><div class="rs-n">580+ credit</div></div>
+    <div class="rs"><div class="rs-l">Min. Credit</div><div class="rs-v gold">500</div><div class="rs-n">FHA floor</div></div>
+    <div class="rs"><div class="rs-l">Upfront MIP</div><div class="rs-v">1.75%</div><div class="rs-n">financed in</div></div>
+    <div class="rs"><div class="rs-l">Loan Cap</div><div class="rs-v">$1.25M</div><div class="rs-n">high-cost area</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <!-- SAVED PANEL -->
+  <div class="saved-panel" id="savedPanel">
+    <div class="saved-header">
+      <div class="saved-title">📌 Saved 203(k) Calculations</div>
+      <button class="clear-btn" onclick="clearAllSaved()">Clear All</button>
+    </div>
+    <div id="savedList"><div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No saved calculations yet.</div></div>
+  </div>
+
+  <div class="sec" style="margin-top:0">Purchase & Renovation Details</div>
+  <div class="input-grid">
+    <div class="inp-box">
+      <label>Purchase Price ($)</label>
+      <input type="number" id="purchasePrice" value="280000" step="5000" oninput="calculate()">
+      <div class="inp-hint">Property "as-is" price</div>
+    </div>
+    <div class="inp-box">
+      <label>Renovation Cost ($)</label>
+      <input type="number" id="renoCost" value="60000" step="1000" oninput="calculate()">
+      <div class="inp-hint">Contractor repair estimate</div>
+    </div>
+    <div class="inp-box">
+      <label>203(k) Type</label>
+      <select id="kType" onchange="calculate()">
+        <option value="limited">Limited (≤$75,000)</option>
+        <option value="standard">Standard (major rehab)</option>
+      </select>
+      <div class="inp-hint">Limited = cosmetic only</div>
+    </div>
+    <div class="inp-box">
+      <label>Credit Tier</label>
+      <select id="creditTier" onchange="calculate()">
+        <option value="3.5">580+ score (3.5% down)</option>
+        <option value="10">500–579 score (10% down)</option>
+      </select>
+      <div class="inp-hint">Sets min. down payment</div>
+    </div>
+    <div class="inp-box">
+      <label>Mortgage Rate (%)</label>
+      <input type="number" id="kRate" value="7.25" step="0.05" oninput="calculate()">
+      <div class="inp-hint">~0.75–1.0% above std. FHA</div>
+    </div>
+    <div class="inp-box">
+      <label>Contingency (%)</label>
+      <input type="number" id="contPct" value="15" step="1" min="0" max="20" oninput="calculate()">
+      <div class="inp-hint">Up to 20% often required</div>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calculate()">🔄 Calculate 203(k) Payment</button>
+
+  <div class="sec">Estimated Monthly Payment</div>
+  <div class="result-hero">
+    <div class="rh-label">Total Monthly Payment (P&amp;I + MIP)</div>
+    <div class="rh-amount" id="totalPayment">$2,847 <span>/mo</span></div>
+    <div class="rh-sub" id="paymentSub">Loan: $327,250 · Down: $13,650 · Limited 203(k)</div>
+    <div class="warn-chip" id="capWarn">⚠️ Rehab budget exceeds the $75,000 Limited 203(k) cap — switch to Standard 203(k).</div>
+    <div class="rh-save-row">
+      <div class="save-count" id="saveCount">0 saved</div>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save Calculation</button>
+    </div>
+  </div>
+
+  <div class="sec">Project Cost Breakdown</div>
+  <div class="donut-card">
+    <div class="donut-title">📊 Total Project Allocation</div>
+    <div class="donut-wrap">
+      <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
+        <circle cx="55" cy="55" r="40" fill="none" stroke="#EEF2F8" stroke-width="18"/>
+        <circle cx="55" cy="55" r="40" fill="none" stroke="#0B1D3A" stroke-width="18" stroke-dasharray="0 251.33" stroke-linecap="round" transform="rotate(-90 55 55)" id="donutPurchase" style="transition:stroke-dasharray 0.8s ease"/>
+        <circle cx="55" cy="55" r="40" fill="none" stroke="#B91C1C" stroke-width="18" stroke-dasharray="0 251.33" stroke-linecap="round" transform="rotate(-90 55 55)" id="donutReno" style="transition:stroke-dasharray 0.8s ease"/>
+        <circle cx="55" cy="55" r="40" fill="none" stroke="#D97706" stroke-width="18" stroke-dasharray="0 251.33" stroke-linecap="round" transform="rotate(-90 55 55)" id="donutCont" style="transition:stroke-dasharray 0.8s ease"/>
+        <text x="55" y="51" text-anchor="middle" font-size="9" fill="#4A5C7A" font-family="DM Sans,sans-serif" font-weight="600">Project</text>
+        <text x="55" y="63" text-anchor="middle" font-size="8" fill="#4A5C7A" font-family="DM Sans,sans-serif" id="donutCenter">$340K</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="dl-item"><div class="dl-dot" style="background:#0B1D3A"></div><div class="dl-label">Purchase Price</div><div class="dl-val" id="dlPurchase">$280K</div></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#B91C1C"></div><div class="dl-label">Renovation</div><div class="dl-val" id="dlReno">$60K</div></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#D97706"></div><div class="dl-label">Contingency</div><div class="dl-val" id="dlCont">$9K</div></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#FCD34D"></div><div class="dl-label">Down Payment</div><div class="dl-val" id="dlDown">$13.7K</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">Key Figures</div>
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">💵</div><div class="bk-label">Down Payment</div><div class="bk-value" id="bkDown">$13,650</div><div class="bk-sub">3.5% of total project</div></div>
+    <div class="bk-card"><div class="bk-icon">🏦</div><div class="bk-label">Base Loan Amount</div><div class="bk-value" id="bkBase">$327,250</div><div class="bk-sub">Before UFMIP added</div></div>
+    <div class="bk-card"><div class="bk-icon">🧾</div><div class="bk-label">Upfront MIP</div><div class="bk-value" id="bkUfmip">$5,727</div><div class="bk-sub">1.75%, financed in</div></div>
+    <div class="bk-card"><div class="bk-icon">📅</div><div class="bk-label">Monthly MIP</div><div class="bk-value" id="bkMip">$153</div><div class="bk-sub">0.55% annual rate</div></div>
+    <div class="bk-card"><div class="bk-icon">🏠</div><div class="bk-label">Monthly P&amp;I</div><div class="bk-value" id="bkPI">$2,694</div><div class="bk-sub">30-yr fixed</div></div>
+    <div class="bk-card"><div class="bk-icon">📝</div><div class="bk-label">Est. Origination Fee</div><div class="bk-value" id="bkOrig">$4,909</div><div class="bk-sub">Greater of $350 or 1.5%</div></div>
+  </div>
+
+  <div class="sec">Payment Composition</div>
+  <div class="chart-card">
+    <div class="chart-title">📈 Monthly Payment: P&amp;I vs. MIP vs. Total</div>
+    <svg width="100%" height="90" viewBox="0 0 360 90" id="payChart">
+      <defs>
+        <linearGradient id="gradNavy2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#0B1D3A" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#1B3F72" stop-opacity="0.7"/>
+        </linearGradient>
+        <linearGradient id="gradGold2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#D97706" stop-opacity="0.95"/>
+          <stop offset="100%" stop-color="#B45309" stop-opacity="0.75"/>
+        </linearGradient>
+        <linearGradient id="gradRed3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#B91C1C" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#991B1B" stop-opacity="0.7"/>
+        </linearGradient>
+      </defs>
+      <text x="2" y="14" font-size="8" fill="#4A5C7A" id="yTop3">$3K</text>
+      <text x="2" y="87" font-size="8" fill="#4A5C7A">$0</text>
+      <line x1="28" y1="10" x2="355" y2="10" stroke="#EEF2F8" stroke-width="1"/>
+      <line x1="28" y1="45" x2="355" y2="45" stroke="#EEF2F8" stroke-width="1"/>
+      <line x1="28" y1="80" x2="355" y2="80" stroke="#EEF2F8" stroke-width="1"/>
+      <rect id="barPI" x="40" y="20" width="80" height="60" rx="6" fill="url(#gradNavy2)"/>
+      <text id="labelPI" x="80" y="15" text-anchor="middle" font-size="9" fill="#0B1D3A" font-weight="700">$2,694</text>
+      <text x="80" y="88" text-anchor="middle" font-size="8" fill="#4A5C7A">P&amp;I</text>
+      <rect id="barMipBar" x="150" y="70" width="80" height="10" rx="5" fill="url(#gradGold2)"/>
+      <text id="labelMipBar" x="190" y="65" text-anchor="middle" font-size="9" fill="#D97706" font-weight="700">$153</text>
+      <text x="190" y="88" text-anchor="middle" font-size="8" fill="#4A5C7A">MIP</text>
+      <rect id="barTotal" x="260" y="10" width="80" height="70" rx="6" fill="url(#gradRed3)"/>
+      <text id="labelTotal" x="300" y="8" text-anchor="middle" font-size="9" fill="#B91C1C" font-weight="700">$2,847</text>
+      <text x="300" y="88" text-anchor="middle" font-size="8" fill="#4A5C7A">Total</text>
+    </svg>
+  </div>
+
+  <div class="sec">Loan Amount vs. FHA Limits</div>
+  <div class="gauge-card">
+    <div class="gauge-title">📏 Where Your Loan Falls (2026 1-Unit Limits)</div>
+    <div class="gauge-track"><div class="gauge-fill" id="gaugeFill"></div></div>
+    <div class="gauge-labels"><span>$0</span><span>Floor $541,287</span><span>Ceiling $1,249,125</span></div>
+    <div style="font-size:9.5px;color:var(--muted);margin-top:8px;line-height:1.4;" id="gaugeNote">Your financed loan amount fits comfortably within the 2026 FHA national limits for a 1-unit home.</div>
+  </div>
+
+  <div class="sec">Limited vs. Standard 203(k)</div>
+  <div class="compare-grid">
+    <div class="compare-card featured">
+      <div class="cc-badge">Faster &amp; Simpler</div>
+      <div class="cc-title">✨ Limited 203(k)</div>
+      <div class="cc-row"><div class="cc-k">Max repair budget</div><div class="cc-v">$75,000</div></div>
+      <div class="cc-row"><div class="cc-k">Structural work</div><div class="cc-v">Not allowed</div></div>
+      <div class="cc-row"><div class="cc-k">HUD consultant</div><div class="cc-v">Not required</div></div>
+      <div class="cc-row"><div class="cc-k">Completion window</div><div class="cc-v">Up to 6 months</div></div>
+      <div class="cc-row"><div class="cc-k">Best for</div><div class="cc-v">Kitchens, baths, cosmetic</div></div>
+    </div>
+    <div class="compare-card">
+      <div class="cc-badge muted">Major Rehab</div>
+      <div class="cc-title">🏗️ Standard 203(k)</div>
+      <div class="cc-row"><div class="cc-k">Max repair budget</div><div class="cc-v">Up to FHA limit</div></div>
+      <div class="cc-row"><div class="cc-k">Structural work</div><div class="cc-v">Allowed</div></div>
+      <div class="cc-row"><div class="cc-k">HUD consultant</div><div class="cc-v">Required (~$400–$1,000)</div></div>
+      <div class="cc-row"><div class="cc-k">Completion window</div><div class="cc-v">Up to 12 months</div></div>
+      <div class="cc-row"><div class="cc-k">Best for</div><div class="cc-v">Additions, structural fixes</div></div>
+    </div>
+  </div>
+
+  <div class="sec">203(k) Process Timeline</div>
+  <div class="timeline-card">
+    <div class="tl-title">🗓️ From Pre-Approval to Move-In</div>
+    <div class="tl-row"><div class="tl-k">Pre-Approval</div><div class="tl-v">1–3 days</div></div>
+    <div class="tl-row"><div class="tl-k">Contractor Bids</div><div class="tl-v">1–2 weeks</div></div>
+    <div class="tl-row"><div class="tl-k">Underwriting</div><div class="tl-v">3–4 weeks</div></div>
+    <div class="tl-row"><div class="tl-k">Closing</div><div class="tl-v">45–60 days from contract</div></div>
+    <div class="tl-row"><div class="tl-k">Renovation Period</div><div class="tl-v" id="tlReno">Up to 6 months</div></div>
+    <div class="tl-row"><div class="tl-k">Work Must Start By</div><div class="tl-v">30 days post-closing</div></div>
+  </div>
+
+  <div class="sec">Is There a Better Fit?</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🏠</div><div><div class="in">Conventional HomeStyle Renovation</div><div class="is">If you have 620+ credit and 10%+ down, this avoids FHA's lifetime mortgage insurance.</div></div></div>
+    <div class="ic"><div class="ii">🎖️</div><div><div class="in">VA Renovation Loan</div><div class="is">Eligible veterans and service members may qualify for 0% down renovation financing.</div></div></div>
+    <div class="ic"><div class="ii">🏗️</div><div><div class="in">Standard Construction Loan</div><div class="is">For ground-up new builds rather than renovating an existing structure, see the main calculator.</div></div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni" onclick="toggleSaved()"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'const_loan_fha203k_saves';
+let savedCalcs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+const FHA_FLOOR = 541287;
+const FHA_CEILING = 1249125;
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+function fmtK(n){const v=Math.abs(n);return (n<0?'-':'')+'$'+(v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?Math.round(v/1000)+'K':Math.round(v));}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function calculate(){
+  const purchase = parseFloat(document.getElementById('purchasePrice').value)||0;
+  const reno = parseFloat(document.getElementById('renoCost').value)||0;
+  const kType = document.getElementById('kType').value;
+  const downPct = parseFloat(document.getElementById('creditTier').value)||3.5;
+  const rate = parseFloat(document.getElementById('kRate').value)/100||0;
+  const contPct = parseFloat(document.getElementById('contPct').value)/100||0;
+
+  const contAmt = reno * contPct;
+  const rehabBudget = reno + contAmt;
+  const totalProject = purchase + rehabBudget;
+  const downAmt = totalProject * (downPct/100);
+  const baseLoan = totalProject - downAmt;
+
+  const ufmip = baseLoan * 0.0175;
+  const financedLoan = baseLoan + ufmip;
+  const annualMipRate = downPct >= 10 ? 0.0050 : 0.0055;
+  const monthlyMip = financedLoan * annualMipRate / 12;
+
+  const months = 360;
+  const mr = rate/12;
+  const monthlyPI = mr===0 ? financedLoan/months : financedLoan*(mr*Math.pow(1+mr,months))/(Math.pow(1+mr,months)-1);
+
+  const totalMonthly = monthlyPI + monthlyMip;
+  const originationFee = Math.max(350, baseLoan*0.015);
+
+  // Limited cap warning
+  const capWarn = document.getElementById('capWarn');
+  if(kType==='limited' && rehabBudget > 75000){
+    capWarn.classList.add('show');
+  } else {
+    capWarn.classList.remove('show');
+  }
+
+  document.getElementById('totalPayment').innerHTML = fmt(Math.round(totalMonthly)) + ' <span>/mo</span>';
+  document.getElementById('paymentSub').textContent = `Loan: ${fmt(Math.round(financedLoan))} · Down: ${fmt(Math.round(downAmt))} · ${kType==='limited'?'Limited':'Standard'} 203(k)`;
+
+  document.getElementById('bkDown').textContent = fmt(Math.round(downAmt));
+  document.querySelector('#bkDown').parentElement.querySelector('.bk-sub').textContent = `${downPct}% of total project`;
+  document.getElementById('bkBase').textContent = fmt(Math.round(baseLoan));
+  document.getElementById('bkUfmip').textContent = fmt(Math.round(ufmip));
+  document.getElementById('bkMip').textContent = fmt(Math.round(monthlyMip));
+  document.getElementById('bkMip').parentElement.querySelector('.bk-sub').textContent = `${(annualMipRate*100).toFixed(2)}% annual rate`;
+  document.getElementById('bkPI').textContent = fmt(Math.round(monthlyPI));
+  document.getElementById('bkOrig').textContent = fmt(Math.round(originationFee));
+
+  updateDonut(purchase, reno, contAmt, downAmt, totalProject);
+  updatePayChart(monthlyPI, monthlyMip, totalMonthly);
+  updateGauge(financedLoan);
+
+  document.getElementById('tlReno').textContent = kType==='limited' ? 'Up to 6 months' : 'Up to 12 months';
+}
+
+function updateDonut(purchase, reno, cont, down, total){
+  const circ = 251.33;
+  const segments = [
+    {id:'donutPurchase', val:purchase},
+    {id:'donutReno', val:reno},
+    {id:'donutCont', val:cont},
+  ];
+  let offset = 0;
+  segments.forEach(seg=>{
+    const pct = total > 0 ? seg.val/total : 0;
+    const len = pct*circ;
+    const el = document.getElementById(seg.id);
+    el.setAttribute('stroke-dasharray', `${len} ${circ}`);
+    el.setAttribute('stroke-dashoffset', -offset);
+    offset += len;
+  });
+  document.getElementById('donutCenter').textContent = fmtK(total);
+  document.getElementById('dlPurchase').textContent = fmtK(purchase);
+  document.getElementById('dlReno').textContent = fmtK(reno);
+  document.getElementById('dlCont').textContent = fmtK(cont);
+  document.getElementById('dlDown').textContent = fmtK(down);
+}
+
+function updatePayChart(pi, mip, total){
+  const maxVal = Math.max(pi, mip, total, 1);
+  const H = 70, topPad = 10;
+  function barH(v){ return Math.max(4,(v/maxVal)*H); }
+  function barY(v){ return topPad + H - barH(v); }
+
+  const bPI = document.getElementById('barPI');
+  const bMip = document.getElementById('barMipBar');
+  const bTotal = document.getElementById('barTotal');
+  bPI.setAttribute('y', barY(pi)); bPI.setAttribute('height', barH(pi));
+  bMip.setAttribute('y', barY(mip)); bMip.setAttribute('height', Math.max(8,barH(mip)));
+  bTotal.setAttribute('y', barY(total)); bTotal.setAttribute('height', barH(total));
+
+  document.getElementById('labelPI').setAttribute('y', barY(pi)-3);
+  document.getElementById('labelPI').textContent = fmt(Math.round(pi));
+  document.getElementById('labelMipBar').setAttribute('y', barY(mip)-3);
+  document.getElementById('labelMipBar').textContent = fmt(Math.round(mip));
+  document.getElementById('labelTotal').setAttribute('y', barY(total)-3);
+  document.getElementById('labelTotal').textContent = fmt(Math.round(total));
+  document.getElementById('yTop3').textContent = fmtK(maxVal);
+}
+
+function updateGauge(financedLoan){
+  const maxScale = FHA_CEILING * 1.1;
+  const pct = Math.min(100, (financedLoan/maxScale)*100);
+  document.getElementById('gaugeFill').style.width = pct + '%';
+  const note = document.getElementById('gaugeNote');
+  if(financedLoan > FHA_CEILING){
+    note.innerHTML = `⚠️ Your financed loan amount (${fmt(Math.round(financedLoan))}) exceeds the 2026 FHA national ceiling of ${fmt(FHA_CEILING)} — you may need a jumbo or conventional renovation loan instead.`;
+  } else if(financedLoan < FHA_FLOOR){
+    note.innerHTML = `Your financed loan amount (${fmt(Math.round(financedLoan))}) is below the FHA floor — you're well within limits nationwide.`;
+  } else {
+    note.innerHTML = `Your financed loan amount (${fmt(Math.round(financedLoan))}) fits within the 2026 FHA limits for most counties. High-cost areas allow up to ${fmt(FHA_CEILING)}.`;
+  }
+}
+
+function saveCalc(){
+  const purchase = parseFloat(document.getElementById('purchasePrice').value)||0;
+  const reno = parseFloat(document.getElementById('renoCost').value)||0;
+  const kType = document.getElementById('kType').value;
+  const downPct = parseFloat(document.getElementById('creditTier').value)||3.5;
+  const rate = parseFloat(document.getElementById('kRate').value)/100||0;
+  const contPct = parseFloat(document.getElementById('contPct').value)/100||0;
+
+  const contAmt = reno*contPct;
+  const totalProject = purchase + reno + contAmt;
+  const downAmt = totalProject*(downPct/100);
+  const baseLoan = totalProject - downAmt;
+  const ufmip = baseLoan*0.0175;
+  const financedLoan = baseLoan + ufmip;
+  const annualMipRate = downPct >= 10 ? 0.0050 : 0.0055;
+  const monthlyMip = financedLoan*annualMipRate/12;
+  const mr = rate/12, months=360;
+  const monthlyPI = mr===0 ? financedLoan/months : financedLoan*(mr*Math.pow(1+mr,months))/(Math.pow(1+mr,months)-1);
+  const totalMonthly = monthlyPI + monthlyMip;
+
+  const entry = {
+    id: Date.now(),
+    ts: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    label: `${kType==='limited'?'Limited':'Standard'} · ${fmtK(purchase)} + ${fmtK(reno)} reno`,
+    monthly: Math.round(totalMonthly),
+    inputs:{purchasePrice:purchase, renoCost:reno, kType, creditTier:downPct, kRate:document.getElementById('kRate').value, contPct:document.getElementById('contPct').value}
+  };
+  savedCalcs.unshift(entry);
+  if(savedCalcs.length > 10) savedCalcs.pop();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCalcs));
+  updateSaveCount();
+  renderSaved();
+  showToast('✅ Calculation saved!');
+  document.getElementById('saveBtn').classList.add('saved');
+  setTimeout(()=>document.getElementById('saveBtn').classList.remove('saved'),2000);
+}
+
+function loadCalc(entry){
+  const i = entry.inputs;
+  document.getElementById('purchasePrice').value = i.purchasePrice;
+  document.getElementById('renoCost').value = i.renoCost;
+  document.getElementById('kType').value = i.kType;
+  document.getElementById('creditTier').value = i.creditTier;
+  document.getElementById('kRate').value = i.kRate;
+  document.getElementById('contPct').value = i.contPct;
+  calculate();
+  showToast('📂 Calculation loaded!');
+  document.getElementById('savedPanel').classList.remove('visible');
+}
+
+function deleteCalc(id){
+  savedCalcs = savedCalcs.filter(c=>c.id!==id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCalcs));
+  renderSaved();
+  updateSaveCount();
+}
+
+function clearAllSaved(){
+  savedCalcs=[];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCalcs));
+  renderSaved();
+  updateSaveCount();
+}
+
+function renderSaved(){
+  const el = document.getElementById('savedList');
+  if(savedCalcs.length===0){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No saved calculations yet.</div>';return;}
+  el.innerHTML = savedCalcs.map(c=>`
+    <div class="saved-item" onclick='loadCalc(${JSON.stringify(c)})'>
+      <div class="si-left">
+        <div class="si-name">${c.label}</div>
+        <div class="si-detail">${c.ts}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <div class="si-right">${fmt(c.monthly)}/mo</div>
+        <div class="si-del" onclick="event.stopPropagation();deleteCalc(${c.id})">✕</div>
+      </div>
+    </div>`).join('');
+}
+
+function updateSaveCount(){
+  document.getElementById('saveCount').textContent = savedCalcs.length + ' saved';
+}
+
+function toggleSaved(){
+  const p = document.getElementById('savedPanel');
+  p.classList.toggle('visible');
+  if(p.classList.contains('visible')) renderSaved();
+}
+
+renderSaved();
+updateSaveCount();
+calculate();
+</script>
+</body>
+</html>

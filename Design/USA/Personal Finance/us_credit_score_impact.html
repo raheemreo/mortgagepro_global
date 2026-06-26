@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Score Impact Calculator</title>
+<style>
+  :root {
+    --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;--border:rgba(27,63,114,0.09);
+    --sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'💳';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+  .content{padding:15px 15px 120px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  .score-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .score-display{text-align:center;margin-bottom:16px;}
+  .score-num{font-size:64px;font-weight:800;font-family:Georgia,serif;line-height:1;}
+  .score-label{font-size:13px;font-weight:700;margin-top:4px;}
+  .score-range{font-size:10px;color:var(--muted);margin-top:2px;}
+  .score-slider{width:100%;-webkit-appearance:none;height:8px;border-radius:100px;outline:none;margin:14px 0 8px;}
+  .score-slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid #1B3F72;box-shadow:0 2px 8px rgba(27,63,114,0.30);cursor:pointer;}
+  .slider-labels{display:flex;justify-content:space-between;font-size:8.5px;font-weight:700;color:var(--muted);}
+  .fico-bands{display:flex;gap:4px;height:8px;border-radius:100px;overflow:hidden;margin-bottom:6px;}
+  .fb{flex:1;}
+
+  .input-group{margin-bottom:14px;}
+  .input-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+  .input-row{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;}
+  .input-prefix{padding:12px 11px;font-size:14px;font-weight:700;color:var(--muted);background:rgba(27,63,114,0.05);border-right:1px solid var(--border);}
+  .input-row input{flex:1;border:none;background:transparent;padding:12px 12px;font-size:15px;font-weight:700;color:var(--navy);font-family:Georgia,serif;outline:none;}
+
+  /* Action Buttons */
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:14px;}
+  .calc-btn{background:linear-gradient(135deg,#0B1D3A,#1B3F72);border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(11,29,58,0.30);font-family:Georgia,serif;transition:transform .1s,box-shadow .1s;}
+  .calc-btn:active{transform:scale(0.97);box-shadow:0 2px 8px rgba(11,29,58,0.20);}
+  .save-btn{background:linear-gradient(135deg,#D97706,#B45309);border:none;border-radius:13px;padding:14px 16px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(217,119,6,0.35);white-space:nowrap;transition:transform .1s;}
+  .save-btn:active{transform:scale(0.97);}
+
+  /* Toast */
+  .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:9999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .rate-table{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .rt-header{background:linear-gradient(135deg,#0B1D3A,#1B3F72);padding:12px 14px;display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1.5fr;}
+  .rt-hcell{font-size:9px;font-weight:800;color:rgba(255,255,255,0.70);text-transform:uppercase;letter-spacing:0.4px;}
+  .rt-row{padding:11px 14px;display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1.5fr;border-bottom:1px solid var(--border);}
+  .rt-row:last-child{border-bottom:none;}
+  .rt-row.active{background:linear-gradient(135deg,rgba(27,63,114,0.06),rgba(185,28,28,0.04));}
+  .rt-cell{font-size:11px;color:var(--muted);font-weight:600;display:flex;align-items:center;}
+  .rt-cell.bold{font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .rt-row.active .rt-cell{color:var(--navy);}
+  .active-tag{background:#EFF6FF;color:#1D4ED8;font-size:8px;font-weight:700;padding:2px 5px;border-radius:20px;margin-left:4px;}
+
+  .result-hero{background:linear-gradient(148deg,#0B1D3A,#1B3F72);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(185,28,28,0.12);}
+  .rh-label{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.7px;}
+  .rh-val{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:6px 0 2px;}
+  .rh-sub{font-size:11px;color:rgba(255,255,255,0.65);}
+  .rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-item{background:rgba(255,255,255,0.12);border-radius:11px;padding:9px 8px;text-align:center;}
+  .rh-item-l{font-size:8.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;}
+  .rh-item-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+  .rh-item-v.gold{color:var(--gold-lt);}
+
+  /* Rate Bar Chart */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .chart-wrap{width:100%;overflow:hidden;}
+  .chart-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+  .chart-band-lbl{font-size:9px;font-weight:700;color:var(--muted);width:52px;text-align:right;flex-shrink:0;}
+  .chart-bar-bg{flex:1;height:22px;background:#EEF2F8;border-radius:6px;overflow:hidden;position:relative;}
+  .chart-bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;transition:width .6s ease;}
+  .chart-bar-text{font-size:10px;font-weight:800;color:#fff;padding:0 8px;white-space:nowrap;}
+  .chart-bar-rate{font-size:10px;font-weight:700;color:var(--muted);width:38px;text-align:right;flex-shrink:0;}
+  .you-arrow{font-size:10px;margin-left:2px;}
+
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .stat-card{background:var(--card);border-radius:16px;padding:15px 13px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .sc-icon{font-size:22px;margin-bottom:6px;}
+  .sc-label{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .sc-val{font-size:18px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .sc-sub{font-size:9px;color:var(--muted);}
+
+  /* Score gauge SVG */
+  .gauge-wrap{text-align:center;padding:8px 0 4px;}
+
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .score-card{animation:fadeUp .35s ease both .05s;}
+  .rate-table{animation:fadeUp .35s ease both .10s;}
+  .result-hero{animation:fadeUp .35s ease both .15s;}
+  .chart-card{animation:fadeUp .35s ease both .18s;}
+  .g2{animation:fadeUp .35s ease both .20s;}
+  .ilist{animation:fadeUp .35s ease both .25s;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">💾 Calculation saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div style="font-size:28px">💳</div>
+      <div class="hdr-title">Credit Score Impact</div>
+      <div class="hdr-sub">FICO · Rate · Payment · Lifetime Cost</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Excellent</div><div class="rs-v gold">740+</div><div class="rs-n">Best Rates</div></div>
+    <div class="rs"><div class="rs-l">Good</div><div class="rs-v">700–739</div><div class="rs-n">Avg Rates</div></div>
+    <div class="rs"><div class="rs-l">Fair</div><div class="rs-v">620–699</div><div class="rs-n">Higher</div></div>
+    <div class="rs"><div class="rs-l">30-Yr Avg</div><div class="rs-v gold">6.82%</div><div class="rs-n">Freddie</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Your FICO Score <span class="more">What affects it?</span></div>
+  <div class="score-card">
+    <div class="gauge-wrap">
+      <svg id="gaugesvg" width="220" height="120" viewBox="0 0 220 120">
+        <defs>
+          <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#B91C1C"/>
+            <stop offset="30%" style="stop-color:#D97706"/>
+            <stop offset="55%" style="stop-color:#EAB308"/>
+            <stop offset="75%" style="stop-color:#84CC16"/>
+            <stop offset="100%" style="stop-color:#15803D"/>
+          </linearGradient>
+        </defs>
+        <path d="M 20 100 A 90 90 0 0 1 200 100" fill="none" stroke="#EEF2F8" stroke-width="16" stroke-linecap="round"/>
+        <path d="M 20 100 A 90 90 0 0 1 200 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="16" stroke-linecap="round"/>
+        <line id="gaugeNeedle" x1="110" y1="100" x2="110" y2="30" stroke="#0B1D3A" stroke-width="3" stroke-linecap="round" transform="rotate(0,110,100)"/>
+        <circle cx="110" cy="100" r="6" fill="#0B1D3A"/>
+        <text x="10" y="116" font-size="9" fill="#4A5C7A" font-weight="700">300</text>
+        <text x="190" y="116" font-size="9" fill="#4A5C7A" font-weight="700">850</text>
+        <text id="gaugeScore" x="110" y="88" text-anchor="middle" font-size="22" font-weight="800" fill="#0B1D3A" font-family="Georgia,serif">720</text>
+        <text id="gaugeLabel" x="110" y="104" text-anchor="middle" font-size="9" fill="#4A5C7A" font-weight="700">Good Credit</text>
+      </svg>
+    </div>
+    <div class="fico-bands">
+      <div class="fb" style="background:#B91C1C;flex:1.3"></div>
+      <div class="fb" style="background:#D97706;flex:0.8"></div>
+      <div class="fb" style="background:#EAB308;flex:0.8"></div>
+      <div class="fb" style="background:#84CC16;flex:0.8"></div>
+      <div class="fb" style="background:#15803D;flex:0.8"></div>
+    </div>
+    <div class="slider-labels" style="margin-bottom:8px">
+      <span>300</span><span>580</span><span>670</span><span>740</span><span>800+</span>
+    </div>
+    <input type="range" class="score-slider" id="scoreSlider" min="300" max="850" value="720"
+      style="background:linear-gradient(90deg,#B91C1C 0%,#D97706 30%,#EAB308 50%,#84CC16 70%,#15803D 100%)">
+
+    <div style="margin-top:14px">
+      <div class="input-label">Loan Amount</div>
+      <div class="input-row">
+        <span class="input-prefix">$</span>
+        <input type="number" id="loanAmt" value="360000">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">📊 Calculate Score Impact</button>
+      <button class="save-btn" onclick="saveCalc()">💾 Save</button>
+    </div>
+  </div>
+
+  <!-- FICO Rate Table -->
+  <div class="sec">FICO Score → Mortgage Rate (2025)</div>
+  <div class="rate-table">
+    <div class="rt-header">
+      <div class="rt-hcell">Score Band</div>
+      <div class="rt-hcell">30-Yr Rate</div>
+      <div class="rt-hcell">Mo. Payment</div>
+      <div class="rt-hcell">30-Yr Cost</div>
+    </div>
+    <div class="rt-row" id="row760"><div class="rt-cell bold">760–850 <span class="active-tag" id="tag760" style="display:none">YOU</span></div><div class="rt-cell bold" id="r760">6.48%</div><div class="rt-cell" id="p760">—</div><div class="rt-cell" id="c760">—</div></div>
+    <div class="rt-row" id="row720"><div class="rt-cell bold">720–759 <span class="active-tag" id="tag720" style="display:none">YOU</span></div><div class="rt-cell bold" id="r720">6.72%</div><div class="rt-cell" id="p720">—</div><div class="rt-cell" id="c720">—</div></div>
+    <div class="rt-row" id="row700"><div class="rt-cell bold">700–719 <span class="active-tag" id="tag700" style="display:none">YOU</span></div><div class="rt-cell bold" id="r700">6.96%</div><div class="rt-cell" id="p700">—</div><div class="rt-cell" id="c700">—</div></div>
+    <div class="rt-row" id="row680"><div class="rt-cell bold">680–699 <span class="active-tag" id="tag680" style="display:none">YOU</span></div><div class="rt-cell bold" id="r680">7.14%</div><div class="rt-cell" id="p680">—</div><div class="rt-cell" id="c680">—</div></div>
+    <div class="rt-row" id="row660"><div class="rt-cell bold">660–679 <span class="active-tag" id="tag660" style="display:none">YOU</span></div><div class="rt-cell bold" id="r660">7.38%</div><div class="rt-cell" id="p660">—</div><div class="rt-cell" id="c660">—</div></div>
+    <div class="rt-row" id="row640"><div class="rt-cell bold">640–659 <span class="active-tag" id="tag640" style="display:none">YOU</span></div><div class="rt-cell bold" id="r640">7.74%</div><div class="rt-cell" id="p640">—</div><div class="rt-cell" id="c640">—</div></div>
+    <div class="rt-row" id="row620"><div class="rt-cell bold">620–639 <span class="active-tag" id="tag620" style="display:none">YOU</span></div><div class="rt-cell bold" id="r620">8.22%</div><div class="rt-cell" id="p620">—</div><div class="rt-cell" id="c620">—</div></div>
+  </div>
+
+  <!-- Result Hero -->
+  <div class="result-hero">
+    <div class="rh-label">Your Estimated Rate</div>
+    <div class="rh-val" id="yourRate">—</div>
+    <div class="rh-sub" id="rateNote">Press Calculate to see your results</div>
+    <div class="rh-grid">
+      <div class="rh-item"><div class="rh-item-l">Monthly P&I</div><div class="rh-item-v" id="moPayment">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">30-Yr Interest</div><div class="rh-item-v gold" id="lifeInterest">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">vs. 760+ Score</div><div class="rh-item-v" id="vsExcellent">—</div></div>
+    </div>
+  </div>
+
+  <!-- Bar Chart: Monthly Payments by Score -->
+  <div class="sec">Monthly Payment by Score Band</div>
+  <div class="chart-card">
+    <div class="chart-title">📊 Monthly Payment Comparison (P&I)</div>
+    <div id="barChart"></div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);">
+      <span>Longer bar = higher monthly cost</span>
+      <span id="barChartLoan" style="font-weight:700;color:var(--navy);">Loan: $360,000</span>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="sec">Score vs Best Rate Comparison</div>
+  <div class="g2">
+    <div class="stat-card">
+      <div class="sc-icon">📉</div>
+      <div class="sc-label">Extra Lifetime Cost</div>
+      <div class="sc-val" id="extraCost">—</div>
+      <div class="sc-sub">vs. 760+ score tier</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon">💰</div>
+      <div class="sc-label">Monthly Overpay</div>
+      <div class="sc-val" id="moOverpay">—</div>
+      <div class="sc-sub">vs. excellent credit</div>
+    </div>
+  </div>
+
+  <!-- FICO Tips -->
+  <div class="sec">Boost Your Score — Quick Wins</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">💳</div><div><div class="in">Pay Down Credit Cards</div><div class="is">Keep utilization under 30% · under 10% for max score boost</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">✅</div><div><div class="in">Never Miss a Payment</div><div class="is">Payment history = 35% of FICO score · autopay helps</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🚫</div><div><div class="in">Don't Open New Accounts</div><div class="is">Hard inquiries lower score 5–10 pts for 12 months</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📋</div><div><div class="in">Dispute Errors on Report</div><div class="is">1 in 5 reports has errors · dispute via AnnualCreditReport.com</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">⏳</div><div><div class="in">Keep Old Accounts Open</div><div class="is">Credit age = 15% of FICO · older accounts help your score</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const BANDS=[
+  {min:760,max:850,rate:6.48,label:'Exceptional',color:'#15803D',rowId:'row760',tagId:'tag760'},
+  {min:720,max:759,rate:6.72,label:'Very Good',color:'#84CC16',rowId:'row720',tagId:'tag720'},
+  {min:700,max:719,rate:6.96,label:'Good',color:'#EAB308',rowId:'row700',tagId:'tag700'},
+  {min:680,max:699,rate:7.14,label:'Good',color:'#EAB308',rowId:'row680',tagId:'tag680'},
+  {min:660,max:679,rate:7.38,label:'Fair',color:'#D97706',rowId:'row660',tagId:'tag660'},
+  {min:640,max:659,rate:7.74,label:'Poor',color:'#B91C1C',rowId:'row640',tagId:'tag640'},
+  {min:620,max:639,rate:8.22,label:'Very Poor',color:'#991B1B',rowId:'row620',tagId:'tag620'},
+];
+function fmt(n){return'$'+Math.round(n).toLocaleString();}
+function fmtK(n){return'$'+Math.round(n/1000)+'K';}
+function calcPI(loan,rate){const mo=rate/100/12,n=360;return mo===0?loan/n:loan*mo*Math.pow(1+mo,n)/(Math.pow(1+mo,n)-1);}
+
+// Gauge needle
+function updateGauge(score,color,label){
+  const pct=(score-300)/(850-300);
+  const angle=-90+pct*180;
+  document.getElementById('gaugeNeedle').setAttribute('transform',`rotate(${angle},110,100)`);
+  document.getElementById('gaugeScore').textContent=score;
+  document.getElementById('gaugeScore').setAttribute('fill',color);
+  document.getElementById('gaugeLabel').textContent=label+' Credit';
+}
+
+// Slider live update gauge
+document.getElementById('scoreSlider').addEventListener('input',function(){
+  const s=parseInt(this.value);
+  let band=BANDS[BANDS.length-1];
+  for(const b of BANDS){if(s>=b.min&&s<=b.max){band=b;break;}}
+  updateGauge(s,band.color,band.label);
+});
+
+function renderBarChart(loan,activeBand){
+  const bestPI=calcPI(loan,BANDS[0].rate);
+  const maxPI=calcPI(loan,BANDS[BANDS.length-1].rate);
+  const range=maxPI-bestPI;
+  let html='';
+  BANDS.forEach(b=>{
+    const pi=calcPI(loan,b.rate);
+    const pct=range>0?((pi-bestPI)/range*70+15):50;
+    const isActive=b.min===activeBand.min;
+    const barColor=isActive?b.color:'#CBD5E1';
+    html+=`<div class="chart-bar-row">
+      <div class="chart-band-lbl" style="color:${isActive?b.color:'var(--muted)'};font-weight:${isActive?'800':'600'}">${b.min}+</div>
+      <div class="chart-bar-bg">
+        <div class="chart-bar-fill" style="width:${pct}%;background:${barColor};">
+          <span class="chart-bar-text">${fmt(pi)}</span>
+        </div>
+      </div>
+      <div class="chart-bar-rate" style="color:${isActive?b.color:'var(--muted)'};">${isActive?'← YOU':''}</div>
+    </div>`;
+  });
+  document.getElementById('barChart').innerHTML=html;
+  document.getElementById('barChartLoan').textContent='Loan: '+fmt(loan);
+}
+
+function calculate(){
+  const score=parseInt(document.getElementById('scoreSlider').value);
+  const loan=parseFloat(document.getElementById('loanAmt').value)||360000;
+  let band=BANDS[BANDS.length-1];
+  for(const b of BANDS){if(score>=b.min&&score<=b.max){band=b;break;}}
+
+  updateGauge(score,band.color,band.label);
+  BANDS.forEach(b=>{
+    const row=document.getElementById(b.rowId);
+    const tag=document.getElementById(b.tagId);
+    if(row)row.classList.toggle('active',b.min===band.min);
+    if(tag)tag.style.display=b.min===band.min?'inline-flex':'none';
+    const pi=calcPI(loan,b.rate);
+    const life=pi*360-loan;
+    document.getElementById('p'+b.min).textContent=fmt(pi);
+    document.getElementById('c'+b.min).textContent=fmtK(life);
+  });
+  const myPI=calcPI(loan,band.rate);
+  const bestPI=calcPI(loan,6.48);
+  const myLife=myPI*360-loan;
+  const bestLife=bestPI*360-loan;
+  document.getElementById('yourRate').textContent=band.rate+'%';
+  document.getElementById('rateNote').textContent=`FICO ${score} — ${band.label} Credit Tier`;
+  document.getElementById('moPayment').textContent=fmt(myPI);
+  document.getElementById('lifeInterest').textContent=fmtK(myLife);
+  const moDiff=myPI-bestPI;
+  document.getElementById('vsExcellent').textContent=(moDiff>=0?'+':'')+fmt(moDiff)+'/mo';
+  document.getElementById('extraCost').textContent=(myLife-bestLife>=0?'+':'')+fmtK(myLife-bestLife);
+  document.getElementById('moOverpay').textContent=(moDiff>=0?'+':'')+fmt(moDiff);
+  renderBarChart(loan,band);
+}
+
+function saveCalc(){
+  const score=document.getElementById('scoreSlider').value;
+  const loan=document.getElementById('loanAmt').value;
+  const rate=document.getElementById('yourRate').textContent;
+  const pmt=document.getElementById('moPayment').textContent;
+  const saved={score,loan,rate,pmt,savedAt:new Date().toLocaleString()};
+  try{localStorage.setItem('creditScoreSave',JSON.stringify(saved));}catch(e){}
+  showToast('💾 Calculation saved!');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+calculate();
+</script>
+</body>
+</html>

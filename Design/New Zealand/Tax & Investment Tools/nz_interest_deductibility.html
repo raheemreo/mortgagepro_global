@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interest Deductibility – NZ</title>
+<style>
+  :root {
+    --black:#0A0F0D;--forest:#0D3B2E;--fern:#1A6B4A;--silver:#C0C8C1;
+    --teal:#0D9488;--sky:#0EA5E9;--red:#C0392B;--gold:#D4A017;--gold-lt:#F5D060;
+    --bg:#EDF5F2;--card:#FFFFFF;--muted:#4A6358;--border:rgba(13,59,46,0.09);
+    --sh:0 4px 20px rgba(10,15,13,0.09);--sh2:0 8px 36px rgba(10,15,13,0.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--black);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(158deg,#0A0F0D 0%,#0D3B2E 45%,#1A6B4A 80%,#C0392B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(245,208,96,0.06);}
+  .header::after{content:'📝';position:absolute;right:12px;top:44px;font-size:78px;opacity:0.09;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.11);border:1px solid rgba(255,255,255,0.19);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;display:block;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:0.4px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  /* CONTENT */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .sec .badge{font-size:9px;font-weight:700;background:#FEF2F2;color:#C0392B;padding:3px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+  /* Info Banner */
+  .info-banner{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 15px;display:flex;align-items:flex-start;gap:11px;margin-bottom:12px;}
+  .ib-icon{font-size:24px;flex-shrink:0;margin-top:2px;}
+  .ib-title{font-size:12.5px;font-weight:800;color:#92400E;}
+  .ib-sub{font-size:9.5px;color:#B45309;margin-top:3px;font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.5;}
+
+  /* Phase Timeline */
+  .phase-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .phase-title{font-size:13px;font-weight:800;color:var(--black);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .phase-row{display:flex;align-items:center;margin-bottom:10px;gap:10px;}
+  .ph-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ph-dot.past{background:#ECFDF5;color:#065F46;}
+  .ph-dot.now{background:var(--fern);color:#fff;}
+  .ph-dot.future{background:#EFF6FF;color:#1D4ED8;}
+  .ph-info{flex:1;}
+  .ph-year{font-size:11px;font-weight:800;color:var(--black);}
+  .ph-pct{font-size:18px;font-weight:800;line-height:1;}
+  .ph-pct.full{color:var(--fern);}
+  .ph-pct.mid{color:var(--gold);}
+  .ph-pct.now-c{color:var(--fern);}
+  .ph-desc{font-size:9px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ph-bar-wrap{flex-shrink:0;width:80px;}
+  .ph-bar-bg{background:#F1F5F2;border-radius:4px;height:8px;overflow:hidden;}
+  .ph-bar-fill{height:100%;border-radius:4px;background:var(--fern);}
+  .ph-connector{width:2px;height:14px;background:var(--border);margin:0 auto 0 15px;}
+
+  /* Calculator */
+  .calc-card{background:linear-gradient(148deg,#0A0F0D,#0D3B2E);border-radius:20px;padding:18px;box-shadow:var(--sh2);position:relative;overflow:hidden;margin-bottom:12px;}
+  .calc-card::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(26,107,74,0.22);}
+  .calc-tag{font-size:9.5px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.8px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .calc-title{font-size:16px;font-weight:800;color:#fff;margin:4px 0 14px;line-height:1.2;}
+  .calc-title span{color:var(--gold-lt);}
+  .inp-label{font-size:9px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.5px;font-family:'Helvetica Neue',Arial,sans-serif;margin-bottom:4px;display:block;}
+  .inp-row{display:flex;gap:8px;margin-bottom:10px;}
+  .inp-box{flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.18);border-radius:11px;padding:10px 12px;}
+  .inp-box input,.inp-box select{background:transparent;border:none;outline:none;width:100%;font-size:14px;font-weight:800;color:#fff;font-family:'Palatino Linotype',Palatino,Georgia,serif;}
+  .inp-box input::placeholder{color:rgba(255,255,255,0.35);}
+  .inp-box select option{background:#0D3B2E;color:#fff;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,var(--fern),#0D3B2E);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(26,107,74,0.40);font-family:'Palatino Linotype',Palatino,Georgia,serif;margin-top:4px;}
+  .calc-btn:active{transform:scale(.97);}
+
+  /* Results */
+  .result-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;display:none;}
+  .result-card.show{display:block;animation:fadeUp .3s ease both;}
+  .result-title{font-size:13px;font-weight:800;color:var(--black);margin-bottom:14px;}
+  .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .res-box{background:var(--bg);border-radius:12px;padding:12px;}
+  .res-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-family:'Helvetica Neue',Arial,sans-serif;margin-bottom:4px;}
+  .res-val{font-size:18px;font-weight:800;color:var(--black);}
+  .res-val.green{color:var(--fern);}
+  .res-val.red{color:var(--red);}
+  .res-val.gold{color:var(--gold);}
+  .res-sub{font-size:9px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;margin-top:2px;}
+
+  /* Chart */
+  .chart-wrap{background:var(--bg);border-radius:14px;padding:14px;margin-bottom:14px;}
+  .chart-title{font-size:11px;font-weight:800;color:var(--black);margin-bottom:12px;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .bar-label{font-size:10px;font-weight:700;color:var(--muted);width:60px;flex-shrink:0;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .bar-track{flex:1;background:#E8F0EC;border-radius:6px;height:22px;overflow:hidden;position:relative;}
+  .bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:800;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;transition:width .6s ease;}
+  .bar-fill.green{background:var(--fern);}
+  .bar-fill.yellow{background:var(--gold);}
+  .bar-fill.light{background:#6EE7B7;color:var(--forest);}
+  .bar-end{font-size:10px;font-weight:800;color:var(--black);width:55px;text-align:right;flex-shrink:0;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  /* Save Button */
+  .save-btn{width:100%;background:var(--card);border:2px solid var(--fern);border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:var(--fern);cursor:pointer;font-family:'Palatino Linotype',Palatino,Georgia,serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;}
+  .save-btn:active{transform:scale(.97);}
+  .save-confirm{background:#ECFDF5;border:1px solid #6EE7B7;border-radius:10px;padding:10px 14px;font-size:11px;color:#065F46;font-family:'Helvetica Neue',Arial,sans-serif;text-align:center;display:none;margin-bottom:12px;}
+  .save-confirm.show{display:block;animation:fadeUp .3s ease both;}
+
+  /* Rules List */
+  .rule-list{display:flex;flex-direction:column;gap:9px;}
+  .rule-item{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;}
+  .rule-ico{width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .rule-name{font-size:12px;font-weight:800;color:var(--black);}
+  .rule-desc{font-size:9.5px;color:var(--muted);margin-top:2px;font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.45;}
+
+  /* Bottom Nav */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,15,13,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ni.active .ni-lb{color:var(--fern);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .info-banner{animation:fadeUp .35s ease both .04s;}
+  .phase-card{animation:fadeUp .35s ease both .08s;}
+  .calc-card{animation:fadeUp .35s ease both .12s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇳🇿</div>
+      <div class="hdr-title">Interest Deductibility</div>
+      <div class="hdr-sub">Phased-in Rules · Rental Property · IRD 2024–2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">FY2023</div><div class="rs-v">50%</div><div class="rs-n">Deductible</div></div>
+    <div class="rs"><div class="rs-l">FY2024</div><div class="rs-v">75%</div><div class="rs-n">Deductible</div></div>
+    <div class="rs"><div class="rs-l">FY2025</div><div class="rs-v gold">100%</div><div class="rs-n">Full restore</div></div>
+    <div class="rs"><div class="rs-l">New Build</div><div class="rs-v">100%</div><div class="rs-n">All years</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Policy Update <span class="badge">2024 Restored</span></div>
+  <div class="info-banner">
+    <div class="ib-icon">🏛️</div>
+    <div>
+      <div class="ib-title">Interest Deductibility Fully Restored from 1 April 2025</div>
+      <div class="ib-sub">The National-led Government reversed Labour's 2021 restrictions. From 1 April 2025, landlords can again deduct 100% of mortgage interest on rental properties against rental income. New builds always retained full deductibility.</div>
+    </div>
+  </div>
+
+  <div class="sec">Phased Restoration Timeline</div>
+  <div class="phase-card">
+    <div class="phase-title">📅 IRD Interest Deductibility Phases</div>
+
+    <div class="phase-row">
+      <div class="ph-dot past">✓</div>
+      <div class="ph-info">
+        <div class="ph-year">1 Apr 2020 – 26 Mar 2021</div>
+        <div class="ph-pct full">100%</div>
+        <div class="ph-desc">Full deductibility (pre-restriction)</div>
+      </div>
+      <div class="ph-bar-wrap"><div class="ph-bar-bg"><div class="ph-bar-fill" style="width:100%"></div></div></div>
+    </div>
+    <div class="ph-connector"></div>
+
+    <div class="phase-row">
+      <div class="ph-dot past">✓</div>
+      <div class="ph-info">
+        <div class="ph-year">27 Mar 2021 – 31 Mar 2022</div>
+        <div class="ph-pct full">100%</div>
+        <div class="ph-desc">Transitional — still deductible</div>
+      </div>
+      <div class="ph-bar-wrap"><div class="ph-bar-bg"><div class="ph-bar-fill" style="width:100%"></div></div></div>
+    </div>
+    <div class="ph-connector"></div>
+
+    <div class="phase-row">
+      <div class="ph-dot past">✓</div>
+      <div class="ph-info">
+        <div class="ph-year">FY2022–23 (1 Apr 2022)</div>
+        <div class="ph-pct mid">75%</div>
+        <div class="ph-desc">First restriction year</div>
+      </div>
+      <div class="ph-bar-wrap"><div class="ph-bar-bg"><div class="ph-bar-fill" style="width:75%"></div></div></div>
+    </div>
+    <div class="ph-connector"></div>
+
+    <div class="phase-row">
+      <div class="ph-dot past">✓</div>
+      <div class="ph-info">
+        <div class="ph-year">FY2023–24 (1 Apr 2023)</div>
+        <div class="ph-pct mid">50%</div>
+        <div class="ph-desc">Maximum restriction</div>
+      </div>
+      <div class="ph-bar-wrap"><div class="ph-bar-bg"><div class="ph-bar-fill" style="width:50%"></div></div></div>
+    </div>
+    <div class="ph-connector"></div>
+
+    <div class="phase-row">
+      <div class="ph-dot past">✓</div>
+      <div class="ph-info">
+        <div class="ph-year">FY2024–25 (1 Apr 2024)</div>
+        <div class="ph-pct mid">80%</div>
+        <div class="ph-desc">Phase-out restoration begins</div>
+      </div>
+      <div class="ph-bar-wrap"><div class="ph-bar-bg"><div class="ph-bar-fill" style="width:80%"></div></div></div>
+    </div>
+    <div class="ph-connector"></div>
+
+    <div class="phase-row">
+      <div class="ph-dot now">★</div>
+      <div class="ph-info">
+        <div class="ph-year">FY2025–26 (1 Apr 2025 onward)</div>
+        <div class="ph-pct now-c">100%</div>
+        <div class="ph-desc">Fully restored — current year</div>
+      </div>
+      <div class="ph-bar-wrap"><div class="ph-bar-bg"><div class="ph-bar-fill" style="width:100%"></div></div></div>
+    </div>
+  </div>
+
+  <div class="sec">Calculate Tax Saving</div>
+  <div class="calc-card">
+    <div class="calc-tag">Interest Deductibility Calculator · IRD NZ</div>
+    <div class="calc-title">Your <span>Rental Interest</span> Tax Benefit</div>
+    <div class="inp-row">
+      <div class="inp-box">
+        <label class="inp-label">Annual Interest Paid (NZD)</label>
+        <input type="number" id="interest" placeholder="24000" value="24000">
+      </div>
+      <div class="inp-box">
+        <label class="inp-label">Tax Year</label>
+        <select id="taxYear">
+          <option value="100">FY2025–26 (100%)</option>
+          <option value="80">FY2024–25 (80%)</option>
+          <option value="50">FY2023–24 (50%)</option>
+          <option value="75">FY2022–23 (75%)</option>
+        </select>
+      </div>
+    </div>
+    <div class="inp-row">
+      <div class="inp-box">
+        <label class="inp-label">Your Tax Rate</label>
+        <select id="taxRate">
+          <option value="10.5">10.5% (up to $14K)</option>
+          <option value="17.5">17.5% ($14K–$48K)</option>
+          <option value="30" selected>30% ($48K–$70K)</option>
+          <option value="33">33% ($70K–$180K)</option>
+          <option value="39">39% (over $180K)</option>
+        </select>
+      </div>
+      <div class="inp-box">
+        <label class="inp-label">Property Type</label>
+        <select id="propType">
+          <option value="existing">Existing Property</option>
+          <option value="newbuild">New Build (100% always)</option>
+        </select>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calcDeductibility()">📝 Calculate Deductibility Saving</button>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-title">📊 Your Deductibility Analysis</div>
+    <div class="res-grid">
+      <div class="res-box">
+        <div class="res-label">Deductible Amount</div>
+        <div class="res-val green" id="deductAmt">$24,000</div>
+        <div class="res-sub" id="deductPct">100% of interest</div>
+      </div>
+      <div class="res-box">
+        <div class="res-label">Tax Saving</div>
+        <div class="res-val green" id="taxSaving">$7,200</div>
+        <div class="res-sub">Annual benefit</div>
+      </div>
+      <div class="res-box">
+        <div class="res-label">Non-deductible</div>
+        <div class="res-val red" id="nonDeduct">$0</div>
+        <div class="res-sub">Cannot claim</div>
+      </div>
+      <div class="res-box">
+        <div class="res-label">Monthly Saving</div>
+        <div class="res-val gold" id="monthlySave">$600</div>
+        <div class="res-sub">Per month benefit</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Year-by-Year Deductibility Comparison</div>
+      <div class="bar-row">
+        <div class="bar-label">FY25–26</div>
+        <div class="bar-track"><div class="bar-fill green" id="bar100" style="width:100%">100%</div></div>
+        <div class="bar-end" id="end100">$7,200</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">FY24–25</div>
+        <div class="bar-track"><div class="bar-fill yellow" id="bar80" style="width:80%">80%</div></div>
+        <div class="bar-end" id="end80">$5,760</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">FY23–24</div>
+        <div class="bar-track"><div class="bar-fill light" id="bar50" style="width:50%">50%</div></div>
+        <div class="bar-end" id="end50">$3,600</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">FY22–23</div>
+        <div class="bar-track"><div class="bar-fill light" id="bar75" style="width:75%">75%</div></div>
+        <div class="bar-end" id="end75">$5,400</div>
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveCalc()">🔖 Save This Calculation</button>
+    <div class="save-confirm" id="saveConfirm">✅ Calculation saved! View in Saved tab.</div>
+  </div>
+
+  <div class="sec">Key Rules & Exceptions</div>
+  <div class="rule-list">
+    <div class="rule-item">
+      <div class="rule-ico">🏗️</div>
+      <div>
+        <div class="rule-name">New Builds — Always 100%</div>
+        <div class="rule-desc">Residential new builds (consent after 27 Mar 2020) retained full interest deductibility throughout all restriction years. This incentive continues indefinitely.</div>
+      </div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-ico">🏘️</div>
+      <div>
+        <div class="rule-name">Ring-Fencing of Rental Losses</div>
+        <div class="rule-desc">Since April 2019, rental losses cannot offset other income (salary, business). Losses carry forward to future rental income only. Separate from deductibility rules.</div>
+      </div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-ico">📋</div>
+      <div>
+        <div class="rule-name">Mixed Use Properties</div>
+        <div class="rule-desc">Properties used partly personally and partly as rental must apportion interest. IRD uses days-rented formula to determine the deductible portion.</div>
+      </div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-ico">🏦</div>
+      <div>
+        <div class="rule-name">Company-Owned Rentals</div>
+        <div class="rule-desc">Rental properties held in a Look-Through Company (LTC) follow same rules as individual ownership. Standard companies retain full deductibility regardless.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🌿</div><div class="ni-lb">New Zealand</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function calcDeductibility(){
+  const interest = parseFloat(document.getElementById('interest').value)||24000;
+  const pct = parseFloat(document.getElementById('taxYear').value)||100;
+  const rate = parseFloat(document.getElementById('taxRate').value)||30;
+  const type = document.getElementById('propType').value;
+  const effectivePct = type === 'newbuild' ? 100 : pct;
+  const deductAmt = interest * effectivePct / 100;
+  const nonDeduct = interest - deductAmt;
+  const taxSaving = deductAmt * rate / 100;
+  const monthly = taxSaving / 12;
+  const fmt = v => '$'+Math.round(v).toLocaleString('en-NZ');
+  document.getElementById('deductAmt').textContent = fmt(deductAmt);
+  document.getElementById('deductPct').textContent = effectivePct+'% of interest';
+  document.getElementById('taxSaving').textContent = fmt(taxSaving);
+  document.getElementById('nonDeduct').textContent = fmt(nonDeduct);
+  document.getElementById('monthlySave').textContent = fmt(monthly);
+  // Update chart bars
+  const rates=[100,80,50,75];const ids=['bar100','bar80','bar50','bar75'];const ends=['end100','end80','end50','end75'];
+  rates.forEach((r,i)=>{
+    const s=interest*(type==='newbuild'?100:r)/100*rate/100;
+    document.getElementById(ends[i]).textContent=fmt(s);
+    document.getElementById(ids[i]).style.width=(type==='newbuild'?100:r)+'%';
+    document.getElementById(ids[i]).textContent=(type==='newbuild'?100:r)+'%';
+  });
+  document.getElementById('resultCard').classList.add('show');
+}
+function saveCalc(){
+  document.getElementById('saveConfirm').classList.add('show');
+  setTimeout(()=>document.getElementById('saveConfirm').classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>

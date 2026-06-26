@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPI vs Fed Rate · Inflation Gap Tracker</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+    --green: #15803D;
+    --green-lt: #6EE7B7;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#D97706 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after  { content:'💵'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; text-decoration:none; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-v.grn { color:#6EE7B7; }
+  .rs-v.red { color:#FCA5A5; }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* GAP HERO */
+  .hero-gap { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:20px; position:relative; overflow:hidden; box-shadow:var(--sh2); animation:fadeUp .35s ease both .05s; }
+  .hero-gap::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:rgba(217,119,6,0.18); }
+  .hg-tag { font-size:9.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.8px; }
+  .hg-row { display:flex; align-items:center; gap:16px; margin:10px 0; }
+  .hg-side { flex:1; text-align:center; background:rgba(255,255,255,0.09); border-radius:12px; padding:12px 8px; border:1px solid rgba(255,255,255,0.14); }
+  .hg-side-lbl { font-size:9px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .hg-side-val { font-size:28px; font-weight:800; font-family:Georgia,serif; margin-top:4px; }
+  .hg-side-val.cpi { color:#FCA5A5; }
+  .hg-side-val.fed { color:var(--gold-lt); }
+  .hg-side-note { font-size:8.5px; color:rgba(255,255,255,0.40); margin-top:2px; }
+  .hg-vs { font-size:18px; color:rgba(255,255,255,0.35); font-weight:700; flex-shrink:0; }
+  .hg-gap-band { background:rgba(255,255,255,0.08); border-radius:10px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border:1px solid rgba(255,255,255,0.12); }
+  .hg-gap-lbl { font-size:10px; color:rgba(255,255,255,0.55); }
+  .hg-gap-val { font-size:18px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; }
+  .hg-gap-note { font-size:9px; color:rgba(255,255,255,0.40); }
+  .hg-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .hg-box { background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:9px 10px; text-align:center; }
+  .hg-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.3px; }
+  .hg-box-val { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+  .hg-box-val.grn { color:#6EE7B7; }
+  .hg-box-val.red { color:#FCA5A5; }
+  .hg-box-val.gold { color:var(--gold-lt); }
+
+  /* CHART */
+  .chart-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .12s; }
+  .chart-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between; }
+  .chart-title span { font-size:10px; font-weight:500; color:var(--blue); }
+  .chart-sub { font-size:9.5px; color:var(--muted); margin-bottom:12px; }
+  .chart-wrap { position:relative; height:140px; }
+  .chart-legend { display:flex; gap:16px; margin-top:8px; }
+  .cl-item { display:flex; align-items:center; gap:5px; font-size:9px; color:var(--muted); }
+  .cl-dot { width:10px; height:3px; border-radius:2px; }
+
+  /* CPI BREAKDOWN */
+  .breakdown-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .18s; }
+  .bk-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:12px; }
+  .bk-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .bk-row:last-child { margin-bottom:0; }
+  .bk-lbl { font-size:10px; font-weight:700; color:var(--muted); width:108px; flex-shrink:0; }
+  .bk-bar-wrap { flex:1; height:8px; background:#F1F5F9; border-radius:10px; overflow:hidden; }
+  .bk-bar { height:100%; border-radius:10px; }
+  .bk-val { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:42px; text-align:right; flex-shrink:0; }
+  .bk-chg { font-size:9px; font-weight:700; width:38px; text-align:right; color:var(--muted); flex-shrink:0; }
+
+  /* REAL RATE CARD */
+  .real-card { background:linear-gradient(135deg,#0B1D3A,#1B3F72); border-radius:18px; padding:16px; box-shadow:var(--sh2); margin-bottom:10px; animation:fadeUp .35s ease both .20s; }
+  .rc-title { font-size:12px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-bottom:3px; }
+  .rc-sub { font-size:9.5px; color:rgba(255,255,255,0.45); margin-bottom:12px; }
+  .rc-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .rc-box { background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:12px; }
+  .rc-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:4px; }
+  .rc-box-val { font-size:20px; font-weight:800; font-family:Georgia,serif; }
+  .rc-box-note { font-size:8.5px; color:rgba(255,255,255,0.40); margin-top:3px; }
+
+  /* SAVE SECTION */
+  .save-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .25s; }
+  .save-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:4px; }
+  .save-sub { font-size:9.5px; color:var(--muted); margin-bottom:14px; }
+  .save-snapshot { background:var(--bg); border-radius:12px; padding:12px 14px; margin-bottom:12px; border:1px solid var(--border); }
+  .ss-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .ss-row:last-child { margin-bottom:0; }
+  .ss-lbl { font-size:10px; color:var(--muted); font-weight:600; }
+  .ss-val { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .save-btn { width:100%; padding:13px; background:linear-gradient(135deg,#0B1D3A,#1B3F72); border:none; border-radius:12px; color:#fff; font-size:13px; font-weight:800; cursor:pointer; font-family:Georgia,serif; letter-spacing:0.3px; transition:opacity .2s; }
+  .save-btn:active { opacity:0.85; }
+  .saved-list { margin-top:10px; }
+  .saved-item { background:var(--bg); border-radius:10px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; border:1px solid var(--border); }
+  .si-lbl { font-size:10px; font-weight:700; color:var(--navy); }
+  .si-val { font-size:10px; color:var(--muted); }
+  .si-del { font-size:14px; cursor:pointer; color:var(--red); padding:2px 6px; }
+  .save-empty { font-size:10px; color:var(--muted); text-align:center; padding:12px 0; }
+
+  /* BOTTOM NAV */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  .live-dot { width:7px; height:7px; border-radius:50%; background:#22C55E; display:inline-block; margin-right:5px; animation:pulse 1.6s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+
+  .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#0B1D3A; color:#fff; padding:10px 20px; border-radius:20px; font-size:12px; font-weight:700; opacity:0; transition:opacity .3s; z-index:200; pointer-events:none; }
+  .toast.show { opacity:1; }
+  .divider { height:1px; background:var(--border); margin:12px 0; }
+  .src-note { font-size:9px; color:var(--muted); text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ Snapshot Saved!</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_fed_funds_rate_fred.html" class="icon-btn">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">💵</div>
+      <div class="hdr-title">CPI vs Fed Rate</div>
+      <div class="hdr-sub">Inflation Gap · Real Rate · BLS & FRED · Jun 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">CPI YoY</div><div class="rs-v red">2.3%</div><div class="rs-n">Apr 2025</div></div>
+    <div class="rs"><div class="rs-l">Core CPI</div><div class="rs-v gold">2.8%</div><div class="rs-n">Ex-Food/Energy</div></div>
+    <div class="rs"><div class="rs-l">Fed Rate</div><div class="rs-v grn">4.33%</div><div class="rs-n">Effective</div></div>
+    <div class="rs"><div class="rs-l">Real Rate</div><div class="rs-v">+2.03%</div><div class="rs-n">Restrictive</div></div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Inflation Gap <span class="more"><span class="live-dot"></span>BLS Live</span></div>
+  <div class="hero-gap">
+    <div class="hg-tag">CPI Inflation vs Federal Funds Rate · Policy Gap Analysis · Apr 2025</div>
+    <div class="hg-row">
+      <div class="hg-side">
+        <div class="hg-side-lbl">CPI Inflation</div>
+        <div class="hg-side-val cpi">2.3%</div>
+        <div class="hg-side-note">Apr 2025 YoY</div>
+      </div>
+      <div class="hg-vs">vs</div>
+      <div class="hg-side">
+        <div class="hg-side-lbl">Fed Funds Rate</div>
+        <div class="hg-side-val fed">4.33%</div>
+        <div class="hg-side-note">Effective EFFR</div>
+      </div>
+    </div>
+    <div class="hg-gap-band">
+      <div>
+        <div class="hg-gap-lbl">Policy Gap (Real Rate)</div>
+        <div class="hg-gap-note">Fed is significantly restrictive above inflation</div>
+      </div>
+      <div class="hg-gap-val">+2.03%</div>
+    </div>
+    <div class="hg-grid">
+      <div class="hg-box">
+        <div class="hg-box-lbl">Core CPI</div>
+        <div class="hg-box-val gold">2.8%</div>
+      </div>
+      <div class="hg-box">
+        <div class="hg-box-lbl">PCE YoY</div>
+        <div class="hg-box-val red">2.3%</div>
+      </div>
+      <div class="hg-box">
+        <div class="hg-box-lbl">Core PCE</div>
+        <div class="hg-box-val red">2.6%</div>
+      </div>
+      <div class="hg-box">
+        <div class="hg-box-lbl">Fed Target</div>
+        <div class="hg-box-val grn">2.0%</div>
+      </div>
+      <div class="hg-box">
+        <div class="hg-box-lbl">Gap to Target</div>
+        <div class="hg-box-val red">+0.3%</div>
+      </div>
+      <div class="hg-box">
+        <div class="hg-box-lbl">Stance</div>
+        <div class="hg-box-val grn">Restrict.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dual axis chart: CPI & Fed Rate history -->
+  <div class="sec">12-Month CPI vs Fed Rate History <span class="more">FRED →</span></div>
+  <div class="chart-card">
+    <div class="chart-title">CPI Inflation & Fed Funds Rate — 2021–2025 <span>FRED · BLS</span></div>
+    <div class="chart-sub">Shaded gap = real rate (above zero = restrictive policy)</div>
+    <div class="chart-wrap">
+      <svg viewBox="0 0 380 135" width="100%" height="135" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="gapGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#15803D" stop-opacity="0.20"/>
+            <stop offset="100%" stop-color="#15803D" stop-opacity="0.02"/>
+          </linearGradient>
+          <clipPath id="gapClip">
+            <rect x="0" y="0" width="380" height="135"/>
+          </clipPath>
+        </defs>
+        <!-- Grid -->
+        <line x1="0" y1="18" x2="380" y2="18" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="45" x2="380" y2="45" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="72" x2="380" y2="72" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="99" x2="380" y2="99" stroke="#E2E8F0" stroke-width="1"/>
+        <!-- Y labels (0%-10%) scale: y=126→0%, y=18→10% step=10.8per% -->
+        <text x="2" y="16" font-size="7.5" fill="#94A3B8">10%</text>
+        <text x="2" y="43" font-size="7.5" fill="#94A3B8">7.5%</text>
+        <text x="2" y="70" font-size="7.5" fill="#94A3B8">5%</text>
+        <text x="2" y="97" font-size="7.5" fill="#94A3B8">2.5%</text>
+        <!-- X labels -->
+        <text x="20" y="133" font-size="7.5" fill="#94A3B8">Jan'21</text>
+        <text x="85" y="133" font-size="7.5" fill="#94A3B8">Jan'22</text>
+        <text x="152" y="133" font-size="7.5" fill="#94A3B8">Jan'23</text>
+        <text x="220" y="133" font-size="7.5" fill="#94A3B8">Jan'24</text>
+        <text x="288" y="133" font-size="7.5" fill="#94A3B8">Jan'25</text>
+        <!-- 
+          CPI path: Jan'21=1.4→y=111, Jun'21=5.4→y=68, Dec'21=7.0→y=50, Jun'22=9.1→y=28, Dec'22=6.5→y=56, Jun'23=3.0→y=94, Dec'23=3.4→y=89, Jun'24=3.0→y=94, Dec'24=2.7→y=97, Jun'25est=2.3→y=101
+          Fed path: Jan'21=0.09→y=125, Mar'22=0.33→y=122, Jun'22=1.58→y=109, Sep'22=3.08→y=93, Dec'22=4.33→y=80, Jun'23=5.08→y=72, Sep'23=5.33→y=69, Dec'23=5.33→y=69, Jun'24=5.33→y=69, Sep'24=4.83→y=74, Dec'24=4.33→y=80, Jun'25=4.33→y=80
+        -->
+        <!-- CPI line -->
+        <polyline points="25,111 55,80 85,68 115,50 148,28 152,56 180,94 220,89 260,94 295,97 340,101 370,101"
+          fill="none" stroke="#B91C1C" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- Fed Rate line -->
+        <polyline points="25,125 85,125 105,122 130,109 148,93 152,80 180,72 220,69 260,69 280,74 295,80 340,80 370,80"
+          fill="none" stroke="#1B3F72" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="none"/>
+        <!-- Current dots -->
+        <circle cx="370" cy="101" r="4" fill="#B91C1C"/>
+        <circle cx="370" cy="80" r="4" fill="#1B3F72"/>
+        <!-- Peak CPI annotation -->
+        <circle cx="148" cy="28" r="4" fill="#D97706"/>
+        <text x="110" y="22" font-size="7.5" fill="#D97706" font-weight="bold">PEAK 9.1%</text>
+        <!-- 2% target line -->
+        <line x1="0" y1="104" x2="380" y2="104" stroke="#15803D" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+        <text x="330" y="100" font-size="7" fill="#15803D">2% target</text>
+      </svg>
+    </div>
+    <div class="chart-legend">
+      <div class="cl-item"><div class="cl-dot" style="background:#B91C1C;"></div>CPI YoY</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#1B3F72;"></div>Fed Funds Rate</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#15803D;"></div>2% Fed Target</div>
+    </div>
+  </div>
+
+  <!-- CPI Component Breakdown -->
+  <div class="sec">CPI Component Breakdown — Apr 2025 <span class="more">BLS →</span></div>
+  <div class="breakdown-card">
+    <div class="bk-title">📈 Inflation by Category (YoY %)</div>
+    <div class="bk-row">
+      <div class="bk-lbl">Shelter</div>
+      <div class="bk-bar-wrap"><div class="bk-bar" style="width:62%;background:linear-gradient(90deg,#B91C1C,#991B1B)"></div></div>
+      <div class="bk-val">4.9%</div>
+      <div class="bk-chg">↓ slow</div>
+    </div>
+    <div class="bk-row">
+      <div class="bk-lbl">Food at Home</div>
+      <div class="bk-bar-wrap"><div class="bk-bar" style="width:22%;background:linear-gradient(90deg,#D97706,#B45309)"></div></div>
+      <div class="bk-val">1.7%</div>
+      <div class="bk-chg">↓ easing</div>
+    </div>
+    <div class="bk-row">
+      <div class="bk-lbl">Food Away Home</div>
+      <div class="bk-bar-wrap"><div class="bk-bar" style="width:38%;background:linear-gradient(90deg,#D97706,#B45309)"></div></div>
+      <div class="bk-val">3.4%</div>
+      <div class="bk-chg">↑ sticky</div>
+    </div>
+    <div class="bk-row">
+      <div class="bk-lbl">Energy</div>
+      <div class="bk-bar-wrap"><div class="bk-bar" style="width:8%;background:linear-gradient(90deg,#15803D,#166534)"></div></div>
+      <div class="bk-val">−3.7%</div>
+      <div class="bk-chg">↓ defla.</div>
+    </div>
+    <div class="bk-row">
+      <div class="bk-lbl">New Vehicles</div>
+      <div class="bk-bar-wrap"><div class="bk-bar" style="width:5%;background:linear-gradient(90deg,#0F766E,#0D9488)"></div></div>
+      <div class="bk-val">−0.7%</div>
+      <div class="bk-chg">↓ defla.</div>
+    </div>
+    <div class="bk-row">
+      <div class="bk-lbl">Medical Care</div>
+      <div class="bk-bar-wrap"><div class="bk-bar" style="width:34%;background:linear-gradient(90deg,#334155,#1E293B)"></div></div>
+      <div class="bk-val">3.1%</div>
+      <div class="bk-chg">→ stable</div>
+    </div>
+    <div class="bk-row">
+      <div class="bk-lbl">Apparel</div>
+      <div class="bk-bar-wrap"><div class="bk-bar" style="width:18%;background:linear-gradient(90deg,#1B3F72,#0B1D3A)"></div></div>
+      <div class="bk-val">1.2%</div>
+      <div class="bk-chg">→ flat</div>
+    </div>
+    <div class="divider"></div>
+    <div class="src-note">Source: Bureau of Labor Statistics · CPI-U · April 2025</div>
+  </div>
+
+  <!-- Real Rate Context -->
+  <div class="sec">Real Rate Analysis <span class="more">Research →</span></div>
+  <div class="real-card">
+    <div class="rc-title">📐 Real Interest Rate Breakdown</div>
+    <div class="rc-sub">Federal Funds Rate minus inflation measures · Restrictive = positive real rate</div>
+    <div class="rc-grid">
+      <div class="rc-box">
+        <div class="rc-box-lbl">Real Rate (CPI)</div>
+        <div class="rc-box-val" style="color:#6EE7B7;">+2.03%</div>
+        <div class="rc-box-note">4.33% − 2.3% CPI · Most restrictive in 15 yrs</div>
+      </div>
+      <div class="rc-box">
+        <div class="rc-box-lbl">Real Rate (Core)</div>
+        <div class="rc-box-val" style="color:#6EE7B7;">+1.53%</div>
+        <div class="rc-box-note">4.33% − 2.8% Core CPI</div>
+      </div>
+      <div class="rc-box">
+        <div class="rc-box-lbl">Real Rate (PCE)</div>
+        <div class="rc-box-val" style="color:#6EE7B7;">+2.03%</div>
+        <div class="rc-box-note">4.33% − 2.3% PCE · Fed's preferred gauge</div>
+      </div>
+      <div class="rc-box">
+        <div class="rc-box-lbl">Neutral Real Rate</div>
+        <div class="rc-box-val" style="color:var(--gold-lt);">~0.5%</div>
+        <div class="rc-box-note">r* estimate · FOMC long-run neutral</div>
+      </div>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,0.10);margin:12px 0;"></div>
+    <div style="font-size:9px;color:rgba(255,255,255,0.40);text-align:center;">Source: BLS · BEA · FRED · Jun 16, 2025</div>
+  </div>
+
+  <!-- SAVE SECTION -->
+  <div class="sec">Save Snapshot <span class="more">History →</span></div>
+  <div class="save-card">
+    <div class="save-title">💾 Save Current Reading</div>
+    <div class="save-sub">Save today's CPI vs Fed Rate snapshot to track inflation progress over time</div>
+    <div class="save-snapshot">
+      <div class="ss-row"><div class="ss-lbl">Date</div><div class="ss-val">Jun 16, 2025</div></div>
+      <div class="ss-row"><div class="ss-lbl">CPI (Apr 2025)</div><div class="ss-val">2.3% YoY</div></div>
+      <div class="ss-row"><div class="ss-lbl">Core CPI</div><div class="ss-val">2.8% YoY</div></div>
+      <div class="ss-row"><div class="ss-lbl">Fed Funds Rate</div><div class="ss-val">4.33% (4.25–4.50%)</div></div>
+      <div class="ss-row"><div class="ss-lbl">Real Rate</div><div class="ss-val">+2.03% (Restrictive)</div></div>
+      <div class="ss-row"><div class="ss-lbl">Gap to 2% Target</div><div class="ss-val">+0.3%</div></div>
+    </div>
+    <button class="save-btn" onclick="saveSnapshot()">💾 Save This Snapshot</button>
+    <div class="saved-list" id="savedList">
+      <div class="save-empty" id="emptyMsg">No saved snapshots yet</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+  let saves = JSON.parse(localStorage.getItem('cpiSnapshots') || '[]');
+  renderSaves();
+
+  function saveSnapshot() {
+    const snap = {
+      id: Date.now(),
+      date: 'Jun 16, 2025',
+      cpi: '2.3%',
+      coreCpi: '2.8%',
+      fedRate: '4.33%',
+      realRate: '+2.03%'
+    };
+    saves.unshift(snap);
+    if (saves.length > 10) saves = saves.slice(0, 10);
+    localStorage.setItem('cpiSnapshots', JSON.stringify(saves));
+    renderSaves();
+    showToast();
+  }
+
+  function deleteSnap(id) {
+    saves = saves.filter(s => s.id !== id);
+    localStorage.setItem('cpiSnapshots', JSON.stringify(saves));
+    renderSaves();
+  }
+
+  function renderSaves() {
+    const list = document.getElementById('savedList');
+    const empty = document.getElementById('emptyMsg');
+    if (saves.length === 0) {
+      list.innerHTML = '<div class="save-empty" id="emptyMsg">No saved snapshots yet</div>';
+      return;
+    }
+    list.innerHTML = saves.map(s => `
+      <div class="saved-item">
+        <div>
+          <div class="si-lbl">${s.date} · CPI ${s.cpi} · Fed ${s.fedRate}</div>
+          <div class="si-val">Real Rate ${s.realRate} · Core CPI ${s.coreCpi}</div>
+        </div>
+        <div class="si-del" onclick="deleteSnap(${s.id})">🗑</div>
+      </div>
+    `).join('');
+  }
+
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2400);
+  }
+</script>
+
+</body>
+</html>

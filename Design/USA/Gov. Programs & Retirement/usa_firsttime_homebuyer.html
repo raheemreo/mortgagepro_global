@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>First-Time Homebuyer Programs</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --white:#FFFFFF;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10);
+    --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --green:#15803D; --green-lt:#DCFCE7;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#15803D 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🏠';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.grn{color:#6EE7B7;}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* CONTENT */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .tag{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--green-lt);color:var(--green);}
+
+  /* HERO GRANT BANNER */
+  .hero-grant{background:linear-gradient(148deg,#0B1D3A,#15803D);border-radius:20px;padding:18px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:4px;}
+  .hero-grant::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .hg-tag{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+  .hg-title{font-size:17px;font-weight:800;color:#fff;margin:4px 0 6px;font-family:Georgia,serif;line-height:1.2;}
+  .hg-title span{color:var(--gold-lt);}
+  .hg-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px;}
+  .hg-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px;text-align:center;}
+  .hg-box .lbl{font-size:8px;color:rgba(255,255,255,0.50);text-transform:uppercase;}
+  .hg-box .val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .hg-box .val.gold{color:var(--gold-lt);}
+
+  /* CALCULATOR CARD */
+  .calc-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .calc-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .calc-title .ico{width:32px;height:32px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:15px;}
+
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px;}
+  .field-full{margin-bottom:9px;}
+  .field label{font-size:9.5px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.4px;}
+  .field input,.field select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--navy);outline:none;font-family:inherit;}
+  .field input:focus,.field select:focus{border-color:var(--blue);background:#fff;}
+
+  .calc-btn{width:100%;background:linear-gradient(135deg,#0B1D3A,#1B3F72);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:Georgia,serif;margin-top:4px;}
+  .calc-btn.green{background:linear-gradient(135deg,#15803D,#166534);}
+  .save-btn{width:100%;background:transparent;border:1.5px solid var(--blue);border-radius:12px;padding:11px;font-size:12px;font-weight:800;color:var(--blue);cursor:pointer;margin-top:8px;}
+
+  /* RESULTS */
+  .result-box{background:linear-gradient(135deg,#0B1D3A,#1B3F72);border-radius:16px;padding:14px;margin-top:12px;display:none;}
+  .result-box.show{display:block;}
+  .rb-title{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;}
+  .rb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .rb-item{background:rgba(255,255,255,0.08);border-radius:10px;padding:10px;}
+  .rb-item .rl{font-size:8.5px;color:rgba(255,255,255,0.50);margin-bottom:3px;}
+  .rb-item .rv{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .rb-item .rv.gold{color:var(--gold-lt);}
+  .rb-item .rv.grn{color:#6EE7B7;}
+  .rb-item.full{grid-column:1/-1;}
+
+  /* SVG CHART */
+  .chart-wrap{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .bar-chart{display:flex;flex-direction:column;gap:7px;}
+  .bar-row{display:flex;align-items:center;gap:8px;}
+  .bar-lbl{font-size:9px;color:var(--muted);font-weight:700;width:90px;flex-shrink:0;}
+  .bar-track{flex:1;height:24px;background:var(--bg);border-radius:6px;overflow:hidden;position:relative;}
+  .bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;font-size:9px;font-weight:800;color:#fff;transition:width .5s ease;}
+  .bar-val{font-size:10px;font-weight:800;color:var(--navy);width:50px;text-align:right;flex-shrink:0;}
+
+  /* PROGRAM CARDS */
+  .prog-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:9px;cursor:pointer;transition:transform .15s;}
+  .prog-card:active{transform:scale(.98);}
+  .prog-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .prog-ico{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .prog-ico.nv{background:linear-gradient(135deg,#0B1D3A,#1B3F72);}
+  .prog-ico.gr{background:linear-gradient(135deg,#15803D,#166534);}
+  .prog-ico.gd{background:linear-gradient(135deg,#D97706,#B45309);}
+  .prog-ico.rd{background:linear-gradient(135deg,#B91C1C,#991B1B);}
+  .prog-name{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .prog-sub{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .prog-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+  .pt{font-size:8.5px;font-weight:700;padding:2px 8px;border-radius:20px;}
+  .pt-b{background:#EFF6FF;color:#1D4ED8;}
+  .pt-g{background:#F0FDF4;color:#15803D;}
+  .pt-o{background:#FFF7ED;color:#C2410C;}
+  .pt-r{background:#FEF2F2;color:#B91C1C;}
+  .prog-detail{font-size:10px;color:var(--muted);line-height:1.5;border-top:1px solid var(--border);padding-top:8px;}
+  .prog-detail strong{color:var(--navy);}
+
+  /* ELIGIBILITY CHECKER */
+  .elig-card{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:16px;padding:14px;margin-bottom:12px;}
+  .elig-title{font-size:12px;font-weight:800;color:#92400E;font-family:Georgia,serif;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+  .elig-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+  .elig-item{background:rgba(255,255,255,0.5);border-radius:10px;padding:9px;display:flex;align-items:center;gap:7px;}
+  .elig-check{font-size:14px;}
+  .elig-text{font-size:10px;font-weight:700;color:#92400E;}
+
+  /* SAVED LIST */
+  .saved-list{display:flex;flex-direction:column;gap:8px;}
+  .saved-item{background:var(--card);border-radius:12px;padding:11px 13px;border:1px solid var(--border);box-shadow:var(--sh);display:flex;align-items:center;justify-content:space-between;}
+  .si-left .si-name{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .si-left .si-meta{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-amount{font-size:14px;font-weight:800;color:var(--green);font-family:Georgia,serif;}
+  .si-del{font-size:16px;cursor:pointer;color:var(--muted);padding:4px;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
+  .toast.show{opacity:1;}
+
+  /* BOTTOM NAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .calc-card,.prog-card,.chart-wrap,.elig-card{animation:fadeUp .35s ease both;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" onclick="history.back()">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏠</div>
+      <div class="hdr-title">First-Time Homebuyer</div>
+      <div class="hdr-sub">HUD · State DPA · FHA · Grant Programs 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">FHA Rate</div><div class="rs-v grn">6.52%</div><div class="rs-n">Avg 2025</div></div>
+    <div class="rs"><div class="rs-l">Min Down</div><div class="rs-v">3.5%</div><div class="rs-n">FHA 580+</div></div>
+    <div class="rs"><div class="rs-l">Max DPA</div><div class="rs-v grn">$25K</div><div class="rs-n">Biden Grant</div></div>
+    <div class="rs"><div class="rs-l">Income Lim.</div><div class="rs-v">120% AMI</div><div class="rs-n">Most States</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- HERO -->
+  <div class="sec" style="margin-top:0">Grant Snapshot <span class="tag">2025 Programs</span></div>
+  <div class="hero-grant">
+    <div class="hg-tag">USA First-Time Homebuyer Assistance</div>
+    <div class="hg-title">Up to <span>$25,000</span> in Down<br>Payment Assistance Available</div>
+    <div class="hg-row">
+      <div class="hg-box"><div class="lbl">Max Grant</div><div class="val gold">$25K</div></div>
+      <div class="hg-box"><div class="lbl">Min Credit</div><div class="val">580</div></div>
+      <div class="hg-box"><div class="lbl">States w/ DPA</div><div class="val">50</div></div>
+    </div>
+  </div>
+
+  <!-- ELIGIBILITY CHECKER -->
+  <div class="sec">Quick Eligibility Check</div>
+  <div class="elig-card">
+    <div class="elig-title">✅ Common Requirements</div>
+    <div class="elig-grid">
+      <div class="elig-item"><span class="elig-check">🏠</span><span class="elig-text">No home ownership in last 3 years</span></div>
+      <div class="elig-item"><span class="elig-check">💳</span><span class="elig-text">Credit score ≥ 580 (FHA) or 620 (Conv.)</span></div>
+      <div class="elig-item"><span class="elig-check">💵</span><span class="elig-text">Income ≤ 80–120% Area Median Income</span></div>
+      <div class="elig-item"><span class="elig-check">🏫</span><span class="elig-text">Complete HUD-approved counseling</span></div>
+      <div class="elig-item"><span class="elig-check">🏡</span><span class="elig-text">Owner-occupied primary residence</span></div>
+      <div class="elig-item"><span class="elig-check">📋</span><span class="elig-text">Property price within program limits</span></div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR -->
+  <div class="sec">Assistance Calculator <span class="tag">Estimate</span></div>
+  <div class="calc-card">
+    <div class="calc-title"><div class="ico">🧮</div>Down Payment Assistance Estimator</div>
+    <div class="field-row">
+      <div class="field"><label>Home Price ($)</label><input type="number" id="homePrice" value="350000" placeholder="350000"></div>
+      <div class="field"><label>Annual Income ($)</label><input type="number" id="income" value="75000" placeholder="75000"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Credit Score</label>
+        <select id="creditScore">
+          <option value="760">760+ Excellent</option>
+          <option value="720">720–759 Very Good</option>
+          <option value="680" selected>680–719 Good</option>
+          <option value="640">640–679 Fair</option>
+          <option value="580">580–639 Minimum FHA</option>
+        </select>
+      </div>
+      <div class="field"><label>State</label>
+        <select id="state">
+          <option value="CA">California</option>
+          <option value="TX">Texas</option>
+          <option value="FL">Florida</option>
+          <option value="NY">New York</option>
+          <option value="IL">Illinois</option>
+          <option value="WA">Washington</option>
+          <option value="CO">Colorado</option>
+          <option value="GA" selected>Georgia</option>
+          <option value="OH">Ohio</option>
+          <option value="AZ">Arizona</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Loan Type</label>
+        <select id="loanType">
+          <option value="fha" selected>FHA (3.5% down)</option>
+          <option value="conv3">Conventional (3% down)</option>
+          <option value="conv5">Conventional (5% down)</option>
+        </select>
+      </div>
+      <div class="field"><label>Household Size</label>
+        <select id="hhsize">
+          <option value="1">1 Person</option>
+          <option value="2" selected>2 People</option>
+          <option value="3">3 People</option>
+          <option value="4">4 People</option>
+          <option value="5">5+ People</option>
+        </select>
+      </div>
+    </div>
+    <button class="calc-btn green" onclick="calcDPA()">🏠 Calculate My Assistance</button>
+
+    <!-- RESULT BOX -->
+    <div class="result-box" id="resultBox">
+      <div class="rb-title">📊 Your Estimated Assistance · 2025</div>
+      <div class="rb-grid">
+        <div class="rb-item"><div class="rl">Required Down Payment</div><div class="rv gold" id="r-downpmt">—</div></div>
+        <div class="rb-item"><div class="rl">DPA Grant Available</div><div class="rv grn" id="r-dpa">—</div></div>
+        <div class="rb-item"><div class="rl">Your Out-of-Pocket Down</div><div class="rv" id="r-oop">—</div></div>
+        <div class="rb-item"><div class="rl">Est. Monthly Payment</div><div class="rv" id="r-monthly">—</div></div>
+        <div class="rb-item"><div class="rl">Loan Amount</div><div class="rv" id="r-loan">—</div></div>
+        <div class="rb-item"><div class="rl">Best Program Match</div><div class="rv gold" id="r-prog">—</div></div>
+        <div class="rb-item full"><div class="rl">AMI Check (80% Limit)</div><div class="rv grn" id="r-ami">—</div></div>
+      </div>
+      <button class="save-btn" onclick="saveCalc()">🔖 Save This Calculation</button>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-wrap" id="chartWrap" style="display:none">
+    <div class="chart-title">💰 Cost Breakdown Comparison</div>
+    <div class="bar-chart" id="barChart"></div>
+  </div>
+
+  <!-- PROGRAMS -->
+  <div class="sec">Federal & State Programs <span class="tag">2025 Active</span></div>
+
+  <div class="prog-card">
+    <div class="prog-top">
+      <div class="prog-ico nv">🏛️</div>
+      <div><div class="prog-name">HUD Homebuyer Assistance</div><div class="prog-sub">U.S. Dept. of Housing & Urban Development</div></div>
+    </div>
+    <div class="prog-tags">
+      <span class="pt pt-g">Up to $25,000 Grant</span>
+      <span class="pt pt-b">Income Limit: 120% AMI</span>
+      <span class="pt pt-o">First-Time Only</span>
+    </div>
+    <div class="prog-detail">The <strong>Downpayment Toward Equity Act</strong> (H.R. 4495) proposes $25,000 for first-generation buyers. Current state HUD programs provide <strong>$5,000–$15,000</strong> in DPA. Must complete HUD-approved counseling (hud.gov). Income limits vary: <strong>80%–120% AMI</strong> by metro area.</div>
+  </div>
+
+  <div class="prog-card">
+    <div class="prog-top">
+      <div class="prog-ico gr">🌿</div>
+      <div><div class="prog-name">State DPA Programs</div><div class="prog-sub">All 50 States + DC · Local HFAs</div></div>
+    </div>
+    <div class="prog-tags">
+      <span class="pt pt-g">$2,500–$65,000</span>
+      <span class="pt pt-b">Forgivable or Deferred</span>
+      <span class="pt pt-b">620+ Credit Score</span>
+    </div>
+    <div class="prog-detail">
+      <strong>CA MyHome:</strong> deferred 3.5% DPA · <strong>TX TDHCA:</strong> up to 5% grant · <strong>FL Assist:</strong> $10,000 0% loan · <strong>NY SONYMA:</strong> $3,000 grant + low rate · <strong>GA Dream:</strong> $7,500 forgivable loan. Combined with FHA for lowest out-of-pocket.
+    </div>
+  </div>
+
+  <div class="prog-card">
+    <div class="prog-top">
+      <div class="prog-ico gd">⭐</div>
+      <div><div class="prog-name">Fannie Mae HomeReady®</div><div class="prog-sub">3% Down · No PMI at 80% LTV · 2025</div></div>
+    </div>
+    <div class="prog-tags">
+      <span class="pt pt-b">3% Down Payment</span>
+      <span class="pt pt-g">Reduced PMI</span>
+      <span class="pt pt-o">620+ Score</span>
+    </div>
+    <div class="prog-detail">Income limit <strong>80% AMI</strong>. Allows <strong>non-occupant co-borrowers</strong>. Gift funds accepted for full down payment. Reduced MI (0.25% less than standard). Online homebuyer education required ($75 fee). Available for 1–4 unit primary residences.</div>
+  </div>
+
+  <div class="prog-card">
+    <div class="prog-top">
+      <div class="prog-ico rd">🏠</div>
+      <div><div class="prog-name">Freddie Mac Home Possible®</div><div class="prog-sub">3% Down · Low-to-Moderate Income · 2025</div></div>
+    </div>
+    <div class="prog-tags">
+      <span class="pt pt-b">3% Down</span>
+      <span class="pt pt-g">No Income Limit (Underserved Areas)</span>
+      <span class="pt pt-o">660+ Score</span>
+    </div>
+    <div class="prog-detail">Income ≤ <strong>80% AMI</strong> (standard), or <strong>no limit</strong> in underserved areas. Sweat equity counts toward down payment. Multiple co-borrowers allowed. MI cancels at 20% equity automatically. Comparable to HomeReady with slightly different qualifying criteria.</div>
+  </div>
+
+  <div class="prog-card">
+    <div class="prog-top">
+      <div class="prog-ico nv">🏦</div>
+      <div><div class="prog-name">Good Neighbor Next Door</div><div class="prog-sub">HUD · 50% Discount for Public Service Workers</div></div>
+    </div>
+    <div class="prog-tags">
+      <span class="pt pt-r">50% Off List Price</span>
+      <span class="pt pt-o">Teachers · Police · Firefighters</span>
+      <span class="pt pt-b">3-Year Residency Required</span>
+    </div>
+    <div class="prog-detail">HUD sells <strong>foreclosed homes at 50% discount</strong> to eligible law enforcement, teachers (K-12), firefighters, and EMTs. Must live in the home for <strong>36 months</strong>. Properties in HUD-designated revitalization areas. Listings rotate weekly on HUDhomestore.gov.</div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="sec">Saved Calculations <span class="tag" id="savedCount">0 Saved</span></div>
+  <div class="saved-list" id="savedList"><div style="font-size:11px;color:var(--muted);text-align:center;padding:12px;">No saved calculations yet. Run the estimator above.</div></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// State AMI data (2025 approximate 80% AMI for family of 4)
+const stateAMI = {
+  CA:106800,TX:73400,FL:68800,NY:93400,IL:82200,
+  WA:99600,CO:96000,GA:71200,OH:70000,AZ:78000
+};
+const stateDPA = {
+  CA:{name:'CA MyHome',amt:0.035,max:15000},
+  TX:{name:'TX TDHCA My First Texas',amt:0.05,max:15000},
+  FL:{name:'FL Assist',amt:10000,max:10000},
+  NY:{name:'NY SONYMA',amt:3000,max:3000},
+  IL:{name:'IL IHDA Access',amt:6000,max:6000},
+  WA:{name:'WA WSHFC Home Advantage',amt:0.04,max:10000},
+  CO:{name:'CO CHFA',amt:0.03,max:8000},
+  GA:{name:'GA Dream',amt:7500,max:7500},
+  OH:{name:'OH OHFA',amt:2500,max:2500},
+  AZ:{name:'AZ AZHFC HOME+',amt:0.03,max:9000}
+};
+const loanDownPct = {fha:0.035, conv3:0.03, conv5:0.05};
+const loanRates = {fha:0.0652, conv3:0.0682, conv5:0.0672};
+const mipFactor = {fha:0.0085/12, conv3:0.007/12, conv5:0.005/12};
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+
+function calcDPA(){
+  const price = parseFloat(document.getElementById('homePrice').value)||350000;
+  const income = parseFloat(document.getElementById('income').value)||75000;
+  const state = document.getElementById('state').value;
+  const loanType = document.getElementById('loanType').value;
+  const hhsize = parseInt(document.getElementById('hhsize').value)||2;
+
+  const downPct = loanDownPct[loanType];
+  const rate = loanRates[loanType];
+  const mip = mipFactor[loanType];
+  const downReq = price * downPct;
+  const loanAmt = price - downReq;
+  const monthlyRate = rate / 12;
+  const n = 360;
+  const basePayment = loanAmt * (monthlyRate * Math.pow(1+monthlyRate,n)) / (Math.pow(1+monthlyRate,n)-1);
+  const monthlyMIP = loanAmt * mip;
+  const totalMonthly = basePayment + monthlyMIP;
+
+  // DPA
+  const dpaInfo = stateDPA[state];
+  let dpaAmt = 0;
+  if(typeof dpaInfo.amt === 'number' && dpaInfo.amt < 1){
+    dpaAmt = Math.min(price * dpaInfo.amt, dpaInfo.max);
+  } else {
+    dpaAmt = dpaInfo.max;
+  }
+  // Plus potential federal DPA (simplified: up to $15K if income <= 120% AMI)
+  const ami80 = stateAMI[state] * (hhsize/4 * 0.5 + 0.75);
+  const ami120 = ami80 * 1.5;
+  const federalBonus = income <= ami120 ? Math.min(15000, price * 0.05) : 0;
+  const totalDPA = Math.min(dpaAmt + federalBonus, downReq);
+  const oop = Math.max(0, downReq - totalDPA);
+  const amiStatus = income <= ami80 ? '✅ Qualifies for 80% AMI programs' : income <= ami120 ? '⚠️ 80%–120% AMI bracket' : '❌ Above 120% AMI limit';
+
+  document.getElementById('r-downpmt').textContent = fmt(downReq);
+  document.getElementById('r-dpa').textContent = fmt(totalDPA);
+  document.getElementById('r-oop').textContent = fmt(oop);
+  document.getElementById('r-monthly').textContent = fmt(totalMonthly)+'/mo';
+  document.getElementById('r-loan').textContent = fmt(loanAmt);
+  document.getElementById('r-prog').textContent = dpaInfo.name;
+  document.getElementById('r-ami').textContent = amiStatus;
+  document.getElementById('resultBox').classList.add('show');
+
+  // Chart
+  renderChart(downReq, totalDPA, oop, totalMonthly, price);
+  document.getElementById('chartWrap').style.display='block';
+
+  // Store for save
+  window._lastCalc = {price, income, state, loanType, downReq, totalDPA, oop, totalMonthly, loanAmt, prog:dpaInfo.name};
+}
+
+function renderChart(downReq, totalDPA, oop, monthly, price){
+  const items = [
+    {lbl:'Home Price', val:price, max:price, color:'#1B3F72'},
+    {lbl:'Down Payment', val:downReq, max:price, color:'#B91C1C'},
+    {lbl:'DPA Grant', val:totalDPA, max:price, color:'#15803D'},
+    {lbl:'Your Out-of-Pocket', val:oop, max:downReq||1, color:'#D97706'},
+    {lbl:'Est. Monthly Pmt', val:monthly, max:monthly, color:'#6D28D9'},
+  ];
+  const chart = document.getElementById('barChart');
+  chart.innerHTML = items.map(it=>{
+    const pct = Math.min(100, (it.val/it.max)*100);
+    return `<div class="bar-row">
+      <div class="bar-lbl">${it.lbl}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${it.color};">${pct>15?'▐':''}</div></div>
+      <div class="bar-val">${it.lbl.includes('Monthly')?'$'+Math.round(it.val).toLocaleString()+'/mo':'$'+Math.round(it.val).toLocaleString()}</div>
+    </div>`;
+  }).join('');
+}
+
+function saveCalc(){
+  if(!window._lastCalc){return;}
+  const saves = JSON.parse(localStorage.getItem('ftbSaves')||'[]');
+  const c = window._lastCalc;
+  saves.unshift({id:Date.now(), name:`${c.state} · ${fmt(c.price)}`, meta:`DPA: ${fmt(c.totalDPA)} · OOP: ${fmt(c.oop)}`, amount:fmt(c.totalDPA), date:new Date().toLocaleDateString()});
+  localStorage.setItem('ftbSaves', JSON.stringify(saves.slice(0,10)));
+  renderSaved(); showToast('✅ Calculation saved!');
+}
+
+function renderSaved(){
+  const saves = JSON.parse(localStorage.getItem('ftbSaves')||'[]');
+  const list = document.getElementById('savedList');
+  document.getElementById('savedCount').textContent = saves.length+' Saved';
+  if(!saves.length){list.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px;">No saved calculations yet.</div>';return;}
+  list.innerHTML = saves.map(s=>`
+    <div class="saved-item">
+      <div class="si-left"><div class="si-name">${s.name}</div><div class="si-meta">${s.meta} · ${s.date}</div></div>
+      <div class="si-amount">${s.amount}</div>
+      <div class="si-del" onclick="delSave(${s.id})">🗑</div>
+    </div>`).join('');
+}
+
+function delSave(id){
+  const saves = JSON.parse(localStorage.getItem('ftbSaves')||'[]').filter(s=>s.id!==id);
+  localStorage.setItem('ftbSaves', JSON.stringify(saves));
+  renderSaved(); showToast('🗑 Deleted');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+renderSaved();
+</script>
+</body>
+</html>

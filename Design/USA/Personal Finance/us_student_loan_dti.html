@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Loan DTI Impact</title>
+<style>
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;--border:rgba(27,63,114,0.09);
+    --sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);
+    --grn:#15803D;--grn-lt:#F0FDF4;--warn:#FFF7ED;--danger:#FEF2F2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 50%,#D97706 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🎓';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--gold);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* INPUTS */
+  .calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .input-group{margin-bottom:13px;}
+  .input-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+  .input-row{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;}
+  .input-row:focus-within{border-color:var(--gold);}
+  .input-prefix{padding:12px 11px;font-size:14px;font-weight:700;color:var(--muted);background:rgba(27,63,114,0.05);border-right:1px solid var(--border);}
+  .input-row input{flex:1;border:none;background:transparent;padding:12px 12px;font-size:15px;font-weight:700;color:var(--navy);font-family:Georgia,serif;outline:none;}
+  .input-suffix{padding:12px 11px;font-size:11px;font-weight:700;color:var(--muted);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  /* BUTTONS */
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:8px;}
+  .calc-btn{background:linear-gradient(135deg,#D97706,#B45309);border:none;border-radius:13px;padding:14px 18px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(217,119,6,0.40);font-family:Georgia,serif;transition:transform .15s,box-shadow .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .calc-btn:active{transform:scale(0.97);}
+  .save-btn{background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:14px 16px;font-size:13px;font-weight:800;color:var(--navy);cursor:pointer;box-shadow:var(--sh);font-family:Georgia,serif;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .save-btn:hover{background:var(--bg);border-color:var(--gold);}
+  .save-btn.saved{background:var(--grn-lt);border-color:var(--grn);color:var(--grn);}
+
+  /* TOAST */
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  /* RESULT HERO */
+  .result-hero{background:linear-gradient(148deg,#D97706,#B45309);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.08);}
+  .rh-label{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.7px;}
+  .rh-val{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:6px 0 2px;}
+  .rh-sub{font-size:11px;color:rgba(255,255,255,0.65);}
+  .rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-item{background:rgba(255,255,255,0.12);border-radius:11px;padding:9px 8px;text-align:center;}
+  .rh-item-l{font-size:8.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;}
+  .rh-item-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+
+  /* DTI GAUGE */
+  .gauge-card{background:var(--card);border-radius:16px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .gauge-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .gauge-wrap{position:relative;width:160px;height:88px;margin:0 auto 4px;}
+  .gauge-svg{width:100%;height:100%;}
+  .gauge-text{position:absolute;bottom:0;left:50%;transform:translateX(-50%);text-align:center;}
+  .gauge-pct{font-size:26px;font-weight:800;font-family:Georgia,serif;color:var(--navy);line-height:1;}
+  .gauge-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
+
+  .dti-compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 10px;}
+  .dti-col{text-align:center;}
+  .dti-col-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+  .dti-circle{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:19px;font-weight:800;font-family:Georgia,serif;transition:all .4s ease;}
+  .dti-sub{font-size:9px;color:var(--muted);margin-top:5px;}
+  .dti-bar-wrap{background:#EEF2F8;border-radius:100px;height:9px;overflow:hidden;margin:5px 0 4px;}
+  .dti-bar{height:100%;border-radius:100px;transition:width .7s cubic-bezier(.34,1.1,.64,1);}
+  .dti-bar-labels{display:flex;justify-content:space-between;font-size:8px;font-weight:700;color:var(--muted);}
+
+  /* CHART */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .bar-chart{display:flex;flex-direction:column;gap:10px;}
+  .bc-row{display:flex;align-items:center;gap:10px;}
+  .bc-label{font-size:10px;font-weight:700;color:var(--muted);width:80px;flex-shrink:0;text-align:right;}
+  .bc-track{flex:1;background:#EEF2F8;border-radius:100px;height:22px;position:relative;overflow:hidden;}
+  .bc-fill{height:100%;border-radius:100px;display:flex;align-items:center;padding-left:10px;font-size:10px;font-weight:800;color:#fff;transition:width .7s cubic-bezier(.34,1.1,.64,1);min-width:36px;}
+  .bc-val{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;width:44px;flex-shrink:0;}
+
+  /* BUYING POWER */
+  .bp-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .bp-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:10px;}
+  .bp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+  .bp-row:last-child{border-bottom:none;}
+  .bp-label{font-size:11px;color:var(--muted);font-weight:600;}
+  .bp-val{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .bp-val.warn{color:var(--red);}
+  .bp-val.ok{color:var(--grn);}
+
+  /* BUYING POWER VISUAL */
+  .bp-visual{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border-radius:13px;padding:13px;margin:10px 0 0;display:flex;align-items:center;gap:12px;}
+  .bp-icon-big{font-size:28px;}
+  .bp-diff-val{font-size:20px;font-weight:800;color:#B91C1C;font-family:Georgia,serif;}
+  .bp-diff-lbl{font-size:9.5px;color:#1E40AF;font-weight:600;margin-top:1px;}
+
+  /* PLANS */
+  .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .plan-card{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:1px solid var(--border);transition:transform .15s;}
+  .plan-card:hover{transform:translateY(-2px);}
+  .plan-name{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:3px;}
+  .plan-pmt{font-size:18px;font-weight:800;color:var(--gold);font-family:Georgia,serif;}
+  .plan-detail{font-size:8.5px;color:var(--muted);margin-top:2px;}
+  .plan-tag{display:inline-flex;padding:2px 7px;border-radius:20px;font-size:8px;font-weight:700;margin-top:4px;}
+  .tag-g{background:#F0FDF4;color:#15803D;}.tag-r{background:#FEF2F2;color:#B91C1C;}.tag-o{background:#FFF7ED;color:#C2410C;}
+
+  /* LENDER LIST */
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  /* SAVED SECTION */
+  .saved-section{margin-bottom:12px;}
+  .saved-list{display:flex;flex-direction:column;gap:8px;}
+  .saved-item{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .saved-info{flex:1;}
+  .saved-name{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .saved-meta{font-size:9px;color:var(--muted);margin-top:2px;}
+  .saved-dti{font-size:15px;font-weight:800;font-family:Georgia,serif;}
+  .saved-del{width:28px;height:28px;border-radius:8px;background:var(--danger);border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .empty-saved{text-align:center;padding:20px;color:var(--muted);font-size:12px;}
+
+  /* BOTTOM NAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--gold);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .calc-card{animation:fadeUp .35s ease both .05s;}
+  .result-hero{animation:fadeUp .35s ease both .10s;}
+  .gauge-card,.chart-card,.bp-card,.plan-grid{animation:fadeUp .35s ease both .15s;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+  .calculating{animation:pulse .6s ease infinite;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div style="font-size:28px">🎓</div>
+      <div class="hdr-title">Student Loan DTI</div>
+      <div class="hdr-sub">Impact on Mortgage Qualification</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Undergrad 2025</div><div class="rs-v gold">6.53%</div><div class="rs-n">Federal</div></div>
+    <div class="rs"><div class="rs-l">Grad 2025</div><div class="rs-v">8.08%</div><div class="rs-n">Direct</div></div>
+    <div class="rs"><div class="rs-l">Avg Balance</div><div class="rs-v">$37.7K</div><div class="rs-n">DOE 2024</div></div>
+    <div class="rs"><div class="rs-l">Back-End DTI</div><div class="rs-v gold">43%</div><div class="rs-n">FHA Max</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">Your Information</div>
+  <div class="calc-card">
+    <div class="row2">
+      <div class="input-group"><label class="input-label">Gross Monthly Income</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="income" value="7500"></div></div>
+      <div class="input-group"><label class="input-label">Student Loan Balance</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="slBalance" value="42000"></div></div>
+    </div>
+    <div class="row2">
+      <div class="input-group"><label class="input-label">Actual Monthly Pmt</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="slPmt" value="420"></div></div>
+      <div class="input-group"><label class="input-label">Other Monthly Debts</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="otherDebts" value="250"></div></div>
+    </div>
+    <div class="row2">
+      <div class="input-group"><label class="input-label">Home Price</label><div class="input-row"><span class="input-prefix">$</span><input type="number" id="homePrice" value="400000"></div></div>
+      <div class="input-group"><label class="input-label">Down Payment</label><div class="input-row"><input type="number" id="downPct" value="10"><span class="input-suffix">%</span></div></div>
+    </div>
+    <div class="row2">
+      <div class="input-group"><label class="input-label">Mortgage Rate</label><div class="input-row"><input type="number" id="mortRate" value="6.82" step="0.01"><span class="input-suffix">%</span></div></div>
+      <div class="input-group"><label class="input-label">Property Tax Rate</label><div class="input-row"><input type="number" id="taxRate" value="1.10" step="0.01"><span class="input-suffix">%</span></div></div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" id="calcBtn" onclick="runCalculate()">🎓 Analyze DTI Impact</button>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+    </div>
+  </div>
+
+  <!-- RESULT HERO -->
+  <div class="result-hero">
+    <div class="rh-label">Back-End DTI with Student Loans</div>
+    <div class="rh-val" id="totalDTI">—</div>
+    <div class="rh-sub" id="heroSub">Enter your details and tap Analyze</div>
+    <div class="rh-grid">
+      <div class="rh-item"><div class="rh-item-l">Without SL</div><div class="rh-item-v" id="dtiNoSL">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">SL Adds</div><div class="rh-item-v" id="slAdds">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">Max Approval</div><div class="rh-item-v" id="maxApproval">43%</div></div>
+    </div>
+  </div>
+
+  <!-- GAUGE + COMPARISON -->
+  <div class="gauge-card">
+    <div class="gauge-title">DTI Impact Comparison</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:center;">
+      <div style="text-align:center;">
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 160 90">
+            <path d="M14 80 A66 66 0 0 1 146 80" fill="none" stroke="#EEF2F8" stroke-width="13" stroke-linecap="round"/>
+            <path id="gaugeArcBg" d="M14 80 A66 66 0 0 1 146 80" fill="none" stroke="#EEF2F8" stroke-width="13" stroke-linecap="round"/>
+            <path id="gaugeArc" d="M14 80 A66 66 0 0 1 146 80" fill="none" stroke="#D97706" stroke-width="13" stroke-linecap="round" stroke-dasharray="207" stroke-dashoffset="207" style="transition:stroke-dashoffset .8s cubic-bezier(.34,1.1,.64,1),stroke .4s;"/>
+            <!-- Zone markers -->
+            <text x="6" y="88" font-size="8" fill="#15803D" font-weight="700">0%</text>
+            <text x="120" y="28" font-size="8" fill="#D97706" font-weight="700">43%</text>
+            <text x="140" y="88" font-size="8" fill="#B91C1C" font-weight="700">50%</text>
+          </svg>
+          <div class="gauge-text">
+            <div class="gauge-pct" id="gaugePct">—</div>
+            <div class="gauge-lbl">DTI w/ SL</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="dti-compare" style="margin:0 0 10px;">
+          <div class="dti-col">
+            <div class="dti-col-label">No SL</div>
+            <div class="dti-circle" id="circleNoSL" style="background:#EFF6FF;color:#1B3F72;">—</div>
+            <div class="dti-sub">Base DTI</div>
+          </div>
+          <div class="dti-col">
+            <div class="dti-col-label">With SL</div>
+            <div class="dti-circle" id="circleSL" style="background:#FEF2F2;color:#B91C1C;">—</div>
+            <div class="dti-sub">Full DTI</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:8px;">
+      <div style="font-size:9.5px;font-weight:700;color:var(--muted);margin-bottom:4px">DTI Progress Meter</div>
+      <div class="dti-bar-wrap"><div class="dti-bar" id="dtiBarSL" style="background:var(--red);width:0%"></div></div>
+      <div class="dti-bar-labels"><span>0%</span><span>28%</span><span>36%</span><span>43%</span><span>50%+</span></div>
+    </div>
+  </div>
+
+  <!-- PAYMENT BREAKDOWN CHART -->
+  <div class="chart-card">
+    <div class="chart-title">📊 Monthly Payment Breakdown</div>
+    <div class="bar-chart" id="barChart">
+      <div class="bc-row">
+        <div class="bc-label">Mortgage</div>
+        <div class="bc-track"><div class="bc-fill" id="bcMort" style="width:0%;background:linear-gradient(90deg,#1B3F72,#2563EB)">—</div></div>
+        <div class="bc-val" id="bcMortVal">—</div>
+      </div>
+      <div class="bc-row">
+        <div class="bc-label">Student Loan</div>
+        <div class="bc-track"><div class="bc-fill" id="bcSL" style="width:0%;background:linear-gradient(90deg,#D97706,#F59E0B)">—</div></div>
+        <div class="bc-val" id="bcSLVal">—</div>
+      </div>
+      <div class="bc-row">
+        <div class="bc-label">Tax + Ins</div>
+        <div class="bc-track"><div class="bc-fill" id="bcTax" style="width:0%;background:linear-gradient(90deg,#4A5C7A,#64748B)">—</div></div>
+        <div class="bc-val" id="bcTaxVal">—</div>
+      </div>
+      <div class="bc-row">
+        <div class="bc-label">Other Debts</div>
+        <div class="bc-track"><div class="bc-fill" id="bcOther" style="width:0%;background:linear-gradient(90deg,#B91C1C,#DC2626)">—</div></div>
+        <div class="bc-val" id="bcOtherVal">—</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--muted);font-weight:600;">Total Monthly Obligations</div>
+      <div style="font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;" id="totalMonthly">—</div>
+    </div>
+  </div>
+
+  <!-- BUYING POWER -->
+  <div class="bp-card">
+    <div class="bp-title">Buying Power Analysis</div>
+    <div class="bp-row"><div class="bp-label">Max home price (no student loans)</div><div class="bp-val ok" id="maxNoSL">$—</div></div>
+    <div class="bp-row"><div class="bp-label">Max home price (with student loans)</div><div class="bp-val warn" id="maxWithSL">$—</div></div>
+    <div class="bp-row"><div class="bp-label">Buying power reduction</div><div class="bp-val warn" id="bpLoss">-$—</div></div>
+    <div class="bp-row"><div class="bp-label">Income needed for your target home</div><div class="bp-val" id="incomeNeeded">$—/mo</div></div>
+    <div class="bp-visual">
+      <div class="bp-icon-big">🏠</div>
+      <div>
+        <div class="bp-diff-val" id="bpVisualAmt">$—</div>
+        <div class="bp-diff-lbl">buying power lost to student loans</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPAYMENT PLANS -->
+  <div class="sec">Repayment Plan Options (2025)</div>
+  <div class="plan-grid">
+    <div class="plan-card"><div class="plan-name">Standard (10yr)</div><div class="plan-pmt" id="std10">$—</div><div class="plan-detail">Fixed payment · fastest payoff</div><span class="plan-tag tag-r">Highest pmt</span></div>
+    <div class="plan-card"><div class="plan-name">Extended (25yr)</div><div class="plan-pmt" id="ext25">$—</div><div class="plan-detail">Lower payment · more interest</div><span class="plan-tag tag-o">Moderate</span></div>
+    <div class="plan-card"><div class="plan-name">IBR / SAVE Plan</div><div class="plan-pmt" id="ibr">$—</div><div class="plan-detail">5% discretionary income</div><span class="plan-tag tag-g">Lowest pmt</span></div>
+    <div class="plan-card"><div class="plan-name">PAYE / ICR</div><div class="plan-pmt" id="paye">$—</div><div class="plan-detail">10% discretionary income</div><span class="plan-tag tag-g">IDR plan</span></div>
+  </div>
+
+  <!-- SAVED CALCULATIONS -->
+  <div class="sec">Saved Calculations <span class="more" onclick="clearSaved()">Clear All</span></div>
+  <div class="saved-section">
+    <div class="saved-list" id="savedList">
+      <div class="empty-saved">No saved calculations yet.<br>Tap 🔖 Save after analyzing.</div>
+    </div>
+  </div>
+
+  <div class="sec">Lender Treatment of Student Loans</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Conventional (Fannie/Freddie)</div><div class="is">Use actual payment or 1% of balance if $0/deferred</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏛️</div><div><div class="in">FHA Loans</div><div class="is">Use actual payment or 0.5% of balance if $0/deferred</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🎖️</div><div><div class="in">VA Loans</div><div class="is">12-month history of $0 payments = exclude from DTI</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🌾</div><div><div class="in">USDA Loans</div><div class="is">Use actual payment or 0.5% of balance/mo if deferred</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let lastResult = null;
+let savedCalcs = JSON.parse(localStorage.getItem('dti_saves') || '[]');
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+function fmtK(n){return '$'+Math.round(n/1000)+'K';}
+function calcPI(loan,rate,n){const mo=rate/100/12;return mo===0?loan/n:loan*mo*Math.pow(1+mo,n)/(Math.pow(1+mo,n)-1);}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function runCalculate(){
+  const btn = document.getElementById('calcBtn');
+  btn.classList.add('calculating');
+  btn.textContent = '⏳ Analyzing…';
+
+  setTimeout(()=>{
+    calculate();
+    btn.classList.remove('calculating');
+    btn.innerHTML = '🎓 Analyze DTI Impact';
+  }, 400);
+}
+
+function calculate(){
+  const income = parseFloat(document.getElementById('income').value)||7500;
+  const slBal  = parseFloat(document.getElementById('slBalance').value)||42000;
+  const slPmt  = parseFloat(document.getElementById('slPmt').value)||420;
+  const other  = parseFloat(document.getElementById('otherDebts').value)||250;
+  const hp     = parseFloat(document.getElementById('homePrice').value)||400000;
+  const dp     = parseFloat(document.getElementById('downPct').value)||10;
+  const mr     = parseFloat(document.getElementById('mortRate').value)||6.82;
+  const tr     = parseFloat(document.getElementById('taxRate').value)||1.10;
+  const ins    = 150;
+
+  const loan     = hp*(1-dp/100);
+  const mortPmt  = calcPI(loan,mr,360);
+  const taxMo    = hp*tr/100/12;
+  const housing  = mortPmt+taxMo+ins;
+  const totalObl = housing+slPmt+other;
+  const dtiSL    = totalObl/income*100;
+  const dtiNoSL  = (housing+other)/income*100;
+
+  function maxHP(slPmtUsed){
+    const maxHousing=0.43*income-other-slPmtUsed;
+    const mo=mr/100/12,n=360;
+    const factor=(1-dp/100)*(mo===0?1/n:mo*Math.pow(1+mo,n)/(Math.pow(1+mo,n)-1));
+    const taxF=tr/100/12;
+    return Math.max(0,(maxHousing-ins)/(factor+taxF));
+  }
+  const mxNoSL   = maxHP(0);
+  const mxWithSL = maxHP(slPmt);
+  const bpLoss   = Math.max(0,mxNoSL-mxWithSL);
+  const incomeNeeded = (housing+slPmt+other)/0.43;
+
+  const std     = calcPI(slBal,6.53,120);
+  const ext     = calcPI(slBal,6.53,300);
+  const ibrPmt  = Math.max(0,(income*12-18225*1.5)*0.05/12);
+  const payePmt = Math.max(0,(income*12-18225*1.5)*0.10/12);
+
+  // Hero
+  document.getElementById('totalDTI').textContent = dtiSL.toFixed(1)+'%';
+  const ok = dtiSL<=43;
+  document.getElementById('heroSub').textContent = ok
+    ? `✅ Within FHA 43% limit — approval likely`
+    : `⚠️ Above FHA 43% limit — approval at risk`;
+  document.getElementById('dtiNoSL').textContent  = dtiNoSL.toFixed(1)+'%';
+  document.getElementById('slAdds').textContent   = '+'+(dtiSL-dtiNoSL).toFixed(1)+'%';
+  document.getElementById('maxApproval').textContent = '43%';
+
+  // Gauge
+  const gaugeArc = document.getElementById('gaugeArc');
+  const totalDash = 207;
+  const pct = Math.min(dtiSL/50, 1);
+  const offset = totalDash - (pct * totalDash);
+  gaugeArc.style.strokeDashoffset = offset;
+  gaugeArc.style.stroke = dtiSL<=36 ? '#15803D' : dtiSL<=43 ? '#D97706' : '#B91C1C';
+  document.getElementById('gaugePct').textContent = dtiSL.toFixed(1)+'%';
+  document.getElementById('gaugePct').style.color = dtiSL<=36 ? '#15803D' : dtiSL<=43 ? '#D97706' : '#B91C1C';
+
+  // Circles
+  document.getElementById('circleNoSL').textContent = dtiNoSL.toFixed(0)+'%';
+  const cSL = document.getElementById('circleSL');
+  cSL.textContent = dtiSL.toFixed(0)+'%';
+  if(dtiSL<=36){cSL.style.background='#F0FDF4';cSL.style.color='#15803D';}
+  else if(dtiSL<=43){cSL.style.background='#FFFBEB';cSL.style.color='#D97706';}
+  else{cSL.style.background='#FEF2F2';cSL.style.color='#B91C1C';}
+  document.getElementById('dtiBarSL').style.background = dtiSL<=36 ? '#15803D' : dtiSL<=43 ? '#D97706' : '#B91C1C';
+  document.getElementById('dtiBarSL').style.width = Math.min(dtiSL/50*100,100)+'%';
+
+  // Bar chart
+  const maxBar = Math.max(mortPmt, slPmt, taxMo+ins, other, 10);
+  const setBar = (id, valId, val, total) => {
+    const el = document.getElementById(id);
+    const width = Math.max((val/total)*100, 3);
+    el.style.width = width+'%';
+    el.textContent = '';
+    document.getElementById(valId).textContent = fmt(val);
+  };
+  setBar('bcMort','bcMortVal', mortPmt, totalObl);
+  setBar('bcSL','bcSLVal', slPmt, totalObl);
+  setBar('bcTax','bcTaxVal', taxMo+ins, totalObl);
+  setBar('bcOther','bcOtherVal', other, totalObl);
+  document.getElementById('totalMonthly').textContent = fmt(totalObl)+'/mo';
+
+  // Buying power
+  document.getElementById('maxNoSL').textContent   = fmtK(mxNoSL);
+  document.getElementById('maxWithSL').textContent = fmtK(mxWithSL);
+  document.getElementById('bpLoss').textContent     = '-'+fmtK(bpLoss);
+  document.getElementById('incomeNeeded').textContent = fmt(incomeNeeded)+'/mo';
+  document.getElementById('bpVisualAmt').textContent = fmtK(bpLoss);
+
+  // Plans
+  document.getElementById('std10').textContent = fmt(std)+'/mo';
+  document.getElementById('ext25').textContent = fmt(ext)+'/mo';
+  document.getElementById('ibr').textContent   = fmt(ibrPmt)+'/mo';
+  document.getElementById('paye').textContent  = fmt(payePmt)+'/mo';
+
+  lastResult = {income,slBal,slPmt,hp,dtiSL:dtiSL.toFixed(1),dtiNoSL:dtiNoSL.toFixed(1),mxWithSL:Math.round(mxWithSL),ts:Date.now()};
+}
+
+function saveCalc(){
+  if(!lastResult){showToast('⚠️ Analyze first before saving');return;}
+  savedCalcs.unshift(lastResult);
+  if(savedCalcs.length>10) savedCalcs.pop();
+  localStorage.setItem('dti_saves', JSON.stringify(savedCalcs));
+  renderSaved();
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  btn.innerHTML = '✅ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},2000);
+  showToast('✅ Calculation saved!');
+}
+
+function clearSaved(){
+  if(savedCalcs.length===0){showToast('Nothing to clear');return;}
+  savedCalcs=[];
+  localStorage.removeItem('dti_saves');
+  renderSaved();
+  showToast('🗑️ All saves cleared');
+}
+
+function deleteSaved(idx){
+  savedCalcs.splice(idx,1);
+  localStorage.setItem('dti_saves',JSON.stringify(savedCalcs));
+  renderSaved();
+}
+
+function renderSaved(){
+  const list = document.getElementById('savedList');
+  if(savedCalcs.length===0){
+    list.innerHTML='<div class="empty-saved">No saved calculations yet.<br>Tap 🔖 Save after analyzing.</div>';
+    return;
+  }
+  list.innerHTML = savedCalcs.map((s,i)=>{
+    const color = parseFloat(s.dtiSL)<=36 ? '#15803D' : parseFloat(s.dtiSL)<=43 ? '#D97706' : '#B91C1C';
+    const d = new Date(s.ts);
+    return `<div class="saved-item">
+      <div class="saved-info">
+        <div class="saved-name">Income $${(s.income/1000).toFixed(1)}K · Home $${(s.hp/1000).toFixed(0)}K</div>
+        <div class="saved-meta">SL $${(s.slBal/1000).toFixed(0)}K · Max HP w/SL: ${s.mxWithSL>0?'$'+(s.mxWithSL/1000).toFixed(0)+'K':'—'} · ${d.toLocaleDateString()}</div>
+      </div>
+      <div class="saved-dti" style="color:${color}">${s.dtiSL}%</div>
+      <button class="saved-del" onclick="deleteSaved(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// Init
+renderSaved();
+calculate();
+</script>
+</body>
+</html>

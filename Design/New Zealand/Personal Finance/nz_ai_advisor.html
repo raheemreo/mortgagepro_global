@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NZ AI Advisor · Powered by Claude</title>
+<style>
+  :root {
+    --black:#0A0F0D;--forest:#0D3B2E;--fern:#1A6B4A;--silver:#C0C8C1;
+    --teal:#0D9488;--sky:#0EA5E9;--red:#C0392B;--gold:#D4A017;--gold-lt:#F5D060;
+    --bg:#EDF5F2;--card:#FFFFFF;--muted:#4A6358;--border:rgba(13,59,46,0.09);
+    --sh:0 4px 20px rgba(10,15,13,0.09);--sh2:0 8px 36px rgba(10,15,13,0.18);
+    --purple:#6D28D9;--purple-lt:#8B5CF6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--black);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(158deg,#0A0F0D 0%,#2D1B69 45%,#6D28D9 80%,#0EA5E9 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(245,208,96,0.06);}
+  .header::after{content:'🤖';position:absolute;right:12px;top:44px;font-size:78px;opacity:0.08;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.11);border:1px solid rgba(255,255,255,0.19);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;display:block;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:0.4px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .badge-p{font-size:9px;font-weight:700;color:var(--purple-lt);background:#EDE9FE;border:1px solid #C4B5FD;padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+  /* AI status bar */
+  .ai-status{background:linear-gradient(135deg,#2D1B69,#6D28D9);border-radius:16px;padding:14px 15px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .ai-dot{width:8px;height:8px;border-radius:50%;background:#6EE7B7;box-shadow:0 0 6px #6EE7B7;animation:pulse 1.5s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+  .ai-info .ai-name{font-size:13px;font-weight:800;color:#fff;}
+  .ai-info .ai-desc{font-size:9px;color:rgba(255,255,255,0.5);font-family:'Helvetica Neue',Arial,sans-serif;margin-top:2px;}
+  .ai-powered{margin-left:auto;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);border-radius:8px;padding:4px 9px;font-size:9px;font-weight:700;color:rgba(255,255,255,0.8);font-family:'Helvetica Neue',Arial,sans-serif;white-space:nowrap;}
+
+  /* Quick Topics */
+  .quick-topics{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+  .topic-chip{padding:7px 12px;background:var(--card);border:1px solid var(--border);border-radius:20px;font-size:10.5px;font-weight:700;color:var(--black);cursor:pointer;transition:all .18s;box-shadow:var(--sh);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .topic-chip:active{background:var(--purple);color:#fff;border-color:var(--purple);}
+  .topic-chip.active{background:var(--purple);color:#fff;border-color:var(--purple);}
+
+  /* Chat window */
+  .chat-window{background:var(--card);border-radius:20px;box-shadow:var(--sh2);border:1px solid var(--border);overflow:hidden;margin-bottom:14px;}
+  .chat-header{background:linear-gradient(135deg,#2D1B69,#6D28D9);padding:12px 15px;display:flex;align-items:center;gap:9px;}
+  .chat-avatar{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .chat-hname{font-size:12px;font-weight:800;color:#fff;}
+  .chat-hsub{font-size:9px;color:rgba(255,255,255,0.5);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .chat-clear{margin-left:auto;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:4px 9px;font-size:9px;font-weight:700;color:#fff;cursor:pointer;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .chat-messages{height:380px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(13,59,46,0.1) transparent;}
+  .chat-messages::-webkit-scrollbar{width:4px;}
+  .chat-messages::-webkit-scrollbar-thumb{background:rgba(13,59,46,0.1);border-radius:4px;}
+
+  .msg{max-width:88%;animation:fadeUp .25s ease both;}
+  .msg.user{align-self:flex-end;}
+  .msg.ai{align-self:flex-start;}
+  .msg-bubble{padding:10px 13px;border-radius:16px;font-size:12.5px;line-height:1.55;}
+  .msg.user .msg-bubble{background:linear-gradient(135deg,var(--purple),#4C1D95);color:#fff;border-bottom-right-radius:4px;}
+  .msg.ai .msg-bubble{background:var(--bg);color:var(--black);border-bottom-left-radius:4px;border:1px solid var(--border);}
+  .msg-time{font-size:8px;color:var(--muted);margin-top:3px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .msg.user .msg-time{text-align:right;}
+
+  /* Typing indicator */
+  .typing-indicator{display:none;align-items:center;gap:6px;padding:8px 13px;background:var(--bg);border-radius:16px;border-bottom-left-radius:4px;border:1px solid var(--border);width:fit-content;}
+  .typing-indicator.show{display:flex;}
+  .typing-dot{width:6px;height:6px;border-radius:50%;background:var(--purple);animation:typing 1.2s infinite;}
+  .typing-dot:nth-child(2){animation-delay:.2s;}
+  .typing-dot:nth-child(3){animation-delay:.4s;}
+  @keyframes typing{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+
+  .chat-input-wrap{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;}
+  .chat-input{flex:1;padding:10px 13px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;font-weight:600;color:var(--black);background:var(--bg);outline:none;font-family:'Palatino Linotype',Palatino,Georgia,serif;resize:none;max-height:100px;transition:border-color .2s;min-height:40px;}
+  .chat-input:focus{border-color:var(--purple);}
+  .send-btn{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--purple),#4C1D95);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s;box-shadow:0 3px 10px rgba(109,40,217,0.4);}
+  .send-btn:active{opacity:.8;}
+  .send-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* Profile card */
+  .profile-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .profile-card h3{font-size:14px;font-weight:800;color:var(--black);margin-bottom:12px;}
+  .profile-field{margin-bottom:10px;}
+  .profile-field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .profile-field select,.profile-field input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:11px;font-size:13px;font-weight:700;color:var(--black);background:var(--bg);outline:none;font-family:'Helvetica Neue',Arial,sans-serif;transition:border-color .2s;}
+  .profile-field select:focus,.profile-field input:focus{border-color:var(--purple);}
+  .profile-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .profile-save-btn{width:100%;padding:11px;background:linear-gradient(135deg,var(--purple),#4C1D95);border:none;border-radius:11px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;font-family:'Palatino Linotype',Palatino,Georgia,serif;margin-top:4px;}
+
+  /* Disclaimer */
+  .disclaimer{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:13px;padding:11px 13px;margin-bottom:14px;}
+  .disclaimer .dt{font-size:11px;font-weight:800;color:#92400E;display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+  .disclaimer .ds{font-size:9.5px;color:#B45309;font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.5;}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,15,13,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ni.active .ni-lb{color:var(--fern);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🤖</div>
+      <div class="hdr-title">NZ AI Advisor</div>
+      <div class="hdr-sub">RBNZ · LVR · KiwiSaver · Mortgages · Tax</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">OCR Rate</div><div class="rs-v gold">5.50%</div><div class="rs-n">RBNZ</div></div>
+    <div class="rs"><div class="rs-l">1-Yr Fixed</div><div class="rs-v">6.59%</div><div class="rs-n">Best NZ</div></div>
+    <div class="rs"><div class="rs-l">LVR O-Occ</div><div class="rs-v">20%</div><div class="rs-n">Min Deposit</div></div>
+    <div class="rs"><div class="rs-l">DTI Cap</div><div class="rs-v gold">6×</div><div class="rs-n">RBNZ 2024</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- AI Status -->
+  <div class="sec" style="margin-top:0">AI Status <span class="badge-p">Powered by Claude</span></div>
+  <div class="ai-status">
+    <div class="ai-dot"></div>
+    <div class="ai-info">
+      <div class="ai-name">NZ Financial AI Advisor</div>
+      <div class="ai-desc">Trained on RBNZ rules · LVR · KiwiSaver · NZ tax · Mortgages</div>
+    </div>
+    <div class="ai-powered">Claude AI</div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    <div class="dt">⚠️ General Advice Only</div>
+    <div class="ds">This AI provides general NZ financial information only, not personalised financial advice. Always consult a registered NZ financial adviser (FAP licence) for decisions. Not regulated under the Financial Markets Conduct Act.</div>
+  </div>
+
+  <!-- Quick Topics -->
+  <div class="sec">Ask About <span class="badge-p">NZ Specific</span></div>
+  <div class="quick-topics">
+    <div class="topic-chip" onclick="askTopic('RBNZ OCR rate and what it means for my mortgage')">📊 OCR & Mortgages</div>
+    <div class="topic-chip" onclick="askTopic('NZ LVR restrictions for owner-occupier and investor in 2024')">🛡️ LVR Rules</div>
+    <div class="topic-chip" onclick="askTopic('How does KiwiSaver first home withdrawal work in NZ?')">🥝 KiwiSaver FHW</div>
+    <div class="topic-chip" onclick="askTopic('Bright-line test NZ property capital gains — what are the rules?')">🚫 Bright-Line Tax</div>
+    <div class="topic-chip" onclick="askTopic('Should I fix my NZ mortgage for 1 year or 2 years in 2025?')">📅 Fix or Float?</div>
+    <div class="topic-chip" onclick="askTopic('NZ debt-to-income DTI rules RBNZ 6x cap explained')">📈 DTI Cap 6×</div>
+    <div class="topic-chip" onclick="askTopic('Interest deductibility for NZ rental property — 2024 rules')">🏘️ Interest Deduct.</div>
+    <div class="topic-chip" onclick="askTopic('What is the NZ HomeStart Grant and how much can I get?')">🏡 HomeStart Grant</div>
+  </div>
+
+  <!-- Your Profile -->
+  <div class="sec">Your Financial Profile <span class="badge-p">For Better Advice</span></div>
+  <div class="profile-card">
+    <h3>👤 Tell the AI About You</h3>
+    <div class="profile-row">
+      <div class="profile-field">
+        <label>Buyer Type</label>
+        <select id="buyerType">
+          <option>First Home Buyer</option>
+          <option>Owner-Occupier</option>
+          <option>Investor</option>
+          <option>Refinancing</option>
+        </select>
+      </div>
+      <div class="profile-field">
+        <label>Approx. Income (NZD)</label>
+        <input type="text" id="income" placeholder="e.g. $120,000">
+      </div>
+    </div>
+    <div class="profile-row">
+      <div class="profile-field">
+        <label>Property Budget</label>
+        <input type="text" id="budget" placeholder="e.g. $850,000">
+      </div>
+      <div class="profile-field">
+        <label>Deposit Available</label>
+        <input type="text" id="depositAmt" placeholder="e.g. $170,000">
+      </div>
+    </div>
+    <div class="profile-field">
+      <label>City / Region</label>
+      <select id="region">
+        <option>Auckland</option>
+        <option>Wellington</option>
+        <option>Christchurch</option>
+        <option>Hamilton</option>
+        <option>Tauranga</option>
+        <option>Dunedin</option>
+        <option>Other NZ</option>
+      </select>
+    </div>
+    <button class="profile-save-btn" onclick="applyProfile()">✅ Apply Profile to AI Context</button>
+  </div>
+
+  <!-- Chat -->
+  <div class="sec">Chat with NZ AI Advisor <span class="badge-p">Live</span></div>
+  <div class="chat-window">
+    <div class="chat-header">
+      <div class="chat-avatar">🤖</div>
+      <div>
+        <div class="chat-hname">NZ Financial Advisor AI</div>
+        <div class="chat-hsub">RBNZ · LVR · KiwiSaver · Mortgages · Tax</div>
+      </div>
+      <button class="chat-clear" onclick="clearChat()">Clear</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <!-- Welcome message added by JS -->
+    </div>
+    <div class="chat-input-wrap">
+      <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask about NZ mortgages, LVR, KiwiSaver…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">↑</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇳🇿</div><div class="ni-lb">NZ Tools</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+  const SYSTEM_PROMPT = `You are a knowledgeable New Zealand financial information assistant specialising in NZ property, mortgages, banking, and personal finance. You have deep knowledge of:
+
+NZ CURRENT RATES & DATA (2025):
+- RBNZ OCR: 5.50% (as of 2024, cuts expected 2025)
+- 1-year fixed mortgage: ~6.59% (ANZ, ASB, BNZ), Kiwibank 6.55%
+- 2-year fixed: ~6.35%
+- Floating rate: ~8.64%
+- Construction loan: ~7.45%
+- Revolving credit: ~8.70%
+
+NZ RULES YOU KNOW:
+- LVR restrictions: Owner-occupier min 20% deposit, Investor min 35% deposit (RBNZ 2024)
+- DTI cap: 6× gross income (introduced RBNZ 2024)
+- KiwiSaver first home withdrawal: 3+ years membership, must leave $1,000
+- HomeStart Grant: $10,000 new build, $5,000 existing property (Kāinga Ora)
+- Bright-line test: 2-year for new builds, 5-year for existing (changed from 10-year in 2024)
+- Interest deductibility: Phased back in for rental properties 2023-2026 (80% in 2024, 100% from Apr 2025)
+- Ring-fencing rules: Rental losses cannot offset other income (2019 law)
+- NZ major lenders: ANZ, ASB, BNZ, Kiwibank, Westpac, SBS, TSB
+- Overseas Investment Act: Foreign buyers largely restricted from NZ residential property
+
+RESPONSE STYLE:
+- Be helpful, clear, and concise — this is a mobile app
+- Use NZD (NZ$) and NZ-specific context always
+- Format with short paragraphs and bullet points where helpful
+- Always add a brief note that this is general information, not financial advice
+- Keep responses focused and under 300 words unless the topic requires more detail
+- Reference real NZ institutions: RBNZ, Kāinga Ora, IRD, FMA when relevant`;
+
+  let conversationHistory = [];
+  let userProfile = {};
+
+  function addMessage(role, text, time) {
+    const msgs = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    const t = time || new Date().toLocaleTimeString('en-NZ', {hour:'2-digit', minute:'2-digit'});
+    div.innerHTML = `<div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div><div class="msg-time">${t}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById('chatMessages');
+    const ind = document.createElement('div');
+    ind.className = 'typing-indicator show';
+    ind.id = 'typingInd';
+    ind.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    msgs.appendChild(ind);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function hideTyping() {
+    const ind = document.getElementById('typingInd');
+    if (ind) ind.remove();
+  }
+
+  function applyProfile() {
+    userProfile = {
+      buyerType: document.getElementById('buyerType').value,
+      income: document.getElementById('income').value,
+      budget: document.getElementById('budget').value,
+      deposit: document.getElementById('depositAmt').value,
+      region: document.getElementById('region').value
+    };
+    addMessage('ai', `✅ Profile applied! I now know you're a <strong>${userProfile.buyerType}</strong> in <strong>${userProfile.region}</strong>${userProfile.income ? ` with income ${userProfile.income}` : ''}${userProfile.budget ? ` and budget ${userProfile.budget}` : ''}. I'll tailor my advice to your situation.`);
+  }
+
+  function buildSystemWithProfile() {
+    let sys = SYSTEM_PROMPT;
+    if (userProfile.buyerType) {
+      sys += `\n\nUSER PROFILE:\n- Buyer type: ${userProfile.buyerType}\n- Region: ${userProfile.region||'NZ'}\n- Income: ${userProfile.income||'not provided'}\n- Property budget: ${userProfile.budget||'not provided'}\n- Deposit: ${userProfile.deposit||'not provided'}\nTailor advice to this profile.`;
+    }
+    return sys;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    document.getElementById('sendBtn').disabled = true;
+    input.value = '';
+    input.style.height = 'auto';
+
+    addMessage('user', text);
+    conversationHistory.push({role:'user', content: text});
+
+    showTyping();
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: buildSystemWithProfile(),
+          messages: conversationHistory
+        })
+      });
+
+      const data = await response.json();
+      hideTyping();
+
+      let reply = '';
+      if (data.content && data.content.length > 0) {
+        reply = data.content.map(b => b.text || '').join('');
+      } else if (data.error) {
+        reply = `⚠️ AI unavailable: ${data.error.message}. Please check your connection or try again.`;
+      }
+
+      if (reply) {
+        conversationHistory.push({role:'assistant', content: reply});
+        addMessage('ai', reply);
+      }
+    } catch (err) {
+      hideTyping();
+      addMessage('ai', `⚠️ Could not connect to AI. Please ensure you have internet access and try again.\n\nIn the meantime, here are key NZ facts:\n• OCR: 5.50% (RBNZ)\n• Best 1-yr fixed: ~6.55% (Kiwibank)\n• Owner-occ LVR: 20% min deposit\n• DTI cap: 6× gross income`);
+    }
+
+    document.getElementById('sendBtn').disabled = false;
+  }
+
+  function askTopic(topic) {
+    document.getElementById('chatInput').value = topic;
+    sendMessage();
+    document.querySelectorAll('.topic-chip').forEach(c => c.classList.remove('active'));
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+  }
+
+  function clearChat() {
+    conversationHistory = [];
+    document.getElementById('chatMessages').innerHTML = '';
+    addWelcome();
+  }
+
+  function addWelcome() {
+    addMessage('ai',
+      `🇳🇿 Kia ora! I'm your NZ Financial AI Advisor, powered by Claude.\n\nI can help you understand:\n• 🏛️ RBNZ OCR & mortgage rates\n• 🛡️ LVR restrictions (20% / 35%)\n• 🥝 KiwiSaver first home withdrawal\n• 🏡 HomeStart Grant eligibility\n• 🚫 Bright-line test & NZ tax\n• 📈 DTI 6× cap rules\n• 💳 Refinancing & break fees\n\nFill in your profile above for personalised context, or tap a topic to start! What would you like to know?`,
+      'Now'
+    );
+  }
+
+  addWelcome();
+</script>
+</body>
+</html>

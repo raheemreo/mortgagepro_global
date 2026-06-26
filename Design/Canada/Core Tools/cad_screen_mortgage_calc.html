@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mortgage Calculator – Canada Tools</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:#F0F7F4;color:#0A2E1A;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0A2E1A 0%,#1A5C35 60%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;text-align:center;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:'Playfair Display',serif;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;}
+.rs-val.red{color:#FF8A9A;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.save-btn{display:flex;align-items:center;gap:5px;background:#1A5C35;color:#fff;border:none;border-radius:20px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.save-btn.saved{background:#6EDFA0;color:#0A2E1A;}
+.input-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(10,46,26,0.09);border:1px solid rgba(26,92,53,0.09);margin-bottom:12px;}
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+.field label{font-size:10px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;}
+.field-row{display:flex;align-items:center;background:#F0F7F4;border-radius:11px;border:1.5px solid rgba(26,92,53,0.12);overflow:hidden;transition:border-color 0.2s;}
+.field-row:focus-within{border-color:#1A5C35;}
+.field-prefix{padding:0 11px;font-size:13px;font-weight:700;color:#1A5C35;}
+.field-input{flex:1;background:none;border:none;outline:none;font-size:16px;font-weight:800;color:#0A2E1A;padding:12px 0;font-family:'DM Sans',sans-serif;}
+.field-suffix{padding:0 11px;font-size:12px;font-weight:600;color:#4A7C5F;}
+.slider{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;background:linear-gradient(to right,#1A5C35 0%,#1A5C35 var(--pct,50%),#D1E8DB var(--pct,50%),#D1E8DB 100%);outline:none;margin-top:8px;}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid #1A5C35;box-shadow:0 2px 6px rgba(26,92,53,0.3);cursor:pointer;}
+.toggle-row{display:flex;background:#F0F7F4;border-radius:11px;padding:4px;gap:4px;border:1.5px solid rgba(26,92,53,0.1);}
+.tog-btn{flex:1;padding:9px 4px;border-radius:8px;border:none;font-size:12px;font-weight:700;background:none;color:#4A7C5F;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.tog-btn.active{background:#1A5C35;color:#fff;box-shadow:0 2px 8px rgba(26,92,53,0.25);}
+.result-card{background:linear-gradient(145deg,#0A2E1A,#1A5C35);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(10,46,26,0.25);position:relative;overflow:hidden;}
+.result-card::before{content:'🍁';position:absolute;right:-5px;top:-10px;font-size:75px;opacity:0.07;}
+.rc-label{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.rc-main{font-size:38px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;margin:4px 0 2px;letter-spacing:-1px;}
+.rc-main span{font-size:18px;font-weight:600;vertical-align:super;font-family:'DM Sans',sans-serif;}
+.rc-sub{font-size:11px;color:rgba(255,255,255,0.55);}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px;}
+.rc-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:11px;padding:10px 12px;}
+.rc-box-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;}
+.rc-box-val{font-size:14px;font-weight:800;color:#fff;margin-top:2px;font-family:'Playfair Display',serif;}
+.rc-box-val.accent{color:#6EDFA0;}
+.rc-box-val.warn{color:#FF8A9A;}
+
+/* Stacked bar viz */
+.breakdown-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);}
+.stacked-bar{height:16px;border-radius:8px;overflow:hidden;display:flex;margin:14px 0 16px;}
+.stacked-seg{height:100%;transition:flex 0.6s cubic-bezier(.4,0,.2,1);}
+.bk-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(26,92,53,0.07);}
+.bk-row:last-child{border-bottom:none;}
+.bk-dot{width:10px;height:10px;border-radius:3px;margin-right:8px;flex-shrink:0;}
+.bk-lbl{font-size:12px;font-weight:600;color:#0A2E1A;display:flex;align-items:center;}
+.bk-right{text-align:right;}
+.bk-val{font-size:13px;font-weight:800;color:#0A2E1A;font-family:'Playfair Display',serif;display:block;}
+.bk-pct{font-size:10px;color:#4A7C5F;}
+
+/* Monthly cost breakdown */
+.monthly-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:12px;}
+.monthly-title{font-size:13px;font-weight:700;color:#0A2E1A;font-family:'Playfair Display',serif;margin-bottom:12px;}
+.m-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(26,92,53,0.06);}
+.m-row:last-child{border-bottom:none;}
+.m-lbl{font-size:12px;color:#4A7C5F;font-weight:500;}
+.m-val{font-size:13px;font-weight:800;color:#0A2E1A;font-family:'Playfair Display',serif;}
+.m-val.big{font-size:17px;color:#1A5C35;}
+
+.cmhc-badge{display:inline-flex;align-items:center;gap:5px;background:#FEF3C7;border:1px solid #F59E0B;border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:#92400E;margin-top:8px;}
+.calc-btn{width:100%;background:#C8102E;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(200,16,46,0.35);margin-top:14px;letter-spacing:0.2px;font-family:'DM Sans',sans-serif;transition:transform 0.1s;}
+.calc-btn:active{transform:scale(0.98);}
+
+.saved-list{margin-bottom:12px;}
+.saved-item{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 2px 8px rgba(10,46,26,0.07);border:1px solid rgba(26,92,53,0.08);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.saved-item-name{font-size:12px;font-weight:700;color:#0A2E1A;}
+.saved-item-sub{font-size:10px;color:#4A7C5F;margin-top:2px;}
+.saved-item-val{font-size:14px;font-weight:800;color:#1A5C35;font-family:'Playfair Display',serif;}
+.saved-item-freq{font-size:10px;color:#4A7C5F;}
+.saved-item-del{background:none;border:none;color:#ccc;font-size:16px;cursor:pointer;margin-left:8px;}
+.saved-item-del:hover{color:#C8102E;}
+.empty-saved{text-align:center;padding:18px;color:#4A7C5F;font-size:12px;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0A2E1A;color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:200;}
+.toast.show{opacity:1;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,92,53,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,46,26,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#4A7C5F;}
+.ni.active .ni-lb{color:#1A5C35;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏠</span><div class="hdr-title">Mortgage Calculator</div><div class="hdr-sub">CMHC · Amortization · BoC Rates</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">5-Yr Fixed</div><div class="rs-val red">4.99%</div><div class="rs-note">↓ -0.1 wk</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Variable</div><div class="rs-val">5.95%</div><div class="rs-note">Prime−0.5</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Stress Test</div><div class="rs-val">7.00%</div><div class="rs-note">Min rate</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Loan Details</div>
+  <div class="input-card">
+    <div class="field">
+      <label>Home Price</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="homePrice" type="number" value="650000" oninput="calculate()">
+      </div>
+      <input type="range" class="slider" id="hpSlider" min="100000" max="2000000" step="5000" value="650000" oninput="syncSlider('homePrice','hpSlider',100000,2000000);calculate()">
+    </div>
+    <div class="field">
+      <label>Down Payment</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="downAmt" type="number" value="65000" oninput="syncDown('amt');calculate()">
+        <div class="field-suffix" id="downPctLabel">10.0%</div>
+      </div>
+      <input type="range" class="slider" id="dpSlider" min="5" max="50" step="0.5" value="10" oninput="syncDown('pct');calculate()">
+    </div>
+    <div class="field">
+      <label>Interest Rate</label>
+      <div class="field-row">
+        <input class="field-input" id="rate" type="number" value="4.99" step="0.01" oninput="calculate()" style="padding-left:12px;">
+        <div class="field-suffix">% / yr</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Amortization Period</label>
+      <div class="toggle-row" id="amortToggle">
+        <button class="tog-btn" onclick="setAmort(15)">15 yr</button>
+        <button class="tog-btn" onclick="setAmort(20)">20 yr</button>
+        <button class="tog-btn active" onclick="setAmort(25)">25 yr</button>
+        <button class="tog-btn" onclick="setAmort(30)">30 yr</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Payment Frequency</label>
+      <div class="toggle-row" id="freqToggle">
+        <button class="tog-btn" onclick="setFreq('weekly')">Weekly</button>
+        <button class="tog-btn active" onclick="setFreq('biweekly')">Bi-wkly</button>
+        <button class="tog-btn" onclick="setFreq('monthly')">Monthly</button>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🍁 Calculate Payment</button>
+  </div>
+
+  <div class="sec-lbl">
+    <span>Your Result</span>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+  </div>
+  <div class="result-card">
+    <div class="rc-label" id="freqResultLabel">Estimated Bi-Weekly Payment</div>
+    <div class="rc-main"><span>CA$</span><span id="payAmt">1,416</span></div>
+    <div class="rc-sub" id="payFreqLabel">Every 2 weeks · 25-year amortization</div>
+    <div id="cmhcBadge" class="cmhc-badge">⚠️ CMHC Insurance Required (&lt;20% down)</div>
+    <div class="rc-grid">
+      <div class="rc-box"><div class="rc-box-lbl">Loan Amount</div><div class="rc-box-val accent" id="loanAmt">CA$601,175</div></div>
+      <div class="rc-box"><div class="rc-box-lbl">CMHC Premium</div><div class="rc-box-val warn" id="cmhcPrem">CA$16,175</div></div>
+      <div class="rc-box"><div class="rc-box-lbl">Total Interest</div><div class="rc-box-val warn" id="totalInt">CA$266,840</div></div>
+      <div class="rc-box"><div class="rc-box-lbl">Total Cost</div><div class="rc-box-val" id="totalCost">CA$933,015</div></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl" style="margin-top:16px">Monthly Cost Summary</div>
+  <div class="monthly-card">
+    <div class="monthly-title">What You Actually Pay Each Month</div>
+    <div class="m-row"><span class="m-lbl">Mortgage payment</span><span class="m-val big" id="moMortgage">CA$1,416</span></div>
+    <div class="m-row"><span class="m-lbl">Estimated property tax</span><span class="m-val" id="moTax">~CA$400</span></div>
+    <div class="m-row"><span class="m-lbl">Estimated heating</span><span class="m-val">~CA$150</span></div>
+    <div class="m-row"><span class="m-lbl" style="font-weight:800">Total housing cost (GDS)</span><span class="m-val" id="moTotal" style="color:#C8102E">CA$1,966</span></div>
+  </div>
+
+  <div class="sec-lbl">Payment Breakdown</div>
+  <div class="breakdown-card">
+    <div class="stacked-bar">
+      <div class="stacked-seg" id="segPrincipal" style="background:#1A5C35;flex:62"></div>
+      <div class="stacked-seg" id="segInterest" style="background:#C8102E;flex:29"></div>
+      <div class="stacked-seg" id="segCmhc" style="background:#F59E0B;flex:2"></div>
+      <div class="stacked-seg" id="segDown" style="background:#4A7C5F;flex:7"></div>
+    </div>
+    <div class="bk-row"><div class="bk-lbl"><div class="bk-dot" style="background:#1A5C35"></div>Principal</div><div class="bk-right"><span class="bk-val" id="bkPrincipal">CA$585,000</span><span class="bk-pct" id="bkPrinPct">62.7%</span></div></div>
+    <div class="bk-row"><div class="bk-lbl"><div class="bk-dot" style="background:#C8102E"></div>Total Interest</div><div class="bk-right"><span class="bk-val" id="bkInterest">CA$266,840</span><span class="bk-pct" id="bkIntPct">28.6%</span></div></div>
+    <div class="bk-row"><div class="bk-lbl"><div class="bk-dot" style="background:#F59E0B"></div>CMHC Insurance</div><div class="bk-right"><span class="bk-val" id="bkCmhc">CA$16,175</span><span class="bk-pct" id="bkCmhcPct">1.7%</span></div></div>
+    <div class="bk-row"><div class="bk-lbl"><div class="bk-dot" style="background:#4A7C5F"></div>Down Payment</div><div class="bk-right"><span class="bk-val" id="bkDown">CA$65,000</span><span class="bk-pct" id="bkDownPct">7.0%</span></div></div>
+  </div>
+
+  <div class="sec-lbl" style="margin-top:16px">
+    <span>📌 Saved Calculations</span>
+    <button class="save-btn" onclick="clearSaved()" style="background:#eee;color:#666;">Clear All</button>
+  </div>
+  <div class="saved-list" id="savedList"><div class="empty-saved">No saved calculations yet.</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🍁</div><div class="ni-lb">Canada</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let amort = 25, freq = 'biweekly';
+let savedCalcs = JSON.parse(localStorage.getItem('mortgage_calc_saved') || '[]');
+
+function setAmort(y){amort=y;document.querySelectorAll('#amortToggle .tog-btn').forEach((b,i)=>{b.classList.toggle('active',[15,20,25,30][i]===y)});calculate();}
+function setFreq(f){freq=f;document.querySelectorAll('#freqToggle .tog-btn').forEach((b,i)=>{b.classList.toggle('active',['weekly','biweekly','monthly'][i]===f)});calculate();}
+function syncSlider(inputId,sliderId,min,max){const v=document.getElementById(sliderId).value;document.getElementById(inputId).value=v;const pct=(v-min)/(max-min)*100;document.getElementById(sliderId).style.setProperty('--pct',pct+'%');}
+function syncDown(from){
+  const hp=parseFloat(document.getElementById('homePrice').value)||0;
+  if(from==='pct'){const pct=parseFloat(document.getElementById('dpSlider').value)||10;document.getElementById('downAmt').value=Math.round(hp*pct/100);document.getElementById('downPctLabel').textContent=pct.toFixed(1)+'%';const p=(pct-5)/(50-5)*100;document.getElementById('dpSlider').style.setProperty('--pct',p+'%');}
+  else{const amt=parseFloat(document.getElementById('downAmt').value)||0;const pct=hp>0?(amt/hp*100):0;document.getElementById('dpSlider').value=Math.min(50,Math.max(5,pct));document.getElementById('downPctLabel').textContent=pct.toFixed(1)+'%';}
+}
+function cmhcRate(pct){if(pct>=20)return 0;if(pct>=15)return 0.028;if(pct>=10)return 0.031;return 0.04;}
+function fmt(n){return 'CA$'+Math.round(n).toLocaleString('en-CA');}
+function calculate(){
+  const hp=parseFloat(document.getElementById('homePrice').value)||0;
+  const down=parseFloat(document.getElementById('downAmt').value)||0;
+  const annualRate=parseFloat(document.getElementById('rate').value)||4.99;
+  const downPct=hp>0?(down/hp*100):0;
+  const baseLoan=hp-down;
+  const cmhc=baseLoan*cmhcRate(downPct);
+  const loan=baseLoan+cmhc;
+  const ea=Math.pow(1+annualRate/200,2)-1;
+  let pmt,periods,label,freqSub;
+  if(freq==='monthly'){const r=ea/12;pmt=loan*r/(1-Math.pow(1+r,-amort*12));periods=amort*12;label='Monthly';freqSub='Every month';}
+  else if(freq==='biweekly'){const r=ea/26;pmt=loan*r/(1-Math.pow(1+r,-amort*26));periods=amort*26;label='Bi-Weekly';freqSub='Every 2 weeks';}
+  else{const r=ea/52;pmt=loan*r/(1-Math.pow(1+r,-amort*52));periods=amort*52;label='Weekly';freqSub='Every week';}
+  const totalPaid=pmt*periods;
+  const totalInterest=totalPaid-baseLoan-cmhc;
+  const totalCost=totalPaid+down;
+  // monthly equiv for summary
+  const moEquiv=freq==='monthly'?pmt:(freq==='biweekly'?pmt*26/12:pmt*52/12);
+
+  document.getElementById('freqResultLabel').textContent=`Estimated ${label} Payment`;
+  document.getElementById('payAmt').textContent=Math.round(pmt).toLocaleString('en-CA');
+  document.getElementById('payFreqLabel').textContent=`${freqSub} · ${amort}-year amortization`;
+  document.getElementById('loanAmt').textContent=fmt(loan);
+  document.getElementById('cmhcPrem').textContent=cmhc>0?fmt(cmhc):'None';
+  document.getElementById('totalInt').textContent=fmt(totalInterest);
+  document.getElementById('totalCost').textContent=fmt(totalCost);
+  document.getElementById('cmhcBadge').style.display=downPct<20?'inline-flex':'none';
+  document.getElementById('moMortgage').textContent=fmt(moEquiv);
+  document.getElementById('moTotal').textContent=fmt(moEquiv+400+150);
+
+  const bkTotal=baseLoan+totalInterest+cmhc+down;
+  const prinPct=baseLoan/bkTotal*100,intPct=totalInterest/bkTotal*100,cmhcPct=cmhc/bkTotal*100,downBPct=down/bkTotal*100;
+  document.getElementById('segPrincipal').style.flex=prinPct;
+  document.getElementById('segInterest').style.flex=intPct;
+  document.getElementById('segCmhc').style.flex=Math.max(cmhcPct,0.5);
+  document.getElementById('segDown').style.flex=downBPct;
+  document.getElementById('bkPrincipal').textContent=fmt(baseLoan);document.getElementById('bkPrinPct').textContent=prinPct.toFixed(1)+'%';
+  document.getElementById('bkInterest').textContent=fmt(totalInterest);document.getElementById('bkIntPct').textContent=intPct.toFixed(1)+'%';
+  document.getElementById('bkCmhc').textContent=cmhc>0?fmt(cmhc):'None';document.getElementById('bkCmhcPct').textContent=cmhcPct.toFixed(1)+'%';
+  document.getElementById('bkDown').textContent=fmt(down);document.getElementById('bkDownPct').textContent=downBPct.toFixed(1)+'%';
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function saveCalc(){
+  const hp=parseFloat(document.getElementById('homePrice').value)||0;
+  const down=parseFloat(document.getElementById('downAmt').value)||0;
+  const rate=parseFloat(document.getElementById('rate').value)||4.99;
+  const downPct=hp>0?(down/hp*100):0;
+  const baseLoan=hp-down;
+  const cmhc=baseLoan*cmhcRate(downPct);
+  const loan=baseLoan+cmhc;
+  const ea=Math.pow(1+rate/200,2)-1;
+  const r=ea/(freq==='monthly'?12:freq==='biweekly'?26:52);
+  const n=amort*(freq==='monthly'?12:freq==='biweekly'?26:52);
+  const pmt=loan*r/(1-Math.pow(1+r,-n));
+  const freqLabel=freq==='monthly'?'Monthly':freq==='biweekly'?'Bi-Weekly':'Weekly';
+  savedCalcs.unshift({id:Date.now(),price:hp,down,rate,amort,freq:freqLabel,pmt:Math.round(pmt),date:new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric'})});
+  if(savedCalcs.length>5)savedCalcs.pop();
+  localStorage.setItem('mortgage_calc_saved',JSON.stringify(savedCalcs));
+  renderSaved();showToast('✅ Calculation saved!');
+  const btn=document.getElementById('saveBtn');btn.classList.add('saved');btn.textContent='✓ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.textContent='🔖 Save';},2000);
+}
+function clearSaved(){savedCalcs=[];localStorage.setItem('mortgage_calc_saved',JSON.stringify(savedCalcs));renderSaved();showToast('🗑️ Cleared');}
+function renderSaved(){
+  const list=document.getElementById('savedList');
+  if(!savedCalcs.length){list.innerHTML='<div class="empty-saved">No saved calculations yet.</div>';return;}
+  list.innerHTML=savedCalcs.map(c=>`<div class="saved-item"><div><div class="saved-item-name">CA$${c.price.toLocaleString()} · ${c.rate}% · ${c.amort}yr</div><div class="saved-item-sub">${c.date} · ${c.freq}</div></div><div style="text-align:right"><div class="saved-item-val">CA$${c.pmt.toLocaleString()}</div><div class="saved-item-freq">/payment</div></div><button class="saved-item-del" onclick="delSaved(${c.id})">✕</button></div>`).join('');
+}
+function delSaved(id){savedCalcs=savedCalcs.filter(c=>c.id!==id);localStorage.setItem('mortgage_calc_saved',JSON.stringify(savedCalcs));renderSaved();}
+document.getElementById('hpSlider').style.setProperty('--pct','29%');
+document.getElementById('dpSlider').style.setProperty('--pct','11%');
+renderSaved();calculate();
+</script>
+</body>
+</html>

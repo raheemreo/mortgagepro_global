@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europe – Euribor Tracker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}.rs-val.red{color:#FF8A9A;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#003399;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+.live-card{background:linear-gradient(145deg,#003399,#1A0040);border-radius:20px;padding:18px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,51,153,0.28);margin-bottom:14px;}
+.live-card::before{content:'📈';position:absolute;right:10px;top:10px;font-size:60px;opacity:0.08;}
+.live-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;display:flex;align-items:center;gap:6px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,0.4)}50%{opacity:0.8;box-shadow:0 0 0 6px rgba(74,222,128,0)}}
+.live-title{font-size:22px;font-weight:800;color:#FFCC00;font-family:Georgia,serif;margin:8px 0 4px;}
+.live-sub{font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:14px;}
+.euribor-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.er-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 6px;text-align:center;cursor:pointer;transition:background 0.2s;}
+.er-box.selected{background:rgba(255,204,0,0.2);border-color:rgba(255,204,0,0.5);}
+.er-tenor{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px;}
+.er-rate{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.er-chg{font-size:9px;margin-top:2px;}
+.er-chg.up{color:#4ade80;}.er-chg.dn{color:#FF8A9A;}
+
+/* CHART */
+.chart-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;margin-bottom:2px;}
+.chart-sub{font-size:10px;color:#6B21A8;margin-bottom:12px;}
+.period-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.ptab{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid rgba(0,51,153,0.15);color:#6B21A8;background:#F7F3FF;}
+.ptab.active{background:#003399;color:#FFCC00;border-color:#003399;}
+
+/* IMPACT CALC */
+.impact-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.impact-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;margin-bottom:10px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.input-group label{font-size:10px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;}
+.input-group input,.input-group select{background:#F7F3FF;border:1.5px solid rgba(0,51,153,0.12);border-radius:10px;padding:9px 11px;font-size:14px;font-weight:700;color:#1A0040;outline:none;width:100%;}
+.input-group input:focus,.input-group select:focus{border-color:#003399;}
+
+/* PRIMARY CALCULATE BUTTON */
+.calc-btn-primary{width:100%;background:linear-gradient(135deg,#FFCC00,#F59E0B);border:none;border-radius:16px;padding:16px;font-size:15px;font-weight:900;color:#1A0040;cursor:pointer;box-shadow:0 6px 20px rgba(255,204,0,0.4);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform 0.15s;margin-bottom:4px;}
+.calc-btn-primary:active{transform:scale(0.97);}
+
+.impact-result{margin-top:14px;display:none;}
+.ir-card-hero{background:linear-gradient(145deg,#003399,#1A0040);border-radius:14px;padding:14px;margin-bottom:10px;text-align:center;}
+.ir-hero-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.6px;}
+.ir-hero-val{font-size:30px;font-weight:900;color:#FFCC00;font-family:Georgia,serif;margin:4px 0 2px;}
+.ir-hero-sub{font-size:11px;color:rgba(255,255,255,0.5);}
+.ir-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.ir-stat{background:#F7F3FF;border-radius:12px;padding:10px 12px;}
+.ir-stat-lbl{font-size:10px;color:#6B21A8;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+.ir-stat-val{font-size:15px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.ir-stat-val.pos{color:#166534;}.ir-stat-val.neg{color:#BE123C;}
+.ir-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(0,51,153,0.07);}
+.ir-row:last-child{border-bottom:none;}
+.ir-lbl{font-size:12px;color:#1A0040;font-weight:600;}
+.ir-val{font-size:14px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+
+/* SAVE BAR */
+.save-bar{background:#fff;border-radius:15px;padding:12px 15px;box-shadow:0 3px 14px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.save-bar .sb-txt{flex:1;}
+.save-bar .sb-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.save-bar .sb-sub{font-size:10px;color:#6B21A8;}
+.save-btn-bar{background:linear-gradient(135deg,#003399,#1A0040);color:#FFCC00;border:none;border-radius:10px;padding:9px 15px;font-size:12px;font-weight:800;cursor:pointer;}
+
+.info-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.stat-box{background:#fff;border-radius:15px;padding:13px;box-shadow:0 3px 12px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);}
+.stat-lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#6B21A8;margin-bottom:4px;}
+.stat-val{font-size:17px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.stat-sub{font-size:9px;color:#94a3b8;margin-top:2px;}
+
+/* ECB TIMELINE */
+.ecb-event{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid rgba(0,51,153,0.07);}
+.ecb-event:last-child{border-bottom:none;}
+.ecb-dot{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.ecb-dot.hold{background:#EEF2FF;}.ecb-dot.cut{background:#F0FDF4;}.ecb-dot.hike{background:#FFF1F2;}
+.ecb-info{flex:1;}
+.ecb-date{font-size:10px;color:#9ca3af;font-weight:600;}
+.ecb-action{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.ecb-rate-shown{font-size:11px;color:#6B21A8;margin-top:2px;}
+.ecb-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-left:8px;}
+.badge-hold{background:#EEF2FF;color:#3730A3;}.badge-cut{background:#F0FDF4;color:#166634;}.badge-hike{background:#FFF1F2;color:#BE123C;}
+
+/* SCENARIO COMPARISON */
+.scenario-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;}
+.sc-box{background:#F7F3FF;border-radius:12px;padding:10px 8px;text-align:center;border:1.5px solid transparent;}
+.sc-box.current{border-color:#003399;background:#EEF2FF;}
+.sc-lbl{font-size:9px;color:#6B21A8;text-transform:uppercase;font-weight:700;margin-bottom:3px;}
+.sc-rate{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.sc-pay{font-size:11px;font-weight:700;color:#003399;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#003399;color:#FFCC00;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:999;transition:transform 0.3s;box-shadow:0 4px 20px rgba(0,51,153,0.3);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp 0.4s ease both;}
+.anim-2{animation:fadeUp 0.4s 0.08s ease both;}
+.anim-3{animation:fadeUp 0.4s 0.16s ease both;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🔄</span><div class="hdr-title">Euribor Tracker</div><div class="hdr-sub">Variable Rate Index · ECB Linked</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">1M Euribor</div><div class="rs-val grn">3.87%</div><div class="rs-note">Jun 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">3M Euribor</div><div class="rs-val">3.65%</div><div class="rs-note">Jun 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">6M Euribor</div><div class="rs-val gold">3.42%</div><div class="rs-note">Jun 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">12M Euribor</div><div class="rs-val red">3.17%</div><div class="rs-note">Jun 2025</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Live Euribor Rates <span class="more">All tenors →</span></div>
+  <div class="live-card anim">
+    <div class="live-tag"><div class="live-dot"></div>Live data · June 2025</div>
+    <div class="live-title">Euribor at a Glance</div>
+    <div class="live-sub">European Interbank Offered Rate — tap a tenor to use it in the impact calculator</div>
+    <div class="euribor-row">
+      <div class="er-box" onclick="selectTenor('1w',3.91,this)"><div class="er-tenor">1W</div><div class="er-rate">3.91%</div><div class="er-chg up">▲0.01</div></div>
+      <div class="er-box" onclick="selectTenor('1m',3.87,this)"><div class="er-tenor">1M</div><div class="er-rate">3.87%</div><div class="er-chg up">▲0.02</div></div>
+      <div class="er-box" onclick="selectTenor('3m',3.65,this)"><div class="er-tenor">3M</div><div class="er-rate">3.65%</div><div class="er-chg dn">▼0.03</div></div>
+      <div class="er-box" onclick="selectTenor('6m',3.42,this)"><div class="er-tenor">6M</div><div class="er-rate">3.42%</div><div class="er-chg dn">▼0.04</div></div>
+    </div>
+    <div class="euribor-row" style="margin-top:6px">
+      <div class="er-box" onclick="selectTenor('9m',3.28,this)"><div class="er-tenor">9M</div><div class="er-rate">3.28%</div><div class="er-chg dn">▼0.05</div></div>
+      <div class="er-box selected" onclick="selectTenor('12m',3.17,this)"><div class="er-tenor">12M</div><div class="er-rate">3.17%</div><div class="er-chg dn">▼0.06</div></div>
+      <div class="er-box"><div class="er-tenor">ECB</div><div class="er-rate">4.00%</div><div class="er-chg" style="color:#FFCC00">●hold</div></div>
+      <div class="er-box"><div class="er-tenor">Peak</div><div class="er-rate">4.19%</div><div class="er-chg" style="color:rgba(255,255,255,0.4)">Oct '23</div></div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="sec-lbl anim-2">Rate History <span class="more">Data source: ECB</span></div>
+  <div class="chart-card anim-2">
+    <div class="chart-title">6-Month Euribor Trend</div>
+    <div class="chart-sub">2024–2025 rate trajectory</div>
+    <div class="period-tabs">
+      <div class="ptab active" onclick="switchPeriod('6m',this)">6M</div>
+      <div class="ptab" onclick="switchPeriod('1y',this)">1Y</div>
+      <div class="ptab" onclick="switchPeriod('2y',this)">2Y</div>
+      <div class="ptab" onclick="switchPeriod('5y',this)">5Y</div>
+    </div>
+    <svg id="euriborChart" viewBox="0 0 360 160" style="width:100%;height:160px;"></svg>
+    <!-- Tooltip -->
+    <div id="chartTooltip" style="text-align:center;font-size:11px;font-weight:700;color:#003399;min-height:16px;margin-top:4px;font-family:Georgia,serif;"></div>
+  </div>
+
+  <!-- KEY STATS -->
+  <div class="sec-lbl anim-3">Key Statistics</div>
+  <div class="info-row anim-3">
+    <div class="stat-box"><div class="stat-lbl">52-Week High</div><div class="stat-val">4.19%</div><div class="stat-sub">6M Euribor, Oct 2023</div></div>
+    <div class="stat-box"><div class="stat-lbl">52-Week Low</div><div class="stat-val">3.17%</div><div class="stat-sub">6M Euribor, Jun 2025</div></div>
+    <div class="stat-box"><div class="stat-lbl">YTD Change</div><div class="stat-val" style="color:#166534">−0.72%</div><div class="stat-sub">vs Jan 2025 (3.89%)</div></div>
+    <div class="stat-box"><div class="stat-lbl">Next ECB Meet</div><div class="stat-val" style="font-size:13px">17 Jul</div><div class="stat-sub">2025 — rate decision</div></div>
+  </div>
+
+  <!-- MORTGAGE IMPACT CALC -->
+  <div class="sec-lbl">Mortgage Impact Calculator</div>
+  <div class="impact-card">
+    <div class="impact-title">💶 How does Euribor affect my payment?</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Loan Balance (€)</label>
+        <input type="number" id="impLoan" value="250000" step="1000">
+      </div>
+      <div class="input-group">
+        <label>Tenor</label>
+        <select id="impTenor">
+          <option value="1m">1M Euribor (3.87%)</option>
+          <option value="3m">3M Euribor (3.65%)</option>
+          <option value="6m" selected>6M Euribor (3.42%)</option>
+          <option value="12m">12M Euribor (3.17%)</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Your Spread (%)</label>
+        <input type="number" id="impSpread" value="1.50" step="0.01" min="0" max="5">
+      </div>
+      <div class="input-group">
+        <label>Remaining Term</label>
+        <select id="impTerm">
+          <option value="10">10 yrs</option>
+          <option value="15">15 yrs</option>
+          <option value="20" selected>20 yrs</option>
+          <option value="25">25 yrs</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- PRIMARY CALCULATE BUTTON -->
+    <button class="calc-btn-primary" onclick="calcImpact()">
+      <span style="font-size:18px">📊</span> Calculate Impact
+    </button>
+
+    <div class="impact-result" id="impResult">
+      <!-- Hero monthly payment -->
+      <div class="ir-card-hero">
+        <div class="ir-hero-lbl">Monthly Payment</div>
+        <div class="ir-hero-val" id="irMonthlyHero">€1,638</div>
+        <div class="ir-hero-sub" id="irHeroSub">at 4.92% (Euribor + Spread)</div>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="ir-stats-grid">
+        <div class="ir-stat"><div class="ir-stat-lbl">Current Euribor</div><div class="ir-stat-val" id="irCurr">3.42%</div></div>
+        <div class="ir-stat"><div class="ir-stat-lbl">Your Total Rate</div><div class="ir-stat-val" id="irTotal">4.92%</div></div>
+        <div class="ir-stat"><div class="ir-stat-lbl">vs Peak Saving/mo</div><div class="ir-stat-val pos" id="irVsPeak">−€97</div></div>
+        <div class="ir-stat"><div class="ir-stat-lbl">Annual Saving</div><div class="ir-stat-val pos" id="irSaving">−€1,164/yr</div></div>
+      </div>
+
+      <!-- Scenario comparison: -1%, current, +1% -->
+      <div style="font-size:12px;font-weight:800;color:#1A0040;margin-bottom:6px;">Rate Scenario Comparison</div>
+      <div class="scenario-grid">
+        <div class="sc-box"><div class="sc-lbl">If −1% cut</div><div class="sc-rate" id="sc1Rate">3.92%</div><div class="sc-pay" id="sc1Pay">€1,582/mo</div></div>
+        <div class="sc-box current"><div class="sc-lbl">Current</div><div class="sc-rate" id="sc2Rate">4.92%</div><div class="sc-pay" id="sc2Pay">€1,638/mo</div></div>
+        <div class="sc-box"><div class="sc-lbl">If +1% hike</div><div class="sc-rate" id="sc3Rate">5.92%</div><div class="sc-pay" id="sc3Pay">€1,697/mo</div></div>
+      </div>
+
+      <!-- Save result -->
+      <div style="margin-top:12px;">
+        <button class="calc-btn-primary" style="background:linear-gradient(135deg,#003399,#1A0040);color:#FFCC00;box-shadow:0 4px 16px rgba(0,51,153,0.3);" onclick="saveAlert()">
+          💾 Save This Analysis
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ECB DECISIONS -->
+  <div class="sec-lbl">ECB Rate Decisions 2024–2025</div>
+  <div class="chart-card">
+    <div class="ecb-event">
+      <div class="ecb-dot cut">↓</div>
+      <div class="ecb-info"><div class="ecb-date">12 Jun 2025</div><div class="ecb-action">Rate Cut −0.25% <span class="ecb-badge badge-cut">CUT</span></div><div class="ecb-rate-shown">Deposit rate → 3.50%</div></div>
+    </div>
+    <div class="ecb-event">
+      <div class="ecb-dot cut">↓</div>
+      <div class="ecb-info"><div class="ecb-date">17 Apr 2025</div><div class="ecb-action">Rate Cut −0.25% <span class="ecb-badge badge-cut">CUT</span></div><div class="ecb-rate-shown">Deposit rate → 3.75%</div></div>
+    </div>
+    <div class="ecb-event">
+      <div class="ecb-dot hold">●</div>
+      <div class="ecb-info"><div class="ecb-date">30 Jan 2025</div><div class="ecb-action">Rate Hold <span class="ecb-badge badge-hold">HOLD</span></div><div class="ecb-rate-shown">Deposit rate → 4.00%</div></div>
+    </div>
+    <div class="ecb-event">
+      <div class="ecb-dot cut">↓</div>
+      <div class="ecb-info"><div class="ecb-date">12 Dec 2024</div><div class="ecb-action">Rate Cut −0.25% <span class="ecb-badge badge-cut">CUT</span></div><div class="ecb-rate-shown">Deposit rate → 4.00%</div></div>
+    </div>
+    <div class="ecb-event">
+      <div class="ecb-dot cut">↓</div>
+      <div class="ecb-info"><div class="ecb-date">06 Jun 2024</div><div class="ecb-action">First Cut −0.25% <span class="ecb-badge badge-cut">CUT</span></div><div class="ecb-rate-shown">Deposit rate → 4.50% — cycle start</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const DATA = {
+  '6m':{labels:['Jun 24','Jul 24','Aug 24','Sep 24','Oct 24','Nov 24','Dec 24','Jan 25','Feb 25','Mar 25','Apr 25','May 25','Jun 25'],vals:[3.82,3.76,3.68,3.58,3.52,3.46,3.44,3.89,3.76,3.65,3.54,3.47,3.42]},
+  '1y':{labels:['Jun 23','Sep 23','Dec 23','Mar 24','Jun 24','Sep 24','Dec 24','Mar 25','Jun 25'],vals:[3.55,4.19,3.99,3.94,3.82,3.58,3.44,3.65,3.42]},
+  '2y':{labels:['Jun 22','Dec 22','Jun 23','Dec 23','Jun 24','Dec 24','Jun 25'],vals:[0.11,2.54,3.55,3.99,3.82,3.44,3.42]},
+  '5y':{labels:['2020','2021','2022','2023','2024','2025'],vals:[-0.5,-0.5,0.1,3.99,3.82,3.42]}
+};
+
+const EURIBOR = {'1w':3.91,'1m':3.87,'3m':3.65,'6m':3.42,'9m':3.28,'12m':3.17};
+let selectedTenorRate=3.42;
+
+function selectTenor(tenor,rate,el){
+  document.querySelectorAll('.er-box').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTenorRate=rate;
+  // auto-set tenor in select if it exists
+  const sel=document.getElementById('impTenor');
+  const map={'1m':'1m','3m':'3m','6m':'6m','12m':'12m'};
+  if(map[tenor]) sel.value=map[tenor];
+}
+
+function switchPeriod(p,el){
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  drawChart(p);
+}
+
+function drawChart(period){
+  const d=DATA[period];
+  const svg=document.getElementById('euriborChart');
+  const W=360,H=160,pl=36,pr=10,pt=14,pb=28;
+  const vals=d.vals; const labels=d.labels; const n=vals.length;
+  const minV=Math.min(...vals)-0.3; const maxV=Math.max(...vals)+0.3;
+  function cx(i){return pl+(i/(n-1))*(W-pl-pr);}
+  function cy(v){return pt+(1-(v-minV)/(maxV-minV))*(H-pt-pb);}
+  const path='M'+vals.map((v,i)=>cx(i)+','+cy(v)).join(' L');
+  const area=path+` L${cx(n-1)},${cy(minV)} L${cx(0)},${cy(minV)} Z`;
+
+  // Zero line if negative values
+  const zeroLine=minV<0?`<line x1="${pl}" y1="${cy(0)}" x2="${W-pr}" y2="${cy(0)}" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4,3"/>`:'' ;
+
+  let yTicks='';
+  const step=(maxV-minV)/4;
+  for(let i=0;i<=4;i++){
+    const v=minV+i*step;
+    yTicks+=`<text x="${pl-4}" y="${cy(v)+4}" text-anchor="end" font-size="9" fill="#9ca3af">${v.toFixed(1)}%</text>`;
+    yTicks+=`<line x1="${pl}" y1="${cy(v)}" x2="${W-pr}" y2="${cy(v)}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+  }
+
+  let xLabels='';
+  labels.forEach((l,i)=>{
+    if(i%Math.ceil(n/5)===0||i===n-1)
+      xLabels+=`<text x="${cx(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="#9ca3af">${l}</text>`;
+  });
+
+  // Dots for each data point
+  let dots='';
+  vals.forEach((v,i)=>{
+    dots+=`<circle cx="${cx(i)}" cy="${cy(v)}" r="3" fill="#fff" stroke="#003399" stroke-width="1.5" style="cursor:pointer" onmouseover="document.getElementById('chartTooltip').textContent='${labels[i]}: ${v}%'" onmouseout="document.getElementById('chartTooltip').textContent=''"/>`;
+  });
+
+  const lx=cx(n-1),ly=cy(vals[n-1]);
+  svg.innerHTML=`<defs>
+    <linearGradient id="gE" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#003399" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#003399" stop-opacity="0.02"/>
+    </linearGradient></defs>
+    ${yTicks}${xLabels}${zeroLine}
+    <path d="${area}" fill="url(#gE)"/>
+    <path d="${path}" fill="none" stroke="#003399" stroke-width="2.5" stroke-linejoin="round"/>
+    ${dots}
+    <circle cx="${lx}" cy="${ly}" r="6" fill="#003399" stroke="#fff" stroke-width="2.5"/>
+    <text x="${lx}" y="${ly-12}" text-anchor="middle" font-size="10" fill="#003399" font-weight="800">${vals[n-1].toFixed(2)}%</text>`;
+}
+
+function calcImpact(){
+  const loan=parseFloat(document.getElementById('impLoan').value)||0;
+  if(loan<=0){showToast('⚠️ Enter a valid loan balance');return;}
+  const tenor=document.getElementById('impTenor').value;
+  const spread=parseFloat(document.getElementById('impSpread').value)||0;
+  const term=parseInt(document.getElementById('impTerm').value);
+  const eurRate=EURIBOR[tenor]||3.42;
+  const totalRate=(eurRate+spread)/100/12;
+  const n=term*12;
+  const monthly=loan*(totalRate*Math.pow(1+totalRate,n))/(Math.pow(1+totalRate,n)-1);
+  const peakRate=(4.19+spread)/100/12;
+  const monthlyPeak=loan*(peakRate*Math.pow(1+peakRate,n))/(Math.pow(1+peakRate,n)-1);
+  const diff=monthly-monthlyPeak;
+  const fmtC=v=>new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
+
+  // Scenarios: -1%, current, +1%
+  function pay(addRate){
+    const r=(eurRate+spread+addRate)/100/12;
+    return loan*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+  }
+  const payMinus=pay(-1); const payPlus=pay(1);
+
+  document.getElementById('irMonthlyHero').textContent=fmtC(monthly);
+  document.getElementById('irHeroSub').textContent=`at ${(eurRate+spread).toFixed(2)}% (${eurRate}% Euribor + ${spread}% spread)`;
+  document.getElementById('irCurr').textContent=eurRate.toFixed(2)+'%';
+  document.getElementById('irTotal').textContent=(eurRate+spread).toFixed(2)+'%';
+  document.getElementById('irVsPeak').textContent=(diff<0?'':'+')+fmtC(diff)+'/mo';
+  document.getElementById('irSaving').textContent=(diff*12<0?'':'+')+fmtC(diff*12)+'/yr';
+  document.getElementById('irVsPeak').className='ir-stat-val '+(diff<0?'pos':'neg');
+  document.getElementById('irSaving').className='ir-stat-val '+(diff*12<0?'pos':'neg');
+  document.getElementById('sc1Rate').textContent=(eurRate+spread-1).toFixed(2)+'%';
+  document.getElementById('sc1Pay').textContent=fmtC(payMinus)+'/mo';
+  document.getElementById('sc2Rate').textContent=(eurRate+spread).toFixed(2)+'%';
+  document.getElementById('sc2Pay').textContent=fmtC(monthly)+'/mo';
+  document.getElementById('sc3Rate').textContent=(eurRate+spread+1).toFixed(2)+'%';
+  document.getElementById('sc3Pay').textContent=fmtC(payPlus)+'/mo';
+  document.getElementById('impResult').style.display='block';
+  document.getElementById('impResult').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function saveAlert(){
+  const d={saved:new Date().toISOString(),tenor:document.getElementById('impTenor').value,monthly:document.getElementById('irMonthlyHero').textContent};
+  localStorage.setItem('eu_euribor_alert',JSON.stringify(d));
+  showToast('✅ Analysis saved!');
+}
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+drawChart('6m');
+</script>
+</body>
+</html>

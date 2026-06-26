@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stamp Duty Calculator – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;
+  min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+  radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);
+  pointer-events:none;z-index:0;}
+
+/* HEADER */
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);
+  padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;
+  font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;
+  background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0;padding:11px 14px;
+  display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;
+  height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;
+  letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+/* CONTENT */
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;
+  letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;
+  justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .more{font-size:11px;font-weight:600;color:var(--saffron);text-transform:none;
+  letter-spacing:0;cursor:pointer;}
+
+/* FORM CARD */
+.fcard{background:var(--card);border-radius:20px;padding:18px;
+  box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+
+.field{margin-bottom:14px;}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.6px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field select,.field input{width:100%;background:#FFF3E8;border:1.5px solid rgba(255,107,0,0.18);
+  border-radius:12px;padding:12px 14px;font-size:14px;font-weight:700;color:var(--navy);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;appearance:none;
+  -webkit-appearance:none;}
+.field select:focus,.field input:focus{border-color:var(--saffron);
+  box-shadow:0 0 0 3px rgba(255,107,0,0.10);}
+.sel-wrap{position:relative;}
+.sel-wrap::after{content:'▼';position:absolute;right:14px;top:50%;
+  transform:translateY(-50%);font-size:10px;color:var(--muted);pointer-events:none;}
+
+.radio-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rb-opt{background:#FFF3E8;border:1.5px solid rgba(255,107,0,0.18);border-radius:12px;
+  padding:10px 12px;cursor:pointer;text-align:center;transition:all .15s;}
+.rb-opt.active{background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border-color:var(--saffron);box-shadow:0 4px 14px rgba(255,107,0,0.30);}
+.rb-opt span{font-size:12px;font-weight:800;color:var(--navy);}
+.rb-opt.active span{color:#fff;}
+.rb-opt small{font-size:9px;color:var(--muted);display:block;margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.rb-opt.active small{color:rgba(255,255,255,0.75);}
+
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;
+  color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;margin-top:6px;}
+
+/* RESULT CARD */
+.result-card{background:linear-gradient(148deg,var(--navy),var(--chakra));
+  border-radius:20px;padding:20px;box-shadow:var(--sh2);margin-bottom:14px;
+  position:relative;overflow:hidden;}
+.result-card::after{content:'☸';position:absolute;right:12px;bottom:8px;
+  font-size:64px;color:rgba(255,255,255,0.05);}
+.rc-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;
+  letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.rc-total{font-size:28px;font-weight:800;color:var(--ochre-lt);margin:6px 0 14px;line-height:1;}
+.rc-total small{font-size:13px;color:rgba(255,255,255,0.50);}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rc-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);
+  border-radius:12px;padding:10px 12px;}
+.rc-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;
+  font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.5px;}
+.rc-box .v{font-size:14px;font-weight:800;color:#fff;}
+.rc-box .v.grn{color:#86EFAC;}
+.rc-box .v.saf{color:var(--ochre-lt);}
+
+/* PIE CHART */
+.chart-card{background:var(--card);border-radius:20px;padding:18px;
+  box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;}
+.chart-title span{font-size:10px;font-weight:600;color:var(--saffron);font-family:'Trebuchet MS',sans-serif;}
+.pie-wrap{display:flex;align-items:center;gap:16px;}
+.pie-svg{flex-shrink:0;}
+.legend{flex:1;display:flex;flex-direction:column;gap:8px;}
+.leg-item{display:flex;align-items:center;gap:8px;}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.leg-lbl{font-size:10px;font-weight:700;color:var(--navy);}
+.leg-val{font-size:10px;font-weight:800;color:var(--saffron);margin-left:auto;
+  font-family:'Trebuchet MS',sans-serif;}
+
+/* BAR CHART – state comparison */
+.bar-chart{display:flex;flex-direction:column;gap:9px;}
+.bar-row{display:flex;align-items:center;gap:8px;}
+.bar-state{font-size:10px;font-weight:700;color:var(--navy);width:80px;flex-shrink:0;}
+.bar-track{flex:1;height:28px;background:#FFF3E8;border-radius:8px;overflow:hidden;
+  position:relative;}
+.bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;
+  padding-left:10px;font-size:10px;font-weight:800;color:#fff;
+  transition:width .6s ease;}
+.bar-pct{font-size:10px;font-weight:800;color:var(--muted);width:38px;text-align:right;
+  flex-shrink:0;font-family:'Trebuchet MS',sans-serif;}
+
+/* SAVE BUTTON */
+.save-btn{width:100%;background:linear-gradient(135deg,var(--green),var(--green2));
+  border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;
+  color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(4,106,56,0.35);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;
+  display:flex;align-items:center;justify-content:center;gap:8px;}
+
+/* INFO BANNER */
+.info-banner{background:linear-gradient(135deg,#FFF3E0,#FFEDD5);
+  border:1.5px solid #FDBA74;border-radius:17px;padding:14px 15px;
+  display:flex;align-items:center;gap:11px;margin-bottom:14px;}
+.ib-icon{font-size:26px;}
+.ib-title{font-size:12px;font-weight:800;color:#9A3412;}
+.ib-sub{font-size:9.5px;color:#C2410C;margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+
+/* STATE TABLE */
+.state-table{background:var(--card);border-radius:20px;overflow:hidden;
+  box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.st-header{background:linear-gradient(135deg,var(--navy),var(--chakra));
+  padding:12px 15px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;}
+.st-hcell{font-size:9px;font-weight:800;color:rgba(255,255,255,0.60);
+  text-transform:uppercase;letter-spacing:.4px;font-family:'Trebuchet MS',sans-serif;}
+.st-row{padding:11px 15px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;
+  border-bottom:1px solid var(--border);}
+.st-row:last-child{border-bottom:none;}
+.st-row:nth-child(even){background:rgba(255,107,0,0.03);}
+.st-cell{font-size:10.5px;font-weight:700;color:var(--navy);}
+.st-cell.rate{font-weight:800;color:var(--saffron);}
+.st-cell.note{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:420px;background:var(--card);
+  border-top:1px solid var(--border);display:flex;
+  padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+.ni.active .ni-ic{filter:drop-shadow(0 0 4px rgba(255,107,0,0.5));}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  background:var(--green);color:#fff;padding:10px 22px;border-radius:30px;
+  font-size:13px;font-weight:700;box-shadow:var(--sh2);z-index:200;
+  opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ Calculation Saved!</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏷️</div>
+      <div class="hdr-title">Stamp <span>Duty Calc</span></div>
+      <div class="hdr-sub">State-wise Stamp Duty · Registration Fee · Total Cost</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Maharashtra</div><div class="rs-v saf">5–6%</div><div class="rs-n">+ Metro</div></div>
+    <div class="rs"><div class="rs-l">Delhi</div><div class="rs-v saf">4–6%</div><div class="rs-n">Women 4%</div></div>
+    <div class="rs"><div class="rs-l">Karnataka</div><div class="rs-v saf">5%</div><div class="rs-n">+Reg 1%</div></div>
+    <div class="rs"><div class="rs-l">Tamil Nadu</div><div class="rs-v saf">7%</div><div class="rs-n">+Reg 4%</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- INPUT FORM -->
+  <div class="sec fu1" style="margin-top:0">Property Details <span class="more">All States →</span></div>
+
+  <div class="fcard fu1">
+    <div class="field">
+      <label>Select State</label>
+      <div class="sel-wrap">
+        <select id="stateSelect" onchange="updateStateRates()">
+          <option value="MH">Maharashtra</option>
+          <option value="DL">Delhi</option>
+          <option value="KA">Karnataka</option>
+          <option value="TN">Tamil Nadu</option>
+          <option value="TS">Telangana</option>
+          <option value="GJ">Gujarat</option>
+          <option value="UP">Uttar Pradesh</option>
+          <option value="WB">West Bengal</option>
+          <option value="RJ">Rajasthan</option>
+          <option value="PB">Punjab</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Owner Gender</label>
+      <div class="radio-row">
+        <div class="rb-opt active" id="rb-male" onclick="selectGender('male')">
+          <span>👨 Male</span><small>Standard rate</small>
+        </div>
+        <div class="rb-opt" id="rb-female" onclick="selectGender('female')">
+          <span>👩 Female</span><small>Concessional rate</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Property Type</label>
+      <div class="sel-wrap">
+        <select id="propType">
+          <option value="residential">Residential Flat/House</option>
+          <option value="commercial">Commercial Property</option>
+          <option value="land">Agricultural / Plot</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Property Value (₹)</label>
+      <input type="number" id="propValue" value="5000000" min="100000" step="100000"
+        oninput="calculate()" placeholder="Enter property value"/>
+    </div>
+
+    <div class="field">
+      <label>Area (sq ft) — for reference</label>
+      <input type="number" id="propArea" value="1000" min="100" step="50"
+        oninput="calculate()" placeholder="Enter area in sq ft"/>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">☸ Calculate Stamp Duty & Fees</button>
+  </div>
+
+  <!-- RESULT CARD -->
+  <div class="sec fu2">Calculation Result <span class="more">Save →</span></div>
+  <div class="result-card fu2" id="resultCard">
+    <div class="rc-tag">Total Buying Cost Breakdown</div>
+    <div class="rc-total" id="rcTotal">₹3,30,000 <small>/ total fees</small></div>
+    <div class="rc-grid">
+      <div class="rc-box"><label>Stamp Duty</label><div class="v saf" id="rcStamp">₹2,50,000</div></div>
+      <div class="rc-box"><label>Registration Fee</label><div class="v" id="rcReg">₹30,000</div></div>
+      <div class="rc-box"><label>Stamp Duty %</label><div class="v grn" id="rcPct">5.00%</div></div>
+      <div class="rc-box"><label>Effective Cost</label><div class="v" id="rcEff">6.60%</div></div>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.12);">
+      <div style="font-size:9px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.5px;">Property Value</div>
+      <div style="font-size:18px;font-weight:800;color:#fff;margin-top:3px;" id="rcPropVal">₹50,00,000</div>
+    </div>
+  </div>
+
+  <!-- PIE CHART -->
+  <div class="chart-card fu3">
+    <div class="chart-title">Cost Distribution <span>Visual Breakdown</span></div>
+    <div class="pie-wrap">
+      <svg class="pie-svg" viewBox="0 0 120 120" width="120" height="120" id="pieChart">
+        <!-- Donut slices drawn by JS -->
+        <circle cx="60" cy="60" r="40" fill="none" stroke="#E8EEF8" stroke-width="22"/>
+        <circle cx="60" cy="60" r="40" fill="none" stroke="#FF6B00" stroke-width="22"
+          stroke-dasharray="200 51.4" stroke-dashoffset="0" stroke-linecap="butt"
+          transform="rotate(-90 60 60)" id="sliceStamp"/>
+        <circle cx="60" cy="60" r="40" fill="none" stroke="#1A3A8F" stroke-width="22"
+          stroke-dasharray="25 226" stroke-dashoffset="-200" stroke-linecap="butt"
+          transform="rotate(-90 60 60)" id="sliceReg"/>
+        <circle cx="60" cy="60" r="40" fill="none" stroke="#046A38" stroke-width="22"
+          stroke-dasharray="26 225" stroke-dashoffset="-225" stroke-linecap="butt"
+          transform="rotate(-90 60 60)" id="sliceProp"/>
+        <text x="60" y="57" text-anchor="middle" font-size="9" font-weight="800" fill="#0B1F48" font-family="'Book Antiqua',serif" id="pieCenter1">6.6%</text>
+        <text x="60" y="68" text-anchor="middle" font-size="7" fill="#7A5C3A" font-family="'Trebuchet MS',sans-serif">of value</text>
+      </svg>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#046A38"></div><div class="leg-lbl">Property Value</div><div class="leg-val" id="lgProp">₹50,00,000</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#FF6B00"></div><div class="leg-lbl">Stamp Duty</div><div class="leg-val" id="lgStamp">₹2,50,000</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#1A3A8F"></div><div class="leg-lbl">Reg. Fee</div><div class="leg-val" id="lgReg">₹30,000</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#F5A623"></div><div class="leg-lbl">Total Fees</div><div class="leg-val" id="lgTotal">₹2,80,000</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE -->
+  <button class="save-btn fu3" onclick="saveCalc()">💾 Save Calculation</button>
+
+  <!-- STATE COMPARISON BAR CHART -->
+  <div class="sec fu3">State Stamp Duty Comparison <span class="more">All India</span></div>
+  <div class="chart-card fu4">
+    <div class="chart-title">Stamp Duty Rates — Major States <span>2024–25</span></div>
+    <div class="bar-chart">
+      <div class="bar-row"><span class="bar-state">Tamil Nadu</span>
+        <div class="bar-track"><div class="bar-fill" style="width:78%;background:linear-gradient(90deg,#BE185D,#9D174D);">7%</div></div>
+        <span class="bar-pct">7.0%</span></div>
+      <div class="bar-row"><span class="bar-state">West Bengal</span>
+        <div class="bar-track"><div class="bar-fill" style="width:72%;background:linear-gradient(90deg,#9333EA,#6D28D9);">6%</div></div>
+        <span class="bar-pct">6.0%</span></div>
+      <div class="bar-row"><span class="bar-state">Maharashtra</span>
+        <div class="bar-track"><div class="bar-fill" style="width:67%;background:linear-gradient(90deg,#FF6B00,#E05A00);">6%</div></div>
+        <span class="bar-pct">5–6%</span></div>
+      <div class="bar-row"><span class="bar-state">Delhi (M)</span>
+        <div class="bar-track"><div class="bar-fill" style="width:61%;background:linear-gradient(90deg,#1A3A8F,#0B1F48);">6%</div></div>
+        <span class="bar-pct">6.0%</span></div>
+      <div class="bar-row"><span class="bar-state">Karnataka</span>
+        <div class="bar-track"><div class="bar-fill" style="width:56%;background:linear-gradient(90deg,#0D9488,#0F766E);">5%</div></div>
+        <span class="bar-pct">5.0%</span></div>
+      <div class="bar-row"><span class="bar-state">Telangana</span>
+        <div class="bar-track"><div class="bar-fill" style="width:44%;background:linear-gradient(90deg,#046A38,#07543A);">4%</div></div>
+        <span class="bar-pct">4.0%</span></div>
+      <div class="bar-row"><span class="bar-state">Gujarat</span>
+        <div class="bar-track"><div class="bar-fill" style="width:44%;background:linear-gradient(90deg,#F5A623,#B45309);">4.9%</div></div>
+        <span class="bar-pct">4.9%</span></div>
+      <div class="bar-row"><span class="bar-state">Delhi (F)</span>
+        <div class="bar-track"><div class="bar-fill" style="width:40%;background:linear-gradient(90deg,#BE185D,#9D174D);">4%</div></div>
+        <span class="bar-pct">4.0% ♀</span></div>
+    </div>
+  </div>
+
+  <!-- STATE RATE TABLE -->
+  <div class="sec fu4">All-India Stamp Duty Table <span class="more">Updated 2024</span></div>
+  <div class="state-table fu5">
+    <div class="st-header">
+      <div class="st-hcell">State</div>
+      <div class="st-hcell">Male</div>
+      <div class="st-hcell">Female</div>
+      <div class="st-hcell">Reg Fee</div>
+    </div>
+    <div class="st-row"><div class="st-cell">Maharashtra</div><div class="st-cell rate">5–6%</div><div class="st-cell rate">5–6%</div><div class="st-cell note">1%</div></div>
+    <div class="st-row"><div class="st-cell">Delhi</div><div class="st-cell rate">6%</div><div class="st-cell rate">4%</div><div class="st-cell note">1% max ₹30K</div></div>
+    <div class="st-row"><div class="st-cell">Karnataka</div><div class="st-cell rate">5%</div><div class="st-cell rate">5%</div><div class="st-cell note">1%</div></div>
+    <div class="st-row"><div class="st-cell">Tamil Nadu</div><div class="st-cell rate">7%</div><div class="st-cell rate">7%</div><div class="st-cell note">4%</div></div>
+    <div class="st-row"><div class="st-cell">Telangana</div><div class="st-cell rate">4%</div><div class="st-cell rate">4%</div><div class="st-cell note">0.5%</div></div>
+    <div class="st-row"><div class="st-cell">Gujarat</div><div class="st-cell rate">4.9%</div><div class="st-cell rate">3.9%</div><div class="st-cell note">1%</div></div>
+    <div class="st-row"><div class="st-cell">Uttar Pradesh</div><div class="st-cell rate">7%</div><div class="st-cell rate">7%</div><div class="st-cell note">1%</div></div>
+    <div class="st-row"><div class="st-cell">West Bengal</div><div class="st-cell rate">6%</div><div class="st-cell rate">6%</div><div class="st-cell note">1%</div></div>
+    <div class="st-row"><div class="st-cell">Rajasthan</div><div class="st-cell rate">5%</div><div class="st-cell rate">4%</div><div class="st-cell note">1%</div></div>
+    <div class="st-row"><div class="st-cell">Punjab</div><div class="st-cell rate">7%</div><div class="st-cell rate">5%</div><div class="st-cell note">1%</div></div>
+    <div class="st-row"><div class="st-cell">Haryana</div><div class="st-cell rate">7%</div><div class="st-cell rate">5%</div><div class="st-cell note">0.5%</div></div>
+    <div class="st-row"><div class="st-cell">Madhya Pradesh</div><div class="st-cell rate">7.5%</div><div class="st-cell rate">7.5%</div><div class="st-cell note">3%</div></div>
+  </div>
+
+  <!-- INFO NOTICE -->
+  <div class="info-banner fu5">
+    <div class="ib-icon">⚠️</div>
+    <div>
+      <div class="ib-title">Important Note</div>
+      <div class="ib-sub">Rates as of FY 2024–25. Always verify with official Sub-Registrar's office. Additional surcharges may apply in metro areas.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const stateData = {
+  MH:{name:'Maharashtra',male:5,female:5,reg:1,extra:'Metro: +1% surcharge'},
+  DL:{name:'Delhi',male:6,female:4,reg:1,regMax:30000,extra:'Reg capped ₹30,000'},
+  KA:{name:'Karnataka',male:5,female:5,reg:1,extra:'Reg 1%'},
+  TN:{name:'Tamil Nadu',male:7,female:7,reg:4,extra:'Highest reg fee'},
+  TS:{name:'Telangana',male:4,female:4,reg:0.5,extra:'Lowest reg fee'},
+  GJ:{name:'Gujarat',male:4.9,female:3.9,reg:1,extra:'Women concession 1%'},
+  UP:{name:'Uttar Pradesh',male:7,female:7,reg:1,extra:''},
+  WB:{name:'West Bengal',male:6,female:6,reg:1,extra:''},
+  RJ:{name:'Rajasthan',male:5,female:4,reg:1,extra:'Women concession 1%'},
+  PB:{name:'Punjab',male:7,female:5,reg:1,extra:'Women concession 2%'},
+};
+
+let gender = 'male';
+
+function selectGender(g) {
+  gender = g;
+  document.getElementById('rb-male').classList.toggle('active', g==='male');
+  document.getElementById('rb-female').classList.toggle('active', g==='female');
+  calculate();
+}
+
+function updateStateRates() { calculate(); }
+
+function fmt(n) {
+  if(n>=10000000) return '₹'+( n/10000000).toFixed(2)+' Cr';
+  if(n>=100000)   return '₹'+(n/100000).toFixed(2)+' L';
+  return '₹'+n.toLocaleString('en-IN');
+}
+
+function calculate() {
+  const state = stateData[document.getElementById('stateSelect').value];
+  const val = parseFloat(document.getElementById('propValue').value)||5000000;
+  const sdRate = gender==='female' ? state.female : state.male;
+  const regRate = state.reg;
+
+  let stamp = val * sdRate / 100;
+  let reg = val * regRate / 100;
+  if(state.regMax) reg = Math.min(reg, state.regMax);
+  const total = stamp + reg;
+  const effPct = (total/val*100).toFixed(2);
+
+  document.getElementById('rcTotal').innerHTML = fmt(total)+' <small>/ total fees</small>';
+  document.getElementById('rcStamp').textContent = fmt(stamp);
+  document.getElementById('rcReg').textContent   = fmt(reg);
+  document.getElementById('rcPct').textContent   = sdRate.toFixed(1)+'%';
+  document.getElementById('rcEff').textContent   = effPct+'%';
+  document.getElementById('rcPropVal').textContent = fmt(val);
+
+  // legend
+  document.getElementById('lgProp').textContent  = fmt(val);
+  document.getElementById('lgStamp').textContent = fmt(stamp);
+  document.getElementById('lgReg').textContent   = fmt(reg);
+  document.getElementById('lgTotal').textContent = fmt(total);
+
+  // Pie (donut) update
+  const circ = 2*Math.PI*40; // ~251.3
+  const stampFrac = stamp/val;
+  const regFrac   = reg/val;
+  const propFrac  = 1 - stampFrac - regFrac;
+
+  const sd1 = circ*stampFrac, sd2 = circ-sd1;
+  const sr1 = circ*regFrac,   sr2 = circ-sr1;
+  const sp1 = circ*propFrac,  sp2 = circ-sp1;
+
+  let el;
+  el = document.getElementById('sliceStamp');
+  el.setAttribute('stroke-dasharray', sd1+' '+sd2);
+  el.setAttribute('stroke-dashoffset','0');
+
+  el = document.getElementById('sliceReg');
+  el.setAttribute('stroke-dasharray', sr1+' '+sr2);
+  el.setAttribute('stroke-dashoffset', -sd1);
+
+  el = document.getElementById('sliceProp');
+  el.setAttribute('stroke-dasharray', sp1+' '+sp2);
+  el.setAttribute('stroke-dashoffset', -(sd1+sr1));
+
+  document.getElementById('pieCenter1').textContent = effPct+'%';
+
+  // store for save
+  window._lastCalc = {state:state.name, gender, propValue:val, stamp, reg, total, sdRate, effPct};
+}
+
+function saveCalc() {
+  if(!window._lastCalc) return;
+  const saved = JSON.parse(localStorage.getItem('stampDutySaved')||'[]');
+  saved.unshift({...window._lastCalc, date:new Date().toLocaleDateString('en-IN')});
+  localStorage.setItem('stampDutySaved', JSON.stringify(saved.slice(0,20)));
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+calculate();
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>First-Home Buyer Incentive – Canada Mortgage Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F0F7F4;color:#0A2E1A;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0A2E1A 0%,#1A5C35 60%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;text-align:center;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#6EDFA0;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.program-card{background:#fff;border-radius:17px;overflow:hidden;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:10px;}
+.pc-hdr{padding:14px 15px 10px;display:flex;align-items:flex-start;gap:12px;}
+.pc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.pc-icon.green{background:#F0FDF4;}
+.pc-icon.blue{background:#EFF6FF;}
+.pc-icon.amber{background:#FFFBEB;}
+.pc-name{font-size:14px;font-weight:800;color:#0A2E1A;font-family:Georgia,serif;}
+.pc-sub{font-size:10px;color:#4A7C5F;margin-top:2px;line-height:1.4;}
+.pc-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-top:5px;}
+.badge-green{background:#F0FDF4;color:#166534;}
+.badge-blue{background:#EFF6FF;color:#1D4ED8;}
+.badge-amber{background:#FFFBEB;color:#92400E;}
+.pc-stats{display:flex;border-top:1px solid #F0F7F4;}
+.pc-stat{flex:1;padding:10px 12px;text-align:center;border-right:1px solid #F0F7F4;}
+.pc-stat:last-child{border-right:none;}
+.pc-stat-val{font-size:15px;font-weight:800;color:#0A2E1A;font-family:Georgia,serif;}
+.pc-stat-val.grn{color:#1A5C35;}
+.pc-stat-lbl{font-size:9px;color:#4A7C5F;margin-top:2px;}
+.expand-btn{width:100%;background:#F0F7F4;border:none;padding:10px;font-size:11px;font-weight:700;color:#1A5C35;cursor:pointer;text-align:center;}
+.detail-panel{display:none;padding:14px 15px;border-top:1px solid #F0F7F4;}
+.detail-panel.open{display:block;}
+.detail-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #F0F7F4;}
+.detail-row:last-child{border-bottom:none;}
+.detail-lbl{font-size:11px;color:#4A7C5F;max-width:55%;}
+.detail-val{font-size:11px;font-weight:700;color:#0A2E1A;text-align:right;}
+.detail-val.grn{color:#1A5C35;}
+.hero-calc{background:linear-gradient(145deg,#0A2E1A,#1A5C35);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(10,46,26,0.25);margin-bottom:10px;}
+.hero-calc::before{content:'🏡';position:absolute;right:-5px;top:-10px;font-size:75px;opacity:0.07;}
+.hc-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.hc-title{font-size:17px;font-weight:800;color:#fff;margin:5px 0 13px;line-height:1.25;font-family:Georgia,serif;}
+.hc-title span{color:#6EDFA0;}
+.hc-row{display:flex;gap:8px;}
+.hc-box{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.hc-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.hc-box .v{font-size:14px;font-weight:800;color:#fff;}
+.hc-box .v.grn{color:#6EDFA0;}
+.inp-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F0F7F4;}
+.inp-row:last-child{border-bottom:none;}
+.inp-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:10px;}
+.inp-lbl{font-size:12px;font-weight:600;color:#0A2E1A;}
+.inp-sub{font-size:10px;color:#4A7C5F;margin-top:1px;}
+.inp{background:#F0F7F4;border:1px solid rgba(26,92,53,0.15);border-radius:9px;padding:7px 10px;font-size:13px;font-weight:700;color:#0A2E1A;width:120px;text-align:right;font-family:'Helvetica Neue',Arial,sans-serif;}
+.inp:focus{outline:none;border-color:#1A5C35;}
+.unit-lbl{font-size:11px;color:#4A7C5F;font-weight:600;}
+.calc-btn{width:100%;background:#1A5C35;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(26,92,53,0.35);margin-top:4px;}
+.strategy-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);}
+.str-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F0F7F4;}
+.str-row:last-child{border-bottom:none;}
+.str-num{width:26px;height:26px;border-radius:50%;background:#1A5C35;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.str-title{font-size:12px;font-weight:700;color:#0A2E1A;}
+.str-sub{font-size:10px;color:#4A7C5F;margin-top:1px;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,92,53,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,46,26,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#4A7C5F;}
+.ni.active .ni-lb{color:#1A5C35;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏡</span><div class="hdr-title">First-Home Buyer</div><div class="hdr-sub">FHSA · HBP · LTT Rebates · 2026</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">FHSA Annual</div><div class="rs-val grn">$8,000</div><div class="rs-note">Tax-deductible</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">FHSA Life</div><div class="rs-val grn">$40,000</div><div class="rs-note">Lifetime cap</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">HBP RRSP</div><div class="rs-val">$60,000</div><div class="rs-note">Per person</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Combined</div><div class="rs-val grn">$100K</div><div class="rs-note">Max down pymt</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Savings Programs</div>
+
+  <!-- FHSA -->
+  <div class="program-card">
+    <div class="pc-hdr">
+      <div class="pc-icon green">🏦</div>
+      <div>
+        <div class="pc-name">First Home Savings Account (FHSA)</div>
+        <div class="pc-sub">Tax-deductible contributions + tax-free withdrawals. Best first-time buyer tool in Canada.</div>
+        <span class="pc-badge badge-green">Launched 2023 · Active 2026</span>
+      </div>
+    </div>
+    <div class="pc-stats">
+      <div class="pc-stat"><div class="pc-stat-val grn">$8K</div><div class="pc-stat-lbl">Annual limit</div></div>
+      <div class="pc-stat"><div class="pc-stat-val grn">$40K</div><div class="pc-stat-lbl">Lifetime max</div></div>
+      <div class="pc-stat"><div class="pc-stat-val">15 yr</div><div class="pc-stat-lbl">Account life</div></div>
+    </div>
+    <button class="expand-btn" onclick="togglePanel(this)">▼ Show FHSA Details</button>
+    <div class="detail-panel">
+      <div class="detail-row"><span class="detail-lbl">Eligibility</span><span class="detail-val">Canadian resident, 18–71, never owned</span></div>
+      <div class="detail-row"><span class="detail-lbl">Annual contribution</span><span class="detail-val grn">$8,000/year</span></div>
+      <div class="detail-row"><span class="detail-lbl">Lifetime limit</span><span class="detail-val grn">$40,000</span></div>
+      <div class="detail-row"><span class="detail-lbl">Carry-forward</span><span class="detail-val">Up to $8K unused room (1 yr)</span></div>
+      <div class="detail-row"><span class="detail-lbl">Tax deduction going in</span><span class="detail-val grn">✓ Yes (like RRSP)</span></div>
+      <div class="detail-row"><span class="detail-lbl">Tax-free withdrawal</span><span class="detail-val grn">✓ Yes (like TFSA)</span></div>
+      <div class="detail-row"><span class="detail-lbl">Repayment required?</span><span class="detail-val grn">No repayment needed</span></div>
+      <div class="detail-row"><span class="detail-lbl">If you don't buy</span><span class="detail-val">Transfer to RRSP tax-free</span></div>
+      <div class="detail-row"><span class="detail-lbl">Tax saving (30% bracket)</span><span class="detail-val grn">~$2,400/yr on $8K</span></div>
+    </div>
+  </div>
+
+  <!-- HBP -->
+  <div class="program-card">
+    <div class="pc-hdr">
+      <div class="pc-icon blue">📋</div>
+      <div>
+        <div class="pc-name">RRSP Home Buyers' Plan (HBP)</div>
+        <div class="pc-sub">Withdraw from your RRSP for a first home. Limit raised to $60K in April 2024.</div>
+        <span class="pc-badge badge-blue">Limit raised Apr 2024</span>
+      </div>
+    </div>
+    <div class="pc-stats">
+      <div class="pc-stat"><div class="pc-stat-val">$60K</div><div class="pc-stat-lbl">Per person</div></div>
+      <div class="pc-stat"><div class="pc-stat-val">$120K</div><div class="pc-stat-lbl">Couple max</div></div>
+      <div class="pc-stat"><div class="pc-stat-val">15 yr</div><div class="pc-stat-lbl">Repay period</div></div>
+    </div>
+    <button class="expand-btn" onclick="togglePanel(this)">▼ Show HBP Details</button>
+    <div class="detail-panel">
+      <div class="detail-row"><span class="detail-lbl">Withdrawal limit (2026)</span><span class="detail-val">$60,000 per person</span></div>
+      <div class="detail-row"><span class="detail-lbl">Couple combined</span><span class="detail-val grn">$120,000 total</span></div>
+      <div class="detail-row"><span class="detail-lbl">Repayment period</span><span class="detail-val">15 years</span></div>
+      <div class="detail-row"><span class="detail-lbl">Repayment start</span><span class="detail-val">2 years after withdrawal</span></div>
+      <div class="detail-row"><span class="detail-lbl">Grace period (2022–2025)</span><span class="detail-val">5-yr grace for HBPs made Jan 2022–Dec 2025</span></div>
+      <div class="detail-row"><span class="detail-lbl">Annual repayment</span><span class="detail-val">1/15th of withdrawn amount</span></div>
+      <div class="detail-row"><span class="detail-lbl">If not repaid</span><span class="detail-val">Added to taxable income</span></div>
+      <div class="detail-row"><span class="detail-lbl">Can combine with FHSA?</span><span class="detail-val grn">✓ Yes — use both!</span></div>
+    </div>
+  </div>
+
+  <!-- LTT Rebates -->
+  <div class="program-card">
+    <div class="pc-hdr">
+      <div class="pc-icon amber">🏛️</div>
+      <div>
+        <div class="pc-name">Land Transfer Tax Rebates</div>
+        <div class="pc-sub">Provincial rebates for first-time buyers at closing. Ontario & BC most impactful.</div>
+        <span class="pc-badge badge-amber">Applied at closing</span>
+      </div>
+    </div>
+    <div class="pc-stats">
+      <div class="pc-stat"><div class="pc-stat-val">$4K</div><div class="pc-stat-lbl">Ontario max</div></div>
+      <div class="pc-stat"><div class="pc-stat-val">$4,475</div><div class="pc-stat-lbl">Toronto +</div></div>
+      <div class="pc-stat"><div class="pc-stat-val grn">Full</div><div class="pc-stat-lbl">BC ≤$500K</div></div>
+    </div>
+    <button class="expand-btn" onclick="togglePanel(this)">▼ Show Rebate Details</button>
+    <div class="detail-panel">
+      <div class="detail-row"><span class="detail-lbl">Ontario provincial rebate</span><span class="detail-val grn">Up to $4,000</span></div>
+      <div class="detail-row"><span class="detail-lbl">Toronto municipal rebate</span><span class="detail-val grn">Up to $4,475</span></div>
+      <div class="detail-row"><span class="detail-lbl">Toronto combined max</span><span class="detail-val grn">$8,475</span></div>
+      <div class="detail-row"><span class="detail-lbl">BC (homes ≤$500K)</span><span class="detail-val grn">Full PTT exemption</span></div>
+      <div class="detail-row"><span class="detail-lbl">BC (homes $500K–$525K)</span><span class="detail-val">Partial rebate (pro-rated)</span></div>
+      <div class="detail-row"><span class="detail-lbl">PEI</span><span class="detail-val grn">Exempt on homes &lt;$200K</span></div>
+      <div class="detail-row"><span class="detail-lbl">Alberta / Saskatchewan</span><span class="detail-val">No LTT — small reg fee only</span></div>
+      <div class="detail-row"><span class="detail-lbl">Quebec, MB, NS, NB</span><span class="detail-val">No FTHB rebate</span></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Max Down Payment Calculator</div>
+  <div class="inp-card">
+    <div class="inp-row">
+      <div><div class="inp-lbl">FHSA balance</div><div class="inp-sub">Contributions + growth</div></div>
+      <div style="display:flex;align-items:center;gap:6px"><span class="unit-lbl">CA$</span><input class="inp" id="fhsa_bal" type="number" value="32000"></div>
+    </div>
+    <div class="inp-row">
+      <div><div class="inp-lbl">RRSP HBP withdrawal</div><div class="inp-sub">Up to $60K per person</div></div>
+      <div style="display:flex;align-items:center;gap:6px"><span class="unit-lbl">CA$</span><input class="inp" id="hbp_amt" type="number" value="40000"></div>
+    </div>
+    <div class="inp-row">
+      <div><div class="inp-lbl">Personal savings</div><div class="inp-sub">Non-registered savings</div></div>
+      <div style="display:flex;align-items:center;gap:6px"><span class="unit-lbl">CA$</span><input class="inp" id="savings" type="number" value="25000"></div>
+    </div>
+    <div class="inp-row">
+      <div><div class="inp-lbl">Co-buyer FHSA/HBP</div><div class="inp-sub">Spouse/partner (optional)</div></div>
+      <div style="display:flex;align-items:center;gap:6px"><span class="unit-lbl">CA$</span><input class="inp" id="cobuy" type="number" value="0"></div>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calcDown()">🏡 Calculate My Down Payment</button>
+  <div id="dpResult" style="display:none;margin-top:10px;">
+    <div class="hero-calc">
+      <div class="hc-tag">Total Available Down Payment</div>
+      <div class="hc-title">You could put down <span id="dpTotal">$0</span></div>
+      <div class="hc-row">
+        <div class="hc-box"><label>Afforadable home</label><div class="v grn" id="dpHome">–</div></div>
+        <div class="hc-box"><label>CMHC needed?</label><div class="v" id="dpCMHC">–</div></div>
+        <div class="hc-box"><label>% of $700K</label><div class="v" id="dpPct">–</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Optimal 2026 Strategy</div>
+  <div class="strategy-card">
+    <div class="str-row"><div class="str-num">1</div><div><div class="str-title">Max FHSA First ($8K/yr)</div><div class="str-sub">Double tax benefit — deduction in, tax-free out. Outperforms HBP for new savings.</div></div></div>
+    <div class="str-row"><div class="str-num">2</div><div><div class="str-title">Add RRSP HBP ($60K per person)</div><div class="str-sub">Combine with FHSA for $100K combined buying power per person. Repay over 15 years.</div></div></div>
+    <div class="str-row"><div class="str-num">3</div><div><div class="str-title">Claim LTT Rebate at Closing</div><div class="str-sub">Your lawyer handles it — up to $8,475 back in Toronto; $4,000 in Ontario.</div></div></div>
+    <div class="str-row"><div class="str-num">4</div><div><div class="str-title">Defer FHSA Deduction if Income Rises</div><div class="str-sub">Contribute now for tax-free growth; claim deduction in a higher-income year.</div></div></div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🍁</div><div class="ni-lb">Canada</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+function togglePanel(btn){
+  const panel = btn.nextElementSibling;
+  panel.classList.toggle('open');
+  btn.textContent = panel.classList.contains('open') ? '▲ Hide Details' : '▼ Show Details';
+}
+function fmt(n){ return 'CA$'+Math.round(n).toLocaleString('en-CA'); }
+function calcDown(){
+  const fhsa = parseFloat(document.getElementById('fhsa_bal').value)||0;
+  const hbp = Math.min(60000, parseFloat(document.getElementById('hbp_amt').value)||0);
+  const sav = parseFloat(document.getElementById('savings').value)||0;
+  const co = parseFloat(document.getElementById('cobuy').value)||0;
+  const total = fhsa + hbp + sav + co;
+  const maxHome5 = total / 0.05;
+  const isCMHC = total / 700000 < 0.2;
+  document.getElementById('dpTotal').textContent = fmt(total);
+  document.getElementById('dpHome').textContent = fmt(maxHome5);
+  document.getElementById('dpCMHC').textContent = isCMHC ? '✓ Yes' : '✗ No (≥20%)';
+  document.getElementById('dpPct').textContent = ((total/700000)*100).toFixed(1)+'%';
+  document.getElementById('dpResult').style.display = 'block';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help to Buy – UK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.gold{color:#FFD700;}.rs-val.grn{color:#90EE90;}.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;}
+/* Info banner */
+.info-banner{background:linear-gradient(135deg,#1e1b4b,#3730A3);border-radius:15px;padding:14px 15px;margin-bottom:14px;}
+.ib-title{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.ib-body{font-size:11px;color:rgba(255,255,255,0.7);margin-top:5px;line-height:1.5;}
+.ib-note{font-size:10px;color:#FFD700;margin-top:6px;font-weight:700;}
+.card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.inp-group{margin-bottom:12px;}
+.inp-label{font-size:11px;font-weight:700;color:#5C5C8A;margin-bottom:5px;display:block;}
+.inp-wrap{position:relative;}
+.inp-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#1a1a5e;}
+.inp-suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#5C5C8A;}
+input[type=number],select{width:100%;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:11px;padding:11px 36px 11px 28px;font-size:15px;font-weight:700;color:#0D0D2B;outline:none;-moz-appearance:textfield;}
+input[type=number]:focus{border-color:#1a1a5e;}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+select{padding-left:12px;cursor:pointer;}
+/* Loan slider labels */
+.slider-labels{display:flex;justify-content:space-between;margin-top:4px;}
+.slider-labels span{font-size:10px;color:#5C5C8A;}
+input[type=range]{width:100%;accent-color:#1a1a5e;margin-top:6px;}
+.btn-calc{width:100%;background:linear-gradient(135deg,#C8102E,#8B0A1E);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(200,16,46,0.35);margin-top:4px;}
+/* Funding stack chart */
+.stack-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.sc-title{font-size:12px;font-weight:800;color:#0D0D2B;margin-bottom:12px;font-family:Georgia,serif;}
+.stack-bar{display:flex;height:28px;border-radius:10px;overflow:hidden;margin-bottom:10px;}
+.stack-seg{height:100%;transition:width 0.8s ease;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;}
+.stack-legend{display:flex;flex-direction:column;gap:6px;}
+.sl-row{display:flex;align-items:center;gap:8px;}
+.sl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.sl-label{font-size:11px;color:#5C5C8A;flex:1;}
+.sl-val{font-size:12px;font-weight:800;color:#0D0D2B;}
+/* Result hero */
+.result-hero{background:linear-gradient(145deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:20px;position:relative;overflow:hidden;margin-bottom:10px;}
+.result-hero::before{content:'🏘️';position:absolute;right:8px;top:-4px;font-size:65px;opacity:0.07;}
+.rh-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.7px;}
+.rh-val{font-size:30px;font-weight:800;color:#fff;font-family:Georgia,serif;margin:4px 0;}
+.rh-sub{font-size:12px;color:rgba(255,255,255,0.6);}
+.rh-tag{display:inline-flex;align-items:center;background:rgba(144,238,144,0.2);border:1px solid rgba(144,238,144,0.35);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#90EE90;margin-top:8px;}
+.metrics-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.met-card{background:#fff;border-radius:15px;padding:13px;box-shadow:0 3px 10px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);}
+.met-lbl{font-size:10px;color:#5C5C8A;margin-bottom:3px;}
+.met-val{font-size:17px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.met-val.red{color:#C8102E;}.met-val.grn{color:#059669;}.met-val.gold{color:#B45309;}
+.met-sub{font-size:10px;color:#5C5C8A;margin-top:2px;}
+/* Fee timeline */
+.timeline{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.tl-title{font-size:12px;font-weight:800;color:#0D0D2B;margin-bottom:12px;font-family:Georgia,serif;}
+.tl-row{display:flex;gap:10px;margin-bottom:10px;position:relative;}
+.tl-row::before{content:'';position:absolute;left:12px;top:24px;width:2px;height:calc(100% + 4px);background:#F5F5F8;}
+.tl-row:last-child::before{display:none;}
+.tl-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;z-index:1;}
+.tl-dot.grn{background:#D1FAE5;}.tl-dot.gold{background:#FEF3C7;}.tl-dot.red{background:#FEE2E2;}
+.tl-body{flex:1;}
+.tl-year{font-size:11px;font-weight:800;color:#0D0D2B;}
+.tl-desc{font-size:10px;color:#5C5C8A;margin-top:2px;}
+.tl-fee{font-size:12px;font-weight:800;color:#C8102E;margin-top:2px;}
+/* Warning box */
+.warn-box{background:#FEF2F2;border:1px solid #FECACA;border-radius:13px;padding:13px;margin-bottom:10px;}
+.wb-title{font-size:12px;font-weight:800;color:#991B1B;}
+.wb-body{font-size:11px;color:#7F1D1D;margin-top:4px;line-height:1.5;}
+.hidden{display:none;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇬🇧</span><div class="hdr-title">Help to Buy</div><div class="hdr-sub">Equity Loan Scheme</div></div>
+    <div style="width:36px"></div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Equity Loan</div><div class="rs-val grn">Up to 20%</div><div class="rs-note">England</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">London</div><div class="rs-val gold">Up to 40%</div><div class="rs-note">GLA areas</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Min Deposit</div><div class="rs-val">5%</div><div class="rs-note">Of price</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Fee-Free</div><div class="rs-val grn">5 yrs</div><div class="rs-note">Then 1.75%</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">About Help to Buy</div>
+  <div class="info-banner">
+    <div class="ib-title">Help to Buy: Equity Loan (Legacy)</div>
+    <div class="ib-body">The Help to Buy: Equity Loan scheme closed to new applications on 31 October 2022. This calculator helps existing borrowers understand their loan and repayment obligations, or models what the scheme offered.</div>
+    <div class="ib-note">⚠️ New applicants: See Shared Ownership or First Homes scheme instead.</div>
+  </div>
+  <div class="sec-lbl">Property & Loan Details</div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">Property Purchase Price</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="propPrice" value="320000" min="0" oninput="updateLoan()"></div>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">Region</label>
+      <select id="region" onchange="updateLoan()">
+        <option value="20">England (outside London) – 20%</option>
+        <option value="40">London – 40%</option>
+      </select>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">Equity Loan % &nbsp;<span id="loanPctLbl" style="color:#1a1a5e">20%</span></label>
+      <input type="range" id="loanPct" min="5" max="20" value="20" step="5" oninput="updateLoan()">
+      <div class="slider-labels"><span>5%</span><span>10%</span><span>15%</span><span>20%</span></div>
+    </div>
+    <div class="inp-group" style="margin-bottom:0">
+      <label class="inp-label">Your Mortgage Rate</label>
+      <div class="inp-wrap"><input type="number" id="mortRate" value="4.75" min="0" max="15" step="0.01" style="padding-left:12px"><span class="inp-suffix">%</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">Years Since Purchase (for fee calc)</label>
+      <div class="inp-wrap"><input type="number" id="yearsSince" value="0" min="0" max="25" style="padding-left:12px"><span class="inp-suffix">yrs</span></div>
+    </div>
+    <div class="inp-group" style="margin-bottom:0">
+      <label class="inp-label">Current Property Value (if different)</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="currVal" value="320000" min="0"></div>
+    </div>
+  </div>
+  <button class="btn-calc" onclick="calculate()">🏘️ Calculate Help to Buy</button>
+
+  <div id="results" class="hidden" style="margin-top:16px">
+    <div class="result-hero">
+      <div class="rh-lbl">Your Mortgage Needed</div>
+      <div class="rh-val" id="mortNeeded">—</div>
+      <div class="rh-sub" id="mortSub">—</div>
+      <div class="rh-tag" id="savingTag">—</div>
+    </div>
+
+    <div class="stack-card">
+      <div class="sc-title">Funding Structure</div>
+      <div class="stack-bar" id="stackBar">
+        <div class="stack-seg" id="segDeposit" style="background:#0D0D2B;width:5%">5%</div>
+        <div class="stack-seg" id="segLoan" style="background:#4F46E5;width:20%">20%</div>
+        <div class="stack-seg" id="segMort" style="background:#C8102E;width:75%">75%</div>
+      </div>
+      <div class="stack-legend">
+        <div class="sl-row"><div class="sl-dot" style="background:#0D0D2B"></div><div class="sl-label">Your Deposit (5%)</div><div class="sl-val" id="legDeposit">—</div></div>
+        <div class="sl-row"><div class="sl-dot" style="background:#4F46E5"></div><div class="sl-label" id="legLoanLabel">Govt Equity Loan (20%)</div><div class="sl-val" id="legLoan">—</div></div>
+        <div class="sl-row"><div class="sl-dot" style="background:#C8102E"></div><div class="sl-label" id="legMortLabel">Your Mortgage (75%)</div><div class="sl-val" id="legMort">—</div></div>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="met-card">
+        <div class="met-lbl">Monthly Mortgage</div>
+        <div class="met-val" id="monthlyMort">—</div>
+        <div class="met-sub">25yr term</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">Equity Loan Fee</div>
+        <div class="met-val gold" id="loanFee">—</div>
+        <div class="met-sub" id="loanFeeNote">After yr 5</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">Current Loan Value</div>
+        <div class="met-val red" id="currLoanVal">—</div>
+        <div class="met-sub">Based on curr. price</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">Equity Owned</div>
+        <div class="met-val grn" id="ownedEquity">—</div>
+        <div class="met-sub">Yours + deposit</div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-title">📅 Equity Loan Fee Timeline</div>
+      <div class="tl-row">
+        <div class="tl-dot grn">✓</div>
+        <div class="tl-body"><div class="tl-year">Years 1–5</div><div class="tl-desc">Interest-free government equity loan</div><div class="tl-fee">£0/month fee</div></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-dot gold">£</div>
+        <div class="tl-body"><div class="tl-year">Year 6 onwards</div><div class="tl-desc">Fee starts at 1.75% of loan, rising annually</div><div class="tl-fee" id="yr6fee">—/month</div></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-dot red">↑</div>
+        <div class="tl-body"><div class="tl-year">Annual increase</div><div class="tl-desc">RPI + 1% each year – can become costly</div><div class="tl-fee" id="yr10fee">Estimated yr 10: —/mo</div></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="wb-title">⚠️ Key Risks to Consider</div>
+      <div class="wb-body">• Equity loan repayment is % of property value — if prices rise, you repay more.<br>• Fees escalate rapidly after year 5 (RPI + 1% p.a.).<br>• You cannot part-repay less than 10% of property value.<br>• Scheme closed Oct 2022 — existing borrowers only.</div>
+    </div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+function fmt(n){return'£'+Math.round(n).toLocaleString('en-GB');}
+function pmt(r,n,pv){if(r===0)return pv/n;return pv*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
+function updateLoan(){
+  const region=parseInt(document.getElementById('region').value);
+  const slider=document.getElementById('loanPct');
+  slider.max=region;
+  if(parseInt(slider.value)>region)slider.value=region;
+  document.getElementById('loanPctLbl').textContent=slider.value+'%';
+}
+function calculate(){
+  const price=parseFloat(document.getElementById('propPrice').value)||0;
+  const loanPct=parseInt(document.getElementById('loanPct').value)/100;
+  const mortRate=parseFloat(document.getElementById('mortRate').value)||4.75;
+  const yearsSince=parseInt(document.getElementById('yearsSince').value)||0;
+  const currVal=parseFloat(document.getElementById('currVal').value)||price;
+  const depositPct=0.05;
+  const loanAmt=price*loanPct;
+  const deposit=price*depositPct;
+  const mortAmt=price-loanAmt-deposit;
+  const mortPct=1-loanPct-depositPct;
+  // Monthly mortgage
+  const rMo=mortRate/100/12;
+  const monthlyMort=pmt(rMo,300,mortAmt);
+  // Current loan value (% of current price)
+  const currLoanVal=currVal*loanPct;
+  // Equity loan fee (year 6+ at 1.75%, rising RPI+1% ~4% p.a.)
+  const baseFeeRate=0.0175;
+  const yr6FeeAmt=loanAmt*baseFeeRate/12;
+  const yr10Rate=baseFeeRate*Math.pow(1.04,4);
+  const yr10Fee=loanAmt*yr10Rate/12;
+  const ownedEquity=currVal*(1-loanPct);
+  const savings=mortAmt - (price*0.75); // vs 5% deposit only
+  
+  document.getElementById('mortNeeded').textContent=fmt(mortAmt);
+  document.getElementById('mortSub').textContent=fmt(deposit)+' deposit + '+fmt(loanAmt)+' govt loan';
+  document.getElementById('savingTag').textContent='Save '+fmt(Math.abs(savings))+' vs. standard mortgage';
+  // Stack
+  const depPct=depositPct*100, lpPct=loanPct*100, mpPct=mortPct*100;
+  document.getElementById('segDeposit').style.width=depPct+'%';
+  document.getElementById('segDeposit').textContent=depPct+'%';
+  document.getElementById('segLoan').style.width=lpPct+'%';
+  document.getElementById('segLoan').textContent=lpPct+'%';
+  document.getElementById('segMort').style.width=mpPct+'%';
+  document.getElementById('segMort').textContent=Math.round(mpPct)+'%';
+  document.getElementById('legDeposit').textContent=fmt(deposit);
+  document.getElementById('legLoanLabel').textContent='Govt Equity Loan ('+Math.round(lpPct)+'%)';
+  document.getElementById('legLoan').textContent=fmt(loanAmt);
+  document.getElementById('legMortLabel').textContent='Your Mortgage ('+Math.round(mpPct)+'%)';
+  document.getElementById('legMort').textContent=fmt(mortAmt);
+  document.getElementById('monthlyMort').textContent='£'+Math.round(monthlyMort)+'/mo';
+  document.getElementById('loanFee').textContent='£'+Math.round(yr6FeeAmt)+'/mo';
+  document.getElementById('loanFeeNote').textContent=yearsSince>=5?'Currently active':'After year 5';
+  document.getElementById('currLoanVal').textContent=fmt(currLoanVal);
+  document.getElementById('ownedEquity').textContent=fmt(ownedEquity);
+  document.getElementById('yr6fee').textContent='£'+Math.round(yr6FeeAmt)+'/month';
+  document.getElementById('yr10fee').textContent='Estimated yr 10: £'+Math.round(yr10Fee)+'/mo';
+  document.getElementById('results').classList.remove('hidden');
+}
+updateLoan();
+</script>
+</body>
+</html>

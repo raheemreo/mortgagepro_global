@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loan Eligibility – MortgagePro India</title>
+<style>
+:root{--saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;--navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;--teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;--muted:#7A5C3A;--border:rgba(255,107,0,0.10);--sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 100px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 11px;font-family:'Trebuchet MS',sans-serif;}
+
+.calc-card{background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.field-grp{margin-bottom:15px;}
+.field-label{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.field-label span{font-size:13px;font-weight:800;color:var(--navy);}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--saffron) var(--pct,50%),#F5E6D4 var(--pct,50%));outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--saffron);border:3px solid #fff;box-shadow:0 2px 8px rgba(255,107,0,0.4);}
+.inp-field{border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:800;color:var(--navy);background:var(--bg);font-family:'Book Antiqua',Palatino,serif;outline:none;width:100%;}
+.inp-field:focus{border-color:var(--saffron);}
+.toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
+.tog-btn{padding:9px;border-radius:12px;border:1.5px solid var(--border);font-size:10px;font-weight:700;color:var(--muted);text-align:center;cursor:pointer;font-family:'Trebuchet MS',sans-serif;transition:all .15s;}
+.tog-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;margin-top:4px;}
+
+/* eligibility meter */
+.eligibility-card{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:22px;padding:22px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:14px;}
+.eligibility-card::after{content:'☸';position:absolute;right:14px;bottom:8px;font-size:60px;color:rgba(255,255,255,0.05);}
+.elig-label{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.elig-amount{font-size:34px;font-weight:800;color:var(--ochre-lt);margin:6px 0;}
+.elig-sub{font-size:10px;color:rgba(255,255,255,0.6);font-family:'Trebuchet MS',sans-serif;margin-bottom:16px;}
+.elig-meter{background:rgba(255,255,255,0.15);border-radius:8px;height:10px;margin-bottom:8px;}
+.elig-fill{height:10px;border-radius:8px;background:linear-gradient(90deg,#86EFAC,#22C55E);transition:width .8s ease;}
+.elig-pct{font-size:9px;color:rgba(255,255,255,0.5);font-family:'Trebuchet MS',sans-serif;text-align:right;}
+.elig-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px;}
+.elig-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:10px;}
+.elig-box-lbl{font-size:8px;color:rgba(255,255,255,0.45);font-family:'Trebuchet MS',sans-serif;}
+.elig-box-val{font-size:13px;font-weight:800;color:#fff;margin-top:3px;}
+.elig-tag{display:inline-flex;padding:4px 10px;border-radius:20px;font-size:9px;font-weight:700;margin-top:12px;font-family:'Trebuchet MS',sans-serif;}
+.tag-green{background:rgba(134,239,172,0.2);color:#86EFAC;}
+.tag-yellow{background:rgba(253,224,71,0.2);color:#FDE047;}
+.tag-red{background:rgba(252,165,165,0.2);color:#FCA5A5;}
+
+/* FOIR gauge */
+.foir-wrap{background:var(--card);border-radius:22px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.foir-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.gauge-row{display:flex;align-items:center;gap:14px;}
+.gauge-svg{flex-shrink:0;}
+.gauge-info{flex:1;}
+.gauge-lbl{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.gauge-val{font-size:22px;font-weight:800;color:var(--navy);margin:4px 0;}
+.gauge-status{font-size:10px;font-weight:700;font-family:'Trebuchet MS',sans-serif;}
+.green-txt{color:var(--green);}
+.yellow-txt{color:#D97706;}
+.red-txt{color:#DC2626;}
+
+/* tips */
+.tip-list{display:flex;flex-direction:column;gap:9px;}
+.tip-item{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;gap:10px;}
+.tip-icon{font-size:20px;width:36px;flex-shrink:0;}
+.tip-title{font-size:12px;font-weight:800;color:var(--navy);}
+.tip-desc{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+
+.save-bar{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;border-radius:17px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-top:14px;margin-bottom:14px;}
+.save-btn{background:var(--green);color:#fff;font-size:10px;font-weight:800;padding:9px 14px;border-radius:10px;border:none;cursor:pointer;font-family:'Trebuchet MS',sans-serif;white-space:nowrap;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .3s;z-index:200;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}.fu5{animation:fadeUp .38s ease both .24s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">✅</div>
+      <div class="hdr-title">Loan <span>Eligibility</span></div>
+      <div class="hdr-sub">Check maximum home loan you can get</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Max FOIR</div><div class="rs-v saf">50%</div><div class="rs-n">RBI Norm</div></div>
+    <div class="rs"><div class="rs-l">SBI Rate</div><div class="rs-v">8.50%</div><div class="rs-n">Floating</div></div>
+    <div class="rs"><div class="rs-l">Max LTV</div><div class="rs-v">90%</div><div class="rs-n">≤30L prop</div></div>
+    <div class="rs"><div class="rs-l">Min CIBIL</div><div class="rs-v saf">700+</div><div class="rs-n">Required</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Income & Loan Details</div>
+  <div class="calc-card fu1">
+    <div class="field-grp">
+      <div class="field-label">Monthly Net Income <span id="lbl-income">₹1,00,000</span></div>
+      <input type="range" id="sl-income" min="20000" max="500000" step="5000" value="100000" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Existing EMIs / Obligations <span id="lbl-emi">₹10,000</span></div>
+      <input type="range" id="sl-emi" min="0" max="100000" step="1000" value="10000" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Interest Rate (p.a.) <span id="lbl-rate">8.50%</span></div>
+      <input type="range" id="sl-rate" min="650" max="1400" step="5" value="850" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Loan Tenure <span id="lbl-tenure">20 Years</span></div>
+      <input type="range" id="sl-tenure" min="5" max="30" step="1" value="20" oninput="update()">
+    </div>
+    <div class="field-grp">
+      <div class="field-label">CIBIL Score</div>
+      <div class="toggle-row">
+        <div class="tog-btn" onclick="setCibil(650,this)">650–699</div>
+        <div class="tog-btn" onclick="setCibil(720,this)">700–749</div>
+        <div class="tog-btn active" onclick="setCibil(760,this)">750–799</div>
+        <div class="tog-btn" onclick="setCibil(800,this)">800+</div>
+      </div>
+    </div>
+    <div class="field-grp">
+      <div class="field-label">Employment Type</div>
+      <div class="toggle-row">
+        <div class="tog-btn active" onclick="setEmp('salaried',this)">Salaried</div>
+        <div class="tog-btn" onclick="setEmp('self',this)">Self-Employed</div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="update()">☸ Check My Eligibility</button>
+  </div>
+
+  <div class="eligibility-card fu2" id="elig-card">
+    <div class="elig-label">Maximum Eligible Home Loan</div>
+    <div class="elig-amount" id="elig-amount">₹56.8 Lakh</div>
+    <div class="elig-sub" id="elig-sub">Based on 50% FOIR · 20 yr tenure · 8.50% rate</div>
+    <div class="elig-meter"><div class="elig-fill" id="elig-fill" style="width:72%"></div></div>
+    <div class="elig-pct" id="elig-pct">72% of ₹80L max possible</div>
+    <div class="elig-grid">
+      <div class="elig-box"><div class="elig-box-lbl">Max Monthly EMI</div><div class="elig-box-val" id="e-max-emi">₹45,000</div></div>
+      <div class="elig-box"><div class="elig-box-lbl">Available for EMI</div><div class="elig-box-val" id="e-avail">₹40,000</div></div>
+      <div class="elig-box"><div class="elig-box-lbl">FOIR Used</div><div class="elig-box-val" id="e-foir">50%</div></div>
+      <div class="elig-box"><div class="elig-box-lbl">Eligibility Status</div><div class="elig-box-val" id="e-status">✅ Eligible</div></div>
+    </div>
+    <div class="elig-tag tag-green" id="elig-tag">✅ Strong Eligibility</div>
+  </div>
+
+  <div class="foir-wrap fu3">
+    <div class="foir-title">📐 FOIR Analysis</div>
+    <div class="gauge-row">
+      <svg class="gauge-svg" width="100" height="70" viewBox="0 0 100 70">
+        <path d="M 10 60 A 40 40 0 0 1 90 60" stroke="#F5E6D4" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M 10 60 A 40 40 0 0 1 90 60" stroke="url(#fg)" stroke-width="12" fill="none" stroke-linecap="round"
+          stroke-dasharray="126" id="gauge-arc" stroke-dashoffset="63" style="transition:stroke-dashoffset .6s ease"/>
+        <defs>
+          <linearGradient id="fg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#22C55E"/>
+            <stop offset="50%" stop-color="#EAB308"/>
+            <stop offset="100%" stop-color="#DC2626"/>
+          </linearGradient>
+        </defs>
+        <text x="50" y="52" text-anchor="middle" font-size="13" font-weight="800" fill="var(--navy)" id="gauge-txt">50%</text>
+      </svg>
+      <div class="gauge-info">
+        <div class="gauge-lbl">Fixed Obligation to Income Ratio</div>
+        <div class="gauge-val" id="foir-val">50.0%</div>
+        <div class="gauge-status green-txt" id="foir-status">✅ Within safe limit (≤50%)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec fu3">Tips to Boost Eligibility</div>
+  <div class="tip-list fu4">
+    <div class="tip-item">
+      <div class="tip-icon">💳</div>
+      <div><div class="tip-title">Improve CIBIL Score to 750+</div><div class="tip-desc">A score above 750 unlocks lower rates (up to 0.25% reduction) and higher loan amounts from SBI, HDFC, ICICI</div></div>
+    </div>
+    <div class="tip-item">
+      <div class="tip-icon">📉</div>
+      <div><div class="tip-title">Close Existing Loans First</div><div class="tip-desc">Reducing existing EMIs improves FOIR significantly — clearing a ₹10,000 EMI can add ₹8–12L to eligibility</div></div>
+    </div>
+    <div class="tip-item">
+      <div class="tip-icon">👫</div>
+      <div><div class="tip-title">Add Co-applicant (Joint Loan)</div><div class="tip-desc">Adding spouse/parent as co-applicant can increase eligibility by 40–60% and also provides additional 80C/24(b) tax benefits</div></div>
+    </div>
+    <div class="tip-item">
+      <div class="tip-icon">📅</div>
+      <div><div class="tip-title">Opt for Longer Tenure</div><div class="tip-desc">Extending tenure to 30 years reduces EMI burden and improves eligibility — useful if you're under 35 years old</div></div>
+    </div>
+  </div>
+
+  <div class="save-bar fu5">
+    <div style="font-size:24px">💾</div>
+    <div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--green2)">Save Eligibility Report</div><div style="font-size:9.5px;color:var(--green);font-family:'Trebuchet MS',sans-serif">Save for bank application reference</div></div>
+    <button class="save-btn" onclick="saveCalc()">Save</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Eligibility Report Saved!</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let cibilScore=760,empType='salaried';
+function fmt(n){if(n>=10000000)return '₹'+(n/10000000).toFixed(2)+' Cr';if(n>=100000)return '₹'+(n/100000).toFixed(1)+' Lakh';return '₹'+Math.round(n).toLocaleString('en-IN');}
+function setCibil(s,el){cibilScore=s;document.querySelectorAll('.toggle-row:nth-of-type(5) .tog-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');update();}
+function setEmp(t,el){empType=t;document.querySelectorAll('.toggle-row:nth-of-type(6) .tog-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');update();}
+function update(){
+  const income=+document.getElementById('sl-income').value;
+  const existEmi=+document.getElementById('sl-emi').value;
+  const rate=+document.getElementById('sl-rate').value/100;
+  const tenure=+document.getElementById('sl-tenure').value;
+  document.getElementById('lbl-income').textContent=fmt(income);
+  document.getElementById('lbl-emi').textContent=fmt(existEmi);
+  document.getElementById('lbl-rate').textContent=rate.toFixed(2)+'%';
+  document.getElementById('lbl-tenure').textContent=tenure+' Years';
+  const foirLimit=empType==='salaried'?0.50:0.45;
+  const maxEmi=income*foirLimit;
+  const availEmi=maxEmi-existEmi;
+  const r=rate/1200;const n=tenure*12;
+  const eligLoan=availEmi>0?availEmi*(Math.pow(1+r,n)-1)/(r*Math.pow(1+r,n)):0;
+  const foir=(existEmi+(availEmi>0?availEmi:0))/income*100;
+  const actualFoir=(existEmi/income)*100;
+  document.getElementById('elig-amount').textContent=fmt(eligLoan);
+  document.getElementById('elig-sub').textContent=`Based on ${(foirLimit*100).toFixed(0)}% FOIR · ${tenure} yr tenure · ${rate.toFixed(2)}% rate`;
+  document.getElementById('e-max-emi').textContent=fmt(maxEmi);
+  document.getElementById('e-avail').textContent=availEmi>0?fmt(availEmi):'₹0';
+  document.getElementById('e-foir').textContent=actualFoir.toFixed(1)+'%';
+  const fillPct=Math.min(100,Math.max(0,(eligLoan/10000000)*100));
+  document.getElementById('elig-fill').style.width=fillPct+'%';
+  document.getElementById('elig-pct').textContent=Math.round(fillPct)+'% of ₹1Cr potential';
+  const gaugeOffset=126-(actualFoir/100)*126;
+  document.getElementById('gauge-arc').style.strokeDashoffset=gaugeOffset;
+  document.getElementById('gauge-txt').textContent=actualFoir.toFixed(0)+'%';
+  document.getElementById('foir-val').textContent=actualFoir.toFixed(1)+'%';
+  if(actualFoir<=40){document.getElementById('foir-status').textContent='✅ Excellent (≤40%)';document.getElementById('foir-status').className='gauge-status green-txt';}
+  else if(actualFoir<=50){document.getElementById('foir-status').textContent='✅ Within safe limit (≤50%)';document.getElementById('foir-status').className='gauge-status green-txt';}
+  else if(actualFoir<=60){document.getElementById('foir-status').textContent='⚠️ Borderline – reduce obligations';document.getElementById('foir-status').className='gauge-status yellow-txt';}
+  else{document.getElementById('foir-status').textContent='❌ High FOIR – loan may be rejected';document.getElementById('foir-status').className='gauge-status red-txt';}
+  if(eligLoan>5000000){document.getElementById('elig-tag').textContent='✅ Strong Eligibility';document.getElementById('elig-tag').className='elig-tag tag-green';document.getElementById('e-status').textContent='✅ Eligible';}
+  else if(eligLoan>2000000){document.getElementById('elig-tag').textContent='⚠️ Moderate Eligibility';document.getElementById('elig-tag').className='elig-tag tag-yellow';document.getElementById('e-status').textContent='⚠️ Moderate';}
+  else{document.getElementById('elig-tag').textContent='❌ Low Eligibility';document.getElementById('elig-tag').className='elig-tag tag-red';document.getElementById('e-status').textContent='❌ Low';}
+}
+function saveCalc(){const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+update();
+</script>
+</body>
+</html>

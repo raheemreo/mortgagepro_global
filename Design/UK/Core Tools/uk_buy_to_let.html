@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buy-to-Let – UK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.save-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.save-btn{font-size:13px;font-weight:700;width:auto;padding:0 12px;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.gold{color:#FFD700;}.rs-val.grn{color:#90EE90;}.rs-val.red{color:#FF8A9A;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;}
+.card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.inp-group{margin-bottom:12px;}
+.inp-label{font-size:11px;font-weight:700;color:#5C5C8A;margin-bottom:5px;display:block;}
+.inp-wrap{position:relative;}
+.inp-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#1a1a5e;}
+.inp-suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#5C5C8A;}
+input[type=number],select{width:100%;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:11px;padding:11px 36px 11px 28px;font-size:15px;font-weight:700;color:#0D0D2B;outline:none;-moz-appearance:textfield;}
+input[type=number]:focus,select:focus{border-color:#1a1a5e;}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+select{padding-left:12px;cursor:pointer;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn-calc{width:100%;background:linear-gradient(135deg,#B45309,#92400E);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(180,83,9,0.35);margin-top:4px;}
+/* Yield hero */
+.yield-hero{background:linear-gradient(145deg,#B45309,#92400E);border-radius:20px;padding:20px;position:relative;overflow:hidden;margin-bottom:10px;}
+.yield-hero::before{content:'🏢';position:absolute;right:8px;top:-4px;font-size:65px;opacity:0.1;}
+.rh-lbl{font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.7px;}
+.rh-val{font-size:36px;font-weight:800;color:#fff;font-family:Georgia,serif;margin:4px 0;}
+.rh-sub{font-size:12px;color:rgba(255,255,255,0.7);}
+.rh-tag{display:inline-flex;align-items:center;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#fff;margin-top:8px;}
+.metrics-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.met-card{background:#fff;border-radius:15px;padding:13px;box-shadow:0 3px 10px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);}
+.met-lbl{font-size:10px;color:#5C5C8A;margin-bottom:3px;}
+.met-val{font-size:18px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.met-val.red{color:#C8102E;}.met-val.grn{color:#059669;}.met-val.gold{color:#B45309;}
+.met-sub{font-size:10px;color:#5C5C8A;margin-top:2px;}
+/* Donut chart */
+.donut-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.dc-title{font-size:12px;font-weight:800;color:#0D0D2B;margin-bottom:12px;font-family:Georgia,serif;}
+.dc-body{display:flex;align-items:center;gap:16px;}
+.dc-legend{flex:1;}
+.dl-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.dl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.dl-label{font-size:11px;color:#5C5C8A;flex:1;}
+.dl-val{font-size:12px;font-weight:800;color:#0D0D2B;}
+/* P&L breakdown */
+.pnl{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #FCD34D;border-radius:15px;padding:14px;margin-bottom:10px;}
+.pnl-title{font-size:12px;font-weight:800;color:#78350F;font-family:Georgia,serif;margin-bottom:10px;}
+.pnl-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(252,211,77,0.5);font-size:12px;}
+.pnl-row:last-child{border-bottom:none;font-weight:800;}
+.pnl-row span:first-child{color:#92400E;}
+.pnl-row span.pos{color:#059669;font-weight:700;}
+.pnl-row span.neg{color:#C8102E;font-weight:700;}
+/* Stress test */
+.stress{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.st-title{font-size:12px;font-weight:800;color:#0D0D2B;margin-bottom:10px;font-family:Georgia,serif;}
+.st-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;margin-bottom:5px;}
+.st-row:last-child{margin-bottom:0;}
+.str-label{font-size:11px;font-weight:700;color:#5C5C8A;}
+.str-val{font-size:12px;font-weight:800;}
+.str-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.pass{background:#D1FAE5;color:#065F46;}.fail{background:#FEE2E2;color:#991B1B;}
+.warn{background:#FEF3C7;color:#78350F;}
+.st-row.pass-bg{background:#F0FDF4;}.st-row.fail-bg{background:#FEF2F2;}.st-row.warn-bg{background:#FFFBEB;}
+.saved-item{background:#fff;border-radius:13px;padding:12px 14px;box-shadow:0 2px 8px rgba(13,13,43,0.06);border:1px solid rgba(26,26,94,0.08);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.si-left .si-name{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.si-left .si-date{font-size:10px;color:#5C5C8A;margin-top:2px;}
+.si-right .si-val{font-size:14px;font-weight:800;color:#B45309;}
+.si-right .si-del{font-size:11px;color:#C8102E;cursor:pointer;margin-top:2px;}
+.empty-saved{text-align:center;color:#5C5C8A;font-size:12px;padding:16px 0;}
+.hidden{display:none;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇬🇧</span><div class="hdr-title">Buy-to-Let Calc</div><div class="hdr-sub">Rental Yield & BTL Analysis</div></div>
+    <div class="save-btn" onclick="saveCalc()">💾 Save</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">BTL Rate</div><div class="rs-val red">5.39%</div><div class="rs-note">Avg 2-yr fix</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Good Yield</div><div class="rs-val gold">5–8%</div><div class="rs-note">Gross target</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Min Deposit</div><div class="rs-val">25%</div><div class="rs-note">BTL standard</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">SDLT Surcharge</div><div class="rs-val red">+3%</div><div class="rs-note">Additional prop.</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Property Details</div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">Purchase Price</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="price" value="280000" min="0"></div>
+    </div>
+    <div class="two-col">
+      <div class="inp-group">
+        <label class="inp-label">Deposit %</label>
+        <div class="inp-wrap"><input type="number" id="depPct" value="25" min="10" max="100" style="padding-left:12px"><span class="inp-suffix">%</span></div>
+      </div>
+      <div class="inp-group">
+        <label class="inp-label">BTL Rate</label>
+        <div class="inp-wrap"><input type="number" id="btlRate" value="5.39" min="0" max="20" step="0.01" style="padding-left:12px"><span class="inp-suffix">%</span></div>
+      </div>
+    </div>
+    <div class="inp-group" style="margin-bottom:0">
+      <label class="inp-label">Mortgage Term</label>
+      <div class="inp-wrap"><input type="number" id="btlTerm" value="25" min="5" max="35" style="padding-left:12px"><span class="inp-suffix">yrs</span></div>
+    </div>
+  </div>
+  <div class="sec-lbl">Rental Income</div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">Monthly Rent</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="rent" value="1400" min="0"></div>
+    </div>
+    <div class="two-col">
+      <div class="inp-group">
+        <label class="inp-label">Void Months/yr</label>
+        <div class="inp-wrap"><input type="number" id="voids" value="1" min="0" max="12" style="padding-left:12px"></div>
+      </div>
+      <div class="inp-group">
+        <label class="inp-label">Agent Fee %</label>
+        <div class="inp-wrap"><input type="number" id="agentFee" value="10" min="0" max="20" style="padding-left:12px"><span class="inp-suffix">%</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="sec-lbl">Annual Costs</div>
+  <div class="card">
+    <div class="two-col">
+      <div class="inp-group">
+        <label class="inp-label">Maintenance</label>
+        <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="maint" value="1200" min="0"></div>
+      </div>
+      <div class="inp-group">
+        <label class="inp-label">Insurance</label>
+        <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="insure" value="400" min="0"></div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="inp-group" style="margin-bottom:0">
+        <label class="inp-label">Service Charge</label>
+        <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="service" value="0" min="0"></div>
+      </div>
+      <div class="inp-group" style="margin-bottom:0">
+        <label class="inp-label">Tax Rate</label>
+        <div class="inp-wrap"><input type="number" id="taxRate" value="40" min="0" max="100" style="padding-left:12px"><span class="inp-suffix">%</span></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn-calc" onclick="calculate()">🏢 Analyse BTL Investment</button>
+
+  <div id="results" class="hidden" style="margin-top:16px">
+    <div class="yield-hero">
+      <div class="rh-lbl">Gross Rental Yield</div>
+      <div class="rh-val" id="grossYield">—</div>
+      <div class="rh-sub" id="netYieldSub">—</div>
+      <div class="rh-tag" id="yieldTag">—</div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="met-card">
+        <div class="met-lbl">Monthly Mortgage</div>
+        <div class="met-val" id="mortPmt">—</div>
+        <div class="met-sub" id="mortSub">Interest only</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">Monthly Cash Flow</div>
+        <div class="met-val" id="cashFlow">—</div>
+        <div class="met-sub">After all costs</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">Net Yield</div>
+        <div class="met-val gold" id="netYield">—</div>
+        <div class="met-sub">After costs</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">ROI (Cash-on-Cash)</div>
+        <div class="met-val grn" id="roi">—</div>
+        <div class="met-sub">On deposit</div>
+      </div>
+    </div>
+
+    <div class="donut-card">
+      <div class="dc-title">Annual Income Breakdown</div>
+      <div class="dc-body">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="38" fill="none" stroke="#F5F5F8" stroke-width="20"/>
+          <circle id="donutMort" cx="55" cy="55" r="38" fill="none" stroke="#C8102E" stroke-width="20" stroke-dasharray="239" stroke-dashoffset="0" stroke-linecap="butt" transform="rotate(-90 55 55)" style="transition:stroke-dashoffset 1s"/>
+          <circle id="donutCosts" cx="55" cy="55" r="38" fill="none" stroke="#B45309" stroke-width="20" stroke-dasharray="239" stroke-dashoffset="0" stroke-linecap="butt" transform="rotate(-90 55 55)" style="transition:stroke-dashoffset 1s"/>
+          <circle id="donutProfit" cx="55" cy="55" r="38" fill="none" stroke="#059669" stroke-width="20" stroke-dasharray="239" stroke-dashoffset="0" stroke-linecap="butt" transform="rotate(-90 55 55)" style="transition:stroke-dashoffset 1s"/>
+          <text x="55" y="50" text-anchor="middle" font-size="11" font-weight="800" fill="#0D0D2B" id="donutCenterVal">—</text>
+          <text x="55" y="63" text-anchor="middle" font-size="9" fill="#5C5C8A">annual</text>
+        </svg>
+        <div class="dc-legend">
+          <div class="dl-row"><div class="dl-dot" style="background:#C8102E"></div><div class="dl-label">Mortgage</div><div class="dl-val" id="dlMort">—</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#B45309"></div><div class="dl-label">Costs</div><div class="dl-val" id="dlCosts">—</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#059669"></div><div class="dl-label">Profit</div><div class="dl-val" id="dlProfit">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pnl">
+      <div class="pnl-title">📊 Annual P&L Statement</div>
+      <div class="pnl-row"><span>Gross Rental Income</span><span class="pos" id="plGross">—</span></div>
+      <div class="pnl-row"><span>Void Periods</span><span class="neg" id="plVoid">—</span></div>
+      <div class="pnl-row"><span>Letting Agent Fees</span><span class="neg" id="plAgent">—</span></div>
+      <div class="pnl-row"><span>Mortgage Interest</span><span class="neg" id="plMortInt">—</span></div>
+      <div class="pnl-row"><span>Maintenance</span><span class="neg" id="plMaint">—</span></div>
+      <div class="pnl-row"><span>Insurance</span><span class="neg" id="plInsure">—</span></div>
+      <div class="pnl-row"><span>Service Charge</span><span class="neg" id="plService">—</span></div>
+      <div class="pnl-row"><span>Net Rental Income</span><span class="pos" id="plNet">—</span></div>
+      <div class="pnl-row"><span>Tax (Section 24)</span><span class="neg" id="plTax">—</span></div>
+      <div class="pnl-row"><span>After-Tax Profit</span><span id="plAfterTax">—</span></div>
+    </div>
+
+    <div class="stress">
+      <div class="st-title">🧪 Lender Stress Tests (ICR)</div>
+      <div class="st-row" id="strRow145">
+        <span class="str-label">145% ICR @ 5.5% (standard)</span>
+        <div style="text-align:right"><div class="str-val" id="strVal145">—</div><div class="str-badge" id="strBadge145">—</div></div>
+      </div>
+      <div class="st-row" id="strRow125">
+        <span class="str-label">125% ICR @ 5.5% (HRT)</span>
+        <div style="text-align:right"><div class="str-val" id="strVal125">—</div><div class="str-badge" id="strBadge125">—</div></div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Saved Analyses</div>
+    <div id="savedList"><div class="empty-saved">No saved analyses yet.</div></div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+let saved=JSON.parse(localStorage.getItem('btl_saved')||'[]');
+let lastResult=null;
+function fmt(n){return'£'+Math.round(n).toLocaleString('en-GB');}
+function pmt(r,n,pv){if(r===0)return pv/n;return pv*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
+
+function calculate(){
+  const price=parseFloat(document.getElementById('price').value)||0;
+  const depPct=parseFloat(document.getElementById('depPct').value)||25;
+  const btlRate=parseFloat(document.getElementById('btlRate').value)||5.39;
+  const btlTerm=parseFloat(document.getElementById('btlTerm').value)||25;
+  const rent=parseFloat(document.getElementById('rent').value)||0;
+  const voids=parseFloat(document.getElementById('voids').value)||0;
+  const agentFee=parseFloat(document.getElementById('agentFee').value)||10;
+  const maint=parseFloat(document.getElementById('maint').value)||0;
+  const insure=parseFloat(document.getElementById('insure').value)||0;
+  const service=parseFloat(document.getElementById('service').value)||0;
+  const taxRate=parseFloat(document.getElementById('taxRate').value)||40;
+
+  const dep=price*depPct/100;
+  const loan=price-dep;
+  const rMo=btlRate/100/12;
+  // Interest-only for BTL (standard)
+  const mortPmtIO=loan*(btlRate/100/12);
+  const annualMortInt=mortPmtIO*12;
+  const grossAnnual=rent*12;
+  const voidLoss=(rent*voids);
+  const agentAmt=(grossAnnual-voidLoss)*(agentFee/100);
+  const netRental=grossAnnual-voidLoss-agentAmt-maint-insure-service;
+  // Section 24: tax on gross rental - 20% mortgage interest relief
+  const taxableIncome=netRental;
+  const mortRelief=annualMortInt*0.2;
+  const taxDue=Math.max(0,taxableIncome*(taxRate/100)-mortRelief);
+  const afterTaxProfit=netRental-annualMortInt-taxDue;
+  const grossYield=(grossAnnual/price)*100;
+  const netYield=(netRental/price)*100;
+  const cashFlow=(netRental-annualMortInt)/12;
+  const roi=(afterTaxProfit/dep)*100;
+  // ICR tests
+  const stressRate=5.5;
+  const stressMortInt=loan*(stressRate/100);
+  const icr145=netRental/(stressMortInt*1.45);
+  const icr125=netRental/(stressMortInt*1.25);
+
+  const tag=grossYield>=7?'🟢 Excellent yield':grossYield>=5?'🟡 Good yield':'🔴 Below target';
+  document.getElementById('grossYield').textContent=grossYield.toFixed(2)+'%';
+  document.getElementById('netYieldSub').textContent='Net yield: '+netYield.toFixed(2)+'% · Cash flow: £'+Math.round(cashFlow)+'/mo';
+  document.getElementById('yieldTag').textContent=tag;
+  document.getElementById('mortPmt').textContent=fmt(mortPmtIO)+'/mo';
+  document.getElementById('mortSub').textContent='Interest-only, '+btlRate+'%';
+  document.getElementById('cashFlow').textContent=(cashFlow>=0?'':'-')+fmt(Math.abs(cashFlow))+'/mo';
+  document.getElementById('cashFlow').className='met-val '+(cashFlow>=0?'grn':'red');
+  document.getElementById('netYield').textContent=netYield.toFixed(2)+'%';
+  document.getElementById('roi').textContent=roi.toFixed(2)+'%';
+  // Donut
+  const totalAnnual=grossAnnual-voidLoss;
+  const mortPct=annualMortInt/totalAnnual;
+  const costsPct=(agentAmt+maint+insure+service)/totalAnnual;
+  const profitPct=Math.max(0,1-mortPct-costsPct);
+  const circ=239;
+  const mortOffset=circ*(1-mortPct);
+  const costsOffset=circ*(1-costsPct);
+  const profitOffset=circ*(1-profitPct);
+  // Stack as segments
+  const mortAngle=mortPct*360, costsAngle=costsPct*360;
+  document.getElementById('donutMort').style.strokeDashoffset=circ*(1-mortPct);
+  document.getElementById('donutCosts').style.strokeDashoffset=circ*(1-costsPct);
+  document.getElementById('donutCosts').style.transform=`rotate(${-90+mortAngle*360/360}deg)`;
+  const profEl=document.getElementById('donutProfit');
+  profEl.style.strokeDasharray=`${circ*profitPct} ${circ*(1-profitPct)}`;
+  profEl.style.strokeDashoffset=circ*(1-(mortPct+costsPct));
+  document.getElementById('donutCenterVal').textContent='£'+Math.round(totalAnnual/1000)+'k';
+  document.getElementById('dlMort').textContent=fmt(annualMortInt);
+  document.getElementById('dlCosts').textContent=fmt(agentAmt+maint+insure+service);
+  document.getElementById('dlProfit').textContent=(afterTaxProfit>=0?'':'-')+fmt(Math.abs(afterTaxProfit));
+  // PnL
+  document.getElementById('plGross').textContent=fmt(grossAnnual);
+  document.getElementById('plVoid').textContent='-'+fmt(voidLoss);
+  document.getElementById('plAgent').textContent='-'+fmt(agentAmt);
+  document.getElementById('plMortInt').textContent='-'+fmt(annualMortInt);
+  document.getElementById('plMaint').textContent='-'+fmt(maint);
+  document.getElementById('plInsure').textContent='-'+fmt(insure);
+  document.getElementById('plService').textContent='-'+fmt(service);
+  document.getElementById('plNet').textContent=fmt(netRental);
+  document.getElementById('plTax').textContent='-'+fmt(taxDue);
+  const aTaxEl=document.getElementById('plAfterTax');
+  aTaxEl.textContent=(afterTaxProfit>=0?'':'-')+fmt(Math.abs(afterTaxProfit));
+  aTaxEl.className=afterTaxProfit>=0?'pos':'neg';
+  // ICR
+  const icr145Pass=icr145>=1;const icr125Pass=icr125>=1;
+  document.getElementById('strRow145').className='st-row '+(icr145Pass?'pass-bg':'fail-bg');
+  document.getElementById('strVal145').textContent='ICR: '+icr145.toFixed(2)+'×';
+  document.getElementById('strBadge145').textContent=icr145Pass?'✓ Pass':'✗ Fail';
+  document.getElementById('strBadge145').className='str-badge '+(icr145Pass?'pass':'fail');
+  document.getElementById('strRow125').className='st-row '+(icr125Pass?'pass-bg':'fail-bg');
+  document.getElementById('strVal125').textContent='ICR: '+icr125.toFixed(2)+'×';
+  document.getElementById('strBadge125').textContent=icr125Pass?'✓ Pass':'✗ Fail';
+  document.getElementById('strBadge125').className='str-badge '+(icr125Pass?'pass':'fail');
+
+  lastResult={price,depPct,dep,btlRate,grossYield,netYield,cashFlow,roi,afterTaxProfit};
+  document.getElementById('results').classList.remove('hidden');
+}
+
+function saveCalc(){
+  if(!lastResult){calculate();}
+  if(!lastResult)return;
+  const r=lastResult;
+  const item={id:Date.now(),name:fmt(r.price)+' BTL',date:new Date().toLocaleDateString('en-GB'),grossYield:r.grossYield,cashFlow:r.cashFlow};
+  saved.unshift(item);if(saved.length>10)saved.pop();
+  localStorage.setItem('btl_saved',JSON.stringify(saved));renderSaved();
+}
+function deleteSaved(id){saved=saved.filter(s=>s.id!==id);localStorage.setItem('btl_saved',JSON.stringify(saved));renderSaved();}
+function renderSaved(){
+  const el=document.getElementById('savedList');
+  if(!saved.length){el.innerHTML='<div class="empty-saved">No saved analyses yet.</div>';return;}
+  el.innerHTML=saved.map(s=>`<div class="saved-item"><div class="si-left"><div class="si-name">${s.name}</div><div class="si-date">${s.date} · Gross yield: ${s.grossYield.toFixed(1)}%</div></div><div class="si-right"><div class="si-val">£${Math.round(s.cashFlow)}/mo</div><div class="si-del" onclick="deleteSaved(${s.id})">✕ Remove</div></div></div>`).join('');
+}
+renderSaved();
+</script>
+</body>
+</html>

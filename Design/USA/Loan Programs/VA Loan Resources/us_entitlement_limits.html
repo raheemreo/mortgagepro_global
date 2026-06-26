@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VA Entitlement & Loan Limits</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+    --purple:#4C1D95;--purple-lt:#7C3AED;--green:#15803D;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#4C1D95 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🏠';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:13.5px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+  .content{padding:14px 14px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;}
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px;}
+  .inp-box{background:var(--card);border-radius:13px;padding:12px 13px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--blue);}
+  .inp-box.full{grid-column:1/-1;}
+  .inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:14px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:8.5px;color:var(--muted);margin-top:3px;}
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#1B3F72);border-radius:18px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;}
+  .result-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:30px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.1;margin:5px 0 4px;}
+  .rh-amount span{font-size:14px;color:var(--gold-lt);}
+  .rh-sub{font-size:9.5px;color:rgba(255,255,255,0.48);}
+  .save-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:9px;padding:6px 11px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;transition:background .2s;z-index:2;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(76,29,149,0.40);border-color:rgba(124,58,237,0.60);}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .saved-section{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;display:none;}
+  .saved-section.has-saves{display:block;}
+  .saved-item{background:#F8FAFF;border-radius:10px;padding:10px 12px;margin-bottom:7px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .saved-item:last-child{margin-bottom:0;}
+  .si-info{flex:1;}
+  .si-title{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-del{font-size:14px;cursor:pointer;color:#B91C1C;padding:2px 5px;opacity:.6;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#1B3F72,#0B1D3A);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(27,63,114,0.32);font-family:'DM Serif Display',serif;margin-top:3px;}
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:13px;padding:12px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:18px;margin-bottom:5px;}
+  .bk-label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:15px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin:3px 0;}
+  .bk-sub{font-size:8.5px;color:var(--muted);}
+  /* Stacked entitlement bar chart */
+  .chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+  .stack-track{height:22px;background:#EEF2F8;border-radius:8px;overflow:hidden;display:flex;margin-bottom:8px;}
+  .stack-seg{height:100%;transition:width .5s;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;}
+  .stack-legend{display:flex;gap:14px;flex-wrap:wrap;}
+  .sl-item{display:flex;align-items:center;gap:5px;}
+  .sl-dot{width:9px;height:9px;border-radius:3px;}
+  .sl-text{font-size:9px;color:var(--muted);}
+  /* compare bars */
+  .compare-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .cmp-row{margin-bottom:10px;}
+  .cmp-row:last-child{margin-bottom:0;}
+  .cmp-header{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .cmp-label{font-size:10px;font-weight:700;color:var(--navy);}
+  .cmp-vals{font-size:9.5px;color:var(--muted);}
+  .cmp-track{height:10px;background:#EEF2F8;border-radius:5px;overflow:visible;position:relative;}
+  .cmp-va{height:100%;border-radius:5px;background:linear-gradient(90deg,#1B3F72,#4C1D95);transition:width .5s;}
+  .ff-card{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:15px;padding:13px 14px;margin-bottom:10px;}
+  .ff-title{font-size:12px;font-weight:700;color:#1E3A5F;font-family:'DM Serif Display',serif;margin-bottom:9px;}
+  .ff-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(147,197,253,0.4);gap:8px;}
+  .ff-row:last-child{border-bottom:none;}
+  .ff-k{font-size:9.5px;color:#1E40AF;font-weight:600;}
+  .ff-v{font-size:9.5px;font-weight:700;color:#1D4ED8;text-align:right;}
+  .elig-card{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .elig-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;}
+  .elig-row:last-child{border-bottom:none;}
+  .elig-label{font-size:11px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .elig-val{font-size:10.5px;font-weight:700;color:#15803D;text-align:right;}
+  .elig-val.gold{color:var(--gold);}
+  .note-strip{background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.25);border-radius:12px;padding:10px 12px;font-size:9.5px;color:#92400E;line-height:1.5;margin-bottom:10px;}
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:18px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.breakdown-grid,.chart-card,.compare-card,.ff-card,.elig-card{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏠</div>
+      <div class="hdr-title">Entitlement &amp; Loan Limits</div>
+      <div class="hdr-sub">2026 county limits · Full vs. partial</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Baseline 2026</div><div class="rs-v gold">$832,750</div><div class="rs-n">Most Counties</div></div>
+    <div class="rs"><div class="rs-l">High-Cost Cap</div><div class="rs-v">$1.25M</div><div class="rs-n">~155 Counties</div></div>
+    <div class="rs"><div class="rs-l">Full Entitlement</div><div class="rs-v">No Limit</div><div class="rs-n">Since 2020</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="note-strip">📌 Since the Blue Water Navy Vietnam Veterans Act of 2019, veterans with <strong>full entitlement</strong> face no VA loan limit at all — county limits only apply if you have <strong>partial</strong> entitlement.</div>
+
+  <div class="sec">Your Entitlement Scenario</div>
+  <div class="input-grid">
+    <div class="inp-box full">
+      <label>Entitlement Status</label>
+      <select id="entStatus" onchange="calculate()">
+        <option value="full" selected>Full Entitlement (1st use / restored)</option>
+        <option value="partial">Partial Entitlement (active prior loan)</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>Home Price ($)</label>
+      <input type="number" id="homePrice" value="500000" step="5000" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>County Type</label>
+      <select id="countyType" onchange="calculate()">
+        <option value="standard" selected>Standard ($832,750)</option>
+        <option value="highcost">High-Cost (up to $1,249,125)</option>
+        <option value="special">AK / HI / Guam / USVI</option>
+      </select>
+    </div>
+    <div class="inp-box full" id="priorBox" style="display:none;">
+      <label>Entitlement Already Used ($)</label>
+      <input type="number" id="entUsed" value="50000" step="5000" oninput="calculate()">
+      <div class="inp-hint">From your COE — "Entitlement Charged" line</div>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calculate()">🏠 Estimate My $0-Down Ceiling</button>
+
+  <div class="sec">Result</div>
+  <div class="result-hero">
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+    <div class="rh-label">Estimated $0-Down Purchase Ceiling</div>
+    <div class="rh-amount" id="zeroDownCeiling">No Limit <span>full entitlement</span></div>
+    <div class="rh-sub" id="ceilingSub">Borrowing power depends on income &amp; lender approval, not a VA cap</div>
+  </div>
+
+  <div class="saved-section" id="savedSection">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📂 Saved Scenarios</div>
+    <div id="savedList"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">📊 Entitlement Usage Breakdown</div>
+    <div class="stack-track" id="stackTrack">
+      <div class="stack-seg" id="seg-used" style="width:0%;background:#B91C1C;"></div>
+      <div class="stack-seg" id="seg-remain" style="width:100%;background:linear-gradient(90deg,#1B3F72,#4C1D95);">Available</div>
+    </div>
+    <div class="stack-legend">
+      <div class="sl-item"><div class="sl-dot" style="background:#B91C1C;"></div><div class="sl-text" id="leg-used">Used: $0</div></div>
+      <div class="sl-item"><div class="sl-dot" style="background:#1B3F72;"></div><div class="sl-text" id="leg-remain">Remaining guaranty</div></div>
+    </div>
+  </div>
+
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">🛡️</div><div class="bk-label">Basic Entitlement</div><div class="bk-value">$36,000</div><div class="bk-sub">Standard VA guaranty base</div></div>
+    <div class="bk-card"><div class="bk-icon">⭐</div><div class="bk-label">Bonus Entitlement</div><div class="bk-value" id="bonusEnt">25% of limit</div><div class="bk-sub">Covers above $144K loans</div></div>
+    <div class="bk-card"><div class="bk-icon">📐</div><div class="bk-label">Max VA Guaranty</div><div class="bk-value" id="maxGuaranty">$208,188</div><div class="bk-sub">25% of county limit</div></div>
+    <div class="bk-card"><div class="bk-icon">💰</div><div class="bk-label">Down Pmt If Needed</div><div class="bk-value" id="downIfNeeded">$0</div><div class="bk-sub">On amount above ceiling</div></div>
+  </div>
+
+  <div class="sec">2026 County Loan Limits</div>
+  <div class="ff-card">
+    <div class="ff-title">🗺️ Conforming Loan Limits by Area Type</div>
+    <div class="ff-row"><div class="ff-k">Standard Counties (~95% of U.S.)</div><div class="ff-v">$832,750</div></div>
+    <div class="ff-row"><div class="ff-k">High-Cost Counties (e.g. SF, DC, Honolulu)</div><div class="ff-v">up to $1,249,125</div></div>
+    <div class="ff-row"><div class="ff-k">Alaska, Hawaii, Guam, USVI</div><div class="ff-v">$1,249,125+</div></div>
+    <div class="ff-row"><div class="ff-k">2-Unit Property Baseline</div><div class="ff-v">$1,066,250</div></div>
+    <div class="ff-row"><div class="ff-k">2025 → 2026 Baseline Change</div><div class="ff-v">+3.3% ($806,500 → $832,750)</div></div>
+  </div>
+
+  <div class="sec">Entitlement Rules That Matter</div>
+  <div class="elig-card">
+    <div class="elig-row"><div class="elig-label">Full Entitlement</div><div class="elig-val">✅ No VA loan limit</div></div>
+    <div class="elig-row"><div class="elig-label">Partial Entitlement</div><div class="elig-val gold">⚡ County limit applies</div></div>
+    <div class="elig-row"><div class="elig-label">Restore After Sale</div><div class="elig-val">✅ Pay loan in full → restore</div></div>
+    <div class="elig-row"><div class="elig-label">One-Time Restoration</div><div class="elig-val">✅ Keep home, restore once</div></div>
+    <div class="elig-row"><div class="elig-label">Multiple VA Loans</div><div class="elig-val">⚡ Possible with remaining entitlement</div></div>
+  </div>
+
+  <div class="note-strip">💡 Loan limits aren't a cap on what you can borrow — they only define how much the VA guarantees without a down payment. With full entitlement, the real ceiling is what a lender approves based on your income, credit, and DTI.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let savedScenarios = JSON.parse(localStorage.getItem('va_entitlement_saves') || '[]');
+
+document.getElementById('entStatus').addEventListener('change', function(){
+  document.getElementById('priorBox').style.display = this.value === 'partial' ? 'block' : 'none';
+  calculate();
+});
+
+const countyLimits = { standard: 832750, highcost: 1249125, special: 1249125 };
+
+function calculate(){
+  const status = document.getElementById('entStatus').value;
+  const price = parseFloat(document.getElementById('homePrice').value) || 0;
+  const countyType = document.getElementById('countyType').value;
+  const limit = countyLimits[countyType];
+
+  if (status === 'full') {
+    document.getElementById('zeroDownCeiling').innerHTML = 'No Limit <span>full entitlement</span>';
+    document.getElementById('ceilingSub').textContent = 'Borrowing power depends on income & lender approval, not a VA cap';
+    document.getElementById('maxGuaranty').textContent = '$'+Math.round(limit*0.25).toLocaleString();
+    document.getElementById('bonusEnt').textContent = '25% — no ceiling';
+    document.getElementById('downIfNeeded').textContent = '$0';
+
+    document.getElementById('seg-used').style.width = '0%';
+    document.getElementById('seg-remain').style.width = '100%';
+    document.getElementById('leg-used').textContent = 'Used: $0';
+    document.getElementById('leg-remain').textContent = 'Remaining: Full guaranty available';
+  } else {
+    const used = parseFloat(document.getElementById('entUsed').value) || 0;
+    const maxGuaranty = limit * 0.25;
+    const remainingGuaranty = Math.max(0, maxGuaranty - used);
+    const zeroDownMax = remainingGuaranty * 4; // entitlement covers 25%, so loan amount = guaranty / 0.25
+    const downNeeded = Math.max(0, price - zeroDownMax);
+
+    document.getElementById('zeroDownCeiling').innerHTML = '$'+Math.round(zeroDownMax).toLocaleString()+' <span>$0-down ceiling</span>';
+    document.getElementById('ceilingSub').textContent = downNeeded > 0
+      ? `Home price exceeds ceiling — est. down payment needed: $${Math.round(downNeeded).toLocaleString()}`
+      : 'Your remaining entitlement fully covers this home price with $0 down';
+    document.getElementById('maxGuaranty').textContent = '$'+Math.round(maxGuaranty).toLocaleString();
+    document.getElementById('bonusEnt').textContent = 'Remaining: $'+Math.round(remainingGuaranty).toLocaleString();
+    document.getElementById('downIfNeeded').textContent = '$'+Math.round(downNeeded).toLocaleString();
+
+    const usedPct = Math.min(100, (used/maxGuaranty)*100);
+    document.getElementById('seg-used').style.width = usedPct.toFixed(1)+'%';
+    document.getElementById('seg-remain').style.width = (100-usedPct).toFixed(1)+'%';
+    document.getElementById('leg-used').textContent = 'Used: $'+Math.round(used).toLocaleString();
+    document.getElementById('leg-remain').textContent = 'Remaining: $'+Math.round(remainingGuaranty).toLocaleString();
+  }
+}
+
+function saveCalc() {
+  const status = document.getElementById('entStatus').options[document.getElementById('entStatus').selectedIndex].text;
+  const price = document.getElementById('homePrice').value;
+  const ceiling = document.getElementById('zeroDownCeiling').textContent.trim();
+  const entry = { id:Date.now(), label:`${status} – $${parseInt(price).toLocaleString()} home`, payment:ceiling, date:new Date().toLocaleDateString() };
+  savedScenarios.unshift(entry);
+  if (savedScenarios.length>5) savedScenarios=savedScenarios.slice(0,5);
+  localStorage.setItem('va_entitlement_saves',JSON.stringify(savedScenarios));
+  renderSaved();
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');btn.textContent='✅ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},2000);
+  showToast('Scenario saved!');
+}
+function deleteSave(id){ savedScenarios=savedScenarios.filter(s=>s.id!==id); localStorage.setItem('va_entitlement_saves',JSON.stringify(savedScenarios)); renderSaved(); }
+function renderSaved(){
+  const sec=document.getElementById('savedSection'); const list=document.getElementById('savedList');
+  if(!savedScenarios.length){sec.classList.remove('has-saves');return;}
+  sec.classList.add('has-saves');
+  list.innerHTML=savedScenarios.map(s=>`<div class="saved-item"><div class="si-info"><div class="si-title">${s.label}</div><div class="si-sub">${s.payment} · ${s.date}</div></div><div class="si-del" onclick="deleteSave(${s.id})">✕</div></div>`).join('');
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+calculate();
+renderSaved();
+</script>
+</body>
+</html>

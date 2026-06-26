@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refinance Tool – Australia</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;text-decoration:none;}
+.save-btn{padding:0 14px;height:36px;border-radius:10px;background:rgba(255,215,0,0.18);border:1px solid rgba(255,215,0,0.35);display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#FFD700;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:22px;display:block;}
+.hdr-title{font-size:18px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;}
+/* Input card */
+.icard{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.icard-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field label{font-size:10px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.field input,.field select{width:100%;background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.15);border-radius:10px;padding:11px 13px;font-size:14px;font-weight:700;color:#1A0A00;outline:none;transition:border-color 0.2s;}
+.field input:focus,.field select:focus{border-color:#7C2D12;}
+.field .prefix-wrap{position:relative;}
+.field .prefix{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;color:#92400E;}
+.field .prefix-wrap input{padding-left:28px;}
+.field .suffix-wrap{position:relative;}
+.field .suffix{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:12px;color:#92400E;}
+.field .suffix-wrap input{padding-right:36px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#7C2D12,#002868);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(124,45,18,0.3);margin-top:4px;transition:opacity 0.2s;}
+.calc-btn:active{opacity:0.85;}
+/* Result cards */
+.result-hero{background:linear-gradient(145deg,#1A0A00,#7C2D12);border-radius:20px;padding:18px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,10,0,0.28);margin-bottom:12px;}
+.result-hero::before{content:'🔄';position:absolute;right:10px;top:8px;font-size:60px;opacity:0.08;}
+.rh-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.rh-amount{font-size:36px;font-weight:800;color:#FFD700;font-family:Georgia,serif;margin:4px 0;}
+.rh-label{font-size:12px;color:rgba(255,255,255,0.6);}
+.rh-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px;}
+.rh-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:9px 11px;}
+.rh-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.rh-box .v{font-size:14px;font-weight:800;color:#fff;}
+.rh-box .v.pos{color:#BBF7D0;}.rh-box .v.neg{color:#FCA5A5;}.rh-box .v.gold{color:#FFD700;}
+/* Comparison card */
+.compare-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.compare-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.compare-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+.compare-row{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:center;margin-bottom:10px;}
+.cr-label{font-size:10px;color:#92400E;font-weight:600;padding-right:4px;}
+.cr-bar-wrap{position:relative;height:28px;border-radius:8px;overflow:hidden;}
+.cr-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:800;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);}
+.cr-bar.old{background:linear-gradient(90deg,#FCA5A5,#EF4444);color:#fff;}
+.cr-bar.new{background:linear-gradient(90deg,#BBF7D0,#16A34A);color:#fff;}
+/* Breakeven timeline */
+.timeline-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.tl-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:14px;}
+.tl-track{position:relative;height:6px;background:#FFF0E4;border-radius:3px;margin:20px 0 28px;}
+.tl-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#7C2D12,#002868);transition:width 0.8s ease;}
+.tl-marker{position:absolute;top:-5px;width:16px;height:16px;border-radius:50%;background:#7C2D12;border:2px solid #fff;transform:translateX(-50%);box-shadow:0 2px 6px rgba(124,45,18,0.4);}
+.tl-label{position:absolute;top:14px;transform:translateX(-50%);font-size:9px;font-weight:700;color:#7C2D12;white-space:nowrap;}
+.tl-start{font-size:9px;color:#92400E;position:absolute;left:0;top:14px;}
+.tl-end{font-size:9px;color:#92400E;position:absolute;right:0;top:14px;}
+.tl-info{display:flex;gap:8px;}
+.tl-box{flex:1;background:#FFF8F0;border-radius:10px;padding:9px;text-align:center;}
+.tl-box label{font-size:9px;color:#92400E;display:block;margin-bottom:2px;}
+.tl-box .v{font-size:16px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+/* Savings chart */
+.chart-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 18px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.09);margin-bottom:12px;}
+.chart-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:14px;}
+.chart-legend{display:flex;gap:14px;margin-bottom:10px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#92400E;}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+svg.savings-chart{width:100%;overflow:visible;}
+/* Costs card */
+.costs-card{background:linear-gradient(145deg,#002868,#1e3a8a);border-radius:18px;padding:16px;margin-bottom:12px;}
+.costs-title{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-bottom:12px;}
+.cost-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.1);}
+.cost-row:last-child{border-bottom:none;}
+.cost-name{font-size:12px;color:rgba(255,255,255,0.75);}
+.cost-val{font-size:13px;font-weight:700;color:#fff;}
+.cost-total-row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.2);}
+.cost-total-label{font-size:12px;font-weight:800;color:#FFD700;}
+.cost-total-val{font-size:16px;font-weight:800;color:#FFD700;}
+/* Verdict */
+.verdict-card{border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;}
+.verdict-card.go{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1px solid #6EE7B7;}
+.verdict-card.wait{background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:1px solid #FCA5A5;}
+.verdict-icon{font-size:28px;flex-shrink:0;}
+.verdict-title{font-size:14px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+.verdict-sub{font-size:11px;color:#374151;margin-top:3px;line-height:1.4;}
+/* Save modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:420px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);}
+.modal-overlay.show .modal{transform:translateY(0);}
+.modal-title{font-size:17px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:4px;}
+.modal-sub{font-size:11px;color:#92400E;margin-bottom:16px;}
+.modal input{width:100%;background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.15);border-radius:10px;padding:12px 13px;font-size:14px;font-weight:600;color:#1A0A00;outline:none;margin-bottom:12px;}
+.modal-row{display:flex;gap:10px;}
+.modal-cancel{flex:1;background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.15);border-radius:11px;padding:13px;font-size:13px;font-weight:700;color:#7C2D12;cursor:pointer;}
+.modal-save{flex:2;background:linear-gradient(135deg,#7C2D12,#002868);border:none;border-radius:11px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1A0A00;color:#FFD700;font-size:12px;font-weight:700;padding:10px 18px;border-radius:20px;opacity:0;transition:all 0.3s;z-index:300;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* Bottom nav */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="back-btn" onclick="history.back()">←</a>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">🇦🇺</span>
+      <div class="hdr-title">Refinance Tool</div>
+      <div class="hdr-sub">Switch Lender · Save Interest</div>
+    </div>
+    <div class="save-btn" onclick="openSave()">💾 Save</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Variable</div><div class="rs-val red">6.09%</div><div class="rs-note">Avg 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">2-Yr Fixed</div><div class="rs-val">6.29%</div><div class="rs-note">Big 4</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">RBA Cash</div><div class="rs-val gold">4.10%</div><div class="rs-note">May 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">3-Yr Fixed</div><div class="rs-val grn">6.15%</div><div class="rs-note">Avg</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Current Loan -->
+  <div class="sec-lbl">Current Loan Details</div>
+  <div class="icard">
+    <div class="icard-title">🏦 Existing Mortgage</div>
+    <div class="row2">
+      <div class="field">
+        <label>Remaining Balance</label>
+        <div class="prefix-wrap"><span class="prefix">$</span><input type="number" id="balance" value="520000" oninput="calculate()"></div>
+      </div>
+      <div class="field">
+        <label>Current Rate</label>
+        <div class="suffix-wrap"><input type="number" id="curRate" value="6.54" step="0.01" oninput="calculate()"><span class="suffix">%</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Years Remaining</label>
+        <div class="suffix-wrap"><input type="number" id="remYears" value="22" oninput="calculate()"><span class="suffix">yr</span></div>
+      </div>
+      <div class="field">
+        <label>Repayment Type</label>
+        <select id="repayType" onchange="calculate()">
+          <option value="pi">P&amp;I</option>
+          <option value="io">Interest Only</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Loan -->
+  <div class="sec-lbl">New Loan Details</div>
+  <div class="icard">
+    <div class="icard-title">✨ Proposed Refinance</div>
+    <div class="row2">
+      <div class="field">
+        <label>New Rate</label>
+        <div class="suffix-wrap"><input type="number" id="newRate" value="5.79" step="0.01" oninput="calculate()"><span class="suffix">%</span></div>
+      </div>
+      <div class="field">
+        <label>New Loan Term</label>
+        <div class="suffix-wrap"><input type="number" id="newTerm" value="25" oninput="calculate()"><span class="suffix">yr</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Lender / Product (Optional)</label>
+      <select id="lenderName" onchange="calculate()">
+        <option>Commonwealth Bank (CBA)</option>
+        <option>Westpac</option>
+        <option>ANZ</option>
+        <option>NAB</option>
+        <option>Macquarie Bank</option>
+        <option>ING Direct</option>
+        <option>Athena Home Loans</option>
+        <option>Reduce Home Loans</option>
+        <option>Other Lender</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Refinance Costs -->
+  <div class="sec-lbl">Refinancing Costs (AUS)</div>
+  <div class="icard">
+    <div class="icard-title">💸 Estimated Costs</div>
+    <div class="row2">
+      <div class="field">
+        <label>Discharge Fee</label>
+        <div class="prefix-wrap"><span class="prefix">$</span><input type="number" id="dischargeFee" value="350" oninput="calculate()"></div>
+      </div>
+      <div class="field">
+        <label>Application Fee</label>
+        <div class="prefix-wrap"><span class="prefix">$</span><input type="number" id="appFee" value="300" oninput="calculate()"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Valuation Fee</label>
+        <div class="prefix-wrap"><span class="prefix">$</span><input type="number" id="valFee" value="300" oninput="calculate()"></div>
+      </div>
+      <div class="field">
+        <label>Break Cost (Fixed)</label>
+        <div class="prefix-wrap"><span class="prefix">$</span><input type="number" id="breakCost" value="0" oninput="calculate()"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Legal / Settlement Fee</label>
+      <div class="prefix-wrap"><span class="prefix">$</span><input type="number" id="legalFee" value="800" oninput="calculate()"></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results" class="hidden">
+    <div class="sec-lbl">Refinance Analysis</div>
+
+    <div class="result-hero">
+      <div class="rh-tag">Total Lifetime Savings</div>
+      <div class="rh-amount" id="r-savings">$0</div>
+      <div class="rh-label">by switching lenders today</div>
+      <div class="rh-grid">
+        <div class="rh-box"><label>Monthly Saving</label><div class="v pos" id="r-monthly">$0</div></div>
+        <div class="rh-box"><label>Annual Saving</label><div class="v pos" id="r-annual">$0</div></div>
+        <div class="rh-box"><label>Old Repayment</label><div class="v neg" id="r-old">$0</div></div>
+        <div class="rh-box"><label>New Repayment</label><div class="v gold" id="r-new">$0</div></div>
+      </div>
+    </div>
+
+    <!-- Comparison bars -->
+    <div class="compare-card">
+      <div class="compare-title">📊 Monthly Repayment Comparison</div>
+      <div style="margin-top:10px;">
+        <div class="compare-row">
+          <span class="cr-label" style="width:45px;font-size:10px;">Current</span>
+          <div class="cr-bar-wrap" style="flex:1">
+            <div class="cr-bar old" id="bar-old" style="width:100%"><span id="bar-old-lbl">$0</span></div>
+          </div>
+        </div>
+        <div style="height:8px;"></div>
+        <div class="compare-row">
+          <span class="cr-label" style="width:45px;font-size:10px;">New</span>
+          <div class="cr-bar-wrap" style="flex:1">
+            <div class="cr-bar new" id="bar-new" style="width:80%"><span id="bar-new-lbl">$0</span></div>
+          </div>
+        </div>
+        <div style="height:8px;"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span style="font-size:10px;color:#92400E;">Rate difference: <strong id="rate-diff">0.00%</strong></span>
+          <span style="font-size:10px;color:#16A34A;font-weight:700;" id="saving-pct">0% less</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breakeven -->
+    <div class="timeline-card">
+      <div class="tl-title">⏱ Breakeven Timeline</div>
+      <div class="tl-track">
+        <div class="tl-fill" id="tl-fill" style="width:30%;"></div>
+        <div class="tl-marker" id="tl-marker" style="left:30%;"></div>
+        <div class="tl-label" id="tl-marker-lbl" style="left:30%;">Now</div>
+        <span class="tl-start">Month 0</span>
+        <span class="tl-end" id="tl-end-lbl">36 mo</span>
+      </div>
+      <div class="tl-info">
+        <div class="tl-box"><label>Total Costs</label><div class="v" id="tl-costs">$0</div></div>
+        <div class="tl-box"><label>Breakeven</label><div class="v" id="tl-breakeven">0 mo</div></div>
+        <div class="tl-box"><label>Net Benefit</label><div class="v" style="color:#16A34A;" id="tl-net">$0</div></div>
+      </div>
+    </div>
+
+    <!-- Savings over time chart -->
+    <div class="chart-card">
+      <div class="chart-title">📈 Cumulative Interest Savings</div>
+      <div class="chart-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#EF4444;"></div>Current Loan</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#002868;"></div>After Refinance</div>
+      </div>
+      <svg class="savings-chart" viewBox="0 0 360 160" id="savingsChart"></svg>
+    </div>
+
+    <!-- Costs breakdown -->
+    <div class="costs-card">
+      <div class="costs-title">💸 Refinancing Costs Breakdown</div>
+      <div class="cost-row"><span class="cost-name">Discharge Fee</span><span class="cost-val" id="c-discharge">$350</span></div>
+      <div class="cost-row"><span class="cost-name">Application Fee</span><span class="cost-val" id="c-app">$300</span></div>
+      <div class="cost-row"><span class="cost-name">Valuation Fee</span><span class="cost-val" id="c-val">$300</span></div>
+      <div class="cost-row"><span class="cost-name">Legal / Settlement Fee</span><span class="cost-val" id="c-legal">$800</span></div>
+      <div class="cost-row"><span class="cost-name">Break Cost</span><span class="cost-val" id="c-break">$0</span></div>
+      <div class="cost-total-row"><span class="cost-total-label">Total Upfront Cost</span><span class="cost-total-val" id="c-total">$1,750</span></div>
+    </div>
+
+    <!-- Verdict -->
+    <div class="verdict-card go" id="verdict-card">
+      <div class="verdict-icon" id="verdict-icon">✅</div>
+      <div>
+        <div class="verdict-title" id="verdict-title">Worth Refinancing</div>
+        <div class="verdict-sub" id="verdict-sub">Your savings significantly outweigh the costs. Refinancing makes strong financial sense.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">🔄 Calculate Refinance Savings</button>
+
+</div>
+
+<!-- Save Modal -->
+<div class="modal-overlay" id="saveModal">
+  <div class="modal">
+    <div class="modal-title">💾 Save Calculation</div>
+    <div class="modal-sub">Give this refinance scenario a name</div>
+    <input type="text" id="saveName" placeholder="e.g. CBA to Athena – Jun 2025" />
+    <div class="modal-row">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" onclick="saveCalc()">Save Calculation</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Calculation saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const fmt = n => '$' + Math.round(n).toLocaleString('en-AU');
+const fmtD = n => n.toFixed(2);
+
+function monthlyPmt(P, annualRate, years) {
+  const r = annualRate / 100 / 12;
+  const n = years * 12;
+  if (r === 0) return P / n;
+  return P * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+}
+
+function totalInterest(P, annualRate, years) {
+  const pmt = monthlyPmt(P, annualRate, years);
+  return pmt * years * 12 - P;
+}
+
+function calculate() {
+  const balance = parseFloat(document.getElementById('balance').value) || 0;
+  const curRate = parseFloat(document.getElementById('curRate').value) || 0;
+  const remYears = parseFloat(document.getElementById('remYears').value) || 0;
+  const newRate = parseFloat(document.getElementById('newRate').value) || 0;
+  const newTerm = parseFloat(document.getElementById('newTerm').value) || 0;
+  const dischargeFee = parseFloat(document.getElementById('dischargeFee').value) || 0;
+  const appFee = parseFloat(document.getElementById('appFee').value) || 0;
+  const valFee = parseFloat(document.getElementById('valFee').value) || 0;
+  const breakCost = parseFloat(document.getElementById('breakCost').value) || 0;
+  const legalFee = parseFloat(document.getElementById('legalFee').value) || 0;
+
+  if (!balance || !curRate || !remYears || !newRate || !newTerm) return;
+
+  const totalCosts = dischargeFee + appFee + valFee + breakCost + legalFee;
+  const oldPmt = monthlyPmt(balance, curRate, remYears);
+  const newPmt = monthlyPmt(balance, newRate, newTerm);
+  const monthlySaving = oldPmt - newPmt;
+  const annualSaving = monthlySaving * 12;
+
+  // Compare total interest over remaining/new term
+  const oldTotalInterest = totalInterest(balance, curRate, remYears);
+  const newTotalInterest = totalInterest(balance, newRate, newTerm);
+  const lifetimeSaving = oldTotalInterest - newTotalInterest - totalCosts;
+
+  // Breakeven
+  const breakevenMonths = monthlySaving > 0 ? Math.ceil(totalCosts / monthlySaving) : Infinity;
+
+  document.getElementById('results').classList.remove('hidden');
+
+  document.getElementById('r-savings').textContent = fmt(lifetimeSaving);
+  document.getElementById('r-monthly').textContent = monthlySaving >= 0 ? '+' + fmt(monthlySaving) : fmt(monthlySaving);
+  document.getElementById('r-annual').textContent = annualSaving >= 0 ? '+' + fmt(annualSaving) : fmt(annualSaving);
+  document.getElementById('r-old').textContent = fmt(oldPmt) + '/mo';
+  document.getElementById('r-new').textContent = fmt(newPmt) + '/mo';
+
+  // Bars
+  const ratio = newPmt / oldPmt;
+  document.getElementById('bar-old-lbl').textContent = fmt(oldPmt) + '/mo';
+  document.getElementById('bar-new-lbl').textContent = fmt(newPmt) + '/mo';
+  document.getElementById('bar-new').style.width = (ratio * 100).toFixed(1) + '%';
+  document.getElementById('rate-diff').textContent = Math.abs(newRate - curRate).toFixed(2) + '%';
+  document.getElementById('saving-pct').textContent = monthlySaving >= 0
+    ? ((1 - ratio) * 100).toFixed(1) + '% less/month'
+    : 'Higher repayment';
+
+  // Timeline
+  document.getElementById('c-discharge').textContent = fmt(dischargeFee);
+  document.getElementById('c-app').textContent = fmt(appFee);
+  document.getElementById('c-val').textContent = fmt(valFee);
+  document.getElementById('c-legal').textContent = fmt(legalFee);
+  document.getElementById('c-break').textContent = fmt(breakCost);
+  document.getElementById('c-total').textContent = fmt(totalCosts);
+
+  const maxMo = Math.min(breakevenMonths > 120 ? 120 : breakevenMonths * 2, 60);
+  const pct = Math.min((breakevenMonths / maxMo) * 100, 95);
+  document.getElementById('tl-fill').style.width = pct + '%';
+  document.getElementById('tl-marker').style.left = pct + '%';
+  document.getElementById('tl-marker-lbl').style.left = pct + '%';
+  document.getElementById('tl-end-lbl').textContent = maxMo + ' mo';
+  document.getElementById('tl-costs').textContent = fmt(totalCosts);
+  document.getElementById('tl-breakeven').textContent = breakevenMonths === Infinity ? 'N/A' : breakevenMonths + ' mo';
+  document.getElementById('tl-net').textContent = fmt(lifetimeSaving);
+
+  // Verdict
+  const vc = document.getElementById('verdict-card');
+  const vi = document.getElementById('verdict-icon');
+  const vt = document.getElementById('verdict-title');
+  const vs = document.getElementById('verdict-sub');
+  if (lifetimeSaving > 0 && breakevenMonths < 36) {
+    vc.className = 'verdict-card go';
+    vi.textContent = '✅'; vt.textContent = 'Strong Refinance Case';
+    vs.textContent = `You break even in ${breakevenMonths} months and save ${fmt(lifetimeSaving)} over the loan life. Refinancing is highly recommended.`;
+  } else if (lifetimeSaving > 0 && breakevenMonths < 72) {
+    vc.className = 'verdict-card go';
+    vi.textContent = '⚠️'; vt.textContent = 'Worth Considering';
+    vs.textContent = `Breakeven is ${breakevenMonths} months. If you plan to stay in the property beyond that, refinancing adds value.`;
+  } else {
+    vc.className = 'verdict-card wait';
+    vi.textContent = '❌'; vt.textContent = 'May Not Be Worth It';
+    vs.textContent = `Costs may outweigh benefits in your timeframe. Consider a lower-cost refinance option or negotiating with your current lender.`;
+  }
+
+  // Draw chart
+  drawChart(balance, curRate, remYears, newRate, newTerm, totalCosts);
+}
+
+function drawChart(P, oldRate, oldYears, newRate, newYears, costs) {
+  const maxYears = Math.max(oldYears, newYears);
+  const steps = Math.min(maxYears, 30);
+  const oldPmt = monthlyPmt(P, oldRate, oldYears);
+  const newPmt = monthlyPmt(P, newRate, newYears);
+
+  let oldInterest = 0, newInterest = costs;
+  let oldBal = P, newBal = P;
+  const oldPts = [[0, 0]], newPts = [[0, costs]];
+
+  for (let y = 1; y <= steps; y++) {
+    for (let m = 0; m < 12; m++) {
+      const oInt = oldBal * (oldRate / 100 / 12);
+      oldInterest += oInt;
+      oldBal = Math.max(0, oldBal - (oldPmt - oInt));
+      const nInt = newBal * (newRate / 100 / 12);
+      newInterest += nInt;
+      newBal = Math.max(0, newBal - (newPmt - nInt));
+    }
+    oldPts.push([y, oldInterest]);
+    newPts.push([y, newInterest]);
+  }
+
+  const maxV = Math.max(...oldPts.map(p => p[1]));
+  const W = 360, H = 140, padL = 42, padB = 20, padT = 8, padR = 10;
+  const cW = W - padL - padR, cH = H - padB - padT;
+
+  function px(y) { return padL + (y / steps) * cW; }
+  function py(v) { return padT + cH - (v / maxV) * cH; }
+
+  const oldPath = oldPts.map((p,i)=>(i===0?`M${px(p[0])},${py(p[1])}`:`L${px(p[0])},${py(p[1])}`)).join(' ');
+  const newPath = newPts.map((p,i)=>(i===0?`M${px(p[0])},${py(p[1])}`:`L${px(p[0])},${py(p[1])}`)).join(' ');
+
+  // Fill area
+  const oldFill = oldPath + ` L${px(steps)},${padT+cH} L${padL},${padT+cH} Z`;
+  const newFill = newPath + ` L${px(steps)},${padT+cH} L${padL},${padT+cH} Z`;
+
+  // Y labels
+  const yLabels = [0,0.25,0.5,0.75,1].map(f=>{
+    const v = f*maxV;
+    return `<text x="${padL-4}" y="${py(v)+4}" text-anchor="end" font-size="8" fill="#92400E">${v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v.toFixed(0)}</text>`;
+  }).join('');
+
+  // X labels
+  const xLabels = [0,Math.round(steps/2),steps].map(y=>{
+    return `<text x="${px(y)}" y="${H-4}" text-anchor="middle" font-size="8" fill="#92400E">Yr ${y}</text>`;
+  }).join('');
+
+  // Grid lines
+  const gridLines = [0.25,0.5,0.75].map(f=>{
+    const yv = padT + cH - f*cH;
+    return `<line x1="${padL}" y1="${yv}" x2="${W-padR}" y2="${yv}" stroke="#FFF0E4" stroke-width="1"/>`;
+  }).join('');
+
+  document.getElementById('savingsChart').innerHTML = `
+    ${gridLines}
+    <path d="${oldFill}" fill="#EF4444" opacity="0.12"/>
+    <path d="${newFill}" fill="#002868" opacity="0.12"/>
+    <path d="${oldPath}" fill="none" stroke="#EF4444" stroke-width="2" stroke-linejoin="round"/>
+    <path d="${newPath}" fill="none" stroke="#002868" stroke-width="2" stroke-linejoin="round"/>
+    ${yLabels}${xLabels}
+  `;
+}
+
+function openSave() {
+  if (document.getElementById('results').classList.contains('hidden')) {
+    calculate();
+  }
+  document.getElementById('saveModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('saveModal').classList.remove('show');
+}
+function saveCalc() {
+  const name = document.getElementById('saveName').value.trim() || 'Refinance Calc';
+  const data = {
+    name, date: new Date().toLocaleDateString('en-AU'),
+    balance: document.getElementById('balance').value,
+    curRate: document.getElementById('curRate').value,
+    newRate: document.getElementById('newRate').value,
+    savings: document.getElementById('r-savings').textContent,
+    monthly: document.getElementById('r-monthly').textContent,
+  };
+  const saved = JSON.parse(localStorage.getItem('au_refinance_saves') || '[]');
+  saved.push(data);
+  localStorage.setItem('au_refinance_saves', JSON.stringify(saved));
+  closeModal();
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+calculate();
+</script>
+</body>
+</html>

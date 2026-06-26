@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PPF Calculator – India Tools</title>
+<style>
+:root{--saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;--navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;--teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;--muted:#7A5C3A;--border:rgba(255,107,0,0.10);--sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}.rs-v.saf{color:var(--ochre-lt);}.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.inp-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.field{margin-bottom:14px;}.field:last-child{margin-bottom:0;}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field-row{display:flex;align-items:center;background:#FFF3E8;border-radius:12px;border:1.5px solid rgba(255,107,0,0.15);overflow:hidden;}
+.field-row:focus-within{border-color:var(--saffron);}
+.f-pre{padding:0 12px;font-size:14px;font-weight:800;color:var(--saffron);}
+.f-inp{flex:1;background:none;border:none;outline:none;font-size:17px;font-weight:800;color:var(--navy);padding:13px 0;font-family:'Book Antiqua',Palatino,Georgia,serif;}
+.f-suf{padding:0 12px;font-size:12px;font-weight:700;color:var(--muted);}
+.field-note{font-size:10px;color:var(--muted);margin-top:5px;font-family:'Trebuchet MS',sans-serif;}
+.range-slider{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--saffron) var(--pct,50%),#FFD9BB var(--pct,50%));margin-top:8px;cursor:pointer;}
+.range-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--saffron);border:3px solid #fff;box-shadow:0 2px 8px rgba(255,107,0,0.4);}
+.btn-row{display:flex;gap:10px;margin-top:14px;}
+.calc-btn{flex:1;background:linear-gradient(135deg,var(--green),var(--green2));border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(4,106,56,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;}
+.save-btn{width:54px;background:linear-gradient(135deg,var(--chakra),var(--navy));border:none;border-radius:14px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.save-btn.saved{background:linear-gradient(135deg,var(--green),var(--green2));}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;font-family:'Trebuchet MS',sans-serif;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+/* Green-themed result hero */
+.result-hero{background:linear-gradient(148deg,var(--green2),var(--green));border-radius:22px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:12px;}
+.result-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.08);}
+.result-hero::after{content:'☸';position:absolute;right:14px;bottom:12px;font-size:54px;color:rgba(255,255,255,0.06);}
+.rh-tag{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.rh-corpus{font-size:36px;font-weight:800;color:#DCFCE7;letter-spacing:-1px;margin:4px 0;}
+.rh-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+.rh-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:10px;}
+.rh-box label{font-size:8px;color:rgba(255,255,255,0.50);display:block;margin-bottom:3px;font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;}
+.rh-box .v{font-size:13px;font-weight:800;color:#fff;}.rh-box .v.yel{color:var(--ochre-lt);}
+/* Chart */
+.chart-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.chart-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.chart-title span{font-size:10px;font-weight:600;color:var(--green);font-family:'Trebuchet MS',sans-serif;}
+/* Growth chart */
+.growth-bars{display:flex;align-items:flex-end;gap:3px;height:80px;}
+.g-grp{flex:1;display:flex;flex-direction:column;align-items:stretch;gap:0;}
+.g-bar-int{border-radius:3px 3px 0 0;transition:height .5s ease;}
+.g-bar-dep{transition:height .5s ease;}
+.g-xlbl{font-size:8px;color:var(--muted);text-align:center;margin-top:4px;font-family:'Trebuchet MS',sans-serif;}
+/* Tax benefit */
+.tax-banner{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:1.5px solid #FDBA74;border-radius:17px;padding:14px 15px;margin-bottom:12px;}
+.tb-title{font-size:13px;font-weight:800;color:#9A3412;margin-bottom:8px;}
+.tb-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(154,52,18,0.08);}
+.tb-row:last-child{border-bottom:none;}
+.tb-lbl{font-size:11px;font-weight:700;color:#9A3412;}
+.tb-val{font-size:12px;font-weight:800;color:var(--saffron2);}
+/* Rules card */
+.rules-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.rule-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,107,0,0.06);}
+.rule-row:last-child{border-bottom:none;}
+.rule-ic{font-size:16px;flex-shrink:0;margin-top:1px;}
+.rule-title{font-size:12px;font-weight:800;color:var(--navy);}
+.rule-sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.saved-item{background:var(--card);border-radius:14px;padding:12px 14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.si-info{flex:1;min-width:0;}.si-name{font-size:12px;font-weight:800;color:var(--navy);}.si-meta{font-size:10px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.si-corpus{font-size:14px;font-weight:800;color:var(--green);white-space:nowrap;}
+.si-del{background:none;border:none;font-size:16px;cursor:pointer;padding:4px;color:#ccc;}
+.empty-saved{text-align:center;padding:20px;color:var(--muted);font-size:12px;font-family:'Trebuchet MS',sans-serif;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}.fu3{animation:fadeUp .38s ease both .14s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏛️</div>
+      <div class="hdr-title">PPF <span>Calculator</span></div>
+      <div class="hdr-sub">Public Provident Fund · EEE Tax Benefit · 7.1% p.a.</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">PPF Rate</div><div class="rs-v saf">7.10%</div><div class="rs-n">Q1 FY26</div></div>
+    <div class="rs"><div class="rs-l">Lock-in</div><div class="rs-v">15 yrs</div><div class="rs-n">Extendable</div></div>
+    <div class="rs"><div class="rs-l">Max/yr</div><div class="rs-v grn">₹1.5L</div><div class="rs-n">Sec 80C</div></div>
+    <div class="rs"><div class="rs-l">Min/yr</div><div class="rs-v">₹500</div><div class="rs-n">To keep active</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Investment Details</div>
+  <div class="inp-card fu1">
+    <div class="field">
+      <label>Yearly Investment</label>
+      <div class="field-row"><div class="f-pre">₹</div><input class="f-inp" id="yearly" type="number" value="150000" min="500" max="150000" oninput="syncSlider('yearly','sY',500,150000);calculate()"></div>
+      <input type="range" class="range-slider" id="sY" min="500" max="150000" step="500" value="150000" oninput="syncInput('sY','yearly',500,150000);calculate()">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;"><span>₹500</span><span>₹1.5L (Max)</span></div>
+      <div class="field-note">Maximum ₹1,50,000/year. Invest before 5th of every month for full month's interest.</div>
+    </div>
+    <div class="field">
+      <label>Investment Period</label>
+      <div class="field-row"><input class="f-inp" id="period" type="number" value="15" min="15" max="50" style="padding-left:12px;" oninput="syncSlider('period','sP',15,50);calculate()"><div class="f-suf">Years</div></div>
+      <input type="range" class="range-slider" id="sP" min="15" max="50" step="5" value="15" oninput="syncInput('sP','period',15,50);calculate()">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;"><span>15 yrs</span><span>50 yrs (ext.)</span></div>
+      <div class="field-note">15 yr base lock-in. Extendable in 5-yr blocks with or without contributions.</div>
+    </div>
+    <div class="field">
+      <label>PPF Interest Rate (p.a.)</label>
+      <div class="field-row"><input class="f-inp" id="rate" type="number" value="7.10" step="0.05" style="padding-left:12px;" oninput="calculate()"><div class="f-suf">%</div></div>
+      <div class="field-note">Current rate: 7.10% p.a. (Q1 FY 2025-26). Government revises quarterly.</div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">🏛️ Calculate PPF Corpus</button>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()">💾</button>
+    </div>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="sec fu2">Maturity Summary</div>
+    <div class="result-hero fu2">
+      <div class="rh-tag">PPF Corpus at Maturity — Tax Free</div>
+      <div class="rh-corpus" id="corpus">₹0</div>
+      <div class="rh-grid">
+        <div class="rh-box"><label>Total Invested</label><div class="v" id="rTotalInv">₹0</div></div>
+        <div class="rh-box"><label>Interest Earned</label><div class="v yel" id="rTotalInt">₹0</div></div>
+        <div class="rh-box"><label>Wealth Gained</label><div class="v yel" id="rWealthGain">0x</div></div>
+        <div class="rh-box"><label>CAGR (effective)</label><div class="v" id="rCagr">0%</div></div>
+      </div>
+    </div>
+
+    <div class="sec fu2">Growth Chart <span>Year-wise corpus</span></div>
+    <div class="chart-card fu3">
+      <div class="chart-title">PPF Corpus Growth <span id="chartSub"></span></div>
+      <div class="growth-bars" id="growthBars"></div>
+      <div style="display:flex" id="growthLabels"></div>
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;font-weight:600;"><div style="width:8px;height:8px;border-radius:2px;background:#046A38;"></div>Principal</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;font-weight:600;"><div style="width:8px;height:8px;border-radius:2px;background:var(--ochre);"></div>Interest</div>
+      </div>
+    </div>
+
+    <div class="sec fu3">80C Tax Benefit</div>
+    <div class="tax-banner fu3">
+      <div class="tb-title">🧾 EEE Benefit — Zero Tax at All 3 Stages</div>
+      <div class="tb-row"><div class="tb-lbl">Annual 80C deduction</div><div class="tb-val" id="tbDeduction">₹1,50,000</div></div>
+      <div class="tb-row"><div class="tb-lbl">Tax saved per year (30% slab)</div><div class="tb-val" id="tbSaved">₹46,800</div></div>
+      <div class="tb-row"><div class="tb-lbl">Total tax saved (over period)</div><div class="tb-val" id="tbTotal">₹0</div></div>
+      <div class="tb-row"><div class="tb-lbl">Interest tax-free (maturity)</div><div class="tb-val">100% Tax Free</div></div>
+    </div>
+  </div>
+
+  <div class="sec">PPF Rules & Features</div>
+  <div class="rules-card">
+    <div class="rule-row"><div class="rule-ic">📅</div><div><div class="rule-title">Loan facility from 3rd–6th year</div><div class="rule-sub">Borrow up to 25% of balance at 2% above PPF rate. Repay within 36 months.</div></div></div>
+    <div class="rule-row"><div class="rule-ic">💸</div><div><div class="rule-title">Partial withdrawal from 7th year</div><div class="rule-sub">Withdraw up to 50% of balance at end of 4th year. Only once per financial year.</div></div></div>
+    <div class="rule-row"><div class="rule-ic">⏰</div><div><div class="rule-title">Extension in 5-year blocks</div><div class="rule-sub">After 15 years, extend without contribution (just interest) or with fresh contributions (80C eligible).</div></div></div>
+    <div class="rule-row"><div class="rule-ic">🏦</div><div><div class="rule-title">Account transfer allowed</div><div class="rule-sub">Transfer between Post Offices and scheduled banks (SBI, HDFC, ICICI, etc.) anytime.</div></div></div>
+    <div class="rule-row"><div class="rule-ic">👨‍👩‍👧</div><div><div class="rule-title">Minor account allowed</div><div class="rule-sub">Open in minor's name — guardian manages until age 18. Counts towards guardian's 80C limit.</div></div></div>
+  </div>
+
+  <div class="sec">Saved Calculations <span id="savedCount"></span></div>
+  <div id="savedList"><div class="empty-saved" id="emptySaved">No saved calculations yet.</div></div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+const SK='ppf_saves';let lastResult=null;
+function fmt(n){return '₹'+Math.round(n).toLocaleString('en-IN');}
+function syncSlider(inp,sl,mn,mx){const v=Math.min(mx,Math.max(mn,parseFloat(document.getElementById(inp).value)||mn));const s=document.getElementById(sl);s.value=v;s.style.setProperty('--pct',((v-mn)/(mx-mn)*100)+'%');}
+function syncInput(sl,inp,mn,mx){const v=parseFloat(document.getElementById(sl).value);document.getElementById(inp).value=v;document.getElementById(sl).style.setProperty('--pct',((v-mn)/(mx-mn)*100)+'%');}
+function calculate(){
+  const yInv=Math.min(150000,parseFloat(document.getElementById('yearly').value)||0);
+  const period=parseFloat(document.getElementById('period').value)||15;
+  const r=(parseFloat(document.getElementById('rate').value)||7.10)/100;
+  // PPF: annual compounding, contribution at start of year
+  let balance=0;
+  const yearData=[];
+  for(let y=1;y<=period;y++){
+    balance=(balance+yInv)*(1+r);
+    yearData.push({y,balance,invested:yInv*y,interest:balance-yInv*y});
+  }
+  const corpus=balance;
+  const totalInv=yInv*period;
+  const totalInt=corpus-totalInv;
+  const wealthGain=corpus/totalInv;
+  const cagr=(Math.pow(corpus/totalInv,1/period)-1)*100;
+  const taxSaved=Math.min(yInv,150000)*0.30*1.04; // 30% + 4% cess per year
+  document.getElementById('corpus').textContent=fmt(corpus);
+  document.getElementById('rTotalInv').textContent=fmt(totalInv);
+  document.getElementById('rTotalInt').textContent=fmt(totalInt);
+  document.getElementById('rWealthGain').textContent=wealthGain.toFixed(2)+'x';
+  document.getElementById('rCagr').textContent=cagr.toFixed(2)+'%';
+  document.getElementById('tbDeduction').textContent=fmt(Math.min(yInv,150000));
+  document.getElementById('tbSaved').textContent=fmt(taxSaved);
+  document.getElementById('tbTotal').textContent=fmt(taxSaved*period);
+  // Growth chart — show every 5th year + last
+  const bars=document.getElementById('growthBars');const lbls=document.getElementById('growthLabels');
+  bars.innerHTML='';lbls.innerHTML='';
+  const showYrs=yearData.filter((_,i)=>i===0||(i+1)%5===0||i===period-1);
+  const maxV=Math.max(...showYrs.map(d=>d.balance),1);
+  document.getElementById('chartSub').textContent=`Final: ${fmt(corpus)}`;
+  showYrs.forEach(d=>{
+    const totalH=Math.max(6,Math.round((d.balance/maxV)*72));
+    const intH=Math.max(2,Math.round((d.interest/d.balance)*totalH));
+    const depH=totalH-intH;
+    const grp=document.createElement('div');grp.className='g-grp';grp.style.flex='1';
+    const bi=document.createElement('div');bi.className='g-bar-int';bi.style.cssText=`height:${intH}px;background:var(--ochre);`;
+    const bd=document.createElement('div');bd.className='g-bar-dep';bd.style.cssText=`height:${depH}px;background:#046A38;border-radius:0 0 3px 3px;`;
+    grp.appendChild(bi);grp.appendChild(bd);bars.appendChild(grp);
+    const l=document.createElement('div');l.style.cssText='flex:1;font-size:8px;color:var(--muted);text-align:center;margin-top:4px;font-family:Trebuchet MS,sans-serif;';l.textContent='Y'+d.y;lbls.appendChild(l);
+  });
+  document.getElementById('results').style.display='block';
+  lastResult={yInv,period,rate:parseFloat(document.getElementById('rate').value),corpus,totalInv,totalInt,wealthGain};
+  document.getElementById('saveBtn').classList.remove('saved');document.getElementById('saveBtn').textContent='💾';
+}
+function saveCalc(){if(!lastResult){calculate();return;}const saves=JSON.parse(localStorage.getItem(SK)||'[]');saves.unshift({id:Date.now(),date:new Date().toLocaleDateString('en-IN',{month:'short',day:'numeric'}),...lastResult});if(saves.length>10)saves.length=10;localStorage.setItem(SK,JSON.stringify(saves));document.getElementById('saveBtn').classList.add('saved');document.getElementById('saveBtn').textContent='✓';showToast('💾 PPF Calculation Saved!');renderSaved();}
+function deleteSave(id){localStorage.setItem(SK,JSON.stringify(JSON.parse(localStorage.getItem(SK)||'[]').filter(s=>s.id!==id)));renderSaved();}
+function renderSaved(){const saves=JSON.parse(localStorage.getItem(SK)||'[]');const list=document.getElementById('savedList');document.getElementById('savedCount').textContent=saves.length?`(${saves.length})`:'';if(!saves.length){list.innerHTML='';list.appendChild(document.getElementById('emptySaved'));document.getElementById('emptySaved').style.display='';return;}document.getElementById('emptySaved').style.display='none';list.innerHTML='';saves.forEach(s=>{const el=document.createElement('div');el.className='saved-item';el.innerHTML=`<div class="si-info"><div class="si-name">${fmt(s.yInv)}/yr · ${s.period}yr @ ${s.rate}% · ${s.date}</div><div class="si-meta">Invested: ${fmt(s.totalInv)} · Interest: ${fmt(s.totalInt)}</div></div><div class="si-corpus">${fmt(s.corpus)}</div><button class="si-del" onclick="deleteSave(${s.id})">🗑</button>`;list.appendChild(el);});}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+['sY','sP'].forEach(id=>{const el=document.getElementById(id);const mn=parseFloat(el.min);const mx=parseFloat(el.max);const v=parseFloat(el.value);el.style.setProperty('--pct',((v-mn)/(mx-mn)*100)+'%');});
+renderSaved();calculate();
+</script>
+</body>
+</html>

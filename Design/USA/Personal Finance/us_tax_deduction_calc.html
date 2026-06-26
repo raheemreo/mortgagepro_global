@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tax Deduction Calculator</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.08);
+    --sh2: 0 8px 36px rgba(11,29,58,0.16);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after { content:'🧾'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  .calc-card { background:var(--card); border-radius:20px; padding:18px; box-shadow:var(--sh2); border:1px solid var(--border); margin-bottom:12px; }
+  .calc-card-hdr { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .calc-card-icon { width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#B91C1C,#991B1B); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .calc-card-title { font-size:14px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .calc-card-sub { font-size:9.5px; color:var(--muted); margin-top:1px; }
+
+  .field { margin-bottom:13px; }
+  .field label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:5px; }
+  .field input, .field select { width:100%; background:var(--bg); border:1.5px solid var(--border); border-radius:11px; padding:11px 13px; font-size:14px; font-weight:700; color:var(--navy); font-family:'Helvetica Neue',Arial,sans-serif; outline:none; transition:border-color .2s,box-shadow .2s; }
+  .field input:focus, .field select:focus { border-color:var(--red); box-shadow:0 0 0 3px rgba(185,28,28,0.10); }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .btn-row { display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:6px; }
+  .calc-btn { background:linear-gradient(135deg,#B91C1C,#991B1B); border:none; border-radius:12px; padding:14px 18px; font-size:13px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(185,28,28,0.40); font-family:Georgia,serif; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .calc-btn:active { transform:scale(0.97); }
+  .save-btn { background:var(--card); border:2px solid var(--red); border-radius:12px; padding:14px; font-size:18px; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .save-btn.saved { background:#15803D; border-color:#15803D; }
+
+  .results-section { display:none; }
+  .results-section.visible { display:block; }
+
+  .result-card { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:18px; box-shadow:var(--sh2); position:relative; overflow:hidden; margin-bottom:12px; }
+  .result-card::before { content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background:rgba(185,28,28,0.15); }
+  .result-lbl { font-size:10px; color:rgba(255,255,255,0.50); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:4px; }
+  .result-big { font-size:36px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; line-height:1; }
+  .result-sub { font-size:11px; color:rgba(255,255,255,0.55); margin-top:4px; }
+  .result-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .rg-item { background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:11px 12px; }
+  .rg-lbl { font-size:9px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; }
+  .rg-val { font-size:16px; font-weight:800; color:#fff; font-family:Georgia,serif; }
+  .rg-val.gold { color:var(--gold-lt); }
+  .rg-val.grn { color:#6EE7B7; }
+  .rg-val.red { color:#FCA5A5; }
+
+  /* CHART CARD */
+  .chart-card { background:var(--card); border-radius:20px; padding:18px; box-shadow:var(--sh2); border:1px solid var(--border); margin-bottom:12px; }
+  .chart-title { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:4px; }
+  .chart-sub { font-size:9.5px; color:var(--muted); margin-bottom:14px; }
+
+  /* INCOME WATERFALL */
+  .waterfall { display:flex; flex-direction:column; gap:8px; }
+  .wf-row { display:flex; align-items:center; gap:10px; }
+  .wf-label { width:110px; font-size:10px; font-weight:600; color:var(--muted); flex-shrink:0; }
+  .wf-bar-wrap { flex:1; height:22px; background:var(--bg); border-radius:6px; overflow:hidden; position:relative; }
+  .wf-bar { height:100%; border-radius:6px; display:flex; align-items:center; padding-left:8px; font-size:9px; font-weight:700; color:#fff; transition:width .7s cubic-bezier(.16,1,.3,1); min-width:24px; }
+  .wf-val { font-size:10px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:64px; text-align:right; flex-shrink:0; }
+
+  /* DEDUCTION COMPARE BANNER */
+  .compare-banner { background:linear-gradient(135deg,#FEF3C7,#FDE68A); border:1px solid #F59E0B; border-radius:15px; padding:13px 15px; margin-bottom:12px; }
+  .cb-title { font-size:12.5px; font-weight:800; color:#92400E; font-family:Georgia,serif; margin-bottom:8px; }
+  .cb-row { display:flex; justify-content:space-between; align-items:center; }
+  .cb-item { text-align:center; }
+  .cb-lbl { font-size:9px; color:#B45309; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; }
+  .cb-val { font-size:18px; font-weight:800; color:#92400E; font-family:Georgia,serif; }
+  .cb-div { font-size:20px; color:#D97706; font-weight:300; }
+  .cb-winner { background:#D97706; color:#fff; font-size:10px; font-weight:800; padding:5px 10px; border-radius:20px; margin-top:8px; display:inline-block; }
+
+  /* BRACKET TABLE WITH HIGHLIGHT */
+  .bracket-table { background:var(--card); border-radius:16px; padding:15px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .bt-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:10px; }
+  .bt-row { display:grid; grid-template-columns:1fr 1.5fr 1fr; gap:6px; padding:7px 0; border-bottom:1px solid var(--border); font-size:11px; }
+  .bt-row:last-child { border-bottom:none; }
+  .bt-row.hdr { font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.4px; padding-bottom:5px; }
+  .bt-row.active-bracket { background:linear-gradient(135deg,rgba(185,28,28,0.06),rgba(185,28,28,0.10)); border-radius:8px; padding:7px 6px; border-bottom:none; }
+  .bt-rate { font-weight:800; color:var(--navy); }
+  .bt-rate.highlight { color:var(--red); font-size:12px; }
+  .bt-badge { display:inline-block; font-size:8px; background:var(--red); color:#fff; padding:1px 6px; border-radius:10px; margin-left:4px; font-weight:700; }
+
+  /* SAVED */
+  .saved-list { display:flex; flex-direction:column; gap:8px; }
+  .saved-item { background:var(--card); border-radius:14px; padding:13px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .si-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .si-label { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .si-time { font-size:9px; color:var(--muted); }
+  .si-delete { font-size:14px; cursor:pointer; opacity:0.4; margin-left:8px; }
+  .si-vals { display:flex; gap:6px; flex-wrap:wrap; }
+  .si-tag { font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; }
+  .si-save { background:#F0FDF4; color:#15803D; }
+  .si-tax  { background:#FEF2F2; color:#B91C1C; }
+
+  .ilist { display:flex; flex-direction:column; gap:9px; }
+  .ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .is { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .ich { font-size:16px; color:rgba(11,29,58,0.18); margin-left:auto; }
+
+  .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-80px); background:#15803D; color:#fff; font-size:12px; font-weight:700; padding:10px 18px; border-radius:30px; box-shadow:var(--sh2); z-index:999; transition:transform .3s ease; white-space:nowrap; }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  .calc-card { animation:fadeUp .35s ease both .05s; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ Tax calc saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🧾</div>
+      <div class="hdr-title">Tax Deduction Calc</div>
+      <div class="hdr-sub">2024 IRS · Standard vs Itemized · All Filing Status</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Std. Single</div><div class="rs-v">$14,600</div><div class="rs-n">2024 IRS</div></div>
+    <div class="rs"><div class="rs-l">Std. MFJ</div><div class="rs-v">$29,200</div><div class="rs-n">Married</div></div>
+    <div class="rs"><div class="rs-l">Top Rate</div><div class="rs-v gold">37%</div><div class="rs-n">&gt;$609K</div></div>
+    <div class="rs"><div class="rs-l">SALT Cap</div><div class="rs-v">$10,000</div><div class="rs-n">Federal</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Your Tax Profile <span class="more">IRS Pub 936 →</span></div>
+  <div class="calc-card">
+    <div class="calc-card-hdr">
+      <div class="calc-card-icon">🧾</div>
+      <div>
+        <div class="calc-card-title">Tax Deduction Calculator</div>
+        <div class="calc-card-sub">2024 Tax Year · Federal + State</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Filing Status</label>
+      <select id="filing">
+        <option value="single">Single</option>
+        <option value="mfj" selected>Married Filing Jointly</option>
+        <option value="mfs">Married Filing Separately</option>
+        <option value="hoh">Head of Household</option>
+      </select>
+    </div>
+    <div class="field"><label>Gross Annual Income</label><input type="number" id="income" value="120000"></div>
+    <div class="field-row">
+      <div class="field"><label>Mortgage Balance</label><input type="number" id="mortgage" value="380000"></div>
+      <div class="field"><label>Mortgage Rate (%)</label><input type="number" id="mrate" value="6.82" step="0.01"></div>
+    </div>
+    <div class="field"><label>Property Tax Paid (Annual)</label><input type="number" id="proptax" value="8500"></div>
+    <div class="field-row">
+      <div class="field"><label>Charitable Donations</label><input type="number" id="charity" value="3200"></div>
+      <div class="field"><label>State Income Tax</label><input type="number" id="stateTax" value="6800"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Medical Expenses</label><input type="number" id="medical" value="0"></div>
+      <div class="field"><label>Other Itemized</label><input type="number" id="other" value="0"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">🧾 Calculate My Tax Deductions</button>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()" title="Save this result">🔖</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="result-card" id="resultCard">
+      <div class="result-lbl">Recommended Deduction</div>
+      <div class="result-big" id="resultBig">—</div>
+      <div class="result-sub" id="resultSub">—</div>
+      <div class="result-grid">
+        <div class="rg-item"><div class="rg-lbl">Tax Savings</div><div class="rg-val grn" id="taxSavings">—</div></div>
+        <div class="rg-item"><div class="rg-lbl">Effective Rate</div><div class="rg-val gold" id="effectiveRate">—</div></div>
+        <div class="rg-item"><div class="rg-lbl">Taxable Income</div><div class="rg-val" id="taxableIncome">—</div></div>
+        <div class="rg-item"><div class="rg-lbl">Est. Federal Tax</div><div class="rg-val red" id="fedTax">—</div></div>
+      </div>
+    </div>
+
+    <!-- INCOME WATERFALL CHART -->
+    <div class="chart-card">
+      <div class="chart-title">💧 Income Waterfall</div>
+      <div class="chart-sub">How your gross income flows to taxable income</div>
+      <div class="waterfall" id="waterfallChart"></div>
+    </div>
+
+    <!-- STANDARD vs ITEMIZED -->
+    <div class="sec">Standard vs Itemized <span class="more">Detail →</span></div>
+    <div class="compare-banner" id="compareBanner">
+      <div class="cb-title">📊 Deduction Comparison</div>
+      <div class="cb-row">
+        <div class="cb-item"><div class="cb-lbl">Standard</div><div class="cb-val" id="stdAmt">—</div></div>
+        <div class="cb-div">vs</div>
+        <div class="cb-item"><div class="cb-lbl">Itemized</div><div class="cb-val" id="itemAmt">—</div></div>
+      </div>
+      <div class="cb-winner" id="winnerBadge">—</div>
+    </div>
+
+    <!-- ITEMIZED DETAIL BARS -->
+    <div class="chart-card">
+      <div class="chart-title">📋 Itemized Deduction Breakdown</div>
+      <div class="chart-sub">What makes up your itemized total vs SALT cap</div>
+      <div class="waterfall" id="itemizedChart"></div>
+    </div>
+
+    <!-- TAX BRACKET TABLE -->
+    <div class="sec">2024 Federal Tax Brackets <span class="more" id="bracketStatusLabel">MFJ →</span></div>
+    <div class="bracket-table" id="bracketTable">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- SAVED HISTORY -->
+    <div class="sec">Saved Calculations <span class="more" onclick="clearSaved()">Clear All</span></div>
+    <div id="savedList" class="saved-list">
+      <div style="text-align:center;padding:20px;font-size:11px;color:var(--muted);">No saved calculations yet — hit 🔖 to save</div>
+    </div>
+
+  </div><!-- end results -->
+
+  <div class="sec">Key Tax Deductions 2024 <span class="more">IRS.gov →</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🏠</div><div><div class="in">Mortgage Interest Deduction</div><div class="is">Up to $750K loan balance · Schedule A · IRS Pub 936</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏛️</div><div><div class="in">SALT Deduction Cap</div><div class="is">State & Local Tax capped at $10,000 · Expires 2025</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">❤️</div><div><div class="in">Charitable Contributions</div><div class="is">Up to 60% of AGI for cash donations · 30% for assets</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏥</div><div><div class="in">Medical Expense Deduction</div><div class="is">Expenses exceeding 7.5% of AGI qualify</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">💼</div><div><div class="in">QBI Deduction (Self-Employed)</div><div class="is">20% deduction on qualified business income · Section 199A</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const STD = { single:14600, mfj:29200, mfs:14600, hoh:21900 };
+const BRACKETS_MFJ    = [[23200,0.10],[94300,0.12],[201050,0.22],[383900,0.24],[487450,0.32],[731200,0.35],[Infinity,0.37]];
+const BRACKETS_SINGLE = [[11600,0.10],[47150,0.12],[100525,0.22],[191950,0.24],[243725,0.32],[609350,0.35],[Infinity,0.37]];
+const BRACKETS_HOH    = [[16550,0.10],[63100,0.12],[100500,0.22],[191950,0.24],[243700,0.32],[609350,0.35],[Infinity,0.37]];
+
+function calcTax(income, filing) {
+  const brackets = filing === 'mfj' ? BRACKETS_MFJ : filing === 'hoh' ? BRACKETS_HOH : BRACKETS_SINGLE;
+  let tax = 0, prev = 0;
+  for (let [top, rate] of brackets) {
+    if (income <= prev) break;
+    tax += (Math.min(income, top) - prev) * rate;
+    if (income <= top) break;
+    prev = top;
+  }
+  return tax;
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+function pct(n) { return n.toFixed(1) + '%'; }
+
+let lastResult = null;
+let savedItems = [];
+
+function calculate() {
+  const filing     = document.getElementById('filing').value;
+  const income     = parseFloat(document.getElementById('income').value)   || 120000;
+  const mortgage   = parseFloat(document.getElementById('mortgage').value) || 0;
+  const mrate      = parseFloat(document.getElementById('mrate').value)    / 100 || 0.0682;
+  const proptax    = parseFloat(document.getElementById('proptax').value)  || 0;
+  const charity    = parseFloat(document.getElementById('charity').value)  || 0;
+  const stateTax   = parseFloat(document.getElementById('stateTax').value) || 0;
+  const medical    = parseFloat(document.getElementById('medical').value)  || 0;
+  const other      = parseFloat(document.getElementById('other').value)    || 0;
+
+  const mortgageInterest = Math.min(mortgage, 750000) * mrate;
+  const saltRaw          = proptax + stateTax;
+  const saltCapped       = Math.min(saltRaw, 10000);
+  const medicalAllowed   = Math.max(0, medical - income * 0.075);
+  const itemized         = mortgageInterest + saltCapped + charity + medicalAllowed + other;
+  const std              = STD[filing];
+  const useItemized      = itemized > std;
+  const deduction        = useItemized ? itemized : std;
+  const taxable          = Math.max(0, income - deduction);
+  const fedTax           = calcTax(taxable, filing);
+  const savings          = calcTax(income, filing) - fedTax;
+  const effectiveRate    = income > 0 ? (fedTax / income) * 100 : 0;
+  const filingLabel      = { single:'Single', mfj:'Married Filing Jointly', mfs:'Married Filing Separately', hoh:'Head of Household' }[filing];
+
+  document.getElementById('resultBig').textContent        = fmt(deduction);
+  document.getElementById('resultSub').textContent        = (useItemized ? 'Itemized' : 'Standard') + ' Deduction · ' + filingLabel;
+  document.getElementById('taxSavings').textContent       = fmt(savings);
+  document.getElementById('effectiveRate').textContent    = pct(effectiveRate);
+  document.getElementById('taxableIncome').textContent    = fmt(taxable);
+  document.getElementById('fedTax').textContent           = fmt(fedTax);
+  document.getElementById('stdAmt').textContent           = fmt(std);
+  document.getElementById('itemAmt').textContent          = fmt(itemized);
+
+  const diff = Math.abs(itemized - std);
+  document.getElementById('winnerBadge').textContent = useItemized
+    ? `✓ Itemized Wins — Save ${fmt(diff)} more`
+    : `✓ Standard Deduction Wins — Save ${fmt(diff)} more`;
+
+  // Waterfall chart
+  const wfData = [
+    { label: 'Gross Income',    val: income,    color: 'linear-gradient(90deg,#0B1D3A,#1B3F72)', pct: 100 },
+    { label: 'Deduction',       val: -deduction, color: 'linear-gradient(90deg,#15803D,#22c55e)', negative: true },
+    { label: 'Taxable Income',  val: taxable,   color: 'linear-gradient(90deg,#D97706,#f59e0b)', pct: Math.round(taxable/income*100) },
+    { label: 'Federal Tax',     val: -fedTax,   color: 'linear-gradient(90deg,#B91C1C,#dc2626)', negative: true },
+    { label: 'After-Tax Income',val: income - fedTax, color: 'linear-gradient(90deg,#6D28D9,#8b5cf6)' },
+  ];
+  document.getElementById('waterfallChart').innerHTML = wfData.map(r => {
+    const barPct = Math.round(Math.abs(r.val) / income * 100);
+    const label  = r.negative ? `-${fmt(Math.abs(r.val))}` : fmt(r.val);
+    return `<div class="wf-row">
+      <div class="wf-label">${r.label}</div>
+      <div class="wf-bar-wrap">
+        <div class="wf-bar" style="background:${r.color};width:${Math.max(5,barPct)}%">${barPct > 15 ? barPct+'%' : ''}</div>
+      </div>
+      <div class="wf-val">${label}</div>
+    </div>`;
+  }).join('');
+
+  // Itemized breakdown bars
+  const itItems = [
+    { label:'🏠 Mortgage Int.',  val: mortgageInterest, color:'linear-gradient(90deg,#1B3F72,#3b82f6)' },
+    { label:'🏛 SALT (capped)',  val: saltCapped,       color:'linear-gradient(90deg,#0B1D3A,#1B3F72)', note: saltRaw > 10000 ? `⚠️ Capped from ${fmt(saltRaw)}` : '' },
+    { label:'❤️ Charitable',     val: charity,           color:'linear-gradient(90deg,#B91C1C,#ef4444)' },
+    { label:'🏥 Medical',        val: medicalAllowed,   color:'linear-gradient(90deg,#D97706,#fbbf24)' },
+    { label:'📋 Other',          val: other,            color:'linear-gradient(90deg,#6D28D9,#a78bfa)' },
+  ].filter(r => r.val > 0);
+  const maxItemVal = itItems.length > 0 ? Math.max(...itItems.map(r => r.val)) : 1;
+  document.getElementById('itemizedChart').innerHTML = itItems.length > 0
+    ? itItems.map(r => `<div class="wf-row">
+        <div class="wf-label">${r.label}</div>
+        <div class="wf-bar-wrap">
+          <div class="wf-bar" style="background:${r.color};width:${Math.max(5,(r.val/maxItemVal)*100)}%"></div>
+        </div>
+        <div class="wf-val">${fmt(r.val)}</div>
+      </div>`).join('')
+    + (saltRaw > 10000 ? `<div style="font-size:9px;color:#D97706;font-weight:600;margin-top:6px;padding:6px 10px;background:#FFF7ED;border-radius:8px;">⚠️ SALT capped at $10K (your actual: ${fmt(saltRaw)} — ${fmt(saltRaw-10000)} non-deductible)</div>` : '')
+    : '<div style="font-size:11px;color:var(--muted);padding:10px 0;">No itemized deductions entered.</div>';
+
+  // Bracket table (dynamic)
+  const brackets = filing === 'mfj' ? BRACKETS_MFJ : filing === 'hoh' ? BRACKETS_HOH : BRACKETS_SINGLE;
+  document.getElementById('bracketStatusLabel').textContent = filingLabel + ' →';
+  document.getElementById('bracketTable').innerHTML = `
+    <div class="bt-title">${filingLabel} — 2024</div>
+    <div class="bt-row hdr"><span>Rate</span><span>Income Range</span><span>Your Tax</span></div>
+    ${brackets.map(([top, rate], i) => {
+      const prev2 = i === 0 ? 0 : brackets[i-1][0];
+      const inBracket = taxable > prev2 && (i === 0 || taxable > prev2);
+      const isActive  = taxable > prev2 && taxable <= top;
+      const taxInBracket = Math.max(0, Math.min(taxable, top) - prev2) * rate;
+      const rangeStr = top === Infinity ? `${fmt(prev2)}+` : `${fmt(prev2)} – ${fmt(top)}`;
+      return `<div class="bt-row${isActive ? ' active-bracket' : ''}">
+        <span class="bt-rate${isActive ? ' highlight' : ''}">${Math.round(rate*100)}%${isActive ? '<span class="bt-badge">You</span>' : ''}</span>
+        <span>${rangeStr}</span>
+        <span>${inBracket && taxInBracket > 0 ? fmt(taxInBracket) : taxable <= prev2 ? '—' : fmt(taxInBracket)}</span>
+      </div>`;
+    }).join('')}`;
+
+  lastResult = { deduction, savings, fedTax, effectiveRate, taxable, useItemized, income, filingLabel };
+  document.getElementById('resultsSection').classList.add('visible');
+}
+
+function saveCalc() {
+  if (!lastResult) { alert('Run a calculation first!'); return; }
+  const { deduction, savings, fedTax, effectiveRate, useItemized, income, filingLabel } = lastResult;
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  savedItems.unshift({ deduction, savings, fedTax, effectiveRate, useItemized, income, filingLabel, time: now, id: Date.now() });
+  renderSaved();
+  showToast('✅ Tax calc saved!');
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  setTimeout(() => btn.classList.remove('saved'), 1500);
+}
+
+function renderSaved() {
+  const el = document.getElementById('savedList');
+  if (savedItems.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;font-size:11px;color:var(--muted);">No saved calculations yet — hit 🔖 to save</div>';
+    return;
+  }
+  el.innerHTML = savedItems.map(s => `
+    <div class="saved-item">
+      <div class="si-top">
+        <div class="si-label">🧾 ${s.filingLabel}</div>
+        <div style="display:flex;align-items:center">
+          <div class="si-time">${s.time}</div>
+          <div class="si-delete" onclick="deleteSaved(${s.id})">✕</div>
+        </div>
+      </div>
+      <div class="si-vals">
+        <span class="si-tag si-save">Saved: ${fmt(s.savings)}</span>
+        <span class="si-tag si-tax">Tax: ${fmt(s.fedTax)}</span>
+        <span class="si-tag" style="background:rgba(27,63,114,0.08);color:var(--navy)">${s.useItemized ? 'Itemized' : 'Standard'}</span>
+      </div>
+    </div>`).join('');
+}
+
+function deleteSaved(id) { savedItems = savedItems.filter(s => s.id !== id); renderSaved(); }
+function clearSaved()    { savedItems = []; renderSaved(); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

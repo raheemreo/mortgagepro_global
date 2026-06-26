@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Closing Costs Calculator</title>
+<style>
+  :root {
+    --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--crimson:#991B1B;
+    --gold:#D97706;--gold-lt:#FCD34D;--bg:#F0F4FF;--card:#FFFFFF;
+    --muted:#4A5C7A;--border:rgba(27,63,114,0.09);
+    --sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);
+    --green:#15803D;--green-lt:#DCFCE7;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 60%,#B91C1C 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'📋';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* RESULT HERO */
+  .result-hero{background:linear-gradient(148deg,#0B1D3A,#1B3F72);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;display:none;}
+  .result-hero.visible{display:block;animation:fadeUp .35s ease both;}
+  .result-hero::before{content:'';position:absolute;top:-35px;right:-35px;width:140px;height:140px;border-radius:50%;background:rgba(185,28,28,0.12);}
+  .rh-label{font-size:9.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:34px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:4px 0 2px;}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.58);}
+  .rh-row{display:flex;gap:8px;margin-top:14px;}
+  .rh-box{flex:1;background:rgba(255,255,255,0.10);border-radius:10px;padding:9px 10px;}
+  .rh-box-lbl{font-size:8.5px;color:rgba(255,255,255,0.50);}
+  .rh-box-val{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+  .rh-box-val.gold{color:var(--gold-lt);}
+
+  /* INPUT CARD */
+  .input-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .inp-group{margin-bottom:15px;}
+  .inp-group:last-child{margin-bottom:0;}
+  .inp-label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+  .inp-label .hint{font-size:10px;font-weight:700;color:var(--blue);text-transform:none;letter-spacing:0;}
+  input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(to right,var(--blue) 0%,var(--blue) 30%,#CBD5E1 30%,#CBD5E1 100%);outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--navy);border:3px solid #fff;box-shadow:0 2px 8px rgba(11,29,58,0.25);}
+  .range-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px;font-weight:600;}
+  .state-select-wrap{position:relative;}
+  .state-select{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:700;color:var(--navy);background:var(--bg);outline:none;-webkit-appearance:none;font-family:'Helvetica Neue',Arial,sans-serif;cursor:pointer;}
+  .state-select:focus{border-color:var(--blue);background:#fff;}
+  .select-arrow{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none;}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
+  .toggle-label{font-size:12px;font-weight:700;color:var(--navy);}
+  .toggle-sub{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .toggle{width:42px;height:24px;background:#CBD5E1;border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+  .toggle.on{background:var(--blue);}
+  .toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+  .toggle.on::after{transform:translateX(18px);}
+
+  /* CALCULATE BUTTON */
+  .calc-btn{width:100%;background:linear-gradient(135deg,#0B1D3A,#1B3F72);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(11,29,58,0.35);font-family:Georgia,serif;letter-spacing:0.3px;margin-top:14px;transition:transform .12s,box-shadow .12s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .calc-btn:active{transform:scale(.98);box-shadow:0 2px 8px rgba(11,29,58,0.25);}
+  .calc-btn:hover{box-shadow:0 6px 20px rgba(11,29,58,0.45);}
+
+  /* SAVE BUTTON */
+  .save-btn{width:100%;background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:14px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(21,128,61,0.35);font-family:Georgia,serif;margin-top:10px;transition:transform .12s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .save-btn:active{transform:scale(.98);}
+  .save-btn.saved{background:linear-gradient(135deg,#166534,#14532D);}
+
+  /* TOAST */
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#15803D;color:#fff;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  /* COST BREAKDOWN */
+  .cost-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);display:none;}
+  .cost-card.visible{display:block;animation:fadeUp .35s ease both .1s;}
+  .cost-section{margin-bottom:14px;}
+  .cost-section:last-child{margin-bottom:0;}
+  .cost-section-head{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .cost-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;}
+  .cost-name{font-size:11.5px;font-weight:700;color:var(--navy);}
+  .cost-note{font-size:9px;color:var(--muted);margin-top:1px;}
+  .cost-amt{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .cost-row.total{background:#F8FAFF;border-radius:10px;padding:9px 10px;margin-top:6px;}
+  .cost-row.total .cost-name{font-size:13px;font-weight:800;font-family:Georgia,serif;color:var(--navy);}
+  .cost-row.total .cost-amt{font-size:15px;color:var(--blue);}
+
+  /* CHART SECTION */
+  .chart-section{display:none;}
+  .chart-section.visible{display:block;animation:fadeUp .35s ease both .15s;}
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  
+  /* DONUT CHART */
+  .donut-wrap{display:flex;align-items:center;gap:16px;}
+  .donut-svg{flex-shrink:0;}
+  .donut-legend{flex:1;display:flex;flex-direction:column;gap:8px;}
+  .leg-row{display:flex;align-items:center;gap:8px;}
+  .leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+  .leg-info{flex:1;}
+  .leg-name{font-size:10.5px;font-weight:700;color:var(--navy);}
+  .leg-pct{font-size:9px;color:var(--muted);margin-top:1px;}
+  .leg-amt{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-left:auto;}
+
+  /* HORIZONTAL BAR CHART */
+  .bar-chart{display:flex;flex-direction:column;gap:10px;}
+  .bar-row{display:flex;flex-direction:column;gap:4px;}
+  .bar-label-row{display:flex;justify-content:space-between;align-items:center;}
+  .bar-name{font-size:10.5px;font-weight:700;color:var(--navy);}
+  .bar-val{font-size:10.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .bar-track{background:#EEF2F8;border-radius:100px;height:8px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:100px;transition:width 0.6s ease;}
+
+  /* SAVINGS INSIGHT */
+  .insight-card{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:14px;padding:13px 15px;margin-bottom:10px;}
+  .insight-title{font-size:11px;font-weight:800;color:#92400E;font-family:Georgia,serif;margin-bottom:5px;}
+  .insight-text{font-size:10px;color:#78350F;line-height:1.5;}
+
+  /* SAVED RESULT CHIP */
+  .saved-chip{display:none;background:var(--green-lt);border:1px solid rgba(21,128,61,0.25);border-radius:10px;padding:10px 14px;margin-top:10px;align-items:center;gap:10px;}
+  .saved-chip.visible{display:flex;}
+  .saved-chip-text{font-size:11px;font-weight:700;color:var(--green);}
+  .saved-chip-sub{font-size:9.5px;color:#166534;margin-top:2px;}
+  .saved-chip-clear{font-size:11px;font-weight:700;color:#B91C1C;cursor:pointer;margin-left:auto;}
+
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tc{background:var(--card);border-radius:16px;padding:14px 12px;box-shadow:var(--sh);border:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden;transition:transform .15s;}
+  .tc:active{transform:scale(.97);}
+  .tc.nv{background:linear-gradient(140deg,#0B1D3A,#1B3F72);}
+  .tc.rd{background:linear-gradient(140deg,#B91C1C,#991B1B);}
+  .tc.gd{background:linear-gradient(140deg,#D97706,#B45309);}
+  .tc.sl{background:linear-gradient(140deg,#334155,#1E293B);}
+  .ti{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:9px;}
+  .tc:not(.nv):not(.rd):not(.gd):not(.sl) .ti{background:var(--bg);}
+  .tc.nv .ti,.tc.rd .ti,.tc.gd .ti,.tc.sl .ti{background:rgba(255,255,255,0.15);}
+  .tn{font-size:12.5px;font-weight:800;color:var(--navy);line-height:1.2;font-family:Georgia,serif;}
+  .tc.nv .tn,.tc.rd .tn,.tc.gd .tn,.tc.sl .tn{color:#fff;}
+  .td{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .tc.nv .td,.tc.rd .td,.tc.gd .td,.tc.sl .td{color:rgba(255,255,255,0.58);}
+  .ta{position:absolute;bottom:11px;right:11px;font-size:14px;color:rgba(11,29,58,0.16);}
+  .tc.nv .ta,.tc.rd .ta,.tc.gd .ta,.tc.sl .ta{color:rgba(255,255,255,0.22);}
+  .bge{display:inline-flex;padding:2px 7px;border-radius:20px;font-size:8.5px;font-weight:700;margin-top:5px;}
+  .bge-b{background:#EFF6FF;color:#1D4ED8;}
+  .bge-g{background:#F0FDF4;color:#15803D;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .input-card{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ Calculation saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📋</div>
+      <div class="hdr-title">Closing Costs</div>
+      <div class="hdr-sub">2–5% Estimate · Buyer & Seller · By State</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Nat'l Avg</div><div class="rs-v">$6,905</div><div class="rs-n">All fees</div></div>
+    <div class="rs"><div class="rs-l">% of Price</div><div class="rs-v gold">2–5%</div><div class="rs-n">Typical range</div></div>
+    <div class="rs"><div class="rs-l">Highest</div><div class="rs-v">DC / NY</div><div class="rs-n">Transfer tax</div></div>
+    <div class="rs"><div class="rs-l">Lowest</div><div class="rs-v">WY / MO</div><div class="rs-n">~1.2% avg</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Loan & Property Details <span class="more">Reset</span></div>
+  <div class="input-card">
+    <div class="inp-group">
+      <div class="inp-label">Purchase Price <span class="hint" id="priceDisplay">$450,000</span></div>
+      <input type="range" id="priceSlider" min="100000" max="1500000" step="5000" value="450000" oninput="updateSlider(this,'priceDisplay',v=>'$'+Math.round(v/1000)+'K')">
+      <div class="range-labels"><span>$100K</span><span>$500K</span><span>$1M</span><span>$1.5M</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Down Payment <span class="hint" id="downDisplay">10%</span></div>
+      <input type="range" id="downSlider" min="3" max="30" step="1" value="10" oninput="updateSlider(this,'downDisplay',v=>v+'%')">
+      <div class="range-labels"><span>3%</span><span>10%</span><span>20%</span><span>30%</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">State</div>
+      <div class="state-select-wrap">
+        <select class="state-select" id="stateSelect">
+          <option value="DC">🏛️ DC — Transfer Tax 2.9%</option>
+          <option value="NY">🗽 New York — Mansion Tax + Transfer</option>
+          <option value="CT">🦌 Connecticut — 1.25% transfer</option>
+          <option value="PA">🔔 Pennsylvania — 2% transfer</option>
+          <option value="FL">🌴 Florida — Doc stamps 0.35%</option>
+          <option value="TX" selected>🤠 Texas — No transfer tax!</option>
+          <option value="CA">🎬 California — 0.11% transfer</option>
+          <option value="NJ">🏙️ New Jersey — 1.0% realty fee</option>
+          <option value="IL">🌆 Illinois — 0.10% transfer</option>
+          <option value="WA">🌲 Washington — 1.10% REET</option>
+          <option value="GA">🍑 Georgia — 0.10% transfer</option>
+          <option value="AZ">🌵 Arizona — Minimal transfer</option>
+          <option value="CO">🏔️ Colorado — $0.01/$100</option>
+          <option value="WY">🤠 Wyoming — Low cost state</option>
+          <option value="MO">🎵 Missouri — $0.005/$100</option>
+        </select>
+        <div class="select-arrow">▼</div>
+      </div>
+    </div>
+    <div class="inp-group" style="border-top:1px solid var(--border);padding-top:12px;">
+      <div class="toggle-row">
+        <div><div class="toggle-label">Include Seller Concessions</div><div class="toggle-sub">Seller pays up to 3% of buyer closing costs</div></div>
+        <div class="toggle" id="concessionToggle" onclick="toggleConcession(this)"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Include Points (1 pt = 1%)</div><div class="toggle-sub">Avg 0.8 pts paid at closing to buy down rate</div></div>
+        <div class="toggle on" id="pointsToggle" onclick="togglePoints(this)"></div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="runCalc()">🧮 Calculate Closing Costs</button>
+  </div>
+
+  <!-- RESULTS (hidden until calculated) -->
+  <div class="result-hero" id="resultHero">
+    <div class="rh-label">Estimated Closing Costs</div>
+    <div class="rh-amount" id="totalCost">$0</div>
+    <div class="rh-sub" id="costSub">—</div>
+    <div class="rh-row">
+      <div class="rh-box"><div class="rh-box-lbl">Down Payment</div><div class="rh-box-val" id="downAmt">—</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">Closing Costs</div><div class="rh-box-val gold" id="closingAmt">—</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">Cash Needed</div><div class="rh-box-val" id="totalCash">—</div></div>
+    </div>
+  </div>
+
+  <!-- CHART SECTION -->
+  <div class="chart-section" id="chartSection">
+    <div class="sec">Cost Breakdown Visual</div>
+    <div class="chart-card">
+      <div class="chart-title">🍩 Closing Cost Composition</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110" id="donutSvg"></svg>
+        <div class="donut-legend" id="donutLegend"></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📊 Cost by Category</div>
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+    <div class="insight-card" id="insightCard">
+      <div class="insight-title">💡 Cost Intelligence</div>
+      <div class="insight-text" id="insightText"></div>
+    </div>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save This Calculation</button>
+    <div class="saved-chip" id="savedChip">
+      <div>
+        <div class="saved-chip-text" id="savedText">Saved!</div>
+        <div class="saved-chip-sub" id="savedSub"></div>
+      </div>
+      <div class="saved-chip-clear" onclick="clearSave()">✕ Clear</div>
+    </div>
+  </div>
+
+  <!-- DETAILED BREAKDOWN -->
+  <div class="cost-card" id="costCard">
+    <div class="sec" style="margin:0 0 12px">Cost Breakdown (LE Form)</div>
+    <div class="cost-section">
+      <div class="cost-section-head">🏦 Loan Costs (Section A&B)</div>
+      <div class="cost-row"><div><div class="cost-name">Origination Fee</div><div class="cost-note">Lender fee · typically 0–1%</div></div><div class="cost-amt" id="origFee">—</div></div>
+      <div class="cost-row"><div><div class="cost-name">Discount Points</div><div class="cost-note">0.8 pts to buy down rate</div></div><div class="cost-amt" id="discountPts">—</div></div>
+      <div class="cost-row"><div><div class="cost-name">Appraisal Fee</div><div class="cost-note">Licensed appraiser · $500–$750</div></div><div class="cost-amt">$600</div></div>
+      <div class="cost-row"><div><div class="cost-name">Credit Report</div><div class="cost-note">Tri-merge credit report</div></div><div class="cost-amt">$30</div></div>
+    </div>
+    <div class="cost-section">
+      <div class="cost-section-head">📜 Other Required Services (Section C)</div>
+      <div class="cost-row"><div><div class="cost-name">Title – Owner's Insurance</div><div class="cost-note">Protects your ownership</div></div><div class="cost-amt" id="titleOwner">—</div></div>
+      <div class="cost-row"><div><div class="cost-name">Title – Lender's Insurance</div><div class="cost-note">Required by lender</div></div><div class="cost-amt" id="titleLender">—</div></div>
+      <div class="cost-row"><div><div class="cost-name">Settlement / Closing Fee</div><div class="cost-note">Escrow / attorney fee</div></div><div class="cost-amt">$1,000</div></div>
+    </div>
+    <div class="cost-section">
+      <div class="cost-section-head">🏛️ Taxes & Government Fees (Section E)</div>
+      <div class="cost-row"><div><div class="cost-name">State Transfer Tax</div><div class="cost-note" id="transferNote">—</div></div><div class="cost-amt" id="transferTax">—</div></div>
+      <div class="cost-row"><div><div class="cost-name">Recording Fees</div><div class="cost-note">County deed recording</div></div><div class="cost-amt">$200</div></div>
+    </div>
+    <div class="cost-section">
+      <div class="cost-section-head">📅 Prepaids (Section F)</div>
+      <div class="cost-row"><div><div class="cost-name">Prepaid Interest (15 days)</div><div class="cost-note">Per diem × 15 days</div></div><div class="cost-amt" id="prepaidInt">—</div></div>
+      <div class="cost-row"><div><div class="cost-name">Homeowner Ins. (1 yr)</div><div class="cost-note">Full year upfront</div></div><div class="cost-amt">$1,500</div></div>
+      <div class="cost-row"><div><div class="cost-name">Escrow Setup (2 mo reserve)</div><div class="cost-note">Tax + insurance impound</div></div><div class="cost-amt" id="escrowSetup">—</div></div>
+    </div>
+    <div class="cost-row total">
+      <div><div class="cost-name">Total Estimated Closing Costs</div></div>
+      <div class="cost-amt" id="totalBreakdown">—</div>
+    </div>
+  </div>
+
+  <!-- RELATED TOOLS -->
+  <div class="sec">Related Tools <span class="more">All →</span></div>
+  <div class="g2">
+    <div class="tc nv"><div class="ti">📊</div><div class="tn">PITI Calculator</div><div class="td">Full monthly payment</div><div class="bge bge-b">All-in-one</div><div class="ta">›</div></div>
+    <div class="tc rd"><div class="ti">💰</div><div class="tn">Down Payment</div><div class="td">3–20% comparison</div><div class="ta">›</div></div>
+    <div class="tc gd"><div class="ti">🏛️</div><div class="tn">Property Tax</div><div class="td">By state & county</div><div class="ta">›</div></div>
+    <div class="tc sl"><div class="ti">🛡️</div><div class="tn">PMI Calculator</div><div class="td">&lt;20% down impact</div><div class="ta">›</div></div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let inclConcession=false,inclPoints=true,lastResult=null;
+
+const TRANSFER_RATES={DC:0.029,NY:0.004,CT:0.0125,PA:0.02,FL:0.0035,TX:0,CA:0.0011,NJ:0.01,IL:0.001,WA:0.011,GA:0.001,AZ:0.0001,CO:0.0001,WY:0.0001,MO:0.00005};
+const TRANSFER_NOTES={DC:'DC: 2.9% deed recordation',NY:'NY: 0.4% + potential mansion tax',CT:'CT: 1.25% transfer tax',PA:'PA: 2.0% realty transfer',FL:'FL: $3.50 per $1,000 doc stamps',TX:'Texas: No state transfer tax',CA:'CA: $1.10 per $1,000',NJ:'NJ: 1.0% realty fee',IL:'IL: $1.00 per $1,000',WA:'WA: 1.10% REET',GA:'GA: $1.00 per $1,000',AZ:'AZ: $0.50 per $1,000',CO:'CO: $0.01 per $100',WY:'WY: Minimal transfer',MO:'MO: $0.50 per $1,000'};
+
+function fmt(n){return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0});}
+
+function updateSlider(el,id,fn){
+  const v=+el.value;
+  document.getElementById(id).textContent=fn(v);
+  const pct=(v-el.min)/(el.max-el.min)*100;
+  el.style.background=`linear-gradient(to right,var(--blue) 0%,var(--blue) ${pct}%,#CBD5E1 ${pct}%,#CBD5E1 100%)`;
+}
+
+function toggleConcession(el){inclConcession=!inclConcession;el.classList.toggle('on');}
+function togglePoints(el){inclPoints=!inclPoints;el.classList.toggle('on');}
+
+function runCalc(){
+  const price=+document.getElementById('priceSlider').value;
+  const downPct=+document.getElementById('downSlider').value;
+  const state=document.getElementById('stateSelect').value;
+
+  const loanAmt=price*(1-downPct/100);
+  const downAmt=price*downPct/100;
+  const origFee=Math.round(loanAmt*0.003);
+  const pointsAmt=inclPoints?Math.round(loanAmt*0.008):0;
+  const titleOwner=Math.round(price*0.003);
+  const titleLender=Math.round(loanAmt*0.0018);
+  const transferRate=TRANSFER_RATES[state]||0;
+  const transferTax=Math.round(price*transferRate);
+  const prepaidInt=Math.round(loanAmt*0.0682/365*15);
+  const escrowSetup=Math.round((price*0.016/12)*2);
+
+  let total=origFee+pointsAmt+600+30+titleOwner+titleLender+1000+transferTax+200+prepaidInt+1500+escrowSetup;
+  if(inclConcession)total=Math.max(0,total-Math.round(price*0.03));
+
+  const totalCash=downAmt+total;
+  const stateNames={DC:'DC',NY:'New York',CT:'Connecticut',PA:'Pennsylvania',FL:'Florida',TX:'Texas',CA:'California',NJ:'New Jersey',IL:'Illinois',WA:'Washington',GA:'Georgia',AZ:'Arizona',CO:'Colorado',WY:'Wyoming',MO:'Missouri'};
+
+  // Update DOM
+  document.getElementById('totalCost').textContent=fmt(total);
+  document.getElementById('costSub').textContent='Buyer costs · '+(stateNames[state]||state)+' · '+fmt(price)+' purchase · '+downPct+'% down';
+  document.getElementById('downAmt').textContent=fmt(downAmt);
+  document.getElementById('closingAmt').textContent=fmt(total);
+  document.getElementById('totalCash').textContent=fmt(Math.round(totalCash));
+  document.getElementById('origFee').textContent=fmt(origFee);
+  document.getElementById('discountPts').textContent=inclPoints?fmt(pointsAmt):'$0';
+  document.getElementById('titleOwner').textContent=fmt(titleOwner);
+  document.getElementById('titleLender').textContent=fmt(titleLender);
+  document.getElementById('transferTax').textContent=fmt(transferTax);
+  document.getElementById('transferNote').textContent=TRANSFER_NOTES[state]||'';
+  document.getElementById('prepaidInt').textContent=fmt(prepaidInt);
+  document.getElementById('escrowSetup').textContent=fmt(escrowSetup);
+  document.getElementById('totalBreakdown').textContent=fmt(total);
+
+  // Show results
+  document.getElementById('resultHero').classList.add('visible');
+  document.getElementById('costCard').classList.add('visible');
+  document.getElementById('chartSection').classList.add('visible');
+
+  // Store result
+  lastResult={total,downAmt,totalCash,price,downPct,state:stateNames[state]||state,origFee,pointsAmt,titleOwner,titleLender,transferTax,prepaidInt,escrowSetup};
+
+  // Build charts
+  buildCharts({loanCosts:origFee+pointsAmt+630,titleFees:titleOwner+titleLender+1000,taxes:transferTax+200,prepaids:prepaidInt+1500+escrowSetup},total,price,downPct,total);
+
+  // Insight
+  const pct=(total/price*100).toFixed(1);
+  let insight=`Your closing costs are ${pct}% of the purchase price. `;
+  if(transferTax===0)insight+=`Great news: ${stateNames[state]||state} has no transfer tax, saving you thousands. `;
+  if(inclPoints)insight+=`Discount points add ${fmt(pointsAmt)} upfront but reduce your rate long-term. `;
+  if(inclConcession)insight+=`Seller concessions offset up to ${fmt(Math.round(price*0.03))} in buyer costs. `;
+  document.getElementById('insightText').textContent=insight;
+
+  document.getElementById('resultHero').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function buildCharts(cats,total,price,downPct,closingTotal){
+  const colors=['#1B3F72','#B91C1C','#D97706','#15803D'];
+  const labels=['Loan Costs','Title & Settlement','Taxes & Recording','Prepaids'];
+  const vals=[cats.loanCosts,cats.titleFees,cats.taxes,cats.prepaids];
+  const maxVal=Math.max(...vals);
+
+  // Donut
+  const r=38,cx=55,cy=55,stroke=14;
+  const total2=vals.reduce((a,b)=>a+b,0);
+  let offset=0;
+  const circ=2*Math.PI*r;
+  let paths='';
+  vals.forEach((v,i)=>{
+    const pct=v/total2;
+    const dash=pct*circ;
+    paths+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[i]}" stroke-width="${stroke}" stroke-dasharray="${dash} ${circ-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" />`;
+    offset+=dash;
+  });
+  document.getElementById('donutSvg').innerHTML=paths+`<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="10" font-weight="800" fill="#0B1D3A">${(closingTotal/price*100).toFixed(1)}%</text><text x="${cx}" y="${cy+8}" text-anchor="middle" font-size="8" fill="#4A5C7A">of price</text>`;
+
+  // Legend
+  document.getElementById('donutLegend').innerHTML=vals.map((v,i)=>`
+    <div class="leg-row">
+      <div class="leg-dot" style="background:${colors[i]}"></div>
+      <div class="leg-info"><div class="leg-name">${labels[i]}</div><div class="leg-pct">${(v/total2*100).toFixed(0)}%</div></div>
+      <div class="leg-amt">${fmt(v)}</div>
+    </div>`).join('');
+
+  // Bar chart
+  document.getElementById('barChart').innerHTML=vals.map((v,i)=>`
+    <div class="bar-row">
+      <div class="bar-label-row"><span class="bar-name">${labels[i]}</span><span class="bar-val">${fmt(v)}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(v/maxVal*100).toFixed(1)}%;background:${colors[i]}"></div></div>
+    </div>`).join('');
+}
+
+function saveCalc(){
+  if(!lastResult)return;
+  const key='closing_'+Date.now();
+  const saves=JSON.parse(localStorage.getItem('cc_saves')||'[]');
+  saves.push({...lastResult,ts:new Date().toLocaleString(),key});
+  localStorage.setItem('cc_saves',JSON.stringify(saves.slice(-5)));
+  document.getElementById('savedText').textContent=`Saved — ${fmt(lastResult.total)} closing costs`;
+  document.getElementById('savedSub').textContent=`${lastResult.state} · ${fmt(lastResult.price)} purchase · ${new Date().toLocaleString()}`;
+  document.getElementById('savedChip').classList.add('visible');
+  showToast('✅ Calculation saved successfully!');
+}
+
+function clearSave(){document.getElementById('savedChip').classList.remove('visible');}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// Init slider displays
+updateSlider(document.getElementById('priceSlider'),'priceDisplay',v=>'$'+Math.round(v/1000)+'K');
+updateSlider(document.getElementById('downSlider'),'downDisplay',v=>v+'%');
+</script>
+</body>
+</html>

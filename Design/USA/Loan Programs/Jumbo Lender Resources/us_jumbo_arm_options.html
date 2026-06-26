@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jumbo ARM Options</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);
+    --slate:#334155;--slate2:#1E293B;--green:#15803D;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#334155 55%,#1E293B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🔄';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:'Playfair Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec-badge{font-size:9px;font-weight:700;color:var(--gold);background:#FEF3C7;border-radius:6px;padding:2px 8px;}
+
+  /* ARM SELECTOR */
+  .arm-selector{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+  .arm-tab{background:var(--card);border-radius:12px;padding:10px 6px;text-align:center;border:2px solid var(--border);cursor:pointer;transition:all .2s;box-shadow:var(--sh);}
+  .arm-tab.active{border-color:var(--navy);background:var(--navy);}
+  .arm-tab-name{font-size:13px;font-weight:800;font-family:'Playfair Display',serif;color:var(--navy);}
+  .arm-tab.active .arm-tab-name{color:#fff;}
+  .arm-tab-rate{font-size:10px;font-weight:700;color:var(--green);margin-top:2px;}
+  .arm-tab.active .arm-tab-rate{color:var(--gold-lt);}
+  .arm-tab-save{font-size:8px;color:var(--muted);margin-top:1px;}
+  .arm-tab.active .arm-tab-save{color:rgba(255,255,255,0.5);}
+
+  /* RESULT HERO */
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#334155);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:10px;}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-top{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
+  .rh-col{}
+  .rh-val-l{font-size:9px;color:rgba(255,255,255,0.50);margin-bottom:2px;}
+  .rh-val{font-size:26px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1;}
+  .rh-val span{font-size:13px;color:var(--gold-lt);}
+  .rh-val.green{color:#86EFAC;}
+  .rh-sub{font-size:9.5px;color:rgba(255,255,255,0.45);margin-top:3px;}
+  .savings-badge{display:inline-block;background:rgba(253,211,77,0.2);border:1px solid rgba(253,211,77,0.4);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--gold-lt);margin-top:10px;}
+  .rh-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;}
+  .save-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:8px 14px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(253,211,77,0.25);border-color:var(--gold-lt);color:var(--gold-lt);}
+  .save-count{background:rgba(255,255,255,0.15);border-radius:8px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,0.7);}
+
+  /* INPUTS */
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .inp-box{background:var(--card);border-radius:14px;padding:13px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:rgba(51,65,85,0.4);}
+  .inp-box label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:15px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:9px;color:var(--muted);margin-top:3px;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#334155,#1E293B);border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(51,65,85,0.35);font-family:'DM Sans',sans-serif;margin-bottom:4px;transition:transform .1s;}
+  .calc-btn:active{transform:scale(0.98);}
+
+  /* PHASE CHART */
+  .chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:4px;}
+  .chart-sub{font-size:9.5px;color:var(--muted);margin-bottom:12px;}
+  .phase-chart{display:flex;height:140px;gap:2px;align-items:flex-end;padding-bottom:20px;position:relative;}
+  .phase-bar{flex:1;border-radius:4px 4px 0 0;position:relative;min-height:10px;transition:height .8s ease;}
+  .phase-label{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:7.5px;color:var(--muted);white-space:nowrap;font-weight:700;}
+  .phase-val{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:800;color:var(--navy);white-space:nowrap;}
+  .chart-legend{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;}
+  .cl-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);}
+  .cl-dot{width:10px;height:10px;border-radius:3px;}
+
+  /* ARM BREAKDOWN */
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:14px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:20px;margin-bottom:6px;}
+  .bk-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:17px;font-weight:800;color:var(--navy);font-family:'Playfair Display',serif;margin:3px 0;}
+  .bk-sub{font-size:9px;color:var(--muted);}
+
+  /* RATE LIFECYCLE TIMELINE */
+  .lifecycle-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .lc-head{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:14px;}
+  .lifecycle-row{display:flex;gap:0;margin-bottom:6px;border-radius:10px;overflow:hidden;}
+  .lc-phase{text-align:center;padding:10px 4px;font-size:9px;font-weight:700;position:relative;}
+  .lc-phase .ph-yr{font-size:8px;opacity:0.8;display:block;margin-bottom:2px;}
+  .lc-phase .ph-rate{font-size:12px;font-weight:800;font-family:'Playfair Display',serif;}
+  .lc-phase .ph-lbl{font-size:7px;margin-top:2px;display:block;opacity:0.75;}
+
+  /* ARM RISKS */
+  .risk-card{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:14px 15px;margin-bottom:10px;}
+  .risk-title{font-size:12px;font-weight:700;color:#92400E;font-family:'Playfair Display',serif;margin-bottom:10px;}
+  .risk-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(245,158,11,0.25);}
+  .risk-row:last-child{border-bottom:none;}
+  .risk-label{font-size:10px;font-weight:600;color:#92400E;}
+  .risk-val{font-size:10px;font-weight:800;color:#B45309;}
+
+  /* WHO BENEFITS */
+  .benefit-card{background:linear-gradient(135deg,#0B1D3A,#334155);border-radius:16px;padding:15px;margin-bottom:10px;}
+  .bc-title{font-size:12px;font-weight:800;color:var(--gold-lt);font-family:'Playfair Display',serif;margin-bottom:10px;}
+  .bc-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;}
+  .bc-dot{font-size:14px;flex-shrink:0;margin-top:1px;}
+  .bc-text{font-size:10px;color:rgba(255,255,255,0.75);line-height:1.4;}
+  .bc-text strong{color:#fff;}
+
+  /* SAVED PANEL */
+  .saved-panel{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;display:none;}
+  .saved-panel.visible{display:block;}
+  .saved-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .saved-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif;}
+  .clear-btn{font-size:10px;color:var(--red);font-weight:600;cursor:pointer;border:none;background:none;}
+  .saved-item{background:var(--bg);border-radius:11px;padding:10px 12px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .si-name{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-detail{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-right{font-size:13px;font-weight:800;color:var(--slate);font-family:'Playfair Display',serif;}
+  .si-del{font-size:14px;color:var(--muted);cursor:pointer;margin-left:6px;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;border-radius:12px;padding:10px 18px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.chart-card,.breakdown-grid,.lifecycle-card,.risk-card,.benefit-card{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔄</div>
+      <div class="hdr-title">Jumbo ARM Options</div>
+      <div class="hdr-sub">Adjustable-Rate Mortgages · Above $766,550</div>
+    </div>
+    <div class="icon-btn" onclick="toggleSaved()">🔖</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">5/1 ARM</div><div class="rs-v gold">6.21%</div><div class="rs-n">Initial</div></div>
+    <div class="rs"><div class="rs-l">7/1 ARM</div><div class="rs-v">6.38%</div><div class="rs-n">Initial</div></div>
+    <div class="rs"><div class="rs-l">10/1 ARM</div><div class="rs-v">6.55%</div><div class="rs-n">Initial</div></div>
+    <div class="rs"><div class="rs-l">30-Yr Fixed</div><div class="rs-v">7.04%</div><div class="rs-n">Savings vs</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- SAVED PANEL -->
+  <div class="saved-panel" id="savedPanel">
+    <div class="saved-header">
+      <div class="saved-title">📌 Saved ARM Calculations</div>
+      <button class="clear-btn" onclick="clearAllSaved()">Clear All</button>
+    </div>
+    <div id="savedList"><div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No saved calculations yet.</div></div>
+  </div>
+
+  <!-- ARM TYPE SELECTOR -->
+  <div class="sec" style="margin-top:0">Select ARM Type</div>
+  <div class="arm-selector">
+    <div class="arm-tab" id="arm-5" onclick="selectArm(5,6.21,'5/1 ARM')">
+      <div class="arm-tab-name">5/1</div>
+      <div class="arm-tab-rate">6.21%</div>
+      <div class="arm-tab-save">Save $521/mo</div>
+    </div>
+    <div class="arm-tab active" id="arm-7" onclick="selectArm(7,6.38,'7/1 ARM')">
+      <div class="arm-tab-name">7/1</div>
+      <div class="arm-tab-rate">6.38%</div>
+      <div class="arm-tab-save">Save $380/mo</div>
+    </div>
+    <div class="arm-tab" id="arm-10" onclick="selectArm(10,6.55,'10/1 ARM')">
+      <div class="arm-tab-name">10/1</div>
+      <div class="arm-tab-rate">6.55%</div>
+      <div class="arm-tab-save">Save $219/mo</div>
+    </div>
+    <div class="arm-tab" id="arm-15" onclick="selectArm(0,6.74,'3/1 ARM')">
+      <div class="arm-tab-name">3/1</div>
+      <div class="arm-tab-rate">6.08%</div>
+      <div class="arm-tab-save">Save $645/mo</div>
+    </div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="sec">Loan Details</div>
+  <div class="input-grid">
+    <div class="inp-box">
+      <label>Loan Amount ($)</label>
+      <input type="number" id="loanAmt" value="1200000" step="25000" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>ARM Initial Rate (%)</label>
+      <input type="number" id="armRate" value="6.38" step="0.05" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>Fixed 30-Yr Rate (%)</label>
+      <input type="number" id="fixedRate" value="7.04" step="0.05" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>Expected Rate Cap (%)</label>
+      <input type="number" id="rateCap" value="11.38" step="0.25" oninput="calculate()">
+      <div class="inp-hint">Typical: initial + 5%</div>
+    </div>
+    <div class="inp-box">
+      <label>Plans to Sell/Refi (Yrs)</label>
+      <input type="number" id="horizon" value="7" step="1" min="1" max="30" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>Loan Term</label>
+      <select id="term" onchange="calculate()">
+        <option value="30" selected>30 Years</option>
+        <option value="20">20 Years</option>
+        <option value="15">15 Years</option>
+      </select>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calculate()">🔄 Calculate ARM Savings</button>
+
+  <!-- RESULT HERO -->
+  <div class="sec">ARM vs Fixed Comparison</div>
+  <div class="result-hero">
+    <div class="rh-label">Side-by-Side Payment Analysis</div>
+    <div class="rh-top">
+      <div class="rh-col">
+        <div class="rh-val-l">ARM Monthly Payment</div>
+        <div class="rh-val green" id="armPayment">$7,463 <span>/mo</span></div>
+        <div class="rh-sub" id="armLabel">7/1 ARM @ 6.38%</div>
+      </div>
+      <div class="rh-col">
+        <div class="rh-val-l">Fixed 30-Yr Payment</div>
+        <div class="rh-val" id="fixedPayment">$7,992 <span>/mo</span></div>
+        <div class="rh-sub">30-Yr Fixed @ 7.04%</div>
+      </div>
+    </div>
+    <div class="savings-badge" id="savingsBadge">💚 Save $529/mo · $44,436 over 7 yrs</div>
+    <div class="rh-save-row">
+      <div class="save-count" id="saveCount">0 saved</div>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save Calculation</button>
+    </div>
+  </div>
+
+  <!-- MONTHLY PAYMENT PHASE CHART -->
+  <div class="chart-card">
+    <div class="chart-title">📊 Monthly Payment Through Loan Life</div>
+    <div class="chart-sub" id="chartSub">Fixed vs ARM across all rate scenarios</div>
+    <div class="phase-chart" id="phaseChart"></div>
+    <div class="chart-legend">
+      <div class="cl-item"><div class="cl-dot" style="background:#0B1D3A"></div>Fixed Rate</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#15803D"></div>ARM (Initial Fixed)</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#D97706"></div>ARM (After Adjustment)</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#B91C1C"></div>ARM (Worst Case Cap)</div>
+    </div>
+  </div>
+
+  <!-- BREAKDOWN GRID -->
+  <div class="sec">Key Figures</div>
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">💰</div><div class="bk-label">Monthly Savings</div><div class="bk-value" id="bkMonthlySave">$529</div><div class="bk-sub">ARM vs 30-yr fixed</div></div>
+    <div class="bk-card"><div class="bk-icon">📅</div><div class="bk-label">Total Savings (Horizon)</div><div class="bk-value" id="bkTotalSave">$44.4K</div><div class="bk-sub" id="bkHorizonLabel">Over 7 years</div></div>
+    <div class="bk-card"><div class="bk-icon">📈</div><div class="bk-label">Rate Spread</div><div class="bk-value" id="bkSpread">0.66%</div><div class="bk-sub">ARM vs 30-yr fixed</div></div>
+    <div class="bk-card"><div class="bk-icon">⚠️</div><div class="bk-label">Worst-Case Payment</div><div class="bk-value" id="bkWorstCase">$11,240</div><div class="bk-sub" id="bkCapLabel">At 11.38% cap</div></div>
+    <div class="bk-card"><div class="bk-icon">🎯</div><div class="bk-label">Break-Even Point</div><div class="bk-value" id="bkBreakEven">Yr 9</div><div class="bk-sub">ARM costs more after</div></div>
+    <div class="bk-card"><div class="bk-icon">🔒</div><div class="bk-label">Adjustment Caps</div><div class="bk-value">2/2/5</div><div class="bk-sub">Annual/Period/Lifetime</div></div>
+  </div>
+
+  <!-- RATE LIFECYCLE -->
+  <div class="sec">Rate Lifecycle Scenario</div>
+  <div class="lifecycle-card">
+    <div class="lc-head" id="lifecycleHead">📅 7/1 ARM Rate Lifecycle (Moderate Rate Rise)</div>
+    <div class="lifecycle-row" id="lifecycleRow"></div>
+    <div style="font-size:9px;color:var(--muted);margin-top:10px;line-height:1.5;">Caps shown are 2/2/5 (2% per adjustment, 2% first adjust, 5% lifetime). Index: SOFR + margin. Rates illustrative based on current SOFR ~5.30%.</div>
+  </div>
+
+  <!-- RISKS -->
+  <div class="sec">ARM Risk Parameters <span class="sec-badge">2025 Data</span></div>
+  <div class="risk-card">
+    <div class="risk-title">⚠️ Jumbo ARM Cap Structure (Standard 2025)</div>
+    <div class="risk-row"><div class="risk-label">Initial Cap (First Adjustment)</div><div class="risk-val">+2%</div></div>
+    <div class="risk-row"><div class="risk-label">Subsequent Adjustment Cap</div><div class="risk-val">+2% per year</div></div>
+    <div class="risk-row"><div class="risk-label">Lifetime Cap Over Initial Rate</div><div class="risk-val">+5%</div></div>
+    <div class="risk-row"><div class="risk-label">Index (Most Lenders)</div><div class="risk-val">SOFR</div></div>
+    <div class="risk-row"><div class="risk-label">Current SOFR Rate (Jun 2025)</div><div class="risk-val">5.31%</div></div>
+    <div class="risk-row"><div class="risk-label">Typical Margin</div><div class="risk-val">2.25%–2.75%</div></div>
+    <div class="risk-row"><div class="risk-label">Negative Amortization</div><div class="risk-val" style="color:var(--green);">None (Standard)</div></div>
+  </div>
+
+  <!-- WHO BENEFITS -->
+  <div class="benefit-card">
+    <div class="bc-title">✅ Who Benefits Most from a Jumbo ARM?</div>
+    <div class="bc-item"><div class="bc-dot">🏡</div><div class="bc-text"><strong>Short-Term Owners:</strong> Planning to sell or move within 5–10 years. You leave before rates adjust.</div></div>
+    <div class="bc-item"><div class="bc-dot">💼</div><div class="bc-text"><strong>High-Income Earners:</strong> Income growth outpaces potential rate increases. Payment increase is manageable.</div></div>
+    <div class="bc-item"><div class="bc-dot">📈</div><div class="bc-text"><strong>Rate-Drop Believers:</strong> Expect Fed to cut rates before your fixed period ends. ARM starts lower and may fall further.</div></div>
+    <div class="bc-item"><div class="bc-dot">🔄</div><div class="bc-text"><strong>Refi-Savvy Borrowers:</strong> Plan to refinance into a fixed rate if rates drop before adjustment kicks in.</div></div>
+    <div class="bc-item"><div class="bc-dot">⚠️</div><div class="bc-text"><strong>Caution:</strong> If rates rise to cap, a $1.2M ARM can cost $3,700+/mo more than today. Ensure reserves cover worst-case scenario.</div></div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni" onclick="toggleSaved()"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY='jumbo_arm_saves';
+let savedCalcs=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+let currentArmYears=7;
+
+function fmt(n){return'$'+Math.round(n).toLocaleString();}
+function fmtK(n){const v=Math.abs(n);return(n<0?'-':'')+'$'+(v>=1000000?(v/1000000).toFixed(2)+'M':v>=1000?Math.round(v/1000)+'K':Math.round(v));}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+function pmt(r,n,pv){if(r===0)return pv/n;return pv*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
+
+function selectArm(years, rate, label){
+  currentArmYears=years;
+  document.querySelectorAll('.arm-tab').forEach(t=>t.classList.remove('active'));
+  const id=years===5?'arm-5':years===7?'arm-7':years===10?'arm-10':'arm-15';
+  document.getElementById(id).classList.add('active');
+  document.getElementById('armRate').value=rate;
+  document.getElementById('armLabel').textContent=label+' @ '+rate+'%';
+  document.getElementById('lifecycleHead').textContent='📅 '+label+' Rate Lifecycle (Moderate Rate Rise)';
+  calculate();
+}
+
+function calculate(){
+  const loan=parseFloat(document.getElementById('loanAmt').value)||1200000;
+  const ar=parseFloat(document.getElementById('armRate').value)/100||0.0638;
+  const fr=parseFloat(document.getElementById('fixedRate').value)/100||0.0704;
+  const cap=parseFloat(document.getElementById('rateCap').value)/100||0.1138;
+  const horizon=parseInt(document.getElementById('horizon').value)||7;
+  const term=parseInt(document.getElementById('term').value)||30;
+  const months=term*12;
+
+  const armPmt=pmt(ar/12,months,loan);
+  const fixedPmt=pmt(fr/12,months,loan);
+  const worstPmt=pmt(cap/12,months,loan);
+  const monthlySave=fixedPmt-armPmt;
+  const totalSave=monthlySave*Math.min(horizon*12,months);
+  const spread=((fr-ar)*100).toFixed(2);
+
+  document.getElementById('armPayment').innerHTML=fmt(Math.round(armPmt))+' <span>/mo</span>';
+  document.getElementById('fixedPayment').innerHTML=fmt(Math.round(fixedPmt))+' <span>/mo</span>';
+  document.getElementById('savingsBadge').textContent='💚 Save '+fmt(Math.round(monthlySave))+'/mo · '+fmtK(Math.round(totalSave))+' over '+horizon+' yrs';
+  document.getElementById('bkMonthlySave').textContent=fmt(Math.round(monthlySave));
+  document.getElementById('bkTotalSave').textContent=fmtK(Math.round(totalSave));
+  document.getElementById('bkHorizonLabel').textContent='Over '+horizon+' years';
+  document.getElementById('bkSpread').textContent=spread+'%';
+  document.getElementById('bkWorstCase').textContent=fmt(Math.round(worstPmt));
+  document.getElementById('bkCapLabel').textContent='At '+(cap*100).toFixed(2)+'% cap';
+
+  // Break-even: roughly when cumulative ARM adj costs exceed savings
+  const armYrs=currentArmYears||7;
+  const breakEven=Math.round(armYrs+((monthlySave*armYrs*12)/(worstPmt-fixedPmt||1))/12);
+  document.getElementById('bkBreakEven').textContent='Yr '+(isFinite(breakEven)&&breakEven>0?Math.min(breakEven,30):'>30');
+
+  updateChart(armPmt,fixedPmt,worstPmt,armYrs,term);
+  updateLifecycle(ar,cap,armYrs);
+}
+
+function updateChart(armPmt,fixedPmt,worstPmt,armYrs,term){
+  const max=Math.max(fixedPmt,worstPmt)*1.05;
+  const periods=[
+    {label:'Fixed-Rate Period',pmt:armPmt,color:'#15803D',phase:'ARM Fixed'},
+    {label:'Adj. Year 1',pmt:armPmt*(1+0.015),color:'#D97706',phase:'Adj+1'},
+    {label:'Adj. Year 2',pmt:armPmt*(1+0.03),color:'#B45309',phase:'Adj+2'},
+    {label:'Fixed 30-Yr',pmt:fixedPmt,color:'#0B1D3A',phase:'Fixed'},
+    {label:'Worst Case',pmt:worstPmt,color:'#B91C1C',phase:'Cap'},
+  ];
+  const maxH=110;
+  const chart=document.getElementById('phaseChart');
+  chart.innerHTML=periods.map(p=>{
+    const h=Math.max(10,Math.round((p.pmt/max)*maxH));
+    return`<div class="phase-bar" style="background:${p.color};height:${h}px;">
+      <span class="phase-label">${p.phase}</span>
+      <span class="phase-val">${fmtK(p.pmt)}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateLifecycle(ar,cap,armYrs){
+  const colors=['#15803D','#D97706','#B45309','#B91C1C'];
+  const phases=[
+    {yrs:`Yr 1–${armYrs}`,rate:(ar*100).toFixed(2)+'%',lbl:'Fixed',color:colors[0]},
+    {yrs:`Yr ${armYrs+1}`,rate:((ar+0.02)*100).toFixed(2)+'%',lbl:'+2% cap',color:colors[1]},
+    {yrs:`Yr ${armYrs+2}`,rate:((ar+0.04)*100).toFixed(2)+'%',lbl:'+2% cap',color:colors[2]},
+    {yrs:`Yr ${armYrs+3}+`,rate:(cap*100).toFixed(2)+'%',lbl:'Lifetime Cap',color:colors[3]},
+  ];
+  document.getElementById('lifecycleRow').innerHTML=phases.map(p=>`
+    <div class="lc-phase" style="background:${p.color};color:#fff;flex:1;">
+      <span class="ph-yr">${p.yrs}</span>
+      <span class="ph-rate">${p.rate}</span>
+      <span class="ph-lbl">${p.lbl}</span>
+    </div>`).join('');
+}
+
+// SAVE
+function saveCalc(){
+  const loan=parseFloat(document.getElementById('loanAmt').value)||1200000;
+  const ar=parseFloat(document.getElementById('armRate').value)||6.38;
+  const fr=parseFloat(document.getElementById('fixedRate').value)||7.04;
+  const horizon=parseInt(document.getElementById('horizon').value)||7;
+  const armPmt=pmt(ar/100/12,30*12,loan);
+  const fixedPmt=pmt(fr/100/12,30*12,loan);
+  const save=fixedPmt-armPmt;
+  const entry={id:Date.now(),ts:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    label:`${fmtK(loan)} · ${ar}% ARM vs ${fr}% Fixed`,armPmt:Math.round(armPmt),monthlySave:Math.round(save),horizon};
+  savedCalcs.unshift(entry);if(savedCalcs.length>10)savedCalcs.pop();
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(savedCalcs));
+  updateSaveCount();renderSaved();
+  showToast('✅ ARM calculation saved!');
+  const btn=document.getElementById('saveBtn');btn.classList.add('saved');
+  setTimeout(()=>btn.classList.remove('saved'),2000);
+}
+
+function renderSaved(){
+  const el=document.getElementById('savedList');
+  if(savedCalcs.length===0){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">No saved calculations yet.</div>';return;}
+  el.innerHTML=savedCalcs.map(c=>`<div class="saved-item">
+    <div><div class="si-name">${c.label}</div><div class="si-detail">${c.ts} · ${c.horizon}-yr horizon</div></div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <div class="si-right">Save ${fmt(c.monthlySave)}/mo</div>
+      <div class="si-del" onclick="deleteCalc(${c.id})">✕</div>
+    </div></div>`).join('');
+}
+
+function deleteCalc(id){savedCalcs=savedCalcs.filter(c=>c.id!==id);localStorage.setItem(STORAGE_KEY,JSON.stringify(savedCalcs));renderSaved();updateSaveCount();}
+function clearAllSaved(){savedCalcs=[];localStorage.setItem(STORAGE_KEY,JSON.stringify(savedCalcs));renderSaved();updateSaveCount();}
+function updateSaveCount(){document.getElementById('saveCount').textContent=savedCalcs.length+' saved';}
+function toggleSaved(){const p=document.getElementById('savedPanel');p.classList.toggle('visible');if(p.classList.contains('visible'))renderSaved();}
+
+renderSaved();updateSaveCount();
+selectArm(7,6.38,'7/1 ARM');
+</script>
+</body>
+</html>

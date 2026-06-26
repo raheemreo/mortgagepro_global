@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPS Calculator – India Financial Tools</title>
+<style>
+:root{--saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;--navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;--teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;--muted:#7A5C3A;--border:rgba(255,107,0,0.10);--sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(13,148,136,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#0D9488 82%,#0F766E 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .info{font-size:11px;font-weight:600;color:var(--teal);text-transform:none;letter-spacing:0;}
+.calc-card{background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.field{margin-bottom:16px;}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field-row{display:flex;align-items:center;gap:8px;}
+.inp{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:11px 14px;font-size:15px;font-weight:800;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--teal);}
+.inp-unit{background:rgba(13,148,136,0.08);border:1.5px solid var(--border);border-radius:11px;padding:11px 12px;font-size:12px;font-weight:800;color:var(--teal);white-space:nowrap;font-family:'Trebuchet MS',sans-serif;}
+.slider-wrap{margin-top:7px;}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;background:linear-gradient(90deg,var(--teal) var(--pct,50%),rgba(13,148,136,0.15) var(--pct,50%));border-radius:4px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--teal);border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(13,148,136,0.4);cursor:pointer;}
+.slider-labels{display:flex;justify-content:space-between;margin-top:4px;}
+.slider-labels span{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.toggle-row{display:flex;gap:6px;flex-wrap:wrap;}
+.tgl{flex:1;padding:9px 6px;border-radius:10px;font-size:11px;font-weight:800;text-align:center;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-family:'Trebuchet MS',sans-serif;transition:all .2s;}
+.tgl.active{background:var(--teal);color:#fff;border-color:var(--teal);box-shadow:0 4px 14px rgba(13,148,136,0.35);}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--teal),#0F766E);border:none;border-radius:13px;padding:15px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(13,148,136,0.38);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;transition:transform .15s;}
+.calc-btn:active{transform:scale(.97);}
+.result-card{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:22px;padding:20px;box-shadow:var(--sh2);position:relative;overflow:hidden;margin-bottom:14px;}
+.result-card::after{content:'☸';position:absolute;right:14px;bottom:12px;font-size:54px;color:rgba(255,255,255,0.06);}
+.res-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.7px;font-family:'Trebuchet MS',sans-serif;}
+.res-big{font-size:32px;font-weight:800;color:var(--ochre-lt);margin:4px 0 14px;line-height:1;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.res-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:10px 12px;}
+.res-box-lbl{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.res-box-val{font-size:16px;font-weight:800;color:#fff;margin-top:3px;}
+.res-box-val.grn{color:#86EFAC;}
+.res-box-val.saf{color:var(--ochre-lt);}
+.res-box-val.tl{color:#5EEAD4;}
+.save-btn{width:100%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.20);border-radius:11px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Trebuchet MS',sans-serif;letter-spacing:.3px;margin-top:10px;transition:background .2s;}
+.save-btn:hover{background:rgba(255,255,255,0.20);}
+.chart-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.chart-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.chart-title span{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;font-weight:600;}
+.legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+/* Pension breakdown */
+.pension-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.pen-card{border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);}
+.pen-card.lump{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border-color:#6EE7B7;}
+.pen-card.ann{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border-color:#93C5FD;}
+.pen-icon{font-size:24px;margin-bottom:6px;}
+.pen-title{font-size:11px;font-weight:800;color:var(--navy);}
+.pen-val{font-size:18px;font-weight:800;color:var(--teal);margin:3px 0;}
+.pen-sub{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+/* Asset allocation pie chart */
+.alloc-row{display:flex;gap:8px;margin-bottom:8px;}
+.alloc-lbl{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;width:80px;flex-shrink:0;}
+.alloc-bar{flex:1;height:9px;border-radius:5px;overflow:hidden;background:rgba(255,107,0,0.08);}
+.alloc-fill{height:100%;border-radius:5px;}
+.alloc-pct{font-size:10px;font-weight:800;color:var(--navy);width:35px;text-align:right;font-family:'Trebuchet MS',sans-serif;}
+/* Tax benefits */
+.tax-box{background:linear-gradient(135deg,#FFFBEB,#FEF3C7);border:1.5px solid #FCD34D;border-radius:17px;padding:14px 15px;margin-bottom:14px;}
+.tax-title{font-size:12px;font-weight:800;color:#92400E;margin-bottom:8px;}
+.tax-row{display:flex;justify-content:space-between;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.tax-row span{font-size:10px;color:#B45309;}
+.tax-row strong{font-size:10px;color:#78350F;font-weight:800;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--teal);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:800;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .10s;}
+.fu3{animation:fadeUp .38s ease both .16s;}
+.fu4{animation:fadeUp .38s ease both .22s;}
+.fu5{animation:fadeUp .38s ease both .28s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="javascript:history.back()">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏦</div>
+      <div class="hdr-title">NPS <span>Calculator</span></div>
+      <div class="hdr-sub">National Pension System · PFRDA India · Tier I & II</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Tier I</div><div class="rs-v saf">Tax-Free</div><div class="rs-n">EEE Status</div></div>
+    <div class="rs"><div class="rs-v grn" style="font-size:13px">80C+80CCD</div><div class="rs-n">₹2L Dedn</div></div>
+    <div class="rs"><div class="rs-l">Equity Cap</div><div class="rs-v">75%</div><div class="rs-n">Age <50</div></div>
+    <div class="rs"><div class="rs-l">Annuity</div><div class="rs-v">40%</div><div class="rs-n">At Retire</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">NPS Details <span class="info">PFRDA 2025–26 ⓘ</span></div>
+  <div class="calc-card fu1">
+    <div class="field">
+      <label>Current Age</label>
+      <div class="field-row">
+        <input class="inp" type="number" id="age" value="30" min="18" max="65" oninput="updateSlider('ageRange',this.value,18,65);calc()">
+        <span class="inp-unit">Yrs</span>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="ageRange" min="18" max="65" value="30" oninput="syncInput('age',this.value);calc()">
+        <div class="slider-labels"><span>18</span><span>65</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Monthly Contribution</label>
+      <div class="field-row">
+        <span class="inp-unit">₹</span>
+        <input class="inp" type="number" id="monthly" value="5000" min="500" oninput="updateSlider('mRange',this.value,500,100000);calc()">
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="mRange" min="500" max="100000" value="5000" oninput="syncInput('monthly',this.value);calc()">
+        <div class="slider-labels"><span>₹500</span><span>₹1L</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Employer Contribution (Govt employees: 14%)</label>
+      <div class="field-row">
+        <span class="inp-unit">₹</span>
+        <input class="inp" type="number" id="employer" value="0" min="0" oninput="calc()">
+        <span class="inp-unit">/ mo</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Expected Annual Return</label>
+      <div class="toggle-row" id="retToggle">
+        <div class="tgl" onclick="setTgl('retToggle',this,'8','retV');calc()">8% Safe</div>
+        <div class="tgl active" onclick="setTgl('retToggle',this,'10','retV');calc()">10% Bal</div>
+        <div class="tgl" onclick="setTgl('retToggle',this,'12','retV');calc()">12% Aggr</div>
+      </div>
+      <input type="hidden" id="retV" value="10">
+    </div>
+    <div class="field">
+      <label>Annuity Rate at Retirement</label>
+      <div class="toggle-row" id="annToggle">
+        <div class="tgl" onclick="setTgl('annToggle',this,'5','annV');calc()">5%</div>
+        <div class="tgl active" onclick="setTgl('annToggle',this,'6','annV');calc()">6%</div>
+        <div class="tgl" onclick="setTgl('annToggle',this,'7','annV');calc()">7%</div>
+      </div>
+      <input type="hidden" id="annV" value="6">
+    </div>
+    <button class="calc-btn" onclick="calc()">🏦 Calculate NPS Corpus</button>
+  </div>
+
+  <div class="result-card fu2">
+    <div class="res-label">Total NPS Corpus at Age 60</div>
+    <div class="res-big" id="maturity">₹0</div>
+    <div class="res-grid">
+      <div class="res-box"><div class="res-box-lbl">Lump Sum (60%)</div><div class="res-box-val saf" id="lump">₹0</div></div>
+      <div class="res-box"><div class="res-box-lbl">Monthly Pension</div><div class="res-box-val grn" id="pension">₹0</div></div>
+      <div class="res-box"><div class="res-box-lbl">Total Invested</div><div class="res-box-val" id="invested">₹0</div></div>
+      <div class="res-box"><div class="res-box-lbl">Tax Saved (est.)</div><div class="res-box-val tl" id="taxSaved">₹0</div></div>
+    </div>
+    <button class="save-btn" onclick="saveCalc()">📥 Save Calculation</button>
+  </div>
+
+  <!-- PENSION CARDS -->
+  <div class="sec fu3">Retirement Income Breakup</div>
+  <div class="pension-cards fu3">
+    <div class="pen-card lump">
+      <div class="pen-icon">💰</div>
+      <div class="pen-title">Tax-Free Lump Sum</div>
+      <div class="pen-val" id="lumpCard">₹0</div>
+      <div class="pen-sub">60% of corpus · Tax-exempt</div>
+    </div>
+    <div class="pen-card ann">
+      <div class="pen-icon">📅</div>
+      <div class="pen-title">Monthly Pension</div>
+      <div class="pen-val" id="pensionCard">₹0</div>
+      <div class="pen-sub">40% annuity · Taxable</div>
+    </div>
+  </div>
+
+  <!-- GROWTH CHART -->
+  <div class="sec fu3">Corpus Growth Projection <span class="info">Year-by-year</span></div>
+  <div class="chart-card fu3">
+    <div class="chart-title">NPS Corpus Build-up <span id="chartSub">30 years</span></div>
+    <svg id="areaSvg" viewBox="0 0 360 140" style="width:100%;height:150px;display:block;" preserveAspectRatio="none"></svg>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--teal)"></div>Total Corpus</div>
+      <div class="leg-item"><div class="leg-dot" style="background:rgba(13,148,136,0.25)"></div>Contributions</div>
+    </div>
+  </div>
+
+  <!-- ASSET ALLOCATION -->
+  <div class="sec fu4">Auto Choice Asset Allocation <span class="info">LC-75 Active</span></div>
+  <div class="chart-card fu4">
+    <div class="chart-title">Equity-Debt Mix by Age <span id="ageNow">Age 30</span></div>
+    <div id="allocBars"></div>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#FF6B00"></div>Equity</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#1A3A8F"></div>Corporate Debt</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#046A38"></div>Govt Securities</div>
+    </div>
+  </div>
+
+  <!-- TAX BENEFITS -->
+  <div class="sec fu4">Tax Benefits · FY 2025–26 <span class="info">New + Old Regime</span></div>
+  <div class="tax-box fu5">
+    <div class="tax-title">💛 NPS Tax Deduction Summary</div>
+    <div class="tax-row"><span>Section 80C (employee contrib)</span><strong>Up to ₹1.5L/yr</strong></div>
+    <div class="tax-row"><span>Section 80CCD(1B) extra NPS</span><strong>Additional ₹50,000/yr</strong></div>
+    <div class="tax-row"><span>Section 80CCD(2) employer</span><strong>Up to 14% of Basic (Govt)</strong></div>
+    <div class="tax-row"><span>Total max deduction</span><strong>₹2,00,000 + employer</strong></div>
+    <div class="tax-row"><span>Lump sum at 60 (60%)</span><strong>Fully Tax-Free</strong></div>
+    <div class="tax-row"><span>Annuity income</span><strong>Taxable as per slab</strong></div>
+    <div class="tax-row"><span>Available in new regime?</span><strong>80CCD(2) only (employer)</strong></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">📥 NPS plan saved!</div>
+
+<script>
+function fmt(n){return '₹'+n.toLocaleString('en-IN',{maximumFractionDigits:0});}
+function syncInput(id,v){document.getElementById(id).value=v;}
+function updateSlider(id,v,mn,mx){const s=document.getElementById(id);s.value=Math.min(mx,Math.max(mn,v));s.style.setProperty('--pct',((s.value-mn)/(mx-mn)*100)+'%');}
+function setTgl(gId,el,v,hId){document.querySelectorAll('#'+gId+' .tgl').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById(hId).value=v;}
+
+function calc(){
+  const age=parseInt(document.getElementById('age').value)||30;
+  const monthly=parseFloat(document.getElementById('monthly').value)||5000;
+  const employer=parseFloat(document.getElementById('employer').value)||0;
+  const ret=parseFloat(document.getElementById('retV').value)||10;
+  const annRate=parseFloat(document.getElementById('annV').value)||6;
+  const yrs=Math.max(1,60-age);
+  const mRate=ret/100/12;
+  const total=monthly+employer;
+
+  let corpus=0,invested=0;
+  const pts=[];
+  for(let m=1;m<=yrs*12;m++){
+    corpus=(corpus+total)*(1+mRate);
+    invested+=total;
+    if(m%12===0) pts.push({y:m/12,corpus,invested});
+  }
+  const lump=corpus*0.60;
+  const annuity=corpus*0.40;
+  const monthlyPension=annuity*annRate/100/12;
+  const taxSaved=Math.min(yrs*12*monthly,200000*yrs)*0.30;
+
+  document.getElementById('maturity').textContent=fmt(corpus);
+  document.getElementById('lump').textContent=fmt(lump);
+  document.getElementById('pension').textContent=fmt(monthlyPension)+'/mo';
+  document.getElementById('invested').textContent=fmt(invested);
+  document.getElementById('taxSaved').textContent=fmt(taxSaved);
+  document.getElementById('lumpCard').textContent=fmt(lump);
+  document.getElementById('pensionCard').textContent=fmt(monthlyPension)+'/mo';
+  document.getElementById('chartSub').textContent=yrs+' years';
+  document.getElementById('ageNow').textContent='Age '+age;
+
+  drawArea(pts);
+  drawAlloc(age);
+  window._lastCalc={age,monthly,employer,ret,annRate,corpus,lump,monthlyPension,invested};
+}
+
+function drawArea(pts){
+  if(!pts.length) return;
+  const W=360,H=140,pad=10,maxV=pts[pts.length-1].corpus;
+  const scX=i=>(i/(pts.length-1))*(W-pad*2)+pad;
+  const scY=v=>H-pad-(v/maxV)*(H-pad*2);
+  const cp=pts.map((p,i)=>`${scX(i)},${scY(p.corpus)}`).join(' ');
+  const ip=pts.map((p,i)=>`${scX(i)},${scY(p.invested)}`).join(' ');
+  document.getElementById('areaSvg').innerHTML=`
+    <defs>
+      <linearGradient id="gT" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0D9488" stop-opacity="0.35"/><stop offset="100%" stop-color="#0D9488" stop-opacity="0"/></linearGradient>
+      <linearGradient id="gI" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF6B00" stop-opacity="0.20"/><stop offset="100%" stop-color="#FF6B00" stop-opacity="0"/></linearGradient>
+    </defs>
+    <polygon points="${pad},${H-pad} ${ip} ${W-pad},${H-pad}" fill="url(#gI)"/>
+    <polygon points="${pad},${H-pad} ${cp} ${W-pad},${H-pad}" fill="url(#gT)"/>
+    <polyline points="${ip}" fill="none" stroke="rgba(255,107,0,0.5)" stroke-width="1.5"/>
+    <polyline points="${cp}" fill="none" stroke="#0D9488" stroke-width="2.5"/>
+  `;
+}
+
+function drawAlloc(age){
+  const ages=[25,30,35,40,45,50,55,60];
+  const equity=a=>Math.max(10,Math.min(75,75-(a-25)*1.5));
+  const corp=a=>Math.min(10,Math.max(5,10-(a-25)*0.2));
+  document.getElementById('allocBars').innerHTML=ages.map(a=>{
+    const eq=equity(a),co=corp(a),go=100-eq-co;
+    const isNow=Math.abs(a-age)<5;
+    return `<div class="alloc-row" style="opacity:${isNow?1:0.55}">
+      <div class="alloc-lbl" style="font-weight:${isNow?800:600}">Age ${a}</div>
+      <div class="alloc-bar">
+        <div style="display:flex;height:100%">
+          <div style="width:${eq}%;background:#FF6B00;border-radius:5px 0 0 5px"></div>
+          <div style="width:${co}%;background:#1A3A8F"></div>
+          <div style="width:${go}%;background:#046A38;border-radius:0 5px 5px 0"></div>
+        </div>
+      </div>
+      <div class="alloc-pct">${eq}% E</div>
+    </div>`;
+  }).join('');
+}
+
+function saveCalc(){
+  if(!window._lastCalc) return;
+  try{const s=JSON.parse(localStorage.getItem('nps_saves')||'[]');s.push({...window._lastCalc,date:new Date().toLocaleDateString('en-IN')});localStorage.setItem('nps_saves',JSON.stringify(s));}catch(e){}
+  const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+['ageRange','mRange'].forEach(id=>{
+  const s=document.getElementById(id);
+  s.style.setProperty('--pct',((s.value-s.min)/(s.max-s.min)*100)+'%');
+  s.addEventListener('input',function(){this.style.setProperty('--pct',((this.value-this.min)/(this.max-this.min)*100)+'%');});
+});
+calc();
+</script>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debt Payoff Planner</title>
+<style>
+  :root{--navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;--bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;--border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);--tl:#0F766E;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#0F766E 60%,#065F46 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'📉';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+  .content{padding:15px 15px 120px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--tl);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* Toast */
+  .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:9999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .strategy-toggle{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border-radius:14px;padding:4px;margin-bottom:14px;box-shadow:var(--sh);}
+  .st-btn{padding:12px;text-align:center;border-radius:11px;font-size:11px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .2s;}
+  .st-btn.active.avalanche{background:linear-gradient(135deg,#0B1D3A,#1B3F72);color:#fff;box-shadow:0 2px 8px rgba(11,29,58,0.30);}
+  .st-btn.active.snowball{background:linear-gradient(135deg,#0F766E,#065F46);color:#fff;box-shadow:0 2px 8px rgba(15,118,110,0.30);}
+  .st-btn-icon{font-size:18px;margin-bottom:3px;}
+  .st-btn-label{font-size:10px;font-weight:800;}
+  .st-btn-sub{font-size:8.5px;font-weight:500;opacity:0.7;}
+
+  .debt-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+  .debt-item{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .debt-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .debt-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .debt-remove{font-size:16px;color:var(--red);cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#FEF2F2;}
+  .debt-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+  .df-label{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:3px;}
+  .df-input{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:8px 9px;font-size:13px;font-weight:700;color:var(--navy);font-family:Georgia,serif;background:var(--bg);outline:none;transition:border-color .2s;}
+  .df-input:focus{border-color:var(--tl);}
+  .add-debt-btn{width:100%;background:transparent;border:2px dashed rgba(15,118,110,0.35);border-radius:13px;padding:13px;font-size:12px;font-weight:700;color:var(--tl);cursor:pointer;font-family:Georgia,serif;}
+
+  .extra-card{background:var(--card);border-radius:14px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .extra-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+  .extra-row{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;}
+  .extra-prefix{padding:11px;font-size:14px;font-weight:700;color:var(--muted);background:rgba(27,63,114,0.05);border-right:1px solid var(--border);}
+  .extra-row input{flex:1;border:none;background:transparent;padding:11px 12px;font-size:15px;font-weight:700;color:var(--navy);font-family:Georgia,serif;outline:none;}
+
+  /* Action Buttons */
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:10px;}
+  .calc-btn{background:linear-gradient(135deg,#0F766E,#065F46);border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(15,118,110,0.40);font-family:Georgia,serif;transition:transform .1s;}
+  .calc-btn:active{transform:scale(0.97);}
+  .save-btn{background:linear-gradient(135deg,#D97706,#B45309);border:none;border-radius:13px;padding:14px 16px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(217,119,6,0.35);white-space:nowrap;transition:transform .1s;}
+  .save-btn:active{transform:scale(0.97);}
+
+  .result-hero{border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .result-hero.avalanche{background:linear-gradient(148deg,#0B1D3A,#1B3F72);}
+  .result-hero.snowball{background:linear-gradient(148deg,#0F766E,#065F46);}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.07);}
+  .rh-label{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.7px;}
+  .rh-val{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:6px 0 2px;}
+  .rh-sub{font-size:11px;color:rgba(255,255,255,0.65);}
+  .rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-item{background:rgba(255,255,255,0.12);border-radius:11px;padding:9px 8px;text-align:center;}
+  .rh-item-l{font-size:8.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;}
+  .rh-item-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+  .rh-item-v.gold{color:var(--gold-lt);}
+
+  /* Debt Stacking Chart */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .debt-stack{display:flex;flex-direction:column;gap:8px;}
+  .ds-row{display:flex;align-items:center;gap:8px;}
+  .ds-label{font-size:9.5px;font-weight:700;width:90px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ds-bar-bg{flex:1;height:20px;background:#EEF2F8;border-radius:5px;overflow:hidden;position:relative;}
+  .ds-bar-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 7px;transition:width .6s ease;}
+  .ds-bar-val{font-size:9.5px;font-weight:800;color:#fff;white-space:nowrap;}
+  .ds-apr{font-size:9px;font-weight:700;width:34px;text-align:right;flex-shrink:0;}
+
+  /* Interest donut */
+  .donut-row{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;margin-top:10px;}
+  .donut-legend{display:flex;flex-direction:column;gap:8px;}
+  .dl-item{display:flex;align-items:center;gap:7px;font-size:10.5px;}
+  .dl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+
+  .compare-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .cmp-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .cmp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+  .cmp-row:last-child{border-bottom:none;}
+  .cmp-label{font-size:11px;font-weight:700;color:var(--muted);}
+  .cmp-vals{display:flex;gap:12px;}
+  .cmp-av{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .cmp-sn{font-size:12px;font-weight:800;color:var(--tl);font-family:Georgia,serif;}
+
+  .order-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .oc-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:10px;}
+  .oc-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .oc-row:last-child{border-bottom:none;}
+  .oc-num{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#0F766E,#065F46);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .oc-name{font-size:12px;font-weight:800;color:var(--navy);flex:1;}
+  .oc-detail{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .oc-tag{font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:20px;}
+  .oc-tag.rate{background:#FEF2F2;color:#B91C1C;}
+  .oc-tag.bal{background:#F0FDF4;color:#15803D;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--tl);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .strategy-toggle{animation:fadeUp .35s ease both .05s;}.debt-list,.extra-card{animation:fadeUp .35s ease both .10s;}.result-hero{animation:fadeUp .35s ease both .15s;}.chart-card,.compare-card,.order-card{animation:fadeUp .35s ease both .20s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">💾 Plan saved!</div>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div style="font-size:28px">📉</div>
+      <div class="hdr-title">Debt Payoff Planner</div>
+      <div class="hdr-sub">Avalanche vs Snowball Strategy</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Avg CC APR</div><div class="rs-v gold">21.51%</div><div class="rs-n">Fed Reserve</div></div>
+    <div class="rs"><div class="rs-l">Auto Loan</div><div class="rs-v">7.18%</div><div class="rs-n">Avg 60mo</div></div>
+    <div class="rs"><div class="rs-l">Student Loan</div><div class="rs-v">5.50%</div><div class="rs-n">Federal</div></div>
+    <div class="rs"><div class="rs-l">Personal Loan</div><div class="rs-v gold">11.48%</div><div class="rs-n">Avg APR</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec" style="margin-top:0">Choose Strategy</div>
+  <div class="strategy-toggle">
+    <div class="st-btn active avalanche" id="avBtn" onclick="setStrategy('avalanche')">
+      <div class="st-btn-icon">🔥</div><div class="st-btn-label">Avalanche</div><div class="st-btn-sub">Highest rate first · saves most $</div>
+    </div>
+    <div class="st-btn snowball" id="snBtn" onclick="setStrategy('snowball')">
+      <div class="st-btn-icon">⛄</div><div class="st-btn-label">Snowball</div><div class="st-btn-sub">Smallest balance first · motivation</div>
+    </div>
+  </div>
+
+  <div class="sec">Your Debts <span class="more" onclick="addDebt()">+ Add Debt</span></div>
+  <div class="debt-list" id="debtList"></div>
+  <button class="add-debt-btn" onclick="addDebt()">+ Add Another Debt</button>
+
+  <div class="sec" style="margin-top:14px">Extra Monthly Payment</div>
+  <div class="extra-card">
+    <div class="extra-label">Extra payment toward debt each month</div>
+    <div class="extra-row">
+      <span class="extra-prefix">$</span>
+      <input type="number" id="extraPmt" value="200">
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">📉 Calculate Payoff Plan</button>
+      <button class="save-btn" onclick="saveCalc()">💾 Save</button>
+    </div>
+  </div>
+
+  <div class="sec" style="margin-top:14px">Results</div>
+  <div class="result-hero avalanche" id="resultHero">
+    <div class="rh-label" id="stratLabel">Avalanche Strategy</div>
+    <div class="rh-val" id="payoffTime">—</div>
+    <div class="rh-sub" id="heroSub">Press Calculate to see your payoff plan</div>
+    <div class="rh-grid">
+      <div class="rh-item"><div class="rh-item-l">Total Debt</div><div class="rh-item-v" id="totalDebt">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">Total Interest</div><div class="rh-item-v gold" id="totalInt">—</div></div>
+      <div class="rh-item"><div class="rh-item-l">Mo. Payment</div><div class="rh-item-v" id="totalPmt">—</div></div>
+    </div>
+  </div>
+
+  <!-- Debt Balance Chart -->
+  <div class="sec">Debt Breakdown</div>
+  <div class="chart-card">
+    <div class="chart-title">💸 Balance by Debt (APR colored)</div>
+    <div class="debt-stack" id="debtStackChart"></div>
+    <div class="donut-row" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+      <svg width="80" height="80" viewBox="0 0 80 80" id="donutSvg">
+        <circle cx="40" cy="40" r="30" fill="none" stroke="#EEF2F8" stroke-width="14"/>
+        <circle id="donutPrin" cx="40" cy="40" r="30" fill="none" stroke="#0F766E" stroke-width="14" stroke-dasharray="188.5 0" stroke-dashoffset="47" transform="rotate(-90 40 40)" stroke-linecap="round"/>
+        <circle id="donutInt" cx="40" cy="40" r="30" fill="none" stroke="#D97706" stroke-width="14" stroke-dasharray="0 188.5" stroke-dashoffset="47" transform="rotate(-90 40 40)" stroke-linecap="round" style="opacity:0"/>
+      </svg>
+      <div class="donut-legend">
+        <div class="dl-item"><div class="dl-dot" style="background:#0F766E"></div><div><div style="font-weight:700;color:var(--navy)" id="legendPrin">—</div><div style="font-size:9px;color:var(--muted)">Principal</div></div></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#D97706"></div><div><div style="font-weight:700;color:var(--navy)" id="legendInt">—</div><div style="font-size:9px;color:var(--muted)">Total Interest</div></div></div>
+        <div class="dl-item"><div class="dl-dot" style="background:#1B3F72"></div><div><div style="font-weight:700;color:var(--navy)" id="legendTotal">—</div><div style="font-size:9px;color:var(--muted)">Total Repaid</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison Table -->
+  <div class="compare-card">
+    <div class="cmp-title">Strategy Comparison</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <div style="flex:1;text-align:center;padding:8px;background:rgba(11,29,58,0.06);border-radius:9px;font-size:10px;font-weight:800;color:var(--navy)">🔥 Avalanche</div>
+      <div style="flex:1;text-align:center;padding:8px;background:rgba(15,118,110,0.10);border-radius:9px;font-size:10px;font-weight:800;color:var(--tl)">⛄ Snowball</div>
+    </div>
+    <div class="cmp-row"><div class="cmp-label">Payoff Time</div><div class="cmp-vals"><div class="cmp-av" id="avTime">—</div><div class="cmp-sn" id="snTime">—</div></div></div>
+    <div class="cmp-row"><div class="cmp-label">Total Interest</div><div class="cmp-vals"><div class="cmp-av" id="avInt">—</div><div class="cmp-sn" id="snInt">—</div></div></div>
+    <div class="cmp-row"><div class="cmp-label">Interest Saved vs Min</div><div class="cmp-vals"><div class="cmp-av" id="avSaved">—</div><div class="cmp-sn" id="snSaved">—</div></div></div>
+    <div class="cmp-row"><div class="cmp-label">First Win (debt paid)</div><div class="cmp-vals"><div class="cmp-av" id="avFirst">—</div><div class="cmp-sn" id="snFirst">—</div></div></div>
+  </div>
+
+  <!-- Payoff Order -->
+  <div class="order-card">
+    <div class="oc-title" id="orderTitle">🔥 Avalanche Payoff Order</div>
+    <div id="orderList"></div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let strategy='avalanche';
+let debts=[
+  {id:1,name:'Chase Credit Card',balance:4200,rate:22.99,minPmt:84},
+  {id:2,name:'Citi Credit Card',balance:7800,rate:19.49,minPmt:156},
+  {id:3,name:'Personal Loan',balance:6500,rate:11.49,minPmt:180},
+];
+let nextId=4;
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+function setStrategy(s){
+  strategy=s;
+  document.getElementById('avBtn').classList.toggle('active',s==='avalanche');
+  document.getElementById('snBtn').classList.toggle('active',s==='snowball');
+  document.getElementById('resultHero').className='result-hero '+s;
+}
+
+function addDebt(){
+  debts.push({id:nextId++,name:'New Debt',balance:1000,rate:15,minPmt:25});
+  renderDebts();renderDebtChart();
+}
+
+function removeDebt(id){
+  debts=debts.filter(d=>d.id!==id);
+  renderDebts();renderDebtChart();
+}
+
+function renderDebts(){
+  const html=debts.map(d=>`
+    <div class="debt-item">
+      <div class="debt-item-header">
+        <input style="border:none;background:transparent;font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;outline:none;width:180px;" value="${d.name}" onchange="debts.find(x=>x.id==${d.id}).name=this.value;renderDebtChart()">
+        <div class="debt-remove" onclick="removeDebt(${d.id})">✕</div>
+      </div>
+      <div class="debt-fields">
+        <div><div class="df-label">Balance</div><div style="position:relative;display:flex;align-items:center;"><span style="position:absolute;left:9px;font-size:11px;font-weight:700;color:var(--muted);">$</span><input class="df-input" style="padding-left:18px;" type="number" value="${d.balance}" onchange="debts.find(x=>x.id==${d.id}).balance=+this.value;renderDebtChart()"></div></div>
+        <div><div class="df-label">APR %</div><input class="df-input" type="number" step="0.01" value="${d.rate}" onchange="debts.find(x=>x.id==${d.id}).rate=+this.value;renderDebtChart()"></div>
+        <div><div class="df-label">Min Pmt $</div><div style="position:relative;display:flex;align-items:center;"><span style="position:absolute;left:9px;font-size:11px;font-weight:700;color:var(--muted);">$</span><input class="df-input" style="padding-left:18px;" type="number" value="${d.minPmt}" onchange="debts.find(x=>x.id==${d.id}).minPmt=+this.value;renderDebtChart()"></div></div>
+      </div>
+    </div>`).join('');
+  document.getElementById('debtList').innerHTML=html;
+}
+
+function renderDebtChart(){
+  const totalBal=debts.reduce((a,d)=>a+d.balance,0);
+  if(totalBal===0){document.getElementById('debtStackChart').innerHTML='';return;}
+  const aprColors=['#B91C1C','#D97706','#EAB308','#84CC16','#0F766E','#1B3F72','#6D28D9'];
+  const sorted=[...debts].sort((a,b)=>b.rate-a.rate);
+  let html=sorted.map((d,i)=>{
+    const pct=Math.max(10,(d.balance/totalBal)*100);
+    const c=aprColors[i%aprColors.length];
+    return`<div class="ds-row">
+      <div class="ds-label" style="color:${c}">${d.name.length>13?d.name.slice(0,12)+'…':d.name}</div>
+      <div class="ds-bar-bg"><div class="ds-bar-fill" style="width:${pct}%;background:${c};">
+        <span class="ds-bar-val">$${Math.round(d.balance).toLocaleString()}</span>
+      </div></div>
+      <div class="ds-apr" style="color:${c}">${d.rate}%</div>
+    </div>`;
+  }).join('');
+  document.getElementById('debtStackChart').innerHTML=html;
+}
+
+function simulate(debtArr,extra){
+  let bals=debtArr.map(d=>({...d,bal:d.balance}));
+  let months=0,totalInt=0;
+  const firstWin={};
+  while(bals.some(b=>b.bal>0.01)&&months<600){
+    months++;
+    let avail=extra+bals.reduce((a,b)=>a+b.minPmt,0);
+    for(let i=0;i<bals.length;i++){
+      if(bals[i].bal<=0)continue;
+      const int=bals[i].bal*(bals[i].rate/100/12);
+      totalInt+=int;bals[i].bal+=int;
+      const pmt=Math.min(bals[i].minPmt,bals[i].bal);
+      bals[i].bal-=pmt;avail-=bals[i].minPmt;
+      if(bals[i].bal<=0&&!firstWin[bals[i].id])firstWin[bals[i].id]=months;
+    }
+    if(avail>0){
+      const tgt=bals.findIndex(b=>b.bal>0);
+      if(tgt>=0){bals[tgt].bal=Math.max(0,bals[tgt].bal-avail);if(bals[tgt].bal<=0&&!firstWin[bals[tgt].id])firstWin[bals[tgt].id]=months;}
+    }
+    bals.forEach(b=>{b.bal=Math.max(0,b.bal);});
+  }
+  return{months,totalInt,firstWin};
+}
+
+function fmtMo(m){const d=new Date();d.setMonth(d.getMonth()+m);return d.toLocaleString('en-US',{month:'short',year:'numeric'});}
+function fmt(n){return'$'+Math.round(n).toLocaleString();}
+
+function calculate(){
+  const extra=parseFloat(document.getElementById('extraPmt').value)||0;
+  const totalDebt=debts.reduce((a,d)=>a+d.balance,0);
+  const minTotal=debts.reduce((a,d)=>a+d.minPmt,0);
+  const avOrder=[...debts].sort((a,b)=>b.rate-a.rate);
+  const snOrder=[...debts].sort((a,b)=>a.balance-b.balance);
+  const avRes=simulate(avOrder,extra);
+  const snRes=simulate(snOrder,extra);
+  const minRes=simulate([...debts].sort((a,b)=>b.rate-a.rate),0);
+  const cur=strategy==='avalanche'?avRes:snRes;
+  const curOrder=strategy==='avalanche'?avOrder:snOrder;
+
+  document.getElementById('stratLabel').textContent=(strategy==='avalanche'?'🔥 Avalanche':'⛄ Snowball')+' Strategy';
+  document.getElementById('payoffTime').textContent=cur.months+' months';
+  document.getElementById('heroSub').textContent=`Debt-free by ${fmtMo(cur.months)} · ${strategy==='avalanche'?'Highest rate first':'Smallest balance first'}`;
+  document.getElementById('totalDebt').textContent=fmt(totalDebt);
+  document.getElementById('totalInt').textContent=fmt(cur.totalInt);
+  document.getElementById('totalPmt').textContent=fmt(minTotal+extra);
+
+  // Update donut
+  const circ=188.5;
+  const prinFrac=totalDebt/(totalDebt+cur.totalInt);
+  const intFrac=cur.totalInt/(totalDebt+cur.totalInt);
+  const pd=document.getElementById('donutPrin');
+  const id=document.getElementById('donutInt');
+  pd.setAttribute('stroke-dasharray',`${circ*prinFrac} ${circ}`);
+  pd.style.opacity='1';
+  id.setAttribute('stroke-dasharray',`${circ*intFrac} ${circ}`);
+  id.setAttribute('stroke-dashoffset',`${47-(circ*prinFrac)}`);
+  id.style.opacity='1';
+  document.getElementById('legendPrin').textContent=fmt(totalDebt);
+  document.getElementById('legendInt').textContent=fmt(cur.totalInt);
+  document.getElementById('legendTotal').textContent=fmt(totalDebt+cur.totalInt);
+
+  const avFirstId=Object.keys(avRes.firstWin).sort((a,b)=>avRes.firstWin[a]-avRes.firstWin[b])[0];
+  const snFirstId=Object.keys(snRes.firstWin).sort((a,b)=>snRes.firstWin[a]-snRes.firstWin[b])[0];
+  const avFirstName=debts.find(d=>d.id==avFirstId)?.name||'—';
+  const snFirstName=debts.find(d=>d.id==snFirstId)?.name||'—';
+
+  document.getElementById('avTime').textContent=avRes.months+' mo';
+  document.getElementById('snTime').textContent=snRes.months+' mo';
+  document.getElementById('avInt').textContent=fmt(avRes.totalInt);
+  document.getElementById('snInt').textContent=fmt(snRes.totalInt);
+  document.getElementById('avSaved').textContent=fmt(Math.max(0,minRes.totalInt-avRes.totalInt));
+  document.getElementById('snSaved').textContent=fmt(Math.max(0,minRes.totalInt-snRes.totalInt));
+  document.getElementById('avFirst').textContent=avFirstName+' (mo '+(avRes.firstWin[avFirstId]||'?')+')';
+  document.getElementById('snFirst').textContent=snFirstName+' (mo '+(snRes.firstWin[snFirstId]||'?')+')';
+
+  const tagType=strategy==='avalanche'?'rate':'bal';
+  document.getElementById('orderTitle').textContent=(strategy==='avalanche'?'🔥 Avalanche':'⛄ Snowball')+' Payoff Order';
+  document.getElementById('orderList').innerHTML=curOrder.map((d,i)=>`
+    <div class="oc-row">
+      <div class="oc-num">${i+1}</div>
+      <div style="flex:1;"><div class="oc-name">${d.name}</div><div class="oc-detail">${fmt(d.balance)} · ${d.rate}% APR · Min ${fmt(d.minPmt)}/mo</div></div>
+      <span class="oc-tag ${tagType}">${strategy==='avalanche'?d.rate+'%':fmt(d.balance)}</span>
+    </div>`).join('');
+}
+
+function saveCalc(){
+  const extra=document.getElementById('extraPmt').value;
+  const months=document.getElementById('payoffTime').textContent;
+  const interest=document.getElementById('totalInt').textContent;
+  const data={strategy,extra,months,interest,debts,savedAt:new Date().toLocaleString()};
+  try{localStorage.setItem('debtPayoffSave',JSON.stringify(data));}catch(e){}
+  showToast('💾 Payoff plan saved!');
+}
+
+renderDebts();renderDebtChart();calculate();
+</script>
+</body>
+</html>

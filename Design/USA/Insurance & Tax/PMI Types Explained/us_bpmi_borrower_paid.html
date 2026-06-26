@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPMI – Borrower-Paid PMI</title>
+<style>
+:root {
+  --navy: #0B1D3A; --blue: #1B3F72; --red: #B91C1C; --crimson: #991B1B;
+  --gold: #D97706; --gold-lt: #FCD34D; --white: #FFFFFF; --bg: #F0F4FF;
+  --card: #FFFFFF; --muted: #4A5C7A; --border: rgba(27,63,114,0.09);
+  --sh: 0 4px 20px rgba(11,29,58,0.10); --sh2: 0 8px 36px rgba(11,29,58,0.18);
+  --green: #15803D;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+.header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+.header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+.header::after { content:'💳'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+.hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+.icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+.hdr-center { text-align:center; }
+.hdr-flag { font-size:28px; }
+.hdr-title { font-size:18px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+.hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+.rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(3,1fr); position:relative; z-index:2; margin-top:4px; }
+.rs { text-align:center; position:relative; }
+.rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+.rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+.rs-v { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+.rs-v.gold { color:var(--gold-lt); }
+.rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+.content { padding:15px 15px 110px; }
+.sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+.sec .badge { font-size:9px; font-weight:700; background:#F0FDF4; color:#15803D; padding:3px 8px; border-radius:20px; text-transform:none; letter-spacing:0; }
+
+.hero { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:19px; position:relative; overflow:hidden; box-shadow:var(--sh2); margin-bottom:12px; }
+.hero::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:rgba(21,128,61,0.18); }
+.h-tag { font-size:9.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.8px; }
+.h-title { font-size:17px; font-weight:800; color:#fff; margin:5px 0 12px; line-height:1.25; font-family:Georgia,serif; }
+.h-title span { color:var(--gold-lt); }
+.h-row { display:flex; gap:7px; }
+.h-box { flex:1; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:9px 10px; }
+.h-box label { font-size:8.5px; color:rgba(255,255,255,0.48); display:block; margin-bottom:2px; }
+.h-box .v { font-size:13px; font-weight:800; color:#fff; }
+.h-box .v.gold { color:var(--gold-lt); }
+.h-box .v.green { color:#86EFAC; }
+
+/* INPUT CARD */
+.input-card { background:var(--card); border-radius:18px; padding:18px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+.inp-group { margin-bottom:14px; }
+.inp-group:last-child { margin-bottom:0; }
+.inp-label { font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; }
+.inp-label .hint { font-size:9.5px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; }
+input[type=range] { width:100%; -webkit-appearance:none; height:6px; border-radius:3px; background:linear-gradient(to right,var(--blue) 0%,var(--blue) 20%,#CBD5E1 20%,#CBD5E1 100%); outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--navy); border:3px solid #fff; box-shadow:0 2px 8px rgba(11,29,58,0.25); }
+.range-labels { display:flex; justify-content:space-between; font-size:9px; color:var(--muted); margin-top:4px; font-weight:600; }
+.calc-btn { width:100%; background:linear-gradient(135deg,#15803D,#166534); border:none; border-radius:14px; padding:14px; font-size:14px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(21,128,61,0.35); font-family:Georgia,serif; letter-spacing:0.3px; margin-top:14px; }
+.btn-row { display:flex; gap:10px; margin-top:14px; }
+.btn-row .calc-btn { margin-top:0; flex:1; }
+.save-btn { flex:0 0 52px; background:var(--card); border:1.5px solid var(--green); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; transition:transform .12s; color:var(--green); }
+.save-btn:active { transform:scale(.94); }
+.save-btn.saved { background:#F0FDF4; }
+
+/* RESULT */
+.result-hero { background:linear-gradient(135deg,#15803D,#166534); border-radius:18px; padding:18px; box-shadow:0 8px 28px rgba(21,128,61,0.30); margin-bottom:10px; }
+.rh-label { font-size:9.5px; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.8px; }
+.rh-amount { font-size:34px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1; margin:4px 0 2px; }
+.rh-sub { font-size:10px; color:rgba(255,255,255,0.60); }
+.rh-row { display:flex; gap:8px; margin-top:14px; }
+.rh-box { flex:1; background:rgba(255,255,255,0.12); border-radius:10px; padding:9px 10px; }
+.rh-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.50); }
+.rh-box-val { font-size:13px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+
+.toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff; padding:10px 18px; border-radius:30px; font-size:12px; font-weight:700; box-shadow:var(--sh2); opacity:0; transition:all .25s; z-index:200; pointer-events:none; white-space:nowrap; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* TIMELINE CHART - cancellation progress */
+.chart-card { background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; }
+.chart-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:13px; }
+.ltv-track { position:relative; height:16px; border-radius:8px; background:linear-gradient(90deg,#FEE2E2 0%,#FEE2E2 56%, #FEF3C7 56%, #FEF3C7 78%, #DCFCE7 78%, #DCFCE7 100%); margin-bottom:8px; }
+.ltv-marker { position:absolute; top:-5px; width:3px; height:26px; background:var(--navy); border-radius:2px; }
+.ltv-labels { display:flex; justify-content:space-between; font-size:8px; color:var(--muted); margin-bottom:12px; }
+.bar-group { margin-bottom:10px; }
+.bar-label { font-size:9.5px; font-weight:700; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; }
+.bar-track { background:#EEF2FF; border-radius:8px; height:22px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:9px; font-weight:800; color:#fff; transition:width .6s ease; }
+
+/* SAVED LIST */
+.saved-card { background:var(--card); border-radius:14px; padding:12px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.saved-card .sd-amt { font-size:14px; font-weight:800; color:var(--green); font-family:Georgia,serif; }
+.saved-card .sd-meta { font-size:9.5px; color:var(--muted); margin-top:2px; }
+.saved-del { margin-left:auto; font-size:16px; color:#B91C1C; cursor:pointer; padding:4px; }
+.saved-empty { font-size:11px; color:var(--muted); text-align:center; padding:18px 0; }
+
+.ilist { display:flex; flex-direction:column; gap:9px; }
+.ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:flex-start; gap:12px; }
+.ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+.is { font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+.bge { display:inline-flex; padding:2px 7px; border-radius:20px; font-size:8.5px; font-weight:700; margin-top:5px; }
+.bge-g { background:#F0FDF4; color:#15803D; }
+.bge-b { background:#EFF6FF; color:#1D4ED8; }
+.bge-r { background:#FEF2F2; color:#B91C1C; }
+
+.bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+.ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+.ni-ic { font-size:19px; }
+.ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+.ni.active .ni-lb { color:var(--blue); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+.hero,.input-card,.chart-card,.ilist { animation:fadeUp .35s ease both .05s; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">💳</div>
+      <div class="hdr-title">BPMI – Borrower-Paid PMI</div>
+      <div class="hdr-sub">Monthly Premium · Cancellable · Most Common</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Avg Annual Rate</div><div class="rs-v gold">0.5–1.5%</div><div class="rs-n">Of loan amount</div></div>
+    <div class="rs"><div class="rs-l">Auto-Cancel</div><div class="rs-v">78% LTV</div><div class="rs-n">By federal law</div></div>
+    <div class="rs"><div class="rs-l">Request at</div><div class="rs-v">80% LTV</div><div class="rs-n">Borrower-initiated</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">What is BPMI? <span class="badge">Most Common Type</span></div>
+  <div class="hero">
+    <div class="h-tag">Borrower-Paid Private Mortgage Insurance</div>
+    <div class="h-title">The default PMI — paid monthly, <span>cancellable at 20% equity</span></div>
+    <div class="h-row">
+      <div class="h-box"><label>Upfront Cost</label><div class="v green">$0</div></div>
+      <div class="h-box"><label>Payment Style</label><div class="v">Monthly</div></div>
+      <div class="h-box"><label>Cancellable?</label><div class="v green">Yes</div></div>
+    </div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="sec">BPMI Cost Calculator</div>
+  <div class="input-card">
+    <div class="inp-group">
+      <div class="inp-label">Home Purchase Price <span class="hint" id="priceDisplay">$400,000</span></div>
+      <input type="range" id="priceSlider" min="100000" max="1500000" step="5000" value="400000" oninput="updateCalc()">
+      <div class="range-labels"><span>$100K</span><span>$500K</span><span>$1M</span><span>$1.5M</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Down Payment % <span class="hint" id="downDisplay">5%</span></div>
+      <input type="range" id="downSlider" min="3" max="19" step="0.5" value="5" oninput="updateCalc()">
+      <div class="range-labels"><span>3%</span><span>5%</span><span>10%</span><span>15%</span><span>19%</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Credit Score <span class="hint" id="scoreDisplay">700</span></div>
+      <input type="range" id="scoreSlider" min="620" max="850" step="10" value="700" oninput="updateCalc()">
+      <div class="range-labels"><span>620</span><span>680</span><span>720</span><span>780</span><span>850</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="updateCalc()">Calculate BPMI</button>
+      <div class="save-btn" id="saveBtn" onclick="saveCalc()">💾</div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-hero" id="resultHero">
+    <div class="rh-label">Monthly BPMI Premium</div>
+    <div class="rh-amount" id="pmiMonthly">$237</div>
+    <div class="rh-sub" id="pmiSubtitle">1.0%/yr · Added to mortgage payment</div>
+    <div class="rh-row">
+      <div class="rh-box"><div class="rh-box-lbl">Annual BPMI</div><div class="rh-box-val" id="pmiAnnual">$2,850</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">LTV Ratio</div><div class="rh-box-val" id="ltvRatio">95.0%</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">Years to 80% LTV</div><div class="rh-box-val" id="yearsTo80">~6.8 yrs</div></div>
+    </div>
+  </div>
+
+  <!-- Saved Calcs -->
+  <div class="sec">Saved Calculations</div>
+  <div id="savedList"></div>
+
+  <!-- LTV Progress Chart -->
+  <div class="sec">Path to Cancellation</div>
+  <div class="chart-card">
+    <div class="chart-title">📊 Your LTV Position</div>
+    <div class="ltv-track"><div class="ltv-marker" id="ltvMarker" style="left:60%"></div></div>
+    <div class="ltv-labels"><span>100%</span><span>90%</span><span>80%</span><span>70%</span><span>60%</span></div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Current LTV</span><span id="barCurrentLtv">95.0%</span></div>
+      <div class="bar-track"><div class="bar-fill" id="barCurrent" style="width:95%;background:linear-gradient(90deg,#B91C1C,#991B1B);">95%</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Target: Request Cancellation (80% LTV)</span><span>80%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:80%;background:linear-gradient(90deg,#D97706,#B45309);">80%</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Target: Auto-Cancel (78% LTV)</span><span>78%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:78%;background:linear-gradient(90deg,#15803D,#166534);">78%</div></div>
+    </div>
+  </div>
+
+  <!-- Key Facts -->
+  <div class="sec">BPMI Key Facts</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">✅</div><div><div class="in">Cancel Anytime at 80% LTV</div><div class="is">Request removal once your loan balance hits 80% of original value — no refinance needed.</div><div class="bge bge-g">Borrower-Initiated</div></div></div>
+    <div class="ic"><div class="ii">⚡</div><div><div class="in">Auto-Terminates at 78% LTV</div><div class="is">Federal Homeowners Protection Act of 1998 requires automatic cancellation if payments are current.</div><div class="bge bge-b">By Law</div></div></div>
+    <div class="ic"><div class="ii">📈</div><div><div class="in">New Appraisal Can Speed It Up</div><div class="is">If your home appreciated, an appraisal may prove 80% LTV sooner than scheduled payments alone.</div></div></div>
+    <div class="ic"><div class="ii">💰</div><div><div class="in">2026 Tax Deduction Restored</div><div class="is">The One Big Beautiful Bill Act (2025) permanently restored the PMI deduction starting tax year 2026, phasing out above $100K AGI.</div><div class="bge bge-g">Tax Year 2026+</div></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmt(n){return '$'+Math.round(n).toLocaleString('en-US');}
+
+function getBpmiRate(ltv, score){
+  // Approximation grid based on Urban Institute / industry tiered data
+  let band;
+  if(ltv > 95) band = 1.50;
+  else if(ltv > 90) band = score>=760?0.55:score>=680?0.85:1.25;
+  else if(ltv > 85) band = score>=760?0.38:score>=680?0.58:0.85;
+  else if(ltv > 80) band = score>=760?0.24:score>=680?0.40:0.65;
+  else if(ltv > 78) band = score>=760?0.17:score>=680?0.22:0.35;
+  else band = 0;
+
+  if(ltv > 95) band = score>=760?0.80:score>=680?1.10:1.50;
+  return band;
+}
+
+function updateCalc(){
+  const price = +document.getElementById('priceSlider').value;
+  const down  = +document.getElementById('downSlider').value;
+  const score = +document.getElementById('scoreSlider').value;
+
+  document.getElementById('priceDisplay').textContent = fmt(price);
+  document.getElementById('downDisplay').textContent = down.toFixed(1)+'%';
+  document.getElementById('scoreDisplay').textContent = score;
+
+  const downAmt = price * down / 100;
+  const loanAmt = price - downAmt;
+  const ltv = (loanAmt/price)*100;
+  const rate = getBpmiRate(ltv, score);
+
+  const annualPmi = loanAmt * rate / 100;
+  const monthlyPmi = annualPmi / 12;
+
+  // Years to 80% LTV
+  const monthlyRate = 0.0682/12;
+  const targetLoan = price*0.80;
+  let balance = loanAmt, months=0;
+  const nPayments = 360;
+  const mp = loanAmt*(monthlyRate*Math.pow(1+monthlyRate,nPayments))/(Math.pow(1+monthlyRate,nPayments)-1);
+  while(balance>targetLoan && months<nPayments){
+    balance = balance*(1+monthlyRate)-mp;
+    months++;
+  }
+  const years = (months/12).toFixed(1);
+
+  document.getElementById('pmiMonthly').textContent = rate>0?fmt(monthlyPmi):'$0';
+  document.getElementById('pmiAnnual').textContent = rate>0?fmt(annualPmi):'$0';
+  document.getElementById('pmiSubtitle').textContent = rate>0?(rate.toFixed(2)+'%/yr · Added to mortgage payment'):'✅ No PMI required — LTV ≤ 80%';
+  document.getElementById('ltvRatio').textContent = ltv.toFixed(1)+'%';
+  document.getElementById('yearsTo80').textContent = ltv<=80?'Already there!':'~'+years+' yrs';
+
+  document.getElementById('barCurrentLtv').textContent = ltv.toFixed(1)+'%';
+  document.getElementById('barCurrent').style.width = Math.min(ltv,100)+'%';
+  document.getElementById('barCurrent').textContent = ltv.toFixed(0)+'%';
+
+  const markerPos = Math.max(0, Math.min(100, (100-ltv)/(100-60)*100));
+  document.getElementById('ltvMarker').style.left = (100-markerPos)+'%';
+}
+
+function saveCalc(){
+  const price = document.getElementById('priceDisplay').textContent;
+  const monthly = document.getElementById('pmiMonthly').textContent;
+  const ltv = document.getElementById('ltvRatio').textContent;
+  const data = { id: Date.now(), price, monthly, ltv, date: new Date().toLocaleDateString() };
+  const saves = JSON.parse(localStorage.getItem('bpmi_saves')||'[]');
+  saves.unshift(data);
+  if(saves.length>5) saves.length=5;
+  localStorage.setItem('bpmi_saves', JSON.stringify(saves));
+  renderSaved();
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  showToast('BPMI calculation saved!');
+  setTimeout(()=>btn.classList.remove('saved'), 1500);
+}
+
+function deleteSave(id){
+  let saves = JSON.parse(localStorage.getItem('bpmi_saves')||'[]');
+  saves = saves.filter(s=>s.id!==id);
+  localStorage.setItem('bpmi_saves', JSON.stringify(saves));
+  renderSaved();
+}
+
+function renderSaved(){
+  const saves = JSON.parse(localStorage.getItem('bpmi_saves')||'[]');
+  const list = document.getElementById('savedList');
+  if(!saves.length){ list.innerHTML = '<div class="saved-empty">No saved calculations yet</div>'; return; }
+  list.innerHTML = saves.map(s=>`<div class="saved-card"><div><div class="sd-amt">${s.monthly}/mo</div><div class="sd-meta">${s.price} home · ${s.ltv} LTV · ${s.date}</div></div><div class="saved-del" onclick="deleteSave(${s.id})">✕</div></div>`).join('');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+updateCalc();
+renderSaved();
+</script>
+</body>
+</html>

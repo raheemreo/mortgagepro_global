@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remortgage Tool – UK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.save-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.save-btn{font-size:13px;font-weight:700;width:auto;padding:0 12px;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#90EE90;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;}
+.card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.inp-group{margin-bottom:12px;}
+.inp-label{font-size:11px;font-weight:700;color:#5C5C8A;margin-bottom:5px;display:block;}
+.inp-wrap{position:relative;}
+.inp-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#1a1a5e;}
+.inp-suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#5C5C8A;}
+input[type=number],input[type=text],select{width:100%;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:11px;padding:11px 36px 11px 28px;font-size:15px;font-weight:700;color:#0D0D2B;outline:none;-moz-appearance:textfield;}
+input[type=number]:focus,select:focus{border-color:#1a1a5e;}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+select{padding-left:12px;cursor:pointer;}
+.btn-calc{width:100%;background:linear-gradient(135deg,#C8102E,#8B0A1E);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(200,16,46,0.35);margin-top:4px;}
+.result-hero{background:linear-gradient(145deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:20px;position:relative;overflow:hidden;margin-bottom:10px;}
+.result-hero::before{content:'🔁';position:absolute;right:8px;top:-4px;font-size:65px;opacity:0.07;}
+.rh-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.7px;}
+.rh-val{font-size:32px;font-weight:800;color:#fff;font-family:Georgia,serif;margin:4px 0;}
+.rh-sub{font-size:12px;color:rgba(255,255,255,0.6);}
+.saving-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(144,238,144,0.18);border:1px solid rgba(144,238,144,0.35);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:#90EE90;margin-top:8px;}
+.metrics-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.met-card{background:#fff;border-radius:15px;padding:13px;box-shadow:0 3px 10px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);}
+.met-lbl{font-size:10px;color:#5C5C8A;margin-bottom:3px;}
+.met-val{font-size:18px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.met-val.red{color:#C8102E;}.met-val.grn{color:#059669;}.met-val.gold{color:#B45309;}
+.met-sub{font-size:10px;color:#5C5C8A;margin-top:2px;}
+/* Bar chart */
+.bar-chart{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.bc-title{font-size:12px;font-weight:800;color:#0D0D2B;margin-bottom:14px;font-family:Georgia,serif;}
+.bc-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.bc-label{font-size:11px;color:#5C5C8A;width:70px;flex-shrink:0;text-align:right;}
+.bc-bar-wrap{flex:1;height:22px;background:#F5F5F8;border-radius:6px;overflow:hidden;position:relative;}
+.bc-bar{height:100%;border-radius:6px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.bc-bar.dark{background:linear-gradient(90deg,#0D0D2B,#1a1a5e);}
+.bc-bar.red{background:linear-gradient(90deg,#C8102E,#8B0A1E);}
+.bc-bar.grn{background:linear-gradient(90deg,#059669,#047857);}
+.bc-num{font-size:11px;font-weight:700;color:#0D0D2B;width:52px;flex-shrink:0;text-align:right;}
+/* Savings breakdown */
+.breakdown{background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #A5B4FC;border-radius:15px;padding:14px;margin-bottom:10px;}
+.bd-title{font-size:12px;font-weight:800;color:#1e1b4b;font-family:Georgia,serif;margin-bottom:10px;}
+.bd-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(165,180,252,0.3);font-size:12px;}
+.bd-row:last-child{border-bottom:none;font-weight:800;color:#1e1b4b;}
+.bd-row span:first-child{color:#4338ca;}
+.bd-row span:last-child{font-weight:700;color:#0D0D2B;}
+/* Saved calcs */
+.saved-item{background:#fff;border-radius:13px;padding:12px 14px;box-shadow:0 2px 8px rgba(13,13,43,0.06);border:1px solid rgba(26,26,94,0.08);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.si-left .si-name{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.si-left .si-date{font-size:10px;color:#5C5C8A;margin-top:2px;}
+.si-right{text-align:right;}
+.si-right .si-val{font-size:14px;font-weight:800;color:#059669;}
+.si-right .si-del{font-size:11px;color:#C8102E;cursor:pointer;margin-top:2px;}
+.empty-saved{text-align:center;color:#5C5C8A;font-size:12px;padding:16px 0;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇬🇧</span><div class="hdr-title">Remortgage Tool</div><div class="hdr-sub">Switch & Save Calculator</div></div>
+    <div class="save-btn" onclick="saveCalc()">💾 Save</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">2-Yr Fixed</div><div class="rs-val red">4.75%</div><div class="rs-note">↑ +0.05</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">5-Yr Fixed</div><div class="rs-val">4.35%</div><div class="rs-note">Best buy</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">BoE Base</div><div class="rs-val gold">5.00%</div><div class="rs-note">Current</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">SVR Avg</div><div class="rs-val red">8.17%</div><div class="rs-note">UK Avg</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Your Current Mortgage</div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">Outstanding Balance</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="balance" value="220000" min="0"></div>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">Current Interest Rate</label>
+      <div class="inp-wrap"><input type="number" id="currRate" value="8.17" min="0" max="20" step="0.01" style="padding-left:12px"><span class="inp-suffix">%</span></div>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">Remaining Term</label>
+      <div class="inp-wrap"><input type="number" id="remTerm" value="22" min="1" max="40" style="padding-left:12px"><span class="inp-suffix">years</span></div>
+    </div>
+    <div class="inp-group" style="margin-bottom:0">
+      <label class="inp-label">Early Repayment Charge (ERC)</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="erc" value="0" min="0"></div>
+    </div>
+  </div>
+  <div class="sec-lbl">New Deal</div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">New Interest Rate</label>
+      <div class="inp-wrap"><input type="number" id="newRate" value="4.35" min="0" max="20" step="0.01" style="padding-left:12px"><span class="inp-suffix">%</span></div>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">New Deal Term</label>
+      <div class="inp-wrap"><input type="number" id="newTerm" value="22" min="1" max="40" style="padding-left:12px"><span class="inp-suffix">years</span></div>
+    </div>
+    <div class="inp-group" style="margin-bottom:0">
+      <label class="inp-label">Arrangement Fee</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="arrangeFee" value="999" min="0"></div>
+    </div>
+  </div>
+  <button class="btn-calc" onclick="calculate()">🔁 Calculate Savings</button>
+
+  <div id="results" class="hidden" style="margin-top:16px">
+    <div class="result-hero">
+      <div class="rh-lbl">Monthly Saving</div>
+      <div class="rh-val" id="monthlySaving">—</div>
+      <div class="rh-sub" id="newPaymentSub">—</div>
+      <div class="saving-tag" id="annualSavingTag">—</div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="met-card">
+        <div class="met-lbl">Current Payment</div>
+        <div class="met-val red" id="currPayment">—</div>
+        <div class="met-sub" id="currRateSub">—</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">New Payment</div>
+        <div class="met-val grn" id="newPayment">—</div>
+        <div class="met-sub" id="newRateSub">—</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">Total Interest Saved</div>
+        <div class="met-val grn" id="totalSaved">—</div>
+        <div class="met-sub">Over full term</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">Break-even Period</div>
+        <div class="met-val gold" id="breakEven">—</div>
+        <div class="met-sub">To recoup fees</div>
+      </div>
+    </div>
+
+    <div class="bar-chart">
+      <div class="bc-title">Monthly Payment Comparison</div>
+      <div class="bc-row">
+        <div class="bc-label">Current</div>
+        <div class="bc-bar-wrap"><div class="bc-bar red" id="barCurr" style="width:100%"></div></div>
+        <div class="bc-num" id="barCurrLbl">—</div>
+      </div>
+      <div class="bc-row">
+        <div class="bc-label">New Deal</div>
+        <div class="bc-bar-wrap"><div class="bc-bar grn" id="barNew" style="width:0%"></div></div>
+        <div class="bc-num" id="barNewLbl">—</div>
+      </div>
+      <div class="bc-row">
+        <div class="bc-label">Saving</div>
+        <div class="bc-bar-wrap"><div class="bc-bar dark" id="barSave" style="width:0%"></div></div>
+        <div class="bc-num" id="barSaveLbl">—</div>
+      </div>
+    </div>
+
+    <div class="breakdown">
+      <div class="bd-title">💷 Cost / Benefit Breakdown</div>
+      <div class="bd-row"><span>ERC (Early Repayment Charge)</span><span id="bdErc">—</span></div>
+      <div class="bd-row"><span>Arrangement Fee</span><span id="bdFee">—</span></div>
+      <div class="bd-row"><span>Legal / Valuation (est.)</span><span>£500</span></div>
+      <div class="bd-row"><span>Total Switching Cost</span><span id="bdTotal">—</span></div>
+      <div class="bd-row"><span>Annual Saving</span><span id="bdAnnual">—</span></div>
+      <div class="bd-row"><span>Net Saving (full term)</span><span id="bdNet">—</span></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl" style="margin-top:8px">Saved Calculations</div>
+  <div id="savedList"><div class="empty-saved">No saved calculations yet.</div></div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+let saved=JSON.parse(localStorage.getItem('remortgage_saved')||'[]');
+let lastResult=null;
+function fmt(n){return'£'+Math.round(n).toLocaleString('en-GB');}
+function fmtD(n){return'£'+n.toFixed(2);}
+function pmt(r,n,pv){if(r===0)return pv/n;return pv*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
+
+function calculate(){
+  const bal=parseFloat(document.getElementById('balance').value)||0;
+  const cr=parseFloat(document.getElementById('currRate').value)||0;
+  const rt=parseFloat(document.getElementById('remTerm').value)||0;
+  const erc=parseFloat(document.getElementById('erc').value)||0;
+  const nr=parseFloat(document.getElementById('newRate').value)||0;
+  const nt=parseFloat(document.getElementById('newTerm').value)||0;
+  const af=parseFloat(document.getElementById('arrangeFee').value)||0;
+  const legal=500;
+
+  const crMo=cr/100/12, nrMo=nr/100/12;
+  const rtMo=rt*12, ntMo=nt*12;
+  const currPmt=pmt(crMo,rtMo,bal);
+  const newPmt=pmt(nrMo,ntMo,bal);
+  const diff=currPmt-newPmt;
+  const totalCurrInterest=currPmt*rtMo-bal;
+  const totalNewInterest=newPmt*ntMo-bal;
+  const totalIntSaved=totalCurrInterest-totalNewInterest;
+  const switchCost=erc+af+legal;
+  const breakEvenMo=diff>0?switchCost/diff:Infinity;
+  const breakEvenStr=breakEvenMo===Infinity?'N/A':(breakEvenMo<1?'< 1 month':Math.ceil(breakEvenMo)+' months');
+  const netSaving=diff*ntMo-switchCost;
+
+  document.getElementById('monthlySaving').textContent=diff>=0?fmt(diff)+'/mo':'−'+fmt(Math.abs(diff))+'/mo';
+  document.getElementById('newPaymentSub').textContent='New payment: '+fmtD(newPmt)+'/mo at '+nr+'%';
+  document.getElementById('annualSavingTag').textContent=(diff>=0?'✅ Save ':'⚠️ Extra ')+fmt(Math.abs(diff*12))+' per year';
+  document.getElementById('currPayment').textContent=fmtD(currPmt);
+  document.getElementById('currRateSub').textContent='At '+cr+'% SVR';
+  document.getElementById('newPayment').textContent=fmtD(newPmt);
+  document.getElementById('newRateSub').textContent='At '+nr+'% fixed';
+  document.getElementById('totalSaved').textContent=fmt(Math.abs(totalIntSaved));
+  document.getElementById('breakEven').textContent=breakEvenStr;
+  document.getElementById('bdErc').textContent=fmt(erc);
+  document.getElementById('bdFee').textContent=fmt(af);
+  document.getElementById('bdTotal').textContent=fmt(switchCost);
+  document.getElementById('bdAnnual').textContent=fmt(diff*12);
+  document.getElementById('bdNet').textContent=(netSaving>=0?'+':'')+fmt(netSaving);
+
+  const maxBar=Math.max(currPmt,newPmt);
+  setTimeout(()=>{
+    document.getElementById('barCurr').style.width=(currPmt/maxBar*100)+'%';
+    document.getElementById('barNew').style.width=(newPmt/maxBar*100)+'%';
+    document.getElementById('barSave').style.width=(Math.abs(diff)/maxBar*100)+'%';
+  },50);
+  document.getElementById('barCurrLbl').textContent='£'+Math.round(currPmt);
+  document.getElementById('barNewLbl').textContent='£'+Math.round(newPmt);
+  document.getElementById('barSaveLbl').textContent='£'+Math.round(Math.abs(diff));
+
+  lastResult={bal,cr,nr,rt,nt,erc,af,currPmt,newPmt,diff,totalIntSaved,switchCost,netSaving,breakEvenStr};
+  document.getElementById('results').classList.remove('hidden');
+}
+
+function saveCalc(){
+  if(!lastResult){calculate();}
+  if(!lastResult)return;
+  const r=lastResult;
+  const item={id:Date.now(),name:'£'+Math.round(r.bal/1000)+'k @ '+r.nr+'%',date:new Date().toLocaleDateString('en-GB'),saving:r.diff,curr:r.currPmt,newP:r.newPmt};
+  saved.unshift(item);
+  if(saved.length>10)saved.pop();
+  localStorage.setItem('remortgage_saved',JSON.stringify(saved));
+  renderSaved();
+}
+function deleteSaved(id){saved=saved.filter(s=>s.id!==id);localStorage.setItem('remortgage_saved',JSON.stringify(saved));renderSaved();}
+function renderSaved(){
+  const el=document.getElementById('savedList');
+  if(!saved.length){el.innerHTML='<div class="empty-saved">No saved calculations yet.</div>';return;}
+  el.innerHTML=saved.map(s=>`<div class="saved-item"><div class="si-left"><div class="si-name">${s.name}</div><div class="si-date">${s.date} · Current £${Math.round(s.curr)}/mo</div></div><div class="si-right"><div class="si-val">${s.saving>=0?'Save ':'Extra '}£${Math.round(Math.abs(s.saving))}/mo</div><div class="si-del" onclick="deleteSaved(${s.id})">✕ Remove</div></div></div>`).join('');
+}
+renderSaved();
+</script>
+</body>
+</html>

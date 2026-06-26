@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europe – Amortization Schedule</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}.rs-val.red{color:#FF8A9A;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#003399;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* INPUT CARD */
+.calc-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.input-group{display:flex;flex-direction:column;gap:4px;}
+.input-group.full{grid-column:span 2;}
+.input-group label{font-size:10px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:0.5px;}
+.input-group select,.input-group input{background:#F7F3FF;border:1.5px solid rgba(0,51,153,0.12);border-radius:10px;padding:9px 11px;font-size:14px;font-weight:700;color:#1A0040;outline:none;width:100%;}
+.input-group select:focus,.input-group input:focus{border-color:#003399;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#003399,#1A0040);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#FFCC00;cursor:pointer;box-shadow:0 4px 14px rgba(0,51,153,0.3);margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s;}
+.calc-btn:active{transform:scale(.97);}
+@keyframes pulseAmort{0%,100%{box-shadow:0 4px 14px rgba(0,51,153,0.3);}50%{box-shadow:0 4px 22px rgba(0,51,153,0.55);}}
+.calc-btn.idle{animation:pulseAmort 2.4s ease-in-out infinite;}
+
+/* SUMMARY BOXES */
+.sum-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.sum-box{background:#fff;border-radius:15px;padding:14px;box-shadow:0 3px 12px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);}
+.sum-box.highlight{background:linear-gradient(135deg,#003399,#1A0040);}
+.sum-lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#6B21A8;margin-bottom:4px;}
+.sum-box.highlight .sum-lbl{color:rgba(255,255,255,0.6);}
+.sum-val{font-size:19px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.sum-box.highlight .sum-val{color:#FFCC00;}
+.sum-sub{font-size:9px;color:#94a3b8;margin-top:2px;}
+.sum-box.highlight .sum-sub{color:rgba(255,255,255,0.45);}
+
+/* CHART */
+.chart-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;margin-bottom:4px;}
+.chart-sub{font-size:10px;color:#6B21A8;margin-bottom:14px;}
+.stacked-bar-wrap{height:20px;border-radius:10px;overflow:hidden;display:flex;margin-bottom:10px;}
+.bar-principal{background:linear-gradient(90deg,#003399,#4F46E5);height:100%;}
+.bar-interest{background:linear-gradient(90deg,#FFCC00,#F59E0B);height:100%;}
+.bar-legend{display:flex;gap:14px;margin-bottom:14px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#1A0040;}
+.leg-dot{width:10px;height:10px;border-radius:3px;}
+.leg-dot.p{background:#003399;}.leg-dot.i{background:#FFCC00;}
+svg.amort-chart{width:100%;height:160px;}
+
+/* TABLE */
+.table-wrap{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.tbl-header{display:grid;grid-template-columns:40px 1fr 1fr 1fr 1fr;padding:10px 12px;background:#F7F3FF;border-bottom:1px solid rgba(0,51,153,0.08);}
+.tbl-header span{font-size:9px;font-weight:700;color:#6B21A8;text-transform:uppercase;}
+.tbl-row{display:grid;grid-template-columns:40px 1fr 1fr 1fr 1fr;padding:9px 12px;border-bottom:1px solid rgba(0,51,153,0.05);transition:background 0.15s;}
+.tbl-row:hover{background:#F7F3FF;}
+.tbl-row:last-child{border-bottom:none;}
+.tbl-row.year-row{background:linear-gradient(90deg,rgba(0,51,153,0.04),transparent);}
+.tbl-row span{font-size:11px;color:#1A0040;font-weight:600;}
+.tbl-row span.yr{font-size:10px;font-weight:800;color:#003399;}
+.tbl-row span.int-amt{color:#B45309;}
+.tbl-row span.bal{color:#6B21A8;}
+.show-more-btn{width:100%;background:none;border:none;padding:12px;font-size:12px;font-weight:700;color:#003399;cursor:pointer;border-top:1px solid rgba(0,51,153,0.08);}
+
+/* SAVE BTN */
+.save-bar{background:#fff;border-radius:15px;padding:12px 15px;box-shadow:0 3px 14px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.save-bar .sb-txt{flex:1;}
+.save-bar .sb-title{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.save-bar .sb-sub{font-size:10px;color:#6B21A8;}
+.save-btn{background:linear-gradient(135deg,#003399,#1A0040);color:#FFCC00;border:none;border-radius:10px;padding:9px 15px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;}
+
+/* SAVED SCHEDULES */
+.saved-sched-item{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 3px 12px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.ssi-icon{width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.ssi-info{flex:1;}
+.ssi-title{font-size:11.5px;font-weight:800;color:#1A0040;}
+.ssi-sub{font-size:9px;color:#6B21A8;margin-top:2px;}
+.ssi-del{font-size:16px;color:rgba(26,0,64,0.2);cursor:pointer;padding:4px;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#003399;color:#FFCC00;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:999;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,51,153,0.3);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp 0.4s ease both;}
+.anim-2{animation:fadeUp 0.4s 0.1s ease both;}
+.anim-3{animation:fadeUp 0.4s 0.2s ease both;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">📅</span><div class="hdr-title">Amortization</div><div class="hdr-sub">European Schedule · EUR</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">🇩🇪 DE Fixed</div><div class="rs-val grn">3.85%</div><div class="rs-note">10yr avg</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇫🇷 FR Fixed</div><div class="rs-val">3.60%</div><div class="rs-note">20yr avg</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Euribor</div><div class="rs-val gold">3.42%</div><div class="rs-note">6-month</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">ECB Rate</div><div class="rs-val red">4.00%</div><div class="rs-note">Current</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Loan Details</div>
+  <div class="calc-card anim">
+    <div class="input-row">
+      <div class="input-group">
+        <label>Country</label>
+        <select id="country" onchange="updateRate()">
+          <option value="DE">🇩🇪 Germany</option>
+          <option value="FR">🇫🇷 France</option>
+          <option value="ES">🇪🇸 Spain</option>
+          <option value="IT">🇮🇹 Italy</option>
+          <option value="NL">🇳🇱 Netherlands</option>
+          <option value="PT">🇵🇹 Portugal</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Rate Type</label>
+        <select id="rateType" onchange="updateRate()">
+          <option value="fixed">Fixed</option>
+          <option value="variable">Variable (Euribor)</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Loan Amount (€)</label>
+        <input type="number" id="loanAmt" value="336000" min="10000" step="1000">
+      </div>
+      <div class="input-group">
+        <label>Interest Rate (%)</label>
+        <input type="number" id="rate" value="3.85" step="0.01" min="0.1">
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Term (Years)</label>
+        <select id="term">
+          <option value="10">10 years</option>
+          <option value="15">15 years</option>
+          <option value="20" selected>20 years</option>
+          <option value="25">25 years</option>
+          <option value="30">30 years</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Start Month</label>
+        <select id="startMonth">
+          <option value="2025-07">Jul 2025</option>
+          <option value="2025-08">Aug 2025</option>
+          <option value="2025-09">Sep 2025</option>
+          <option value="2025-10">Oct 2025</option>
+          <option value="2025-11">Nov 2025</option>
+          <option value="2025-12">Dec 2025</option>
+          <option value="2026-01" selected>Jan 2026</option>
+        </select>
+      </div>
+    </div>
+    <button class="calc-btn idle" id="amortCalcBtn" onclick="calculate()">📅 Generate Amortization Schedule</button>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="sec-lbl anim-2">Summary</div>
+    <div class="sum-grid anim-2">
+      <div class="sum-box highlight">
+        <div class="sum-lbl">Monthly Payment</div>
+        <div class="sum-val" id="monthly">€1,998</div>
+        <div class="sum-sub">Fixed instalment</div>
+      </div>
+      <div class="sum-box">
+        <div class="sum-lbl">Total Payment</div>
+        <div class="sum-val" id="totalPay">€479,520</div>
+        <div class="sum-sub">Over full term</div>
+      </div>
+      <div class="sum-box">
+        <div class="sum-lbl">Total Interest</div>
+        <div class="sum-val" id="totalInt">€143,520</div>
+        <div class="sum-sub" id="intPct">42.7% of loan</div>
+      </div>
+      <div class="sum-box">
+        <div class="sum-lbl">Payoff Date</div>
+        <div class="sum-val" id="payoffDate" style="font-size:14px">Jan 2046</div>
+        <div class="sum-sub" id="termYrs">20 years</div>
+      </div>
+    </div>
+
+    <div class="sec-lbl anim-3">Principal vs Interest Breakdown</div>
+    <div class="chart-card anim-3">
+      <div class="chart-title">Loan Composition</div>
+      <div class="chart-sub">How your payments are allocated over the term</div>
+      <div class="stacked-bar-wrap" id="stackedBar">
+        <div class="bar-principal" id="barP" style="width:70%"></div>
+        <div class="bar-interest" id="barI" style="width:30%"></div>
+      </div>
+      <div class="bar-legend">
+        <div class="leg-item"><div class="leg-dot p"></div><span id="legP">Principal €336,000 (70%)</span></div>
+        <div class="leg-item"><div class="leg-dot i"></div><span id="legI">Interest €143,520 (30%)</span></div>
+      </div>
+      <svg class="amort-chart" id="amortChart" viewBox="0 0 360 160"></svg>
+    </div>
+
+    <div class="save-bar">
+      <div style="font-size:28px">💾</div>
+      <div class="sb-txt"><div class="sb-title">Save this Schedule</div><div class="sb-sub">Store calculation for later reference</div></div>
+      <button class="save-btn" onclick="saveCalc()">Save ✓</button>
+    </div>
+
+    <div id="savedSchedulesWrap" style="display:none;">
+      <div class="sec-lbl">🔖 Saved Schedules <span id="savedSchedulesCount" style="font-size:9px;font-weight:700;background:#EEF2FF;color:#3730A3;padding:2px 8px;border-radius:20px;text-transform:none;">0</span></div>
+      <div id="savedSchedulesList"></div>
+    </div>
+
+    <div class="sec-lbl">Yearly Amortization Table</div>
+    <div class="table-wrap">
+      <div class="tbl-header">
+        <span>Yr</span><span>Principal</span><span>Interest</span><span>Total Paid</span><span>Balance</span>
+      </div>
+      <div id="tableBody"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Schedule saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const RATES = {
+  DE:{fixed:3.85,variable:3.42+1.5},
+  FR:{fixed:3.60,variable:3.42+1.2},
+  ES:{fixed:4.10,variable:3.42+1.8},
+  IT:{fixed:4.25,variable:3.42+2.0},
+  NL:{fixed:3.75,variable:3.42+1.3},
+  PT:{fixed:4.30,variable:3.42+2.2}
+};
+
+function updateRate(){
+  const c=document.getElementById('country').value;
+  const t=document.getElementById('rateType').value;
+  document.getElementById('rate').value=RATES[c][t].toFixed(2);
+}
+
+function fmt(n){return new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>{t.classList.remove('show');t.textContent='✅ Schedule saved!';},2200);
+}
+
+document.querySelectorAll('#loanAmt,#rate,#term,#startMonth,#country,#rateType').forEach(el=>{
+  el.addEventListener('input',()=>document.getElementById('amortCalcBtn').classList.add('idle'));
+  el.addEventListener('change',()=>document.getElementById('amortCalcBtn').classList.add('idle'));
+});
+
+function calculate(){
+  document.getElementById('amortCalcBtn').classList.remove('idle');
+  const P=parseFloat(document.getElementById('loanAmt').value);
+  const annualR=parseFloat(document.getElementById('rate').value)/100;
+  if(!P||P<=0){showToast('Enter a valid loan amount');return;}
+  if(!annualR||annualR<=0){showToast('Enter a valid interest rate');return;}
+  const r=annualR/12;
+  const n=parseInt(document.getElementById('term').value)*12;
+  const startVal=document.getElementById('startMonth').value;
+
+  const monthly=P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+  const totalPay=monthly*n;
+  const totalInt=totalPay-P;
+  const intPct=((totalInt/P)*100).toFixed(1);
+
+  document.getElementById('monthly').textContent=fmt(monthly);
+  document.getElementById('totalPay').textContent=fmt(totalPay);
+  document.getElementById('totalInt').textContent=fmt(totalInt);
+  document.getElementById('intPct').textContent=intPct+'% of loan';
+  document.getElementById('termYrs').textContent=parseInt(document.getElementById('term').value)+' years';
+
+  // payoff date
+  const [yr,mo]=startVal.split('-').map(Number);
+  const terms=parseInt(document.getElementById('term').value);
+  const payoffYear=yr+terms+(mo-1>=12?1:0);
+  const payoffMo=new Date(yr,mo-1+terms*12).toLocaleString('en-GB',{month:'short',year:'numeric'});
+  document.getElementById('payoffDate').textContent=payoffMo;
+
+  // stacked bar
+  const pPct=((P/totalPay)*100).toFixed(1);
+  const iPct=((totalInt/totalPay)*100).toFixed(1);
+  document.getElementById('barP').style.width=pPct+'%';
+  document.getElementById('barI').style.width=iPct+'%';
+  document.getElementById('legP').textContent='Principal '+fmt(P)+' ('+pPct+'%)';
+  document.getElementById('legI').textContent='Interest '+fmt(totalInt)+' ('+iPct+'%)';
+
+  // SVG chart - balance + cumulative interest curves
+  drawChart(P,r,n,monthly);
+
+  // build yearly table
+  buildTable(P,r,n,monthly,yr,mo);
+
+  document.getElementById('results').style.display='block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function drawChart(P,r,n,monthly){
+  const svg=document.getElementById('amortChart');
+  const W=360,H=160,pad={t:10,r:10,b:28,l:48};
+  const years=n/12;
+  const pts_bal=[],pts_int=[];
+  let bal=P,cumInt=0;
+  for(let i=0;i<=n;i++){
+    if(i%12===0){
+      pts_bal.push({x:i/12,y:bal});
+      pts_int.push({x:i/12,y:cumInt});
+    }
+    const iAmt=bal*r;
+    const pAmt=monthly-iAmt;
+    cumInt+=iAmt;
+    bal=Math.max(0,bal-pAmt);
+  }
+  const maxVal=P;
+  function cx(x){return pad.l+(x/years)*(W-pad.l-pad.r);}
+  function cy(y){return pad.t+(1-y/maxVal)*(H-pad.t-pad.b);}
+
+  let balPath='M'+pts_bal.map(p=>cx(p.x)+','+cy(p.y)).join(' L');
+  let intPath='M'+pts_int.map(p=>cx(p.x)+','+cy(p.y)).join(' L');
+
+  // area fill
+  let balArea=balPath+' L'+cx(years)+','+cy(0)+' L'+cx(0)+','+cy(0)+' Z';
+  let intArea=intPath+' L'+cx(years)+','+cy(pts_int[pts_int.length-1].y)+' L'+cx(0)+','+cy(0)+' Z';
+
+  // Y axis labels
+  const yTicks=[0,P*0.25,P*0.5,P*0.75,P];
+  let yLabels=yTicks.map(v=>`<text x="${pad.l-4}" y="${cy(v)+4}" text-anchor="end" font-size="9" fill="#9ca3af">€${(v/1000).toFixed(0)}k</text>`).join('');
+
+  // X axis labels
+  let xLabels='';
+  for(let i=0;i<=years;i+=Math.ceil(years/5)){
+    xLabels+=`<text x="${cx(i)}" y="${H-6}" text-anchor="middle" font-size="9" fill="#9ca3af">Yr ${i}</text>`;
+  }
+
+  svg.innerHTML=`
+    <defs>
+      <linearGradient id="gBal" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#003399" stop-opacity="0.3"/><stop offset="100%" stop-color="#003399" stop-opacity="0.02"/></linearGradient>
+      <linearGradient id="gInt" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#FFCC00" stop-opacity="0.3"/><stop offset="100%" stop-color="#FFCC00" stop-opacity="0.02"/></linearGradient>
+    </defs>
+    <path d="${balArea}" fill="url(#gBal)"/>
+    <path d="${intArea}" fill="url(#gInt)"/>
+    <path d="${balPath}" fill="none" stroke="#003399" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="${intPath}" fill="none" stroke="#FFCC00" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5,3"/>
+    ${yLabels}${xLabels}
+    <text x="${cx(years/2)}" y="${cy(P*0.7)}" text-anchor="middle" font-size="9" fill="#003399" font-weight="700">Balance</text>
+    <text x="${cx(years/2)}" y="${cy(pts_int[Math.floor(pts_int.length/2)].y)+14}" text-anchor="middle" font-size="9" fill="#B45309" font-weight="700">Cum. Interest</text>
+  `;
+}
+
+function buildTable(P,r,n,monthly,startYr,startMo){
+  let bal=P,html='',visRows=5;
+  const totalRows=n/12;
+  for(let yr=1;yr<=totalRows;yr++){
+    let yearPrin=0,yearInt=0,yearPay=0;
+    for(let mo=0;mo<12;mo++){
+      if(bal<=0)break;
+      const iAmt=bal*r;
+      const pAmt=Math.min(monthly-iAmt,bal);
+      yearInt+=iAmt;yearPrin+=pAmt;yearPay+=monthly;
+      bal=Math.max(0,bal-pAmt);
+    }
+    const calYr=startYr+yr-1;
+    html+=`<div class="tbl-row year-row" ${yr>visRows?'style="display:none" class="tbl-row year-row hidden-row"':''}>
+      <span class="yr">${calYr}</span>
+      <span>${fmt(yearPrin)}</span>
+      <span class="int-amt">${fmt(yearInt)}</span>
+      <span>${fmt(yearPay)}</span>
+      <span class="bal">${fmt(Math.max(0,bal))}</span>
+    </div>`;
+  }
+  document.getElementById('tableBody').innerHTML=html;
+
+  // show more button
+  const existing=document.querySelector('.show-more-btn');
+  if(existing)existing.remove();
+  if(totalRows>visRows){
+    const btn=document.createElement('button');
+    btn.className='show-more-btn';
+    btn.textContent='Show all '+totalRows+' years ↓';
+    btn.onclick=function(){
+      document.querySelectorAll('.hidden-row').forEach(r=>r.style.display='');
+      btn.remove();
+    };
+    document.querySelector('.table-wrap').appendChild(btn);
+  }
+}
+
+let savedSchedules=[];
+function saveCalc(){
+  const data={
+    date:new Date().toLocaleDateString('en-GB'),
+    country:document.getElementById('country').value,
+    loan:document.getElementById('loanAmt').value,
+    rate:document.getElementById('rate').value,
+    term:document.getElementById('term').value,
+    monthly:document.getElementById('monthly').textContent,
+    totalInt:document.getElementById('totalInt').textContent
+  };
+  savedSchedules.unshift(data);
+  renderSavedSchedules();
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function renderSavedSchedules(){
+  const wrap=document.getElementById('savedSchedulesWrap');
+  const list=document.getElementById('savedSchedulesList');
+  if(!savedSchedules.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  document.getElementById('savedSchedulesCount').textContent=savedSchedules.length;
+  list.innerHTML=savedSchedules.map((s,i)=>`
+    <div class="saved-sched-item">
+      <div class="ssi-icon">📅</div>
+      <div class="ssi-info">
+        <div class="ssi-title">${s.country} · €${parseFloat(s.loan).toLocaleString()} · ${s.rate}%</div>
+        <div class="ssi-sub">${s.term}yr term · Monthly ${s.monthly} · Saved ${s.date}</div>
+      </div>
+      <div class="ssi-del" onclick="deleteSavedSchedule(${i})">✕</div>
+    </div>`).join('');
+}
+function deleteSavedSchedule(i){savedSchedules.splice(i,1);renderSavedSchedules();}
+
+// auto-calculate on load
+calculate();
+</script>
+</body>
+</html>

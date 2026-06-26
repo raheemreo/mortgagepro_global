@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Median Home Prices by State</title>
+<style>
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--crimson:#991B1B;
+    --gold:#D97706;--gold-lt:#FCD34D;--white:#FFFFFF;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);
+    --sh2:0 8px 36px rgba(11,29,58,0.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#334155 55%,#1B3F72 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🗺️';position:absolute;right:10px;top:48px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}  .rs-v.grn{color:#6EE7B7;}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .tag{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;}
+  .tag-b{background:#EFF6FF;color:#1D4ED8;} .tag-g{background:#F0FDF4;color:#15803D;}
+  .tag-s{background:#F1F5F9;color:#334155;} .tag-r{background:#FEF2F2;color:#B91C1C;}
+
+  /* SUMMARY CARDS */
+  .summary-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+  .sum-card{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .sc-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;}
+  .sc-val{font-size:20px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:4px 0 2px;line-height:1;}
+  .sc-sub{font-size:9px;color:var(--muted);}
+  .sc-chg{font-size:10px;font-weight:700;margin-top:2px;}
+  .up{color:#15803D;} .dn{color:#B91C1C;}
+
+  /* NATIONAL HERO */
+  .nat-hero{background:linear-gradient(148deg,#0B1D3A,#334155);border-radius:18px;padding:16px;box-shadow:var(--sh2);margin-bottom:12px;}
+  .nh-tag{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+  .nh-title{font-size:16px;font-weight:800;color:#fff;margin:4px 0 10px;font-family:Georgia,serif;}
+  .nh-title span{color:var(--gold-lt);}
+  .nh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .nh-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px;text-align:center;}
+  .nh-box .lbl{font-size:7.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;}
+  .nh-box .val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .nh-box .val.gold{color:var(--gold-lt);}
+  .nh-box .val.grn{color:#6EE7B7;}
+
+  /* FILTER / SORT */
+  .filter-row{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;}
+  .filter-row::-webkit-scrollbar{display:none;}
+  .filter-btn{flex-shrink:0;padding:7px 13px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .2s;}
+  .filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  /* SEARCH */
+  .search-box{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--navy);outline:none;margin-bottom:12px;}
+  .search-box:focus{border-color:var(--blue);}
+
+  /* STATE LIST */
+  .state-list{display:flex;flex-direction:column;gap:0;}
+  .state-item{background:var(--card);border-radius:0;padding:11px 14px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1.8fr 1fr 0.7fr;align-items:center;gap:8px;cursor:pointer;transition:background .15s;}
+  .state-item:first-child{border-radius:16px 16px 0 0;}
+  .state-item:last-child{border-radius:0 0 16px 16px;border-bottom:none;}
+  .state-item:hover{background:#F8FAFF;}
+  .si-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .si-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-price{font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;text-align:right;}
+  .si-chg{font-size:10px;font-weight:700;text-align:right;margin-top:2px;}
+  .si-bar-wrap{width:100%;height:6px;background:var(--bg);border-radius:3px;margin-top:4px;}
+  .si-bar{height:6px;border-radius:3px;transition:width .4s ease;}
+  .rank-badge{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;}
+  .state-list-wrap{background:var(--card);border-radius:16px;box-shadow:var(--sh);border:1px solid var(--border);overflow:hidden;margin-bottom:12px;}
+  .state-list-header{background:var(--bg);padding:9px 14px;display:grid;grid-template-columns:1.8fr 1fr 0.7fr;border-bottom:1px solid var(--border);}
+  .slh-col{font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;cursor:pointer;}
+  .slh-col.right{text-align:right;}
+
+  /* REGIONAL BARS */
+  .region-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .region-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .reg-row{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+  .reg-lbl{font-size:10px;font-weight:700;color:var(--muted);width:90px;flex-shrink:0;}
+  .reg-track{flex:1;height:24px;background:var(--bg);border-radius:7px;overflow:hidden;}
+  .reg-fill{height:100%;border-radius:7px;display:flex;align-items:center;padding-left:9px;font-size:9px;font-weight:800;color:#fff;transition:width .6s ease;}
+  .reg-val{font-size:11px;font-weight:800;color:var(--navy);width:60px;text-align:right;flex-shrink:0;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .nat-hero,.summary-row,.state-list-wrap,.region-card{animation:fadeUp .35s ease both;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🗺️</div>
+      <div class="hdr-title">Median Home Prices by State</div>
+      <div class="hdr-sub">NAR · Zillow · Redfin · Q1 2025 Data</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">US Median</div><div class="rs-v gold">$416,900</div><div class="rs-n">NAR Q1 2025</div></div>
+    <div class="rs"><div class="rs-l">YoY Change</div><div class="rs-v grn">+5.1%</div><div class="rs-n">National</div></div>
+    <div class="rs"><div class="rs-l">Highest</div><div class="rs-v">$948K</div><div class="rs-n">Hawaii</div></div>
+    <div class="rs"><div class="rs-l">Lowest</div><div class="rs-v">$181K</div><div class="rs-n">Mississippi</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- NATIONAL HERO -->
+  <div class="sec" style="margin-top:0">National Overview <span class="tag tag-b">Q1 2025</span></div>
+  <div class="nat-hero">
+    <div class="nh-tag">USA Median Home Price · NAR Q1 2025</div>
+    <div class="nh-title">National Median: <span>$416,900</span></div>
+    <div class="nh-grid">
+      <div class="nh-box"><div class="lbl">YoY Growth</div><div class="val grn">+5.1%</div></div>
+      <div class="nh-box"><div class="lbl">vs 2020</div><div class="val gold">+42%</div></div>
+      <div class="nh-box"><div class="lbl">Inventory</div><div class="val">1.11M</div></div>
+      <div class="nh-box"><div class="lbl">Months Supply</div><div class="val">3.8 mo</div></div>
+      <div class="nh-box"><div class="lbl">Days on Market</div><div class="val">36</div></div>
+      <div class="nh-box"><div class="lbl">All-Cash Sales</div><div class="val">28%</div></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-row">
+    <div class="sum-card"><div class="sc-lbl">Most Expensive</div><div class="sc-val">$948K</div><div class="sc-sub">🌺 Hawaii</div><div class="sc-chg up">↑ +3.8%</div></div>
+    <div class="sum-card"><div class="sc-lbl">Most Affordable</div><div class="sc-val">$181K</div><div class="sc-sub">🌊 Mississippi</div><div class="sc-chg up">↑ +4.2%</div></div>
+    <div class="sum-card"><div class="sc-lbl">Fastest Growing</div><div class="sc-val">+11.4%</div><div class="sc-sub">🗽 New Hampshire</div><div class="sc-chg up">YoY</div></div>
+    <div class="sum-card"><div class="sc-lbl">Biggest Decline</div><div class="sc-val">−2.1%</div><div class="sc-sub">🤠 Austin, TX</div><div class="sc-chg dn">YoY (Metro)</div></div>
+  </div>
+
+  <!-- REGIONAL BARS -->
+  <div class="sec">Regional Averages <span class="tag tag-s">4 Regions</span></div>
+  <div class="region-card">
+    <div class="region-title">📊 Median Price by US Census Region</div>
+    <div id="regBars"></div>
+  </div>
+
+  <!-- FILTER ROW -->
+  <div class="sec">All 50 States <span class="tag tag-g" id="stateCount">50 States</span></div>
+  <input class="search-box" id="searchBox" placeholder="🔍  Search state…" oninput="filterStates()">
+  <div class="filter-row" id="filterRow">
+    <div class="filter-btn active" onclick="setFilter('all',this)">All States</div>
+    <div class="filter-btn" onclick="setFilter('ne',this)">Northeast</div>
+    <div class="filter-btn" onclick="setFilter('mw',this)">Midwest</div>
+    <div class="filter-btn" onclick="setFilter('so',this)">South</div>
+    <div class="filter-btn" onclick="setFilter('we',this)">West</div>
+    <div class="filter-btn" onclick="setFilter('top10',this)">Top 10 💰</div>
+    <div class="filter-btn" onclick="setFilter('bot10',this)">Most Affordable</div>
+  </div>
+
+  <!-- SORT ROW -->
+  <div style="display:flex;gap:7px;margin-bottom:10px;">
+    <div class="filter-btn active" id="sort-price" onclick="setSortBtn('price',this)" style="font-size:10px">Sort: Price ↓</div>
+    <div class="filter-btn" id="sort-alpha" onclick="setSortBtn('alpha',this)" style="font-size:10px">A–Z</div>
+    <div class="filter-btn" id="sort-yoy" onclick="setSortBtn('yoy',this)" style="font-size:10px">YoY Change</div>
+  </div>
+
+  <!-- STATE LIST -->
+  <div class="state-list-wrap">
+    <div class="state-list-header">
+      <div class="slh-col">State</div>
+      <div class="slh-col right">Median Price</div>
+      <div class="slh-col right">YoY %</div>
+    </div>
+    <div class="state-list" id="stateList"></div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// All 50 states + DC data (Zillow/Redfin/NAR Q1 2025)
+const states = [
+  {name:'Alabama',abbr:'AL',price:248000,yoy:5.8,region:'so',icon:'🌳'},
+  {name:'Alaska',abbr:'AK',price:338000,yoy:3.1,region:'we',icon:'🏔️'},
+  {name:'Arizona',abbr:'AZ',price:436000,yoy:1.7,region:'we',icon:'🌵'},
+  {name:'Arkansas',abbr:'AR',price:218000,yoy:6.2,region:'so',icon:'🌾'},
+  {name:'California',abbr:'CA',price:880000,yoy:5.9,region:'we',icon:'🌴'},
+  {name:'Colorado',abbr:'CO',price:575000,yoy:-0.4,region:'we',icon:'⛰️'},
+  {name:'Connecticut',abbr:'CT',price:449000,yoy:8.7,region:'ne',icon:'🍁'},
+  {name:'Delaware',abbr:'DE',price:376000,yoy:6.1,region:'ne',icon:'🏛️'},
+  {name:'Florida',abbr:'FL',price:420000,yoy:0.8,region:'so',icon:'🌞'},
+  {name:'Georgia',abbr:'GA',price:348000,yoy:5.2,region:'so',icon:'🍑'},
+  {name:'Hawaii',abbr:'HI',price:948000,yoy:3.8,region:'we',icon:'🌺'},
+  {name:'Idaho',abbr:'ID',price:450000,yoy:2.1,region:'we',icon:'🥔'},
+  {name:'Illinois',abbr:'IL',price:295000,yoy:7.1,region:'mw',icon:'🏙️'},
+  {name:'Indiana',abbr:'IN',price:258000,yoy:6.8,region:'mw',icon:'🌽'},
+  {name:'Iowa',abbr:'IA',price:228000,yoy:5.5,region:'mw',icon:'🌾'},
+  {name:'Kansas',abbr:'KS',price:242000,yoy:6.0,region:'mw',icon:'🌻'},
+  {name:'Kentucky',abbr:'KY',price:241000,yoy:7.2,region:'so',icon:'🐎'},
+  {name:'Louisiana',abbr:'LA',price:228000,yoy:3.3,region:'so',icon:'🎷'},
+  {name:'Maine',abbr:'ME',price:389000,yoy:9.4,region:'ne',icon:'🦞'},
+  {name:'Maryland',abbr:'MD',price:469000,yoy:6.8,region:'ne',icon:'🦀'},
+  {name:'Massachusetts',abbr:'MA',price:625000,yoy:5.5,region:'ne',icon:'🫘'},
+  {name:'Michigan',abbr:'MI',price:268000,yoy:7.8,region:'mw',icon:'🚗'},
+  {name:'Minnesota',abbr:'MN',price:349000,yoy:4.9,region:'mw',icon:'❄️'},
+  {name:'Mississippi',abbr:'MS',price:181000,yoy:4.2,region:'so',icon:'🌊'},
+  {name:'Missouri',abbr:'MO',price:262000,yoy:5.9,region:'mw',icon:'🌉'},
+  {name:'Montana',abbr:'MT',price:498000,yoy:1.2,region:'we',icon:'🦌'},
+  {name:'Nebraska',abbr:'NE',price:284000,yoy:5.1,region:'mw',icon:'🌽'},
+  {name:'Nevada',abbr:'NV',price:455000,yoy:3.9,region:'we',icon:'🎰'},
+  {name:'New Hampshire',abbr:'NH',price:499000,yoy:11.4,region:'ne',icon:'⛰️'},
+  {name:'New Jersey',abbr:'NJ',price:560000,yoy:8.9,region:'ne',icon:'🗽'},
+  {name:'New Mexico',abbr:'NM',price:332000,yoy:4.5,region:'we',icon:'🌶️'},
+  {name:'New York',abbr:'NY',price:750000,yoy:8.2,region:'ne',icon:'🗽'},
+  {name:'North Carolina',abbr:'NC',price:368000,yoy:5.3,region:'so',icon:'🌲'},
+  {name:'North Dakota',abbr:'ND',price:282000,yoy:4.0,region:'mw',icon:'🌾'},
+  {name:'Ohio',abbr:'OH',price:248000,yoy:8.4,region:'mw',icon:'🏭'},
+  {name:'Oklahoma',abbr:'OK',price:215000,yoy:3.8,region:'so',icon:'🤠'},
+  {name:'Oregon',abbr:'OR',price:485000,yoy:1.9,region:'we',icon:'🌲'},
+  {name:'Pennsylvania',abbr:'PA',price:306000,yoy:7.9,region:'ne',icon:'🔔'},
+  {name:'Rhode Island',abbr:'RI',price:488000,yoy:10.1,region:'ne',icon:'⚓'},
+  {name:'South Carolina',abbr:'SC',price:318000,yoy:4.8,region:'so',icon:'🌙'},
+  {name:'South Dakota',abbr:'SD',price:316000,yoy:3.7,region:'mw',icon:'🏔️'},
+  {name:'Tennessee',abbr:'TN',price:356000,yoy:2.9,region:'so',icon:'🎸'},
+  {name:'Texas',abbr:'TX',price:355000,yoy:0.5,region:'so',icon:'🤠'},
+  {name:'Utah',abbr:'UT',price:555000,yoy:2.2,region:'we',icon:'🏜️'},
+  {name:'Vermont',abbr:'VT',price:378000,yoy:9.8,region:'ne',icon:'🍁'},
+  {name:'Virginia',abbr:'VA',price:420000,yoy:6.2,region:'so',icon:'🌿'},
+  {name:'Washington',abbr:'WA',price:578000,yoy:3.5,region:'we',icon:'☕'},
+  {name:'West Virginia',abbr:'WV',price:189000,yoy:5.6,region:'so',icon:'⛏️'},
+  {name:'Wisconsin',abbr:'WI',price:322000,yoy:6.5,region:'mw',icon:'🧀'},
+  {name:'Wyoming',abbr:'WY',price:398000,yoy:1.5,region:'we',icon:'🐂'},
+];
+
+const regionNames = {ne:'Northeast',mw:'Midwest',so:'South',we:'West'};
+let currentFilter = 'all';
+let currentSort = 'price';
+let searchTerm = '';
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+
+// Regional bars
+const regionData = [
+  {r:'Northeast',avg:520000,color:'#0B1D3A'},
+  {r:'West',avg:568000,color:'#1B3F72'},
+  {r:'Midwest',avg:285000,color:'#D97706'},
+  {r:'South',avg:310000,color:'#15803D'},
+];
+const maxReg = Math.max(...regionData.map(r=>r.avg));
+document.getElementById('regBars').innerHTML = regionData.map(r=>`
+  <div class="reg-row">
+    <div class="reg-lbl">${r.r}</div>
+    <div class="reg-track"><div class="reg-fill" style="width:${(r.avg/maxReg*100).toFixed(1)}%;background:${r.color}">${r.avg/maxReg>0.4?'$'+Math.round(r.avg/1000)+'K':''}</div></div>
+    <div class="reg-val">${fmt(r.avg)}</div>
+  </div>`).join('');
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStates();
+}
+function setSortBtn(s, btn) {
+  currentSort = s;
+  document.querySelectorAll('#sort-price,#sort-alpha,#sort-yoy').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStates();
+}
+function filterStates() {
+  searchTerm = document.getElementById('searchBox').value.toLowerCase();
+  renderStates();
+}
+
+const maxPrice = Math.max(...states.map(s=>s.price));
+
+function renderStates() {
+  let data = [...states];
+  if(searchTerm) data = data.filter(s=>s.name.toLowerCase().includes(searchTerm)||s.abbr.toLowerCase().includes(searchTerm));
+  if(currentFilter==='ne') data=data.filter(s=>s.region==='ne');
+  if(currentFilter==='mw') data=data.filter(s=>s.region==='mw');
+  if(currentFilter==='so') data=data.filter(s=>s.region==='so');
+  if(currentFilter==='we') data=data.filter(s=>s.region==='we');
+  if(currentSort==='price') data.sort((a,b)=>b.price-a.price);
+  if(currentSort==='alpha') data.sort((a,b)=>a.name.localeCompare(b.name));
+  if(currentSort==='yoy') data.sort((a,b)=>b.yoy-a.yoy);
+  if(currentFilter==='top10'){data.sort((a,b)=>b.price-a.price);data=data.slice(0,10);}
+  if(currentFilter==='bot10'){data.sort((a,b)=>a.price-b.price);data=data.slice(0,10);}
+
+  document.getElementById('stateCount').textContent = data.length+' States';
+
+  const list = document.getElementById('stateList');
+  list.innerHTML = data.map((s,i)=>{
+    const pct = (s.price/maxPrice*100).toFixed(1);
+    const barCol = s.price>700000?'#B91C1C':s.price>500000?'#D97706':s.price>350000?'#1B3F72':'#15803D';
+    const chgCol = s.yoy>=0?'up':'dn';
+    const chgStr = s.yoy>=0?'+'+s.yoy.toFixed(1)+'%':s.yoy.toFixed(1)+'%';
+    return `<div class="state-item">
+      <div>
+        <div class="si-name">${s.icon} ${s.name}</div>
+        <div class="si-sub">${s.abbr} · ${regionNames[s.region]}</div>
+        <div class="si-bar-wrap"><div class="si-bar" style="width:${pct}%;background:${barCol}"></div></div>
+      </div>
+      <div>
+        <div class="si-price">${fmt(s.price)}</div>
+        <div class="si-sub" style="text-align:right">#${i+1} rank</div>
+      </div>
+      <div>
+        <div class="si-chg ${chgCol}">${chgStr}</div>
+        <div class="si-sub" style="text-align:right">YoY</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+renderStates();
+</script>
+</body>
+</html>

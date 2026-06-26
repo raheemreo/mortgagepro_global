@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>First-Home Buyer – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00; --saffron2:#E05A00; --ochre:#F5A623; --ochre-lt:#FFDEA0;
+  --navy:#0B1F48; --chakra:#1A3A8F; --green:#046A38; --green2:#07543A;
+  --teal:#0D9488; --white:#FFFFFF; --bg:#FFF8F0; --card:#FFFFFF;
+  --muted:#7A5C3A; --border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09); --sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg); color:var(--navy);
+  max-width:420px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background-image:
+    radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+    radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);
+  pointer-events:none; z-index:0;
+}
+.header{
+  background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#046A38 82%,#07543A 100%);
+  padding:46px 18px 0; position:relative; overflow:hidden;
+}
+.header::before{
+  content:'🏡'; position:absolute; right:8px; top:22px;
+  font-size:90px; opacity:0.08; line-height:1;
+}
+.header::after{
+  content:''; position:absolute; bottom:0; left:0; width:100%; height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);
+}
+.hdr-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2;}
+.icon-btn{
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; color:#fff; cursor:pointer; text-decoration:none;
+}
+.hdr-center{text-align:center; position:relative; z-index:2;}
+.hdr-flag{font-size:28px; display:block;}
+.hdr-title{font-size:20px; font-weight:800; color:#fff; letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px; color:rgba(255,255,255,0.50); margin-top:1px; font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{
+  background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0; padding:11px 14px;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  position:relative; z-index:2; margin-top:4px;
+}
+.rs{text-align:center; position:relative;}
+.rs:not(:last-child)::after{content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px; color:rgba(255,255,255,0.46); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px; font-weight:800; color:#fff; line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px; color:rgba(255,255,255,0.36); margin-top:1px; font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px; position:relative; z-index:1;}
+.sec{
+  font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase;
+  letter-spacing:1px; margin:22px 0 11px; display:flex; align-items:center;
+  justify-content:space-between; font-family:'Trebuchet MS',sans-serif;
+}
+.sec .badge{font-size:9px; font-weight:700; padding:3px 9px; border-radius:20px; background:#ECFDF5; color:#065F46; text-transform:none; letter-spacing:0;}
+
+/* HERO */
+.hero{
+  background:linear-gradient(148deg,var(--green),var(--green2));
+  border-radius:22px; padding:20px; position:relative; overflow:hidden; box-shadow:var(--sh2);
+}
+.hero::before{content:''; position:absolute; top:-50px; right:-50px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,0.08);}
+.hero::after{content:'🏡'; position:absolute; right:14px; bottom:12px; font-size:54px; opacity:.15;}
+.h-tag{font-size:9px; color:rgba(255,255,255,0.50); text-transform:uppercase; letter-spacing:.8px; font-family:'Trebuchet MS',sans-serif;}
+.h-title{font-size:17px; font-weight:800; color:#fff; margin:4px 0 14px; line-height:1.25;}
+.h-title span{color:var(--ochre-lt);}
+.h-input-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+.h-field{background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); border-radius:11px; padding:10px 11px;}
+.h-field label{font-size:8.5px; color:rgba(255,255,255,0.50); display:block; margin-bottom:4px; font-family:'Trebuchet MS',sans-serif; text-transform:uppercase; letter-spacing:.4px;}
+.h-field input, .h-field select{
+  width:100%; background:transparent; border:none; outline:none;
+  font-size:14px; font-weight:800; color:#fff;
+  font-family:'Book Antiqua',Palatino,Georgia,serif;
+}
+.h-field select option{color:var(--navy); background:#fff;}
+.h-btn{
+  margin-top:13px; width:100%;
+  background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border:none; border-radius:13px; padding:13px;
+  font-size:14px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,107,0,0.42);
+  font-family:'Book Antiqua',Palatino,Georgia,serif; letter-spacing:.3px;
+}
+
+/* BENEFIT CARDS */
+.benefit-list{display:flex; flex-direction:column; gap:9px;}
+.benefit-card{
+  background:var(--card); border-radius:15px; padding:14px 15px;
+  box-shadow:var(--sh); border:1px solid var(--border);
+  display:flex; align-items:flex-start; gap:12px; position:relative;
+}
+.benefit-card.active-benefit{
+  background:linear-gradient(140deg,#ECFDF5,#D1FAE5);
+  border-color:#6EE7B7;
+}
+.b-icon{
+  width:44px; height:44px; border-radius:12px;
+  background:rgba(255,107,0,0.08); display:flex;
+  align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
+}
+.active-benefit .b-icon{background:rgba(4,106,56,0.12);}
+.b-title{font-size:13px; font-weight:800; color:var(--navy); line-height:1.2;}
+.b-sub{font-size:9.5px; color:var(--muted); margin-top:3px; font-family:'Trebuchet MS',sans-serif; line-height:1.45;}
+.b-max{
+  position:absolute; top:13px; right:13px;
+  font-size:9px; font-weight:700; padding:3px 9px; border-radius:20px;
+  background:#ECFDF5; color:#065F46; font-family:'Trebuchet MS',sans-serif;
+}
+.active-benefit .b-max{background:#D1FAE5; color:#047857;}
+
+/* RESULT */
+.result-hero{
+  background:linear-gradient(148deg,var(--navy),var(--chakra));
+  border-radius:22px; padding:20px; box-shadow:var(--sh2);
+  position:relative; overflow:hidden; display:none;
+}
+.result-hero::after{content:'☸'; position:absolute; right:14px; bottom:12px; font-size:54px; color:rgba(255,255,255,0.06);}
+.rh-title{font-size:11px; color:rgba(255,255,255,0.50); text-transform:uppercase; letter-spacing:.7px; font-family:'Trebuchet MS',sans-serif; margin-bottom:12px;}
+.rh-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+.rh-box{background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.16); border-radius:11px; padding:11px;}
+.rh-box label{font-size:8.5px; color:rgba(255,255,255,0.45); display:block; margin-bottom:3px; font-family:'Trebuchet MS',sans-serif;}
+.rh-box .v{font-size:16px; font-weight:800; color:#fff;}
+.rh-box .vs{font-size:9px; color:rgba(255,255,255,0.50); margin-top:2px; font-family:'Trebuchet MS',sans-serif;}
+.savings-highlight{
+  background:rgba(255,107,0,0.15); border:1.5px solid rgba(255,107,0,0.35);
+  border-radius:13px; padding:14px; margin-top:10px; text-align:center;
+}
+.sh-lbl{font-size:9px; color:rgba(255,255,255,0.55); font-family:'Trebuchet MS',sans-serif;}
+.sh-val{font-size:28px; font-weight:800; color:var(--ochre-lt); margin:4px 0;}
+.sh-sub{font-size:9.5px; color:rgba(255,255,255,0.60); font-family:'Trebuchet MS',sans-serif;}
+
+/* PIE DONUT */
+.donut-card{
+  background:var(--card); border-radius:17px; padding:16px 15px;
+  box-shadow:var(--sh); border:1px solid var(--border);
+}
+.donut-title{font-size:13px; font-weight:800; color:var(--navy); margin-bottom:14px;}
+.donut-layout{display:flex; align-items:center; gap:16px;}
+.donut-svg{width:130px; height:130px; flex-shrink:0;}
+.donut-legend{flex:1;}
+.legend-item{display:flex; align-items:center; gap:8px; margin-bottom:9px;}
+.legend-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+.legend-label{font-size:11px; font-weight:700; color:var(--navy);}
+.legend-val{font-size:10px; color:var(--muted); font-family:'Trebuchet MS',sans-serif;}
+
+/* CHECKLIST */
+.checklist{display:flex; flex-direction:column; gap:8px;}
+.check-item{
+  background:var(--card); border-radius:13px; padding:12px 14px;
+  box-shadow:var(--sh); border:1px solid var(--border);
+  display:flex; align-items:center; gap:11px; cursor:pointer;
+}
+.check-box{
+  width:22px; height:22px; border-radius:7px; border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center; font-size:13px;
+  flex-shrink:0; background:rgba(255,107,0,0.04); transition:all .2s;
+}
+.check-item.checked .check-box{background:var(--green); border-color:var(--green); color:#fff;}
+.check-lbl{font-size:12px; font-weight:700; color:var(--navy); flex:1;}
+.check-sub{font-size:9px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; margin-top:1px;}
+.check-item.checked .check-lbl{color:var(--green); text-decoration:line-through; text-decoration-color:rgba(4,106,56,0.4);}
+
+.save-btn{
+  width:100%; background:linear-gradient(135deg,var(--green),var(--green2));
+  border:none; border-radius:13px; padding:13px;
+  font-size:14px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(4,106,56,0.30);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;
+  display:flex; align-items:center; justify-content:center; gap:8px; margin-top:4px;
+}
+.save-toast{display:none; text-align:center; margin-top:8px; font-size:11px; color:var(--green); font-weight:700; font-family:'Trebuchet MS',sans-serif;}
+
+.pmay-banner{
+  background:linear-gradient(135deg,#ECFDF5,#D1FAE5);
+  border:1.5px solid #6EE7B7; border-radius:17px;
+  padding:14px 15px; display:flex; align-items:center; gap:11px; margin-bottom:11px;
+}
+.pb-icon{font-size:26px;}
+.pb-title{font-size:13px; font-weight:800; color:var(--green2);}
+.pb-sub{font-size:9.5px; color:var(--green); margin-top:2px; font-family:'Trebuchet MS',sans-serif;}
+.pb-btn{margin-left:auto; background:var(--green); color:#fff; font-size:10px; font-weight:800; padding:8px 12px; border-radius:9px; white-space:nowrap; flex-shrink:0; font-family:'Trebuchet MS',sans-serif; cursor:pointer;}
+
+.bnav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:420px; background:var(--card);
+  border-top:1px solid var(--border); display:flex;
+  padding:10px 0 20px; box-shadow:0 -4px 22px rgba(11,31,72,0.09); z-index:100;
+}
+.ni{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;}
+.ni-ic{font-size:19px; line-height:1;}
+.ni-lb{font-size:10px; font-weight:700; color:var(--muted); font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+.fu6{animation:fadeUp .38s ease both .29s;}
+.fu7{animation:fadeUp .38s ease both .34s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="screen_india.html">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🎁</div>
+      <div class="hdr-title">First-Home <span>Buyer</span></div>
+      <div class="hdr-sub">Sec 80EE · 80EEA · PMAY · Tax Benefits – FY 2025–26</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">Sec 80EE</div>
+      <div class="rs-v saf">₹50K</div>
+      <div class="rs-n">Extra deduction</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Sec 80EEA</div>
+      <div class="rs-v grn">₹1.5L</div>
+      <div class="rs-n">Affordable housing</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">PMAY Subsidy</div>
+      <div class="rs-v">₹2.67L</div>
+      <div class="rs-n">Max CLR</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Sec 24(b)</div>
+      <div class="rs-v">₹2L</div>
+      <div class="rs-n">Interest dedn.</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- HERO CALCULATOR -->
+  <div class="sec fu1" style="margin-top:0">Your First-Home Tax Benefits <span class="badge">FY 2025–26</span></div>
+  <div class="hero fu1">
+    <div class="h-tag">पहला घर – First Home Buyer Benefit Calculator</div>
+    <div class="h-title">Maximise your <span>tax savings</span> as a first-time buyer</div>
+    <div class="h-input-grid">
+      <div class="h-field">
+        <label>Annual Income</label>
+        <input type="number" id="income" value="1200000" placeholder="1200000">
+      </div>
+      <div class="h-field">
+        <label>Property Value</label>
+        <input type="number" id="propVal" value="4500000" placeholder="4500000">
+      </div>
+      <div class="h-field">
+        <label>Loan Amount (₹)</label>
+        <input type="number" id="loanAmt" value="3500000" placeholder="3500000">
+      </div>
+      <div class="h-field">
+        <label>Annual Interest Paid</label>
+        <input type="number" id="intPaid" value="280000" placeholder="280000">
+      </div>
+      <div class="h-field" style="grid-column:1/-1;">
+        <label>Tax Regime</label>
+        <select id="regime">
+          <option value="old">Old Regime (Deductions Allowed)</option>
+          <option value="new">New Regime (No Deductions)</option>
+        </select>
+      </div>
+    </div>
+    <button class="h-btn" onclick="calculateBenefits()">🏠 Calculate My First-Home Benefits</button>
+  </div>
+
+  <!-- PMAY BANNER -->
+  <div class="pmay-banner fu2">
+    <div class="pb-icon">🏡</div>
+    <div>
+      <div class="pb-title">PMAY-U 2.0 – Pradhan Mantri Awas Yojana</div>
+      <div class="pb-sub">Interest subsidy up to ₹2.67 Lakh · EWS/LIG/MIG-I/MIG-II · Annual income ≤₹18L</div>
+    </div>
+    <div class="pb-btn">Check</div>
+  </div>
+
+  <!-- RESULT CARD -->
+  <div class="result-hero fu2" id="resultHero">
+    <div class="rh-title">☸ Your First-Home Tax Benefit Summary</div>
+    <div class="rh-grid">
+      <div class="rh-box">
+        <label>Section 80C (Principal)</label>
+        <div class="v" id="r80c">₹1,50,000</div>
+        <div class="vs">Max ₹1.5L p.a.</div>
+      </div>
+      <div class="rh-box">
+        <label>Section 24(b) (Interest)</label>
+        <div class="v" id="r24b">₹2,00,000</div>
+        <div class="vs">Max ₹2L p.a.</div>
+      </div>
+      <div class="rh-box">
+        <label>Section 80EE / 80EEA</label>
+        <div class="v" id="r80ee">₹50,000</div>
+        <div class="vs">First-time only</div>
+      </div>
+      <div class="rh-box">
+        <label>Total Deduction</label>
+        <div class="v" id="rtotal">₹4,00,000</div>
+        <div class="vs">This FY</div>
+      </div>
+    </div>
+    <div class="savings-highlight">
+      <div class="sh-lbl">💰 Total Tax Saved This Year</div>
+      <div class="sh-val" id="rtaxsaved">₹1,04,000</div>
+      <div class="sh-sub" id="rtaxsub">At 26% effective rate (Old Regime)</div>
+    </div>
+  </div>
+
+  <!-- DONUT CHART -->
+  <div class="donut-card fu3" id="donutCard" style="display:none;">
+    <div class="donut-title">📊 Benefit Breakdown</div>
+    <div class="donut-layout">
+      <svg class="donut-svg" viewBox="0 0 130 130" id="donutSvg">
+        <circle cx="65" cy="65" r="50" fill="none" stroke="#EEE" stroke-width="18"/>
+        <circle cx="65" cy="65" r="50" fill="none" stroke="var(--green)" stroke-width="18"
+          stroke-dasharray="94.25 219.91" stroke-dashoffset="0" transform="rotate(-90 65 65)" id="seg1"/>
+        <circle cx="65" cy="65" r="50" fill="none" stroke="var(--saffron)" stroke-width="18"
+          stroke-dasharray="125.66 188.5" stroke-dashoffset="-94.25" transform="rotate(-90 65 65)" id="seg2"/>
+        <circle cx="65" cy="65" r="50" fill="none" stroke="#1A3A8F" stroke-width="18"
+          stroke-dasharray="31.42 282.74" stroke-dashoffset="-219.91" transform="rotate(-90 65 65)" id="seg3"/>
+        <text x="65" y="60" text-anchor="middle" font-size="11" font-weight="800" fill="var(--navy)" font-family="Book Antiqua,serif" id="donutCenter">₹4L</text>
+        <text x="65" y="75" text-anchor="middle" font-size="8" fill="var(--muted)" font-family="Trebuchet MS,sans-serif">Total</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--green);"></div>
+          <div>
+            <div class="legend-label" id="leg1">Sec 80C ₹1.5L</div>
+            <div class="legend-val">Principal repayment</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--saffron);"></div>
+          <div>
+            <div class="legend-label" id="leg2">Sec 24(b) ₹2L</div>
+            <div class="legend-val">Interest deduction</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#1A3A8F;"></div>
+          <div>
+            <div class="legend-label" id="leg3">80EE/A ₹50K</div>
+            <div class="legend-val">First-home bonus</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL BENEFITS -->
+  <div class="sec fu4">All First-Home Buyer Benefits</div>
+  <div class="benefit-list fu4">
+    <div class="benefit-card active-benefit">
+      <div class="b-icon">📜</div>
+      <div>
+        <div class="b-title">Section 80C – Principal Repayment</div>
+        <div class="b-sub">Deduction of up to ₹1.5 Lakh per year on home loan principal. Applicable under Old Tax Regime. Includes stamp duty & registration in year of purchase.</div>
+      </div>
+      <div class="b-max">₹1.5L/yr</div>
+    </div>
+    <div class="benefit-card active-benefit">
+      <div class="b-icon">📝</div>
+      <div>
+        <div class="b-title">Section 24(b) – Interest on Home Loan</div>
+        <div class="b-sub">Up to ₹2 Lakh/year on interest paid for self-occupied property. For let-out property, no upper limit. Old Regime only. 5-year construction wait applies.</div>
+      </div>
+      <div class="b-max">₹2L/yr</div>
+    </div>
+    <div class="benefit-card active-benefit">
+      <div class="b-icon">🎁</div>
+      <div>
+        <div class="b-title">Section 80EEA – Affordable Housing Bonus</div>
+        <div class="b-sub">Additional ₹1.5L deduction for first-time buyers. Property stamp value ≤₹45L. Loan sanctioned between Apr 2019 – Mar 2022. Loan outstanding during FY.</div>
+      </div>
+      <div class="b-max">₹1.5L/yr</div>
+    </div>
+    <div class="benefit-card">
+      <div class="b-icon">🏠</div>
+      <div>
+        <div class="b-title">Section 80EE – Additional Interest Deduction</div>
+        <div class="b-sub">₹50,000 extra for loans sanctioned Apr 2016 – Mar 2017. Loan value ≤₹35L. Property value ≤₹50L. Cannot claim with 80EEA. First-time buyer only.</div>
+      </div>
+      <div class="b-max">₹50K/yr</div>
+    </div>
+    <div class="benefit-card">
+      <div class="b-icon">🏡</div>
+      <div>
+        <div class="b-title">PMAY – Credit Linked Subsidy Scheme</div>
+        <div class="b-sub">EWS/LIG: ₹2.67L subsidy. MIG-I (₹6–12L income): ₹2.35L. MIG-II (₹12–18L income): ₹2.30L. One-time benefit credited to loan account at disbursement.</div>
+      </div>
+      <div class="b-max">₹2.67L</div>
+    </div>
+    <div class="benefit-card">
+      <div class="b-icon">🏦</div>
+      <div>
+        <div class="b-title">Special Women Borrower Concession</div>
+        <div class="b-sub">If property is in woman's name (sole or co-owner), SBI offers 0.05% rate concession. Delhi stamp duty: 4% for women vs 6% for men. Saves ₹60K–₹2L on ₹1Cr property.</div>
+      </div>
+      <div class="b-max">0.05% off</div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS CHECKLIST -->
+  <div class="sec fu5">First-Home Buyer Document Checklist</div>
+  <div class="checklist fu5" id="checklist">
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div>
+        <div class="check-lbl">PAN Card</div>
+        <div class="check-sub">Mandatory for loan & registration above ₹50L</div>
+      </div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div>
+        <div class="check-lbl">Aadhaar Card</div>
+        <div class="check-sub">KYC & PMAY application</div>
+      </div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div>
+        <div class="check-lbl">Last 3 Months Salary Slips</div>
+        <div class="check-sub">Income proof for loan eligibility</div>
+      </div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div>
+        <div class="check-lbl">ITR for Last 2 Years</div>
+        <div class="check-sub">Income Tax Returns – Form 16 or ITR-1/2</div>
+      </div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div>
+        <div class="check-lbl">Bank Statements (6 Months)</div>
+        <div class="check-sub">Savings / current account statements</div>
+      </div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div>
+        <div class="check-lbl">Sale Agreement / Allotment Letter</div>
+        <div class="check-sub">Property purchase documents from builder/seller</div>
+      </div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div>
+        <div class="check-lbl">RERA Registration Certificate</div>
+        <div class="check-sub">Verify builder at rera.gov.in / state RERA site</div>
+      </div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div>
+        <div class="check-lbl">Self-Declaration (First-Time Buyer)</div>
+        <div class="check-sub">For 80EE/80EEA – no other residential property owned</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE BUTTON -->
+  <div class="sec fu6">Save This Calculation</div>
+  <div class="fu6">
+    <button class="save-btn" onclick="saveResult()">🔖 Save First-Home Benefits Report</button>
+    <div class="save-toast" id="saveToast">✅ Benefits report saved to your profile!</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function calculateBenefits(){
+  const income = parseFloat(document.getElementById('income').value)||1200000;
+  const propVal = parseFloat(document.getElementById('propVal').value)||4500000;
+  const loanAmt = parseFloat(document.getElementById('loanAmt').value)||3500000;
+  const intPaid = parseFloat(document.getElementById('intPaid').value)||280000;
+  const regime = document.getElementById('regime').value;
+
+  if(regime==='new'){
+    document.getElementById('r80c').textContent='₹0';
+    document.getElementById('r24b').textContent='₹0';
+    document.getElementById('r80ee').textContent='₹0';
+    document.getElementById('rtotal').textContent='₹0';
+    document.getElementById('rtaxsaved').textContent='₹0';
+    document.getElementById('rtaxsub').textContent='New Regime: No deductions on home loan';
+    document.getElementById('resultHero').style.display='block';
+    document.getElementById('donutCard').style.display='none';
+    return;
+  }
+
+  const d80c = Math.min(150000, loanAmt*0.10);
+  const d24b = Math.min(200000, intPaid);
+  // 80EEA if stamp val <= 45L and affordable
+  const d80eea = propVal<=4500000 ? Math.min(150000, Math.max(0, intPaid - 200000)) : 0;
+  const d80ee = d80eea===0 ? 50000 : 0; // simplified
+  const d80eeApplied = d80eea > 0 ? d80eea : d80ee;
+  const totalDedn = d80c + d24b + d80eeApplied;
+
+  // Rough tax saved: approximate slab (30% if income>15L, 20% if >10L, 10% otherwise)
+  let rate = income > 1500000 ? 0.30 : income > 1000000 ? 0.20 : 0.10;
+  const taxSaved = Math.round(totalDedn * rate);
+
+  const fmt = v => '₹' + (v/100).toLocaleString('en-IN',{maximumFractionDigits:0}) + (v>=100000?'':(v>0?'':'')).replace(/(\d+)(\d{2})$/,'$1,$2');
+  const fmtL = v => {
+    if(v>=10000000) return '₹'+(v/10000000).toFixed(2)+'Cr';
+    if(v>=100000) return '₹'+(v/100000).toFixed(2)+'L';
+    return '₹'+v.toLocaleString('en-IN');
+  };
+
+  document.getElementById('r80c').textContent = fmtL(d80c);
+  document.getElementById('r24b').textContent = fmtL(d24b);
+  document.getElementById('r80ee').textContent = fmtL(d80eeApplied);
+  document.getElementById('rtotal').textContent = fmtL(totalDedn);
+  document.getElementById('rtaxsaved').textContent = fmtL(taxSaved);
+  document.getElementById('rtaxsub').textContent = `At ${Math.round(rate*100)}% effective rate (Old Regime)`;
+
+  document.getElementById('resultHero').style.display='block';
+  document.getElementById('donutCard').style.display='block';
+
+  // Update donut
+  const total = d80c + d24b + d80eeApplied || 1;
+  const circ = 2 * Math.PI * 50; // ≈314.16
+  const seg1 = (d80c/total)*circ;
+  const seg2 = (d24b/total)*circ;
+  const seg3 = (d80eeApplied/total)*circ;
+  document.getElementById('seg1').setAttribute('stroke-dasharray', `${seg1.toFixed(2)} ${(circ-seg1).toFixed(2)}`);
+  document.getElementById('seg2').setAttribute('stroke-dasharray', `${seg2.toFixed(2)} ${(circ-seg2).toFixed(2)}`);
+  document.getElementById('seg2').setAttribute('stroke-dashoffset', `-${seg1.toFixed(2)}`);
+  document.getElementById('seg3').setAttribute('stroke-dasharray', `${seg3.toFixed(2)} ${(circ-seg3).toFixed(2)}`);
+  document.getElementById('seg3').setAttribute('stroke-dashoffset', `-${(seg1+seg2).toFixed(2)}`);
+
+  const totalL = totalDedn>=100000 ? (totalDedn/100000).toFixed(1)+'L' : totalDedn.toLocaleString('en-IN');
+  document.getElementById('donutCenter').textContent = '₹'+totalL;
+  document.getElementById('leg1').textContent = `Sec 80C ${fmtL(d80c)}`;
+  document.getElementById('leg2').textContent = `Sec 24(b) ${fmtL(d24b)}`;
+  document.getElementById('leg3').textContent = `80EE/A ${fmtL(d80eeApplied)}`;
+
+  document.getElementById('resultHero').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function toggleCheck(el){
+  el.classList.toggle('checked');
+  const box = el.querySelector('.check-box');
+  box.textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+function saveResult(){
+  const total = document.getElementById('rtotal').textContent;
+  const saved = JSON.parse(localStorage.getItem('firsthome_saves')||'[]');
+  saved.push({total, date:new Date().toLocaleDateString('en-IN'), ts:Date.now()});
+  localStorage.setItem('firsthome_saves', JSON.stringify(saved));
+  const t = document.getElementById('saveToast');
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none', 3000);
+}
+</script>
+</body>
+</html>

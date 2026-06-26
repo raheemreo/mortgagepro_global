@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMAY – Housing for All · MortgagePro</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#07543A 0%,#046A38 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'🏡';position:absolute;right:8px;top:20px;font-size:90px;opacity:.08;line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.grn{color:#86EFAC;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 100px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+.badge-g{background:#ECFDF5;color:var(--green);}
+.badge-s{background:#FFF3E0;color:var(--saffron);}
+
+/* HERO */
+.hero{background:linear-gradient(148deg,var(--green2),var(--green));border-radius:22px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:4px;}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,107,0,0.14);}
+.hero::after{content:'🏠';position:absolute;right:14px;bottom:10px;font-size:50px;opacity:.1;}
+.h-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.h-title{font-size:17px;font-weight:800;color:#fff;margin:6px 0 4px;line-height:1.25;}
+.h-title span{color:var(--ochre-lt);}
+.h-sub{font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:14px;font-family:'Trebuchet MS',sans-serif;}
+.h-row{display:flex;gap:7px;}
+.h-box{flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:8px 10px;}
+.h-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:2px;font-family:'Trebuchet MS',sans-serif;}
+.h-box .v{font-size:12px;font-weight:800;color:#fff;}
+
+/* CATEGORY CARDS */
+.cat-scroll{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.cat-scroll::-webkit-scrollbar{display:none;}
+.cat-card{flex-shrink:0;width:130px;border-radius:17px;padding:14px;box-shadow:var(--sh);cursor:pointer;}
+.cat-card.ews{background:linear-gradient(140deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;}
+.cat-card.lig{background:linear-gradient(140deg,#EFF6FF,#DBEAFE);border:1.5px solid #93C5FD;}
+.cat-card.mig1{background:linear-gradient(140deg,#FFF3E0,#FFEDD5);border:1.5px solid #FDBA74;}
+.cat-card.mig2{background:linear-gradient(140deg,#F5F3FF,#EDE9FE);border:1.5px solid #C4B5FD;}
+.cat-icon{font-size:26px;margin-bottom:8px;}
+.cat-name{font-size:11.5px;font-weight:800;color:var(--navy);}
+.cat-income{font-size:9px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.cat-subsidy{font-size:14px;font-weight:800;color:var(--saffron);margin:6px 0 2px;}
+.cat-label{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+
+/* CALCULATOR */
+.calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.calc-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+.field{margin-bottom:12px;}
+.field label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field select,.field input{width:100%;padding:11px 14px;border-radius:11px;border:1.5px solid var(--border);background:var(--bg);font-size:13px;font-weight:700;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;appearance:none;}
+.field select:focus,.field input:focus{border-color:var(--saffron);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--green),var(--green2));border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(4,106,56,0.35);font-family:'Book Antiqua',Palatino,Georgia,serif;margin-top:4px;}
+
+/* RESULT */
+.result-box{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:2px solid #6EE7B7;border-radius:17px;padding:16px;margin-top:14px;display:none;}
+.result-box.show{display:block;}
+.res-title{font-size:11px;font-weight:800;color:var(--green2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;font-family:'Trebuchet MS',sans-serif;}
+.res-main{font-size:32px;font-weight:800;color:var(--green2);text-align:center;margin:8px 0;}
+.res-sub{font-size:11px;color:var(--green);text-align:center;font-family:'Trebuchet MS',sans-serif;margin-bottom:12px;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.res-item{background:rgba(4,106,56,0.08);border-radius:10px;padding:9px;}
+.res-item label{font-size:8.5px;color:var(--green);display:block;margin-bottom:2px;font-family:'Trebuchet MS',sans-serif;}
+.res-item .rv{font-size:13px;font-weight:800;color:var(--green2);}
+.save-btn{width:100%;background:var(--green);border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;margin-top:10px;font-family:'Trebuchet MS',sans-serif;}
+
+/* PIE CHART */
+.pie-wrap{display:flex;align-items:center;gap:16px;margin:10px 0;}
+.pie-labels{flex:1;}
+.pie-lbl-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.pie-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.pie-text{font-size:10px;color:var(--navy);font-weight:600;}
+.pie-pct{font-size:10px;font-weight:800;color:var(--muted);margin-left:auto;}
+
+/* CHECKLIST */
+.check-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.check-item{background:var(--card);border-radius:14px;padding:12px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;}
+.check-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.check-body{}
+.check-title{font-size:12px;font-weight:800;color:var(--navy);}
+.check-sub{font-size:9.5px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;line-height:1.5;}
+
+/* INFO LIST */
+.ilist{display:flex;flex-direction:column;gap:9px;}
+.ic{background:var(--card);border-radius:15px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+.ii{width:40px;height:40px;border-radius:12px;background:rgba(255,107,0,0.07);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.in{font-size:12.5px;font-weight:800;color:var(--navy);}
+.is{font-size:9.5px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.ich{font-size:16px;color:rgba(11,31,72,0.18);margin-left:auto;}
+
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 22px;border-radius:22px;font-size:12px;font-weight:700;opacity:0;transition:.3s;z-index:999;font-family:'Trebuchet MS',sans-serif;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* BNAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}.fu6{animation:fadeUp .38s ease both .29s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏡</div>
+      <div class="hdr-title">PMAY <span>Housing for All</span></div>
+      <div class="hdr-sub">Pradhan Mantri Awas Yojana · Urban & Rural</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">Max Subsidy</div>
+      <div class="rs-v saf">₹2.67L</div>
+      <div class="rs-n">EWS/LIG</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Interest</div>
+      <div class="rs-v grn">6.50%</div>
+      <div class="rs-n">Subsidy Rate</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Benefited</div>
+      <div class="rs-v">1.22Cr</div>
+      <div class="rs-n">Households</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Deadline</div>
+      <div class="rs-v saf">Mar 31</div>
+      <div class="rs-n">2026</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec fu1" style="margin-top:0">Scheme Overview <span class="badge badge-g">Active Scheme</span></div>
+  <div class="hero fu1">
+    <div class="h-tag">प्रधानमंत्री आवास योजना · Ministry of Housing</div>
+    <div class="h-title">Housing for All — <span>Interest Subsidy</span> on Home Loans</div>
+    <div class="h-sub">Credit Linked Subsidy Scheme (CLSS) for EWS / LIG / MIG categories</div>
+    <div class="h-row">
+      <div class="h-box"><label>Scheme</label><div class="v">PMAY-U 2.0</div></div>
+      <div class="h-box"><label>Subsidy NPV</label><div class="v">₹2.67L</div></div>
+      <div class="h-box"><label>Max Loan</label><div class="v">₹6L (EWS)</div></div>
+    </div>
+  </div>
+
+  <div class="sec fu2">Category Eligibility <span class="badge badge-s">4 Categories</span></div>
+  <div class="cat-scroll fu2">
+    <div class="cat-card ews">
+      <div class="cat-icon">🏘️</div>
+      <div class="cat-name">EWS</div>
+      <div class="cat-income">Income ≤ ₹3 Lakh/yr</div>
+      <div class="cat-subsidy">₹2.67L</div>
+      <div class="cat-label">Max NPV Subsidy</div>
+    </div>
+    <div class="cat-card lig">
+      <div class="cat-icon">🏠</div>
+      <div class="cat-name">LIG</div>
+      <div class="cat-income">₹3L – ₹6L/yr</div>
+      <div class="cat-subsidy">₹2.67L</div>
+      <div class="cat-label">Max NPV Subsidy</div>
+    </div>
+    <div class="cat-card mig1">
+      <div class="cat-icon">🏡</div>
+      <div class="cat-name">MIG-I</div>
+      <div class="cat-income">₹6L – ₹12L/yr</div>
+      <div class="cat-subsidy">₹2.35L</div>
+      <div class="cat-label">Max NPV Subsidy</div>
+    </div>
+    <div class="cat-card mig2">
+      <div class="cat-icon">🏗️</div>
+      <div class="cat-name">MIG-II</div>
+      <div class="cat-income">₹12L – ₹18L/yr</div>
+      <div class="cat-subsidy">₹2.30L</div>
+      <div class="cat-label">Max NPV Subsidy</div>
+    </div>
+  </div>
+
+  <div class="sec fu3">PMAY Subsidy Calculator <span class="badge badge-g">Save Results</span></div>
+  <div class="calc-card fu3">
+    <div class="calc-title">🧮 Calculate Your PMAY Subsidy</div>
+    <div class="field">
+      <label>Your Income Category</label>
+      <select id="catSelect">
+        <option value="ews">EWS (≤ ₹3 Lakh/year)</option>
+        <option value="lig">LIG (₹3L – ₹6L/year)</option>
+        <option value="mig1">MIG-I (₹6L – ₹12L/year)</option>
+        <option value="mig2">MIG-II (₹12L – ₹18L/year)</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Loan Amount (₹ Lakh)</label>
+        <input type="number" id="loanAmt" value="20" min="1" max="100"/>
+      </div>
+      <div class="field">
+        <label>Loan Tenure (Years)</label>
+        <input type="number" id="tenure" value="20" min="5" max="30"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Bank Interest Rate (%)</label>
+      <input type="number" id="bankRate" value="8.50" step="0.05" min="6" max="15"/>
+    </div>
+    <button class="calc-btn" onclick="calcPMAY()">🏡 Calculate Subsidy Benefit</button>
+
+    <div class="result-box" id="result">
+      <div class="res-title">Your PMAY Subsidy Benefit</div>
+      <div class="res-main" id="subsidyAmt">₹0</div>
+      <div class="res-sub" id="subsidySub">Interest Subsidy (NPV)</div>
+      <div class="res-grid">
+        <div class="res-item"><label>Effective Rate</label><div class="rv" id="effRate">—</div></div>
+        <div class="res-item"><label>Normal EMI</label><div class="rv" id="normalEmi">—</div></div>
+        <div class="res-item"><label>Subsidised EMI</label><div class="rv" id="subsEmi">—</div></div>
+        <div class="res-item"><label>Monthly Saving</label><div class="rv" id="monthlySave">—</div></div>
+      </div>
+      <!-- Donut vis -->
+      <div class="pie-wrap" style="margin-top:14px;">
+        <svg width="80" height="80" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.915" fill="none" stroke="#D1FAE5" stroke-width="4"/>
+          <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--green)" stroke-width="4" stroke-dasharray="60 40" stroke-dashoffset="25" id="donutSlice"/>
+          <text x="18" y="20" text-anchor="middle" font-size="7" font-weight="800" fill="var(--green2)" id="donutPct">60%</text>
+        </svg>
+        <div class="pie-labels">
+          <div class="pie-lbl-row"><div class="pie-dot" style="background:var(--green)"></div><div class="pie-text">Subsidised Interest</div><div class="pie-pct" id="pieS">—</div></div>
+          <div class="pie-lbl-row"><div class="pie-dot" style="background:#D1FAE5"></div><div class="pie-text">Remaining Interest</div><div class="pie-pct" id="pieR">—</div></div>
+        </div>
+      </div>
+      <button class="save-btn" onclick="savePMAY()">💾 Save This Calculation</button>
+    </div>
+  </div>
+
+  <div class="sec fu4">Documents Required</div>
+  <div class="check-list fu4">
+    <div class="check-item">
+      <div class="check-icon">📄</div>
+      <div class="check-body">
+        <div class="check-title">Identity & Address Proof</div>
+        <div class="check-sub">Aadhaar Card (mandatory), PAN Card, Voter ID or Passport. Address proof must match Aadhaar.</div>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">💰</div>
+      <div class="check-body">
+        <div class="check-title">Income Certificate</div>
+        <div class="check-sub">Salary slips (3 months), Form 16, or ITR for salaried. For self-employed: CA-certified income declaration.</div>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">🏠</div>
+      <div class="check-body">
+        <div class="check-title">Property Documents</div>
+        <div class="check-sub">Sale agreement, allotment letter, NOC from builder. Property must be in applicant's name (women preferred for EWS/LIG).</div>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon">🏦</div>
+      <div class="check-body">
+        <div class="check-title">Bank Statements</div>
+        <div class="check-sub">Last 6 months bank statement. No existing housing property owned by any family member in India.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec fu5">Quick Links</div>
+  <div class="ilist fu5">
+    <div class="ic">
+      <div class="ii">🌐</div>
+      <div><div class="in">PMAY Official Portal</div><div class="is">pmaymis.gov.in · Apply online</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic">
+      <div class="ii">🔍</div>
+      <div><div class="in">Check Beneficiary Status</div><div class="is">Track your PMAY application status</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic">
+      <div class="ii">🏦</div>
+      <div><div class="in">Nodal Banks List</div><div class="is">SBI, HDFC, LIC HFL, NHB PLIs</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic">
+      <div class="ii">📞</div>
+      <div><div class="in">Helpline</div><div class="is">1800-11-6446 · Toll Free · 9am–5pm</div></div>
+      <div class="ich">›</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">✅ Calculation saved successfully!</div>
+
+<div class="bnav">
+  <div class="ni" onclick="history.back()"><div class="ni-ic">←</div><div class="ni-lb">Back</div></div>
+  <div class="ni"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni active"><div class="ni-ic">🏡</div><div class="ni-lb">PMAY</div></div>
+</div>
+
+<script>
+const catData={
+  ews: {name:'EWS',subRate:6.5,maxLoan:6,subsidy:267000},
+  lig: {name:'LIG',subRate:6.5,maxLoan:6,subsidy:267000},
+  mig1:{name:'MIG-I',subRate:4.0,maxLoan:9,subsidy:235000},
+  mig2:{name:'MIG-II',subRate:3.0,maxLoan:12,subsidy:230000}
+};
+
+function emi(p,r,n){const mr=r/12/100;return p*(mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1);}
+
+function calcPMAY(){
+  const cat=document.getElementById('catSelect').value;
+  const loan=parseFloat(document.getElementById('loanAmt').value)*100000;
+  const yrs=parseInt(document.getElementById('tenure').value);
+  const rate=parseFloat(document.getElementById('bankRate').value);
+  const d=catData[cat];
+  const subLoan=Math.min(loan,d.maxLoan*100000);
+  const effRate=Math.max(rate-d.subRate,1);
+  const normalEmi=emi(loan,rate,yrs*12);
+  const subEmi=emi(subLoan,effRate,yrs*12)+emi(Math.max(loan-subLoan,0),rate,yrs*12);
+  const saving=normalEmi-subEmi;
+  const subsidyNPV=d.subsidy;
+  const interestTotal=normalEmi*yrs*12-loan;
+  const subPct=Math.min(Math.round((subsidyNPV/interestTotal)*100),80);
+
+  document.getElementById('subsidyAmt').textContent='₹'+Math.round(subsidyNPV/100)*100/100000+'L (NPV)';
+  document.getElementById('subsidySub').textContent='On ₹'+Math.round(subLoan/100000)+'L at '+d.subRate+'% subsidy rate';
+  document.getElementById('effRate').textContent=effRate.toFixed(2)+'%';
+  document.getElementById('normalEmi').textContent='₹'+Math.round(normalEmi).toLocaleString('en-IN');
+  document.getElementById('subsEmi').textContent='₹'+Math.round(subEmi).toLocaleString('en-IN');
+  document.getElementById('monthlySave').textContent='₹'+Math.round(Math.abs(saving)).toLocaleString('en-IN');
+  document.getElementById('pieS').textContent=subPct+'%';
+  document.getElementById('pieR').textContent=(100-subPct)+'%';
+  document.getElementById('donutPct').textContent=subPct+'%';
+  document.getElementById('donutSlice').setAttribute('stroke-dasharray',subPct+' '+(100-subPct));
+  document.getElementById('result').classList.add('show');
+}
+
+function savePMAY(){
+  const toast=document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>

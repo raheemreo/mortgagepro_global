@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USA Financial Tools</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  /* ─── HEADER ─── */
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after  { content:'🦅'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+
+  /* Live Rates Strip */
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.up::after { content:'↑'; font-size:9px; color:#6EE7B7; }
+  .rs-v.dn::after { content:'↓'; font-size:9px; color:#FCA5A5; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  /* ─── CONTENT ─── */
+  .content { padding:15px 15px 110px; }
+
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* Hero Quick Calc */
+  .hero { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:19px; position:relative; overflow:hidden; box-shadow:var(--sh2); }
+  .hero::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:rgba(185,28,28,0.14); }
+  .h-tag { font-size:9.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.8px; }
+  .h-title { font-size:18px; font-weight:800; color:#fff; margin:4px 0 13px; line-height:1.2; font-family:Georgia,serif; }
+  .h-title span { color:var(--gold-lt); }
+  .h-row { display:flex; gap:7px; }
+  .h-box { flex:1; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:8px 10px; }
+  .h-box label { font-size:8.5px; color:rgba(255,255,255,0.48); display:block; margin-bottom:2px; }
+  .h-box .v { font-size:13px; font-weight:800; color:#fff; }
+  .h-btn { margin-top:12px; width:100%; background:linear-gradient(135deg,#B91C1C,#991B1B); border:none; border-radius:12px; padding:13px; font-size:13px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(185,28,28,0.40); font-family:Georgia,serif; }
+
+  /* ─── GRID TOOLS ─── */
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; }
+  .tc { background:var(--card); border-radius:16px; padding:14px 12px; box-shadow:var(--sh); border:1px solid var(--border); cursor:pointer; position:relative; overflow:hidden; transition:transform .15s; }
+  .tc:active { transform:scale(.97); }
+  .tc.nv { background:linear-gradient(140deg,#0B1D3A,#1B3F72); }
+  .tc.rd { background:linear-gradient(140deg,#B91C1C,#991B1B); }
+  .tc.gd { background:linear-gradient(140deg,#D97706,#B45309); }
+  .tc.tl { background:linear-gradient(140deg,#0F766E,#0D9488); }
+  .tc.sl { background:linear-gradient(140deg,#334155,#1E293B); }
+  .tc.vt { background:linear-gradient(140deg,#6D28D9,#4C1D95); }
+  .tc.grn { background:linear-gradient(140deg,#15803D,#166534); }
+  .ti { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; margin-bottom:9px; }
+  .tc:not(.nv):not(.rd):not(.gd):not(.tl):not(.sl):not(.vt):not(.grn) .ti { background:var(--bg); }
+  .tc.nv .ti,.tc.rd .ti,.tc.gd .ti,.tc.tl .ti,.tc.sl .ti,.tc.vt .ti,.tc.grn .ti { background:rgba(255,255,255,0.14); }
+  .tn { font-size:12.5px; font-weight:800; color:var(--navy); line-height:1.2; font-family:Georgia,serif; }
+  .tc.nv .tn,.tc.rd .tn,.tc.gd .tn,.tc.tl .tn,.tc.sl .tn,.tc.vt .tn,.tc.grn .tn { color:#fff; }
+  .td { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .tc.nv .td,.tc.rd .td,.tc.gd .td,.tc.tl .td,.tc.sl .td,.tc.vt .td,.tc.grn .td { color:rgba(255,255,255,0.58); }
+  .ta { position:absolute; bottom:11px; right:11px; font-size:14px; color:rgba(11,29,58,0.16); }
+  .tc.nv .ta,.tc.rd .ta,.tc.gd .ta,.tc.tl .ta,.tc.sl .ta,.tc.vt .ta,.tc.grn .ta { color:rgba(255,255,255,0.22); }
+  .bge { display:inline-flex; padding:2px 7px; border-radius:20px; font-size:8.5px; font-weight:700; margin-top:5px; }
+  .bge-b { background:#EFF6FF; color:#1D4ED8; }
+  .bge-r { background:#FEF2F2; color:#B91C1C; }
+  .bge-g { background:#F0FDF4; color:#15803D; }
+  .bge-o { background:#FFF7ED; color:#C2410C; }
+
+  /* ─── MINI RATE CARDS (horizontal scroll) ─── */
+  .hscroll { display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; }
+  .hscroll::-webkit-scrollbar { display:none; }
+  .mrc { flex-shrink:0; width:110px; background:var(--card); border-radius:15px; padding:13px 11px; box-shadow:var(--sh); border:1px solid var(--border); cursor:pointer; }
+  .mrc-icon { font-size:22px; margin-bottom:6px; display:block; }
+  .mrc-lbl { font-size:9px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.4px; }
+  .mrc-val { font-size:17px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin:2px 0; }
+  .mrc-sub { font-size:9px; color:var(--muted); }
+  .mrc-chg { font-size:9px; font-weight:700; margin-top:4px; }
+  .up { color:#15803D; } .dn { color:#B91C1C; }
+
+  /* ─── INFO LIST ─── */
+  .ilist { display:flex; flex-direction:column; gap:9px; }
+  .ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .is { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .ich { font-size:16px; color:rgba(11,29,58,0.18); margin-left:auto; }
+
+  /* ─── FED BANNER ─── */
+  .fed-banner { background:linear-gradient(135deg,#0B1D3A,#1B3F72); border-radius:16px; padding:14px 15px; display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .fb-icon { font-size:26px; }
+  .fb-lbl { font-size:9px; text-transform:uppercase; letter-spacing:0.6px; color:rgba(255,255,255,0.45); font-weight:700; }
+  .fb-val { font-size:22px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; line-height:1; }
+  .fb-sub { font-size:9px; color:rgba(255,255,255,0.50); margin-top:2px; }
+  .fb-btn { margin-left:auto; background:var(--gold); color:#fff; font-size:10px; font-weight:800; padding:8px 12px; border-radius:9px; white-space:nowrap; flex-shrink:0; }
+
+  /* ─── MARKET TICKER ─── */
+  .ticker { background:var(--card); border-radius:16px; padding:14px 15px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; }
+  .ticker-title { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+  .ticker-title span { font-size:10px; font-weight:500; color:var(--blue); }
+  .tick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .tick-item { text-align:center; }
+  .tick-name { font-size:9px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; }
+  .tick-val { font-size:14px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin:2px 0; }
+  .tick-chg { font-size:9px; font-weight:700; }
+
+  /* ─── STATE TAX BANNER ─── */
+  .tax-banner { background:linear-gradient(135deg,#FEF3C7,#FDE68A); border:1px solid #F59E0B; border-radius:15px; padding:13px 15px; display:flex; align-items:center; gap:11px; margin-bottom:10px; }
+  .tb-icon { font-size:24px; }
+  .tb-title { font-size:12.5px; font-weight:800; color:#92400E; font-family:Georgia,serif; }
+  .tb-sub { font-size:9.5px; color:#B45309; margin-top:2px; }
+  .tb-btn { margin-left:auto; background:#D97706; color:#fff; font-size:10px; font-weight:800; padding:7px 11px; border-radius:8px; white-space:nowrap; flex-shrink:0; }
+
+  /* ─── BOTTOM NAV ─── */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  .hero { animation:fadeUp .35s ease both .05s; }
+  .g2,.g3 { animation:fadeUp .35s ease both .12s; }
+  .hscroll { animation:fadeUp .35s ease both .18s; }
+  .ticker,.fed-banner,.tax-banner { animation:fadeUp .35s ease both .22s; }
+  .ilist { animation:fadeUp .35s ease both .28s; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇺🇸</div>
+      <div class="hdr-title">USA Financial Tools</div>
+      <div class="hdr-sub">USD · FRED · Fed Rate · All 50 States</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">30-Yr Fixed</div><div class="rs-v up">6.82%</div><div class="rs-n">Freddie Mac</div></div>
+    <div class="rs"><div class="rs-l">15-Yr Fixed</div><div class="rs-v">6.11%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">5/1 ARM</div><div class="rs-v dn">6.05%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">Fed Funds</div><div class="rs-v gold">5.33%</div><div class="rs-n">FOMC</div></div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Quick Calc Hero -->
+  <div class="sec" style="margin-top:0">Quick Estimate <span class="more">Advanced →</span></div>
+  <div class="hero">
+    <div class="h-tag">USA Mortgage Calculator</div>
+    <div class="h-title">PITI · DTI · <span>Amortization</span><br>All-in-one payment</div>
+    <div class="h-row">
+      <div class="h-box"><label>Home Price</label><div class="v">$450,000</div></div>
+      <div class="h-box"><label>Down Pmt.</label><div class="v">20%</div></div>
+      <div class="h-box"><label>Term</label><div class="v">30 yr</div></div>
+    </div>
+    <button class="h-btn">🦅 Calculate USA Mortgage (PITI)</button>
+  </div>
+
+  <!-- Federal Reserve Banner -->
+  <div class="sec">Federal Reserve <span class="more">FOMC Calendar →</span></div>
+  <div class="fed-banner">
+    <div class="fb-icon">🏛️</div>
+    <div>
+      <div class="fb-lbl">Fed Funds Rate · FOMC</div>
+      <div class="fb-val">5.25 – 5.50%</div>
+      <div class="fb-sub">Next FOMC: Jul 30 · Rate cut watch: 65%</div>
+    </div>
+    <div class="fb-btn">FRED Live</div>
+  </div>
+
+  <!-- Market Snapshot -->
+  <div class="sec">Market Snapshot <span class="more">Full Dashboard →</span></div>
+  <div class="ticker">
+    <div class="ticker-title">US Financial Indices <span>Live</span></div>
+    <div class="tick-grid">
+      <div class="tick-item"><div class="tick-name">S&P 500</div><div class="tick-val">5,304</div><div class="tick-chg up">+0.74%</div></div>
+      <div class="tick-item"><div class="tick-name">Dow Jones</div><div class="tick-val">38,886</div><div class="tick-chg up">+0.51%</div></div>
+      <div class="tick-item"><div class="tick-name">NASDAQ</div><div class="tick-val">16,742</div><div class="tick-chg dn">-0.21%</div></div>
+      <div class="tick-item"><div class="tick-name">10-Yr T-Bill</div><div class="tick-val">4.47%</div><div class="tick-chg dn">-0.03</div></div>
+      <div class="tick-item"><div class="tick-name">30-Yr T-Bond</div><div class="tick-val">4.61%</div><div class="tick-chg up">+0.02</div></div>
+      <div class="tick-item"><div class="tick-name">VIX</div><div class="tick-val">13.4</div><div class="tick-chg dn">-0.80</div></div>
+    </div>
+  </div>
+
+  <!-- Mortgage Rate Tracker -->
+  <div class="sec">Live Mortgage Rates <span class="more">Rate Trends →</span></div>
+  <div class="hscroll">
+    <div class="mrc"><span class="mrc-icon">🏠</span><div class="mrc-lbl">30-Yr Fixed</div><div class="mrc-val">6.82%</div><div class="mrc-sub">Freddie Mac</div><div class="mrc-chg up">↑ +0.05</div></div>
+    <div class="mrc"><span class="mrc-icon">🏡</span><div class="mrc-lbl">15-Yr Fixed</div><div class="mrc-val">6.11%</div><div class="mrc-sub">National Avg</div><div class="mrc-chg dn">↓ -0.02</div></div>
+    <div class="mrc"><span class="mrc-icon">📊</span><div class="mrc-lbl">5/1 ARM</div><div class="mrc-val">6.05%</div><div class="mrc-sub">Adjustable</div><div class="mrc-chg dn">↓ -0.03</div></div>
+    <div class="mrc"><span class="mrc-icon">🏢</span><div class="mrc-lbl">Jumbo 30yr</div><div class="mrc-val">7.04%</div><div class="mrc-sub">&gt;$766K</div><div class="mrc-chg up">↑ +0.08</div></div>
+    <div class="mrc"><span class="mrc-icon">🎖️</span><div class="mrc-lbl">VA Loan</div><div class="mrc-val">6.25%</div><div class="mrc-sub">Veterans</div><div class="mrc-chg up">↑ +0.01</div></div>
+    <div class="mrc"><span class="mrc-icon">🌾</span><div class="mrc-lbl">USDA Rural</div><div class="mrc-val">6.35%</div><div class="mrc-sub">Rural areas</div><div class="mrc-chg dn">↓ -0.01</div></div>
+  </div>
+
+  <!-- Core Mortgage Tools -->
+  <div class="sec">Core Mortgage Tools <span class="more">All →</span></div>
+  <div class="g2">
+    <div class="tc nv"><div class="ti">📊</div><div class="tn">PITI Calculator</div><div class="td">Principal+Interest+Tax+Ins</div><div class="bge bge-b">Full Breakdown</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🧮</div><div class="tn">Mortgage Calc</div><div class="td">Monthly payment estimate</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">📈</div><div class="tn">DTI Calculator</div><div class="td">Debt-to-income ratio</div><div class="bge bge-r">28/36 Rule</div><div class="ta">›</div></div>
+    <div class="tc rd"><div class="ti">📅</div><div class="tn">Amortization</div><div class="td">Full payment schedule</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">💰</div><div class="tn">Affordability</div><div class="td">How much house?</div><div class="ta">›</div></div>
+    <div class="tc gd"><div class="ti">🔑</div><div class="tn">Down Payment</div><div class="td">3% · 5% · 10% · 20%</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🔄</div><div class="tn">Refinance Calc</div><div class="td">Break-even & savings</div><div class="ta">›</div></div>
+    <div class="tc tl"><div class="ti">🏎️</div><div class="tn">Auto Loan</div><div class="td">Vehicle financing</div><div class="ta">›</div></div>
+  </div>
+
+  <!-- Loan Program Tools -->
+  <div class="sec">Loan Programs <span class="more">Compare →</span></div>
+  <div class="g2">
+    <div class="tc"><div class="ti">🏦</div><div class="tn">FHA Loan Calc</div><div class="td">3.5% down · MIP included</div><div class="bge bge-g">580+ Score</div><div class="ta">›</div></div>
+    <div class="tc nv"><div class="ti">🎖️</div><div class="tn">VA Loan Calc</div><div class="td">0% down · Veterans only</div><div class="bge bge-b">No PMI</div><div class="ta">›</div></div>
+    <div class="tc grn"><div class="ti">🌾</div><div class="tn">USDA Loan</div><div class="td">Rural 0% down payment</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🏢</div><div class="tn">Jumbo Loan</div><div class="td">&gt;$766,550 conforming</div><div class="ta">›</div></div>
+    <div class="tc rd"><div class="ti">🏗️</div><div class="tn">Construction Loan</div><div class="td">Build new home</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🔁</div><div class="tn">ARM Calculator</div><div class="td">5/1 · 7/1 · 10/1 ARM</div><div class="ta">›</div></div>
+  </div>
+
+  <!-- Insurance & Tax Tools -->
+  <div class="sec">Insurance & Tax <span class="more">All →</span></div>
+  <div class="g2">
+    <div class="tc"><div class="ti">🛡️</div><div class="tn">PMI Calculator</div><div class="td">Private mortgage insurance</div><div class="bge bge-r">&lt;20% down</div><div class="ta">›</div></div>
+    <div class="tc gd"><div class="ti">🔥</div><div class="tn">Homeowner Ins.</div><div class="td">HO-3 · coverage estimate</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🌊</div><div class="tn">Flood Insurance</div><div class="td">NFIP · FEMA flood zones</div><div class="ta">›</div></div>
+    <div class="tc sl"><div class="ti">🏛️</div><div class="tn">Property Tax Calc</div><div class="td">By state & county rate</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">📋</div><div class="tn">Closing Costs</div><div class="td">2–5% estimate by state</div><div class="ta">›</div></div>
+    <div class="tc vt"><div class="ti">📝</div><div class="tn">HOA Fee Impact</div><div class="td">Effect on DTI & payment</div><div class="ta">›</div></div>
+  </div>
+
+  <!-- State Tax -->
+  <div class="sec">State-by-State Tools <span class="more">All 50 States →</span></div>
+  <div class="tax-banner">
+    <div class="tb-icon">🗺️</div>
+    <div><div class="tb-title">Property Tax by State</div><div class="tb-sub">NJ 2.23% · IL 2.08% · TX 1.60% · CA 0.76% · HI 0.29%</div></div>
+    <div class="tb-btn">All States</div>
+  </div>
+  <div class="g3">
+    <div class="tc"><div class="ti">🌴</div><div class="tn">California</div><div class="td">Prop 13 · 0.76%</div><div class="ta">›</div></div>
+    <div class="tc nv"><div class="ti">🤠</div><div class="tn">Texas</div><div class="td">No income tax · 1.60%</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🌇</div><div class="tn">New York</div><div class="td">STAR program · 1.72%</div><div class="ta">›</div></div>
+    <div class="tc rd"><div class="ti">🌞</div><div class="tn">Florida</div><div class="td">Homestead · 0.83%</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🌆</div><div class="tn">Illinois</div><div class="td">High rate · 2.08%</div><div class="ta">›</div></div>
+    <div class="tc gd"><div class="ti">🍊</div><div class="tn">All States</div><div class="td">50 state calculator</div><div class="ta">›</div></div>
+  </div>
+
+  <!-- Personal Finance Tools -->
+  <div class="sec">Personal Finance <span class="more">All →</span></div>
+  <div class="g2">
+    <div class="tc nv"><div class="ti">💳</div><div class="tn">Credit Score Impact</div><div class="td">FICO · score to rate</div><div class="bge bge-b">620–850</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🏦</div><div class="tn">HELOC Calculator</div><div class="td">Home equity line</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">💵</div><div class="tn">Home Equity Loan</div><div class="td">Lump sum borrowing</div><div class="ta">›</div></div>
+    <div class="tc tl"><div class="ti">📉</div><div class="tn">Debt Payoff Planner</div><div class="td">Avalanche vs Snowball</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🎓</div><div class="tn">Student Loan DTI</div><div class="td">Impact on mortgage</div><div class="ta">›</div></div>
+    <div class="tc rd"><div class="ti">🧾</div><div class="tn">Tax Deduction Calc</div><div class="td">Mortgage interest deduction</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">📦</div><div class="tn">Moving Cost Calc</div><div class="td">Budget your relocation</div><div class="ta">›</div></div>
+    <div class="tc vt"><div class="ti">🤝</div><div class="tn">Rent vs Buy</div><div class="td">True cost comparison</div><div class="ta">›</div></div>
+  </div>
+
+  <!-- Investment Tools -->
+  <div class="sec">Real Estate Investment <span class="more">All →</span></div>
+  <div class="g2">
+    <div class="tc grn"><div class="ti">🏘️</div><div class="tn">Rental Yield Calc</div><div class="td">Cap rate & cash flow</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">📊</div><div class="tn">Cash-on-Cash Return</div><div class="td">Investment analysis</div><div class="ta">›</div></div>
+    <div class="tc sl"><div class="ti">🔨</div><div class="tn">Fix & Flip Calc</div><div class="td">ARV · rehab · profit</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🏙️</div><div class="tn">1031 Exchange</div><div class="td">Tax-deferred swap</div><div class="ta">›</div></div>
+  </div>
+
+  <!-- Retirement / Government Programs -->
+  <div class="sec">Gov. Programs & Retirement <span class="more">All →</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🏠</div><div><div class="in">First-Time Homebuyer Programs</div><div class="is">HUD · State DPA · $25K grant programs</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🪖</div><div><div class="in">VA Benefits & Home Loans</div><div class="is">Entitlement · COE · funding fee waiver</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📈</div><div><div class="in">401(k) / IRA Home Withdrawal</div><div class="is">10% penalty exemptions · first-time buyer</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🌾</div><div><div class="in">USDA Rural Development</div><div class="is">502 Direct · 502 Guaranteed loan</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏛️</div><div><div class="in">FHA 203(k) Rehab Loan</div><div class="is">Purchase + renovation in one loan</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🤖</div><div><div class="in">USA AI Mortgage Advisor</div><div class="is">FRED rates · FHA/VA/USDA guidance</div></div><div class="ich">›</div></div>
+  </div>
+
+  <!-- Housing Market Data -->
+  <div class="sec">Housing Market Data <span class="more">Dashboard →</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📉</div><div><div class="in">FRED Rate History</div><div class="is">Federal Reserve Economic Data live</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏡</div><div><div class="in">US Home Price Index (HPI)</div><div class="is">S&P/Case-Shiller · FHFA index</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📊</div><div><div class="in">Median Home Prices by State</div><div class="is">NAR · Zillow · Redfin data</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Top US Mortgage Lenders</div><div class="is">Rocket · UWM · Chase · Wells Fargo</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📋</div><div><div class="in">Mortgage Prequalification Guide</div><div class="is">Pre-qual vs Pre-approval steps</div></div><div class="ich">›</div></div>
+  </div>
+
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+</body>
+</html>

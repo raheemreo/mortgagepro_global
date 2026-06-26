@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europe – Notary Fee Calculator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}.rs-val.red{color:#FF8A9A;}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;}
+
+.country-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:14px;}
+.country-row::-webkit-scrollbar{display:none;}
+.cpill{flex-shrink:0;padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid transparent;}
+.cpill.active{background:#003399;color:#FFCC00;border-color:#003399;}
+.cpill:not(.active){background:#fff;color:#1A0040;border-color:rgba(0,51,153,0.15);}
+
+.calc-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.input-group label{font-size:10px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;}
+.input-group input,.input-group select{background:#F7F3FF;border:1.5px solid rgba(0,51,153,0.12);border-radius:10px;padding:9px 11px;font-size:14px;font-weight:700;color:#1A0040;outline:none;width:100%;}
+.input-group input:focus,.input-group select:focus{border-color:#003399;}
+.input-group.full{grid-column:span 2;}
+
+/* PRIMARY CALCULATE BUTTON */
+.calc-btn-primary{width:100%;background:linear-gradient(135deg,#FFCC00,#F59E0B);border:none;border-radius:16px;padding:16px;font-size:15px;font-weight:900;color:#1A0040;cursor:pointer;box-shadow:0 6px 20px rgba(255,204,0,0.4);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform 0.15s;margin-top:4px;}
+.calc-btn-primary:active{transform:scale(0.97);}
+
+/* TOTAL BANNER */
+.total-banner{background:linear-gradient(145deg,#003399,#1A0040);border-radius:20px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden;}
+.total-banner::before{content:'📜';position:absolute;right:12px;top:12px;font-size:55px;opacity:0.1;}
+.tb-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.tb-amount{font-size:32px;font-weight:800;color:#FFCC00;font-family:Georgia,serif;margin:4px 0;}
+.tb-sub{font-size:11px;color:rgba(255,255,255,0.6);}
+.tb-row{display:flex;gap:10px;margin-top:13px;}
+.tb-box{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px;text-align:center;}
+.tb-box-lbl{font-size:9px;color:rgba(255,255,255,0.5);margin-bottom:2px;}
+.tb-box-val{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+/* Save inside banner */
+.tb-save{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.12);}
+.tb-save-btn{flex:1;background:rgba(255,204,0,0.18);border:1.5px solid rgba(255,204,0,0.4);border-radius:11px;padding:9px;font-size:12px;font-weight:800;color:#FFCC00;cursor:pointer;text-align:center;}
+
+.breakdown-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.donut-legend{flex:1;}
+.dleg-item{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+.dleg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.dleg-lbl{font-size:11px;color:#1A0040;font-weight:600;flex:1;}
+.dleg-val{font-size:11px;color:#003399;font-weight:800;font-family:Georgia,serif;}
+.dleg-pct{font-size:9px;color:#94a3b8;margin-left:3px;}
+
+/* STACKED BAR - better visual for fee breakdown */
+.stacked-bar{height:16px;border-radius:8px;overflow:hidden;display:flex;margin-bottom:14px;}
+.stacked-seg{height:100%;transition:width 0.6s ease;}
+
+/* BREAKDOWN ROWS */
+.br-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(0,51,153,0.06);}
+.br-row:last-child{border-bottom:none;}
+.br-left{display:flex;align-items:center;gap:10px;}
+.br-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.br-name{font-size:12px;font-weight:700;color:#1A0040;}
+.br-sub{font-size:10px;color:#6B21A8;}
+.br-right{text-align:right;}
+.br-amt{font-size:14px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+.br-pct{font-size:10px;color:#94a3b8;}
+.br-total-row{background:#F7F3FF;border-radius:12px;padding:11px 12px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.br-total-lbl{font-size:13px;font-weight:800;color:#1A0040;}
+.br-total-val{font-size:16px;font-weight:800;color:#003399;font-family:Georgia,serif;}
+
+/* COUNTRY NOTE */
+.note-card{background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #818CF8;border-radius:15px;padding:13px 15px;margin-bottom:14px;}
+.note-title{font-size:12px;font-weight:800;color:#1e1b4b;font-family:Georgia,serif;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.note-item{display:flex;gap:8px;margin-bottom:5px;align-items:flex-start;}
+.note-item .ni-icon{font-size:12px;margin-top:1px;flex-shrink:0;}
+.note-item .ni-text{font-size:11px;color:#4338ca;line-height:1.4;}
+
+/* COUNTRY COMPARISON */
+.comparison-card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 4px 20px rgba(26,0,64,0.09);border:1px solid rgba(0,51,153,0.08);margin-bottom:14px;}
+.cmp-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cmp-flag{font-size:16px;width:22px;flex-shrink:0;}
+.cmp-name{font-size:11px;font-weight:700;color:#1A0040;width:80px;flex-shrink:0;}
+.cmp-track{flex:1;height:9px;background:#E0E7FF;border-radius:5px;overflow:hidden;}
+.cmp-fill{height:100%;border-radius:5px;transition:width 0.6s ease;}
+.cmp-pct{font-size:11px;font-weight:800;color:#003399;font-family:Georgia,serif;width:36px;text-align:right;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#003399;color:#FFCC00;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:999;transition:transform 0.3s;box-shadow:0 4px 20px rgba(0,51,153,0.3);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp 0.4s ease both;}.anim-2{animation:fadeUp 0.4s 0.08s ease both;}.anim-3{animation:fadeUp 0.4s 0.16s ease both;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">📜</span><div class="hdr-title">Notary Fee Calc</div><div class="hdr-sub">DE · FR · ES · IT · NL · PT</div></div>
+    <div class="back-btn" style="font-size:13px;" onclick="saveCalc()">💾</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">🇩🇪 Germany</div><div class="rs-val grn">~1.5%</div><div class="rs-note">Notary</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇫🇷 France</div><div class="rs-val">~7.0%</div><div class="rs-note">Frais</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇪🇸 Spain</div><div class="rs-val red">~0.5%</div><div class="rs-note">Notaría</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇮🇹 Italy</div><div class="rs-val gold">~1.0%</div><div class="rs-note">Notaio</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Select Country</div>
+  <div class="country-row anim">
+    <div class="cpill active" onclick="selectCountry('DE',this)">🇩🇪 Germany</div>
+    <div class="cpill" onclick="selectCountry('FR',this)">🇫🇷 France</div>
+    <div class="cpill" onclick="selectCountry('ES',this)">🇪🇸 Spain</div>
+    <div class="cpill" onclick="selectCountry('IT',this)">🇮🇹 Italy</div>
+    <div class="cpill" onclick="selectCountry('NL',this)">🇳🇱 Netherlands</div>
+    <div class="cpill" onclick="selectCountry('PT',this)">🇵🇹 Portugal</div>
+  </div>
+
+  <div class="calc-card anim-2">
+    <div class="input-row">
+      <div class="input-group full">
+        <label>Property Purchase Price (€)</label>
+        <input type="number" id="propPrice" value="350000" step="10000">
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Buyer Type</label>
+        <select id="buyerType">
+          <option value="resident">EU Resident</option>
+          <option value="nonresident">Non-Resident</option>
+          <option value="firsttime">First-Time Buyer</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Property Type</label>
+        <select id="propType">
+          <option value="new">New Build</option>
+          <option value="resale" selected>Resale</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- PRIMARY CALCULATE BUTTON -->
+    <button class="calc-btn-primary" onclick="calculate()">
+      <span style="font-size:18px">📜</span> Calculate Closing Costs
+    </button>
+  </div>
+
+  <div id="results" style="display:none">
+    <!-- TOTAL BANNER -->
+    <div class="total-banner anim-3">
+      <div class="tb-lbl">Total Closing Costs</div>
+      <div class="tb-amount" id="totalAmt">€28,470</div>
+      <div class="tb-sub" id="totalPct">8.1% of purchase price · Germany</div>
+      <div class="tb-row">
+        <div class="tb-box"><div class="tb-box-lbl">Purchase Price</div><div class="tb-box-val" id="tbPrice">€350,000</div></div>
+        <div class="tb-box"><div class="tb-box-lbl">Total Outlay</div><div class="tb-box-val" id="tbTotal">€378,470</div></div>
+        <div class="tb-box"><div class="tb-box-lbl">Cash (20% dep)</div><div class="tb-box-val" id="tbCash">€98,470</div></div>
+      </div>
+      <!-- Save inline -->
+      <div class="tb-save">
+        <div class="tb-save-btn" onclick="saveCalc()">💾 Save Calculation</div>
+        <div class="tb-save-btn" onclick="shareResult()" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff;">📤 Share</div>
+      </div>
+    </div>
+
+    <!-- BREAKDOWN with DONUT + STACKED BAR -->
+    <div class="sec-lbl">Cost Breakdown</div>
+    <div class="breakdown-card">
+      <!-- Stacked bar visual -->
+      <div id="stackedBar" class="stacked-bar" style="margin-bottom:12px;"></div>
+
+      <div class="donut-wrap">
+        <svg width="110" height="110" viewBox="0 0 110 110" id="donutChart"></svg>
+        <div class="donut-legend" id="donutLegend"></div>
+      </div>
+
+      <div id="brRows"></div>
+      <div class="br-total-row">
+        <span class="br-total-lbl">Total Closing Costs</span>
+        <span class="br-total-val" id="brTotal">€28,470</span>
+      </div>
+    </div>
+
+    <!-- COUNTRY COMPARISON -->
+    <div class="sec-lbl">Country Cost Comparison</div>
+    <div class="comparison-card">
+      <div style="font-size:12px;font-weight:800;color:#1A0040;margin-bottom:10px;">Typical Total Closing Costs (%)</div>
+      <div id="comparisonChart"></div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="note-card anim" id="noteCard">
+      <div class="note-title">🏛️ <span id="noteTitle">Germany – Important Notes</span></div>
+      <div id="noteItems"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Calculation saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const COUNTRY_DATA = {
+  DE:{name:'Germany',flag:'🇩🇪',totalTypical:10.57,
+    fees:[
+      {name:'Grunderwerbsteuer',sub:'Property Transfer Tax',icon:'🏛️',col:'#003399',pct:{resident:5.0,nonresident:5.0,firsttime:5.0},newBld:true},
+      {name:'Notarkosten',sub:'Notary Fees (GNotKG)',icon:'📜',col:'#6D28D9',pct:{resident:1.5,nonresident:1.5,firsttime:1.5},newBld:true},
+      {name:'Grundbucheintrag',sub:'Land Registry Fee',icon:'📗',col:'#0F766E',pct:{resident:0.5,nonresident:0.5,firsttime:0.5},newBld:true},
+      {name:'Maklergebühr',sub:'Estate Agent (optional)',icon:'🏠',col:'#B45309',pct:{resident:3.57,nonresident:3.57,firsttime:3.57},newBld:false},
+    ],
+    notes:['Transfer tax varies by state: 3.5% (Bavaria) to 6.5% (Saarland). National average used is 5%.','Notary fees are statutory (GNotKG) and apply to both buyer and seller.','Land registry fee is ~0.5% for mortgage registration.','Agent commission is typically split 50/50 between buyer and seller since 2020.']},
+  FR:{name:'France',flag:'🇫🇷',totalTypical:8.0,
+    fees:[
+      {name:'Droits de mutation',sub:'Transfer Tax (resale)',icon:'🏛️',col:'#003399',pct:{resident:5.80,nonresident:5.80,firsttime:5.80},newBld:false},
+      {name:'Frais de notaire',sub:'Notary Professional Fees',icon:'📜',col:'#6D28D9',pct:{resident:0.8,nonresident:0.8,firsttime:0.8},newBld:true},
+      {name:'Emoluments & débours',sub:'Disbursements & Admin',icon:'📗',col:'#0F766E',pct:{resident:0.4,nonresident:0.4,firsttime:0.4},newBld:true},
+      {name:'Honoraires agence',sub:'Estate Agent (avg)',icon:'🏠',col:'#B45309',pct:{resident:4.5,nonresident:4.5,firsttime:4.5},newBld:false},
+    ],
+    notes:['For new builds (VEFA), transfer tax is only ~0.7% instead of 5.8%.','Notary fees in France include both taxes and professional fees — total ~7–8% for resale.','New builds attract reduced fees (~2–3%) as VAT (20%) is paid at source.','First-time buyer discounts may apply in certain municipalities.']},
+  ES:{name:'Spain',flag:'🇪🇸',totalTypical:9.5,
+    fees:[
+      {name:'ITP / AJD',sub:'Transfer Tax (resale)',icon:'🏛️',col:'#003399',pct:{resident:8.0,nonresident:8.0,firsttime:6.0},newBld:false},
+      {name:'IVA + AJD',sub:'VAT + Stamp Duty (new)',icon:'🏛️',col:'#003399',pct:{resident:0,nonresident:0,firsttime:0},newBld:true},
+      {name:'Gastos de notaría',sub:'Notary Fees',icon:'📜',col:'#6D28D9',pct:{resident:0.3,nonresident:0.3,firsttime:0.3},newBld:true},
+      {name:'Registro de Propiedad',sub:'Land Registry',icon:'📗',col:'#0F766E',pct:{resident:0.2,nonresident:0.2,firsttime:0.2},newBld:true},
+      {name:'Gestión',sub:'Administration Fees',icon:'🗂️',col:'#B45309',pct:{resident:0.15,nonresident:0.15,firsttime:0.15},newBld:true},
+    ],
+    notes:['ITP (resale) varies by region: 6–10%. Most regions average 8%; Madrid 6% for first-time buyers.','New builds pay 10% VAT + 1.5% AJD (Stamp Duty) instead of ITP.','Non-residents face the same taxes but should budget extra for fiscal representative costs.','Spanish mortgage lender now pays the AJD since 2019 (Ley Hipotecaria).']},
+  IT:{name:'Italy',flag:'🇮🇹',totalTypical:14.0,
+    fees:[
+      {name:'Imposta di Registro',sub:'Registration Tax (resale)',icon:'🏛️',col:'#003399',pct:{resident:2.0,nonresident:9.0,firsttime:2.0},newBld:false},
+      {name:'Onorario Notaio',sub:'Notary Professional Fees',icon:'📜',col:'#6D28D9',pct:{resident:1.0,nonresident:1.0,firsttime:1.0},newBld:true},
+      {name:'Imposta Ipotecaria',sub:'Mortgage Tax',icon:'🏦',col:'#0F766E',pct:{resident:0.25,nonresident:0.25,firsttime:0.25},newBld:true},
+      {name:'Provvigione agente',sub:'Estate Agent',icon:'🏠',col:'#B45309',pct:{resident:3.0,nonresident:3.0,firsttime:3.0},newBld:false},
+    ],
+    notes:['Italian residents buying primary residence pay just 2% registration tax; non-residents pay 9%.','Mortgage tax (imposta ipotecaria) is 0.25% of loan for primary residence; 2% otherwise.','Notary fees in Italy are regulated (DM 140/2012) on a sliding scale.','First home (prima casa) concessions reduce most taxes significantly for residents.']},
+  NL:{name:'Netherlands',flag:'🇳🇱',totalTypical:3.0,
+    fees:[
+      {name:'Overdrachtsbelasting',sub:'Transfer Tax',icon:'🏛️',col:'#003399',pct:{resident:2.0,nonresident:2.0,firsttime:0.0},newBld:false},
+      {name:'Notariskosten',sub:'Notary Fees (regulated)',icon:'📜',col:'#6D28D9',pct:{resident:0.4,nonresident:0.4,firsttime:0.4},newBld:true},
+      {name:'Kadaster',sub:'Land Registry',icon:'📗',col:'#0F766E',pct:{resident:0.1,nonresident:0.1,firsttime:0.1},newBld:true},
+      {name:'Hypotheekadvies',sub:'Mortgage Advice',icon:'💬',col:'#B45309',pct:{resident:0.5,nonresident:0.5,firsttime:0.5},newBld:true},
+    ],
+    notes:['First-time buyers under 35 pay 0% transfer tax (vrijstelling) as of 2021.','Repeat buyers pay 2% transfer tax. Investors/non-owner-occupiers pay 10.4% (2024).','NHG is available for properties under €435,000.','The Netherlands allows 100% LTV for owner-occupiers.']},
+  PT:{name:'Portugal',flag:'🇵🇹',totalTypical:10.5,
+    fees:[
+      {name:'IMT',sub:'Municipal Transfer Tax',icon:'🏛️',col:'#003399',pct:{resident:3.0,nonresident:6.5,firsttime:1.5},newBld:true},
+      {name:'Imposto do Selo',sub:'Stamp Duty (0.8%)',icon:'🏛️',col:'#1e3a8a',pct:{resident:0.8,nonresident:0.8,firsttime:0.8},newBld:true},
+      {name:'Escritura',sub:'Notary / Deed Fees',icon:'📜',col:'#6D28D9',pct:{resident:0.5,nonresident:0.5,firsttime:0.5},newBld:true},
+      {name:'Registo',sub:'Land Registry',icon:'📗',col:'#0F766E',pct:{resident:0.3,nonresident:0.3,firsttime:0.3},newBld:true},
+      {name:'Mediação imobiliária',sub:'Estate Agent',icon:'🏠',col:'#B45309',pct:{resident:3.0,nonresident:5.0,firsttime:3.0},newBld:false},
+    ],
+    notes:['IMT rate depends on purchase price and buyer type. Rates range 0–6.5% on a sliding scale.','NHR (Non-Habitual Resident) status offers 10% flat tax for 10 years for qualifying buyers.','Stamp duty applies on both the property price (0.8%) and mortgage amount (0.6%).','The Golden Visa program uses real estate investment thresholds (€280,000+).']}
+};
+
+const COMPARISON_DATA=[
+  {flag:'🇩🇪',name:'Germany',pct:10.6,col:'#003399'},
+  {flag:'🇫🇷',name:'France',pct:8.0,col:'#1e3a8a'},
+  {flag:'🇪🇸',name:'Spain',pct:9.5,col:'#DC2626'},
+  {flag:'🇮🇹',name:'Italy',pct:14.0,col:'#166534'},
+  {flag:'🇳🇱',name:'Netherlands',pct:3.0,col:'#9A3412'},
+  {flag:'🇵🇹',name:'Portugal',pct:10.5,col:'#4338CA'},
+];
+
+let selectedCountry='DE';
+function selectCountry(code,el){
+  selectedCountry=code;
+  document.querySelectorAll('.cpill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  if(document.getElementById('results').style.display!=='none') calculate();
+}
+function fmt(n){return new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);}
+
+function calculate(){
+  const price=parseFloat(document.getElementById('propPrice').value)||0;
+  if(price<=0){showToast('⚠️ Enter a valid price');return;}
+  const buyer=document.getElementById('buyerType').value;
+  const isNew=document.getElementById('propType').value==='new';
+  const cd=COUNTRY_DATA[selectedCountry];
+
+  let items=[]; let total=0;
+  cd.fees.forEach(f=>{
+    const skip=(!isNew && f.name==='IVA + AJD');
+    const onlyNew=(f.name==='Grunderwerbsteuer'||f.name==='Droits de mutation'||f.name==='ITP / AJD')&&isNew&&f.newBld===false;
+    const newAlt=(f.name==='IVA + AJD')&&!isNew;
+    if(skip||onlyNew||newAlt) return;
+    const pct=f.pct[buyer]||f.pct.resident;
+    if(pct===0) return;
+    const amt=price*pct/100;
+    total+=amt;
+    items.push({...f,pct,amt});
+  });
+  if(selectedCountry==='ES'&&isNew){
+    items=items.filter(i=>i.name!=='ITP / AJD');
+    items.unshift({name:'IVA',sub:'VAT 10% (new build)',icon:'🏛️',col:'#003399',amt:price*0.10,pct:10});
+    items.push({name:'AJD',sub:'Stamp Duty 1.5%',icon:'🏛️',col:'#1e3a8a',amt:price*0.015,pct:1.5});
+    total=items.reduce((s,i)=>s+i.amt,0);
+  }
+
+  const deposit=price*0.20;
+  const totalOutlay=price+total;
+  const cashNeeded=deposit+total;
+
+  document.getElementById('totalAmt').textContent=fmt(total);
+  document.getElementById('totalPct').textContent=((total/price)*100).toFixed(1)+'% of purchase price · '+cd.name;
+  document.getElementById('tbPrice').textContent=fmt(price);
+  document.getElementById('tbTotal').textContent=fmt(totalOutlay);
+  document.getElementById('tbCash').textContent=fmt(cashNeeded);
+  document.getElementById('brTotal').textContent=fmt(total);
+
+  // Stacked bar
+  const stackedBar=document.getElementById('stackedBar');
+  stackedBar.innerHTML=items.map(it=>`<div class="stacked-seg" style="width:${(it.amt/total*100).toFixed(1)}%;background:${it.col||'#94a3b8'}" title="${it.name}: ${fmt(it.amt)}"></div>`).join('');
+
+  // Donut
+  drawDonut(items,total);
+
+  // Breakdown rows
+  document.getElementById('brRows').innerHTML=items.map(it=>`
+    <div class="br-row">
+      <div class="br-left">
+        <div class="br-icon" style="background:${it.col}20">${it.icon}</div>
+        <div><div class="br-name">${it.name}</div><div class="br-sub">${it.sub}</div></div>
+      </div>
+      <div class="br-right">
+        <div class="br-amt">${fmt(it.amt)}</div>
+        <div class="br-pct">${it.pct.toFixed(1)}% · ${(it.amt/total*100).toFixed(0)}% of fees</div>
+      </div>
+    </div>`).join('');
+
+  // Country comparison bars
+  const maxPct=Math.max(...COMPARISON_DATA.map(d=>d.pct));
+  document.getElementById('comparisonChart').innerHTML=COMPARISON_DATA.map(d=>{
+    const isActive=d.name===cd.name;
+    return `<div class="cmp-row">
+      <div class="cmp-flag">${d.flag}</div>
+      <div class="cmp-name" style="${isActive?'font-weight:900;color:#003399':''}">${d.name}</div>
+      <div class="cmp-track"><div class="cmp-fill" style="width:${(d.pct/maxPct*100).toFixed(1)}%;background:${isActive?'#003399':d.col+'80'}"></div></div>
+      <div class="cmp-pct" style="${isActive?'color:#003399;font-weight:900':''}">${d.pct}%</div>
+    </div>`;
+  }).join('');
+
+  // Notes
+  document.getElementById('noteTitle').textContent=cd.flag+' '+cd.name+' – Important Notes';
+  document.getElementById('noteItems').innerHTML=cd.notes.map(n=>`<div class="note-item"><span class="ni-icon">ℹ️</span><span class="ni-text">${n}</span></div>`).join('');
+
+  document.getElementById('results').style.display='block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function drawDonut(items,total){
+  const svg=document.getElementById('donutChart');
+  const cx=55,cy=55,r=42,inner=26;
+  let startAngle=-Math.PI/2;
+  let paths='';
+  items.forEach((item)=>{
+    const frac=item.amt/total;
+    if(frac<0.001) return;
+    const angle=frac*2*Math.PI;
+    const x1=cx+r*Math.cos(startAngle);
+    const y1=cy+r*Math.sin(startAngle);
+    const x2=cx+r*Math.cos(startAngle+angle);
+    const y2=cy+r*Math.sin(startAngle+angle);
+    const xi1=cx+inner*Math.cos(startAngle);
+    const yi1=cy+inner*Math.sin(startAngle);
+    const xi2=cx+inner*Math.cos(startAngle+angle);
+    const yi2=cy+inner*Math.sin(startAngle+angle);
+    const large=angle>Math.PI?1:0;
+    paths+=`<path d="M${xi1} ${yi1} L${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2} L${xi2} ${yi2} A${inner} ${inner} 0 ${large} 0 ${xi1} ${yi1} Z" fill="${item.col||'#94a3b8'}" opacity="0.88"/>`;
+    startAngle+=angle;
+  });
+  const pctTotal=((total/parseFloat(document.getElementById('propPrice').value))*100).toFixed(1);
+  svg.innerHTML=`${paths}
+    <circle cx="${cx}" cy="${cy}" r="${inner}" fill="#fff"/>
+    <text x="${cx}" y="${cy-5}" text-anchor="middle" font-size="9" fill="#6B21A8" font-weight="700">Total</text>
+    <text x="${cx}" y="${cy+10}" text-anchor="middle" font-size="12" fill="#003399" font-weight="900">${pctTotal}%</text>`;
+
+  document.getElementById('donutLegend').innerHTML=items.map(it=>`
+    <div class="dleg-item">
+      <div class="dleg-dot" style="background:${it.col||'#94a3b8'}"></div>
+      <span class="dleg-lbl">${it.name.length>13?it.name.substring(0,12)+'…':it.name}</span>
+      <span class="dleg-val">${fmt(it.amt)}<span class="dleg-pct">${(it.amt/total*100).toFixed(0)}%</span></span>
+    </div>`).join('');
+}
+
+function saveCalc(){
+  if(document.getElementById('results').style.display==='none'){showToast('⚠️ Run a calculation first');return;}
+  const data={saved:new Date().toISOString(),country:selectedCountry,price:document.getElementById('propPrice').value,total:document.getElementById('totalAmt').textContent};
+  const arr=JSON.parse(localStorage.getItem('eu_notary_saves')||'[]');
+  arr.push(data); localStorage.setItem('eu_notary_saves',JSON.stringify(arr));
+  showToast('✅ Calculation saved!');
+}
+function shareResult(){
+  const text=`Notary Fees ${selectedCountry}: ${document.getElementById('totalAmt').textContent} (${document.getElementById('totalPct').textContent.split('·')[0].trim()})`;
+  if(navigator.share) navigator.share({title:'EU Closing Costs',text});
+  else {navigator.clipboard.writeText(text).catch(()=>{}); showToast('📋 Copied!');}
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+</script>
+</body>
+</html>

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBI Monetary Policy – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-v.red{color:#FCA5A5;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .more{font-size:11px;font-weight:600;color:var(--saffron);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* RBI HERO */
+.rbi-hero{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:22px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:0;}
+.rbi-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,107,0,0.14);}
+.rbi-hero::after{content:'🏛️';position:absolute;right:14px;bottom:12px;font-size:52px;opacity:0.15;}
+.rh-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.rh-rate-row{display:flex;align-items:flex-end;gap:12px;margin:8px 0 16px;}
+.rh-rate-main{font-size:48px;font-weight:800;color:#fff;line-height:1;}
+.rh-rate-pct{font-size:16px;font-weight:800;color:var(--ochre-lt);line-height:1;margin-bottom:8px;}
+.rh-cut-badge{background:rgba(134,239,172,0.18);border:1px solid rgba(134,239,172,0.35);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:#86EFAC;font-family:'Trebuchet MS',sans-serif;margin-bottom:8px;display:inline-block;}
+.rh-boxes{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.rh-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:8px 9px;}
+.rh-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;font-family:'Trebuchet MS',sans-serif;}
+.rh-box .v{font-size:13px;font-weight:800;color:#fff;}
+.rh-box .v.grn{color:#86EFAC;}
+.live-pill{display:inline-flex;align-items:center;gap:4px;background:rgba(4,106,56,0.25);border:1px solid rgba(134,239,172,0.30);border-radius:20px;padding:3px 9px;font-size:9px;font-weight:700;color:#86EFAC;font-family:'Trebuchet MS',sans-serif;margin-bottom:6px;}
+.live-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:#86EFAC;animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* POLICY CORRIDOR */
+.corridor-card{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+.corridor-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+.corridor-bar{position:relative;margin:0 8px;margin-bottom:8px;}
+.cb-track{height:10px;border-radius:10px;background:linear-gradient(90deg,#86EFAC 0%,#FDE68A 45%,#FCA5A5 100%);position:relative;}
+.cb-labels{display:flex;justify-content:space-between;margin-top:4px;}
+.cb-lbl{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.rate-corridor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+.rc-item{background:rgba(255,107,0,0.04);border:1px solid rgba(255,107,0,0.10);border-radius:12px;padding:10px;text-align:center;}
+.rc-lbl{font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-family:'Trebuchet MS',sans-serif;}
+.rc-val{font-size:17px;font-weight:800;color:var(--navy);margin:3px 0;}
+.rc-sub{font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.rc-item.highlight{background:linear-gradient(140deg,var(--saffron),var(--saffron2));}
+.rc-item.highlight .rc-lbl{color:rgba(255,255,255,0.65);}
+.rc-item.highlight .rc-val{color:#fff;}
+.rc-item.highlight .rc-sub{color:rgba(255,255,255,0.60);}
+
+/* MPC DECISIONS CHART */
+.mpc-chart-card{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+.mpc-chart-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:6px;}
+.mpc-chart-sub{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:14px;}
+
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:100px;padding:0 4px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.bar-fill{width:100%;border-radius:5px 5px 0 0;transition:height .3s;}
+.bar-lbl{font-size:7.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;text-align:center;line-height:1.2;}
+.bar-val{font-size:9px;font-weight:800;color:var(--navy);}
+
+.bar-fill.cut{background:linear-gradient(180deg,#86EFAC,var(--green));}
+.bar-fill.hold{background:linear-gradient(180deg,#FDE68A,#D97706);}
+.bar-fill.hike{background:linear-gradient(180deg,#FCA5A5,#DC2626);}
+
+.chart-legend{display:flex;gap:12px;margin-top:10px;justify-content:center;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.legend-dot{width:10px;height:10px;border-radius:3px;}
+.legend-dot.cut{background:var(--green);}
+.legend-dot.hold{background:#D97706;}
+.legend-dot.hike{background:#DC2626;}
+
+/* MPC HISTORY TIMELINE */
+.mpc-timeline{display:flex;flex-direction:column;gap:0;}
+.mpc-item{display:flex;gap:12px;position:relative;padding-bottom:2px;}
+.mpc-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:44px;}
+.mpc-date-box{background:var(--navy);border-radius:8px;padding:4px 5px;text-align:center;width:44px;}
+.mpc-date-mon{font-size:8px;color:rgba(255,255,255,0.55);font-family:'Trebuchet MS',sans-serif;line-height:1;}
+.mpc-date-yr{font-size:11px;font-weight:800;color:#fff;line-height:1;}
+.mpc-line{width:2px;flex:1;margin:3px auto 0;min-height:16px;}
+.mpc-line.cut{background:var(--green);}
+.mpc-line.hold{background:#D97706;}
+.mpc-line.hike{background:#DC2626;}
+.mpc-body{flex:1;padding:0 0 14px;}
+.mpc-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:800;font-family:'Trebuchet MS',sans-serif;margin-bottom:4px;}
+.mpc-badge.cut{background:#ECFDF5;color:#065F46;}
+.mpc-badge.hold{background:#FFF7ED;color:#92400E;}
+.mpc-badge.hike{background:#FEF2F2;color:#B91C1C;}
+.mpc-rate{font-size:16px;font-weight:800;color:var(--navy);}
+.mpc-rate-change{font-size:9.5px;font-weight:700;font-family:'Trebuchet MS',sans-serif;margin-left:6px;}
+.mpc-rate-change.cut{color:var(--green);}
+.mpc-rate-change.hold{color:#D97706;}
+.mpc-rate-change.hike{color:#DC2626;}
+.mpc-detail{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;line-height:1.5;margin-top:3px;}
+.mpc-card-wrap{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+
+/* GDP / INFLATION PROJECTIONS */
+.proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px;}
+.proj-card{background:var(--card);border-radius:17px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);}
+.proj-card-title{font-size:11px;font-weight:800;color:var(--navy);margin-bottom:10px;}
+.proj-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,107,0,0.07);}
+.proj-row:last-child{border-bottom:none;}
+.proj-q{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.proj-v{font-size:11px;font-weight:800;}
+.proj-v.green{color:var(--green);}
+.proj-v.orange{color:var(--saffron);}
+
+/* IMPACT SECTION */
+.impact-card{background:var(--card);border-radius:17px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:11px;}
+.impact-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.impact-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,107,0,0.07);}
+.impact-row:last-child{border-bottom:none;padding-bottom:0;}
+.impact-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.impact-text .imp-title{font-size:11.5px;font-weight:800;color:var(--navy);}
+.impact-text .imp-sub{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+.impact-badge{margin-left:auto;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;font-family:'Trebuchet MS',sans-serif;flex-shrink:0;}
+.impact-badge.good{background:#ECFDF5;color:#065F46;}
+.impact-badge.warn{background:#FFF7ED;color:#C2410C;}
+.impact-badge.bad{background:#FEF2F2;color:#B91C1C;}
+
+/* NEXT MEETING COUNTDOWN */
+.next-meeting{background:linear-gradient(140deg,var(--green),var(--green2));border-radius:17px;padding:16px;box-shadow:var(--sh2);margin-bottom:11px;display:flex;align-items:center;gap:12px;}
+.nm-icon{font-size:32px;}
+.nm-title{font-size:11px;font-weight:800;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.nm-date{font-size:18px;font-weight:800;color:#fff;}
+.nm-sub{font-size:9.5px;color:rgba(255,255,255,0.55);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+.nm-days{margin-left:auto;background:rgba(255,255,255,0.15);border-radius:12px;padding:8px 12px;text-align:center;}
+.nm-days-val{font-size:22px;font-weight:800;color:#fff;}
+.nm-days-lbl{font-size:8px;color:rgba(255,255,255,0.60);font-family:'Trebuchet MS',sans-serif;}
+
+/* BNAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+.fu6{animation:fadeUp .38s ease both .29s;}
+.fu7{animation:fadeUp .38s ease both .34s;}
+.fu8{animation:fadeUp .38s ease both .39s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏛️</div>
+      <div class="hdr-title">RBI <span>Monetary Policy</span></div>
+      <div class="hdr-sub">Repo Rate · MPC Decisions · Inflation · GDP</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">Repo Rate</div>
+      <div class="rs-v saf">5.25%</div>
+      <div class="rs-n">Jun 2026</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">CPI Inflation</div>
+      <div class="rs-v grn">2.00%</div>
+      <div class="rs-n">FY26 Est.</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">GDP FY26</div>
+      <div class="rs-v grn">7.30%</div>
+      <div class="rs-n">RBI Est.</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Stance</div>
+      <div class="rs-v saf">Neutral</div>
+      <div class="rs-n">MPC</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- RBI HERO -->
+  <div class="sec fu1" style="margin-top:0;">Reserve Bank of India <span class="more">RBI.org.in →</span></div>
+  <div class="rbi-hero fu1">
+    <div class="live-pill">● Live · Jun 9, 2026</div>
+    <div class="rh-tag">🏛️ Monetary Policy Committee (MPC) · Current Rate</div>
+    <div class="rh-rate-row">
+      <div class="rh-rate-main">5.25</div>
+      <div>
+        <div class="rh-rate-pct">%</div>
+        <div class="rh-cut-badge">▼ -100 bps since Feb 2025</div>
+      </div>
+    </div>
+    <div class="rh-boxes">
+      <div class="rh-box">
+        <label>SDF Rate</label>
+        <div class="v">5.00%</div>
+      </div>
+      <div class="rh-box">
+        <label>MSF / Bank Rate</label>
+        <div class="v">5.50%</div>
+      </div>
+      <div class="rh-box">
+        <label>CRR</label>
+        <div class="v grn">3.00%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POLICY CORRIDOR -->
+  <div class="sec fu2">RBI Policy Rate Corridor</div>
+  <div class="corridor-card fu2">
+    <div class="corridor-title">Interest Rate Corridor – Jun 2026</div>
+    <div class="rate-corridor-grid">
+      <div class="rc-item">
+        <div class="rc-lbl">SDF (Floor)</div>
+        <div class="rc-val">5.00%</div>
+        <div class="rc-sub">Standing Deposit Facility</div>
+      </div>
+      <div class="rc-item highlight">
+        <div class="rc-lbl">Repo Rate</div>
+        <div class="rc-val">5.25%</div>
+        <div class="rc-sub">Policy Rate · Unchanged</div>
+      </div>
+      <div class="rc-item">
+        <div class="rc-lbl">MSF (Ceiling)</div>
+        <div class="rc-val">5.50%</div>
+        <div class="rc-sub">Marginal Standing Facility</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEXT MPC MEETING -->
+  <div class="next-meeting fu2">
+    <div class="nm-icon">📅</div>
+    <div>
+      <div class="nm-title">Next MPC Meeting</div>
+      <div class="nm-date">Aug 5–7, 2026</div>
+      <div class="nm-sub">Bi-monthly policy review · 6 MPC members</div>
+    </div>
+    <div class="nm-days">
+      <div class="nm-days-val" id="daysLeft">57</div>
+      <div class="nm-days-lbl">days away</div>
+    </div>
+  </div>
+
+  <!-- MPC RATE HISTORY BAR CHART -->
+  <div class="sec fu3">MPC Rate Decisions — 2025–26 <span class="more">Full History →</span></div>
+  <div class="mpc-chart-card fu3">
+    <div class="mpc-chart-title">Repo Rate Trend</div>
+    <div class="mpc-chart-sub">6 MPC Meetings · FY2025–26 · % per annum</div>
+    <div style="position:relative;padding-left:32px;">
+      <!-- Y-axis labels -->
+      <div style="position:absolute;left:0;top:0;height:100px;display:flex;flex-direction:column;justify-content:space-between;">
+        <span style="font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;">7%</span>
+        <span style="font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;">6%</span>
+        <span style="font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;">5%</span>
+      </div>
+      <svg viewBox="0 0 320 110" width="100%" height="110" style="overflow:visible;">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FF6B00" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#FF6B00" stop-opacity="0.0"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid -->
+        <line x1="0" y1="10" x2="320" y2="10" stroke="rgba(255,107,0,0.08)" stroke-width="1"/>
+        <line x1="0" y1="45" x2="320" y2="45" stroke="rgba(255,107,0,0.08)" stroke-width="1"/>
+        <line x1="0" y1="80" x2="320" y2="80" stroke="rgba(255,107,0,0.08)" stroke-width="1"/>
+        <!-- Area: rates 6.5 → 6.25 → 6.0 → 5.5 → 5.25 → 5.25 (scale: 5%=80, 6%=45, 7%=10) -->
+        <!-- x positions: 27, 80, 133, 186, 240, 293 -->
+        <!-- y: 6.5=27.5, 6.25=38.75, 6.0=45, 5.75=51.25, 5.5=57.5, 5.25=63.75 → scaled: 6.5→21, 6.25→32, 6.0→45, 5.5→57, 5.25→63.75 -->
+        <path d="M27,21 L80,32 L133,45 L186,56 L240,65 L293,65 L293,100 L27,100 Z" fill="url(#lineGrad)"/>
+        <polyline points="27,21 80,32 133,45 186,56 240,65 293,65" fill="none" stroke="var(--saffron)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- Dots with cut indicators -->
+        <circle cx="27" cy="21" r="4" fill="#D97706" stroke="white" stroke-width="1.5"/>
+        <circle cx="80" cy="32" r="4" fill="var(--green)" stroke="white" stroke-width="1.5"/>
+        <circle cx="133" cy="45" r="4" fill="var(--green)" stroke="white" stroke-width="1.5"/>
+        <circle cx="186" cy="56" r="4" fill="var(--green)" stroke="white" stroke-width="1.5"/>
+        <circle cx="240" cy="65" r="4" fill="var(--green)" stroke="white" stroke-width="1.5"/>
+        <circle cx="293" cy="65" r="4" fill="#D97706" stroke="white" stroke-width="1.5"/>
+        <!-- Rate labels -->
+        <text x="17" y="16" font-size="8" fill="var(--muted)" font-family="Trebuchet MS" text-anchor="middle">6.50</text>
+        <text x="70" y="27" font-size="8" fill="var(--green)" font-family="Trebuchet MS" text-anchor="middle">6.25</text>
+        <text x="123" y="40" font-size="8" fill="var(--green)" font-family="Trebuchet MS" text-anchor="middle">6.00</text>
+        <text x="176" y="51" font-size="8" fill="var(--green)" font-family="Trebuchet MS" text-anchor="middle">5.50</text>
+        <text x="233" y="60" font-size="8" fill="var(--green)" font-family="Trebuchet MS" text-anchor="middle">5.25</text>
+        <text x="293" y="60" font-size="8" fill="#D97706" font-family="Trebuchet MS" text-anchor="middle">5.25</text>
+        <!-- X axis labels -->
+        <text x="27" y="105" font-size="8" fill="var(--muted)" font-family="Trebuchet MS" text-anchor="middle">Feb'25</text>
+        <text x="80" y="105" font-size="8" fill="var(--muted)" font-family="Trebuchet MS" text-anchor="middle">Apr'25</text>
+        <text x="133" y="105" font-size="8" fill="var(--muted)" font-family="Trebuchet MS" text-anchor="middle">Jun'25</text>
+        <text x="186" y="105" font-size="8" fill="var(--muted)" font-family="Trebuchet MS" text-anchor="middle">Aug'25</text>
+        <text x="240" y="105" font-size="8" fill="var(--muted)" font-family="Trebuchet MS" text-anchor="middle">Dec'25</text>
+        <text x="293" y="105" font-size="8" fill="var(--muted)" font-family="Trebuchet MS" text-anchor="middle">Jun'26</text>
+      </svg>
+    </div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot hold"></div>Hold</div>
+      <div class="legend-item"><div class="legend-dot cut"></div>Cut</div>
+    </div>
+  </div>
+
+  <!-- MPC DECISION HISTORY -->
+  <div class="sec fu4">MPC Decision History <span class="more">Full Log →</span></div>
+  <div class="mpc-card-wrap fu4">
+    <div class="mpc-timeline">
+
+      <div class="mpc-item">
+        <div class="mpc-left">
+          <div class="mpc-date-box"><div class="mpc-date-mon">Jun</div><div class="mpc-date-yr">2026</div></div>
+          <div class="mpc-line hold"></div>
+        </div>
+        <div class="mpc-body">
+          <div class="mpc-badge hold">⏸ Hold</div>
+          <div><span class="mpc-rate">5.25%</span><span class="mpc-rate-change hold">Unchanged</span></div>
+          <div class="mpc-detail">Third consecutive hold. Neutral stance maintained. Iran war impact on inflation monitored. GDP forecast raised to 7.3%. Rupee weakness (~₹95.4) a concern.</div>
+        </div>
+      </div>
+
+      <div class="mpc-item">
+        <div class="mpc-left">
+          <div class="mpc-date-box"><div class="mpc-date-mon">Feb</div><div class="mpc-date-yr">2026</div></div>
+          <div class="mpc-line hold"></div>
+        </div>
+        <div class="mpc-body">
+          <div class="mpc-badge hold">⏸ Hold</div>
+          <div><span class="mpc-rate">5.25%</span><span class="mpc-rate-change hold">Unchanged</span></div>
+          <div class="mpc-detail">Stable prices and strong economy. Many expected 25 bps cut but RBI held rates. SDF at 5.00%, MSF at 5.50%. Neutral stance maintained.</div>
+        </div>
+      </div>
+
+      <div class="mpc-item">
+        <div class="mpc-left">
+          <div class="mpc-date-box"><div class="mpc-date-mon">Dec</div><div class="mpc-date-yr">2025</div></div>
+          <div class="mpc-line cut"></div>
+        </div>
+        <div class="mpc-body">
+          <div class="mpc-badge cut">▼ Rate Cut</div>
+          <div><span class="mpc-rate">5.25%</span><span class="mpc-rate-change cut">-25 bps</span></div>
+          <div class="mpc-detail">Unanimous 6-0 cut. CPI at 2%, GDP forecast raised to 7.3%. ₹1 lakh cr govt bond purchases & $5B USD/INR swap announced. SDF to 5.00%.</div>
+        </div>
+      </div>
+
+      <div class="mpc-item">
+        <div class="mpc-left">
+          <div class="mpc-date-box"><div class="mpc-date-mon">Jun</div><div class="mpc-date-yr">2025</div></div>
+          <div class="mpc-line cut"></div>
+        </div>
+        <div class="mpc-body">
+          <div class="mpc-badge cut">▼ Rate Cut</div>
+          <div><span class="mpc-rate">5.50%</span><span class="mpc-rate-change cut">-50 bps</span></div>
+          <div class="mpc-detail">Largest single cut — 50 bps. Third consecutive cut since Feb. Stance changed from accommodative → neutral. CRR cut by 100 bps. CPI projected at 3.7% for FY26.</div>
+        </div>
+      </div>
+
+      <div class="mpc-item">
+        <div class="mpc-left">
+          <div class="mpc-date-box"><div class="mpc-date-mon">Apr</div><div class="mpc-date-yr">2025</div></div>
+          <div class="mpc-line cut"></div>
+        </div>
+        <div class="mpc-body">
+          <div class="mpc-badge cut">▼ Rate Cut</div>
+          <div><span class="mpc-rate">6.00%</span><span class="mpc-rate-change cut">-25 bps</span></div>
+          <div class="mpc-detail">Second cut of easing cycle. Inflation softening below 4% target. Growth supported by private consumption and fixed capital formation.</div>
+        </div>
+      </div>
+
+      <div class="mpc-item">
+        <div class="mpc-left">
+          <div class="mpc-date-box"><div class="mpc-date-mon">Feb</div><div class="mpc-date-yr">2025</div></div>
+        </div>
+        <div class="mpc-body">
+          <div class="mpc-badge cut">▼ Rate Cut</div>
+          <div><span class="mpc-rate">6.25%</span><span class="mpc-rate-change cut">-25 bps</span></div>
+          <div class="mpc-detail">First cut since May 2020. Easing cycle begins under Gov. Sanjay Malhotra. Accommodative stance adopted. Previous rate 6.50% held for 8 consecutive meetings.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- GDP & INFLATION PROJECTIONS -->
+  <div class="sec fu5">RBI Projections FY 2025–26 <span class="more">Full Outlook →</span></div>
+  <div class="proj-grid fu5">
+    <div class="proj-card">
+      <div class="proj-card-title">📈 GDP Growth</div>
+      <div class="proj-row"><span class="proj-q">Q1 FY26</span><span class="proj-v green">7.1%</span></div>
+      <div class="proj-row"><span class="proj-q">Q2 FY26</span><span class="proj-v green">7.3%</span></div>
+      <div class="proj-row"><span class="proj-q">Q3 FY26</span><span class="proj-v green">7.5%</span></div>
+      <div class="proj-row"><span class="proj-q">FY26 Est.</span><span class="proj-v green">7.30%</span></div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-card-title">📉 CPI Inflation</div>
+      <div class="proj-row"><span class="proj-q">Q1 FY26</span><span class="proj-v orange">2.9%</span></div>
+      <div class="proj-row"><span class="proj-q">Q2 FY26</span><span class="proj-v orange">3.4%</span></div>
+      <div class="proj-row"><span class="proj-q">Q3 FY26</span><span class="proj-v orange">3.9%</span></div>
+      <div class="proj-row"><span class="proj-q">FY26 Est.</span><span class="proj-v orange">3.70%</span></div>
+    </div>
+  </div>
+
+  <!-- IMPACT ON HOME LOANS -->
+  <div class="sec fu6">Rate Cut Impact on Home Loans <span class="more">Compare →</span></div>
+  <div class="impact-card fu6">
+    <div class="impact-title">How -100 bps Cut Affects You</div>
+    <div class="impact-row">
+      <div class="impact-icon" style="background:rgba(4,106,56,0.10);">🏠</div>
+      <div class="impact-text">
+        <div class="imp-title">Home Loan EMI (₹50L, 20yr)</div>
+        <div class="imp-sub">Savings: ~₹3,200/month vs Feb 2025 rates</div>
+      </div>
+      <div class="impact-badge good">▼ Lower</div>
+    </div>
+    <div class="impact-row">
+      <div class="impact-icon" style="background:rgba(255,107,0,0.08);">📊</div>
+      <div class="impact-text">
+        <div class="imp-title">RLLR (Repo Linked Lending Rate)</div>
+        <div class="imp-sub">Now linked to 5.25% repo; bank spread 2–3%</div>
+      </div>
+      <div class="impact-badge good">7.25–8.25%</div>
+    </div>
+    <div class="impact-row">
+      <div class="impact-icon" style="background:rgba(13,148,136,0.10);">💰</div>
+      <div class="impact-text">
+        <div class="imp-title">Fixed Deposit Returns</div>
+        <div class="imp-sub">FD rates lowered; short tenures still attractive</div>
+      </div>
+      <div class="impact-badge warn">▼ Falling</div>
+    </div>
+    <div class="impact-row">
+      <div class="impact-icon" style="background:rgba(217,119,6,0.10);">🏗️</div>
+      <div class="impact-text">
+        <div class="imp-title">Real Estate Demand</div>
+        <div class="imp-sub">Cheaper loans boosting housing demand; Nifty Realty up</div>
+      </div>
+      <div class="impact-badge good">▲ Positive</div>
+    </div>
+    <div class="impact-row">
+      <div class="impact-icon" style="background:rgba(220,38,38,0.08);">💱</div>
+      <div class="impact-text">
+        <div class="imp-title">Rupee Pressure</div>
+        <div class="imp-sub">Rate cuts widen rate differential; INR at ₹95.4/USD</div>
+      </div>
+      <div class="impact-badge bad">▲ Weak</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// Days to next MPC meeting (Aug 5, 2026)
+const next = new Date('2026-08-05');
+const today = new Date('2026-06-09');
+const diff = Math.ceil((next - today) / (1000*60*60*24));
+document.getElementById('daysLeft').textContent = diff;
+</script>
+</body>
+</html>

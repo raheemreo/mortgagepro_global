@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Section 24(b) – Interest Deduction · MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00; --saffron2:#E05A00; --ochre:#F5A623; --ochre-lt:#FFDEA0;
+  --navy:#0B1F48; --chakra:#1A3A8F; --green:#046A38; --green2:#07543A;
+  --teal:#0D9488; --white:#FFFFFF; --bg:#FFF8F0; --card:#FFFFFF;
+  --muted:#7A5C3A; --border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09); --sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg); color:var(--navy);
+  max-width:420px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background-image:
+    radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+    radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);
+  pointer-events:none; z-index:0;
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);
+  padding:46px 18px 0; position:relative; overflow:hidden;
+}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{
+  background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0;padding:11px 14px;
+  display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;
+}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+/* CONTENT */
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .badge{font-size:9px;font-weight:700;background:#ECFDF5;color:#065F46;padding:3px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+/* HERO CARD */
+.hero-24b{
+  background:linear-gradient(148deg,var(--navy),var(--chakra));
+  border-radius:22px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);
+}
+.hero-24b::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,107,0,0.16);}
+.hero-24b::after{content:'§';position:absolute;right:14px;bottom:12px;font-size:64px;color:rgba(255,255,255,0.05);font-style:normal;}
+.h-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.h-title{font-size:18px;font-weight:800;color:#fff;margin:4px 0 6px;line-height:1.25;}
+.h-title span{color:var(--ochre-lt);}
+.h-sub{font-size:10.5px;color:rgba(255,255,255,0.55);margin-bottom:14px;font-family:'Trebuchet MS',sans-serif;line-height:1.5;}
+.limit-row{display:flex;gap:8px;margin-bottom:14px;}
+.limit-box{flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:10px 10px;}
+.limit-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:2px;font-family:'Trebuchet MS',sans-serif;}
+.limit-box .v{font-size:14px;font-weight:800;color:#fff;}
+.limit-box .v span{font-size:9px;color:rgba(255,255,255,0.5);}
+
+/* INPUT CARD */
+.input-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.input-card h3{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.field{margin-bottom:12px;}
+.field label{font-size:9.5px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.4px;}
+.field input,.field select{
+  width:100%;background:#FFF8F0;border:1.5px solid var(--border);
+  border-radius:11px;padding:11px 14px;font-size:14px;font-weight:700;
+  color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;
+  outline:none;transition:border-color .2s;
+}
+.field input:focus,.field select:focus{border-color:var(--saffron);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-hint{font-size:9px;color:var(--muted);margin-top:3px;font-family:'Trebuchet MS',sans-serif;}
+.toggle-row{display:flex;gap:8px;margin-bottom:12px;}
+.tog-btn{flex:1;padding:9px 6px;border-radius:11px;border:1.5px solid var(--border);background:#FFF8F0;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;font-family:'Trebuchet MS',sans-serif;transition:all .18s;text-align:center;}
+.tog-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.calc-btn{
+  width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));
+  border:none;border-radius:13px;padding:14px;
+  font-size:14px;font-weight:800;color:#fff;cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,107,0,0.42);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;
+  transition:transform .15s;
+}
+.calc-btn:active{transform:scale(.97);}
+
+/* RESULT CARD */
+.result-card{background:linear-gradient(148deg,var(--green2),var(--green));border-radius:20px;padding:18px;box-shadow:var(--sh2);margin-bottom:12px;display:none;}
+.result-card.show{display:block;}
+.res-title{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.7px;font-family:'Trebuchet MS',sans-serif;margin-bottom:12px;}
+.res-main{text-align:center;margin-bottom:16px;}
+.res-label{font-size:11px;color:rgba(255,255,255,0.6);font-family:'Trebuchet MS',sans-serif;}
+.res-amount{font-size:36px;font-weight:800;color:#fff;line-height:1.1;}
+.res-amount span{font-size:16px;}
+.res-sub{font-size:10.5px;color:rgba(255,255,255,0.6);font-family:'Trebuchet MS',sans-serif;margin-top:4px;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.res-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:11px;padding:10px 11px;}
+.res-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:2px;font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;}
+.res-box .rv{font-size:13px;font-weight:800;color:#fff;}
+.res-box .rv.warn{color:#FCA5A5;}
+.res-box .rv.ok{color:#86EFAC;}
+
+/* SAVE BTN */
+.save-btn{
+  width:100%;background:rgba(4,106,56,0.1);border:2px solid var(--green);
+  border-radius:13px;padding:12px;font-size:13px;font-weight:800;
+  color:var(--green);cursor:pointer;font-family:'Trebuchet MS',sans-serif;
+  margin-top:10px;display:none;transition:all .2s;
+}
+.save-btn.show{display:block;}
+.save-btn:active{background:var(--green);color:#fff;}
+.saved-tag{display:none;text-align:center;font-size:11px;color:var(--green);font-weight:700;font-family:'Trebuchet MS',sans-serif;margin-top:6px;}
+.saved-tag.show{display:block;}
+
+/* CHART */
+.chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;display:none;}
+.chart-card.show{display:block;}
+.chart-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.chart-title span{font-size:10px;color:var(--saffron);font-weight:600;font-family:'Trebuchet MS',sans-serif;}
+.bar-group{margin-bottom:10px;}
+.bar-label{font-size:9.5px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-bottom:4px;display:flex;justify-content:space-between;}
+.bar-track{background:#FFF0E0;border-radius:20px;height:22px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:20px;display:flex;align-items:center;padding-left:10px;font-size:9.5px;font-weight:800;color:#fff;font-family:'Trebuchet MS',sans-serif;transition:width 0.6s cubic-bezier(.4,0,.2,1);}
+.bar-fill.s{background:linear-gradient(90deg,var(--saffron),var(--ochre));}
+.bar-fill.n{background:linear-gradient(90deg,var(--navy),var(--chakra));}
+.bar-fill.g{background:linear-gradient(90deg,var(--green),#0A9956);}
+
+/* DONUT CHART */
+.donut-wrap{display:flex;align-items:center;gap:16px;margin-bottom:12px;}
+.donut-svg{flex-shrink:0;}
+.donut-legend{flex:1;}
+.legend-item{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+.legend-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+.legend-lbl{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;flex:1;}
+.legend-val{font-size:11px;font-weight:800;color:var(--navy);}
+
+/* INFO BLOCKS */
+.info-list{display:flex;flex-direction:column;gap:9px;}
+.info-item{
+  background:var(--card);border-radius:14px;padding:13px 14px;
+  box-shadow:var(--sh);border:1px solid var(--border);
+  display:flex;align-items:flex-start;gap:11px;
+}
+.info-icon{width:38px;height:38px;border-radius:11px;background:rgba(255,107,0,0.07);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.info-head{font-size:12px;font-weight:800;color:var(--navy);}
+.info-sub{font-size:9.5px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;line-height:1.45;}
+.info-badge{display:inline-flex;padding:2px 7px;border-radius:20px;font-size:8.5px;font-weight:700;margin-top:5px;font-family:'Trebuchet MS',sans-serif;}
+.ib-g{background:#ECFDF5;color:#065F46;}
+.ib-s{background:#FFF3E0;color:#E05A00;}
+.ib-b{background:#EFF6FF;color:#1D4ED8;}
+.ib-r{background:#FEF2F2;color:#B91C1C;}
+
+/* SCENARIO TABLE */
+.table-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.table-card h3{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;}
+thead th{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;font-family:'Trebuchet MS',sans-serif;border-bottom:1px solid var(--border);}
+tbody td{font-size:11px;padding:9px 8px;border-bottom:1px solid rgba(255,107,0,0.06);color:var(--navy);font-weight:600;}
+tbody tr:last-child td{border-bottom:none;}
+tbody td.highlight{color:var(--green);font-weight:800;}
+tbody td.warn{color:var(--saffron);}
+thead th:not(:first-child),tbody td:not(:first-child){text-align:right;}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+@keyframes popIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+.pop{animation:popIn .35s cubic-bezier(.4,0,.2,1) both;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📝</div>
+      <div class="hdr-title">Section <span>24(b)</span></div>
+      <div class="hdr-sub">Interest Deduction · Income Tax Act · AY 2025–26</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">Max Deduction</div>
+      <div class="rs-v saf">₹2 Lakh</div>
+      <div class="rs-n">Self-Occupied</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Let-Out Prop.</div>
+      <div class="rs-v grn">No Limit</div>
+      <div class="rs-n">Full Interest</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Old Regime</div>
+      <div class="rs-v">Only</div>
+      <div class="rs-n">New Regime: ✗</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- Hero Info -->
+  <div class="sec fu1" style="margin-top:0">Tax Deduction on Home Loan Interest <span class="badge">AY 2025–26</span></div>
+  <div class="hero-24b fu1">
+    <div class="h-tag">Income Tax Act · Section 24(b)</div>
+    <div class="h-title">Save up to <span>₹61,880 tax</span><br>on home loan interest</div>
+    <div class="h-sub">Deduct home loan interest paid from taxable income under the Old Tax Regime. Max ₹2L for self-occupied; unlimited for let-out property.</div>
+    <div class="limit-row">
+      <div class="limit-box"><label>Self-Occupied</label><div class="v">₹2,00,000 <span>/ yr</span></div></div>
+      <div class="limit-box"><label>Let-Out</label><div class="v">Unlimited</div></div>
+      <div class="limit-box"><label>Under Const.</label><div class="v">₹30,000 <span>/ yr</span></div></div>
+    </div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="sec fu2">Calculate Your 24(b) Benefit</div>
+  <div class="input-card fu2">
+    <h3>🏠 Loan & Property Details</h3>
+
+    <div class="field">
+      <label>Property Type</label>
+      <div class="toggle-row">
+        <div class="tog-btn active" id="t-self" onclick="setType('self')">Self-Occupied</div>
+        <div class="tog-btn" id="t-let" onclick="setType('let')">Let-Out</div>
+        <div class="tog-btn" id="t-uc" onclick="setType('uc')">Under Const.</div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Annual Interest Paid (₹)</label>
+        <input type="number" id="annualInterest" placeholder="e.g. 250000" value="250000">
+        <div class="field-hint">From bank statement / Form 16</div>
+      </div>
+      <div class="field">
+        <label>Annual Income (₹)</label>
+        <input type="number" id="annualIncome" placeholder="e.g. 1200000" value="1200000">
+        <div class="field-hint">Gross total income</div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Tax Slab (%)</label>
+        <select id="taxSlab">
+          <option value="5">5% (₹3L–6L)</option>
+          <option value="20" selected>20% (₹9L–12L)</option>
+          <option value="30">30% (Above ₹15L)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Loan Year</label>
+        <select id="loanYear">
+          <option value="preConstruction">Pre-Construction</option>
+          <option value="postPossession" selected>Post Possession</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field" id="preConstField" style="display:none;">
+      <label>Pre-Construction Interest Total (₹)</label>
+      <input type="number" id="preConstInterest" placeholder="e.g. 120000">
+      <div class="field-hint">Deducted in 5 equal instalments from year of possession</div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate24b()">📝 Calculate Tax Saving</button>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="res-title">Section 24(b) — Your Tax Saving Analysis</div>
+    <div class="res-main">
+      <div class="res-label">Estimated Annual Tax Saving</div>
+      <div class="res-amount" id="taxSaving">₹<span id="savingAmt">0</span></div>
+      <div class="res-sub" id="savingDesc">Based on ₹2,00,000 deduction at 20% slab</div>
+    </div>
+    <div class="res-grid">
+      <div class="res-box"><label>Interest Paid</label><div class="rv" id="resInterest">₹2,50,000</div></div>
+      <div class="res-box"><label>Deductible Amount</label><div class="rv ok" id="resDeductible">₹2,00,000</div></div>
+      <div class="res-box"><label>Excess (Not Claimable)</label><div class="rv warn" id="resExcess">₹50,000</div></div>
+      <div class="res-box"><label>Taxable Income Reduction</label><div class="rv ok" id="resTaxable">₹2,00,000</div></div>
+    </div>
+    <button class="save-btn show" id="saveBtn" onclick="saveCalc()">💾 Save This Calculation</button>
+    <div class="saved-tag" id="savedTag">✅ Saved to your records</div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-card" id="chartCard">
+    <div class="chart-title">Income & Deduction Breakdown <span id="chartYear">AY 2025–26</span></div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Gross Income</span><span id="b1val">₹12,00,000</span></div>
+      <div class="bar-track"><div class="bar-fill s" id="bar1" style="width:100%">100%</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>After 24(b) Deduction</span><span id="b2val">₹10,00,000</span></div>
+      <div class="bar-track"><div class="bar-fill n" id="bar2" style="width:83%">83%</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Tax Saved (Highlighted)</span><span id="b3val">₹40,000</span></div>
+      <div class="bar-track"><div class="bar-fill g" id="bar3" style="width:20%"></div></div>
+    </div>
+    <!-- Donut -->
+    <div class="donut-wrap" style="margin-top:16px;">
+      <svg class="donut-svg" width="90" height="90" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="35" fill="none" stroke="#FFF0E0" stroke-width="16"/>
+        <circle cx="45" cy="45" r="35" fill="none" stroke="var(--saffron)" stroke-width="16"
+          stroke-dasharray="220 0" stroke-dashoffset="55"
+          id="donutInterest" style="transition:stroke-dasharray .6s"/>
+        <circle cx="45" cy="45" r="35" fill="none" stroke="var(--green)" stroke-width="16"
+          stroke-dasharray="0 220" stroke-dashoffset="55"
+          id="donutSaving" style="transition:stroke-dasharray .6s"/>
+        <text x="45" y="48" text-anchor="middle" font-size="9" font-weight="800" fill="var(--navy)" font-family="Trebuchet MS">24(b)</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--saffron)"></div><div class="legend-lbl">Interest Paid</div><div class="legend-val" id="dleg1">₹2,50,000</div></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div><div class="legend-lbl">Tax Saving</div><div class="legend-val" id="dleg2">₹40,000</div></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#FFF0E0"></div><div class="legend-lbl">Non-Claimable</div><div class="legend-val" id="dleg3">₹50,000</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenario Table -->
+  <div class="table-card fu3" id="scenarioTable">
+    <h3>📊 Tax Saving Scenarios by Slab</h3>
+    <table>
+      <thead><tr><th>Annual Interest</th><th>5% Slab</th><th>20% Slab</th><th>30% Slab</th></tr></thead>
+      <tbody>
+        <tr><td>₹1,00,000</td><td>₹5,200</td><td class="highlight">₹20,800</td><td>₹31,200</td></tr>
+        <tr><td>₹1,50,000</td><td>₹7,800</td><td class="highlight">₹31,200</td><td>₹46,800</td></tr>
+        <tr><td>₹2,00,000</td><td>₹10,400</td><td class="highlight">₹41,600</td><td>₹62,400</td></tr>
+        <tr><td>₹2,50,000 <span style="font-size:8px;color:var(--saffron)">Cap ₹2L</span></td><td>₹10,400</td><td class="highlight">₹41,600</td><td>₹62,400</td></tr>
+        <tr><td>₹3,00,000 <span style="font-size:8px;color:var(--saffron)">Cap ₹2L</span></td><td>₹10,400</td><td class="highlight">₹41,600</td><td>₹62,400</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:9px;color:var(--muted);margin-top:8px;font-family:'Trebuchet MS',sans-serif;">* Includes 4% Health & Education Cess. Self-occupied property cap ₹2,00,000.</div>
+  </div>
+
+  <!-- Key Rules -->
+  <div class="sec fu4">Key Rules & Conditions</div>
+  <div class="info-list fu4">
+    <div class="info-item">
+      <div class="info-icon">🏠</div>
+      <div>
+        <div class="info-head">Self-Occupied Property — ₹2 Lakh Cap</div>
+        <div class="info-sub">Maximum deduction of ₹2,00,000 per year on interest paid. Applicable only under Old Tax Regime. Applicable from year of possession.</div>
+        <div class="info-badge ib-g">Old Regime Only</div>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">🔑</div>
+      <div>
+        <div class="info-head">Let-Out / Rented Property — No Limit</div>
+        <div class="info-sub">Full interest paid can be claimed as deduction against rental income. If loss occurs, up to ₹2L can be set off against other income; balance carried forward 8 years.</div>
+        <div class="info-badge ib-s">Unlimited Claim</div>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">🏗️</div>
+      <div>
+        <div class="info-head">Under-Construction Property</div>
+        <div class="info-sub">Interest during construction period is aggregated and deducted in 5 equal instalments starting from year of completion/possession. Cap ₹30,000 if loan taken before 01-Apr-1999.</div>
+        <div class="info-badge ib-b">5-Year Spread</div>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">⚠️</div>
+      <div>
+        <div class="info-head">New Tax Regime — Not Applicable</div>
+        <div class="info-sub">Section 24(b) deduction is NOT available if you opt for the New Tax Regime under Section 115BAC. Choose Old Regime to avail this benefit.</div>
+        <div class="info-badge ib-r">New Regime: No Benefit</div>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">📜</div>
+      <div>
+        <div class="info-head">Documents Required</div>
+        <div class="info-sub">Interest certificate from lender · Loan account statement · Possession certificate · Registration documents (for let-out).</div>
+        <div class="info-badge ib-g">Keep Records</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let propType = 'self';
+function setType(t){
+  propType = t;
+  ['self','let','uc'].forEach(x => document.getElementById('t-'+x).classList.remove('active'));
+  document.getElementById('t-'+t).classList.add('active');
+  document.getElementById('preConstField').style.display = (t === 'uc') ? 'block' : 'none';
+}
+
+function fmt(n){ return n>=10000000?(n/10000000).toFixed(2)+' Cr':n>=100000?(n/100000).toFixed(2)+' L':n>=1000?(n/1000).toFixed(1)+' K':n.toString(); }
+function fmtFull(n){ return '₹'+n.toLocaleString('en-IN'); }
+
+function calculate24b(){
+  const interest = parseFloat(document.getElementById('annualInterest').value)||0;
+  const income   = parseFloat(document.getElementById('annualIncome').value)||0;
+  const slab     = parseFloat(document.getElementById('taxSlab').value)||20;
+  const cess     = 1.04;
+
+  let cap, deductible, excess;
+  if(propType === 'self'){
+    cap = 200000; deductible = Math.min(interest, cap); excess = Math.max(interest - cap, 0);
+  } else if(propType === 'let'){
+    cap = Infinity; deductible = interest; excess = 0;
+  } else {
+    cap = 30000; deductible = Math.min(interest/5, cap); excess = interest - deductible*5;
+  }
+
+  const taxSaving = Math.round(deductible * (slab/100) * cess);
+  const newTaxable = income - deductible;
+
+  document.getElementById('savingAmt').textContent = taxSaving.toLocaleString('en-IN');
+  document.getElementById('savingDesc').textContent = 'Based on '+fmtFull(deductible)+' deduction at '+slab+'% slab + 4% cess';
+  document.getElementById('resInterest').textContent = fmtFull(interest);
+  document.getElementById('resDeductible').textContent = fmtFull(deductible);
+  document.getElementById('resExcess').textContent = excess===0?'NIL':fmtFull(excess);
+  document.getElementById('resExcess').className = 'rv '+(excess>0?'warn':'ok');
+  document.getElementById('resTaxable').textContent = fmtFull(deductible);
+
+  document.getElementById('resultCard').classList.add('show','pop');
+  document.getElementById('chartCard').classList.add('show');
+  updateChart(income, deductible, taxSaving, interest, excess);
+  document.getElementById('savedTag').classList.remove('show');
+  document.getElementById('saveBtn').classList.add('show');
+}
+
+function updateChart(income, deduct, saving, interest, excess){
+  const pct = deduct/income;
+  document.getElementById('b1val').textContent = fmtFull(income);
+  document.getElementById('b2val').textContent = fmtFull(income - deduct);
+  document.getElementById('b3val').textContent = fmtFull(saving);
+  document.getElementById('bar2').style.width = Math.round((1-pct)*100)+'%';
+  document.getElementById('bar2').textContent = Math.round((1-pct)*100)+'%';
+  const savPct = Math.min(Math.round(saving/income*200),60);
+  document.getElementById('bar3').style.width = savPct+'%';
+
+  // Donut
+  const circ = 2*Math.PI*35;
+  const intShare = Math.min(interest/income, 1);
+  const savShare = saving/income;
+  const intArc = intShare * circ;
+  const savArc = Math.min(savShare * circ * 3, intArc * 0.7);
+  document.getElementById('donutInterest').setAttribute('stroke-dasharray', intArc+' '+(circ-intArc));
+  document.getElementById('donutSaving').setAttribute('stroke-dasharray', savArc+' '+(circ-savArc));
+  document.getElementById('donutSaving').setAttribute('stroke-dashoffset', 55 - intArc);
+
+  document.getElementById('dleg1').textContent = fmtFull(interest);
+  document.getElementById('dleg2').textContent = fmtFull(saving);
+  document.getElementById('dleg3').textContent = excess===0?'NIL':fmtFull(excess);
+}
+
+function saveCalc(){
+  const data = {
+    date: new Date().toLocaleDateString('en-IN'),
+    type: propType,
+    interest: document.getElementById('annualInterest').value,
+    income: document.getElementById('annualIncome').value,
+    slab: document.getElementById('taxSlab').value,
+    saving: document.getElementById('savingAmt').textContent
+  };
+  const saves = JSON.parse(localStorage.getItem('sec24b_saves')||'[]');
+  saves.push(data);
+  localStorage.setItem('sec24b_saves', JSON.stringify(saves));
+  document.getElementById('savedTag').classList.add('show');
+  document.getElementById('saveBtn').textContent = '✅ Saved';
+}
+</script>
+</body>
+</html>

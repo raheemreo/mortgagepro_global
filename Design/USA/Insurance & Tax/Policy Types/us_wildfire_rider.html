@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wildfire Rider – Homeowner Insurance</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+    --fire1: #7C2D12;
+    --fire2: #B45309;
+    --fire3: #D97706;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  /* HEADER */
+  .header { background:linear-gradient(155deg,#7C2D12 0%,#C2410C 50%,#D97706 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after { content:'🔥'; position:absolute; right:10px; top:50px; font-size:88px; opacity:0.09; pointer-events:none; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.55); margin-top:1px; }
+  .rate-strip { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.18); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.52); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.40); margin-top:1px; }
+
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* RESULT HERO */
+  .result-hero { background:linear-gradient(135deg,#7C2D12,#C2410C,#D97706); border-radius:18px; padding:18px; box-shadow:0 8px 28px rgba(124,45,18,0.40); margin-bottom:10px; position:relative; overflow:hidden; }
+  .result-hero::before { content:''; position:absolute; top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.07); }
+  .result-hero::after { content:'🔥'; position:absolute; bottom:-10px;right:14px;font-size:60px;opacity:0.12; }
+  .rh-label { font-size:9.5px; color:rgba(255,255,255,0.58); text-transform:uppercase; letter-spacing:0.8px; }
+  .rh-amount { font-size:34px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1; margin:4px 0 2px; }
+  .rh-sub { font-size:10px; color:rgba(255,255,255,0.62); }
+  .rh-row { display:flex; gap:8px; margin-top:14px; }
+  .rh-box { flex:1; background:rgba(255,255,255,0.14); border-radius:10px; padding:9px 10px; }
+  .rh-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.52); }
+  .rh-box-val { font-size:13px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+
+  /* ALERT BANNER */
+  .alert-banner { background:linear-gradient(135deg,rgba(185,28,28,0.08),rgba(217,119,6,0.08)); border:1.5px solid rgba(185,28,28,0.18); border-radius:14px; padding:12px 14px; display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+  .alert-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
+  .alert-title { font-size:11.5px; font-weight:800; color:var(--red); font-family:Georgia,serif; }
+  .alert-desc { font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+
+  /* INPUT CARD */
+  .input-card { background:var(--card); border-radius:18px; padding:18px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .inp-group { margin-bottom:15px; }
+  .inp-group:last-child { margin-bottom:0; }
+  .inp-label { font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; }
+  .inp-label .hint { font-size:10px; font-weight:700; color:var(--gold); text-transform:none; letter-spacing:0; }
+  input[type=range] { width:100%; -webkit-appearance:none; height:6px; border-radius:3px; background:linear-gradient(to right,#C2410C 0%,#C2410C 50%,#CBD5E1 50%,#CBD5E1 100%); outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#7C2D12;border:3px solid #fff;box-shadow:0 2px 8px rgba(124,45,18,0.3); }
+  .range-labels { display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px;font-weight:600; }
+  .choice-row { display:flex;gap:7px;flex-wrap:wrap; }
+  .choice-btn { flex:1;min-width:60px;padding:8px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;text-align:center;transition:all .15s; }
+  .choice-btn.sel { border-color:#C2410C;background:#FFF7ED;color:#7C2D12; }
+
+  /* STAT GRID */
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .stat-box { background:var(--card); border-radius:14px; padding:13px 12px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .stat-box.fire { background:linear-gradient(140deg,#7C2D12,#C2410C); }
+  .stat-box.amber { background:linear-gradient(140deg,#D97706,#B45309); }
+  .stat-icon { font-size:18px; margin-bottom:6px; }
+  .stat-val { font-size:17px; font-weight:800; color:var(--navy); font-family:Georgia,serif; line-height:1.1; }
+  .stat-box.fire .stat-val, .stat-box.amber .stat-val { color:#fff; }
+  .stat-lbl { font-size:9px; color:var(--muted); margin-top:2px; font-weight:600; }
+  .stat-box.fire .stat-lbl, .stat-box.amber .stat-lbl { color:rgba(255,255,255,0.62); }
+
+  /* CHART CARD */
+  .chart-card { background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .chart-title-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .chart-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .chart-badge { font-size:8.5px; font-weight:700; background:#FFF7ED; color:#C2410C; padding:3px 8px; border-radius:20px; }
+  .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:11px; }
+  .bar-row:last-child { margin-bottom:0; }
+  .bar-lbl { font-size:10px; font-weight:700; color:var(--muted); width:80px; flex-shrink:0; }
+  .bar-track { flex:1; height:14px; background:var(--bg); border-radius:7px; overflow:hidden; position:relative; }
+  .bar-fill { height:100%; border-radius:7px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+  .bar-fill.fire-grad { background:linear-gradient(90deg,#7C2D12,#C2410C,#D97706); }
+  .bar-fill.amber-grad { background:linear-gradient(90deg,#D97706,#FCD34D); }
+  .bar-fill.blue-grad { background:linear-gradient(90deg,#1B3F72,#3B82F6); }
+  .bar-val { font-size:11px; font-weight:800; color:var(--navy); width:62px; text-align:right; flex-shrink:0; font-family:Georgia,serif; }
+
+  /* DONUT CHART */
+  .donut-wrap { display:flex; align-items:center; gap:16px; padding:4px 0; }
+  .donut-svg { flex-shrink:0; }
+  .donut-legend { flex:1; display:flex; flex-direction:column; gap:8px; }
+  .dl-row { display:flex; align-items:center; gap:8px; }
+  .dl-dot { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+  .dl-lbl { font-size:10px; font-weight:700; color:var(--navy); }
+  .dl-sub { font-size:9px; color:var(--muted); }
+  .dl-pct { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-left:auto; }
+
+  /* STATE RISK CARDS */
+  .state-scroll { display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; }
+  .state-scroll::-webkit-scrollbar { display:none; }
+  .state-card { flex-shrink:0; width:100px; background:var(--card); border-radius:14px; padding:12px 10px; box-shadow:var(--sh); border:1px solid var(--border); cursor:pointer; text-align:center; }
+  .state-card.hi { border-color:rgba(185,28,28,0.3); background:#FFF5F5; }
+  .state-card.md { border-color:rgba(217,119,6,0.3); background:#FFFBF0; }
+  .sc-state { font-size:17px; margin-bottom:4px; }
+  .sc-name { font-size:9.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .sc-rate { font-size:15px; font-weight:800; color:var(--fire2); font-family:Georgia,serif; margin:2px 0; }
+  .sc-rate.red { color:var(--red); }
+  .sc-lbl { font-size:8.5px; color:var(--muted); }
+
+  /* COVERAGE CARD */
+  .cov-card { background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .cov-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .cov-row:last-child { border-bottom:none; }
+  .cov-left { display:flex; align-items:center; gap:10px; }
+  .cov-icon { width:32px; height:32px; border-radius:9px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .cov-name { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .cov-desc { font-size:9.5px; color:var(--muted); margin-top:1px; }
+  .cov-amt { font-size:14px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .cov-tag { font-size:8.5px; font-weight:700; padding:2px 7px; border-radius:20px; text-align:right; margin-top:2px; display:inline-block; }
+  .tag-inc { background:#FFF7ED; color:#C2410C; }
+  .tag-add { background:#EFF6FF; color:#1D4ED8; }
+  .tag-std { background:#F0FDF4; color:#15803D; }
+  .tag-excl { background:#FEF2F2; color:#B91C1C; }
+
+  /* TIPS */
+  .tip-list { display:flex; flex-direction:column; gap:9px; }
+  .tip-item { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:flex-start; gap:12px; }
+  .tip-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+  .tip-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .tip-desc { font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+  .tip-saving { font-size:10px; font-weight:700; color:#15803D; margin-top:4px; }
+
+  /* CALC/SAVE BUTTONS */
+  .btn-row { display:flex; gap:10px; margin-top:14px; }
+  .calc-btn { flex:1; background:linear-gradient(135deg,#7C2D12,#C2410C); border:none; border-radius:14px; padding:14px; font-size:14px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(124,45,18,0.35); font-family:Georgia,serif; letter-spacing:0.3px; transition:transform .12s,box-shadow .12s; }
+  .calc-btn:active { transform:scale(.98); }
+  .save-btn { flex:0 0 52px; background:var(--card); border:1.5px solid #C2410C; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; transition:transform .12s; color:#C2410C; }
+  .save-btn:active { transform:scale(.94); }
+  .save-btn.saved { background:#FFF7ED; }
+
+  /* SAVED ESTIMATES */
+  .ilist { display:flex; flex-direction:column; gap:9px; }
+  .saved-card { background:var(--card); border-radius:14px; padding:12px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+  .saved-card .sd-amt { font-size:14px; font-weight:800; color:#C2410C; font-family:Georgia,serif; }
+  .saved-card .sd-meta { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .saved-del { margin-left:auto; font-size:16px; color:#B91C1C; cursor:pointer; padding:4px; }
+  .saved-empty { font-size:11px; color:var(--muted); text-align:center; padding:18px 0; }
+  .ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff; padding:10px 18px; border-radius:30px; font-size:12px; font-weight:700; box-shadow:var(--sh2); opacity:0; transition:all .25s; z-index:200; pointer-events:none; white-space:nowrap; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* BOTTOM NAV */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:#C2410C; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  .result-hero { animation:fadeUp .35s ease both .05s; }
+  .input-card { animation:fadeUp .35s ease both .10s; }
+  .chart-card,.stat-grid { animation:fadeUp .35s ease both .15s; }
+  .cov-card,.state-scroll { animation:fadeUp .35s ease both .18s; }
+  .tip-list,.ilist { animation:fadeUp .35s ease both .22s; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔥</div>
+      <div class="hdr-title">Wildfire Rider</div>
+      <div class="hdr-sub">Add-On Policy · CA, OR, WA, CO, AZ, NV, MT, ID</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Avg Add-On/yr</div><div class="rs-v gold">$1,840</div><div class="rs-n">2025 Data</div></div>
+    <div class="rs"><div class="rs-l">CA High Risk</div><div class="rs-v">$3,200+</div><div class="rs-n">SRA Zone</div></div>
+    <div class="rs"><div class="rs-l">Homes at Risk</div><div class="rs-v">4.5M</div><div class="rs-n">Nationwide</div></div>
+    <div class="rs"><div class="rs-l">CA Losses</div><div class="rs-v gold">$12B</div><div class="rs-n">2024 Est.</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ALERT BANNER -->
+  <div class="alert-banner" style="margin-top:4px;">
+    <div class="alert-icon">⚠️</div>
+    <div>
+      <div class="alert-title">High-Risk Zone Warning</div>
+      <div class="alert-desc">Standard HO-3 policies exclude wildfire in many CA, OR & WA counties. This rider restores coverage. California's FAIR Plan is the last-resort option if private carriers have non-renewed your policy.</div>
+    </div>
+  </div>
+
+  <!-- RESULT HERO -->
+  <div class="sec" style="margin-top:0">Your Rider Estimate <span class="more">Customize →</span></div>
+  <div class="result-hero">
+    <div class="rh-label">Annual Wildfire Rider Premium</div>
+    <div class="rh-amount" id="annualRider">$1,560</div>
+    <div class="rh-sub" id="riderSub">CA Standard Risk · $400K dwelling · $1,000 ded.</div>
+    <div class="rh-row">
+      <div class="rh-box"><div class="rh-box-lbl">Monthly Add-On</div><div class="rh-box-val" id="monthlyRider">$130</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">% of Dwelling</div><div class="rh-box-val" id="riderPct">0.39%</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">Ded. (Fire)</div><div class="rh-box-val" id="fireDedDisplay">$1,000</div></div>
+    </div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="sec">Your Home Details <span class="more">Reset</span></div>
+  <div class="input-card">
+    <div class="inp-group">
+      <div class="inp-label">Home Replacement Value <span class="hint" id="dwellingDisplay">$400,000</span></div>
+      <input type="range" id="dwellingSlider" min="150000" max="1500000" step="10000" value="400000" oninput="updateCalc()">
+      <div class="range-labels"><span>$150K</span><span>$500K</span><span>$1M</span><span>$1.5M</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">State / Risk Zone</div>
+      <div class="choice-row">
+        <div class="choice-btn" onclick="setState('low',this)">OR/WA</div>
+        <div class="choice-btn sel" onclick="setState('ca_std',this)">CA Std</div>
+        <div class="choice-btn" onclick="setState('ca_sra',this)">CA SRA</div>
+        <div class="choice-btn" onclick="setState('extreme',this)">CA FAIR</div>
+      </div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Fire Deductible</div>
+      <div class="choice-row">
+        <div class="choice-btn" onclick="setDed(1000,this)">$1,000</div>
+        <div class="choice-btn sel" onclick="setDed(2500,this)">$2,500</div>
+        <div class="choice-btn" onclick="setDed(5000,this)">$5,000</div>
+        <div class="choice-btn" onclick="setDed(10000,this)">$10,000</div>
+      </div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Home Age (Years) <span class="hint" id="ageDisplay">10 yrs</span></div>
+      <input type="range" id="ageSlider" min="0" max="80" step="5" value="10" oninput="updateCalc()">
+      <div class="range-labels"><span>New</span><span>20 yr</span><span>50 yr</span><span>80 yr</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Fire-Resistant Features</div>
+      <div class="choice-row">
+        <div class="choice-btn" onclick="setMit('none',this)">None</div>
+        <div class="choice-btn sel" onclick="setMit('partial',this)">Partial</div>
+        <div class="choice-btn" onclick="setMit('full',this)">IBH-Rated</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="updateCalc(true)">Calculate Rider Premium</button>
+      <div class="save-btn" id="saveBtn" onclick="saveCalc()">💾</div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="sec">2025 Wildfire Statistics <span class="more">Source: USFS</span></div>
+  <div class="stat-grid">
+    <div class="stat-box fire"><div class="stat-icon">🔥</div><div class="stat-val">68,988</div><div class="stat-lbl">Wildfires in 2024 USA</div></div>
+    <div class="stat-box amber"><div class="stat-icon">🏚️</div><div class="stat-val">$29B</div><div class="stat-lbl">2024 US Wildfire Losses</div></div>
+    <div class="stat-box"><div class="stat-icon">📍</div><div class="stat-val">4.5M</div><div class="stat-lbl">US Homes in WUI Zones</div></div>
+    <div class="stat-box"><div class="stat-icon">📈</div><div class="stat-val">+340%</div><div class="stat-lbl">CA Premium Rise (2020–25)</div></div>
+  </div>
+
+  <!-- COST BREAKDOWN CHART -->
+  <div class="sec">Rider Cost by State <span class="more">Avg Annual</span></div>
+  <div class="chart-card">
+    <div class="chart-title-row">
+      <div class="chart-title">Avg Wildfire Rider Premium / Year</div>
+      <div class="chart-badge">2025 Rates</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lbl">CA – SRA Zone</div>
+      <div class="bar-track"><div class="bar-fill fire-grad" style="width:100%"></div></div>
+      <div class="bar-val">$3,200</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lbl">CA – Standard</div>
+      <div class="bar-track"><div class="bar-fill fire-grad" style="width:56%"></div></div>
+      <div class="bar-val">$1,800</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lbl">CO</div>
+      <div class="bar-track"><div class="bar-fill amber-grad" style="width:44%"></div></div>
+      <div class="bar-val">$1,410</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lbl">AZ</div>
+      <div class="bar-track"><div class="bar-fill amber-grad" style="width:38%"></div></div>
+      <div class="bar-val">$1,215</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lbl">OR</div>
+      <div class="bar-track"><div class="bar-fill blue-grad" style="width:28%"></div></div>
+      <div class="bar-val">$895</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-lbl">WA</div>
+      <div class="bar-track"><div class="bar-fill blue-grad" style="width:22%"></div></div>
+      <div class="bar-val">$705</div>
+    </div>
+  </div>
+
+  <!-- COST SPLIT DONUT -->
+  <div class="sec">Your Premium Breakdown <span class="more">Visual</span></div>
+  <div class="chart-card">
+    <div class="chart-title-row">
+      <div class="chart-title">Where Your Rider Premium Goes</div>
+    </div>
+    <div class="donut-wrap">
+      <svg class="donut-svg" width="120" height="120" viewBox="0 0 42 42" id="donutSvg">
+        <circle cx="21" cy="21" r="15.9" fill="none" stroke="#E5E7EB" stroke-width="6"/>
+        <!-- Structure loss: 55% → 345.6deg → dasharray 55 45 -->
+        <circle id="donut1" cx="21" cy="21" r="15.9" fill="none" stroke="#7C2D12" stroke-width="6" stroke-dasharray="55 45" stroke-dashoffset="25" stroke-linecap="round"/>
+        <!-- Debris removal: 20% → dasharray 20 80 offset 25-55=-30 → 70 -->
+        <circle id="donut2" cx="21" cy="21" r="15.9" fill="none" stroke="#C2410C" stroke-width="6" stroke-dasharray="20 80" stroke-dashoffset="-30" stroke-linecap="round"/>
+        <!-- Smoke/ALE: 15% → dasharray 15 85, offset=-50 -->
+        <circle id="donut3" cx="21" cy="21" r="15.9" fill="none" stroke="#D97706" stroke-width="6" stroke-dasharray="15 85" stroke-dashoffset="-50" stroke-linecap="round"/>
+        <!-- Admin/reserve: 10% -->
+        <circle id="donut4" cx="21" cy="21" r="15.9" fill="none" stroke="#FCD34D" stroke-width="6" stroke-dasharray="10 90" stroke-dashoffset="-65" stroke-linecap="round"/>
+        <text x="21" y="24" text-anchor="middle" font-size="5.5" font-weight="800" fill="#7C2D12" font-family="Georgia,serif" id="donutCenter">$1,560</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="dl-row"><div class="dl-dot" style="background:#7C2D12"></div><div><div class="dl-lbl">Structure Loss</div><div class="dl-sub">Rebuild coverage</div></div><div class="dl-pct">55%</div></div>
+        <div class="dl-row"><div class="dl-dot" style="background:#C2410C"></div><div><div class="dl-lbl">Debris Removal</div><div class="dl-sub">Clean-up costs</div></div><div class="dl-pct">20%</div></div>
+        <div class="dl-row"><div class="dl-dot" style="background:#D97706"></div><div><div class="dl-lbl">Smoke / ALE</div><div class="dl-sub">Loss of use</div></div><div class="dl-pct">15%</div></div>
+        <div class="dl-row"><div class="dl-dot" style="background:#FCD34D"></div><div><div class="dl-lbl">Admin / Reserve</div><div class="dl-sub">Carrier overhead</div></div><div class="dl-pct">10%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COVERAGE BREAKDOWN -->
+  <div class="sec">What the Rider Covers <span class="more">Full Policy →</span></div>
+  <div class="cov-card">
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🏠</div><div><div class="cov-name">Dwelling – Fire Loss</div><div class="cov-desc">Full rebuild from wildfire destruction</div></div></div>
+      <div style="text-align:right"><div class="cov-amt" id="covDwelling">$400,000</div><div class="cov-tag tag-inc">Included</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🌫️</div><div><div class="cov-name">Smoke Damage</div><div class="cov-desc">Interior/exterior smoke remediation</div></div></div>
+      <div style="text-align:right"><div class="cov-amt" id="covSmoke">$40,000</div><div class="cov-tag tag-inc">Included</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🪨</div><div><div class="cov-name">Debris Removal</div><div class="cov-desc">Ash, tree, structural debris</div></div></div>
+      <div style="text-align:right"><div class="cov-amt" id="covDebris">$40,000</div><div class="cov-tag tag-inc">Included</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🏨</div><div><div class="cov-name">Additional Living Exp.</div><div class="cov-desc">Evacuation hotel, meals up to 24 mo</div></div></div>
+      <div style="text-align:right"><div class="cov-amt" id="covALE">$80,000</div><div class="cov-tag tag-add">Add-On</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">🌲</div><div><div class="cov-name">Vegetation / Ember Buffer</div><div class="cov-desc">Defensible space clearing cost</div></div></div>
+      <div style="text-align:right"><div class="cov-amt">$5,000</div><div class="cov-tag tag-add">Endorsement</div></div>
+    </div>
+    <div class="cov-row">
+      <div class="cov-left"><div class="cov-icon">❌</div><div><div class="cov-name">Land / Soil Remediation</div><div class="cov-desc">Not covered under standard rider</div></div></div>
+      <div style="text-align:right"><div class="cov-amt">—</div><div class="cov-tag tag-excl">Excluded</div></div>
+    </div>
+  </div>
+
+  <!-- HIGH RISK STATE CARDS -->
+  <div class="sec">Highest-Risk Counties 2025 <span class="more">View Map →</span></div>
+  <div class="state-scroll">
+    <div class="state-card hi"><div class="sc-state">🔴</div><div class="sc-name">Butte, CA</div><div class="sc-rate red">$4,100</div><div class="sc-lbl">SRA / Camp Fire</div></div>
+    <div class="state-card hi"><div class="sc-state">🔴</div><div class="sc-name">Shasta, CA</div><div class="sc-rate red">$3,850</div><div class="sc-lbl">Very High Risk</div></div>
+    <div class="state-card hi"><div class="sc-state">🔴</div><div class="sc-name">Mariposa, CA</div><div class="sc-rate red">$3,600</div><div class="sc-lbl">Yosemite-adj.</div></div>
+    <div class="state-card md"><div class="sc-state">🟠</div><div class="sc-name">Jackson, CO</div><div class="sc-rate">$1,900</div><div class="sc-lbl">High Elevation</div></div>
+    <div class="state-card md"><div class="sc-state">🟠</div><div class="sc-name">Deschutes, OR</div><div class="sc-rate">$1,420</div><div class="sc-lbl">WUI Zone</div></div>
+    <div class="state-card"><div class="sc-state">🟡</div><div class="sc-name">Yakima, WA</div><div class="sc-rate">$870</div><div class="sc-lbl">Moderate Risk</div></div>
+  </div>
+
+  <!-- DISCOUNT TIPS -->
+  <div class="sec">Ways to Lower Your Premium <span class="more">All Tips</span></div>
+  <div class="tip-list">
+    <div class="tip-item">
+      <div class="tip-icon">🪵</div>
+      <div>
+        <div class="tip-title">Class A Fire-Rated Roof</div>
+        <div class="tip-desc">Replace wood shake with tile, metal, or asphalt. Most carriers offer a 10–15% discount for Class A roofing material.</div>
+        <div class="tip-saving">💰 Save up to $320/yr</div>
+      </div>
+    </div>
+    <div class="tip-item">
+      <div class="tip-icon">🌿</div>
+      <div>
+        <div class="tip-title">Defensible Space – Zone 1</div>
+        <div class="tip-desc">Clear 0–30 ft of combustible vegetation. California IBHS mitigation grants available through 2026 legislative session.</div>
+        <div class="tip-saving">💰 Save up to $210/yr</div>
+      </div>
+    </div>
+    <div class="tip-item">
+      <div class="tip-icon">🚪</div>
+      <div>
+        <div class="tip-title">Ember-Resistant Vents & Eaves</div>
+        <div class="tip-desc">Replace open vents with 1/16" ember-blocking mesh. IBH-rated homes qualify for up to 20% premium reduction.</div>
+        <div class="tip-saving">💰 Save up to $280/yr</div>
+      </div>
+    </div>
+    <div class="tip-item">
+      <div class="tip-icon">📋</div>
+      <div>
+        <div class="tip-title">Higher Fire Deductible</div>
+        <div class="tip-desc">Increasing your fire deductible from $1,000 to $5,000 can reduce annual rider cost by 12–18%.</div>
+        <div class="tip-saving">💰 Save up to $250/yr</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVED ESTIMATES -->
+  <div class="sec">Saved Estimates <span class="more" onclick="clearSaved()">Clear All</span></div>
+  <div class="ilist" id="savedList">
+    <div class="saved-empty">No saved estimates yet. Tap 💾 after calculating to save.</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🔥</div><div class="ni-lb">Wildfire</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let stateZone = 'ca_std';
+let fireDed = 2500;
+let mitigation = 'partial';
+
+// Base rider rates (% of dwelling value, annual)
+const STATE_RATES = { low: 0.0028, ca_std: 0.0039, ca_sra: 0.0072, extreme: 0.0130 };
+const DED_DISC = { 1000: 0, 2500: -0.08, 5000: -0.15, 10000: -0.22 };
+const MIT_DISC = { none: 0, partial: -0.08, full: -0.18 };
+const STATE_LABELS = { low: 'OR/WA Standard', ca_std: 'CA Standard Risk', ca_sra: 'CA SRA Zone', extreme: 'CA FAIR Plan Zone' };
+
+function fmt(n){ return '$' + n.toLocaleString('en-US',{maximumFractionDigits:0}); }
+
+function setState(s, btn){
+  stateZone = s;
+  document.querySelectorAll('.choice-btn').forEach(b=>{ if(['OR/WA','CA Std','CA SRA','CA FAIR'].includes(b.textContent)) b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  updateCalc();
+}
+
+function setDed(d, btn){
+  fireDed = d;
+  document.querySelectorAll('.choice-btn').forEach(b=>{ if(['$1,000','$2,500','$5,000','$10,000'].includes(b.textContent)) b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  updateCalc();
+}
+
+function setMit(m, btn){
+  mitigation = m;
+  document.querySelectorAll('.choice-btn').forEach(b=>{ if(['None','Partial','IBH-Rated'].includes(b.textContent)) b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  updateCalc();
+}
+
+function updateCalc(showToast){
+  const dwelling = +document.getElementById('dwellingSlider').value;
+  const age = +document.getElementById('ageSlider').value;
+  document.getElementById('dwellingDisplay').textContent = fmt(dwelling);
+  document.getElementById('ageDisplay').textContent = age + ' yrs';
+
+  let rate = STATE_RATES[stateZone];
+  if(age > 40) rate *= 1.20;
+  else if(age > 20) rate *= 1.10;
+
+  const disc = DED_DISC[fireDed] + MIT_DISC[mitigation];
+  let annual = Math.round(dwelling * rate * (1 + disc) / 10) * 10;
+  const monthly = Math.round(annual / 12);
+  const pct = ((annual / dwelling) * 100).toFixed(2);
+
+  document.getElementById('annualRider').textContent = fmt(annual);
+  document.getElementById('monthlyRider').textContent = fmt(monthly);
+  document.getElementById('riderPct').textContent = pct + '%';
+  document.getElementById('fireDedDisplay').textContent = fmt(fireDed);
+  document.getElementById('riderSub').textContent = STATE_LABELS[stateZone] + ' · ' + fmt(dwelling) + ' dwelling · ' + fmt(fireDed) + ' ded.';
+
+  // Coverage amounts
+  document.getElementById('covDwelling').textContent = fmt(dwelling);
+  document.getElementById('covSmoke').textContent = fmt(Math.round(dwelling * 0.10));
+  document.getElementById('covDebris').textContent = fmt(Math.round(dwelling * 0.10));
+  document.getElementById('covALE').textContent = fmt(Math.round(dwelling * 0.20));
+
+  // Update donut center
+  document.getElementById('donutCenter').textContent = fmt(annual);
+
+  // Update range gradient
+  const slider = document.getElementById('dwellingSlider');
+  const min = +slider.min, max = +slider.max, val = +slider.value;
+  const pctSlider = ((val - min) / (max - min)) * 100;
+  slider.style.background = `linear-gradient(to right, #C2410C 0%, #C2410C ${pctSlider}%, #CBD5E1 ${pctSlider}%, #CBD5E1 100%)`;
+
+  const ageSlider = document.getElementById('ageSlider');
+  const ageMin = +ageSlider.min, ageMax = +ageSlider.max, ageVal = +ageSlider.value;
+  const agePct = ((ageVal - ageMin) / (ageMax - ageMin)) * 100;
+  ageSlider.style.background = `linear-gradient(to right, #C2410C 0%, #C2410C ${agePct}%, #CBD5E1 ${agePct}%, #CBD5E1 100%)`;
+
+  if(showToast) showMsg('Rider premium calculated ✓');
+}
+
+function showMsg(text){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function saveCalc(){
+  try{
+    const dwelling = +document.getElementById('dwellingSlider').value;
+    const age = +document.getElementById('ageSlider').value;
+    const annual = document.getElementById('annualRider').textContent;
+    const monthly = document.getElementById('monthlyRider').textContent;
+    const entry = {
+      id: Date.now(),
+      annual, monthly,
+      dwelling: fmt(dwelling),
+      age: age + ' yrs',
+      ded: fmt(fireDed),
+      zone: STATE_LABELS[stateZone],
+      mit: mitigation,
+      date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+    };
+    const list = JSON.parse(localStorage.getItem('wildfireSaves')||'[]');
+    list.unshift(entry);
+    localStorage.setItem('wildfireSaves', JSON.stringify(list.slice(0,10)));
+    renderSaved();
+    const btn = document.getElementById('saveBtn');
+    btn.classList.add('saved');
+    setTimeout(()=>btn.classList.remove('saved'), 600);
+    showMsg('Estimate saved 💾');
+  }catch(e){ showMsg('Could not save'); }
+}
+
+function deleteSaved(id){
+  let list = JSON.parse(localStorage.getItem('wildfireSaves')||'[]');
+  list = list.filter(x=>x.id !== id);
+  localStorage.setItem('wildfireSaves', JSON.stringify(list));
+  renderSaved();
+}
+
+function clearSaved(){
+  localStorage.removeItem('wildfireSaves');
+  renderSaved();
+}
+
+function renderSaved(){
+  const list = JSON.parse(localStorage.getItem('wildfireSaves')||'[]');
+  const el = document.getElementById('savedList');
+  if(list.length === 0){
+    el.innerHTML = '<div class="saved-empty">No saved estimates yet. Tap 💾 to save your current calculation.</div>';
+    return;
+  }
+  el.innerHTML = list.map(e=>`
+    <div class="saved-card">
+      <div class="ii">🔥</div>
+      <div>
+        <div class="sd-amt">${e.annual}/yr · ${e.monthly}/mo</div>
+        <div class="sd-meta">${e.dwelling} dwelling · ${e.ded} ded · ${e.zone} · ${e.date}</div>
+      </div>
+      <div class="saved-del" onclick="deleteSaved(${e.id})">🗑️</div>
+    </div>
+  `).join('');
+}
+
+updateCalc();
+renderSaved();
+</script>
+</body>
+</html>

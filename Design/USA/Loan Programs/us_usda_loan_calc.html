@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USDA Loan Calculator</title>
+<style>
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);
+    --grn:#15803D;--grn-dk:#166534;--grn-lt:#F0FDF4;--danger:#FEF2F2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 45%,#78350F 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🌾';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--grn);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  .rural-banner{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 15px;display:flex;align-items:center;gap:11px;margin-bottom:12px;}
+  .rb-icon{font-size:24px;}
+  .rb-title{font-size:12.5px;font-weight:800;color:#92400E;font-family:Georgia,serif;}
+  .rb-sub{font-size:9.5px;color:#B45309;margin-top:2px;}
+  .rb-btn{margin-left:auto;background:#D97706;color:#fff;font-size:10px;font-weight:800;padding:7px 11px;border-radius:8px;white-space:nowrap;flex-shrink:0;cursor:pointer;}
+
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .inp-box{background:var(--card);border-radius:14px;padding:13px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--grn);}
+  .inp-box label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:9px;color:var(--muted);margin-top:3px;}
+
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:6px;}
+  .calc-btn{background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:13px;padding:14px 18px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(21,128,61,0.35);font-family:Georgia,serif;transition:transform .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .calc-btn:active{transform:scale(0.97);}
+  .save-btn{background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:14px 16px;font-size:13px;font-weight:800;color:var(--navy);cursor:pointer;box-shadow:var(--sh);font-family:Georgia,serif;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .save-btn:hover{background:var(--bg);border-color:var(--grn);}
+  .save-btn.saved{background:var(--grn-lt);border-color:var(--grn);color:var(--grn);}
+
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#15803D);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:10px;}
+  .rh-label{font-size:9.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:36px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;margin:6px 0 4px;}
+  .rh-amount span{font-size:16px;color:var(--gold-lt);}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.50);}
+  .rh-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;}
+  .rh-stat{background:rgba(255,255,255,0.12);border-radius:10px;padding:9px 8px;text-align:center;}
+  .rh-stat-l{font-size:8px;color:rgba(255,255,255,0.50);text-transform:uppercase;}
+  .rh-stat-v{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:14px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:20px;margin-bottom:6px;}
+  .bk-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:17px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .bk-sub{font-size:9px;color:var(--muted);}
+
+  /* STACKED BAR CHART */
+  .stack-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .stack-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .stack-bar{height:28px;border-radius:14px;overflow:hidden;display:flex;margin-bottom:10px;}
+  .sb-pi{background:linear-gradient(90deg,#15803D,#22C55E);transition:width .7s ease;}
+  .sb-fee{background:linear-gradient(90deg,#D97706,#F59E0B);transition:width .7s ease;}
+  .sb-tax{background:linear-gradient(90deg,#4A5C7A,#64748B);transition:width .7s ease;}
+  .sb-ins{background:linear-gradient(90deg,#78350F,#A16207);transition:width .7s ease;}
+  .stack-legend{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .sl-row{display:flex;align-items:center;gap:7px;}
+  .sl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .sl-lbl{font-size:10px;color:var(--muted);font-weight:600;flex:1;}
+  .sl-val{font-size:10px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+
+  /* INCOME METER */
+  .income-card{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid #86EFAC;border-radius:15px;padding:14px 15px;margin-bottom:10px;}
+  .ic-title{font-size:12.5px;font-weight:800;color:#14532D;font-family:Georgia,serif;margin-bottom:12px;}
+  .ic-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(134,239,172,0.4);}
+  .ic-row:last-child{border-bottom:none;}
+  .ic-k{font-size:10.5px;color:#166534;font-weight:600;}
+  .ic-v{font-size:10.5px;font-weight:800;color:var(--grn);}
+  .ic-v.warn{color:var(--gold);}
+  .ic-v.bad{color:#B91C1C;}
+  .income-meter-wrap{margin-top:10px;}
+  .im-label{font-size:9px;font-weight:700;color:#166534;margin-bottom:4px;display:flex;justify-content:space-between;}
+  .im-track{background:rgba(134,239,172,0.3);border-radius:100px;height:10px;overflow:hidden;}
+  .im-fill{height:100%;border-radius:100px;transition:width .7s ease,background .4s;}
+
+  /* SAVINGS vs CONV */
+  .savings-card{background:linear-gradient(135deg,#0B1D3A,#15803D);border-radius:16px;padding:16px;margin-bottom:10px;box-shadow:var(--sh2);}
+  .sc-title{font-size:13px;font-weight:800;color:var(--gold-lt);font-family:Georgia,serif;margin-bottom:12px;}
+  .sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .sc-item{background:rgba(255,255,255,0.10);border-radius:11px;padding:10px;text-align:center;}
+  .sc-item-l{font-size:8.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.4px;}
+  .sc-item-v{font-size:17px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:3px;}
+  .sc-item-v.grn{color:#86EFAC;}
+
+  .elig-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .elig-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+  .elig-row:last-child{border-bottom:none;}
+  .elig-label{font-size:11px;font-weight:700;color:var(--navy);font-family:Georgia,serif;}
+  .elig-val{font-size:10.5px;font-weight:800;color:var(--grn);}
+  .elig-val.warn{color:var(--gold);}
+
+  /* SAVED */
+  .saved-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+  .saved-item{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .saved-info{flex:1;}
+  .saved-name{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .saved-meta{font-size:9px;color:var(--muted);margin-top:2px;}
+  .saved-amt{font-size:15px;font-weight:800;color:var(--grn);font-family:Georgia,serif;}
+  .saved-del{width:28px;height:28px;border-radius:8px;background:var(--danger);border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .empty-saved{text-align:center;padding:20px;color:var(--muted);font-size:12px;}
+
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic-list{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--grn);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.breakdown-grid,.income-card,.elig-card,.rural-banner,.ilist{animation:fadeUp .35s ease both .05s;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+  .calculating{animation:pulse .6s ease infinite;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🌾</div>
+      <div class="hdr-title">USDA Loan Calculator</div>
+      <div class="hdr-sub">Rural · 0% Down · 502 Guaranteed · Income Limits</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">USDA Rate</div><div class="rs-v">6.35%</div><div class="rs-n">30-Yr Only</div></div>
+    <div class="rs"><div class="rs-l">Min. Down</div><div class="rs-v gold">0%</div><div class="rs-n">Rural areas</div></div>
+    <div class="rs"><div class="rs-l">Guarantee Fee</div><div class="rs-v">1.00%</div><div class="rs-n">Upfront</div></div>
+    <div class="rs"><div class="rs-l">Annual Fee</div><div class="rs-v">0.35%</div><div class="rs-n">2025 Rate</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="rural-banner">
+    <div class="rb-icon">🗺️</div>
+    <div>
+      <div class="rb-title">USDA Rural Eligibility Check</div>
+      <div class="rb-sub">97% of U.S. land area eligible · 19.3% of population</div>
+    </div>
+    <div class="rb-btn">Map →</div>
+  </div>
+
+  <div class="sec" style="margin-top:0">Loan Details <span class="more">USDA.gov →</span></div>
+  <div class="input-grid">
+    <div class="inp-box">
+      <label>Home Price ($)</label>
+      <input type="number" id="homePrice" value="280000">
+      <div class="inp-hint">Rural area property</div>
+    </div>
+    <div class="inp-box">
+      <label>Household Income ($/yr)</label>
+      <input type="number" id="income" value="75000">
+      <div class="inp-hint">All household members</div>
+    </div>
+    <div class="inp-box">
+      <label>Interest Rate (%)</label>
+      <input type="number" id="rate" value="6.35" step="0.01">
+      <div class="inp-hint">Jun 2025 USDA avg</div>
+    </div>
+    <div class="inp-box">
+      <label>Household Size</label>
+      <select id="hhSize">
+        <option value="1">1 person</option>
+        <option value="2">2 people</option>
+        <option value="3">3 people</option>
+        <option value="4" selected>4 people</option>
+        <option value="5">5 people</option>
+        <option value="6">6 people</option>
+        <option value="7">7 people</option>
+        <option value="8">8 people</option>
+      </select>
+      <div class="inp-hint">Affects income limit</div>
+    </div>
+    <div class="inp-box">
+      <label>State Region</label>
+      <select id="region">
+        <option value="standard" selected>Standard (most states)</option>
+        <option value="high_cost">High-Cost (CA, HI, AK, etc.)</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>Property Tax ($/yr)</label>
+      <input type="number" id="propTax" value="2800">
+      <div class="inp-hint">Rural rates typically lower</div>
+    </div>
+  </div>
+  <div class="inp-box" style="margin-bottom:10px">
+    <label>Home Insurance ($/yr)</label>
+    <input type="number" id="insurance" value="1400">
+  </div>
+  <div class="btn-row">
+    <button class="calc-btn" id="calcBtn" onclick="runCalculate()">🌾 Calculate USDA Payment</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+  </div>
+
+  <div class="sec">Monthly Payment Breakdown</div>
+  <div class="result-hero">
+    <div class="rh-label">Total Monthly Payment (PITI + Annual Fee)</div>
+    <div class="rh-amount" id="totalPayment">— <span>/mo</span></div>
+    <div class="rh-sub" id="loanSummary">Enter details and tap Calculate</div>
+    <div class="rh-stats">
+      <div class="rh-stat"><div class="rh-stat-l">Guar. Fee</div><div class="rh-stat-v" id="gfStat">—</div></div>
+      <div class="rh-stat"><div class="rh-stat-l">Ann. Fee/mo</div><div class="rh-stat-v" id="afStat">—</div></div>
+      <div class="rh-stat"><div class="rh-stat-l">Total Interest</div><div class="rh-stat-v" id="tiStat">—</div></div>
+    </div>
+  </div>
+
+  <!-- STACKED BAR -->
+  <div class="stack-card">
+    <div class="stack-title">📊 Payment Composition</div>
+    <div class="stack-bar">
+      <div class="sb-pi" id="sbPI" style="width:0%"></div>
+      <div class="sb-fee" id="sbFee" style="width:0%"></div>
+      <div class="sb-tax" id="sbTax" style="width:0%"></div>
+      <div class="sb-ins" id="sbIns" style="width:0%"></div>
+    </div>
+    <div class="stack-legend">
+      <div class="sl-row"><div class="sl-dot" style="background:#15803D"></div><div class="sl-lbl">P&I</div><div class="sl-val" id="slgPI">—</div></div>
+      <div class="sl-row"><div class="sl-dot" style="background:#D97706"></div><div class="sl-lbl">Annual Fee</div><div class="sl-val" id="slgFee">—</div></div>
+      <div class="sl-row"><div class="sl-dot" style="background:#4A5C7A"></div><div class="sl-lbl">Tax</div><div class="sl-val" id="slgTax">—</div></div>
+      <div class="sl-row"><div class="sl-dot" style="background:#78350F"></div><div class="sl-lbl">Insurance</div><div class="sl-val" id="slgIns">—</div></div>
+    </div>
+  </div>
+
+  <!-- BREAKDOWN -->
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">💵</div><div class="bk-label">Principal & Interest</div><div class="bk-value" id="pi">—</div><div class="bk-sub">Base mortgage</div></div>
+    <div class="bk-card"><div class="bk-icon">🛡️</div><div class="bk-label">Annual Guarantee Fee</div><div class="bk-value" id="annualFee">—</div><div class="bk-sub">0.35% of loan ÷ 12</div></div>
+    <div class="bk-card"><div class="bk-icon">🏛️</div><div class="bk-label">Property Tax</div><div class="bk-value" id="tax">—</div><div class="bk-sub">Monthly escrow</div></div>
+    <div class="bk-card"><div class="bk-icon">🔥</div><div class="bk-label">Home Insurance</div><div class="bk-value" id="ins">—</div><div class="bk-sub">Monthly escrow</div></div>
+    <div class="bk-card"><div class="bk-icon">📊</div><div class="bk-label">Upfront Guar. Fee</div><div class="bk-value" id="gfAmount">—</div><div class="bk-sub">1% financed into loan</div></div>
+    <div class="bk-card"><div class="bk-icon">💰</div><div class="bk-label">Total Interest Paid</div><div class="bk-value" id="totalInterest">—</div><div class="bk-sub">Over 30 years</div></div>
+  </div>
+
+  <!-- INCOME CHECK -->
+  <div class="sec">Income Eligibility Check (2025)</div>
+  <div class="income-card">
+    <div class="ic-title">🌾 USDA 2025 Income Limits (502 Guaranteed)</div>
+    <div class="ic-row"><div class="ic-k">Your Household Income</div><div class="ic-v" id="incomeLine">—</div></div>
+    <div class="ic-row"><div class="ic-k">Income Limit for HH Size</div><div class="ic-v" id="incomeLimit">—</div></div>
+    <div class="ic-row"><div class="ic-k">Eligibility Status</div><div class="ic-v" id="incomeStatus">—</div></div>
+    <div class="ic-row"><div class="ic-k">Income to Limit Ratio</div><div class="ic-v" id="incomeRatio">—</div></div>
+    <div class="income-meter-wrap">
+      <div class="im-label"><span>Income Usage</span><span id="imPct">—</span></div>
+      <div class="im-track"><div class="im-fill" id="imFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- SAVINGS VS CONVENTIONAL -->
+  <div class="savings-card">
+    <div class="sc-title">💚 USDA vs. Conventional Savings</div>
+    <div class="sc-grid">
+      <div class="sc-item"><div class="sc-item-l">Down Pmt Saved</div><div class="sc-item-v grn" id="scDown">—</div></div>
+      <div class="sc-item"><div class="sc-item-l">No PMI Savings</div><div class="sc-item-v grn" id="scPMI">—</div></div>
+      <div class="sc-item"><div class="sc-item-l">USDA Ann. Fee</div><div class="sc-item-v" id="scFee">—</div></div>
+      <div class="sc-item"><div class="sc-item-l">Net Monthly Save</div><div class="sc-item-v grn" id="scNet">—</div></div>
+    </div>
+  </div>
+
+  <div class="sec">USDA Eligibility Checklist</div>
+  <div class="elig-card">
+    <div class="elig-row"><div class="elig-label">Location Requirement</div><div class="elig-val">✅ Rural/suburban area (USDA map)</div></div>
+    <div class="elig-row"><div class="elig-label">Down Payment</div><div class="elig-val">✅ $0 required (100% financing)</div></div>
+    <div class="elig-row"><div class="elig-label">Loan Term</div><div class="elig-val">✅ 30-year fixed only</div></div>
+    <div class="elig-row"><div class="elig-label">Primary Residence</div><div class="elig-val">✅ Must be primary home</div></div>
+    <div class="elig-row"><div class="elig-label">Credit Score</div><div class="elig-val">✅ No USDA min · Lenders ~640</div></div>
+    <div class="elig-row"><div class="elig-label">Property Type</div><div class="elig-val">✅ SFR, PUD, condos (approved)</div></div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="sec">Saved Calculations <span class="more" onclick="clearSaved()">Clear All</span></div>
+  <div class="saved-list" id="savedList">
+    <div class="empty-saved">No saved calculations yet.<br>Tap 🔖 Save after calculating.</div>
+  </div>
+
+  <div class="sec">USDA Program Resources</div>
+  <div class="ilist">
+    <div class="ic-list"><div class="ii">🗺️</div><div><div class="in">USDA Eligibility Map</div><div class="is">Check property at eligibility.sc.egov.usda.gov</div></div><div class="ich">›</div></div>
+    <div class="ic-list"><div class="ii">🌾</div><div><div class="in">502 Direct vs. Guaranteed</div><div class="is">Direct: very low income · Guaranteed: moderate income</div></div><div class="ich">›</div></div>
+    <div class="ic-list"><div class="ii">📋</div><div><div class="in">2025 Income Limits by County</div><div class="is">Varies by county · Updated annually by RD</div></div><div class="ich">›</div></div>
+    <div class="ic-list"><div class="ii">🔄</div><div><div class="in">USDA Streamline Refinance</div><div class="is">Reduce rate on existing USDA loan with less paperwork</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const incomeLimits={standard:[103500,112450,126500,140550,151800,163050,174300,185550],high_cost:[135600,154900,174250,193550,208900,224300,239650,255050]};
+let lastResult=null;
+let savedCalcs=JSON.parse(localStorage.getItem('usda_saves')||'[]');
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+function runCalculate(){
+  const btn=document.getElementById('calcBtn');
+  btn.classList.add('calculating');btn.textContent='⏳ Calculating…';
+  setTimeout(()=>{calculate();btn.classList.remove('calculating');btn.innerHTML='🌾 Calculate USDA Payment';},400);
+}
+
+function calculate(){
+  const price       = parseFloat(document.getElementById('homePrice').value)||0;
+  const income      = parseFloat(document.getElementById('income').value)||0;
+  const rateAnnual  = parseFloat(document.getElementById('rate').value)/100||0;
+  const propTaxAnnual=parseFloat(document.getElementById('propTax').value)||0;
+  const insAnnual   = parseFloat(document.getElementById('insurance').value)||0;
+  const hhSize      = parseInt(document.getElementById('hhSize').value);
+  const region      = document.getElementById('region').value;
+
+  const gf        = price*0.01;
+  const loanAmt   = price+gf;
+  const months    = 360;
+  const mr        = rateAnnual/12;
+  const pi        = mr===0?loanAmt/months:loanAmt*(mr*Math.pow(1+mr,months))/(Math.pow(1+mr,months)-1);
+  const annualFeeMonthly=(loanAmt*0.0035)/12;
+  const taxMo     = propTaxAnnual/12;
+  const insMo     = insAnnual/12;
+  const total     = pi+annualFeeMonthly+taxMo+insMo;
+  const totalInterest=(pi*months)-loanAmt;
+
+  // Hero
+  document.getElementById('totalPayment').innerHTML='$'+Math.round(total).toLocaleString()+' <span>/mo</span>';
+  document.getElementById('loanSummary').textContent=`Loan: $${Math.round(loanAmt).toLocaleString()} · $0 down · Guarantee Fee: $${Math.round(gf).toLocaleString()} financed`;
+  document.getElementById('gfStat').textContent='$'+Math.round(gf).toLocaleString();
+  document.getElementById('afStat').textContent='$'+Math.round(annualFeeMonthly).toLocaleString();
+  const ti=totalInterest>=1000000?(totalInterest/1000000).toFixed(2)+'M':Math.round(totalInterest/1000)+'K';
+  document.getElementById('tiStat').textContent='$'+ti;
+
+  // Breakdown
+  document.getElementById('pi').textContent=fmt(pi);
+  document.getElementById('annualFee').textContent=fmt(annualFeeMonthly);
+  document.getElementById('tax').textContent=fmt(taxMo);
+  document.getElementById('ins').textContent=fmt(insMo);
+  document.getElementById('gfAmount').textContent=fmt(gf);
+  document.getElementById('totalInterest').textContent='$'+ti;
+
+  // Stacked bar
+  const setW=(id,val,tot)=>{document.getElementById(id).style.width=Math.max((val/tot)*100,0)+'%';};
+  setW('sbPI',pi,total); setW('sbFee',annualFeeMonthly,total); setW('sbTax',taxMo,total); setW('sbIns',insMo,total);
+  document.getElementById('slgPI').textContent=fmt(pi);
+  document.getElementById('slgFee').textContent=fmt(annualFeeMonthly);
+  document.getElementById('slgTax').textContent=fmt(taxMo);
+  document.getElementById('slgIns').textContent=fmt(insMo);
+
+  // Income eligibility
+  const limits=incomeLimits[region];
+  const limit=limits[Math.min(hhSize-1,7)];
+  const ratio=((income/limit)*100);
+  const eligible=income<=limit;
+  document.getElementById('incomeLine').textContent='$'+income.toLocaleString()+' / yr';
+  document.getElementById('incomeLimit').textContent='$'+limit.toLocaleString()+` (${hhSize}-person)`;
+  document.getElementById('incomeStatus').textContent=eligible?'✅ Within limit':'❌ Exceeds limit';
+  document.getElementById('incomeStatus').className='ic-v'+(eligible?'':(income/limit<1.1?' warn':' bad'));
+  document.getElementById('incomeRatio').textContent=ratio.toFixed(1)+'% – '+(eligible?'Eligible':'Over cap');
+  // meter
+  const meterPct=Math.min(ratio,100);
+  document.getElementById('imFill').style.width=meterPct+'%';
+  document.getElementById('imFill').style.background=ratio<=70?'#15803D':ratio<=90?'#D97706':'#B91C1C';
+  document.getElementById('imPct').textContent=ratio.toFixed(1)+'% of limit';
+
+  // Savings vs conventional
+  const convDown=price*0.20;
+  const convPMI=(loanAmt*0.008)/12;
+  const netSavings=convPMI-annualFeeMonthly;
+  document.getElementById('scDown').textContent=fmt(convDown)+' saved';
+  document.getElementById('scPMI').textContent=fmt(convPMI)+'/mo';
+  document.getElementById('scFee').textContent=fmt(annualFeeMonthly)+'/mo';
+  document.getElementById('scNet').textContent=(netSavings>0?'+':'')+fmt(netSavings)+'/mo';
+
+  lastResult={price,income,hhSize,total:Math.round(total),eligible,ratio:ratio.toFixed(1),ts:Date.now()};
+}
+
+function saveCalc(){
+  if(!lastResult){showToast('⚠️ Calculate first before saving');return;}
+  savedCalcs.unshift(lastResult);
+  if(savedCalcs.length>10)savedCalcs.pop();
+  localStorage.setItem('usda_saves',JSON.stringify(savedCalcs));
+  renderSaved();
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');btn.innerHTML='✅ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},2000);
+  showToast('✅ Calculation saved!');
+}
+
+function clearSaved(){
+  if(savedCalcs.length===0){showToast('Nothing to clear');return;}
+  savedCalcs=[];localStorage.removeItem('usda_saves');renderSaved();showToast('🗑️ All saves cleared');
+}
+
+function deleteSaved(idx){
+  savedCalcs.splice(idx,1);localStorage.setItem('usda_saves',JSON.stringify(savedCalcs));renderSaved();
+}
+
+function renderSaved(){
+  const list=document.getElementById('savedList');
+  if(savedCalcs.length===0){list.innerHTML='<div class="empty-saved">No saved calculations yet.<br>Tap 🔖 Save after calculating.</div>';return;}
+  list.innerHTML=savedCalcs.map((s,i)=>{
+    const color=s.eligible?'#15803D':'#B91C1C';
+    const d=new Date(s.ts);
+    return `<div class="saved-item">
+      <div class="saved-info">
+        <div class="saved-name">$${(s.price/1000).toFixed(0)}K home · HH ${s.hhSize} · Income $${(s.income/1000).toFixed(0)}K</div>
+        <div class="saved-meta">Income ${s.ratio}% of limit · ${s.eligible?'✅ Eligible':'❌ Over limit'} · ${d.toLocaleDateString()}</div>
+      </div>
+      <div class="saved-amt" style="color:${color}">$${s.total.toLocaleString()}</div>
+      <button class="saved-del" onclick="deleteSaved(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+renderSaved();
+calculate();
+</script>
+</body>
+</html>

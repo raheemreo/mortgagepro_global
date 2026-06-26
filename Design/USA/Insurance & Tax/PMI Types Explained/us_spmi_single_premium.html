@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPMI – Single Premium PMI</title>
+<style>
+:root {
+  --navy: #0B1D3A; --blue: #1B3F72; --red: #B91C1C; --crimson: #991B1B;
+  --gold: #D97706; --gold-lt: #FCD34D; --white: #FFFFFF; --bg: #F0F4FF;
+  --card: #FFFFFF; --muted: #4A5C7A; --border: rgba(27,63,114,0.09);
+  --sh: 0 4px 20px rgba(11,29,58,0.10); --sh2: 0 8px 36px rgba(11,29,58,0.18);
+  --green: #15803D; --purple:#6D28D9; --purple-lt:#C4B5FD;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+.header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+.header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+.header::after { content:'💵'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+.hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+.icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+.hdr-center { text-align:center; }
+.hdr-flag { font-size:28px; }
+.hdr-title { font-size:18px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+.hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+.rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(3,1fr); position:relative; z-index:2; margin-top:4px; }
+.rs { text-align:center; position:relative; }
+.rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+.rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+.rs-v { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+.rs-v.gold { color:var(--gold-lt); }
+.rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+.content { padding:15px 15px 110px; }
+.sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+.sec .badge { font-size:9px; font-weight:700; background:#F5F3FF; color:#6D28D9; padding:3px 8px; border-radius:20px; text-transform:none; letter-spacing:0; }
+
+.hero { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:19px; position:relative; overflow:hidden; box-shadow:var(--sh2); margin-bottom:12px; }
+.hero::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:rgba(109,40,217,0.18); }
+.h-tag { font-size:9.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.8px; }
+.h-title { font-size:17px; font-weight:800; color:#fff; margin:5px 0 12px; line-height:1.25; font-family:Georgia,serif; }
+.h-title span { color:var(--gold-lt); }
+.h-row { display:flex; gap:7px; }
+.h-box { flex:1; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:9px 10px; }
+.h-box label { font-size:8.5px; color:rgba(255,255,255,0.48); display:block; margin-bottom:2px; }
+.h-box .v { font-size:13px; font-weight:800; color:#fff; }
+.h-box .v.gold { color:var(--gold-lt); }
+.h-box .v.purple { color:var(--purple-lt); }
+
+/* CALC CARD */
+.input-card { background:var(--card); border-radius:18px; padding:18px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+.input-card h3{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+.inp-group { margin-bottom:14px; }
+.inp-group:last-child { margin-bottom:0; }
+.inp-label { font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; }
+.inp-label .hint { font-size:9.5px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; }
+input[type=range] { width:100%; -webkit-appearance:none; height:6px; border-radius:3px; background:linear-gradient(to right,var(--blue) 0%,var(--blue) 20%,#CBD5E1 20%,#CBD5E1 100%); outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--navy); border:3px solid #fff; box-shadow:0 2px 8px rgba(11,29,58,0.25); }
+.range-labels { display:flex; justify-content:space-between; font-size:9px; color:var(--muted); margin-top:4px; font-weight:600; }
+.toggle-row{display:flex;gap:8px;margin-bottom:14px;}
+.tog-btn{flex:1;padding:10px 6px;border-radius:11px;border:1.5px solid var(--border);background:var(--bg);font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer;text-align:center;transition:all .18s;}
+.tog-btn.active{background:var(--purple);color:#fff;border-color:var(--purple);}
+.calc-btn { width:100%; background:linear-gradient(135deg,#6D28D9,#5B21B6); border:none; border-radius:14px; padding:14px; font-size:14px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(109,40,217,0.35); font-family:Georgia,serif; letter-spacing:0.3px; margin-top:14px; }
+.btn-row { display:flex; gap:10px; margin-top:14px; }
+.btn-row .calc-btn { margin-top:0; flex:1; }
+.save-btn { flex:0 0 52px; background:var(--card); border:1.5px solid var(--purple); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; transition:transform .12s; color:var(--purple); }
+.save-btn:active { transform:scale(.94); }
+.save-btn.saved { background:#F5F3FF; }
+
+/* RESULT */
+.result-hero { background:linear-gradient(135deg,#6D28D9,#5B21B6); border-radius:18px; padding:18px; box-shadow:0 8px 28px rgba(109,40,217,0.30); margin-bottom:10px; }
+.rh-label { font-size:9.5px; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.8px; }
+.rh-amount { font-size:32px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1; margin:4px 0 2px; }
+.rh-sub { font-size:10px; color:rgba(255,255,255,0.60); }
+.rh-row { display:flex; gap:8px; margin-top:14px; }
+.rh-box { flex:1; background:rgba(255,255,255,0.12); border-radius:10px; padding:9px 10px; }
+.rh-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.50); }
+.rh-box-val { font-size:13px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+
+.toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff; padding:10px 18px; border-radius:30px; font-size:12px; font-weight:700; box-shadow:var(--sh2); opacity:0; transition:all .25s; z-index:200; pointer-events:none; white-space:nowrap; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* DONUT */
+.donut-card { background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:18px; margin-bottom:10px; }
+.donut-wrap { position:relative; width:108px; height:108px; flex-shrink:0; }
+.donut-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.donut-center .dc-val { font-size:14px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+.donut-center .dc-lbl { font-size:8px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.donut-legend { flex:1; display:flex; flex-direction:column; gap:9px; }
+.dl-row { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; color:var(--navy); }
+.dl-dot { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+.dl-val { margin-left:auto; font-family:Georgia,serif; }
+
+.saved-card { background:var(--card); border-radius:14px; padding:12px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.saved-card .sd-amt { font-size:14px; font-weight:800; color:var(--purple); font-family:Georgia,serif; }
+.saved-card .sd-meta { font-size:9.5px; color:var(--muted); margin-top:2px; }
+.saved-del { margin-left:auto; font-size:16px; color:#B91C1C; cursor:pointer; padding:4px; }
+.saved-empty { font-size:11px; color:var(--muted); text-align:center; padding:18px 0; }
+
+.ilist { display:flex; flex-direction:column; gap:9px; }
+.ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:flex-start; gap:12px; }
+.ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+.is { font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+.bge { display:inline-flex; padding:2px 7px; border-radius:20px; font-size:8.5px; font-weight:700; margin-top:5px; }
+.bge-g { background:#F0FDF4; color:#15803D; }
+.bge-b { background:#EFF6FF; color:#1D4ED8; }
+.bge-r { background:#FEF2F2; color:#B91C1C; }
+.bge-p{background:#F5F3FF;color:#6D28D9;}
+
+.bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+.ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+.ni-ic { font-size:19px; }
+.ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+.ni.active .ni-lb { color:var(--blue); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+.hero,.input-card,.donut-card,.ilist { animation:fadeUp .35s ease both .05s; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">💵</div>
+      <div class="hdr-title">SPMI – Single Premium</div>
+      <div class="hdr-sub">One Upfront Payment · No Monthly Premium</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Upfront Cost</div><div class="rs-v gold">1.0–3.0%</div><div class="rs-n">Of loan amount</div></div>
+    <div class="rs"><div class="rs-l">Monthly PMI</div><div class="rs-v">$0</div><div class="rs-n">Eliminated</div></div>
+    <div class="rs"><div class="rs-l">Refund on Sale?</div><div class="rs-v">No</div><div class="rs-n">Non-refundable</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">What is SPMI? <span class="badge">Lump Sum</span></div>
+  <div class="hero">
+    <div class="h-tag">Single Premium Private Mortgage Insurance</div>
+    <div class="h-title">Pay all your PMI <span>at closing — once</span></div>
+    <div class="h-row">
+      <div class="h-box"><label>Upfront Cost</label><div class="v gold">1–3% of loan</div></div>
+      <div class="h-box"><label>Monthly Cost</label><div class="v">$0</div></div>
+      <div class="h-box"><label>Can Finance It?</label><div class="v purple">Often Yes</div></div>
+    </div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="sec">SPMI Cost Calculator</div>
+  <div class="input-card">
+    <h3>💵 Calculate Your Upfront Premium</h3>
+    <div class="inp-group">
+      <div class="inp-label">Loan Amount <span class="hint" id="loanDisplay">$350,000</span></div>
+      <input type="range" id="loanSlider" min="100000" max="1200000" step="5000" value="350000" oninput="updateCalc()">
+      <div class="range-labels"><span>$100K</span><span>$500K</span><span>$1M</span><span>$1.2M</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Single Premium Rate <span class="hint" id="rateDisplay">2.0%</span></div>
+      <input type="range" id="rateSlider" min="1.0" max="3.0" step="0.1" value="2.0" oninput="updateCalc()">
+      <div class="range-labels"><span>1.0%</span><span>1.5%</span><span>2.0%</span><span>2.5%</span><span>3.0%</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Payment Method</div>
+      <div class="toggle-row">
+        <div class="tog-btn active" id="t-cash" onclick="setMethod('cash')">Pay Cash at Closing</div>
+        <div class="tog-btn" id="t-financed" onclick="setMethod('financed')">Finance into Loan</div>
+      </div>
+    </div>
+    <div class="inp-group" id="financedRateGroup" style="display:none;">
+      <div class="inp-label">Mortgage Rate (if financed) <span class="hint" id="mtgRateDisplay">6.75%</span></div>
+      <input type="range" id="mtgRateSlider" min="5.0" max="8.5" step="0.05" value="6.75" oninput="updateCalc()">
+      <div class="range-labels"><span>5%</span><span>6.75%</span><span>8.5%</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="updateCalc()">Calculate SPMI Cost</button>
+      <div class="save-btn" id="saveBtn" onclick="saveCalc()">💾</div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-hero" id="resultHero">
+    <div class="rh-label">Single Premium Due at Closing</div>
+    <div class="rh-amount" id="spmiAmount">$7,000</div>
+    <div class="rh-sub" id="spmiSubtitle">2.0% of $350,000 loan · Paid once, no monthly PMI</div>
+    <div class="rh-row">
+      <div class="rh-box"><div class="rh-box-lbl">vs. BPMI Monthly (Est)</div><div class="rh-box-val" id="vsMonthly">$219/mo</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">Break-Even Point</div><div class="rh-box-val" id="breakEven">~32 mo</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">If Financed: +Monthly</div><div class="rh-box-val" id="financedMonthly">+$45/mo</div></div>
+    </div>
+  </div>
+
+  <!-- Saved -->
+  <div class="sec">Saved Calculations</div>
+  <div id="savedList"></div>
+
+  <!-- Donut: cash vs financed -->
+  <div class="sec">Loan Impact Breakdown</div>
+  <div class="donut-card">
+    <div class="donut-wrap">
+      <svg viewBox="0 0 36 36" width="108" height="108" style="transform:rotate(-90deg)">
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#EEF2FF" stroke-width="3.6"></circle>
+        <circle id="donutLoan" cx="18" cy="18" r="15.9" fill="none" stroke="#1B3F72" stroke-width="3.6" stroke-dasharray="83 100" stroke-dashoffset="0" stroke-linecap="round"></circle>
+        <circle id="donutSpmi" cx="18" cy="18" r="15.9" fill="none" stroke="#6D28D9" stroke-width="3.6" stroke-dasharray="17 100" stroke-dashoffset="-83" stroke-linecap="round"></circle>
+      </svg>
+      <div class="donut-center"><div class="dc-val" id="donutPct">2.0%</div><div class="dc-lbl">of Loan</div></div>
+    </div>
+    <div class="donut-legend">
+      <div class="dl-row"><span class="dl-dot" style="background:#1B3F72"></span>Base Loan Amount<span class="dl-val" id="legendLoan">$350,000</span></div>
+      <div class="dl-row"><span class="dl-dot" style="background:#6D28D9"></span>SPMI Premium<span class="dl-val" id="legendSpmi">$7,000</span></div>
+      <div class="dl-row"><span class="dl-dot" style="background:#D97706"></span>Total if Financed<span class="dl-val" id="legendTotal">$357,000</span></div>
+    </div>
+  </div>
+
+  <!-- Key Facts -->
+  <div class="sec">SPMI Key Facts</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">💰</div><div><div class="in">No Monthly PMI Line Item</div><div class="is">Your mortgage statement shows P&I only — no separate PMI charge to track or cancel later.</div><div class="bge bge-g">Simpler Statement</div></div></div>
+    <div class="ic"><div class="ii">🏠</div><div><div class="in">Best for Long-Term Holders</div><div class="is">If you plan to keep the loan 5+ years, paying upfront often beats years of monthly BPMI premiums.</div><div class="bge bge-p">Buy & Hold</div></div></div>
+    <div class="ic"><div class="ii">⚠️</div><div><div class="in">Non-Refundable if You Sell Early</div><div class="is">Unlike BPMI which simply stops, SPMI paid upfront is not refunded if you sell or refinance quickly.</div><div class="bge bge-r">Sunk Cost Risk</div></div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Can Be Financed Into the Loan</div><div class="is">Rolling SPMI into your mortgage avoids cash at closing, but you'll pay mortgage interest on it too.</div><div class="bge bge-b">Cash-Flow Friendly</div></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let payMethod = 'cash';
+function setMethod(m){
+  payMethod = m;
+  document.getElementById('t-cash').classList.toggle('active', m==='cash');
+  document.getElementById('t-financed').classList.toggle('active', m==='financed');
+  document.getElementById('financedRateGroup').style.display = m==='financed' ? 'block' : 'none';
+  updateCalc();
+}
+
+function fmt(n){return '$'+Math.round(n).toLocaleString('en-US');}
+
+function updateCalc(){
+  const loan = +document.getElementById('loanSlider').value;
+  const rate = +document.getElementById('rateSlider').value;
+  const mtgRate = +document.getElementById('mtgRateSlider').value;
+
+  document.getElementById('loanDisplay').textContent = fmt(loan);
+  document.getElementById('rateDisplay').textContent = rate.toFixed(1)+'%';
+  document.getElementById('mtgRateDisplay').textContent = mtgRate.toFixed(2)+'%';
+
+  const spmiAmount = loan * rate / 100;
+  // Approximate equivalent BPMI monthly (using mid-tier 0.75% annual rate as comparison baseline)
+  const equivBpmiMonthly = (loan * 0.0075) / 12;
+  const breakEvenMonths = spmiAmount / equivBpmiMonthly;
+
+  document.getElementById('spmiAmount').textContent = fmt(spmiAmount);
+  document.getElementById('spmiSubtitle').textContent = rate.toFixed(1)+'% of '+fmt(loan)+' loan · Paid once, no monthly PMI';
+  document.getElementById('vsMonthly').textContent = fmt(equivBpmiMonthly)+'/mo';
+  document.getElementById('breakEven').textContent = '~'+Math.round(breakEvenMonths)+' mo';
+
+  if(payMethod === 'financed'){
+    const newLoan = loan + spmiAmount;
+    const monthlyRate = mtgRate/100/12;
+    const n = 360;
+    const fullPmt = newLoan*(monthlyRate*Math.pow(1+monthlyRate,n))/(Math.pow(1+monthlyRate,n)-1);
+    const basePmt = loan*(monthlyRate*Math.pow(1+monthlyRate,n))/(Math.pow(1+monthlyRate,n)-1);
+    document.getElementById('financedMonthly').textContent = '+'+fmt(fullPmt-basePmt)+'/mo';
+  } else {
+    document.getElementById('financedMonthly').textContent = 'N/A (cash)';
+  }
+
+  // Donut
+  const pct = rate;
+  const loanArc = 100 - pct*3; // scale visually
+  document.getElementById('donutLoan').setAttribute('stroke-dasharray', Math.max(loanArc,60)+' 100');
+  document.getElementById('donutSpmi').setAttribute('stroke-dasharray', (100-Math.max(loanArc,60))+' 100');
+  document.getElementById('donutSpmi').setAttribute('stroke-dashoffset', -Math.max(loanArc,60));
+  document.getElementById('donutPct').textContent = rate.toFixed(1)+'%';
+  document.getElementById('legendLoan').textContent = fmt(loan);
+  document.getElementById('legendSpmi').textContent = fmt(spmiAmount);
+  document.getElementById('legendTotal').textContent = fmt(loan+spmiAmount);
+}
+
+function saveCalc(){
+  const data = {
+    id: Date.now(),
+    amount: document.getElementById('spmiAmount').textContent,
+    loan: document.getElementById('loanDisplay').textContent,
+    method: payMethod,
+    date: new Date().toLocaleDateString()
+  };
+  const saves = JSON.parse(localStorage.getItem('spmi_saves')||'[]');
+  saves.unshift(data);
+  if(saves.length>5) saves.length=5;
+  localStorage.setItem('spmi_saves', JSON.stringify(saves));
+  renderSaved();
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  showToast('SPMI calculation saved!');
+  setTimeout(()=>btn.classList.remove('saved'), 1500);
+}
+
+function deleteSave(id){
+  let saves = JSON.parse(localStorage.getItem('spmi_saves')||'[]');
+  saves = saves.filter(s=>s.id!==id);
+  localStorage.setItem('spmi_saves', JSON.stringify(saves));
+  renderSaved();
+}
+
+function renderSaved(){
+  const saves = JSON.parse(localStorage.getItem('spmi_saves')||'[]');
+  const list = document.getElementById('savedList');
+  if(!saves.length){ list.innerHTML = '<div class="saved-empty">No saved calculations yet</div>'; return; }
+  list.innerHTML = saves.map(s=>`<div class="saved-card"><div><div class="sd-amt">${s.amount}</div><div class="sd-meta">${s.loan} loan · ${s.method} · ${s.date}</div></div><div class="saved-del" onclick="deleteSave(${s.id})">✕</div></div>`).join('');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+updateCalc();
+renderSaved();
+</script>
+</body>
+</html>

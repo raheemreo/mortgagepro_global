@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europe Mortgage Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F7F3FF;color:#1A0040;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#003399 0%,#1A0040 55%,#FFCC00 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,204,0,0.08);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,51,153,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#003399;text-transform:none;letter-spacing:0;cursor:pointer;}
+.hero-card{background:linear-gradient(145deg,#003399,#1A0040);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,51,153,0.28);}
+.hero-card::before{content:'⭐';position:absolute;right:5px;top:5px;font-size:65px;opacity:0.07;}
+.hc-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.hc-title{font-size:19px;font-weight:800;color:#fff;margin:5px 0 13px;line-height:1.2;font-family:Georgia,serif;}
+.hc-title span{color:#FFCC00;}
+.hc-row{display:flex;gap:8px;}
+.hc-box{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.hc-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.hc-box .v{font-size:14px;font-weight:800;color:#fff;}
+.hc-btn{margin-top:13px;width:100%;background:#FFCC00;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#003399;cursor:pointer;box-shadow:0 4px 14px rgba(255,204,0,0.35);}
+
+/* COUNTRY PICKER */
+.country-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:10px;}
+.country-row::-webkit-scrollbar{display:none;}
+.cpill{flex-shrink:0;padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid transparent;}
+.cpill.active{background:#003399;color:#FFCC00;border-color:#003399;}
+.cpill:not(.active){background:#fff;color:#1A0040;border-color:rgba(0,51,153,0.15);}
+
+.ecb-banner{background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #818CF8;border-radius:15px;padding:13px 15px;display:flex;align-items:center;gap:11px;margin-bottom:10px;}
+.sb-title{font-size:13px;font-weight:800;color:#1e1b4b;font-family:Georgia,serif;}.sb-sub{font-size:10px;color:#4338ca;margin-top:2px;}
+.sb-btn{margin-left:auto;background:#4F46E5;color:#fff;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;white-space:nowrap;flex-shrink:0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.tcard{background:#fff;border-radius:17px;padding:15px 13px;box-shadow:0 3px 14px rgba(26,0,64,0.08);border:1px solid rgba(0,51,153,0.08);cursor:pointer;position:relative;overflow:hidden;}
+.tcard.dark{background:linear-gradient(140deg,#003399,#1A0040);}
+.tcard.gold-eu{background:linear-gradient(140deg,#B45309,#78350F);}
+.tcard.violet{background:linear-gradient(140deg,#6D28D9,#4C1D95);}
+.tcard.teal{background:linear-gradient(140deg,#0F766E,#115E59);}
+.tcard.slate{background:linear-gradient(140deg,#334155,#1E293B);}
+.tic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;}
+.tcard:not(.dark):not(.gold-eu):not(.violet):not(.teal):not(.slate) .tic{background:#F7F3FF;}
+.tcard.dark .tic,.tcard.gold-eu .tic,.tcard.violet .tic,.tcard.teal .tic,.tcard.slate .tic{background:rgba(255,255,255,0.15);}
+.tname{font-size:13px;font-weight:800;color:#1A0040;line-height:1.2;font-family:Georgia,serif;}
+.tcard.dark .tname,.tcard.gold-eu .tname,.tcard.violet .tname,.tcard.teal .tname,.tcard.slate .tname{color:#fff;}
+.tdesc{font-size:10px;color:#6B21A8;margin-top:3px;}
+.tcard.dark .tdesc,.tcard.gold-eu .tdesc,.tcard.violet .tdesc,.tcard.teal .tdesc,.tcard.slate .tdesc{color:rgba(255,255,255,0.6);}
+.tarr{position:absolute;bottom:12px;right:12px;font-size:15px;color:rgba(26,0,64,0.18);}
+.tcard.dark .tarr,.tcard.gold-eu .tarr,.tcard.violet .tarr,.tcard.teal .tarr,.tcard.slate .tarr{color:rgba(255,255,255,0.25);}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-top:5px;}
+.badge-eu{background:#EEF2FF;color:#3730A3;}.badge-g{background:#F0FDF4;color:#166534;}
+.info-card{background:#fff;border-radius:15px;padding:14px;box-shadow:0 3px 14px rgba(26,0,64,0.07);border:1px solid rgba(0,51,153,0.08);display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer;}
+.info-icon{width:40px;height:40px;border-radius:11px;background:#F7F3FF;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.info-name{font-size:13px;font-weight:800;color:#1A0040;font-family:Georgia,serif;}
+.info-sub{font-size:10px;color:#6B21A8;margin-top:2px;}
+.info-chev{font-size:18px;color:rgba(26,0,64,0.2);margin-left:auto;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(0,51,153,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,0,64,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#6B21A8;}
+.ni.active .ni-lb{color:#003399;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇪🇺</span><div class="hdr-title">Europe Tools</div><div class="hdr-sub">EUR · ECB Rate · Multi-Country</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">🇩🇪 Germany</div><div class="rs-val grn">3.85%</div><div class="rs-note">Fixed 10yr</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇫🇷 France</div><div class="rs-val">3.60%</div><div class="rs-note">Fixed 20yr</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">🇪🇸 Spain</div><div class="rs-val red">4.10%</div><div class="rs-note">Variable</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">ECB Rate</div><div class="rs-val gold">4.00%</div><div class="rs-note">Current</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Select Country <span class="more">Compare all →</span></div>
+  <div class="country-row">
+    <div class="cpill active">🇩🇪 Germany</div>
+    <div class="cpill">🇫🇷 France</div>
+    <div class="cpill">🇪🇸 Spain</div>
+    <div class="cpill">🇮🇹 Italy</div>
+    <div class="cpill">🇳🇱 Netherlands</div>
+    <div class="cpill">🇵🇹 Portugal</div>
+  </div>
+  <div class="hero-card">
+    <div class="hc-tag">European Mortgage Calculator</div>
+    <div class="hc-title">Calculate your <span>Baufinanzierung</span><br>payment in EUR</div>
+    <div class="hc-row">
+      <div class="hc-box"><label>Property Value</label><div class="v">€420,000</div></div>
+      <div class="hc-box"><label>Deposit</label><div class="v">20%</div></div>
+      <div class="hc-box"><label>Term</label><div class="v">20 yr</div></div>
+    </div>
+    <button class="hc-btn">⭐ Calculate European Mortgage</button>
+  </div>
+  <div class="sec-lbl">ECB Rate Monitor <span class="more">Rate history →</span></div>
+  <div class="ecb-banner">
+    <div style="font-size:24px">🏛️</div>
+    <div><div class="sb-title">ECB Interest Rate: 4.00%</div><div class="sb-sub">European Central Bank — affects all Eurozone mortgages</div></div>
+    <div class="sb-btn">View ECB</div>
+  </div>
+  <div class="sec-lbl">Core Tools <span class="more">All tools →</span></div>
+  <div class="grid2">
+    <div class="tcard dark"><div class="tic">🏠</div><div class="tname">Mortgage Calc</div><div class="tdesc">EUR monthly payment</div><div class="badge badge-eu">Multi-country</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">📊</div><div class="tname">DTI Ratio EUR</div><div class="tdesc">Debt-to-income Europe</div><div class="tarr">›</div></div>
+    <div class="tcard violet"><div class="tic">🏛️</div><div class="tname">Property Tax Calc</div><div class="tdesc">Country-specific taxes</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">💶</div><div class="tname">Affordability EUR</div><div class="tdesc">Borrowing capacity</div><div class="badge badge-g">Per country</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">📅</div><div class="tname">Amortization</div><div class="tdesc">European schedule</div><div class="tarr">›</div></div>
+    <div class="tcard gold-eu"><div class="tic">🔄</div><div class="tname">Euribor Tracker</div><div class="tdesc">Variable rate index</div><div class="tarr">›</div></div>
+    <div class="tcard teal"><div class="tic">🌍</div><div class="tname">Country Comparison</div><div class="tdesc">Compare EU rates</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">📜</div><div class="tname">Notary Fee Calc</div><div class="tdesc">DE/FR/ES closing costs</div><div class="tarr">›</div></div>
+    <div class="tcard slate"><div class="tic">🏘️</div><div class="tname">Non-Resident Calc</div><div class="tdesc">Foreign buyer guide</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">💱</div><div class="tname">Currency Converter</div><div class="tdesc">EUR · GBP · USD · CHF</div><div class="tarr">›</div></div>
+  </div>
+  <div class="sec-lbl">Countries & Resources</div>
+  <div class="info-card"><div class="info-icon">🇩🇪</div><div><div class="info-name">Germany – Baufinanzierung</div><div class="info-sub">10yr fixed · Grunderwerbsteuer</div></div><div class="info-chev">›</div></div>
+  <div class="info-card"><div class="info-icon">🇫🇷</div><div><div class="info-name">France – Prêt Immobilier</div><div class="info-sub">20yr fixed · Frais de notaire</div></div><div class="info-chev">›</div></div>
+  <div class="info-card"><div class="info-icon">🇪🇸</div><div><div class="info-name">Spain – Hipoteca</div><div class="info-sub">Euribor variable · ITP/AJD tax</div></div><div class="info-chev">›</div></div>
+  <div class="info-card"><div class="info-icon">🤖</div><div><div class="info-name">Europe AI Advisor</div><div class="info-sub">ECB rules · multi-country guidance</div></div><div class="info-chev">›</div></div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">⭐</div><div class="ni-lb">Europe</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+</body>
+</html>

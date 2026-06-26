@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refinancing from ARM</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root {
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+    --teal:#0F766E;--teal-lt:#99F6E4;--green:#15803D;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#0F766E 60%,#0D9488 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🔄';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+  .content{padding:14px 14px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;}
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px;}
+  .inp-box{background:var(--card);border-radius:13px;padding:12px 13px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--teal);}
+  .inp-box.full{grid-column:1/-1;}
+  .inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:14px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:8.5px;color:var(--muted);margin-top:3px;}
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#0F766E);border-radius:18px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;}
+  .result-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:30px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.1;margin:5px 0 4px;}
+  .rh-amount span{font-size:14px;color:var(--gold-lt);}
+  .rh-sub{font-size:9.5px;color:rgba(255,255,255,0.48);}
+  .save-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:9px;padding:6px 11px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .2s;z-index:2;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(20,184,166,0.35);border-color:rgba(20,184,166,0.60);}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .saved-section{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;display:none;}
+  .saved-section.has-saves{display:block;}
+  .saved-item{background:#F8FAFF;border-radius:10px;padding:10px 12px;margin-bottom:7px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .saved-item:last-child{margin-bottom:0;}
+  .si-info{flex:1;}
+  .si-title{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-del{font-size:14px;cursor:pointer;color:#B91C1C;padding:2px 5px;opacity:.6;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#0F766E,#0D9488);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(15,118,110,0.32);font-family:'DM Serif Display',serif;margin-top:3px;}
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:13px;padding:12px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:18px;margin-bottom:5px;}
+  .bk-label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:16px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin:3px 0;}
+  .bk-sub{font-size:8.5px;color:var(--muted);}
+  /* break-even chart bars */
+  .chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+  .be-wrap{position:relative;height:120px;margin-bottom:6px;}
+  .be-bars{display:flex;align-items:flex-end;gap:5px;height:100%;border-bottom:1px solid var(--border);padding-bottom:2px;}
+  .be-bar{flex:1;background:linear-gradient(180deg,#0F766E,#0D9488);border-radius:3px 3px 0 0;position:relative;min-height:2px;transition:height .5s;}
+  .be-bar.under{background:linear-gradient(180deg,#FCD34D,#D97706);}
+  .be-legend{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);margin-top:4px;}
+  .be-info{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .be-stat{text-align:center;flex:1;}
+  .be-stat-val{font-size:15px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .be-stat-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-top:2px;}
+  .ff-card{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:15px;padding:13px 14px;margin-bottom:10px;}
+  .ff-title{font-size:12px;font-weight:700;color:#1E3A5F;font-family:'DM Serif Display',serif;margin-bottom:9px;}
+  .ff-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(147,197,253,0.4);gap:8px;}
+  .ff-row:last-child{border-bottom:none;}
+  .ff-k{font-size:9.5px;color:#1E40AF;font-weight:600;}
+  .ff-v{font-size:9.5px;font-weight:700;color:#1D4ED8;text-align:right;}
+  .elig-card{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .elig-row{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:9px;}
+  .elig-row:last-child{border-bottom:none;}
+  .elig-check{width:18px;height:18px;border-radius:6px;border:1.5px solid var(--border);flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;transition:all .15s;}
+  .elig-check.checked{background:var(--green);border-color:var(--green);}
+  .elig-text{flex:1;}
+  .elig-label{font-size:11px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .elig-note{font-size:9px;color:var(--muted);margin-top:2px;}
+  .note-strip{background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.25);border-radius:12px;padding:10px 12px;font-size:9.5px;color:#92400E;line-height:1.5;margin-bottom:10px;}
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:18px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--teal);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.breakdown-grid,.chart-card,.ff-card,.elig-card{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔄</div>
+      <div class="hdr-title">Refinancing from ARM</div>
+      <div class="hdr-sub">When to refi to fixed · Break-even</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">30-Yr Refi Rate</div><div class="rs-v gold">6.75%</div><div class="rs-n">Avg Today</div></div>
+    <div class="rs"><div class="rs-l">Closing Costs</div><div class="rs-v">2–6%</div><div class="rs-n">Of Loan Amt</div></div>
+    <div class="rs"><div class="rs-l">Typical Break-Even</div><div class="rs-v">22–58 mo</div><div class="rs-n">Cost-Dependent</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="note-strip">📌 The math is simple: divide your total refinance cost by your monthly savings. The result is your break-even month — how long you need to stay to make refinancing worth it.</div>
+
+  <div class="sec">Your Refinance Scenario</div>
+  <div class="input-grid">
+    <div class="inp-box full">
+      <label>Current ARM Balance ($)</label>
+      <input type="number" id="curBalance" value="340000" step="1000" oninput="calculate()">
+    </div>
+    <div class="inp-box">
+      <label>Current ARM Rate (%)</label>
+      <input type="number" id="curRate" value="7.25" step="0.05" oninput="calculate()">
+      <div class="inp-hint">Your rate after/near adjustment</div>
+    </div>
+    <div class="inp-box">
+      <label>New Fixed Rate (%)</label>
+      <input type="number" id="newRate" value="6.47" step="0.05" oninput="calculate()">
+      <div class="inp-hint">Today's avg 30-yr fixed ~6.47%</div>
+    </div>
+    <div class="inp-box">
+      <label>Remaining Term (yrs)</label>
+      <select id="term" onchange="calculate()">
+        <option value="30" selected>30 Years</option>
+        <option value="25">25 Years</option>
+        <option value="20">20 Years</option>
+        <option value="15">15 Years</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>Closing Costs (%)</label>
+      <input type="number" id="closingPct" value="3" step="0.5" oninput="calculate()">
+      <div class="inp-hint">Typical range: 2%–6% of loan</div>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calculate()">🔄 Calculate My Break-Even</button>
+
+  <div class="sec">Result</div>
+  <div class="result-hero">
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+    <div class="rh-label">Break-Even Point</div>
+    <div class="rh-amount" id="breakEvenMonths">22 mo <span>to recoup costs</span></div>
+    <div class="rh-sub" id="breakEvenSub">Monthly savings: $187 · Total refi cost: $10,200</div>
+  </div>
+
+  <div class="saved-section" id="savedSection">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📂 Saved Refi Scenarios</div>
+    <div id="savedList"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">📈 Cumulative Savings vs. Refi Cost (10-Yr View)</div>
+    <div class="be-wrap" id="beChart"></div>
+    <div class="be-legend"><span>Now</span><span>5 yrs</span><span>10 yrs</span></div>
+    <div class="be-info">
+      <div class="be-stat"><div class="be-stat-val" id="be-months">22 mo</div><div class="be-stat-lbl">Break-Even</div></div>
+      <div class="be-stat"><div class="be-stat-val" id="be-total-cost">$10,200</div><div class="be-stat-lbl">Total Refi Cost</div></div>
+      <div class="be-stat"><div class="be-stat-val" id="be-5yr">$1,020</div><div class="be-stat-lbl">5-Yr Net Savings</div></div>
+    </div>
+  </div>
+
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">💵</div><div class="bk-label">New Fixed P&amp;I</div><div class="bk-value" id="newPI">$2,150</div><div class="bk-sub">Locked for the term</div></div>
+    <div class="bk-card"><div class="bk-icon">📉</div><div class="bk-label">Current ARM P&amp;I</div><div class="bk-value" id="oldPI">$2,337</div><div class="bk-sub">At current/adj. rate</div></div>
+    <div class="bk-card"><div class="bk-icon">💰</div><div class="bk-label">Monthly Savings</div><div class="bk-value" id="monthlySavings">$187</div><div class="bk-sub">Right after refi</div></div>
+    <div class="bk-card"><div class="bk-icon">💳</div><div class="bk-label">Est. Closing Costs</div><div class="bk-value" id="closingCostsAmt">$10,200</div><div class="bk-sub">% of new loan amount</div></div>
+    <div class="bk-card"><div class="bk-icon">📦</div><div class="bk-label">New Loan Amount</div><div class="bk-value" id="newLoanAmt">$340,000</div><div class="bk-sub">If costs paid at closing</div></div>
+    <div class="bk-card"><div class="bk-icon">📅</div><div class="bk-label">Rate Improvement</div><div class="bk-value" id="rateDrop">-0.78%</div><div class="bk-sub">ARM rate vs. new fixed</div></div>
+  </div>
+
+  <div class="sec">Refinance Cost Ranges (2026)</div>
+  <div class="ff-card">
+    <div class="ff-title">💳 Typical Refinance Closing Costs</div>
+    <div class="ff-row"><div class="ff-k">Closing Cost Range</div><div class="ff-v">2%–6% of loan</div></div>
+    <div class="ff-row"><div class="ff-k">On a $300,000 Refi</div><div class="ff-v">~$6,000–$18,000</div></div>
+    <div class="ff-row"><div class="ff-k">No-Closing-Cost Option</div><div class="ff-v">Higher rate instead of fees</div></div>
+    <div class="ff-row"><div class="ff-k">Rule of Thumb to Refi Again</div><div class="ff-v">≥0.5%–0.75% rate drop</div></div>
+    <div class="ff-row"><div class="ff-k">Current 30-Yr Refi Avg</div><div class="ff-v">6.75% (Jun 2026)</div></div>
+  </div>
+
+  <div class="sec">Should You Refinance? Checklist</div>
+  <div class="elig-card">
+    <div class="elig-row">
+      <div class="elig-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div>
+      <div class="elig-text"><div class="elig-label">Staying past your break-even month</div><div class="elig-note">If you'll move/sell sooner, refinancing usually doesn't pay off</div></div>
+    </div>
+    <div class="elig-row">
+      <div class="elig-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div>
+      <div class="elig-text"><div class="elig-label">ARM adjustment is approaching or has hit</div><div class="elig-note">Refinancing before a steep reset can avoid payment shock</div></div>
+    </div>
+    <div class="elig-row">
+      <div class="elig-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div>
+      <div class="elig-text"><div class="elig-label">You want payment certainty over savings</div><div class="elig-note">A fixed rate trades potential upside for predictability</div></div>
+    </div>
+    <div class="elig-row">
+      <div class="elig-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div>
+      <div class="elig-text"><div class="elig-label">You have funds (or equity) to cover closing costs</div><div class="elig-note">Or you're comfortable with a slightly higher no-cost rate</div></div>
+    </div>
+    <div class="elig-row">
+      <div class="elig-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div>
+      <div class="elig-text"><div class="elig-label">Your credit & DTI still qualify you</div><div class="elig-note">A refi is a brand-new loan — full underwriting usually applies</div></div>
+    </div>
+  </div>
+
+  <div class="note-strip">💡 Each refinance resets your amortization schedule — early payments go mostly to interest again. Refinancing repeatedly for marginal savings can leave you worse off even if each individual move looks attractive on paper.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let savedRefis = JSON.parse(localStorage.getItem('arm_refi_saves') || '[]');
+
+function pmtFor(principal, annualRate, months){
+  const mr = annualRate/12;
+  if (mr === 0) return principal/months;
+  return principal * (mr*Math.pow(1+mr,months)) / (Math.pow(1+mr,months)-1);
+}
+
+function calculate(){
+  const balance = parseFloat(document.getElementById('curBalance').value) || 0;
+  const curRate = parseFloat(document.getElementById('curRate').value)/100 || 0;
+  const newRate = parseFloat(document.getElementById('newRate').value)/100 || 0;
+  const termYrs = parseInt(document.getElementById('term').value);
+  const closingPct = parseFloat(document.getElementById('closingPct').value)/100 || 0;
+  const months = termYrs * 12;
+
+  const closingCosts = balance * closingPct;
+  const newLoanAmt = balance; // assume costs paid out of pocket, not financed, for clarity
+
+  const oldPI = pmtFor(balance, curRate, months);
+  const newPI = pmtFor(newLoanAmt, newRate, months);
+  const monthlySavings = oldPI - newPI;
+
+  const breakEvenMonths = monthlySavings > 0 ? closingCosts / monthlySavings : Infinity;
+
+  document.getElementById('breakEvenMonths').innerHTML = (isFinite(breakEvenMonths) ? Math.ceil(breakEvenMonths) : '—')+' mo <span>to recoup costs</span>';
+  document.getElementById('breakEvenSub').textContent = `Monthly savings: $${Math.round(monthlySavings).toLocaleString()} · Total refi cost: $${Math.round(closingCosts).toLocaleString()}`;
+
+  document.getElementById('newPI').textContent = '$'+Math.round(newPI).toLocaleString();
+  document.getElementById('oldPI').textContent = '$'+Math.round(oldPI).toLocaleString();
+  document.getElementById('monthlySavings').textContent = (monthlySavings>=0?'$':'-$')+Math.abs(Math.round(monthlySavings)).toLocaleString();
+  document.getElementById('closingCostsAmt').textContent = '$'+Math.round(closingCosts).toLocaleString();
+  document.getElementById('newLoanAmt').textContent = '$'+Math.round(newLoanAmt).toLocaleString();
+  document.getElementById('rateDrop').textContent = ((newRate-curRate)*100).toFixed(2)+'%';
+  document.getElementById('rateDrop').style.color = newRate < curRate ? '#15803D' : '#B91C1C';
+
+  document.getElementById('be-months').textContent = isFinite(breakEvenMonths) ? Math.ceil(breakEvenMonths)+' mo' : 'N/A';
+  document.getElementById('be-total-cost').textContent = '$'+Math.round(closingCosts).toLocaleString();
+  const fiveYrSavings = (monthlySavings*60) - closingCosts;
+  document.getElementById('be-5yr').textContent = (fiveYrSavings>=0?'$':'-$')+Math.abs(Math.round(fiveYrSavings)).toLocaleString();
+
+  renderBreakEvenChart(closingCosts, monthlySavings);
+}
+
+function renderBreakEvenChart(totalCost, monthlySavings){
+  const chart = document.getElementById('beChart');
+  const yearsToShow = 10;
+  const maxVal = Math.max(totalCost, Math.abs(monthlySavings)*12*yearsToShow, 1000);
+  let html = '<div class="be-bars">';
+  for (let y=1; y<=yearsToShow; y++){
+    const cumSavings = monthlySavings*12*y;
+    const netPosition = cumSavings - totalCost;
+    const heightPct = Math.min(100, Math.max(2, (Math.abs(netPosition)/maxVal)*100*2.2));
+    const isOver = netPosition >= 0;
+    html += `<div class="be-bar ${isOver?'':'under'}" style="height:${heightPct}%;" title="Year ${y}: ${isOver?'+':'-'}$${Math.round(Math.abs(netPosition)).toLocaleString()}"></div>`;
+  }
+  html += '</div>';
+  chart.innerHTML = html;
+}
+
+function saveCalc() {
+  const balance = document.getElementById('curBalance').value;
+  const newRate = document.getElementById('newRate').value;
+  const breakeven = document.getElementById('breakEvenMonths').textContent.trim();
+  const entry = { id:Date.now(), label:`ARM Refi – $${parseInt(balance).toLocaleString()} @ ${newRate}%`, payment:`Break-even: ${breakeven}`, date:new Date().toLocaleDateString() };
+  savedRefis.unshift(entry);
+  if (savedRefis.length>5) savedRefis=savedRefis.slice(0,5);
+  localStorage.setItem('arm_refi_saves',JSON.stringify(savedRefis));
+  renderSaved();
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');btn.textContent='✅ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},2000);
+  showToast('Refinance scenario saved!');
+}
+function deleteSave(id){ savedRefis=savedRefis.filter(s=>s.id!==id); localStorage.setItem('arm_refi_saves',JSON.stringify(savedRefis)); renderSaved(); }
+function renderSaved(){
+  const sec=document.getElementById('savedSection'); const list=document.getElementById('savedList');
+  if(!savedRefis.length){sec.classList.remove('has-saves');return;}
+  sec.classList.add('has-saves');
+  list.innerHTML=savedRefis.map(s=>`<div class="saved-item"><div class="si-info"><div class="si-title">${s.label}</div><div class="si-sub">${s.payment} · ${s.date}</div></div><div class="si-del" onclick="deleteSave(${s.id})">✕</div></div>`).join('');
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+calculate();
+renderSaved();
+</script>
+</body>
+</html>

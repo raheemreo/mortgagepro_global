@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HUD DPA Programs</title>
+  <style>
+    :root {
+      --navy: #0B1D3A;
+      --blue: #1B3F72;
+      --red: #B91C1C;
+      --crimson: #991B1B;
+      --gold: #D97706;
+      --gold-lt: #FCD34D;
+      --white: #FFFFFF;
+      --bg: #F0F4FF;
+      --card: #FFFFFF;
+      --muted: #4A5C7A;
+      --border: rgba(27, 63, 114, 0.09);
+      --sh: 0 4px 20px rgba(11, 29, 58, 0.10);
+      --sh2: 0 8px 36px rgba(11, 29, 58, 0.18);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--navy);
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(155deg, #0B1D3A 0%, #1B3F72 55%, #D97706 100%);
+      padding: 46px 20px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .header::after {
+      content: '🏠';
+      position: absolute;
+      right: 10px;
+      top: 50px;
+      font-size: 72px;
+      opacity: 0.07;
+    }
+
+    .hdr-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #fff;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .hdr-center {
+      text-align: center;
+    }
+
+    .hdr-flag {
+      font-size: 28px;
+    }
+
+    .hdr-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.3px;
+      font-family: Georgia, serif;
+    }
+
+    .hdr-sub {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.52);
+      margin-top: 1px;
+    }
+
+    .rate-strip {
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px 14px 0 0;
+      padding: 11px 14px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      position: relative;
+      z-index: 2;
+      margin-top: 4px;
+    }
+
+    .rs {
+      text-align: center;
+      position: relative;
+    }
+
+    .rs:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 15%;
+      height: 70%;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .rs-l {
+      font-size: 8.5px;
+      color: rgba(255, 255, 255, 0.48);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .rs-v {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      font-family: Georgia, serif;
+      line-height: 1.1;
+    }
+
+    .rs-v.gold {
+      color: var(--gold-lt);
+    }
+
+    .rs-n {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.38);
+      margin-top: 1px;
+    }
+
+    /* ── CONTENT ── */
+    .content {
+      padding: 15px 15px 110px;
+    }
+
+    .sec {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 20px 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sec .badge-count {
+      font-size: 10px;
+      font-weight: 700;
+      background: var(--navy);
+      color: #fff;
+      border-radius: 20px;
+      padding: 2px 8px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    /* ── HERO ── */
+    .result-hero {
+      background: linear-gradient(148deg, #0B1D3A, #1B3F72);
+      border-radius: 20px;
+      padding: 19px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--sh2);
+      margin-bottom: 14px;
+    }
+
+    .result-hero::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .rh-tag {
+      font-size: 9.5px;
+      color: rgba(255, 255, 255, 0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .rh-main {
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--gold-lt);
+      font-family: Georgia, serif;
+      line-height: 1.1;
+      margin: 4px 0 2px;
+    }
+
+    .rh-sub {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.60);
+    }
+
+    .rh-bars {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .rh-bar-item {
+      background: rgba(255, 255, 255, 0.10);
+      border-radius: 10px;
+      padding: 9px 10px;
+    }
+
+    .rh-bar-lbl {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.50);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .rh-bar-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      font-family: Georgia, serif;
+      margin-top: 2px;
+    }
+
+    .rh-bar-sub {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.40);
+      margin-top: 1px;
+    }
+
+    /* ── FILTER PILLS ── */
+    .filter-row {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+      margin-bottom: 14px;
+    }
+
+    .filter-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .fpill {
+      flex-shrink: 0;
+      padding: 7px 13px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+
+    .fpill.active {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+    }
+
+    /* ── INPUT CARD ── */
+    .input-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .input-card-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ic-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .field {
+      margin-bottom: 13px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    .field label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .field-row {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border-radius: 11px;
+      border: 1.5px solid var(--border);
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+
+    .field-row:focus-within {
+      border-color: var(--gold);
+    }
+
+    .field-prefix {
+      padding: 0 10px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .field-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 11px 8px 11px 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--navy);
+      outline: none;
+    }
+
+    .field-suffix {
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 7px 13px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .pill.active {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+    }
+
+    .calc-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #D97706, #92400E);
+      border: none;
+      border-radius: 14px;
+      padding: 15px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(217, 119, 6, 0.35);
+      font-family: Georgia, serif;
+      margin-top: 4px;
+      transition: transform .15s;
+    }
+
+    .calc-btn:active {
+      transform: scale(.98);
+    }
+
+    /* ── ELIGIBILITY METER ── */
+    .elig-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .elig-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+      margin-bottom: 14px;
+    }
+
+    .elig-score-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .elig-donut {
+      flex-shrink: 0;
+    }
+
+    .elig-info {
+      flex: 1;
+    }
+
+    .elig-pct {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+      line-height: 1;
+    }
+
+    .elig-lbl {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .elig-prog-row {
+      margin-bottom: 9px;
+    }
+
+    .elig-prog-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .elig-prog-name {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .elig-prog-status {
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .elig-track {
+      height: 8px;
+      background: rgba(27, 63, 114, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .elig-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .6s ease;
+    }
+
+    /* ── PROGRAM CARDS ── */
+    .prog-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: transform .15s;
+    }
+
+    .prog-card:active {
+      transform: scale(.98);
+    }
+
+    .prog-card.featured {
+      border: 2px solid var(--gold);
+      background: linear-gradient(135deg, #fffbeb, #fff);
+    }
+
+    .prog-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .prog-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .prog-icon.nv {
+      background: linear-gradient(135deg, #0B1D3A, #1B3F72);
+    }
+
+    .prog-icon.gd {
+      background: linear-gradient(135deg, #D97706, #92400E);
+    }
+
+    .prog-icon.grn {
+      background: linear-gradient(135deg, #15803D, #166534);
+    }
+
+    .prog-icon.pur {
+      background: linear-gradient(135deg, #6D28D9, #4C1D95);
+    }
+
+    .prog-icon.bg {
+      background: var(--bg);
+    }
+
+    .prog-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+      line-height: 1.2;
+    }
+
+    .prog-org {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .prog-amount {
+      text-align: right;
+    }
+
+    .prog-amt-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--blue);
+      font-family: Georgia, serif;
+    }
+
+    .prog-amt-lbl {
+      font-size: 8.5px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .prog-tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .ptag {
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 8.5px;
+      font-weight: 700;
+    }
+
+    .ptag-g {
+      background: #DCFCE7;
+      color: #15803D;
+    }
+
+    .ptag-b {
+      background: #EFF6FF;
+      color: #1D4ED8;
+    }
+
+    .ptag-o {
+      background: #FEF3C7;
+      color: #B45309;
+    }
+
+    .ptag-r {
+      background: #FEF2F2;
+      color: #B91C1C;
+    }
+
+    .ptag-pur {
+      background: #F5F3FF;
+      color: #6D28D9;
+    }
+
+    .prog-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .pd-item {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 9px 10px;
+    }
+
+    .pd-lbl {
+      font-size: 8.5px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .pd-val {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+      margin-top: 2px;
+    }
+
+    .prog-footer {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .prog-match {
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .prog-arrow {
+      font-size: 16px;
+      color: var(--muted);
+    }
+
+    .prog-expand {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .prog-expand.open {
+      display: block;
+    }
+
+    .prog-req-title {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 8px;
+    }
+
+    .req-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .req-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+      color: var(--muted);
+    }
+
+    .req-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .cmp-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .cmp-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+      margin-bottom: 14px;
+    }
+
+    .cmp-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 4px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+
+    .cmp-row:last-child {
+      border-bottom: none;
+    }
+
+    .cmp-row.header {
+      padding: 4px 0 8px;
+    }
+
+    .cmp-hdr {
+      font-size: 8.5px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .cmp-hdr:first-child {
+      text-align: left;
+    }
+
+    .cmp-prog-name {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .cmp-prog-sub {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .cmp-cell {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--navy);
+    }
+
+    .cmp-cell.good {
+      color: #15803D;
+    }
+
+    .cmp-cell.warn {
+      color: #B45309;
+    }
+
+    .cmp-cell.bad {
+      color: #B91C1C;
+    }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+
+    .stat-box {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 12px 10px;
+      text-align: center;
+      box-shadow: var(--sh);
+    }
+
+    .stat-val {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--navy);
+      font-family: Georgia, serif;
+    }
+
+    .stat-lbl {
+      font-size: 8.5px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    /* ── SAVE ── */
+    .save-btn {
+      width: 100%;
+      background: var(--card);
+      border: 1.5px solid var(--gold);
+      border-radius: 14px;
+      padding: 13px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--gold);
+      cursor: pointer;
+      font-family: Georgia, serif;
+      margin-top: 8px;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .save-btn:active {
+      transform: scale(.98);
+      background: var(--bg);
+    }
+
+    .save-btn.saved {
+      background: #DCFCE7;
+      border-color: #15803D;
+      color: #15803D;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 96px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      max-width: 380px;
+      width: 90%;
+      background: var(--navy);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+      text-align: center;
+      box-shadow: var(--sh2);
+      opacity: 0;
+      pointer-events: none;
+      transition: all .3s ease;
+      z-index: 200;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── SAVED LIST ── */
+    .saved-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .saved-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .saved-row:last-child {
+      border-bottom: none;
+    }
+
+    .saved-name {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+    }
+
+    .saved-meta {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .saved-del {
+      font-size: 13px;
+      color: var(--red);
+      cursor: pointer;
+      padding: 6px;
+    }
+
+    .saved-empty {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      padding: 14px 0;
+    }
+
+    /* ── ILIST ── */
+    .ilist {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .ic {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 13px 14px;
+      box-shadow: var(--sh);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .ii {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .in {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--navy);
+      font-family: Georgia, serif;
+    }
+
+    .is {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .ich {
+      font-size: 16px;
+      color: rgba(11, 29, 58, 0.18);
+      margin-left: auto;
+    }
+
+    /* ── NAV ── */
+    .bnav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 10px 0 18px;
+      box-shadow: 0 -4px 20px rgba(11, 29, 58, 0.07);
+      z-index: 100;
+    }
+
+    .ni {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+
+    .ni-ic {
+      font-size: 19px;
+    }
+
+    .ni-lb {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .ni.active .ni-lb {
+      color: var(--blue);
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .result-hero {
+      animation: fadeUp .35s ease both .05s;
+    }
+
+    .input-card {
+      animation: fadeUp .35s ease both .10s;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div class="hdr-top">
+      <div class="icon-btn" onclick="history.back()">←</div>
+      <div class="hdr-center">
+        <div class="hdr-flag">🏠</div>
+        <div class="hdr-title">HUD DPA Programs</div>
+        <div class="hdr-sub">Down Payment Assistance · Federal &amp; State 2025</div>
+      </div>
+      <div class="icon-btn">ℹ️</div>
+    </div>
+    <div class="rate-strip">
+      <div class="rs">
+        <div class="rs-l">Programs</div>
+        <div class="rs-v gold">2,500+</div>
+        <div class="rs-n">Nationwide</div>
+      </div>
+      <div class="rs">
+        <div class="rs-l">Max Grant</div>
+        <div class="rs-v">$25K</div>
+        <div class="rs-n">Select States</div>
+      </div>
+      <div class="rs">
+        <div class="rs-l">Avg Award</div>
+        <div class="rs-v">$10K</div>
+        <div class="rs-n">2024 Data</div>
+      </div>
+      <div class="rs">
+        <div class="rs-l">Forgiven</div>
+        <div class="rs-v gold">100%</div>
+        <div class="rs-n">After 5 yrs</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- HERO -->
+    <div class="sec" style="margin-top:0;">Your Eligibility Estimate <span class="badge-count" id="matchCount">6
+        Programs</span></div>
+    <div class="result-hero">
+      <div class="rh-tag">Estimated DPA Assistance Available</div>
+      <div class="rh-main" id="heroAmt">Up to $17,500</div>
+      <div class="rh-sub" id="heroSub">Based on your income &amp; home price · Subject to lender approval</div>
+      <div class="rh-bars">
+        <div class="rh-bar-item">
+          <div class="rh-bar-lbl">Grant (Free)</div>
+          <div class="rh-bar-val" id="heroGrant">$10,000</div>
+          <div class="rh-bar-sub">Non-repayable</div>
+        </div>
+        <div class="rh-bar-item">
+          <div class="rh-bar-lbl">Forgivable Loan</div>
+          <div class="rh-bar-val" id="heroForgivable">$7,500</div>
+          <div class="rh-bar-sub">0% if you stay 5 yrs</div>
+        </div>
+        <div class="rh-bar-item">
+          <div class="rh-bar-lbl">Effective DP</div>
+          <div class="rh-bar-val" id="heroEffDP">$0</div>
+          <div class="rh-bar-sub">Out-of-pocket</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-strip">
+      <div class="stat-box">
+        <div class="stat-val" id="sPrograms">6</div>
+        <div class="stat-lbl">Programs Match</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="sGrants">3</div>
+        <div class="stat-lbl">Grant Only</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="sSavings" style="color:#15803D;">$17.5K</div>
+        <div class="stat-lbl">Max Assist.</div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-row">
+      <div class="fpill active" onclick="setFilter(this,'all')">All Programs</div>
+      <div class="fpill" onclick="setFilter(this,'grant')">Grants Only</div>
+      <div class="fpill" onclick="setFilter(this,'firsttime')">First-Time Buyer</div>
+      <div class="fpill" onclick="setFilter(this,'federal')">Federal</div>
+      <div class="fpill" onclick="setFilter(this,'state')">State</div>
+      <div class="fpill" onclick="setFilter(this,'teacher')">Public Servant</div>
+    </div>
+
+    <!-- INPUTS -->
+    <div class="input-card">
+      <div class="input-card-title">
+        <div class="ic-icon">🔍</div>Check Your Eligibility
+      </div>
+
+      <div class="field">
+        <label>Annual Household Income</label>
+        <div class="field-row">
+          <span class="field-prefix">$</span>
+          <input class="field-input" id="incomeInput" type="number" value="72000" step="1000" min="0">
+        </div>
+      </div>
+      <div class="field">
+        <label>Home Purchase Price</label>
+        <div class="field-row">
+          <span class="field-prefix">$</span>
+          <input class="field-input" id="priceInput" type="number" value="350000" step="5000" min="50000">
+        </div>
+      </div>
+      <div class="field">
+        <label>First-Time Homebuyer?</label>
+        <div class="pill-row">
+          <div class="pill active" data-ftb="yes">Yes — First Time</div>
+          <div class="pill" data-ftb="no">No — Repeat Buyer</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Credit Score (FICO)</label>
+        <div class="pill-row">
+          <div class="pill" data-fico="580">580–619</div>
+          <div class="pill" data-fico="620">620–659</div>
+          <div class="pill active" data-fico="660">660–719</div>
+          <div class="pill" data-fico="720">720+</div>
+        </div>
+      </div>
+
+      <button class="calc-btn" onclick="runCheck()">🔍 Find My DPA Programs</button>
+      <button class="save-btn" id="saveBtn" onclick="doSave()">💾 Save My Eligibility Results</button>
+    </div>
+
+    <!-- ELIGIBILITY METER -->
+    <div class="elig-card" id="eligCard">
+      <div class="elig-title">📊 Eligibility Breakdown</div>
+      <div class="elig-score-row">
+        <div class="elig-donut">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(27,63,114,0.08)" stroke-width="10" />
+            <circle id="eligArc" cx="40" cy="40" r="30" fill="none" stroke="var(--gold)" stroke-width="10"
+              stroke-dasharray="0 188.5" stroke-linecap="round"
+              style="transform:rotate(-90deg);transform-origin:40px 40px;transition:stroke-dasharray .6s ease;" />
+            <text x="40" y="45" text-anchor="middle" font-size="15" font-weight="800" fill="var(--navy)"
+              font-family="Georgia,serif" id="eligPctText">80%</text>
+          </svg>
+        </div>
+        <div class="elig-info">
+          <div class="elig-pct" id="eligPctBig">80%</div>
+          <div class="elig-lbl" id="eligLabel">Strong Eligibility — Most programs apply</div>
+        </div>
+      </div>
+      <div id="eligBars"></div>
+    </div>
+
+    <!-- PROGRAM CARDS -->
+    <div class="sec">Top Matching Programs <span class="badge-count" id="matchCount2">6</span></div>
+    <div id="programList"></div>
+
+    <!-- COMPARISON TABLE -->
+    <div class="cmp-card">
+      <div class="cmp-title">Side-by-Side Comparison</div>
+      <div class="cmp-row header">
+        <div class="cmp-hdr">Program</div>
+        <div class="cmp-hdr">Max $</div>
+        <div class="cmp-hdr">FICO</div>
+        <div class="cmp-hdr">Repay?</div>
+      </div>
+      <div id="cmpRows"></div>
+    </div>
+
+    <!-- HOW TO APPLY -->
+    <div class="sec">How to Apply</div>
+    <div class="ilist">
+      <div class="ic">
+        <div class="ii">1️⃣</div>
+        <div>
+          <div class="in">Get Pre-Approved First</div>
+          <div class="is">HUD-approved lenders only · Confirm income limits</div>
+        </div>
+        <div class="ich"></div>
+      </div>
+      <div class="ic">
+        <div class="ii">2️⃣</div>
+        <div>
+          <div class="in">Complete Homebuyer Education</div>
+          <div class="is">Required for most programs · 8-hr HUD course · Often free</div>
+        </div>
+        <div class="ich"></div>
+      </div>
+      <div class="ic">
+        <div class="ii">3️⃣</div>
+        <div>
+          <div class="in">Gather Documentation</div>
+          <div class="is">W-2s, tax returns, bank statements, pay stubs</div>
+        </div>
+        <div class="ich"></div>
+      </div>
+      <div class="ic">
+        <div class="ii">4️⃣</div>
+        <div>
+          <div class="in">Apply Through HUD-Approved Lender</div>
+          <div class="is">Visit hud.gov/findahousinucounselor or call 800-569-4287</div>
+        </div>
+        <div class="ich"></div>
+      </div>
+    </div>
+
+    <!-- SAVED -->
+    <div class="sec" style="margin-top:20px;">Saved Results <span
+        style="font-size:10px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;"
+        onclick="clearAll()">Clear All</span></div>
+    <div class="saved-card">
+      <div id="savedList">
+        <div class="saved-empty">No saved results yet.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="bnav">
+    <div class="ni">
+      <div class="ni-ic">🏠</div>
+      <div class="ni-lb">Home</div>
+    </div>
+    <div class="ni active">
+      <div class="ni-ic">🦅</div>
+      <div class="ni-lb">USA</div>
+    </div>
+    <div class="ni">
+      <div class="ni-ic">🔖</div>
+      <div class="ni-lb">Saved</div>
+    </div>
+    <div class="ni">
+      <div class="ni-ic">🌍</div>
+      <div class="ni-lb">Global</div>
+    </div>
+    <div class="ni">
+      <div class="ni-ic">⚙️</div>
+      <div class="ni-lb">Settings</div>
+    </div>
+  </div>
+
+  <script>
+    // ─── DATA ───────────────────────────────────────────────────────────────────
+    const programs = [
+      {
+        id: 'nchfa', name: 'NC Home Advantage Mortgage', org: 'NC Housing Finance Agency',
+        icon: '🏛️', iconClass: 'nv', type: ['grant', 'firsttime', 'state'],
+        maxAmt: 15000, awardType: 'Forgivable Loan', repay: 'None after 15 yrs',
+        minFico: 640, maxIncome: 126000, maxPrice: 385000,
+        description: 'Up to $15,000 forgivable loan, forgiven 20% per year starting year 11.',
+        requirements: ['First-time or military buyer', '640+ FICO score', 'Income ≤ 80% AMI', 'HUD counseling required'],
+        badge: 'ptag-g', badgeText: 'Forgivable'
+      },
+      {
+        id: 'hpap', name: 'Home Purchase Assistance (HPAP)', org: 'Washington DC DHCD',
+        icon: '🏙️', iconClass: 'nv', type: ['grant', 'firsttime', 'state'],
+        maxAmt: 202000, awardType: 'Deferred Loan', repay: 'At sale/refi',
+        minFico: 640, maxIncome: 131850, maxPrice: 748000,
+        description: 'DC\'s flagship DPA — up to $202,000 deferred, 0% interest.',
+        requirements: ['DC resident ≥ 12 months', 'First-time buyer', '640+ FICO', 'Income ≤ 80% AMI'],
+        badge: 'ptag-b', badgeText: 'Deferred Loan'
+      },
+      {
+        id: 'chdap', name: 'California CHDAP', org: 'CalHFA',
+        icon: '☀️', iconClass: 'gd', type: ['grant', 'firsttime', 'state'],
+        maxAmt: 20000, awardType: 'Grant', repay: 'Never',
+        minFico: 660, maxIncome: 180000, maxPrice: 660000,
+        description: '3.5% of purchase price, max $20K. Only repaid if you sell within 3 years.',
+        requirements: ['First-time buyer', '660+ FICO', 'Income limits vary by county', 'Owner-occupied only'],
+        badge: 'ptag-g', badgeText: 'Grant'
+      },
+      {
+        id: 'gnnd', name: 'Good Neighbor Next Door', org: 'HUD / FHA',
+        icon: '👮', iconClass: 'pur', type: ['grant', 'teacher', 'federal'],
+        maxAmt: 50000, awardType: '50% Discount', repay: 'None if 3-yr residency',
+        minFico: 580, maxIncome: 999999, maxPrice: 999999,
+        description: '50% off HUD-listed homes for teachers, police, firefighters, EMTs.',
+        requirements: ['Teacher / Law Enforcement / Firefighter / EMT', 'Primary residence 36 months', 'HUD-designated revitalization area', 'FHA, VA, or Conv. financing'],
+        badge: 'ptag-pur', badgeText: '50% Discount'
+      },
+      {
+        id: 'nfmc', name: 'Freddie Mac BorrowSmart Access', org: 'Freddie Mac',
+        icon: '🏦', iconClass: 'nv', type: ['grant', 'federal'],
+        maxAmt: 2500, awardType: 'Grant', repay: 'Never',
+        minFico: 620, maxIncome: 80000, maxPrice: 999999,
+        description: '$2,500 grant for low-income borrowers using Freddie Mac Home Possible.',
+        requirements: ['620+ FICO', 'Income ≤ 50% AMI', 'Home Possible loan only', 'First-use within 90 days'],
+        badge: 'ptag-g', badgeText: 'Grant'
+      },
+      {
+        id: 'fannie', name: 'Fannie Mae HomeReady DPA', org: 'Fannie Mae / State HFAs',
+        icon: '🇺🇸', iconClass: 'nv', type: ['grant', 'firsttime', 'federal'],
+        maxAmt: 10000, awardType: 'Grant + Forgivable', repay: 'Partial if sold < 5 yrs',
+        minFico: 620, maxIncome: 102000, maxPrice: 648000,
+        description: 'Paired with HomeReady 3% down; DPA varies by state HFA partnership.',
+        requirements: ['620+ FICO', 'Income ≤ 80% AMI', 'HomeReady mortgage required', 'Online homebuyer education'],
+        badge: 'ptag-b', badgeText: 'Federal + State'
+      },
+      {
+        id: 'neighbor', name: 'Bank of America Community DPA', org: 'Bank of America',
+        icon: '🏧', iconClass: 'grn', type: ['grant', 'firsttime'],
+        maxAmt: 17500, awardType: 'Grant', repay: 'Never',
+        minFico: 640, maxIncome: 120500, maxPrice: 999999,
+        description: '$10K Down Payment Grant + $7.5K closing cost grant in select markets.',
+        requirements: ['First-time buyer', '640+ FICO', 'Income limits apply', 'Eligible markets only (30 cities)'],
+        badge: 'ptag-g', badgeText: 'Grant — Never Repay'
+      }
+    ];
+
+    let currentFilter = 'all', ftb = 'yes', fico = 660, savedResults = [];
+
+    function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+    function fmtK(n) { return n >= 1000 ? '$' + (n / 1000).toFixed(0) + 'K' : fmt(n); }
+
+    function setFilter(el, f) {
+      document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active'); currentFilter = f; renderPrograms();
+    }
+
+    document.querySelectorAll('[data-ftb]').forEach(p => p.addEventListener('click', () => {
+      document.querySelectorAll('[data-ftb]').forEach(x => x.classList.remove('active'));
+      p.classList.add('active'); ftb = p.dataset.ftb;
+    }));
+    document.querySelectorAll('[data-fico]').forEach(p => p.addEventListener('click', () => {
+      document.querySelectorAll('[data-fico]').forEach(x => x.classList.remove('active'));
+      p.classList.add('active'); fico = +p.dataset.fico;
+    }));
+
+    function getMatches() {
+      const income = +document.getElementById('incomeInput').value || 72000;
+      const price = +document.getElementById('priceInput').value || 350000;
+      return programs.filter(p => {
+        if (fico < p.minFico) return false;
+        if (income > p.maxIncome && p.maxIncome < 999999) return false;
+        if (price > p.maxPrice && p.maxPrice < 999999) return false;
+        if (ftb === 'no' && p.type.includes('firsttime') && !p.type.includes('federal')) return false;
+        if (currentFilter !== 'all' && !p.type.includes(currentFilter)) return false;
+        return true;
+      });
+    }
+
+    function runCheck() {
+      const matches = getMatches();
+      const maxAmt = matches.reduce((s, p) => Math.max(s, p.maxAmt), 0);
+      const grants = matches.filter(p => p.awardType === 'Grant' || p.awardType.includes('Grant'));
+      const totalPossible = Math.min(matches.reduce((s, p) => s + p.maxAmt, 0), 50000);
+      const price = +document.getElementById('priceInput').value || 350000;
+      const dpNeeded = price * 0.03;
+      const effDP = Math.max(0, dpNeeded - maxAmt);
+
+      document.getElementById('heroAmt').textContent = 'Up to ' + fmtK(maxAmt);
+      document.getElementById('heroGrant').textContent = fmtK(grants.reduce((s, p) => Math.max(s, p.maxAmt), 0));
+      document.getElementById('heroForgivable').textContent = fmtK(matches.filter(p => p.awardType.includes('Forgiv')).reduce((s, p) => Math.max(s, p.maxAmt), 0) || 0);
+      document.getElementById('heroEffDP').textContent = effDP <= 0 ? '$0 Possible' : fmtK(effDP);
+      document.getElementById('heroSub').textContent = `Based on $${(+document.getElementById('incomeInput').value || 72000).toLocaleString()} income · ${matches.length} programs found`;
+
+      document.getElementById('sPrograms').textContent = matches.length;
+      document.getElementById('sGrants').textContent = grants.length;
+      document.getElementById('sSavings').textContent = fmtK(maxAmt);
+      document.getElementById('matchCount').textContent = matches.length + ' Programs';
+      document.getElementById('matchCount2').textContent = matches.length;
+
+      // Eligibility meter
+      let score = 50;
+      if (fico >= 720) score += 30; else if (fico >= 660) score += 20; else if (fico >= 620) score += 10;
+      if (ftb === 'yes') score += 15;
+      if (matches.length >= 5) score += 5;
+      score = Math.min(score, 100);
+      const arc = 2 * Math.PI * 30;
+      document.getElementById('eligArc').style.strokeDasharray = `${score / 100 * arc} ${arc}`;
+      document.getElementById('eligArc').style.stroke = score >= 70 ? '#D97706' : score >= 50 ? '#B45309' : '#B91C1C';
+      document.getElementById('eligPctText').textContent = score + '%';
+      document.getElementById('eligPctBig').textContent = score + '%';
+      document.getElementById('eligLabel').textContent = score >= 70 ? 'Strong Eligibility — Most programs apply' : score >= 50 ? 'Moderate — Review income limits carefully' : 'Limited — Check FICO & income requirements';
+
+      const bars = [
+        { name: 'Credit Score', pct: fico >= 720 ? 100 : fico >= 660 ? 75 : fico >= 620 ? 50 : 25, color: fico >= 720 ? '#15803D' : fico >= 660 ? '#D97706' : '#B91C1C', status: fico >= 720 ? 'Excellent' : fico >= 660 ? 'Good' : 'Fair' },
+        { name: 'Income Limit', pct: 75, color: '#D97706', status: 'Within Range' },
+        { name: 'First-Time Buyer', pct: ftb === 'yes' ? 100 : 60, color: ftb === 'yes' ? '#15803D' : '#4A5C7A', status: ftb === 'yes' ? 'Eligible' : 'May Qualify' },
+        { name: 'Program Matches', pct: Math.min(matches.length / 7 * 100, 100), color: '#1B3F72', status: matches.length + ' Found' },
+      ];
+      document.getElementById('eligBars').innerHTML = bars.map(b => `
+    <div class="elig-prog-row">
+      <div class="elig-prog-label">
+        <span class="elig-prog-name">${b.name}</span>
+        <span class="elig-prog-status" style="color:${b.color}">${b.status}</span>
+      </div>
+      <div class="elig-track"><div class="elig-fill" style="width:${b.pct}%;background:${b.color}"></div></div>
+    </div>`).join('');
+
+      renderPrograms(matches);
+    }
+
+    function renderPrograms(matches) {
+      if (!matches) matches = getMatches();
+      document.getElementById('programList').innerHTML = matches.map((p, i) => `
+    <div class="prog-card ${i === 0 ? 'featured' : ''}" onclick="toggleExpand('exp_${p.id}',this)">
+      <div class="prog-header">
+        <div class="prog-icon ${p.iconClass}">${p.icon}</div>
+        <div style="flex:1;">
+          <div class="prog-title">${p.name}</div>
+          <div class="prog-org">${p.org}</div>
+        </div>
+        <div class="prog-amount">
+          <div class="prog-amt-val">${fmtK(p.maxAmt)}</div>
+          <div class="prog-amt-lbl">Max Award</div>
+        </div>
+      </div>
+      <div class="prog-tags">
+        <span class="ptag ${p.badge}">${p.badgeText}</span>
+        ${p.type.includes('firsttime') ? '<span class="ptag ptag-b">First-Time</span>' : ''}
+        ${p.type.includes('federal') ? '<span class="ptag ptag-pur">Federal</span>' : ''}
+      </div>
+      <div class="prog-details">
+        <div class="pd-item"><div class="pd-lbl">Min FICO</div><div class="pd-val">${p.minFico}+</div></div>
+        <div class="pd-item"><div class="pd-lbl">Repayment</div><div class="pd-val">${p.repay}</div></div>
+        <div class="pd-item"><div class="pd-lbl">Award Type</div><div class="pd-val">${p.awardType}</div></div>
+        <div class="pd-item"><div class="pd-lbl">Income Limit</div><div class="pd-val">${p.maxIncome < 999999 ? fmtK(p.maxIncome) + '/yr' : 'No Limit'}</div></div>
+      </div>
+      <div class="prog-footer">
+        <div class="prog-match" style="color:#15803D;">✓ Likely Eligible</div>
+        <div class="prog-arrow">›</div>
+      </div>
+      <div class="prog-expand" id="exp_${p.id}">
+        <div class="prog-req-title">📋 Requirements</div>
+        <div class="req-list">${p.requirements.map(r => `<div class="req-item"><div class="req-dot" style="background:var(--gold)"></div>${r}</div>`).join('')}</div>
+        <div style="margin-top:10px;font-size:10.5px;color:var(--muted);">${p.description}</div>
+      </div>
+    </div>`).join('');
+
+      // Comparison table
+      document.getElementById('cmpRows').innerHTML = matches.slice(0, 6).map(p => `
+    <div class="cmp-row">
+      <div><div class="cmp-prog-name">${p.name.split(' ').slice(0, 3).join(' ')}</div><div class="cmp-prog-sub">${p.org.split(' ').slice(0, 2).join(' ')}</div></div>
+      <div class="cmp-cell good">${fmtK(p.maxAmt)}</div>
+      <div class="cmp-cell ${p.minFico <= 620 ? 'good' : p.minFico <= 660 ? 'warn' : 'bad'}">${p.minFico}+</div>
+      <div class="cmp-cell ${p.repay === 'Never' || p.repay.includes('None') ? 'good' : 'warn'}">${p.repay === 'Never' || p.repay.includes('None') ? 'No' : 'Yes'}</div>
+    </div>`).join('');
+    }
+
+    function toggleExpand(id, card) {
+      const el = document.getElementById(id);
+      el.classList.toggle('open');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+    function doSave() {
+      const income = document.getElementById('incomeInput').value;
+      const price = document.getElementById('priceInput').value;
+      const matches = getMatches();
+      const maxAmt = matches.reduce((s, p) => Math.max(s, p.maxAmt), 0);
+      const entry = { id: Date.now(), name: 'Up to ' + fmtK(maxAmt) + ' DPA', meta: 'Income $' + Number(income).toLocaleString() + ' · Price $' + Number(price).toLocaleString() + ' · ' + matches.length + ' programs' };
+      savedResults.unshift(entry);
+      if (savedResults.length > 10) savedResults.pop();
+      try { localStorage.setItem('hud_saves', JSON.stringify(savedResults)); } catch (e) { }
+      renderSaved();
+      const btn = document.getElementById('saveBtn');
+      btn.classList.add('saved'); btn.textContent = '✓ Saved!';
+      showToast('Eligibility results saved');
+      setTimeout(() => { btn.classList.remove('saved'); btn.innerHTML = '💾 Save My Eligibility Results'; }, 1600);
+    }
+    function clearAll() {
+      savedResults = [];
+      try { localStorage.removeItem('hud_saves'); } catch (e) { }
+      renderSaved(); showToast('Cleared');
+    }
+    function renderSaved() {
+      const el = document.getElementById('savedList');
+      if (!savedResults.length) { el.innerHTML = '<div class="saved-empty">No saved results yet.</div>'; return; }
+      el.innerHTML = savedResults.map(e => `<div class="saved-row"><div><div class="saved-name">${e.name}</div><div class="saved-meta">${e.meta}</div></div><div class="saved-del" onclick="delSaved(${e.id})">🗑️</div></div>`).join('');
+    }
+    function delSaved(id) {
+      savedResults = savedResults.filter(e => e.id !== id);
+      try { localStorage.setItem('hud_saves', JSON.stringify(savedResults)); } catch (e) { }
+      renderSaved(); showToast('Removed');
+    }
+
+    // init
+    try { savedResults = JSON.parse(localStorage.getItem('hud_saves')) || []; } catch (e) { savedResults = []; }
+    runCheck();
+    renderSaved();
+  </script>
+</body>
+
+</html>

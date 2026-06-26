@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoE Base Rate Tracker – MortgagePro UK</title>
+<style>
+/* ── DESIGN TOKENS (exact from parent) ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+
+/* HEADER */
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#90EE90;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+
+/* CONTENT */
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#1a1a5e;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* LIVE RATE HERO */
+.live-hero{background:linear-gradient(145deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:22px 20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(13,13,43,0.28);margin-bottom:14px;}
+.live-hero::before{content:'🏛️';position:absolute;right:8px;top:0;font-size:80px;opacity:0.07;}
+.lh-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.lh-rate{font-size:52px;font-weight:800;color:#FFD700;font-family:Georgia,serif;line-height:1;margin:6px 0 4px;}
+.lh-label{font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:14px;}
+.lh-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.lh-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 10px;}
+.lh-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.4px;}
+.lh-box .v{font-size:13px;font-weight:800;color:#fff;}
+.lh-box .v.grn{color:#90EE90;}.lh-box .v.red{color:#FF8A9A;}.lh-box .v.gold{color:#FFD700;}
+
+/* STATUS PILL */
+.status-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(144,238,144,0.15);border:1px solid rgba(144,238,144,0.3);border-radius:20px;padding:5px 12px;margin-top:12px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#90EE90;animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}
+.status-text{font-size:10px;font-weight:700;color:#90EE90;}
+
+/* LINE CHART */
+.chart-card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:14px;}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.chart-title{font-size:14px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.chart-sub{font-size:10px;color:#5C5C8A;margin-bottom:14px;}
+.chart-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.ctab{padding:5px 12px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid rgba(26,26,94,0.12);color:#5C5C8A;background:#F5F5F8;transition:all .15s;}
+.ctab.active{background:linear-gradient(135deg,#0D0D2B,#1a1a5e);color:#FFD700;border-color:transparent;box-shadow:0 2px 8px rgba(13,13,43,0.25);}
+
+/* SVG CHART STYLES */
+.svg-wrap{width:100%;overflow:hidden;border-radius:8px;}
+.chart-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:8px;height:8px;border-radius:2px;}
+.leg-lbl{font-size:10px;color:#5C5C8A;font-weight:600;}
+
+/* MPC DECISIONS TABLE */
+.mpc-card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:14px;}
+.mpc-header{background:linear-gradient(135deg,#0D0D2B,#1a1a5e);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;}
+.mpc-htitle{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.mpc-hsub{font-size:9px;color:rgba(255,255,255,0.5);}
+.mpc-row{display:grid;grid-template-columns:1fr 80px 70px 50px;gap:4px;padding:11px 16px;border-bottom:1px solid rgba(26,26,94,0.06);align-items:center;}
+.mpc-row:last-child{border-bottom:none;}
+.mpc-row:nth-child(even){background:rgba(26,26,94,0.02);}
+.mpc-date{font-size:11px;font-weight:700;color:#0D0D2B;}
+.mpc-rate{font-size:13px;font-weight:800;color:#1a1a5e;font-family:Georgia,serif;}
+.mpc-chg{font-size:11px;font-weight:700;text-align:center;}
+.chg-up{color:#C8102E;}.chg-dn{color:#16a34a;}.chg-hold{color:#5C5C8A;}
+.mpc-dec{font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;text-align:center;}
+.dec-hold{background:#EEF2FF;color:#3730A3;}
+.dec-hike{background:#FEF2F2;color:#991B1B;}
+.dec-cut{background:#ECFDF5;color:#065F46;}
+
+/* IMPACT CARD */
+.impact-card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:14px;}
+.impact-title{font-size:14px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:14px;}
+.impact-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(26,26,94,0.06);}
+.impact-row:last-child{border-bottom:none;}
+.impact-icon{width:38px;height:38px;border-radius:10px;background:#F5F5F8;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.impact-name{font-size:12px;font-weight:700;color:#0D0D2B;}
+.impact-sub{font-size:10px;color:#5C5C8A;margin-top:2px;}
+.impact-val{margin-left:auto;text-align:right;}
+.impact-num{font-size:13px;font-weight:800;color:#1a1a5e;font-family:Georgia,serif;}
+.impact-chg{font-size:10px;font-weight:700;}
+
+/* FORECAST CARD */
+.forecast-card{background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #A5B4FC;border-radius:18px;padding:18px;margin-bottom:14px;}
+.fc-title{font-size:14px;font-weight:800;color:#1e1b4b;font-family:Georgia,serif;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.fc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fc-box{background:#fff;border-radius:12px;padding:12px;border:1px solid rgba(79,70,229,0.15);}
+.fc-quarter{font-size:9px;font-weight:700;color:#4338ca;text-transform:uppercase;letter-spacing:0.4px;}
+.fc-rate{font-size:18px;font-weight:800;color:#1e1b4b;font-family:Georgia,serif;margin:3px 0;}
+.fc-note{font-size:9px;color:#6366f1;}
+.fc-source{font-size:9px;color:#6366f1;margin-top:10px;font-style:italic;}
+
+/* INFO CARDS */
+.info-card{background:#fff;border-radius:15px;padding:14px;box-shadow:0 3px 14px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer;}
+.info-icon{width:40px;height:40px;border-radius:11px;background:#F5F5F8;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.info-name{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.info-sub{font-size:10px;color:#5C5C8A;margin-top:2px;}
+.info-chev{font-size:18px;color:rgba(13,13,43,0.2);margin-left:auto;}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .35s ease both .04s;}.fu2{animation:fadeUp .35s ease both .09s;}
+.fu3{animation:fadeUp .35s ease both .14s;}.fu4{animation:fadeUp .35s ease both .19s;}
+.fu5{animation:fadeUp .35s ease both .24s;}.fu6{animation:fadeUp .35s ease both .29s;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">🏛️</span>
+      <div class="hdr-title">BoE Rate Tracker</div>
+      <div class="hdr-sub">Bank of England · Monetary Policy · MPC Decisions</div>
+    </div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Base Rate</div><div class="rs-val gold">4.25%</div><div class="rs-note">May 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Peak (2023)</div><div class="rs-val red">5.25%</div><div class="rs-note">Aug 2023</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">CPI Inflation</div><div class="rs-val grn">2.6%</div><div class="rs-note">Apr 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Next MPC</div><div class="rs-val">Jun 25</div><div class="rs-note">2025</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- LIVE RATE HERO -->
+  <div class="sec-lbl fu1" style="margin-top:0">Current Rate <span class="more">BoE Website →</span></div>
+  <div class="live-hero fu1">
+    <div class="lh-tag">Bank of England — Official Base Rate</div>
+    <div class="lh-rate">4.25%</div>
+    <div class="lh-label">Effective since 8 May 2025 · Cut by 25bps</div>
+    <div class="lh-row">
+      <div class="lh-box"><label>Peak Rate</label><div class="v red">5.25%</div></div>
+      <div class="lh-box"><label>Pre-2022 Low</label><div class="v grn">0.10%</div></div>
+      <div class="lh-box"><label>Avg 10-yr</label><div class="v gold">1.82%</div></div>
+    </div>
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      <span class="status-text">EASING CYCLE — Cuts underway since Aug 2024</span>
+    </div>
+  </div>
+
+  <!-- RATE HISTORY CHART -->
+  <div class="sec-lbl fu2">Rate History <span class="more">Since 2020</span></div>
+  <div class="chart-card fu2">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">BoE Base Rate History</div>
+        <div class="chart-sub">Monetary Policy Committee decisions 2020–2025</div>
+      </div>
+    </div>
+    <div class="chart-tabs">
+      <div class="ctab active" id="tab5yr" onclick="switchChart('5yr',this)">5 Years</div>
+      <div class="ctab" id="tab10yr" onclick="switchChart('10yr',this)">10 Years</div>
+      <div class="ctab" id="tabAll" onclick="switchChart('all',this)">Since 2000</div>
+    </div>
+    <div class="svg-wrap" id="chartWrap"><!-- SVG drawn by JS --></div>
+    <div class="chart-legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#C8102E;"></div><div class="leg-lbl">BoE Base Rate</div></div>
+      <div class="leg-item"><div class="leg-dot" style="background:#FFD700;"></div><div class="leg-lbl">CPI Inflation</div></div>
+    </div>
+  </div>
+
+  <!-- MPC DECISIONS -->
+  <div class="sec-lbl fu3">MPC Decisions <span class="more">All →</span></div>
+  <div class="mpc-card fu3">
+    <div class="mpc-header">
+      <div>
+        <div class="mpc-htitle">Monetary Policy Committee</div>
+        <div class="mpc-hsub">Recent rate decisions — newest first</div>
+      </div>
+    </div>
+    <!-- rows: date | rate | change | decision -->
+    <div class="mpc-row" style="background:rgba(26,26,94,0.04);padding-top:8px;padding-bottom:8px;">
+      <div style="font-size:9px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:.5px;">Date</div>
+      <div style="font-size:9px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:.5px;">Rate</div>
+      <div style="font-size:9px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:.5px;">Change</div>
+      <div style="font-size:9px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:.5px;">Vote</div>
+    </div>
+    <div class="mpc-row"><div class="mpc-date">8 May 2025</div><div class="mpc-rate">4.25%</div><div class="mpc-chg chg-dn">▼ −0.25</div><div class="mpc-dec dec-cut">Cut</div></div>
+    <div class="mpc-row"><div class="mpc-date">20 Mar 2025</div><div class="mpc-rate">4.50%</div><div class="mpc-chg chg-hold">— Hold</div><div class="mpc-dec dec-hold">Hold</div></div>
+    <div class="mpc-row"><div class="mpc-date">6 Feb 2025</div><div class="mpc-rate">4.50%</div><div class="mpc-chg chg-dn">▼ −0.25</div><div class="mpc-dec dec-cut">Cut</div></div>
+    <div class="mpc-row"><div class="mpc-date">19 Dec 2024</div><div class="mpc-rate">4.75%</div><div class="mpc-chg chg-hold">— Hold</div><div class="mpc-dec dec-hold">Hold</div></div>
+    <div class="mpc-row"><div class="mpc-date">7 Nov 2024</div><div class="mpc-rate">4.75%</div><div class="mpc-chg chg-dn">▼ −0.25</div><div class="mpc-dec dec-cut">Cut</div></div>
+    <div class="mpc-row"><div class="mpc-date">19 Sep 2024</div><div class="mpc-rate">5.00%</div><div class="mpc-chg chg-hold">— Hold</div><div class="mpc-dec dec-hold">Hold</div></div>
+    <div class="mpc-row"><div class="mpc-date">1 Aug 2024</div><div class="mpc-rate">5.00%</div><div class="mpc-chg chg-dn">▼ −0.25</div><div class="mpc-dec dec-cut">Cut</div></div>
+    <div class="mpc-row"><div class="mpc-date">20 Jun 2024</div><div class="mpc-rate">5.25%</div><div class="mpc-chg chg-hold">— Hold</div><div class="mpc-dec dec-hold">Hold</div></div>
+    <div class="mpc-row"><div class="mpc-date">9 Aug 2023</div><div class="mpc-rate">5.25%</div><div class="mpc-chg chg-up">▲ +0.25</div><div class="mpc-dec dec-hike">Hike</div></div>
+    <div class="mpc-row"><div class="mpc-date">22 Jun 2023</div><div class="mpc-rate">5.00%</div><div class="mpc-chg chg-up">▲ +0.50</div><div class="mpc-dec dec-hike">Hike</div></div>
+    <div class="mpc-row"><div class="mpc-date">16 Dec 2021</div><div class="mpc-rate">0.25%</div><div class="mpc-chg chg-up">▲ +0.15</div><div class="mpc-dec dec-hike">Hike</div></div>
+    <div class="mpc-row"><div class="mpc-date">19 Mar 2020</div><div class="mpc-rate">0.10%</div><div class="mpc-chg chg-dn">▼ −0.15</div><div class="mpc-dec dec-cut">COVID Cut</div></div>
+  </div>
+
+  <!-- IMPACT ON PRODUCTS -->
+  <div class="sec-lbl fu4">Rate Impact on Products <span class="more">Now</span></div>
+  <div class="impact-card fu4">
+    <div class="impact-title">How 4.25% Base Rate Affects You</div>
+    <div class="impact-row">
+      <div class="impact-icon">🏠</div>
+      <div><div class="impact-name">2-Year Fixed Mortgage</div><div class="impact-sub">Avg UK high-street lender</div></div>
+      <div class="impact-val"><div class="impact-num">4.75%</div><div class="impact-chg chg-dn" style="color:#16a34a;">▼ Falling</div></div>
+    </div>
+    <div class="impact-row">
+      <div class="impact-icon">📅</div>
+      <div><div class="impact-name">5-Year Fixed Mortgage</div><div class="impact-sub">Best buy rates</div></div>
+      <div class="impact-val"><div class="impact-num">4.35%</div><div class="impact-chg chg-dn" style="color:#16a34a;">▼ Falling</div></div>
+    </div>
+    <div class="impact-row">
+      <div class="impact-icon">🔁</div>
+      <div><div class="impact-name">SVR (Standard Variable)</div><div class="impact-sub">Average lender SVR</div></div>
+      <div class="impact-val"><div class="impact-num">7.99%</div><div class="impact-chg" style="color:#C8102E;">⚠ High</div></div>
+    </div>
+    <div class="impact-row">
+      <div class="impact-icon">🏦</div>
+      <div><div class="impact-name">Easy Access Savings</div><div class="impact-sub">Top-of-market accounts</div></div>
+      <div class="impact-val"><div class="impact-num">4.85%</div><div class="impact-chg chg-dn" style="color:#16a34a;">▼ Easing</div></div>
+    </div>
+    <div class="impact-row">
+      <div class="impact-icon">💳</div>
+      <div><div class="impact-name">Tracker Mortgage</div><div class="impact-sub">Base + typical margin</div></div>
+      <div class="impact-val"><div class="impact-num">4.99%</div><div class="impact-chg chg-dn" style="color:#16a34a;">▼ Falling</div></div>
+    </div>
+    <div class="impact-row">
+      <div class="impact-icon">🏢</div>
+      <div><div class="impact-name">Buy-to-Let Rate</div><div class="impact-sub">Avg BTL 5-yr fixed</div></div>
+      <div class="impact-val"><div class="impact-num">5.25%</div><div class="impact-chg chg-dn" style="color:#16a34a;">▼ Easing</div></div>
+    </div>
+  </div>
+
+  <!-- FORECAST -->
+  <div class="sec-lbl fu5">Market Forecasts <span class="more">Source: OBR/ICAP</span></div>
+  <div class="forecast-card fu5">
+    <div class="fc-title">📊 Rate Path Expectations — 2025–2026</div>
+    <div class="fc-grid">
+      <div class="fc-box"><div class="fc-quarter">Q2 2025 (Now)</div><div class="fc-rate">4.25%</div><div class="fc-note">Confirmed — May cut</div></div>
+      <div class="fc-box"><div class="fc-quarter">Q3 2025</div><div class="fc-rate">4.00%</div><div class="fc-note">1 cut expected Aug</div></div>
+      <div class="fc-box"><div class="fc-quarter">Q4 2025</div><div class="fc-rate">3.75%</div><div class="fc-note">Further easing likely</div></div>
+      <div class="fc-box"><div class="fc-quarter">Q2 2026</div><div class="fc-rate">3.25%</div><div class="fc-note">Consensus median</div></div>
+    </div>
+    <div class="fc-source">* Forecasts based on OBR May 2025, Goldman Sachs, ICAP market pricing. Not financial advice.</div>
+  </div>
+
+  <!-- RELATED LINKS -->
+  <div class="sec-lbl fu6">Related Resources</div>
+  <div class="info-card fu6">
+    <div class="info-icon">🏡</div>
+    <div><div class="info-name">UK House Price Index</div><div class="info-sub">HM Land Registry — regional data</div></div>
+    <div class="info-chev">›</div>
+  </div>
+  <div class="info-card fu6">
+    <div class="info-icon">🏛️</div>
+    <div><div class="info-name">SDLT Calculator</div><div class="info-sub">Stamp Duty — all buyer types</div></div>
+    <div class="info-chev">›</div>
+  </div>
+  <div class="info-card fu6">
+    <div class="info-icon">🤖</div>
+    <div><div class="info-name">UK AI Mortgage Advisor</div><div class="info-sub">FCA-aware · rate impact analysis</div></div>
+    <div class="info-chev">›</div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+/* ─── Chart Data ─── */
+const chartData = {
+  '5yr': {
+    labels:['Jan 20','Mar 20','Dec 21','Feb 22','Mar 22','May 22','Jun 22','Aug 22','Sep 22','Nov 22','Dec 22','Feb 23','Mar 23','May 23','Jun 23','Aug 23','Dec 23','Aug 24','Nov 24','Feb 25','May 25'],
+    rate:  [0.75,0.10,0.25,0.50,0.75,1.00,1.25,1.75,2.25,3.00,3.50,4.00,4.25,4.50,5.00,5.25,5.25,5.00,4.75,4.50,4.25],
+    cpi:   [1.8,1.5,5.1,5.5,7.0,9.0,9.4,10.1,10.1,11.1,10.5,10.1,8.7,8.7,7.9,6.8,4.0,2.2,2.3,2.8,2.6]
+  },
+  '10yr': {
+    labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'],
+    rate:  [0.25,0.50,0.75,0.75,0.10,0.10,3.50,5.25,4.75,4.25],
+    cpi:   [1.6,3.0,2.4,1.3,0.6,5.1,10.5,6.8,2.5,2.6]
+  },
+  'all': {
+    labels:['2000','2003','2007','2009','2016','2020','2022','2023','2024','2025'],
+    rate:  [6.00,3.75,5.75,0.50,0.25,0.10,3.50,5.25,4.75,4.25],
+    cpi:   [3.0,1.4,4.0,2.2,0.6,0.6,10.5,6.8,2.5,2.6]
+  }
+};
+
+let activeSet = '5yr';
+
+function switchChart(key, el) {
+  activeSet = key;
+  document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  drawChart(chartData[key]);
+}
+
+function drawChart(d) {
+  const W = 388, H = 180, padL = 32, padR = 10, padT = 14, padB = 28;
+  const n = d.labels.length;
+  const allVals = [...d.rate, ...d.cpi];
+  const maxV = Math.max(...allVals) * 1.1;
+  const minV = 0;
+  const xStep = (W - padL - padR) / (n - 1);
+  const yScale = v => padT + (H - padT - padB) * (1 - (v - minV) / (maxV - minV));
+  const xPos   = i => padL + i * xStep;
+
+  // Build path points
+  const ratePts = d.rate.map((v,i) => `${xPos(i)},${yScale(v)}`).join(' ');
+  const cpiPts  = d.cpi.map((v,i)  => `${xPos(i)},${yScale(v)}`).join(' ');
+
+  // Area fill for rate
+  const rateArea = `${xPos(0)},${H - padB} ` + ratePts + ` ${xPos(n-1)},${H - padB}`;
+
+  // Y-axis gridlines
+  const yTicks = [0, 2, 4, 6, 8, 10, 12].filter(v => v <= maxV);
+  const gridLines = yTicks.map(v =>
+    `<line x1="${padL}" y1="${yScale(v)}" x2="${W - padR}" y2="${yScale(v)}" stroke="rgba(26,26,94,0.06)" stroke-width="1"/>
+     <text x="${padL - 4}" y="${yScale(v) + 4}" text-anchor="end" font-size="8" fill="#5C5C8A">${v}%</text>`
+  ).join('');
+
+  // X-axis labels — show every other
+  const xLabels = d.labels.map((lbl, i) =>
+    (i % Math.ceil(n / 5) === 0 || i === n - 1)
+      ? `<text x="${xPos(i)}" y="${H - padB + 14}" text-anchor="middle" font-size="8" fill="#5C5C8A">${lbl}</text>`
+      : ''
+  ).join('');
+
+  // Highlight current rate dot
+  const lastX = xPos(n - 1), lastY = yScale(d.rate[n - 1]);
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+    <defs>
+      <linearGradient id="rateGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#C8102E" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#C8102E" stop-opacity="0.01"/>
+      </linearGradient>
+    </defs>
+    ${gridLines}
+    <polygon points="${rateArea}" fill="url(#rateGrad)"/>
+    <polyline points="${ratePts}" fill="none" stroke="#C8102E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <polyline points="${cpiPts}"  fill="none" stroke="#FFD700" stroke-width="1.8" stroke-dasharray="5,3" stroke-linejoin="round" stroke-linecap="round"/>
+    ${xLabels}
+    <circle cx="${lastX}" cy="${lastY}" r="5" fill="#C8102E" stroke="#fff" stroke-width="2"/>
+    <text x="${lastX + 7}" y="${lastY + 4}" font-size="9" font-weight="800" fill="#C8102E">${d.rate[n-1]}%</text>
+  </svg>`;
+
+  document.getElementById('chartWrap').innerHTML = svg;
+}
+
+drawChart(chartData['5yr']);
+</script>
+</body>
+</html>

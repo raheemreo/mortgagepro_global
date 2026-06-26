@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mortgage Calculator</title>
+<style>
+  :root{--navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--crimson:#991B1B;--gold:#D97706;--gold-lt:#FCD34D;--white:#FFFFFF;--bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;--border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🦅';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.up::after{content:'↑';font-size:9px;color:#6EE7B7;}
+  .rs-v.dn::after{content:'↓';font-size:9px;color:#FCA5A5;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* Slider card */
+  .slider-card{background:linear-gradient(148deg,#0B1D3A,#1B3F72);border-radius:20px;padding:20px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;}
+  .slider-card::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(185,28,28,0.14);}
+  .sc-tag{font-size:9.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+  .sc-result{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;margin:6px 0 16px;line-height:1;}
+  .sc-result span{font-size:18px;color:var(--gold-lt);margin-right:2px;}
+
+  .slider-group{margin-bottom:14px;position:relative;z-index:2;}
+  .sg-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+  .sg-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(255,255,255,0.55);}
+  .sg-value{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:5px;background:rgba(255,255,255,0.18);outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FCD34D,#D97706);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+  .rate-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:2;}
+  .rr-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:11px;padding:10px;text-align:center;cursor:pointer;}
+  .rr-box.active{background:rgba(185,28,28,0.30);border-color:rgba(185,28,28,0.50);}
+  .rr-label{font-size:8.5px;color:rgba(255,255,255,0.50);font-weight:700;}
+  .rr-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+
+  /* Comparison grid */
+  .comp-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .comp-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+  .comp-title span{font-size:10px;font-weight:500;color:var(--blue);}
+  .comp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .cg-item{background:var(--bg);border-radius:12px;padding:11px 8px;text-align:center;border:1px solid var(--border);}
+  .cg-item.highlight{background:linear-gradient(140deg,#0B1D3A,#1B3F72);border-color:transparent;}
+  .cg-term{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);}
+  .cg-item.highlight .cg-term{color:rgba(255,255,255,0.55);}
+  .cg-payment{font-size:16px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:4px 0 2px;}
+  .cg-item.highlight .cg-payment{color:#fff;}
+  .cg-rate{font-size:9px;color:var(--muted);}
+  .cg-item.highlight .cg-rate{color:rgba(255,255,255,0.50);}
+  .cg-total{font-size:9px;font-weight:700;color:var(--red);margin-top:3px;}
+  .cg-item.highlight .cg-total{color:#FCA5A5;}
+
+  /* Key metrics */
+  .metrics-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .mc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .mc-item{background:var(--bg);border-radius:12px;padding:12px;border:1px solid var(--border);}
+  .mc-label{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .mc-val{font-size:16px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .mc-sub{font-size:9px;color:var(--muted);}
+  .mc-item.nv{background:linear-gradient(140deg,#0B1D3A,#1B3F72);}
+  .mc-item.nv .mc-label,.mc-item.nv .mc-sub{color:rgba(255,255,255,0.50);}
+  .mc-item.nv .mc-val{color:#fff;}
+  .mc-item.rd{background:linear-gradient(140deg,#B91C1C,#991B1B);}
+  .mc-item.rd .mc-label,.mc-item.rd .mc-sub{color:rgba(255,255,255,0.50);}
+  .mc-item.rd .mc-val{color:#fff;}
+
+  /* Rate comparison list */
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ic-right{margin-left:auto;text-align:right;}
+  .ic-rate{font-size:16px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .ic-pmt{font-size:9.5px;color:var(--muted);}
+  .up{color:#15803D;} .dn{color:var(--red);}
+
+  .tip-banner{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 15px;margin-bottom:10px;}
+  .tip-title{font-size:11.5px;font-weight:800;color:#92400E;font-family:Georgia,serif;display:flex;align-items:center;gap:7px;}
+  .tip-body{font-size:10px;color:#B45309;margin-top:5px;line-height:1.5;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  /* CALC + SAVE BUTTONS */
+  .calc-btn2 { width:100%; background:linear-gradient(135deg,#B91C1C,#991B1B); border:none; border-radius:12px; padding:14px; font-size:13px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(185,28,28,0.35); font-family:Georgia,serif; margin-top:10px; transition:transform .15s; }
+  .calc-btn2:active { transform:scale(.98); }
+  .save-btn { width:100%; background:var(--card); border:1.5px solid var(--blue); border-radius:12px; padding:13px; font-size:13px; font-weight:800; color:var(--blue); cursor:pointer; font-family:Georgia,serif; margin-top:8px; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .save-btn:active { transform:scale(.98); background:var(--bg); }
+  .save-btn.saved { background:#DCFCE7; border-color:#15803D; color:#15803D; }
+  .slider-card .save-btn.saved { background:rgba(34,197,94,0.25); border-color:#22c55e; color:#fff; }
+  .toast { position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px); max-width:380px; width:90%; background:var(--navy); color:#fff; padding:12px 18px; border-radius:12px; font-size:12.5px; font-weight:700; text-align:center; box-shadow:var(--sh2); opacity:0; pointer-events:none; transition:all .3s ease; z-index:200; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* SAVED LIST */
+  .saved-card { background:var(--card); border-radius:16px; padding:14px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; }
+  .saved-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .saved-row:last-child { border-bottom:none; }
+  .saved-info { display:flex; flex-direction:column; }
+  .saved-name { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .saved-meta { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .saved-del { font-size:13px; color:var(--red); cursor:pointer; padding:6px; }
+  .saved-empty { font-size:11px; color:var(--muted); text-align:center; padding:14px 0; }
+
+  /* DONUT */
+  .donut-row{display:flex;align-items:center;gap:14px;margin-top:6px;}
+  .donut-legend2{flex:1;display:flex;flex-direction:column;gap:7px;}
+  .dl2-row{display:flex;align-items:center;gap:8px;}
+  .dl2-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .dl2-lbl{font-size:10.5px;color:var(--muted);flex:1;}
+  .dl2-val{font-size:11.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .slider-card{animation:fadeUp .35s ease both .05s;}
+  .comp-card,.metrics-card{animation:fadeUp .35s ease both .12s;}
+  .ilist{animation:fadeUp .35s ease both .22s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇺🇸</div>
+      <div class="hdr-title">Mortgage Calculator</div>
+      <div class="hdr-sub">Monthly Payment · 30yr · 15yr · ARM</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">30-Yr Fixed</div><div class="rs-v up">6.82%</div><div class="rs-n">Freddie Mac</div></div>
+    <div class="rs"><div class="rs-l">15-Yr Fixed</div><div class="rs-v">6.11%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">5/1 ARM</div><div class="rs-v dn">6.05%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">Fed Funds</div><div class="rs-v gold">5.33%</div><div class="rs-n">FOMC</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">Adjust Loan <span class="more">Reset</span></div>
+  <div class="slider-card">
+    <div class="sc-tag">🧮 USA Mortgage Calculator</div>
+    <div class="sc-result"><span>$</span><span id="monthlyPmt">2,196</span><span style="font-size:13px;color:rgba(255,255,255,0.50);font-weight:400;">/mo</span></div>
+
+    <div class="slider-group">
+      <div class="sg-top">
+        <span class="sg-label">Home Price</span>
+        <span class="sg-value" id="priceDisplay">$420,000</span>
+      </div>
+      <input type="range" id="priceSlider" min="100000" max="2000000" step="5000" value="420000" oninput="updateCalc()">
+    </div>
+
+    <div class="slider-group">
+      <div class="sg-top">
+        <span class="sg-label">Down Payment</span>
+        <span class="sg-value" id="downDisplay">20% · $84,000</span>
+      </div>
+      <input type="range" id="downSlider" min="3" max="50" step="1" value="20" oninput="updateCalc()">
+    </div>
+
+    <div class="slider-group">
+      <div class="sg-top">
+        <span class="sg-label">Interest Rate</span>
+        <span class="sg-value" id="rateDisplay">6.82%</span>
+      </div>
+      <input type="range" id="rateSlider" min="2" max="12" step="0.01" value="6.82" oninput="updateCalc()">
+    </div>
+
+    <div class="rate-row">
+      <div class="rr-box active" onclick="setTerm(30,this)" id="t30">
+        <div class="rr-label">30-Year Fixed</div>
+        <div class="rr-val" id="pmt30">$2,196</div>
+      </div>
+      <div class="rr-box" onclick="setTerm(15,this)" id="t15">
+        <div class="rr-label">15-Year Fixed</div>
+        <div class="rr-val" id="pmt15">$2,985</div>
+      </div>
+    </div>
+    <button class="calc-btn2" onclick="updateCalc()" style="position:relative;z-index:2;">🧮 Calculate Payment</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalculation()" style="position:relative;z-index:2;background:rgba(255,255,255,0.10);border-color:rgba(255,255,255,0.25);color:#fff;">💾 Save This Calculation</button>
+  </div>
+
+  <!-- Term Comparison -->
+  <div class="sec">Loan Term Comparison <span class="more">Full →</span></div>
+  <div class="comp-card">
+    <div class="comp-title">Monthly Payment by Term <span>Same rate</span></div>
+    <div class="comp-grid">
+      <div class="cg-item">
+        <div class="cg-term">10 Year</div>
+        <div class="cg-payment" id="p10">$3,867</div>
+        <div class="cg-rate">6.82%</div>
+        <div class="cg-total" id="ti10">$128K int</div>
+      </div>
+      <div class="cg-item highlight">
+        <div class="cg-term">⭐ 30 Year</div>
+        <div class="cg-payment" id="p30">$2,196</div>
+        <div class="cg-rate">6.82%</div>
+        <div class="cg-total" id="ti30">$452K int</div>
+      </div>
+      <div class="cg-item">
+        <div class="cg-term">15 Year</div>
+        <div class="cg-payment" id="p15">$2,985</div>
+        <div class="cg-rate">6.11%</div>
+        <div class="cg-total" id="ti15">$201K int</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Metrics -->
+  <div class="sec">Key Metrics</div>
+  <div class="metrics-card">
+    <div class="donut-row">
+      <svg width="84" height="84" viewBox="0 0 92 92" style="flex-shrink:0;">
+        <circle cx="46" cy="46" r="36" fill="none" stroke="#F0F4FF" stroke-width="13"/>
+        <circle id="donutLoanSeg" cx="46" cy="46" r="36" fill="none" stroke="#1B3F72" stroke-width="13" stroke-dasharray="0 226" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:46px 46px;transition:stroke-dasharray .6s ease;"/>
+        <circle id="donutIntSeg" cx="46" cy="46" r="36" fill="none" stroke="#B91C1C" stroke-width="13" stroke-dasharray="0 226" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:46px 46px;transition:stroke-dasharray .6s ease;"/>
+      </svg>
+      <div class="donut-legend2">
+        <div class="dl2-row"><div class="dl2-dot" style="background:#1B3F72;"></div><div class="dl2-lbl">Loan Principal</div><div class="dl2-val" id="donutLoanVal">43%</div></div>
+        <div class="dl2-row"><div class="dl2-dot" style="background:#B91C1C;"></div><div class="dl2-lbl">Total Interest</div><div class="dl2-val" id="donutIntVal">57%</div></div>
+      </div>
+    </div>
+    <div class="mc-grid" style="margin-top:14px;">
+      <div class="mc-item nv">
+        <div class="mc-label">Loan Amount</div>
+        <div class="mc-val" id="mLoan">$336,000</div>
+        <div class="mc-sub">After down payment</div>
+      </div>
+      <div class="mc-item rd">
+        <div class="mc-label">Total Interest</div>
+        <div class="mc-val" id="mTotInt">$453,180</div>
+        <div class="mc-sub">Over loan life</div>
+      </div>
+      <div class="mc-item">
+        <div class="mc-label">Total Cost</div>
+        <div class="mc-val" id="mTotCost">$789,180</div>
+        <div class="mc-sub">Principal + interest</div>
+      </div>
+      <div class="mc-item">
+        <div class="mc-label">Loan-to-Value</div>
+        <div class="mc-val" id="mLTV">80.0%</div>
+        <div class="mc-sub">PMI threshold: 80%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Rates by Lender -->
+  <div class="sec">Today's Best Rates <span class="more">Compare →</span></div>
+  <div class="ilist">
+    <div class="ic">
+      <div class="ii">🚀</div>
+      <div><div class="in">Rocket Mortgage</div><div class="is">30-yr fixed · largest US lender</div></div>
+      <div class="ic-right"><div class="ic-rate up">6.75%</div><div class="ic-pmt" id="rkt"></div></div>
+    </div>
+    <div class="ic">
+      <div class="ii">🏦</div>
+      <div><div class="in">Wells Fargo</div><div class="is">30-yr fixed · $1.9T assets</div></div>
+      <div class="ic-right"><div class="ic-rate">6.88%</div><div class="ic-pmt" id="wf"></div></div>
+    </div>
+    <div class="ic">
+      <div class="ii">🏛️</div>
+      <div><div class="in">Chase Bank</div><div class="is">30-yr fixed · DreamMaker 3%</div></div>
+      <div class="ic-right"><div class="ic-rate">6.90%</div><div class="ic-pmt" id="chase"></div></div>
+    </div>
+    <div class="ic">
+      <div class="ii">📊</div>
+      <div><div class="in">Freddie Mac Avg</div><div class="is">National weekly avg (PMMS)</div></div>
+      <div class="ic-right"><div class="ic-rate">6.82%</div><div class="ic-pmt" id="freddie"></div></div>
+    </div>
+  </div>
+
+  <div class="tip-banner" style="margin-top:14px;">
+    <div class="tip-title">💡 Rate Tip</div>
+    <div class="tip-body">A 0.5% rate drop on a $336K loan saves <strong>~$112/month</strong> and <strong>$40,000+ over 30 years</strong>. Shop at least 3 lenders — studies show borrowers who compare save an avg of $1,500 per year (CFPB 2024).</div>
+  </div>
+
+  <!-- Saved Calculations -->
+  <div class="sec" style="margin-top:20px;">Saved Calculations <span class="more" onclick="clearAllSaved()">Clear All</span></div>
+  <div class="saved-card">
+    <div id="savedList"><div class="saved-empty">No saved calculations yet. Tap "Save This Calculation" above.</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let currentTerm=30;
+function fmt(n){return n.toLocaleString('en-US',{maximumFractionDigits:0});}
+function pmt(loan,annualRate,years){
+  const r=annualRate/100/12,n=years*12;
+  if(r===0)return loan/n;
+  return loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+}
+
+function setTerm(t,el){
+  currentTerm=t;
+  document.querySelectorAll('.rr-box').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  updateCalc();
+}
+
+function updateCalc(){
+  const price=parseInt(document.getElementById('priceSlider').value);
+  const downPct=parseInt(document.getElementById('downSlider').value);
+  const rate=parseFloat(document.getElementById('rateSlider').value);
+  const down=price*downPct/100;
+  const loan=price-down;
+  const ltv=loan/price*100;
+
+  document.getElementById('priceDisplay').textContent='$'+fmt(price);
+  document.getElementById('downDisplay').textContent=downPct+'% · $'+fmt(down);
+  document.getElementById('rateDisplay').textContent=rate.toFixed(2)+'%';
+
+  const p30=pmt(loan,6.82,30), p15=pmt(loan,6.11,15), p10=pmt(loan,rate,10);
+  const pCurr=pmt(loan,rate,currentTerm);
+
+  document.getElementById('monthlyPmt').textContent=fmt(pCurr);
+  document.getElementById('pmt30').textContent='$'+fmt(p30);
+  document.getElementById('pmt15').textContent='$'+fmt(p15);
+
+  // Comparison grid
+  document.getElementById('p10').textContent='$'+fmt(p10);
+  document.getElementById('p30').textContent='$'+fmt(p30);
+  document.getElementById('p15').textContent='$'+fmt(p15);
+  document.getElementById('ti10').textContent='$'+fmt(p10*120-loan)+' int';
+  document.getElementById('ti30').textContent='$'+fmt(p30*360-loan)+' int';
+  document.getElementById('ti15').textContent='$'+fmt(p15*180-loan)+' int';
+
+  // Metrics
+  const totInt=pCurr*currentTerm*12-loan;
+  document.getElementById('mLoan').textContent='$'+fmt(loan);
+  document.getElementById('mTotInt').textContent='$'+fmt(totInt);
+  document.getElementById('mTotCost').textContent='$'+fmt(pCurr*currentTerm*12);
+  document.getElementById('mLTV').textContent=ltv.toFixed(1)+'%';
+
+  // Donut: loan vs total interest
+  const circumference=2*Math.PI*36;
+  const totalCost=loan+totInt;
+  const loanPct=totalCost>0?loan/totalCost*100:0;
+  const intPct=100-loanPct;
+  const loanLen=(loanPct/100*circumference).toFixed(1);
+  const intLen=(intPct/100*circumference).toFixed(1);
+  const dLoan=document.getElementById('donutLoanSeg');
+  const dInt=document.getElementById('donutIntSeg');
+  dLoan.style.strokeDasharray=`${loanLen} ${circumference}`;
+  dLoan.style.strokeDashoffset='0';
+  dInt.style.strokeDasharray=`${intLen} ${circumference}`;
+  dInt.style.strokeDashoffset=(-loanLen).toString();
+  document.getElementById('donutLoanVal').textContent=loanPct.toFixed(0)+'%';
+  document.getElementById('donutIntVal').textContent=intPct.toFixed(0)+'%';
+
+  // Lender estimates (using their rates)
+  document.getElementById('rkt').textContent='~$'+fmt(pmt(loan,6.75,30))+'/mo';
+  document.getElementById('wf').textContent='~$'+fmt(pmt(loan,6.88,30))+'/mo';
+  document.getElementById('chase').textContent='~$'+fmt(pmt(loan,6.90,30))+'/mo';
+  document.getElementById('freddie').textContent='~$'+fmt(pmt(loan,6.82,30))+'/mo';
+}
+updateCalc();
+
+/* ===== SAVE / LOAD ===== */
+const SAVE_KEY='mortgage_saved';
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+function getSaved(){try{return JSON.parse(localStorage.getItem(SAVE_KEY))||[];}catch(e){return [];}}
+function setSaved(arr){localStorage.setItem(SAVE_KEY,JSON.stringify(arr));}
+
+function saveCalculation(){
+  const price=document.getElementById('priceSlider').value;
+  const down=document.getElementById('downSlider').value;
+  const rate=document.getElementById('rateSlider').value;
+  const monthly=document.getElementById('monthlyPmt').textContent;
+
+  const entry={
+    id:Date.now(),
+    name:'$'+monthly+'/mo · '+currentTerm+'yr @ '+(+rate).toFixed(2)+'%',
+    meta:'Price $'+Number(price).toLocaleString()+' · '+down+'% down',
+    data:{price,down,rate,term:currentTerm}
+  };
+  const arr=getSaved();
+  arr.unshift(entry);
+  if(arr.length>10) arr.pop();
+  setSaved(arr);
+  renderSaved();
+
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  btn.textContent='✓ Saved!';
+  showToast('Calculation saved');
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='💾 Save This Calculation';},1600);
+}
+
+function loadCalculation(id){
+  const entry=getSaved().find(e=>e.id===id);
+  if(!entry) return;
+  const d=entry.data;
+  document.getElementById('priceSlider').value=d.price;
+  document.getElementById('downSlider').value=d.down;
+  document.getElementById('rateSlider').value=d.rate;
+  currentTerm=d.term;
+  document.querySelectorAll('.rr-box').forEach(b=>b.classList.remove('active'));
+  document.getElementById(d.term===30?'t30':'t15').classList.add('active');
+  updateCalc();
+  showToast('Calculation loaded');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function deleteSaved(id,evt){
+  evt.stopPropagation();
+  setSaved(getSaved().filter(e=>e.id!==id));
+  renderSaved();
+  showToast('Removed');
+}
+
+function clearAllSaved(){
+  if(getSaved().length===0) return;
+  setSaved([]);
+  renderSaved();
+  showToast('All saved calculations cleared');
+}
+
+function renderSaved(){
+  const arr=getSaved();
+  const list=document.getElementById('savedList');
+  if(arr.length===0){
+    list.innerHTML='<div class="saved-empty">No saved calculations yet. Tap "Save This Calculation" above.</div>';
+    return;
+  }
+  list.innerHTML=arr.map(e=>`
+    <div class="saved-row" onclick="loadCalculation(${e.id})">
+      <div class="saved-info">
+        <div class="saved-name">${e.name}</div>
+        <div class="saved-meta">${e.meta}</div>
+      </div>
+      <div class="saved-del" onclick="deleteSaved(${e.id},event)">🗑️</div>
+    </div>`).join('');
+}
+renderSaved();
+</script>
+</body>
+</html>

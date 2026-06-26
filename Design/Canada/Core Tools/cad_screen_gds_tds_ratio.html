@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDS / TDS Ratio – Canada Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --green-deep:#0A2E1A;--green-mid:#1A5C35;--green-light:#4A7C5F;--green-pale:#DCF4E8;--green-bg:#F0F7F4;
+  --red:#C8102E;--red-pale:#FFE4E8;--accent:#6EDFA0;--amber:#F59E0B;--amber-pale:#FEF3C7;
+  --white:#fff;--shadow:0 4px 20px rgba(10,46,26,0.1);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--green-bg);color:var(--green-deep);max-width:420px;margin:0 auto;min-height:100vh;}
+
+/* HEADER */
+.header{background:linear-gradient(150deg,#071A0F 0%,#0A2E1A 40%,#1A5C35 75%,#C8102E 100%);padding:52px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(110,223,160,0.07);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:24px;display:block;margin-bottom:2px;}
+.hdr-title{font-family:'DM Serif Display',serif;font-size:20px;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px;font-weight:500;}
+.rate-strip{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:16px 16px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:6px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:'DM Serif Display',serif;}
+.rs-val.grn{color:var(--accent);}.rs-val.warn{color:#FFD580;}
+.rs-div{width:1px;height:28px;background:rgba(255,255,255,0.12);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.35);margin-top:1px;}
+
+/* CONTENT */
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:10px;font-weight:700;color:var(--green-light);text-transform:uppercase;letter-spacing:1.2px;margin:22px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+
+/* INPUT CARDS */
+.input-card{background:var(--white);border-radius:20px;padding:18px;box-shadow:var(--shadow);border:1px solid rgba(26,92,53,0.07);margin-bottom:10px;}
+.field{margin-bottom:13px;}
+.field:last-child{margin-bottom:0;}
+.field label{font-size:10px;font-weight:700;color:var(--green-light);text-transform:uppercase;letter-spacing:0.7px;display:block;margin-bottom:6px;}
+.field-row{display:flex;align-items:center;background:var(--green-bg);border-radius:12px;border:1.5px solid rgba(26,92,53,0.10);overflow:hidden;transition:border-color 0.2s;}
+.field-row:focus-within{border-color:var(--green-mid);}
+.field-prefix{padding:0 12px;font-size:13px;font-weight:700;color:var(--green-mid);}
+.field-input{flex:1;background:none;border:none;outline:none;font-size:16px;font-weight:800;color:var(--green-deep);padding:13px 0;font-family:'DM Sans',sans-serif;}
+.field-suffix{padding:0 12px;font-size:12px;font-weight:600;color:var(--green-light);}
+.field-note{font-size:10px;color:var(--green-light);margin-top:5px;font-weight:500;}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:10px;margin-top:6px;}
+.calc-btn{flex:1;background:linear-gradient(135deg,var(--red),#E5172E);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(200,16,46,0.35);transition:transform 0.15s;font-family:'DM Sans',sans-serif;}
+.calc-btn:active{transform:scale(0.98);}
+.save-btn{width:54px;background:linear-gradient(135deg,#1A4A8A,#2563EB);border:none;border-radius:14px;font-size:18px;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,0.3);transition:transform 0.15s;display:flex;align-items:center;justify-content:center;}
+.save-btn:active{transform:scale(0.98);}
+.save-btn.saved{background:linear-gradient(135deg,#059669,#10B981);}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--green-deep);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* GAUGE CARDS - improved ring gauges */
+.gauge-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.gauge-card{background:var(--white);border-radius:20px;padding:16px;box-shadow:var(--shadow);border:1px solid rgba(26,92,53,0.07);text-align:center;}
+.gauge-title{font-size:11px;font-weight:700;color:var(--green-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+.gauge-ring-wrap{position:relative;width:100px;height:100px;margin:0 auto 8px;}
+.gauge-svg{width:100px;height:100px;}
+.gauge-bg{fill:none;stroke:#EEF6F0;stroke-width:10;}
+.gauge-arc{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1),stroke 0.4s;}
+.gauge-val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;font-weight:800;font-family:'DM Serif Display',serif;color:var(--green-deep);text-align:center;line-height:1.1;}
+.gauge-sub{font-size:9px;color:var(--green-light);font-weight:700;display:block;}
+.gauge-limit{font-size:10px;color:var(--green-light);font-weight:600;margin-top:3px;}
+.gauge-status{display:inline-flex;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-top:5px;}
+.status-pass{background:#DCF4E8;color:var(--green-mid);}
+.status-warn{background:#FEF3C7;color:#92400E;}
+.status-fail{background:#FFE4E8;color:var(--red);}
+
+/* RESULT CARD */
+.result-card{background:linear-gradient(145deg,var(--green-deep),#1A5C35);border-radius:22px;padding:20px;box-shadow:0 10px 40px rgba(10,46,26,0.3);position:relative;overflow:hidden;margin-bottom:10px;}
+.result-card::before{content:'🍁';position:absolute;right:-5px;top:-10px;font-size:75px;opacity:0.06;}
+.rc-label{font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;}
+.rc-row{display:flex;align-items:center;justify-content:space-between;margin:10px 0;padding:11px 13px;background:rgba(255,255,255,0.09);border-radius:13px;border:1px solid rgba(255,255,255,0.12);}
+.rc-row-lbl{font-size:11px;color:rgba(255,255,255,0.55);font-weight:600;}
+.rc-row-val{font-size:16px;font-weight:800;color:#fff;font-family:'DM Serif Display',serif;}
+.rc-row-status{font-size:10px;font-weight:700;padding:4px 9px;border-radius:20px;}
+.rcs-pass{background:var(--accent);color:var(--green-deep);}
+.rcs-fail{background:#FF8A9A;color:#fff;}
+
+/* VISUAL STACKED BAR CHART */
+.chart-card{background:var(--white);border-radius:20px;padding:18px;box-shadow:var(--shadow);border:1px solid rgba(26,92,53,0.07);margin-bottom:10px;}
+.chart-title{font-size:13px;font-weight:800;color:var(--green-deep);font-family:'DM Serif Display',serif;margin-bottom:14px;}
+/* Horizontal stacked breakdown */
+.stacked-wrap{margin-bottom:14px;}
+.stacked-bar-lbl{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--green-light);margin-bottom:5px;}
+.stacked-bar{height:20px;border-radius:8px;background:var(--green-bg);overflow:hidden;display:flex;}
+.stacked-seg{height:100%;transition:width 0.6s ease;min-width:0;}
+.stacked-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.sl-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green-light);font-weight:600;}
+.sl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+/* BREAKDOWN CARD */
+.breakdown-card{background:var(--white);border-radius:20px;padding:18px;box-shadow:var(--shadow);border:1px solid rgba(26,92,53,0.07);margin-bottom:10px;}
+.bk-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(26,92,53,0.06);}
+.bk-row:last-child{border-bottom:none;padding-bottom:0;}
+.bk-row:first-child{padding-top:0;}
+.bk-lbl{font-size:12px;font-weight:600;color:var(--green-deep);}
+.bk-sub{font-size:10px;color:var(--green-light);font-weight:500;}
+.bk-amt{font-size:13px;font-weight:800;color:var(--green-deep);font-family:'DM Serif Display',serif;}
+.bk-pct{font-size:10px;color:var(--green-light);font-weight:600;text-align:right;}
+
+/* SAVED */
+.saved-item{background:var(--white);border-radius:14px;padding:12px 14px;box-shadow:0 2px 10px rgba(10,46,26,0.07);border:1px solid rgba(26,92,53,0.07);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.si-info{flex:1;min-width:0;}
+.si-name{font-size:12px;font-weight:700;color:var(--green-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.si-meta{font-size:10px;color:var(--green-light);margin-top:2px;font-weight:500;}
+.si-badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;white-space:nowrap;}
+.si-del{background:none;border:none;font-size:16px;cursor:pointer;padding:4px;color:#ccc;transition:color 0.2s;}
+.si-del:hover{color:var(--red);}
+.empty-saved{text-align:center;padding:20px;color:var(--green-light);font-size:12px;font-weight:600;}
+
+/* NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);border-top:1px solid rgba(26,92,53,0.08);display:flex;padding:10px 0 18px;box-shadow:0 -4px 24px rgba(10,46,26,0.08);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:20px;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--green-light);}
+.ni.active .ni-lb{color:var(--green-mid);}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">💾 Saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">📊</span>
+      <div class="hdr-title">GDS / TDS Ratio</div>
+      <div class="hdr-sub">Gross & Total Debt Service · OSFI B-20</div>
+    </div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">GDS Max</div><div class="rs-val grn">39%</div><div class="rs-note">CMHC limit</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">TDS Max</div><div class="rs-val warn">44%</div><div class="rs-note">CMHC limit</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Stress Rate</div><div class="rs-val">7.00%</div><div class="rs-note">OSFI B-20</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">BoC Prime</div><div class="rs-val">4.45%</div><div class="rs-note">Jun 2026</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Monthly Income</div>
+  <div class="input-card">
+    <div class="field">
+      <label>Gross Monthly Household Income</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="income" type="number" value="9000" min="1" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+      <div class="field-note">Before-tax income. Include all co-borrowers.</div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Housing Costs (GDS)</div>
+  <div class="input-card">
+    <div class="field">
+      <label>Mortgage Payment</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="mortgage" type="number" value="2832" min="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Property Tax</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="tax" type="number" value="400" min="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+      <div class="field-note">Avg. CA$4,800/yr or ~0.74% of home value in Canada</div>
+    </div>
+    <div class="field">
+      <label>Heating Costs</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="heating" type="number" value="150" min="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+      <div class="field-note">Avg. CA$150–200/mo across Canada</div>
+    </div>
+    <div class="field">
+      <label>Condo Fees (if applicable)</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="condo" type="number" value="0" min="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+      <div class="field-note">CMHC counts 50% of condo fees toward GDS</div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">📊 Calculate Ratios</button>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()" title="Save">💾</button>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Other Debt Payments (TDS)</div>
+  <div class="input-card">
+    <div class="field">
+      <label>Car Loan / Lease</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="car" type="number" value="350" min="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Credit Cards (3% of balance)</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="cc" type="number" value="150" min="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+      <div class="field-note">Lenders typically use 3% of outstanding card balance</div>
+    </div>
+    <div class="field">
+      <label>Student / Other Loans</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="other" type="number" value="0" min="0" oninput="calculate()">
+        <div class="field-suffix">/mo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Your Ratios</div>
+  <div class="gauge-grid">
+    <div class="gauge-card">
+      <div class="gauge-title">GDS Ratio</div>
+      <div class="gauge-ring-wrap">
+        <svg class="gauge-svg" viewBox="0 0 100 100">
+          <circle class="gauge-bg" cx="50" cy="50" r="38" stroke-dasharray="239" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+          <circle class="gauge-arc" id="gdsArc" cx="50" cy="50" r="38" stroke="#1A5C35" stroke-dasharray="239" stroke-dashoffset="120" transform="rotate(-90 50 50)"/>
+        </svg>
+        <div class="gauge-val">
+          <span id="gdsVal">36.0%</span>
+          <span class="gauge-sub">GDS</span>
+        </div>
+      </div>
+      <div class="gauge-limit">Limit: 39%</div>
+      <div class="gauge-status status-pass" id="gdsStatus">✓ Pass</div>
+    </div>
+    <div class="gauge-card">
+      <div class="gauge-title">TDS Ratio</div>
+      <div class="gauge-ring-wrap">
+        <svg class="gauge-svg" viewBox="0 0 100 100">
+          <circle class="gauge-bg" cx="50" cy="50" r="38" stroke-dasharray="239" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+          <circle class="gauge-arc" id="tdsArc" cx="50" cy="50" r="38" stroke="#F59E0B" stroke-dasharray="239" stroke-dashoffset="120" transform="rotate(-90 50 50)"/>
+        </svg>
+        <div class="gauge-val">
+          <span id="tdsVal">42.0%</span>
+          <span class="gauge-sub">TDS</span>
+        </div>
+      </div>
+      <div class="gauge-limit">Limit: 44%</div>
+      <div class="gauge-status status-warn" id="tdsStatus">⚠ Near Limit</div>
+    </div>
+  </div>
+
+  <div class="result-card">
+    <div class="rc-label">Qualification Summary</div>
+    <div class="rc-row">
+      <div><div class="rc-row-lbl">GDS — Housing Costs</div><div class="rc-row-val" id="gdsRowVal">36.0% / 39%</div></div>
+      <div class="rc-row-status rcs-pass" id="gdsRowStatus">PASS</div>
+    </div>
+    <div class="rc-row">
+      <div><div class="rc-row-lbl">TDS — Total Debt</div><div class="rc-row-val" id="tdsRowVal">42.0% / 44%</div></div>
+      <div class="rc-row-status rcs-pass" id="tdsRowStatus">PASS</div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Visual Breakdown <span style="font-size:9px;font-weight:600;opacity:0.7">Income allocation</span></div>
+  <div class="chart-card">
+    <div class="chart-title">Monthly Income Distribution</div>
+    <div class="stacked-wrap">
+      <div class="stacked-bar-lbl"><span>0%</span><span id="gdsBarLabel">GDS: 36%</span><span>100%</span></div>
+      <div class="stacked-bar" id="gdsStackedBar">
+        <div class="stacked-seg" id="seg-mortgage" style="background:#1A5C35;width:31%"></div>
+        <div class="stacked-seg" id="seg-tax" style="background:#4A7C5F;width:4%"></div>
+        <div class="stacked-seg" id="seg-heat" style="background:#6EDFA0;width:2%"></div>
+        <div class="stacked-seg" id="seg-condo" style="background:#9EDED8;width:0%"></div>
+      </div>
+      <div class="stacked-legend">
+        <div class="sl-item"><div class="sl-dot" style="background:#1A5C35"></div>Mortgage</div>
+        <div class="sl-item"><div class="sl-dot" style="background:#4A7C5F"></div>Property Tax</div>
+        <div class="sl-item"><div class="sl-dot" style="background:#6EDFA0"></div>Heating</div>
+        <div class="sl-item"><div class="sl-dot" style="background:#9EDED8"></div>Condo</div>
+      </div>
+    </div>
+    <div class="stacked-wrap">
+      <div class="stacked-bar-lbl"><span>0%</span><span id="tdsBarLabel">TDS: 42%</span><span>100%</span></div>
+      <div class="stacked-bar" id="tdsStackedBar">
+        <div class="stacked-seg" id="seg-gds" style="background:#1A5C35;width:36%"></div>
+        <div class="stacked-seg" id="seg-car" style="background:#F59E0B;width:4%"></div>
+        <div class="stacked-seg" id="seg-cc" style="background:#FCD34D;width:2%"></div>
+        <div class="stacked-seg" id="seg-other" style="background:#FEF08A;width:0%"></div>
+      </div>
+      <div class="stacked-legend">
+        <div class="sl-item"><div class="sl-dot" style="background:#1A5C35"></div>GDS Total</div>
+        <div class="sl-item"><div class="sl-dot" style="background:#F59E0B"></div>Car</div>
+        <div class="sl-item"><div class="sl-dot" style="background:#FCD34D"></div>Credit</div>
+        <div class="sl-item"><div class="sl-dot" style="background:#FEF08A"></div>Other</div>
+      </div>
+    </div>
+    <!-- Remaining income after all debt -->
+    <div style="margin-top:4px">
+      <div style="font-size:10px;font-weight:700;color:var(--green-light);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Remaining Income After All Debts</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--green-bg);border-radius:12px;padding:12px 14px;">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--green-deep)">Discretionary Income</div>
+          <div style="font-size:10px;color:var(--green-light);margin-top:2px;font-weight:500">After housing + all debts</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;font-family:'DM Serif Display',serif;color:var(--green-mid)" id="discretionary">CA$5,118</div>
+          <div style="font-size:10px;color:var(--green-light);font-weight:600" id="discretPct">56.9% of income</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Monthly Cost Breakdown</div>
+  <div class="breakdown-card">
+    <div class="bk-row">
+      <div><div class="bk-lbl">Gross Income</div></div>
+      <div style="text-align:right"><div class="bk-amt" id="bkIncome">CA$9,000</div></div>
+    </div>
+    <div class="bk-row">
+      <div><div class="bk-lbl">Mortgage</div></div>
+      <div style="text-align:right"><div class="bk-amt" id="bkMortgage">CA$2,832</div><div class="bk-pct" id="bkMortgagePct">31.5%</div></div>
+    </div>
+    <div class="bk-row">
+      <div><div class="bk-lbl">Property Tax + Heating</div></div>
+      <div style="text-align:right"><div class="bk-amt" id="bkTaxHeat">CA$550</div><div class="bk-pct" id="bkTaxHeatPct">6.1%</div></div>
+    </div>
+    <div class="bk-row">
+      <div><div class="bk-lbl">Condo Fees (50%)</div></div>
+      <div style="text-align:right"><div class="bk-amt" id="bkCondo">CA$0</div><div class="bk-pct" id="bkCondoPct">0%</div></div>
+    </div>
+    <div class="bk-row" style="background:var(--green-bg);border-radius:10px;padding:10px 10px;margin:4px -2px;">
+      <div><div class="bk-lbl" style="font-weight:800;color:var(--green-mid)">Total GDS</div></div>
+      <div style="text-align:right"><div class="bk-amt" id="bkGdsTotal" style="color:var(--green-mid)">CA$3,382</div><div class="bk-pct" id="bkGdsPct" style="color:var(--green-mid);font-weight:700">37.6%</div></div>
+    </div>
+    <div class="bk-row">
+      <div><div class="bk-lbl">Car + Credit + Other</div></div>
+      <div style="text-align:right"><div class="bk-amt" id="bkOtherDebt">CA$500</div><div class="bk-pct" id="bkOtherPct">5.6%</div></div>
+    </div>
+    <div class="bk-row" style="background:#FEF3C7;border-radius:10px;padding:10px 10px;margin:4px -2px;">
+      <div><div class="bk-lbl" style="font-weight:800;color:#92400E">Total TDS</div></div>
+      <div style="text-align:right"><div class="bk-amt" id="bkTdsTotal" style="color:var(--red)">CA$3,882</div><div class="bk-pct" id="bkTdsPct" style="color:var(--red);font-weight:700">43.1%</div></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Saved Results <span style="font-size:9px;font-weight:600;opacity:0.7" id="savedCount"></span></div>
+  <div id="savedList"><div class="empty-saved" id="emptySaved">No saved results yet. Hit 💾 to save.</div></div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🍁</div><div class="ni-lb">Canada</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const STORAGE_KEY='gdstds_saves';
+let lastResult=null;
+const CIRC=2*Math.PI*38; // ~239
+
+function setArc(id,pct,max){
+  const ratio=Math.min(pct/max,1.1);
+  const offset=CIRC-(CIRC*ratio);
+  const arc=document.getElementById(id);
+  arc.style.strokeDashoffset=offset;
+  arc.style.stroke=pct>max?'#C8102E':pct>max*0.85?'#F59E0B':'#1A5C35';
+}
+function fmt(n){return 'CA$'+Math.round(n).toLocaleString('en-CA');}
+function pct1(v,t){return t>0?(v/t*100).toFixed(1)+'%':'0%';}
+
+function calculate(){
+  const income=parseFloat(document.getElementById('income').value)||1;
+  const mortgage=parseFloat(document.getElementById('mortgage').value)||0;
+  const tax=parseFloat(document.getElementById('tax').value)||0;
+  const heating=parseFloat(document.getElementById('heating').value)||0;
+  const condo=parseFloat(document.getElementById('condo').value)||0;
+  const car=parseFloat(document.getElementById('car').value)||0;
+  const cc=parseFloat(document.getElementById('cc').value)||0;
+  const other=parseFloat(document.getElementById('other').value)||0;
+
+  const condoHalf=condo*0.5;
+  const gdsTotal=mortgage+tax+heating+condoHalf;
+  const otherDebt=car+cc+other;
+  const tdsTotal=gdsTotal+otherDebt;
+  const gds=gdsTotal/income*100;
+  const tds=tdsTotal/income*100;
+  const discretionary=income-tdsTotal;
+
+  // Gauges
+  document.getElementById('gdsVal').childNodes[0].nodeValue=gds.toFixed(1)+'%';
+  document.getElementById('tdsVal').childNodes[0].nodeValue=tds.toFixed(1)+'%';
+  setArc('gdsArc',gds,39);
+  setArc('tdsArc',tds,44);
+
+  const gdsPass=gds<=39;
+  const tdsPass=tds<=44;
+  const gdsS=document.getElementById('gdsStatus');
+  gdsS.className='gauge-status '+(gds>39?'status-fail':gds>33?'status-warn':'status-pass');
+  gdsS.textContent=gds>39?'✗ Over Limit':gds>33?'⚠ Near Limit':'✓ Pass';
+  const tdsS=document.getElementById('tdsStatus');
+  tdsS.className='gauge-status '+(tds>44?'status-fail':tds>38?'status-warn':'status-pass');
+  tdsS.textContent=tds>44?'✗ Over Limit':tds>38?'⚠ Near Limit':'✓ Pass';
+
+  document.getElementById('gdsRowVal').textContent=gds.toFixed(1)+'% / 39%';
+  document.getElementById('tdsRowVal').textContent=tds.toFixed(1)+'% / 44%';
+  const gdsRS=document.getElementById('gdsRowStatus');
+  gdsRS.textContent=gdsPass?'PASS':'FAIL'; gdsRS.className='rc-row-status '+(gdsPass?'rcs-pass':'rcs-fail');
+  const tdsRS=document.getElementById('tdsRowStatus');
+  tdsRS.textContent=tdsPass?'PASS':'FAIL'; tdsRS.className='rc-row-status '+(tdsPass?'rcs-pass':'rcs-fail');
+
+  // Stacked bars
+  document.getElementById('seg-mortgage').style.width=(mortgage/income*100).toFixed(1)+'%';
+  document.getElementById('seg-tax').style.width=(tax/income*100).toFixed(1)+'%';
+  document.getElementById('seg-heat').style.width=(heating/income*100).toFixed(1)+'%';
+  document.getElementById('seg-condo').style.width=(condoHalf/income*100).toFixed(1)+'%';
+  document.getElementById('gdsBarLabel').textContent='GDS: '+gds.toFixed(1)+'%';
+
+  document.getElementById('seg-gds').style.width=(gdsTotal/income*100).toFixed(1)+'%';
+  document.getElementById('seg-car').style.width=(car/income*100).toFixed(1)+'%';
+  document.getElementById('seg-cc').style.width=(cc/income*100).toFixed(1)+'%';
+  document.getElementById('seg-other').style.width=(other/income*100).toFixed(1)+'%';
+  document.getElementById('tdsBarLabel').textContent='TDS: '+tds.toFixed(1)+'%';
+
+  document.getElementById('discretionary').textContent=fmt(Math.max(0,discretionary));
+  document.getElementById('discretPct').textContent=(discretionary/income*100).toFixed(1)+'% of income';
+
+  // Breakdown
+  document.getElementById('bkIncome').textContent=fmt(income);
+  document.getElementById('bkMortgage').textContent=fmt(mortgage);
+  document.getElementById('bkMortgagePct').textContent=pct1(mortgage,income);
+  document.getElementById('bkTaxHeat').textContent=fmt(tax+heating);
+  document.getElementById('bkTaxHeatPct').textContent=pct1(tax+heating,income);
+  document.getElementById('bkCondo').textContent=fmt(condoHalf);
+  document.getElementById('bkCondoPct').textContent=pct1(condoHalf,income);
+  document.getElementById('bkGdsTotal').textContent=fmt(gdsTotal);
+  document.getElementById('bkGdsPct').textContent=gds.toFixed(1)+'%';
+  document.getElementById('bkOtherDebt').textContent=fmt(otherDebt);
+  document.getElementById('bkOtherPct').textContent=pct1(otherDebt,income);
+  document.getElementById('bkTdsTotal').textContent=fmt(tdsTotal);
+  document.getElementById('bkTdsPct').textContent=tds.toFixed(1)+'%';
+
+  // Color TDS total row based on status
+  document.getElementById('bkTdsTotal').style.color=tdsPass?(tds>38?'#D97706':'var(--green-mid)'):'var(--red)';
+  document.getElementById('bkTdsPct').style.color=tdsPass?(tds>38?'#D97706':'var(--green-mid)'):'var(--red)';
+
+  lastResult={income,mortgage,tax,heating,condo,car,cc,other,gds,tds,gdsTotal,tdsTotal,discretionary,gdsPass,tdsPass};
+  const sb=document.getElementById('saveBtn');
+  sb.classList.remove('saved'); sb.textContent='💾';
+}
+
+function saveCalc(){
+  if(!lastResult){calculate();return;}
+  const saves=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  const entry={
+    id:Date.now(),
+    date:new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric'}),
+    income:lastResult.income,gds:lastResult.gds,tds:lastResult.tds,
+    gdsPass:lastResult.gdsPass,tdsPass:lastResult.tdsPass,
+    gdsTotal:lastResult.gdsTotal,tdsTotal:lastResult.tdsTotal
+  };
+  saves.unshift(entry);
+  if(saves.length>10) saves.length=10;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(saves));
+  document.getElementById('saveBtn').classList.add('saved');
+  document.getElementById('saveBtn').textContent='✓';
+  showToast('💾 Ratios saved!');
+  renderSaved();
+}
+function deleteSave(id){
+  const saves=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]').filter(s=>s.id!==id);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(saves));
+  renderSaved();
+}
+function renderSaved(){
+  const saves=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+  const list=document.getElementById('savedList');
+  const empty=document.getElementById('emptySaved');
+  const count=document.getElementById('savedCount');
+  count.textContent=saves.length?`(${saves.length})`:'';
+  if(!saves.length){list.innerHTML='';list.appendChild(empty);empty.style.display='';return;}
+  empty.style.display='none'; list.innerHTML='';
+  saves.forEach(s=>{
+    const pass=s.gdsPass&&s.tdsPass;
+    const badgeStyle=pass?'background:#DCF4E8;color:var(--green-mid)':'background:#FFE4E8;color:var(--red)';
+    const el=document.createElement('div'); el.className='saved-item';
+    el.innerHTML=`<div class="si-info">
+      <div class="si-name">${fmt(s.income)}/mo · ${s.date}</div>
+      <div class="si-meta">GDS ${s.gds.toFixed(1)}% ${s.gdsPass?'✓':'✗'} · TDS ${s.tds.toFixed(1)}% ${s.tdsPass?'✓':'✗'}</div>
+    </div>
+    <div class="si-badge" style="${badgeStyle}">${pass?'Both Pass':(!s.gdsPass&&!s.tdsPass?'Both Fail':'Partial')}</div>
+    <button class="si-del" onclick="deleteSave(${s.id})">🗑</button>`;
+    list.appendChild(el);
+  });
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+renderSaved();
+calculate();
+</script>
+</body>
+</html>

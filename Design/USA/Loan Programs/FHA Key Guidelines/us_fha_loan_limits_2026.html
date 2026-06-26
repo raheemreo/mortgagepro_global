@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 FHA Loan Limits</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{
+  --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;
+  --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+  --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+  --green:#15803D;--green-dk:#166534;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 60%,#166534 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::after{content:'📋';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;}
+.hdr-flag{font-size:26px;}
+.hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+.rs-v.gold{color:var(--gold-lt);}
+.rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+.content{padding:14px 14px 110px;}
+.sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;display:flex;align-items:center;justify-content:space-between;}
+.sec .badge{font-size:9px;font-weight:700;background:#ECFDF5;color:#166534;padding:3px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+/* HERO */
+.limit-hero{background:linear-gradient(140deg,#0B1D3A,#15803D);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:12px;position:relative;overflow:hidden;}
+.limit-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.lh-tag{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.lh-title{font-size:17px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;margin:5px 0 6px;line-height:1.25;}
+.lh-title span{color:var(--gold-lt);}
+.lh-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-bottom:13px;line-height:1.5;}
+.lh-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.lh-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.15);border-radius:11px;padding:10px 12px;}
+.lh-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px;}
+.lh-box .v{font-size:17px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;}
+.lh-box .v.gold{color:var(--gold-lt);}
+.lh-box .chg{font-size:8.5px;color:#86EFAC;margin-top:2px;}
+
+/* LOOKUP TOOL */
+.lookup-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.lookup-card h3{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.inp-box{background:var(--bg);border-radius:13px;padding:11px 13px;border:1.5px solid var(--border);transition:border-color .2s;}
+.inp-box:focus-within{border-color:var(--green);}
+.inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:14px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;background:transparent;-webkit-appearance:none;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(21,128,61,0.32);font-family:'DM Serif Display',serif;}
+
+/* RESULT */
+.result-card{background:linear-gradient(140deg,#0B1D3A,#1B3F72);border-radius:16px;padding:16px;box-shadow:var(--sh2);margin-bottom:10px;display:none;position:relative;}
+.result-card.show{display:block;animation:fadeUp .32s ease both;}
+.rc-label{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.rc-amount{font-size:30px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.1;margin:6px 0 4px;}
+.rc-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-bottom:12px;}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rc-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.rc-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:2px;}
+.rc-box .v{font-size:12px;font-weight:700;color:#fff;}
+.rc-box .v.gold{color:var(--gold-lt);}
+.rc-box .v.warn{color:#FCA5A5;}
+.save-btn-inline{width:100%;margin-top:12px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:10px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;}
+.save-btn-inline.saved{background:rgba(21,128,61,0.4);border-color:rgba(21,128,61,0.6);}
+
+/* CHART: BAR COMPARISON */
+.chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:13px;}
+.bar-group{margin-bottom:11px;}
+.bar-label{font-size:9.5px;font-weight:600;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between;}
+.bar-track{background:#EEF2F8;border-radius:8px;height:24px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:10px;font-size:9.5px;font-weight:700;color:#fff;transition:width .6s ease;}
+
+/* MULTIUNIT TABLE */
+.table-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.table-card h3{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;}
+thead th{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;padding:6px 6px;border-bottom:1px solid var(--border);}
+tbody td{font-size:10.5px;padding:9px 6px;border-bottom:1px solid var(--border);color:var(--navy);font-weight:600;}
+tbody tr:last-child td{border-bottom:none;}
+tbody td.h{color:var(--green);font-weight:700;}
+thead th:not(:first-child),tbody td:not(:first-child){text-align:right;}
+
+/* STATE EXAMPLES */
+.ilist{display:flex;flex-direction:column;gap:8px;}
+.ic{background:var(--card);border-radius:13px;padding:12px 13px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+.ii{width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.in{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+.is{font-size:9px;color:var(--muted);margin-top:2px;}
+.ich{font-size:15px;color:rgba(11,29,58,0.18);margin-left:auto;}
+.iv{font-size:13px;font-weight:700;color:var(--green);margin-left:auto;text-align:right;}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:18px;}
+.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+.ni.active .ni-lb{color:var(--green);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.limit-hero,.lookup-card,.chart-card,.table-card{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📋</div>
+      <div class="hdr-title">2026 FHA Loan Limits</div>
+      <div class="hdr-sub">National Floor · Ceiling · County Lookup</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">1-Unit Floor</div><div class="rs-v">$541,287</div><div class="rs-n">Low-Cost</div></div>
+    <div class="rs"><div class="rs-l">1-Unit Ceiling</div><div class="rs-v gold">$1,249,125</div><div class="rs-n">High-Cost</div></div>
+    <div class="rs"><div class="rs-l">Conforming</div><div class="rs-v">$832,750</div><div class="rs-n">FHFA 2026</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">FHA Loan Limits Overview <span class="badge">Effective Jan 1, 2026</span></div>
+  <div class="limit-hero">
+    <div class="lh-tag">HUD Mortgagee Letter 2025-23</div>
+    <div class="lh-title">2026 limits rose to <span>$541,287</span> floor nationwide</div>
+    <div class="lh-sub">FHA loan limits increased for the third year in a row, reflecting a 3.26% rise in national home prices. The floor applies to ~85% of U.S. counties; high-cost areas can borrow up to the ceiling.</div>
+    <div class="lh-grid">
+      <div class="lh-box"><label>2026 Floor (Up from $524,225)</label><div class="v">$541,287</div><div class="chg">↑ +3.26% YoY</div></div>
+      <div class="lh-box"><label>2026 Ceiling (Up from $1,209,750)</label><div class="v gold">$1,249,125</div><div class="chg">↑ +$39,375 YoY</div></div>
+    </div>
+  </div>
+
+  <!-- County Lookup -->
+  <div class="sec">Estimate Your County Limit</div>
+  <div class="lookup-card">
+    <h3>🔍 FHA Limit Estimator</h3>
+    <div class="input-grid">
+      <div class="inp-box">
+        <label>Local Median Home Price ($)</label>
+        <input type="number" id="medianPrice" value="450000" step="5000">
+      </div>
+      <div class="inp-box">
+        <label>Property Units</label>
+        <select id="units">
+          <option value="1" selected>1-Unit</option>
+          <option value="2">2-Unit</option>
+          <option value="3">3-Unit</option>
+          <option value="4">4-Unit</option>
+        </select>
+      </div>
+      <div class="inp-box" style="grid-column:span 2;">
+        <label>Area Type</label>
+        <select id="areaType">
+          <option value="standard" selected>Standard County</option>
+          <option value="highcost">Designated High-Cost Area</option>
+          <option value="special">AK / HI / Guam / USVI (Special)</option>
+        </select>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="estimateLimit()">📋 Estimate FHA Limit</button>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="rc-label">Estimated FHA Loan Limit</div>
+    <div class="rc-amount" id="estLimit">$541,287</div>
+    <div class="rc-sub" id="estSub">Based on 115% of median home price, floor/ceiling applied</div>
+    <div class="rc-grid">
+      <div class="rc-box"><label>115% of Median Price</label><div class="v" id="rc115">$517,500</div></div>
+      <div class="rc-box"><label>Applicable Floor</label><div class="v" id="rcFloor">$541,287</div></div>
+      <div class="rc-box"><label>Applicable Ceiling</label><div class="v gold" id="rcCeiling">$1,249,125</div></div>
+      <div class="rc-box"><label>Result Basis</label><div class="v" id="rcBasis">Floor Applied</div></div>
+    </div>
+    <button class="save-btn-inline" id="saveBtn" onclick="saveCalc()">🔖 Save This Estimate</button>
+  </div>
+
+  <!-- Year over Year Comparison Chart -->
+  <div class="sec">Year-over-Year Growth</div>
+  <div class="chart-card">
+    <div class="chart-title">📈 FHA 1-Unit Floor: 2023–2026</div>
+    <div class="bar-group">
+      <div class="bar-label"><span>2023</span><span>$472,030</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:64%;background:linear-gradient(90deg,#94A3B8,#64748B);">$472K</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>2024</span><span>$498,257</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:68%;background:linear-gradient(90deg,#1B3F72,#0B1D3A);">$498K</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>2025</span><span>$524,225</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:71%;background:linear-gradient(90deg,#15803D,#166534);">$524K</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>2026 (Current)</span><span>$541,287</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:74%;background:linear-gradient(90deg,#D97706,#B45309);">$541K</div></div>
+    </div>
+  </div>
+
+  <!-- Multiunit Table -->
+  <div class="sec">2026 Limits by Property Size</div>
+  <div class="table-card">
+    <h3>🏘️ Forward Mortgage Limits — All Unit Types</h3>
+    <table>
+      <thead><tr><th>Units</th><th>Floor</th><th>Ceiling</th></tr></thead>
+      <tbody>
+        <tr><td>1-Unit</td><td class="h">$541,287</td><td>$1,249,125</td></tr>
+        <tr><td>2-Unit</td><td class="h">$693,050</td><td>$1,599,375</td></tr>
+        <tr><td>3-Unit</td><td class="h">$837,700</td><td>$1,933,200</td></tr>
+        <tr><td>4-Unit</td><td class="h">$1,041,125</td><td>$2,402,625</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:9px;color:var(--muted);margin-top:8px;">Source: HUD Mortgagee Letter 2025-23, effective for case numbers assigned on/after Jan 1, 2026.</div>
+  </div>
+
+  <!-- Example High-Cost Areas -->
+  <div class="sec">High-Cost Area Examples</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🌉</div><div><div class="in">San Francisco County, CA</div><div class="is">At national ceiling · median price &gt;$1.2M</div></div><div class="iv">$1,249,125</div></div>
+    <div class="ic"><div class="ii">🗽</div><div><div class="in">New York County, NY</div><div class="is">Manhattan · high-cost designation</div></div><div class="iv">$1,249,125</div></div>
+    <div class="ic"><div class="ii">🌴</div><div><div class="in">Los Angeles County, CA</div><div class="is">High-cost · near ceiling</div></div><div class="iv">$1,159,825</div></div>
+    <div class="ic"><div class="ii">🏔️</div><div><div class="in">Denver County, CO</div><div class="is">Moderate high-cost area</div></div><div class="iv">$632,500</div></div>
+    <div class="ic"><div class="ii">🌽</div><div><div class="in">Most Rural Counties (US Avg.)</div><div class="is">Standard floor applies</div></div><div class="iv">$541,287</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const floors = {1:541287, 2:693050, 3:837700, 4:1041125};
+const ceilings = {1:1249125, 2:1599375, 3:1933200, 4:2402625};
+
+function fmt(n){ return '$'+Math.round(n).toLocaleString('en-US'); }
+
+function estimateLimit(){
+  const median = parseFloat(document.getElementById('medianPrice').value)||0;
+  const units  = parseInt(document.getElementById('units').value);
+  const area   = document.getElementById('areaType').value;
+
+  const floor   = floors[units];
+  const ceiling = ceilings[units];
+  const pct115  = median * 1.15;
+
+  let result, basis;
+  if(area === 'special'){
+    result = floor * 2.25/0.65 > ceiling*1.5 ? ceiling*1.5 : Math.min(pct115*1.95, ceiling*1.5);
+    result = Math.max(result, floor*2.25/0.65);
+    basis = 'Special Exception (225%)';
+  } else if(pct115 <= floor){
+    result = floor; basis = 'Floor Applied';
+  } else if(pct115 >= ceiling){
+    result = ceiling; basis = 'Ceiling Applied (High-Cost)';
+  } else {
+    result = pct115; basis = '115% of Median Price';
+  }
+
+  document.getElementById('estLimit').textContent = fmt(result);
+  document.getElementById('estSub').textContent = 'For a '+units+'-unit property based on '+fmt(median)+' median price';
+  document.getElementById('rc115').textContent = fmt(pct115);
+  document.getElementById('rcFloor').textContent = fmt(floor);
+  document.getElementById('rcCeiling').textContent = fmt(ceiling);
+  document.getElementById('rcBasis').textContent = basis;
+  document.getElementById('resultCard').classList.add('show');
+}
+
+function saveCalc(){
+  const data = {
+    date: new Date().toLocaleDateString(),
+    limit: document.getElementById('estLimit').textContent,
+    units: document.getElementById('units').value,
+    median: document.getElementById('medianPrice').value
+  };
+  const saves = JSON.parse(localStorage.getItem('fha_limit_saves')||'[]');
+  saves.unshift(data);
+  if(saves.length>5) saves.length=5;
+  localStorage.setItem('fha_limit_saves', JSON.stringify(saves));
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved'); btn.textContent='✅ Saved';
+  showToast('Estimate saved!');
+  setTimeout(()=>{btn.classList.remove('saved'); btn.textContent='🔖 Save This Estimate';}, 2000);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>

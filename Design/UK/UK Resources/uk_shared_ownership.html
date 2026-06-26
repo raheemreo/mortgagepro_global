@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shared Ownership Calculator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.save-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.save-btn{font-size:12px;font-weight:700;width:auto;padding:0 12px;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:24px;display:block;}
+.hdr-title{font-size:18px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#90EE90;}.rs-val.gold{color:#FFD700;}.rs-val.red{color:#FF8A9A;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#1a1a5e;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* Info Banner */
+.info-banner{background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #A5B4FC;border-radius:15px;padding:13px 15px;display:flex;align-items:flex-start;gap:11px;margin-bottom:14px;}
+.ib-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.ib-title{font-size:13px;font-weight:800;color:#1e1b4b;font-family:Georgia,serif;}
+.ib-sub{font-size:10px;color:#4338ca;margin-top:2px;line-height:1.5;}
+
+/* Calculator Card */
+.calc-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:14px;}
+.field-label{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.field-label span{font-size:12px;font-weight:800;color:#0D0D2B;text-transform:none;letter-spacing:0;}
+.slider-wrap{margin-bottom:16px;}
+input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:3px;background:linear-gradient(90deg,#1a1a5e var(--val,50%),#E0E7FF var(--val,50%));outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#1a1a5e;border:3px solid #fff;box-shadow:0 2px 8px rgba(26,26,94,0.35);cursor:pointer;}
+.range-minmax{display:flex;justify-content:space-between;margin-top:4px;}
+.range-minmax span{font-size:10px;color:#9CA3AF;}
+
+.share-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.share-tab{flex:1;min-width:60px;padding:8px 6px;border-radius:10px;border:2px solid #E0E7FF;background:#F5F5F8;font-size:12px;font-weight:700;color:#5C5C8A;cursor:pointer;text-align:center;transition:all 0.2s;}
+.share-tab.active{background:#1a1a5e;border-color:#1a1a5e;color:#fff;}
+
+.calc-btn{width:100%;background:linear-gradient(135deg,#C8102E,#8B0A1E);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(200,16,46,0.35);letter-spacing:0.3px;}
+
+/* Results */
+.result-hero{background:linear-gradient(145deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:0 8px 32px rgba(13,13,43,0.28);}
+.rh-label{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.rh-main{font-size:28px;font-weight:800;color:#fff;font-family:Georgia,serif;margin:4px 0;}
+.rh-main span{color:#FFD700;}
+.rh-sub{font-size:11px;color:rgba(255,255,255,0.55);}
+.rh-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.rh-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:11px 12px;}
+.rh-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:3px;}
+.rh-box .v{font-size:15px;font-weight:800;color:#fff;}
+.rh-box .v.gold{color:#FFD700;}.rh-box .v.grn{color:#90EE90;}.rh-box .v.red{color:#FF8A9A;}
+
+/* Donut Chart */
+.chart-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:14px;}
+.chart-title{font-size:14px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:14px;}
+.chart-wrap{display:flex;align-items:center;gap:16px;}
+.donut-svg{flex-shrink:0;}
+.legend{flex:1;}
+.leg-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.leg-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+.leg-label{font-size:11px;color:#5C5C8A;}
+.leg-val{font-size:12px;font-weight:800;color:#0D0D2B;margin-left:auto;}
+
+/* Cost Breakdown */
+.cost-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #F5F5F8;}
+.cost-row:last-child{border-bottom:none;}
+.cost-left{display:flex;align-items:center;gap:10px;}
+.cost-icon{width:32px;height:32px;border-radius:8px;background:#F5F5F8;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.cost-name{font-size:13px;font-weight:700;color:#0D0D2B;}
+.cost-sub{font-size:10px;color:#5C5C8A;}
+.cost-amount{font-size:14px;font-weight:800;color:#0D0D2B;}
+.cost-amount.red{color:#C8102E;}
+
+/* Staircase */
+.stair-card{background:linear-gradient(145deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:18px;margin-bottom:14px;}
+.stair-title{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-bottom:4px;}
+.stair-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-bottom:16px;}
+.stair-item{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.stair-pct{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#FFD700;flex-shrink:0;}
+.stair-info{flex:1;}
+.stair-name{font-size:12px;font-weight:700;color:#fff;}
+.stair-detail{font-size:10px;color:rgba(255,255,255,0.5);margin-top:1px;}
+.stair-cost{font-size:13px;font-weight:800;color:#90EE90;}
+.stair-bar{width:100%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:6px;overflow:hidden;}
+.stair-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#FFD700,#90EE90);}
+
+/* Eligibility */
+.elig-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:14px;}
+.elig-title{font-size:14px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:12px;}
+.elig-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.elig-icon{font-size:16px;margin-top:1px;flex-shrink:0;}
+.elig-text{font-size:12px;color:#374151;line-height:1.5;}
+.elig-text strong{color:#0D0D2B;}
+
+/* Save Toast */
+.save-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a5e;color:#fff;padding:10px 20px;border-radius:25px;font-size:12px;font-weight:700;box-shadow:0 4px 20px rgba(26,26,94,0.4);opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;z-index:200;}
+.save-toast.show{opacity:1;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">🏘️</span>
+      <div class="hdr-title">Shared Ownership</div>
+      <div class="hdr-sub">Part-buy · Part-rent · Staircasing</div>
+    </div>
+    <div class="save-btn" onclick="saveCalc()">💾 Save</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Min Share</div><div class="rs-val grn">10%</div><div class="rs-note">2024 Rules</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Avg Rent</div><div class="rs-val">2.75%</div><div class="rs-note">of unsold</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Max Share</div><div class="rs-val gold">100%</div><div class="rs-note">Freehold</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">FTB Relief</div><div class="rs-val red">£425k</div><div class="rs-note">SDLT cap</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec-lbl" style="margin-top:0">About This Scheme <span class="more">Eligibility →</span></div>
+  <div class="info-banner">
+    <div class="ib-icon">🏛️</div>
+    <div>
+      <div class="ib-title">Government Shared Ownership Scheme</div>
+      <div class="ib-sub">Buy a 10–75% share of a home, pay subsidised rent on the rest. Staircase up to 100% ownership over time. Funded by Homes England & GLA. Income cap: £80,000 (£90,000 in London).</div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Your Details</div>
+  <div class="calc-card">
+    <div class="slider-wrap">
+      <div class="field-label">Full Property Value <span id="propValLabel">£280,000</span></div>
+      <input type="range" id="propVal" min="80000" max="600000" step="5000" value="280000" oninput="updateCalc()">
+      <div class="range-minmax"><span>£80,000</span><span>£600,000</span></div>
+    </div>
+
+    <div class="slider-wrap">
+      <div class="field-label">Annual Household Income <span id="incomeLabel">£52,000</span></div>
+      <input type="range" id="income" min="20000" max="90000" step="1000" value="52000" oninput="updateCalc()">
+      <div class="range-minmax"><span>£20,000</span><span>£90,000</span></div>
+    </div>
+
+    <div class="field-label" style="margin-bottom:8px;">Your Initial Share</div>
+    <div class="share-tabs">
+      <div class="share-tab active" onclick="setShare(25,this)">25%</div>
+      <div class="share-tab" onclick="setShare(40,this)">40%</div>
+      <div class="share-tab" onclick="setShare(50,this)">50%</div>
+      <div class="share-tab" onclick="setShare(75,this)">75%</div>
+    </div>
+
+    <div class="slider-wrap">
+      <div class="field-label">Mortgage Term <span id="termLabel">25 years</span></div>
+      <input type="range" id="mortTerm" min="10" max="35" step="1" value="25" oninput="updateCalc()">
+      <div class="range-minmax"><span>10 yrs</span><span>35 yrs</span></div>
+    </div>
+
+    <div class="slider-wrap">
+      <div class="field-label">Mortgage Rate <span id="rateLabel">4.75%</span></div>
+      <input type="range" id="mortRate" min="2" max="8" step="0.05" value="4.75" oninput="updateCalc()">
+      <div class="range-minmax"><span>2.00%</span><span>8.00%</span></div>
+    </div>
+
+    <button class="calc-btn" onclick="updateCalc()">🏘️ Calculate Shared Ownership</button>
+  </div>
+
+  <div class="sec-lbl">Results</div>
+
+  <div class="result-hero" id="resultHero">
+    <div class="rh-label">Monthly Total Cost</div>
+    <div class="rh-main">£<span id="totalMonthly">1,386</span><span style="font-size:16px;color:rgba(255,255,255,0.5)">/mo</span></div>
+    <div class="rh-sub">Mortgage repayment + rent on unsold share</div>
+    <div class="rh-grid">
+      <div class="rh-box"><label>Share Value</label><div class="v gold" id="shareValue">£70,000</div></div>
+      <div class="rh-box"><label>Deposit (10%)</label><div class="v" id="depositAmt">£7,000</div></div>
+      <div class="rh-box"><label>Mortgage/mo</label><div class="v grn" id="mortPayment">£365</div></div>
+      <div class="rh-box"><label>Rent/mo</label><div class="v red" id="rentPayment">£525</div></div>
+      <div class="rh-box"><label>Service Charge</label><div class="v" id="serviceCharge">£150</div></div>
+      <div class="rh-box"><label>Affordability</label><div class="v grn" id="affordStatus">✔ Eligible</div></div>
+    </div>
+  </div>
+
+  <!-- Donut Chart -->
+  <div class="chart-card">
+    <div class="chart-title">Monthly Cost Breakdown</div>
+    <div class="chart-wrap">
+      <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="48" fill="none" stroke="#F5F5F8" stroke-width="18"/>
+        <circle id="donutMort" cx="60" cy="60" r="48" fill="none" stroke="#1a1a5e" stroke-width="18" stroke-dasharray="100 202" stroke-dashoffset="25" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+        <circle id="donutRent" cx="60" cy="60" r="48" fill="none" stroke="#C8102E" stroke-width="18" stroke-dasharray="100 202" stroke-dashoffset="25" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+        <circle id="donutSvc" cx="60" cy="60" r="48" fill="none" stroke="#FFD700" stroke-width="18" stroke-dasharray="20 282" stroke-dashoffset="25" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+        <text x="60" y="56" text-anchor="middle" font-size="11" font-weight="800" fill="#0D0D2B" id="donutCenter">£1,386</text>
+        <text x="60" y="70" text-anchor="middle" font-size="8" fill="#5C5C8A">per month</text>
+      </svg>
+      <div class="legend" id="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#1a1a5e"></div><span class="leg-label">Mortgage</span><span class="leg-val" id="legMort">£365</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#C8102E"></div><span class="leg-label">Rent</span><span class="leg-val" id="legRent">£525</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#FFD700"></div><span class="leg-label">Service Charge</span><span class="leg-val" id="legSvc">£150</span></div>
+        <div class="leg-item"><div class="leg-dot" style="background:#E0E7FF"></div><span class="leg-label">% of Income</span><span class="leg-val" id="legPct">32%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Staircasing Plan -->
+  <div class="stair-card">
+    <div class="stair-title">Staircasing Plan 📈</div>
+    <div class="stair-sub">Cost to buy additional shares (at current value)</div>
+    <div id="stairItems"></div>
+  </div>
+
+  <!-- Cost Breakdown -->
+  <div class="sec-lbl">Upfront Costs</div>
+  <div class="calc-card">
+    <div id="costBreakdown"></div>
+  </div>
+
+  <!-- Eligibility Checker -->
+  <div class="sec-lbl">Eligibility Check</div>
+  <div class="elig-card">
+    <div class="elig-title">Can you apply? 🔍</div>
+    <div class="elig-item"><div class="elig-icon" id="e1icon">✅</div><div class="elig-text" id="e1text"><strong>Household income:</strong> £52,000 — within the £80,000 cap (£90,000 in London).</div></div>
+    <div class="elig-item"><div class="elig-icon">✅</div><div class="elig-text"><strong>First-time buyer or previous shared owner</strong> required (or no longer able to afford current home).</div></div>
+    <div class="elig-item"><div class="elig-icon">✅</div><div class="elig-text"><strong>Must not own another home</strong> at time of purchase.</div></div>
+    <div class="elig-item"><div class="elig-icon" id="e4icon">✅</div><div class="elig-text" id="e4text"><strong>Property value:</strong> £280,000 — within the local affordable housing threshold.</div></div>
+    <div class="elig-item"><div class="elig-icon">ℹ️</div><div class="elig-text"><strong>Lease requirement:</strong> minimum 80 years remaining on lease recommended before purchasing.</div></div>
+  </div>
+
+</div>
+
+<div class="save-toast" id="saveToast">✅ Calculation saved to your profile!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let currentShare = 25;
+
+function setShare(pct, el) {
+  currentShare = pct;
+  document.querySelectorAll('.share-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  updateCalc();
+}
+
+function fmt(n) {
+  return '£' + Math.round(n).toLocaleString('en-GB');
+}
+
+function updateCalc() {
+  const propVal = +document.getElementById('propVal').value;
+  const income = +document.getElementById('income').value;
+  const term = +document.getElementById('mortTerm').value;
+  const rate = +document.getElementById('mortRate').value;
+
+  // Labels
+  document.getElementById('propValLabel').textContent = fmt(propVal);
+  document.getElementById('incomeLabel').textContent = fmt(income);
+  document.getElementById('termLabel').textContent = term + ' years';
+  document.getElementById('rateLabel').textContent = rate.toFixed(2) + '%';
+
+  // Slider gradient
+  ['propVal','income','mortTerm','mortRate'].forEach(id => {
+    const el = document.getElementById(id);
+    const pct = (el.value - el.min) / (el.max - el.min) * 100;
+    el.style.setProperty('--val', pct + '%');
+  });
+
+  const shareVal = propVal * currentShare / 100;
+  const deposit = shareVal * 0.10;
+  const loanAmt = shareVal - deposit;
+  const monthlyRate = rate / 100 / 12;
+  const n = term * 12;
+  const mortPayment = loanAmt * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
+  const unsoldVal = propVal * (1 - currentShare / 100);
+  const rent = unsoldVal * 0.0275 / 12;
+  const serviceCharge = 150;
+  const total = mortPayment + rent + serviceCharge;
+
+  document.getElementById('shareValue').textContent = fmt(shareVal);
+  document.getElementById('depositAmt').textContent = fmt(deposit);
+  document.getElementById('mortPayment').textContent = fmt(mortPayment);
+  document.getElementById('rentPayment').textContent = fmt(rent);
+  document.getElementById('serviceCharge').textContent = fmt(serviceCharge);
+  document.getElementById('totalMonthly').textContent = Math.round(total).toLocaleString('en-GB');
+
+  // Affordability (total ≤ 35% income)
+  const pctIncome = total / (income / 12) * 100;
+  const eligible = income <= (80000) && pctIncome <= 45;
+  document.getElementById('affordStatus').textContent = eligible ? '✔ Eligible' : '⚠ Review';
+  document.getElementById('affordStatus').className = 'v ' + (eligible ? 'grn' : 'red');
+
+  // Donut
+  const circ = 2 * Math.PI * 48;
+  const mortPct = mortPayment / total;
+  const rentPct = rent / total;
+  const svcPct = serviceCharge / total;
+  const mortDash = mortPct * circ;
+  const rentDash = rentPct * circ;
+  const svcDash = svcPct * circ;
+
+  const donutMort = document.getElementById('donutMort');
+  const donutRent = document.getElementById('donutRent');
+  const donutSvc = document.getElementById('donutSvc');
+  donutMort.setAttribute('stroke-dasharray', mortDash + ' ' + (circ - mortDash));
+  donutMort.setAttribute('stroke-dashoffset', 0.25 * circ);
+  donutRent.setAttribute('stroke-dasharray', rentDash + ' ' + (circ - rentDash));
+  donutRent.setAttribute('stroke-dashoffset', (0.25 - mortPct) * circ);
+  donutSvc.setAttribute('stroke-dasharray', svcDash + ' ' + (circ - svcDash));
+  donutSvc.setAttribute('stroke-dashoffset', (0.25 - mortPct - rentPct) * circ);
+  document.getElementById('donutCenter').textContent = fmt(total);
+  document.getElementById('legMort').textContent = fmt(mortPayment);
+  document.getElementById('legRent').textContent = fmt(rent);
+  document.getElementById('legSvc').textContent = fmt(serviceCharge);
+  document.getElementById('legPct').textContent = Math.round(pctIncome) + '%';
+
+  // Staircase
+  const stairs = [
+    {pct: currentShare + 10, label: '+10% staircase'},
+    {pct: currentShare + 25, label: '+25% staircase'},
+    {pct: 100, label: 'Full ownership'},
+  ].filter(s => s.pct > currentShare && s.pct <= 100);
+  const stairHTML = stairs.map(s => {
+    const addPct = Math.min(s.pct, 100) - currentShare;
+    const cost = propVal * addPct / 100;
+    const barW = (s.pct / 100 * 100).toFixed(0);
+    return `<div class="stair-item">
+      <div class="stair-pct">${Math.min(s.pct,100)}%</div>
+      <div class="stair-info">
+        <div class="stair-name">${s.label}</div>
+        <div class="stair-detail">Covers ${addPct}% at current £${Math.round(propVal/1000)}k valuation</div>
+        <div class="stair-bar"><div class="stair-fill" style="width:${barW}%"></div></div>
+      </div>
+      <div class="stair-cost">${fmt(cost)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('stairItems').innerHTML = stairHTML;
+
+  // Upfront costs
+  const sdlt = calcSDLT(shareVal);
+  const legalFees = 1500;
+  const surveyFee = 650;
+  const mortgageFee = 995;
+  const totalUpfront = deposit + sdlt + legalFees + surveyFee + mortgageFee;
+  document.getElementById('costBreakdown').innerHTML = `
+    <div class="cost-row"><div class="cost-left"><div class="cost-icon">🏦</div><div><div class="cost-name">Deposit (10%)</div><div class="cost-sub">On your ${currentShare}% share</div></div></div><div class="cost-amount">${fmt(deposit)}</div></div>
+    <div class="cost-row"><div class="cost-left"><div class="cost-icon">🏛️</div><div><div class="cost-name">Stamp Duty (SDLT)</div><div class="cost-sub">On share value (FTB relief applied)</div></div></div><div class="cost-amount red">${fmt(sdlt)}</div></div>
+    <div class="cost-row"><div class="cost-left"><div class="cost-icon">⚖️</div><div><div class="cost-name">Legal / Conveyancing</div><div class="cost-sub">Estimated solicitor fees</div></div></div><div class="cost-amount red">${fmt(legalFees)}</div></div>
+    <div class="cost-row"><div class="cost-left"><div class="cost-icon">🔍</div><div><div class="cost-name">Survey Fee</div><div class="cost-sub">HomeBuyer Report (RICS)</div></div></div><div class="cost-amount red">${fmt(surveyFee)}</div></div>
+    <div class="cost-row"><div class="cost-left"><div class="cost-icon">📋</div><div><div class="cost-name">Mortgage Arrangement Fee</div><div class="cost-sub">Typical lender fee (can add to loan)</div></div></div><div class="cost-amount red">${fmt(mortgageFee)}</div></div>
+    <div class="cost-row" style="border-top:2px solid #E0E7FF;margin-top:4px;padding-top:14px;"><div class="cost-left"><div class="cost-icon">💰</div><div><div class="cost-name" style="color:#1a1a5e;font-size:14px;">Total Upfront</div><div class="cost-sub">Cash needed at completion</div></div></div><div class="cost-amount" style="font-size:16px;color:#1a1a5e;">${fmt(totalUpfront)}</div></div>
+  `;
+
+  // Eligibility dynamic
+  document.getElementById('e1text').innerHTML = `<strong>Household income:</strong> ${fmt(income)} — ${income <= 80000 ? 'within' : 'EXCEEDS'} the £80,000 cap (£90,000 in London).`;
+  document.getElementById('e1icon').textContent = income <= 80000 ? '✅' : '❌';
+  document.getElementById('e4text').innerHTML = `<strong>Property value:</strong> ${fmt(propVal)} — ${propVal <= 600000 ? 'within typical' : 'above'} the affordable housing threshold.`;
+  document.getElementById('e4icon').textContent = propVal <= 600000 ? '✅' : '⚠️';
+}
+
+function calcSDLT(val) {
+  // Shared ownership SDLT — FTB rules on share value
+  if (val <= 425000) return 0;
+  if (val <= 625000) return (val - 425000) * 0.05;
+  return val * 0.05; // simplified
+}
+
+function saveCalc() {
+  const toast = document.getElementById('saveToast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+// Init
+updateCalc();
+</script>
+</body>
+</html>

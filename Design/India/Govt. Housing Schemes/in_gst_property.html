@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GST on Property – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.05) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(11,31,72,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+.header{background:linear-gradient(158deg,#9A3412 0%,#C2410C 40%,#FF6B00 80%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'📋';position:absolute;right:-5px;top:22px;font-size:110px;opacity:.09;line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.badge{font-size:9px;font-weight:700;background:rgba(255,107,0,0.10);color:var(--saffron);padding:3px 8px;border-radius:20px;}
+
+/* PROPERTY TYPE SELECTOR */
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.type-card{border-radius:16px;padding:14px 13px;cursor:pointer;border:2px solid transparent;transition:all .2s;position:relative;overflow:hidden;}
+.type-card.uc{background:linear-gradient(135deg,#FFF3E0,#FFEDD5);border-color:#FDBA74;}
+.type-card.rp{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border-color:#6EE7B7;}
+.type-card.aff{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border-color:#93C5FD;}
+.type-card.plot{background:linear-gradient(135deg,#F5F3FF,#EDE9FE);border-color:#C4B5FD;}
+.type-card.selected{box-shadow:0 0 0 3px var(--saffron),var(--sh2);}
+.type-icon{font-size:24px;margin-bottom:7px;}
+.type-name{font-size:12px;font-weight:800;color:var(--navy);}
+.type-gst{font-size:14px;font-weight:800;margin-top:4px;}
+.uc .type-gst{color:#C2410C;}
+.rp .type-gst{color:var(--green);}
+.aff .type-gst{color:#1D4ED8;}
+.plot .type-gst{color:#7C3AED;}
+.type-desc{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;line-height:1.4;}
+.type-check{position:absolute;top:10px;right:10px;width:18px;height:18px;border-radius:50%;background:var(--saffron);color:#fff;font-size:10px;display:none;align-items:center;justify-content:center;}
+.type-card.selected .type-check{display:flex;}
+
+/* FORM */
+.form-card{background:var(--card);border-radius:20px;padding:18px 16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.fc-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.field{margin-bottom:12px;}
+.field label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;display:block;margin-bottom:5px;}
+.field input,.field select{width:100%;background:#FFF8F0;border:1.5px solid rgba(255,107,0,0.15);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;}
+.field input:focus,.field select:focus{border-color:var(--saffron);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;margin-top:4px;}
+
+/* RESULT */
+.result-panel{background:var(--card);border-radius:20px;padding:18px 16px;box-shadow:var(--sh2);border:1.5px solid var(--border);margin-bottom:14px;display:none;}
+.rp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.rp-title{font-size:13px;font-weight:800;color:var(--navy);}
+.save-btn{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;font-size:9px;font-weight:800;padding:6px 12px;border-radius:9px;border:none;cursor:pointer;font-family:'Trebuchet MS',sans-serif;}
+
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.r-box{background:linear-gradient(135deg,#FFF8F0,#FFF3E0);border:1px solid rgba(255,107,0,0.12);border-radius:14px;padding:12px 11px;text-align:center;}
+.r-box.highlight{background:linear-gradient(135deg,#9A3412,#C2410C);}
+.r-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;margin-bottom:4px;}
+.r-val{font-size:16px;font-weight:800;color:var(--navy);}
+.r-box.highlight .r-lbl{color:rgba(255,255,255,0.55);}
+.r-box.highlight .r-val{color:var(--ochre-lt);}
+.r-sub{font-size:8.5px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.r-box.highlight .r-sub{color:rgba(255,255,255,0.45);}
+
+/* COST BREAKDOWN BARS */
+.cost-break{margin-top:4px;}
+.cb-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.cb-label{font-size:10px;font-weight:700;color:var(--navy);width:120px;flex-shrink:0;}
+.cb-track{flex:1;height:9px;background:#F5EDE0;border-radius:5px;overflow:hidden;}
+.cb-fill{height:100%;border-radius:5px;transition:width .8s ease;}
+.cb-val{font-size:10px;font-weight:800;color:var(--navy);width:58px;text-align:right;flex-shrink:0;font-family:'Trebuchet MS',sans-serif;}
+
+/* GST RATE TABLE */
+.gst-table{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.gt-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.gt-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.gt-row:last-child{border-bottom:none;padding-bottom:0;}
+.gt-icon{font-size:20px;width:36px;text-align:center;flex-shrink:0;}
+.gt-type{font-size:11.5px;font-weight:800;color:var(--navy);}
+.gt-desc{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+.gt-rate{margin-left:auto;font-size:16px;font-weight:800;flex-shrink:0;}
+.gt-rate.nil{color:var(--green);}
+.gt-rate.low{color:#1D4ED8;}
+.gt-rate.mid{color:var(--saffron);}
+.gt-rate.high{color:#C2410C;}
+
+/* INFO */
+.info-card{background:linear-gradient(135deg,#FFF3E0,#FFEDD5);border:1.5px solid #FDBA74;border-radius:17px;padding:14px 15px;margin-bottom:10px;}
+.ic-title{font-size:12px;font-weight:800;color:#9A3412;margin-bottom:8px;}
+.ic-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;}
+.ic-dot{width:6px;height:6px;border-radius:50%;background:var(--saffron);margin-top:4px;flex-shrink:0;}
+.ic-text{font-size:10px;color:#9A3412;font-family:'Trebuchet MS',sans-serif;line-height:1.4;}
+
+/* TOAST */
+.toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 22px;border-radius:30px;font-size:12px;font-weight:800;font-family:'Trebuchet MS',sans-serif;box-shadow:0 6px 24px rgba(4,106,56,0.4);opacity:0;transition:all .3s;z-index:200;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .10s;}
+.fu3{animation:fadeUp .38s ease both .16s;}
+.fu4{animation:fadeUp .38s ease both .22s;}
+.fu5{animation:fadeUp .38s ease both .28s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📋</div>
+      <div class="hdr-title">GST on <span>Property</span></div>
+      <div class="hdr-sub">Under-Construction · Affordable · Ready Possession</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Under-Constr.</div><div class="rs-v saf">5%</div><div class="rs-n">Standard</div></div>
+    <div class="rs"><div class="rs-l">Affordable</div><div class="rs-v grn">1%</div><div class="rs-n">&lt;₹45L</div></div>
+    <div class="rs"><div class="rs-l">Ready</div><div class="rs-v grn">NIL</div><div class="rs-n">Possession</div></div>
+    <div class="rs"><div class="rs-l">ITC</div><div class="rs-v saf">N/A</div><div class="rs-n">Not Claimable</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec fu1" style="margin-top:0">Select Property Type <span class="badge">GST 2025</span></div>
+
+  <div class="type-grid fu1">
+    <div class="type-card uc" onclick="selType('uc',this)" id="type-uc">
+      <div class="type-check">✓</div>
+      <div class="type-icon">🏗️</div>
+      <div class="type-name">Under-Construction</div>
+      <div class="type-gst">GST: 5%</div>
+      <div class="type-desc">New flat/apartment not yet received OC from builder</div>
+    </div>
+    <div class="type-card rp" onclick="selType('rp',this)" id="type-rp">
+      <div class="type-check">✓</div>
+      <div class="type-icon">🏠</div>
+      <div class="type-name">Ready Possession</div>
+      <div class="type-gst">GST: NIL</div>
+      <div class="type-desc">OC received or resale property — no GST applicable</div>
+    </div>
+    <div class="type-card aff" onclick="selType('aff',this)" id="type-aff">
+      <div class="type-check">✓</div>
+      <div class="type-icon">🏘️</div>
+      <div class="type-name">Affordable Housing</div>
+      <div class="type-gst">GST: 1%</div>
+      <div class="type-desc">Metro ≤60 sqm &amp; ≤₹45L, Non-metro ≤90 sqm</div>
+    </div>
+    <div class="type-card plot" onclick="selType('plot',this)" id="type-plot">
+      <div class="type-check">✓</div>
+      <div class="type-icon">🗺️</div>
+      <div class="type-name">Plot / Land</div>
+      <div class="type-gst">GST: NIL</div>
+      <div class="type-desc">Bare land sale — GST not applicable</div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="sec fu2">Enter Property Details</div>
+  <div class="form-card fu2">
+    <div class="fc-title">📊 GST Calculation</div>
+    <div class="field">
+      <label>Property Value / Agreement Value (₹)</label>
+      <input type="number" id="propValue" placeholder="₹ 45,00,000" value="4500000">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Stamp Duty Rate (%)</label>
+        <input type="number" id="sdRate" value="5" step="0.1" min="0" max="10">
+      </div>
+      <div class="field">
+        <label>Registration Fee (%)</label>
+        <input type="number" id="regFee" value="1" step="0.1" min="0" max="5">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>City Type</label>
+        <select id="cityType">
+          <option value="metro">Metro City</option>
+          <option value="nonmetro">Non-Metro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Carpet Area (sqm)</label>
+        <input type="number" id="carpetArea" placeholder="60" value="55">
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calcGST()">📋 Calculate GST &amp; Total Cost</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="result-panel fu3" id="resultPanel">
+    <div class="rp-head">
+      <div class="rp-title" id="rp-typeTitle">📊 GST Calculation Result</div>
+      <button class="save-btn" onclick="saveRes()">💾 Save</button>
+    </div>
+    <div class="result-grid">
+      <div class="r-box highlight">
+        <div class="r-lbl">GST Amount</div>
+        <div class="r-val" id="gstAmt">—</div>
+        <div class="r-sub" id="gstRateLbl">—</div>
+      </div>
+      <div class="r-box">
+        <div class="r-lbl">Property Value</div>
+        <div class="r-val" id="propValLbl">—</div>
+        <div class="r-sub">Agreement value</div>
+      </div>
+      <div class="r-box">
+        <div class="r-lbl">Stamp Duty</div>
+        <div class="r-val" id="sdAmt">—</div>
+        <div class="r-sub">State duty</div>
+      </div>
+      <div class="r-box">
+        <div class="r-lbl">Registration</div>
+        <div class="r-val" id="regAmt">—</div>
+        <div class="r-sub">SRO fee</div>
+      </div>
+      <div class="r-box highlight">
+        <div class="r-lbl">Total Outflow</div>
+        <div class="r-val" id="totalAmt">—</div>
+        <div class="r-sub">All-in cost</div>
+      </div>
+      <div class="r-box">
+        <div class="r-lbl">Extra over Value</div>
+        <div class="r-val" id="extraAmt">—</div>
+        <div class="r-sub">GST + SD + Reg</div>
+      </div>
+    </div>
+
+    <!-- COST BREAKDOWN -->
+    <div style="font-size:11px;font-weight:800;color:var(--navy);margin-bottom:10px;">📊 Total Cost Breakdown</div>
+    <div class="cost-break" id="costBreak"></div>
+  </div>
+
+  <!-- GST RATE TABLE -->
+  <div class="sec fu4">GST Rates — All Property Types</div>
+  <div class="gst-table fu4">
+    <div class="gt-title">📋 India GST on Real Estate (2025)</div>
+    <div class="gt-row">
+      <div class="gt-icon">🏗️</div>
+      <div><div class="gt-type">Under-Construction (Standard)</div><div class="gt-desc">New flat/apartment before OC · Includes construction service</div></div>
+      <div class="gt-rate mid">5%</div>
+    </div>
+    <div class="gt-row">
+      <div class="gt-icon">🏘️</div>
+      <div><div class="gt-type">Affordable Housing</div><div class="gt-desc">Metro ≤60 sqm &amp; ≤₹45L · Non-metro ≤90 sqm &amp; ≤₹45L</div></div>
+      <div class="gt-rate low">1%</div>
+    </div>
+    <div class="gt-row">
+      <div class="gt-icon">🏠</div>
+      <div><div class="gt-type">Ready Possession / Resale</div><div class="gt-desc">OC received / second sale — GST not applicable</div></div>
+      <div class="gt-rate nil">NIL</div>
+    </div>
+    <div class="gt-row">
+      <div class="gt-icon">🗺️</div>
+      <div><div class="gt-type">Plot / Land Purchase</div><div class="gt-desc">Bare land — not a supply of service, GST exempt</div></div>
+      <div class="gt-rate nil">NIL</div>
+    </div>
+    <div class="gt-row">
+      <div class="gt-icon">🏢</div>
+      <div><div class="gt-type">Commercial Property (UC)</div><div class="gt-desc">Under-construction commercial space (office/shop)</div></div>
+      <div class="gt-rate high">12%</div>
+    </div>
+    <div class="gt-row">
+      <div class="gt-icon">🏬</div>
+      <div><div class="gt-type">Long-term Lease &gt; 30 yrs</div><div class="gt-desc">Long-term lease treated as sale of property right</div></div>
+      <div class="gt-rate mid">18%</div>
+    </div>
+  </div>
+
+  <!-- INFO TIPS -->
+  <div class="info-card fu5">
+    <div class="ic-title">📌 Key GST on Property Facts (India 2025)</div>
+    <div class="ic-row"><div class="ic-dot"></div><div class="ic-text">GST is applicable only on under-construction properties. Ready-to-move properties (with OC) are exempt.</div></div>
+    <div class="ic-row"><div class="ic-dot"></div><div class="ic-text">ITC (Input Tax Credit) is NOT available to home buyers — only builders can claim ITC.</div></div>
+    <div class="ic-row"><div class="ic-dot"></div><div class="ic-text">GST is charged on the total agreement value including parking, club fees, etc.</div></div>
+    <div class="ic-row"><div class="ic-dot"></div><div class="ic-text">Affordable housing: carpet area ≤60 sqm in metro (Delhi NCR, Mumbai, Bengaluru, Chennai, Hyderabad, Kolkata) and ≤90 sqm in non-metro AND value ≤₹45 Lakh.</div></div>
+    <div class="ic-row"><div class="ic-dot"></div><div class="ic-text">Stamp duty and registration are calculated on the circle rate or agreement value, whichever is higher — separate from GST.</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">✅ GST Calculation Saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let selectedType = 'uc';
+
+const gstRates = {uc:5, rp:0, aff:1, plot:0};
+const typeNames = {uc:'Under-Construction (5% GST)', rp:'Ready Possession (NIL GST)', aff:'Affordable Housing (1% GST)', plot:'Plot / Land (NIL GST)'};
+
+function selType(t,el){
+  selectedType=t;
+  document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+document.getElementById('type-uc').classList.add('selected');
+
+function fmt(n){
+  if(n>=10000000) return '₹'+(n/10000000).toFixed(2)+' Cr';
+  if(n>=100000)   return '₹'+(n/100000).toFixed(2)+' L';
+  return '₹'+Math.round(n).toLocaleString('en-IN');
+}
+
+function calcGST(){
+  const pv   = parseFloat(document.getElementById('propValue').value)||4500000;
+  const sdR  = parseFloat(document.getElementById('sdRate').value)/100;
+  const regR = parseFloat(document.getElementById('regFee').value)/100;
+  const gstR = gstRates[selectedType]/100;
+
+  const gst  = pv * gstR;
+  const sd   = pv * sdR;
+  const reg  = pv * regR;
+  const total= pv + gst + sd + reg;
+  const extra= gst + sd + reg;
+
+  document.getElementById('rp-typeTitle').textContent = '📊 ' + typeNames[selectedType];
+  document.getElementById('gstAmt').textContent  = fmt(gst);
+  document.getElementById('gstRateLbl').textContent = gstRates[selectedType]+'% GST';
+  document.getElementById('propValLbl').textContent = fmt(pv);
+  document.getElementById('sdAmt').textContent   = fmt(sd);
+  document.getElementById('regAmt').textContent  = fmt(reg);
+  document.getElementById('totalAmt').textContent = fmt(total);
+  document.getElementById('extraAmt').textContent = fmt(extra);
+
+  // Bar chart
+  const items = [
+    {label:'Property Value', amt:pv, color:'linear-gradient(90deg,#1A3A8F,#0D9488)'},
+    {label:'Stamp Duty', amt:sd, color:'linear-gradient(90deg,#FF6B00,#E05A00)'},
+    {label:'Registration', amt:reg, color:'linear-gradient(90deg,#046A38,#10B981)'},
+    {label:'GST', amt:gst, color:'linear-gradient(90deg,#C2410C,#9A3412)'},
+  ];
+  const maxAmt = total;
+  document.getElementById('costBreak').innerHTML = items.map(i=>`
+    <div class="cb-row">
+      <div class="cb-label">${i.label}</div>
+      <div class="cb-track"><div class="cb-fill" style="width:${(i.amt/maxAmt*100).toFixed(1)}%;background:${i.color};"></div></div>
+      <div class="cb-val">${fmt(i.amt)}</div>
+    </div>`).join('');
+
+  document.getElementById('resultPanel').style.display='block';
+  document.getElementById('resultPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  window._lastGST={type:typeNames[selectedType],gst:fmt(gst),total:fmt(total),date:new Date().toLocaleDateString('en-IN')};
+}
+
+function saveRes(){
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHA Loan Calculator</title>
+<style>
+  :root{--navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;--bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;--border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);--green:#15803D;--green-dk:#166534;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 55%,#166534 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🏦';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .inp-box{background:var(--card);border-radius:14px;padding:13px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);}
+  .inp-box label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:9px;color:var(--muted);margin-top:3px;}
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:4px;}
+  .calc-btn{background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(21,128,61,0.35);font-family:Georgia,serif;transition:transform .1s;}
+  .calc-btn:active{transform:scale(0.98);}
+  .save-btn{background:var(--card);border:2px solid var(--green);border-radius:12px;padding:14px 16px;font-size:13px;font-weight:800;color:var(--green);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap;}
+  .save-btn:hover{background:var(--green);color:#fff;}
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#15803D;color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s ease;pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .saved-section{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .saved-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .saved-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .clear-btn{font-size:10px;font-weight:700;color:var(--green);background:none;border:none;cursor:pointer;}
+  .saved-item{background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+  .saved-item:last-child{margin-bottom:0;}
+  .si-label{font-size:10.5px;font-weight:800;color:var(--navy);}
+  .si-detail{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-val{font-size:14px;font-weight:800;color:var(--green);font-family:Georgia,serif;}
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#15803D);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:10px;}
+  .rh-label{font-size:9.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:36px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;margin:6px 0 4px;}
+  .rh-amount span{font-size:16px;color:var(--gold-lt);}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.50);}
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:14px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:20px;margin-bottom:6px;}
+  .bk-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:17px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .bk-sub{font-size:9px;color:var(--muted);}
+
+  /* Payment breakdown stacked bar */
+  .chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .stacked-bar{height:36px;border-radius:10px;overflow:hidden;display:flex;margin-bottom:12px;}
+  .stacked-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;transition:width .5s ease;min-width:0;overflow:hidden;}
+  .stack-legend{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .sl-item{display:flex;align-items:center;gap:6px;}
+  .sl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .sl-label{font-size:9.5px;color:var(--muted);}
+  .sl-val{font-size:9.5px;font-weight:800;color:var(--navy);margin-left:auto;}
+
+  /* DTI gauge */
+  .dti-gauge{display:flex;flex-direction:column;align-items:center;margin:4px 0 8px;}
+  .dti-arc{width:160px;height:80px;}
+  .dti-val-label{font-size:22px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-top:-4px;}
+  .dti-status{font-size:10px;color:var(--muted);margin-top:2px;}
+
+  .elig-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .elig-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+  .elig-row:last-child{border-bottom:none;}
+  .elig-label{font-size:11px;font-weight:700;color:var(--navy);font-family:Georgia,serif;}
+  .elig-val{font-size:11px;font-weight:800;color:var(--green);}
+  .elig-val.warn{color:var(--gold);}
+  .elig-val.fail{color:#B91C1C;}
+  .mip-card{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:14px 15px;margin-bottom:10px;}
+  .mip-title{font-size:12.5px;font-weight:800;color:#92400E;font-family:Georgia,serif;margin-bottom:10px;}
+  .mip-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(245,158,11,0.25);}
+  .mip-row:last-child{border-bottom:none;}
+  .mip-k{font-size:10px;color:#92400E;font-weight:600;}
+  .mip-v{font-size:10px;font-weight:800;color:#B45309;}
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--green);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.breakdown-grid,.chart-card,.elig-card,.mip-card,.ilist{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ Calculation saved!</div>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏦</div>
+      <div class="hdr-title">FHA Loan Calculator</div>
+      <div class="hdr-sub">HUD · 3.5% Down · MIP · 580+ FICO</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">FHA Rate</div><div class="rs-v">6.54%</div><div class="rs-n">30-Yr Avg</div></div>
+    <div class="rs"><div class="rs-l">Min. Down</div><div class="rs-v gold">3.5%</div><div class="rs-n">580+ Score</div></div>
+    <div class="rs"><div class="rs-l">UFMIP</div><div class="rs-v">1.75%</div><div class="rs-n">Upfront MIP</div></div>
+    <div class="rs"><div class="rs-l">Annual MIP</div><div class="rs-v">0.55%</div><div class="rs-n">2025 Rate</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec" style="margin-top:0">Loan Details <span class="more">HUD Guidelines →</span></div>
+  <div class="input-grid">
+    <div class="inp-box"><label>Home Price ($)</label><input type="number" id="homePrice" value="350000"><div class="inp-hint">FHA limit: $498,257 (most counties)</div></div>
+    <div class="inp-box"><label>Credit Score</label>
+      <select id="creditScore">
+        <option value="580">580–619</option>
+        <option value="620" selected>620–659</option>
+        <option value="660">660–719</option>
+        <option value="720">720–850</option>
+      </select><div class="inp-hint">Min 580 for 3.5% down</div>
+    </div>
+    <div class="inp-box"><label>Interest Rate (%)</label><input type="number" id="rate" value="6.54" step="0.01"><div class="inp-hint">National avg Jun 2025</div></div>
+    <div class="inp-box"><label>Loan Term</label>
+      <select id="term">
+        <option value="30" selected>30 Years</option>
+        <option value="20">20 Years</option>
+        <option value="15">15 Years</option>
+      </select>
+    </div>
+    <div class="inp-box"><label>Property Tax ($/yr)</label><input type="number" id="propTax" value="4200"><div class="inp-hint">Avg U.S. ~1.1% of value</div></div>
+    <div class="inp-box"><label>Home Insurance ($/yr)</label><input type="number" id="insurance" value="1800"><div class="inp-hint">Avg U.S. ~$1,800/yr</div></div>
+  </div>
+  <div class="inp-box" style="margin-bottom:10px;">
+    <label>Annual Gross Income ($)</label>
+    <input type="number" id="grossIncome" value="72000">
+    <div class="inp-hint">Used for DTI calculation</div>
+  </div>
+  <div class="btn-row">
+    <button class="calc-btn" onclick="calculate()">🏦 Calculate FHA Monthly Payment</button>
+    <button class="save-btn" onclick="saveCalc()">🔖 Save</button>
+  </div>
+  <div id="savedSection" style="display:none;margin-top:14px;">
+    <div class="saved-section">
+      <div class="saved-header"><div class="saved-title">🔖 Saved Calculations</div><button class="clear-btn" onclick="clearSaves()">Clear All</button></div>
+      <div id="savedList"></div>
+    </div>
+  </div>
+
+  <div class="sec">Monthly Payment Breakdown</div>
+  <div class="result-hero">
+    <div class="rh-label">Total Monthly Payment (PITI + MIP)</div>
+    <div class="rh-amount" id="totalPayment">$2,847 <span>/mo</span></div>
+    <div class="rh-sub" id="loanSummary">Loan: $337,956 · Down: $12,250 (3.5%) · UFMIP: $5,706 financed</div>
+  </div>
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">💵</div><div class="bk-label">Principal & Interest</div><div class="bk-value" id="pi">$2,127</div><div class="bk-sub">Base mortgage payment</div></div>
+    <div class="bk-card"><div class="bk-icon">🛡️</div><div class="bk-label">Annual MIP</div><div class="bk-value" id="mip">$155</div><div class="bk-sub">0.55% of loan/yr ÷ 12</div></div>
+    <div class="bk-card"><div class="bk-icon">🏛️</div><div class="bk-label">Property Tax</div><div class="bk-value" id="tax">$350</div><div class="bk-sub">Escrow monthly</div></div>
+    <div class="bk-card"><div class="bk-icon">🔥</div><div class="bk-label">Home Insurance</div><div class="bk-value" id="ins">$150</div><div class="bk-sub">Escrow monthly</div></div>
+    <div class="bk-card"><div class="bk-icon">📊</div><div class="bk-label">DTI Ratio</div><div class="bk-value" id="dtiImpact">28.4%</div><div class="bk-sub">Housing / gross income</div></div>
+    <div class="bk-card"><div class="bk-icon">💰</div><div class="bk-label">Total Interest Paid</div><div class="bk-value" id="totalInterest">$397K</div><div class="bk-sub">Over loan life</div></div>
+  </div>
+
+  <!-- Payment Breakdown Stacked Bar -->
+  <div class="sec">Payment Composition</div>
+  <div class="chart-card">
+    <div class="chart-title">💡 Monthly Payment Breakdown</div>
+    <div class="stacked-bar" id="stackedBar"></div>
+    <div class="stack-legend" id="stackLegend"></div>
+  </div>
+
+  <!-- DTI Gauge -->
+  <div class="sec">DTI Analysis</div>
+  <div class="chart-card">
+    <div class="chart-title">📊 Debt-to-Income Ratio</div>
+    <div class="dti-gauge">
+      <svg class="dti-arc" id="dtiArc" viewBox="0 0 160 90"></svg>
+      <div class="dti-val-label" id="dtiLabel">28.4%</div>
+      <div class="dti-status" id="dtiStatus">✅ Excellent — well within FHA 43% limit</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px;">
+      <span>0%</span><span style="color:#15803D">28% Good</span><span style="color:#D97706">36% Caution</span><span style="color:#B91C1C">43% Limit</span>
+    </div>
+  </div>
+
+  <div class="sec">FHA Eligibility Checklist</div>
+  <div class="elig-card">
+    <div class="elig-row"><div class="elig-label">Min. Credit Score</div><div class="elig-val" id="eligScore">✅ 620 (3.5% down)</div></div>
+    <div class="elig-row"><div class="elig-label">Down Payment Required</div><div class="elig-val" id="eligDown">✅ $12,250 (3.5%)</div></div>
+    <div class="elig-row"><div class="elig-label">FHA Loan Limit (National)</div><div class="elig-val" id="eligLimit">✅ $498,257 – Within limit</div></div>
+    <div class="elig-row"><div class="elig-label">Max DTI Allowed</div><div class="elig-val">✅ 43% (up to 57% w/ AUS)</div></div>
+    <div class="elig-row"><div class="elig-label">Primary Residence</div><div class="elig-val">✅ Required by FHA</div></div>
+    <div class="elig-row"><div class="elig-label">Upfront MIP (UFMIP)</div><div class="elig-val" id="eligUFMIP">✅ $6,125 (financed)</div></div>
+  </div>
+  <div class="sec">2025 MIP Rate Schedule</div>
+  <div class="mip-card">
+    <div class="mip-title">🛡️ FHA Annual MIP Rates (HUD 2025)</div>
+    <div class="mip-row"><div class="mip-k">LTV ≤ 90% · 30-yr term</div><div class="mip-v">0.50% / year</div></div>
+    <div class="mip-row"><div class="mip-k">LTV 90–95% · 30-yr term</div><div class="mip-v">0.50% / year</div></div>
+    <div class="mip-row"><div class="mip-k">LTV > 95% · 30-yr term</div><div class="mip-v">0.55% / year</div></div>
+    <div class="mip-row"><div class="mip-k">LTV ≤ 90% · 15-yr term</div><div class="mip-v">0.15% / year</div></div>
+    <div class="mip-row"><div class="mip-k">LTV > 90% · 15-yr term</div><div class="mip-v">0.40% / year</div></div>
+    <div class="mip-row"><div class="mip-k">UFMIP (all loans)</div><div class="mip-v">1.75% upfront</div></div>
+  </div>
+  <div class="sec">FHA Key Guidelines</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📋</div><div><div class="in">2025 FHA Loan Limits</div><div class="is">Floor $498,257 · Ceiling $1,149,825 (high-cost areas)</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">💳</div><div><div class="in">Credit Score Requirements</div><div class="is">580+ → 3.5% down · 500–579 → 10% down required</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🔄</div><div><div class="in">MIP Cancellation Rules</div><div class="is">After Jun 2013: MIP stays for life of loan if down &lt; 10%</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏠</div><div><div class="in">Property Standards</div><div class="is">HUD Minimum Property Standards · Appraisal required</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📈</div><div><div class="in">FHA 203(k) Rehab Option</div><div class="is">Purchase + renovation in one FHA loan</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+let lastResult=null,saves=[];
+
+function calculate(){
+  const price=parseFloat(document.getElementById('homePrice').value)||0;
+  const score=parseInt(document.getElementById('creditScore').value);
+  const rateAnnual=parseFloat(document.getElementById('rate').value)/100||0;
+  const termYrs=parseInt(document.getElementById('term').value);
+  const propTaxAnnual=parseFloat(document.getElementById('propTax').value)||0;
+  const insAnnual=parseFloat(document.getElementById('insurance').value)||0;
+  const grossIncome=parseFloat(document.getElementById('grossIncome').value)||72000;
+  const downPct=score>=580?0.035:0.10;
+  const downAmt=price*downPct;
+  const baseLoan=price-downAmt;
+  const ufmip=baseLoan*0.0175;
+  const loanAmt=baseLoan+ufmip;
+  const months=termYrs*12;
+  const mr=rateAnnual/12;
+  const pi=mr===0?loanAmt/months:loanAmt*(mr*Math.pow(1+mr,months))/(Math.pow(1+mr,months)-1);
+  const ltv=(loanAmt/price)*100;
+  let mipRate=0.0055;
+  if(termYrs<=15){mipRate=ltv>90?0.0040:0.0015;}
+  else{mipRate=ltv>95?0.0055:0.0050;}
+  const mipMonthly=(loanAmt*mipRate)/12;
+  const taxMonthly=propTaxAnnual/12;
+  const insMonthly=insAnnual/12;
+  const total=pi+mipMonthly+taxMonthly+insMonthly;
+  const totalInterest=(pi*months)-loanAmt;
+  const monthlyIncome=grossIncome/12;
+  const dti=(total/monthlyIncome*100);
+
+  document.getElementById('totalPayment').innerHTML='$'+Math.round(total).toLocaleString()+' <span>/mo</span>';
+  document.getElementById('loanSummary').textContent=`Loan: $${Math.round(loanAmt).toLocaleString()} · Down: $${Math.round(downAmt).toLocaleString()} (${(downPct*100).toFixed(1)}%) · UFMIP: $${Math.round(ufmip).toLocaleString()} financed`;
+  document.getElementById('pi').textContent='$'+Math.round(pi).toLocaleString();
+  document.getElementById('mip').textContent='$'+Math.round(mipMonthly).toLocaleString();
+  document.getElementById('tax').textContent='$'+Math.round(taxMonthly).toLocaleString();
+  document.getElementById('ins').textContent='$'+Math.round(insMonthly).toLocaleString();
+  document.getElementById('dtiImpact').textContent=dti.toFixed(1)+'%';
+  const ti=totalInterest>=1000000?(totalInterest/1000000).toFixed(2)+'M':Math.round(totalInterest/1000)+'K';
+  document.getElementById('totalInterest').textContent='$'+ti;
+
+  const limitOk=price<=498257;
+  document.getElementById('eligScore').textContent=score>=580?`✅ ${score} (${(downPct*100).toFixed(1)}% down)`:`❌ ${score} – Below 580 min`;
+  document.getElementById('eligScore').className='elig-val'+(score>=580?'':' fail');
+  document.getElementById('eligDown').textContent=`✅ $${Math.round(downAmt).toLocaleString()} (${(downPct*100).toFixed(1)}%)`;
+  document.getElementById('eligLimit').textContent=limitOk?`✅ $${price.toLocaleString()} – Within limit`:`❌ $${price.toLocaleString()} – Exceeds $498,257`;
+  document.getElementById('eligLimit').className='elig-val'+(limitOk?'':' fail');
+  document.getElementById('eligUFMIP').textContent=`✅ $${Math.round(ufmip).toLocaleString()} (financed)`;
+
+  // Stacked bar
+  const parts=[
+    {label:'P&I',val:pi,color:'#15803D'},
+    {label:'MIP',val:mipMonthly,color:'#D97706'},
+    {label:'Tax',val:taxMonthly,color:'#1B3F72'},
+    {label:'Insurance',val:insMonthly,color:'#0F766E'},
+  ];
+  document.getElementById('stackedBar').innerHTML=parts.map(p=>`<div class="stacked-seg" style="width:${(p.val/total*100).toFixed(1)}%;background:${p.color};">${p.val/total>.08?'$'+Math.round(p.val):''}</div>`).join('');
+  document.getElementById('stackLegend').innerHTML=parts.map(p=>`<div class="sl-item"><div class="sl-dot" style="background:${p.color}"></div><div class="sl-label">${p.label}</div><div class="sl-val">$${Math.round(p.val).toLocaleString()}</div></div>`).join('');
+
+  // DTI gauge (SVG arc)
+  drawDTIGauge(dti);
+  document.getElementById('dtiLabel').textContent=dti.toFixed(1)+'%';
+  const dtiEl=document.getElementById('dtiStatus');
+  if(dti<=28){dtiEl.textContent='✅ Excellent — well within FHA 43% limit';dtiEl.style.color='#15803D';}
+  else if(dti<=36){dtiEl.textContent='✅ Good — within FHA limit';dtiEl.style.color='#15803D';}
+  else if(dti<=43){dtiEl.textContent='⚠️ Acceptable — near FHA 43% limit';dtiEl.style.color='#D97706';}
+  else{dtiEl.textContent='❌ Above FHA 43% limit — may need AUS approval';dtiEl.style.color='#B91C1C';}
+
+  lastResult={total:Math.round(total),pi:Math.round(pi),dti:dti.toFixed(1),price,loanAmt:Math.round(loanAmt),
+    label:`FHA $${Math.round(price/1000)}K @${(rateAnnual*100).toFixed(2)}%`,ts:new Date().toLocaleTimeString()};
+}
+
+function drawDTIGauge(dti){
+  const svg=document.getElementById('dtiArc');
+  const cx=80,cy=80,r=60;
+  const startA=Math.PI;const endA=2*Math.PI;
+  function arc(pct,color,startPct,endPct){
+    const sa=startA+(startPct/100)*(endA-startA);
+    const ea=startA+(endPct/100)*(endA-startA);
+    const x1=cx+r*Math.cos(sa),y1=cy+r*Math.sin(sa);
+    const x2=cx+r*Math.cos(ea),y2=cy+r*Math.sin(ea);
+    return `<path d="M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round"/>`;
+  }
+  const zones=[{p:0,ep:56,c:'#DCFCE7'},{p:56,ep:72,c:'#FEF3C7'},{p:72,ep:86,c:'#FEE2E2'},{p:86,ep:100,c:'#FCA5A5'}];
+  let s=zones.map(z=>arc(0,z.c,z.p,z.ep)).join('');
+  const needlePct=Math.min(dti/50*100,100);
+  const needleA=startA+(needlePct/100)*(endA-startA);
+  const nx=cx+r*Math.cos(needleA),ny=cy+r*Math.sin(needleA);
+  const color=dti<=28?'#15803D':dti<=36?'#166534':dti<=43?'#D97706':'#B91C1C';
+  s+=`<path d="M ${cx} ${cy} L ${nx} ${ny}" stroke="${color}" stroke-width="3" stroke-linecap="round"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="4" fill="${color}"/>`;
+  svg.innerHTML=s;
+}
+
+function saveCalc(){if(!lastResult){calculate();}if(!lastResult)return;saves.unshift({...lastResult});if(saves.length>5)saves.pop();renderSaves();showToast();}
+function renderSaves(){
+  const sec=document.getElementById('savedSection');
+  if(saves.length===0){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('savedList').innerHTML=saves.map(s=>`<div class="saved-item"><div><div class="si-label">${s.label}</div><div class="si-detail">DTI: ${s.dti}% · ${s.ts}</div></div><div class="si-val">$${s.total.toLocaleString()}/mo</div></div>`).join('');
+}
+function clearSaves(){saves=[];renderSaves();}
+function showToast(){const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+calculate();
+</script>
+</body>
+</html>

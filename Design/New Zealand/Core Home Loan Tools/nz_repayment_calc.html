@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repayment Calculator · NZ</title>
+<style>
+  :root{--black:#0A0F0D;--forest:#0D3B2E;--fern:#1A6B4A;--silver:#C0C8C1;--teal:#0D9488;--sky:#0EA5E9;--red:#C0392B;--gold:#D4A017;--gold-lt:#F5D060;--bg:#EDF5F2;--card:#FFFFFF;--muted:#4A6358;--border:rgba(13,59,46,0.09);--sh:0 4px 20px rgba(10,15,13,0.09);--sh2:0 8px 36px rgba(10,15,13,0.18);}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--black);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(158deg,#0A0F0D 0%,#0D3B2E 45%,#1A6B4A 80%,#C0392B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'📊';position:absolute;right:12px;top:44px;font-size:78px;opacity:0.09;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.11);border:1px solid rgba(255,255,255,0.19);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;display:block;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:0.4px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--fern);text-transform:none;letter-spacing:0;cursor:pointer;}
+  .card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+  .card-title{font-size:14px;font-weight:800;color:var(--black);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .ct-icon{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--fern),var(--forest));display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .inp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .inp-full{margin-bottom:12px;}
+  .inp-grp label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .inp-grp input,.inp-grp select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:11px 12px;font-size:14px;font-weight:700;color:var(--black);font-family:'Palatino Linotype',Palatino,Georgia,serif;outline:none;transition:border-color .2s;}
+  .inp-grp input:focus,.inp-grp select:focus{border-color:var(--fern);}
+  .inp-note{font-size:9px;color:var(--muted);margin-top:3px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  /* TOGGLE SWITCH */
+  .type-toggle{display:flex;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:14px;border:1.5px solid var(--border);}
+  .tt-opt{flex:1;text-align:center;padding:10px 6px;border-radius:9px;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--muted);}
+  .tt-opt.active{background:linear-gradient(135deg,var(--fern),var(--forest));color:#fff;box-shadow:0 3px 10px rgba(26,107,74,0.35);}
+
+  .calc-btn{width:100%;background:linear-gradient(135deg,var(--fern),#0D3B2E);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(26,107,74,0.40);font-family:Palatino,'Palatino Linotype',Georgia,serif;transition:transform .15s;}
+  .calc-btn:active{transform:scale(.98);}
+
+  /* COMPARE PANEL */
+  .cmp-panel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .cmp-box{border-radius:18px;padding:18px;position:relative;overflow:hidden;}
+  .cmp-box.pi{background:linear-gradient(148deg,#0A0F0D,#0D3B2E);}
+  .cmp-box.io{background:linear-gradient(148deg,#C0392B,#922B21);}
+  .cmp-box::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.07);}
+  .cx-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.6px;font-family:'Helvetica Neue',Arial,sans-serif;margin-bottom:4px;}
+  .cx-type{font-size:11px;font-weight:800;color:#fff;margin-bottom:10px;}
+  .cx-amt{font-size:24px;font-weight:800;color:var(--gold-lt);line-height:1;}
+  .cx-sub{font-size:9px;color:rgba(255,255,255,0.55);margin-top:3px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .cx-stat{margin-top:10px;}
+  .cx-stat-row{display:flex;justify-content:space-between;margin-top:5px;}
+  .cx-stat-l{font-size:9px;color:rgba(255,255,255,0.50);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .cx-stat-v{font-size:9.5px;font-weight:800;color:#fff;}
+
+  /* STACKED BAR */
+  .stacked-wrap{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .stacked-title{font-size:12px;font-weight:800;color:var(--black);margin-bottom:12px;}
+  .stk-row{margin-bottom:10px;}
+  .stk-label{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .stk-name{font-size:10px;font-weight:700;color:var(--black);}
+  .stk-val{font-size:10px;font-weight:700;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .stk-bar{height:20px;border-radius:8px;overflow:hidden;display:flex;}
+  .stk-p{background:linear-gradient(90deg,#1A6B4A,#0D9488);transition:width .6s ease;}
+  .stk-i{background:linear-gradient(90deg,#C0392B,#E74C3C);transition:width .6s ease;}
+
+  /* IO PERIOD TIMELINE */
+  .timeline{margin-top:10px;}
+  .tl-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;}
+  .tl-content{flex:1;}
+  .tl-title{font-size:11px;font-weight:800;color:var(--black);}
+  .tl-sub{font-size:9.5px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .tl-line{width:2px;height:16px;background:var(--border);margin-left:13px;}
+
+  /* IO WARNING */
+  .warn-box{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:14px;padding:14px;margin-bottom:14px;}
+  .warn-title{font-size:12px;font-weight:800;color:#92400E;margin-bottom:4px;}
+  .warn-sub{font-size:9.5px;color:#B45309;line-height:1.5;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  /* SAVE */
+  .save-bar{background:var(--card);border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .save-info{font-size:11px;font-weight:700;color:var(--black);}
+  .save-info span{font-size:9px;color:var(--muted);display:block;font-weight:400;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .save-btn{background:linear-gradient(135deg,var(--teal),#0F766E);color:#fff;font-size:11px;font-weight:800;padding:9px 16px;border-radius:10px;border:none;cursor:pointer;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,15,13,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ni.active .ni-lb{color:var(--fern);}
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:linear-gradient(135deg,var(--fern),var(--forest));color:#fff;padding:12px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:200;transition:transform .3s;box-shadow:var(--sh2);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .card,.cmp-panel,.stacked-wrap,.warn-box{animation:fadeUp .35s ease both;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ Repayment plan saved</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇳🇿</div>
+      <div class="hdr-title">Repayment Calculator</div>
+      <div class="hdr-sub">P&I vs Interest Only · NZ Home Loans</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">1-Yr Fixed</div><div class="rs-v">6.59%</div><div class="rs-n">ANZ/ASB</div></div>
+    <div class="rs"><div class="rs-l">2-Yr Fixed</div><div class="rs-v">6.35%</div><div class="rs-n">Kiwibank</div></div>
+    <div class="rs"><div class="rs-l">Floating</div><div class="rs-v">8.64%</div><div class="rs-n">Variable</div></div>
+    <div class="rs"><div class="rs-l">OCR</div><div class="rs-v gold">5.50%</div><div class="rs-n">RBNZ</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Loan Details <span class="more">NZ Rates →</span></div>
+  <div class="card">
+    <div class="card-title"><div class="ct-icon">📊</div>Repayment Type Comparison</div>
+
+    <div class="inp-row">
+      <div class="inp-grp">
+        <label>Loan Amount (NZD)</label>
+        <input type="number" id="loanAmt" value="680000">
+        <div class="inp-note">After deposit</div>
+      </div>
+      <div class="inp-grp">
+        <label>Interest Rate (%)</label>
+        <input type="number" id="rate" value="6.59" step="0.01">
+        <div class="inp-note">NZ avg 1-yr fixed</div>
+      </div>
+    </div>
+
+    <div class="inp-row">
+      <div class="inp-grp">
+        <label>Loan Term (Years)</label>
+        <input type="number" id="term" value="30" min="5" max="30">
+      </div>
+      <div class="inp-grp">
+        <label>IO Period (Years)</label>
+        <input type="number" id="ioPeriod" value="5" min="1" max="10">
+        <div class="inp-note">Max 5 yrs typical NZ</div>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">📊 Compare Repayment Types</button>
+  </div>
+
+  <!-- COMPARISON PANELS -->
+  <div class="sec">Side-by-Side Comparison</div>
+  <div class="cmp-panel" id="cmpPanel">
+    <div class="cmp-box pi">
+      <div class="cx-label">Principal & Interest</div>
+      <div class="cx-type">P&I · Recommended</div>
+      <div class="cx-amt" id="pi-monthly">$5,408</div>
+      <div class="cx-sub">/month</div>
+      <div class="cx-stat">
+        <div class="cx-stat-row"><div class="cx-stat-l">Total Interest</div><div class="cx-stat-v" id="pi-int">$1.27M</div></div>
+        <div class="cx-stat-row"><div class="cx-stat-l">Total Paid</div><div class="cx-stat-v" id="pi-total">$1.95M</div></div>
+        <div class="cx-stat-row"><div class="cx-stat-l">Equity @ 5yr</div><div class="cx-stat-v" id="pi-eq5">$78K</div></div>
+      </div>
+    </div>
+    <div class="cmp-box io">
+      <div class="cx-label">Interest Only</div>
+      <div class="cx-type">IO · Investors</div>
+      <div class="cx-amt" id="io-monthly">$3,734</div>
+      <div class="cx-sub">/month (IO period)</div>
+      <div class="cx-stat">
+        <div class="cx-stat-row"><div class="cx-stat-l">Total Interest</div><div class="cx-stat-v" id="io-int">$1.49M</div></div>
+        <div class="cx-stat-row"><div class="cx-stat-l">Total Paid</div><div class="cx-stat-v" id="io-total">$2.17M</div></div>
+        <div class="cx-stat-row"><div class="cx-stat-l">Equity @ 5yr</div><div class="cx-stat-v" id="io-eq5">$0</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STACKED BAR VISUAL -->
+  <div class="stacked-wrap">
+    <div class="stacked-title">Total Cost Breakdown</div>
+    <div class="stk-row">
+      <div class="stk-label"><div class="stk-name">P&I — Full Term</div><div class="stk-val" id="stk-pi-val">$1,948K total</div></div>
+      <div class="stk-bar" id="stk-pi"><div class="stk-p" style="width:35%"></div><div class="stk-i" style="width:65%"></div></div>
+    </div>
+    <div class="stk-row" style="margin-top:14px;">
+      <div class="stk-label"><div class="stk-name">IO then P&I</div><div class="stk-val" id="stk-io-val">$2,170K total</div></div>
+      <div class="stk-bar" id="stk-io"><div class="stk-p" style="width:31%"></div><div class="stk-i" style="width:69%"></div></div>
+    </div>
+    <div style="display:flex;gap:14px;margin-top:10px;">
+      <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:3px;background:#1A6B4A;"></div><div style="font-size:9.5px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;">Principal</div></div>
+      <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:3px;background:#C0392B;"></div><div style="font-size:9.5px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;">Interest</div></div>
+    </div>
+    <div style="margin-top:10px;padding:10px 12px;background:#F0FDF4;border-radius:10px;border:1px solid #86EFAC;">
+      <div style="font-size:10.5px;font-weight:800;color:#15803D;">💰 P&I saves <span id="savings-highlight">$221K</span> vs IO over full term</div>
+    </div>
+  </div>
+
+  <!-- IO WARNING -->
+  <div class="warn-box" id="ioWarn">
+    <div class="warn-title">⚠️ Interest Only — Key NZ Rules</div>
+    <div class="warn-sub">
+      · Max IO period: typically 5 years for NZ owner-occupiers (1–2 yrs for investors)<br>
+      · After IO period ends, P&I repayments increase significantly<br>
+      · No equity built during IO period — property value changes affect LVR<br>
+      · RBNZ LVR rules still apply: owner-occ 20% min deposit; investors 35%<br>
+      · IO common for property investors under ring-fencing rules (IRD 2019)
+    </div>
+  </div>
+
+  <!-- MONTHLY CASHFLOW TIMELINE -->
+  <div class="sec">IO Period Timeline</div>
+  <div class="card">
+    <div class="card-title"><div class="ct-icon">📅</div>IO → P&I Transition</div>
+    <div class="timeline" id="timeline"></div>
+  </div>
+
+  <!-- SAVE BAR -->
+  <div class="save-bar">
+    <div class="save-info">💾 Save comparison<span>P&I vs IO saved to portfolio</span></div>
+    <button class="save-btn" onclick="saveCalc()">Save</button>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🌿</div><div class="ni-lb">New Zealand</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmt(n){if(n>=1000000)return'$'+(n/1000000).toFixed(2)+'M';if(n>=1000)return'$'+(n/1000).toFixed(0)+'K';return'$'+n.toFixed(0);}
+function calcPI(loan,rate,years){const r=rate/100/12,n=years*12;if(r===0)return loan/n;return loan*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
+function calcIO(loan,rate){return loan*rate/100/12;}
+
+function getEquityAtYear(loan,rate,years,yr){
+  const r=rate/100/12,n=years*12;
+  if(r===0)return loan*yr/years;
+  const m=calcPI(loan,rate,years);
+  let bal=loan;
+  for(let i=0;i<yr*12;i++)bal=bal*(1+r)-m;
+  return Math.max(0,loan-bal);
+}
+
+function calculate(){
+  const loan=parseFloat(document.getElementById('loanAmt').value)||680000;
+  const rate=parseFloat(document.getElementById('rate').value)||6.59;
+  const term=parseFloat(document.getElementById('term').value)||30;
+  const ioPrd=parseFloat(document.getElementById('ioPeriod').value)||5;
+
+  const piMonthly=calcPI(loan,rate,term);
+  const ioMonthly=calcIO(loan,rate);
+  const piTotal=piMonthly*term*12;
+  const piInt=piTotal-loan;
+  const ioTotalInt=ioMonthly*ioPrd*12;
+  const remainTerm=term-ioPrd;
+  const piAfterIO=calcPI(loan,rate,remainTerm);
+  const ioTotal=ioTotalInt+(piAfterIO*remainTerm*12);
+  const ioInt=ioTotal-loan;
+  const savings=ioTotal-piTotal;
+  const eq5PI=getEquityAtYear(loan,rate,term,Math.min(5,term));
+
+  document.getElementById('pi-monthly').textContent=fmt(piMonthly);
+  document.getElementById('pi-int').textContent=fmt(piInt);
+  document.getElementById('pi-total').textContent=fmt(piTotal);
+  document.getElementById('pi-eq5').textContent=fmt(eq5PI);
+  document.getElementById('io-monthly').textContent=fmt(ioMonthly);
+  document.getElementById('io-int').textContent=fmt(ioInt);
+  document.getElementById('io-total').textContent=fmt(ioTotal);
+  document.getElementById('io-eq5').textContent='$0';
+
+  const piPrin=loan/piTotal;const piIntPct=piInt/piTotal;
+  const ioPrin=loan/ioTotal;const ioIntPct=ioInt/ioTotal;
+  document.getElementById('stk-pi').innerHTML=`<div class="stk-p" style="width:${(piPrin*100).toFixed(0)}%"></div><div class="stk-i" style="width:${(piIntPct*100).toFixed(0)}%"></div>`;
+  document.getElementById('stk-io').innerHTML=`<div class="stk-p" style="width:${(ioPrin*100).toFixed(0)}%"></div><div class="stk-i" style="width:${(ioIntPct*100).toFixed(0)}%"></div>`;
+  document.getElementById('stk-pi-val').textContent=fmt(piTotal)+' total';
+  document.getElementById('stk-io-val').textContent=fmt(ioTotal)+' total';
+  document.getElementById('savings-highlight').textContent=fmt(savings);
+
+  // Timeline
+  const tl=document.getElementById('timeline');
+  const yr=new Date().getFullYear();
+  const items=[
+    {dot:'#1A6B4A',title:'Now – Year '+ioPrd+' (IO Period)',sub:`Interest Only: ${fmt(ioMonthly)}/month · No principal reduction`,period:`${yr} – ${yr+ioPrd}`},
+    {dot:'#C0392B',title:'Year '+ioPrd+' – End (P&I)',sub:`Repayment jumps to ${fmt(piAfterIO)}/month (${fmt(piAfterIO-ioMonthly)} more)`,period:`${yr+ioPrd} – ${yr+term}`},
+    {dot:'#F5D060',title:'Loan End',sub:`Total repaid: ${fmt(ioTotal)} · Extra vs P&I: ${fmt(savings)}`,period:`${yr+term}`},
+  ];
+  tl.innerHTML=items.map((it,i)=>`
+    <div class="tl-row">
+      <div class="tl-dot" style="background:${it.dot};">${i+1}</div>
+      <div class="tl-content">
+        <div class="tl-title">${it.title} <span style="font-size:9px;color:var(--muted);font-weight:400;">${it.period}</span></div>
+        <div class="tl-sub">${it.sub}</div>
+      </div>
+    </div>
+    ${i<items.length-1?'<div class="tl-line"></div>':''}
+  `).join('');
+}
+
+function saveCalc(){
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+calculate();
+</script>
+</body>
+</html>

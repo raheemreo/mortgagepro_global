@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stamp Duty Calculator – Australia</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:8px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:12px;}
+.input-row{margin-bottom:14px;}
+.input-row label{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+.input-wrap{position:relative;}
+.input-wrap .prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#7C2D12;}
+.input-wrap input,.input-wrap select{width:100%;padding:11px 12px 11px 28px;border:1.5px solid rgba(124,45,18,0.2);border-radius:11px;font-size:15px;font-weight:700;color:#1A0A00;background:#FFF8F0;outline:none;font-family:inherit;}
+.input-wrap.no-prefix input,.input-wrap.no-prefix select{padding-left:12px;}
+.input-wrap input:focus,.input-wrap select:focus{border-color:#7C2D12;background:#fff;}
+.slider-wrap{margin-top:6px;}
+.slider-wrap input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:3px;background:linear-gradient(to right,#7C2D12 0%,#7C2D12 var(--pct,50%),rgba(124,45,18,0.2) var(--pct,50%));outline:none;}
+.slider-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#7C2D12;box-shadow:0 2px 6px rgba(124,45,18,0.4);cursor:pointer;}
+.slider-val{display:flex;justify-content:space-between;font-size:10px;color:#92400E;margin-top:4px;}
+/* State pills */
+.state-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;}
+.state-pill{padding:9px 4px;border:1.5px solid rgba(124,45,18,0.2);border-radius:10px;font-size:11px;font-weight:700;color:#92400E;text-align:center;cursor:pointer;background:#FFF8F0;}
+.state-pill.active{background:#7C2D12;color:#fff;border-color:#7C2D12;}
+/* Buyer type */
+.buyer-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.buyer-tab{flex:1;padding:9px;border:1.5px solid rgba(124,45,18,0.2);border-radius:10px;font-size:11px;font-weight:700;color:#92400E;text-align:center;cursor:pointer;background:#FFF8F0;}
+.buyer-tab.active{background:#002868;color:#fff;border-color:#002868;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#D97706,#92400E);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;margin-top:4px;}
+/* Result */
+.result-card{background:linear-gradient(145deg,#D97706,#92400E);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(217,119,6,0.3);margin-bottom:12px;display:none;}
+.result-card.show{display:block;}
+.result-card::before{content:'🏘️';position:absolute;right:8px;top:5px;font-size:65px;opacity:0.12;}
+.rc-tag{font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.8px;}
+.rc-amount{font-size:36px;font-weight:800;color:#fff;font-family:Georgia,serif;margin:6px 0 4px;}
+.rc-sub{font-size:12px;color:rgba(255,255,255,0.7);}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+.rc-box{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;}
+.rc-box label{font-size:9px;color:rgba(255,255,255,0.6);display:block;margin-bottom:2px;text-transform:uppercase;}
+.rc-box .v{font-size:14px;font-weight:800;color:#fff;}
+.rc-box .v.gold{color:#FFD700;}
+.save-btn{width:100%;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:11px;padding:11px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px;}
+/* Upfront cost breakdown */
+.cost-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(124,45,18,0.07);}
+.cost-row:last-child{border-bottom:none;}
+.cr-label{font-size:12px;font-weight:700;color:#1A0A00;}
+.cr-sub{font-size:10px;color:#92400E;margin-top:1px;}
+.cr-val{font-size:14px;font-weight:800;color:#7C2D12;font-family:Georgia,serif;}
+.cr-val.green{color:#0F766E;}
+/* State comparison bar chart */
+.state-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.sb-state{width:32px;font-size:10px;font-weight:700;color:#92400E;}
+.sb-track{flex:1;height:9px;background:rgba(124,45,18,0.1);border-radius:5px;overflow:hidden;}
+.sb-fill{height:100%;border-radius:5px;background:linear-gradient(to right,#D97706,#7C2D12);transition:width 0.8s ease;}
+.sb-amount{font-size:10px;font-weight:700;color:#1A0A00;white-space:nowrap;}
+.concession-badge{background:#ECFDF5;border:1px solid #6EE7B7;border-radius:10px;padding:8px 12px;font-size:11px;color:#065F46;font-weight:700;margin-top:6px;display:flex;align-items:center;gap:6px;}
+.info-tip{background:#FFF7ED;border:1px solid #FCA5A5;border-radius:12px;padding:11px 13px;font-size:11px;color:#92400E;margin-top:8px;line-height:1.5;}
+.info-tip strong{color:#7C2D12;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1A0A00;color:#FFD700;padding:10px 22px;border-radius:20px;font-size:13px;font-weight:700;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.result-section{display:none;}
+.result-section.show{display:block;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇦🇺</span><div class="hdr-title">Stamp Duty</div><div class="hdr-sub">State-by-State Calculator 2025</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">NSW FHOG</div><div class="rs-val gold">$10K</div><div class="rs-note">New homes</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">VIC FHOG</div><div class="rs-val gold">$10K</div><div class="rs-note">Regional $20K</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">QLD FHOG</div><div class="rs-val gold">$30K</div><div class="rs-note">Updated 2024</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">WA FHOG</div><div class="rs-val gold">$10K</div><div class="rs-note">South of 26th</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Select State / Territory</div>
+  <div class="card" style="padding:14px;">
+    <div class="state-grid">
+      <div class="state-pill active" data-state="NSW" onclick="setState(this)">NSW</div>
+      <div class="state-pill" data-state="VIC" onclick="setState(this)">VIC</div>
+      <div class="state-pill" data-state="QLD" onclick="setState(this)">QLD</div>
+      <div class="state-pill" data-state="WA" onclick="setState(this)">WA</div>
+      <div class="state-pill" data-state="SA" onclick="setState(this)">SA</div>
+      <div class="state-pill" data-state="TAS" onclick="setState(this)">TAS</div>
+      <div class="state-pill" data-state="ACT" onclick="setState(this)">ACT</div>
+      <div class="state-pill" data-state="NT" onclick="setState(this)">NT</div>
+    </div>
+    <div class="input-row">
+      <label>Property Value</label>
+      <div class="input-wrap"><span class="prefix">$</span><input type="number" id="propVal" value="750000" oninput="updateSlider('valSlider',this.value,100000,3000000)"></div>
+      <div class="slider-wrap"><input type="range" id="valSlider" min="100000" max="3000000" value="750000" oninput="syncSlider('propVal',this.value,100000,3000000)"><div class="slider-val"><span>$100K</span><span>$3M</span></div></div>
+    </div>
+    <div class="input-row">
+      <label>Buyer Type</label>
+      <div class="buyer-tabs">
+        <div class="buyer-tab active" data-buyer="owner" onclick="setBuyer(this)">Owner Occupier</div>
+        <div class="buyer-tab" data-buyer="fhb" onclick="setBuyer(this)">First Home Buyer</div>
+        <div class="buyer-tab" data-buyer="investor" onclick="setBuyer(this)">Investor</div>
+      </div>
+    </div>
+    <div class="input-row">
+      <label>Property Type</label>
+      <div class="input-wrap no-prefix"><select id="propType"><option value="established">Established Home</option><option value="new">New Home / Off-the-Plan</option><option value="vacant">Vacant Land</option></select></div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🏘️ Calculate Stamp Duty</button>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="rc-tag" id="rcState">NSW Stamp Duty</div>
+    <div class="rc-amount" id="rcAmount">$0</div>
+    <div class="rc-sub" id="rcSub">Transfer duty payable at settlement</div>
+    <div class="rc-grid">
+      <div class="rc-box"><label>Effective Rate</label><div class="v" id="rcEffRate">0%</div></div>
+      <div class="rc-box"><label>After Concessions</label><div class="v gold" id="rcConcession">$0</div></div>
+      <div class="rc-box"><label>FHOG Grant</label><div class="v" id="rcFHOG">N/A</div></div>
+      <div class="rc-box"><label>Net Cost</label><div class="v gold" id="rcNet">$0</div></div>
+    </div>
+    <div id="concessionMsg"></div>
+    <button class="save-btn" onclick="saveCalc()">🔖 Save This Calculation</button>
+  </div>
+
+  <div class="result-section" id="resultSec">
+    <div class="card">
+      <div class="sec-lbl" style="margin-top:0;margin-bottom:10px;">Upfront Cost Breakdown</div>
+      <div id="costBreakdown"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-lbl" style="margin-top:0;margin-bottom:12px;">State Comparison (same property)</div>
+      <div id="stateComparison"></div>
+    </div>
+
+    <div class="info-tip" id="infoTip"></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">✅ Calculation Saved!</div>
+
+<script>
+let selectedState='NSW', buyerType='owner';
+
+// 2025 Stamp Duty rates per state (simplified marginal brackets)
+const stampRates = {
+  NSW: {
+    brackets: [[0,14000,1.25],[14000,32000,1.5],[32000,85000,1.75],[85000,319000,3.5],[319000,1064000,4.5],[1064000,3131000,5.5],[3131000,Infinity,7]],
+    fhbThreshold:800000, fhbExemptThreshold:650000, fhog_established:0, fhog_new:10000,
+    concessions:'Full exemption on established homes up to $650K, concession up to $800K for FHB.',
+    land_tax_note:'NSW also has land tax (above $1.075M threshold, 1.6% p.a.).'
+  },
+  VIC: {
+    brackets: [[0,25000,1.4],[25000,130000,2.4],[130000,440000,5],[440000,550000,6],[550000,960000,6],[960000,Infinity,6.5]],
+    fhbThreshold:750000, fhbExemptThreshold:600000, fhog_established:0, fhog_new:10000, fhog_regional:20000,
+    concessions:'Duty waiver on first $600K (FHB established). Principal place of residence concession.'
+  },
+  QLD: {
+    brackets: [[0,5000,0],[5000,75000,1.5],[75000,540000,3.5],[540000,1000000,4.5],[1000000,Infinity,5.75]],
+    fhbThreshold:700000, fhbExemptThreshold:700000, fhog:30000,
+    concessions:'FHB concession: duty rebate up to $8,750 on homes under $700K. FHOG $30,000 (updated 2024).'
+  },
+  WA: {
+    brackets: [[0,80000,1.9],[80000,100000,2.85],[100000,250000,3.8],[250000,500000,4.75],[500000,Infinity,5.15]],
+    fhbThreshold:430000, fhog:10000,
+    concessions:'FHB exemption on homes up to $430K, concession up to $530K.'
+  },
+  SA: {
+    brackets: [[0,12000,1],[12000,30000,2],[30000,50000,3],[50000,100000,3.5],[100000,200000,4],[200000,250000,4.25],[250000,300000,4.75],[300000,500000,5],[500000,Infinity,5.5]],
+    fhog:15000,
+    concessions:'No stamp duty exemption for FHB in SA. FHOG $15,000 for new homes.'
+  },
+  TAS: {
+    brackets: [[0,3000,50],[3000,25000,1.75],[25000,75000,2.25],[75000,200000,3.5],[200000,375000,4],[375000,725000,4.25],[725000,Infinity,4.5]],
+    fhog:30000,
+    concessions:'50% duty concession for FHB on established homes (announced 2023). FHOG $30,000 new homes.'
+  },
+  ACT: {
+    brackets: [[0,260000,0.6],[260000,300000,2.2],[300000,500000,3.4],[500000,750000,4.32],[750000,1000000,5.9],[1000000,1455000,6.4],[1455000,Infinity,6.9]],
+    fhog:0,
+    concessions:'Home Buyer Concession Scheme: duty-free on eligible owner-occupier purchases (income tested).'
+  },
+  NT: {
+    brackets: [[0,525000,null],[525000,Infinity,4.95]], // NT uses property value formula
+    special_nt:true,
+    fhog:10000,
+    concessions:'NT FHOG $10,000. First Home Owner Discount: 50% duty concession for homes under $650K.'
+  }
+};
+
+const fhogData = {
+  NSW:{new:10000,regional:0},VIC:{new:10000,regional:20000},QLD:{new:30000,regional:30000},
+  WA:{new:10000,regional:10000},SA:{new:15000,regional:15000},TAS:{new:30000,regional:30000},
+  ACT:{new:0,regional:0},NT:{new:10000,regional:10000}
+};
+
+function calcStamp(state, value, buyer, propType){
+  const r=stampRates[state];
+  let duty=0;
+
+  if(state==='NT'&&r.special_nt){
+    // NT formula: D = (0.06571441 * V² + 15 * V) / 1000 if V < $525K, else bracket
+    if(value<525000){
+      duty=(0.06571441*Math.pow(value/1000,2)+15*(value/1000));
+    } else {
+      duty=value*0.0495;
+    }
+  } else {
+    r.brackets.forEach(([low,high,rate])=>{
+      if(value>low){
+        const taxable=Math.min(value,high)-low;
+        duty+=taxable*(rate/100);
+      }
+    });
+  }
+
+  // FHB concessions
+  let concession=0;
+  if(buyer==='fhb'){
+    if(state==='NSW'&&value<=800000){
+      if(value<=650000) concession=duty;
+      else concession=duty*(800000-value)/150000;
+    }
+    if(state==='VIC'&&value<=750000){
+      if(value<=600000) concession=duty;
+    }
+    if(state==='QLD'&&value<=700000) concession=Math.min(duty,8750);
+    if(state==='WA'&&value<=530000){
+      if(value<=430000) concession=duty;
+      else concession=duty*(530000-value)/100000;
+    }
+    if(state==='TAS') concession=duty*0.5;
+    if(state==='ACT') concession=duty; // simplified
+    if(state==='NT'&&value<=650000) concession=duty*0.5;
+  }
+
+  const dutyAfterConc=Math.max(duty-concession,0);
+  const fhog=buyer==='fhb'?(propType==='new'?(fhogData[state].new||0):(propType==='established'&&state==='QLD'?0:0)):0;
+
+  return {duty:Math.round(duty), concession:Math.round(concession), dutyAfterConc:Math.round(dutyAfterConc), fhog};
+}
+
+function setState(el){
+  document.querySelectorAll('.state-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  selectedState=el.dataset.state;
+}
+function setBuyer(el){
+  document.querySelectorAll('.buyer-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  buyerType=el.dataset.buyer;
+}
+function fmt(n){return'$'+Math.round(n).toLocaleString('en-AU');}
+function updateSlider(id,val,min,max){
+  const s=document.getElementById(id);s.value=val;
+  s.style.setProperty('--pct',((val-min)/(max-min)*100)+'%');
+}
+function syncSlider(inputId,val,min,max){
+  document.getElementById(inputId).value=val;
+  event.target.style.setProperty('--pct',((val-min)/(max-min)*100)+'%');
+}
+
+function calculate(){
+  const val=parseFloat(document.getElementById('propVal').value)||750000;
+  const propType=document.getElementById('propType').value;
+  const res=calcStamp(selectedState,val,buyerType,propType);
+
+  document.getElementById('rcState').textContent=selectedState+' Transfer Duty';
+  document.getElementById('rcAmount').textContent=fmt(res.duty);
+  document.getElementById('rcEffRate').textContent=(res.duty/val*100).toFixed(2)+'%';
+  document.getElementById('rcConcession').textContent=res.concession>0?fmt(res.dutyAfterConc):'No concession';
+  document.getElementById('rcFHOG').textContent=res.fhog>0?fmt(res.fhog):'N/A';
+  document.getElementById('rcNet').textContent=fmt(Math.max(res.dutyAfterConc-res.fhog,0));
+  document.getElementById('resultCard').classList.add('show');
+
+  // Concession message
+  const r=stampRates[selectedState];
+  if(buyerType==='fhb'&&r.concessions){
+    document.getElementById('concessionMsg').innerHTML=`<div style="margin-top:10px;background:rgba(255,255,255,0.15);border-radius:10px;padding:10px;font-size:11px;color:rgba(255,255,255,0.8);">✅ <strong style="color:#fff">FHB Concession:</strong> ${r.concessions}</div>`;
+  } else {
+    document.getElementById('concessionMsg').innerHTML='';
+  }
+
+  // Cost breakdown
+  const conveyancing=1800, inspection=600, lender=800, registration=160;
+  const total=res.dutyAfterConc+conveyancing+inspection+lender+registration;
+  document.getElementById('costBreakdown').innerHTML=`
+    <div class="cost-row"><div><div class="cr-label">Stamp Duty</div><div class="cr-sub">${selectedState} transfer duty ${buyerType==='fhb'?'(FHB concession applied)':''}</div></div><div class="cr-val">${fmt(res.dutyAfterConc)}</div></div>
+    <div class="cost-row"><div><div class="cr-label">Conveyancing / Legal</div><div class="cr-sub">Estimated solicitor fees</div></div><div class="cr-val">${fmt(conveyancing)}</div></div>
+    <div class="cost-row"><div><div class="cr-label">Building & Pest Inspection</div><div class="cr-sub">Pre-purchase inspection</div></div><div class="cr-val">${fmt(inspection)}</div></div>
+    <div class="cost-row"><div><div class="cr-label">Lender / Mortgage Fees</div><div class="cr-sub">Application + valuation</div></div><div class="cr-val">${fmt(lender)}</div></div>
+    <div class="cost-row"><div><div class="cr-label">Title & Land Registration</div><div class="cr-sub">Gov. registration fees</div></div><div class="cr-val">${fmt(registration)}</div></div>
+    ${res.fhog>0?`<div class="cost-row"><div><div class="cr-label">FHOG Grant</div><div class="cr-sub">First Home Owner Grant offset</div></div><div class="cr-val green">−${fmt(res.fhog)}</div></div>`:''}
+    <div class="cost-row" style="background:rgba(124,45,18,0.05);border-radius:10px;padding:10px;margin-top:4px;border:none;"><div><div class="cr-label" style="font-size:13px;">Total Upfront Costs</div></div><div class="cr-val" style="font-size:17px;">${fmt(Math.max(total-res.fhog,0))}</div></div>
+  `;
+
+  // State comparison
+  const states=['NSW','VIC','QLD','WA','SA','TAS','ACT','NT'];
+  const duties=states.map(s=>({state:s,duty:calcStamp(s,val,buyerType,propType).dutyAfterConc}));
+  const maxDuty=Math.max(...duties.map(d=>d.duty));
+  document.getElementById('stateComparison').innerHTML=duties.map(d=>`
+    <div class="state-bar-row">
+      <div class="sb-state">${d.state}</div>
+      <div class="sb-track"><div class="sb-fill" style="width:${maxDuty>0?Math.round(d.duty/maxDuty*100):0}%;${d.state===selectedState?'background:linear-gradient(to right,#FFD700,#D97706);':''}"></div></div>
+      <div class="sb-amount" style="${d.state===selectedState?'font-weight:800;color:#7C2D12;':''}">${fmt(d.duty)}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('infoTip').innerHTML=`<strong>📋 2025 Note:</strong> ${r.concessions||'No specific concessions available for this buyer type.'} Rates updated for financial year 2024–25. Stamp duty is also known as transfer duty in QLD and WA. Always verify with your state revenue office.`;
+  document.getElementById('resultSec').classList.add('show');
+}
+
+function saveCalc(){
+  const toast=document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2500);
+}
+
+const el=document.getElementById('valSlider');
+el.style.setProperty('--pct',((750000-100000)/(3000000-100000)*100)+'%');
+</script>
+</body>
+</html>

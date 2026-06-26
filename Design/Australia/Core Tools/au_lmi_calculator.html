@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMI Calculator – Australia Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;text-decoration:none;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#7C2D12;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+.input-card{background:linear-gradient(145deg,#1A0A00,#7C2D12);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(26,10,0,0.28);position:relative;overflow:hidden;}
+.input-card::before{content:'🛡️';position:absolute;right:8px;top:8px;font-size:65px;opacity:0.07;}
+.ic-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.ic-title{font-size:18px;font-weight:800;color:#fff;margin:5px 0 16px;font-family:Georgia,serif;}
+.ic-title span{color:#FFD700;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.field-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:11px 13px;}
+.field-box label{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.field-box input,.field-box select{background:transparent;border:none;outline:none;font-size:16px;font-weight:800;color:#fff;width:100%;font-family:Georgia,serif;}
+.field-box select option{background:#1A0A00;}
+.field-box .prefix{font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:2px;}
+.toggle-row{display:flex;background:rgba(255,255,255,0.08);border-radius:10px;padding:3px;margin-bottom:10px;gap:3px;}
+.tog-btn{flex:1;padding:7px;border-radius:8px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);text-align:center;cursor:pointer;border:none;background:transparent;}
+.tog-btn.active{background:#FFD700;color:#1A0A00;}
+.calc-btn{margin-top:14px;width:100%;background:#002868;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;}
+
+/* LVR GAUGE */
+.lvr-gauge-card{background:#fff;border-radius:20px;padding:20px;box-shadow:0 4px 20px rgba(26,10,0,0.1);border:1px solid rgba(124,45,18,0.1);}
+.gauge-title{text-align:center;font-size:14px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:14px;}
+.gauge-track{height:18px;border-radius:9px;background:#F3F4F6;overflow:visible;position:relative;margin:0 10px;}
+.gauge-zones{position:absolute;inset:0;display:flex;border-radius:9px;overflow:hidden;}
+.gz-safe{flex:80;background:linear-gradient(90deg,#BBF7D0,#86EFAC);}
+.gz-warn{flex:10;background:linear-gradient(90deg,#FDE68A,#FBBF24);}
+.gz-med{flex:5;background:linear-gradient(90deg,#FDBA74,#F97316);}
+.gz-high{flex:5;background:linear-gradient(90deg,#FCA5A5,#EF4444);}
+.gauge-needle{position:absolute;top:-4px;width:4px;height:26px;border-radius:2px;background:#1A0A00;transform:translateX(-50%);transition:left 0.5s ease;}
+.gauge-labels{display:flex;justify-content:space-between;font-size:9px;color:#92400E;margin-top:6px;padding:0 10px;}
+.lvr-value-row{display:flex;justify-content:center;gap:20px;margin-top:14px;}
+.lv-box{text-align:center;}
+.lv-lbl{font-size:10px;color:#92400E;text-transform:uppercase;letter-spacing:0.4px;}
+.lv-val{font-size:20px;font-weight:800;font-family:Georgia,serif;}
+.lv-val.safe{color:#16a34a;}.lv-val.warn{color:#d97706;}.lv-val.danger{color:#dc2626;}
+
+/* RESULT */
+.result-card{background:#fff;border-radius:20px;padding:20px;box-shadow:0 4px 20px rgba(26,10,0,0.1);border:1px solid rgba(124,45,18,0.1);}
+.rc-lmi-hero{text-align:center;padding-bottom:14px;border-bottom:1px solid rgba(124,45,18,0.08);}
+.rc-lbl{font-size:11px;color:#92400E;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px;}
+.rc-amount{font-size:40px;font-weight:800;color:#dc2626;font-family:Georgia,serif;line-height:1;}
+.rc-note{font-size:11px;color:#92400E;margin-top:4px;}
+.rc-stamp{font-size:11px;color:#6B7280;margin-top:3px;}
+
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.ig-box{background:#FFF8F0;border-radius:12px;padding:12px;text-align:center;}
+.ig-lbl{font-size:9px;color:#92400E;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.ig-val{font-size:15px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+
+/* LMI TIERS */
+.tiers-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);}
+.tier-row{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid rgba(124,45,18,0.06);position:relative;}
+.tier-row:last-child{border-bottom:none;}
+.tier-row.active-tier{background:#FFF8F0;margin:0 -8px;padding:9px 8px;border-radius:8px;}
+.tier-badge{width:46px;height:24px;border-radius:6px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:10px;}
+.tier-info{flex:1;}
+.tier-lvr{font-size:12px;font-weight:700;color:#1A0A00;}
+.tier-desc{font-size:10px;color:#92400E;margin-top:1px;}
+.tier-rate{font-size:13px;font-weight:800;font-family:Georgia,serif;white-space:nowrap;}
+.tier-arrow{font-size:10px;color:#92400E;margin-left:6px;}
+
+/* BAR CHART */
+.bar-chart{margin-top:8px;}
+.bc-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.bc-lbl{width:70px;font-size:10px;color:#92400E;flex-shrink:0;}
+.bc-track{flex:1;height:10px;border-radius:5px;background:#FFF8F0;overflow:hidden;}
+.bc-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#002868,#EA580C);}
+.bc-val{font-size:10px;font-weight:700;color:#1A0A00;width:55px;text-align:right;flex-shrink:0;}
+
+/* SAVE / MODAL */
+.save-bar{background:#fff;border:1px solid rgba(124,45,18,0.12);border-radius:14px;padding:12px 15px;display:flex;align-items:center;gap:10px;margin-top:10px;cursor:pointer;box-shadow:0 2px 10px rgba(26,10,0,0.06);}
+.save-bar .sb-action{background:#7C2D12;color:#FFD700;font-size:11px;font-weight:800;padding:7px 13px;border-radius:9px;border:none;cursor:pointer;margin-left:auto;}
+.saved-card{background:#fff;border-radius:14px;padding:13px 14px;box-shadow:0 2px 10px rgba(26,10,0,0.06);border:1px solid rgba(124,45,18,0.08);display:flex;align-items:center;gap:11px;margin-bottom:8px;}
+.sc-icon{width:38px;height:38px;border-radius:10px;background:#FFF8F0;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.sc-body{flex:1;}
+.sc-title{font-size:13px;font-weight:700;color:#1A0A00;}
+.sc-sub{font-size:10px;color:#92400E;margin-top:1px;}
+.sc-rate{font-size:13px;font-weight:800;color:#dc2626;font-family:Georgia,serif;white-space:nowrap;}
+.sc-del{font-size:15px;color:rgba(26,10,0,0.2);margin-left:8px;cursor:pointer;padding:4px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,10,0,0.55);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#fff;border-radius:22px 22px 0 0;padding:24px 20px 40px;width:100%;max-width:420px;}
+.modal-title{font-size:17px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:4px;}
+.modal-sub{font-size:11px;color:#92400E;margin-bottom:16px;}
+.modal-field{background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.2);border-radius:11px;padding:12px 14px;width:100%;font-size:14px;color:#1A0A00;outline:none;margin-bottom:12px;}
+.modal-btns{display:flex;gap:10px;}
+.modal-cancel{flex:1;padding:13px;border-radius:12px;font-size:13px;font-weight:700;background:#FFF8F0;color:#1A0A00;border:1px solid rgba(124,45,18,0.2);cursor:pointer;}
+.modal-save{flex:2;padding:13px;border-radius:12px;font-size:13px;font-weight:800;background:#7C2D12;color:#FFD700;border:none;cursor:pointer;}
+.tip-card{background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:1px solid #FCA5A5;border-radius:15px;padding:13px 15px;}
+.tip-title{font-size:13px;font-weight:800;color:#7C2D12;font-family:Georgia,serif;margin-bottom:8px;}
+.tip-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;font-size:11px;color:#92400E;line-height:1.4;}
+.tip-bullet{width:16px;height:16px;border-radius:50%;background:#EA580C;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.slide-up{animation:slideUp 0.35s ease forwards;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <a href="screen_australia.html" class="back-btn">←</a>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🛡️</span><div class="hdr-title">LMI Calculator</div><div class="hdr-sub">AUD · Genworth/QBE Rates · LVR</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">LMI Free</div><div class="rs-val grn">≤ 80%</div><div class="rs-note">LVR</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">85% LVR</div><div class="rs-val">0.77%</div><div class="rs-note">of loan</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">90% LVR</div><div class="rs-val">1.96%</div><div class="rs-note">of loan</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">95% LVR</div><div class="rs-val red">3.84%</div><div class="rs-note">of loan</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Property Details <span class="more" id="reset-btn">Reset ↺</span></div>
+  <div class="input-card">
+    <div class="ic-tag">Lenders Mortgage Insurance Calculator</div>
+    <div class="ic-title">Calculate your <span>LMI Premium</span></div>
+    <div class="field-row">
+      <div class="field-box">
+        <label>Property Value</label>
+        <div class="prefix">AUD $</div>
+        <input type="number" id="prop-val" value="750000" placeholder="750000">
+      </div>
+      <div class="field-box">
+        <label>Deposit / Savings</label>
+        <div class="prefix">AUD $</div>
+        <input type="number" id="deposit" value="75000" placeholder="75000">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-box">
+        <label>Loan Term (yrs)</label>
+        <input type="number" id="term" value="30" min="5" max="30">
+      </div>
+      <div class="field-box">
+        <label>State</label>
+        <select id="state">
+          <option value="NSW">NSW</option>
+          <option value="VIC">VIC</option>
+          <option value="QLD">QLD</option>
+          <option value="WA">WA</option>
+          <option value="SA">SA</option>
+          <option value="TAS">TAS</option>
+          <option value="ACT">ACT</option>
+          <option value="NT">NT</option>
+        </select>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <button class="tog-btn active" data-owner="owner">Owner Occupied</button>
+      <button class="tog-btn" data-owner="invest">Investment</button>
+    </div>
+    <button class="calc-btn" id="calc-btn">🛡️ Calculate LMI</button>
+  </div>
+
+  <!-- LVR GAUGE -->
+  <div class="sec-lbl" id="gauge-lbl" style="display:none">LVR Gauge</div>
+  <div class="lvr-gauge-card" id="gauge-card" style="display:none">
+    <div class="gauge-title">Loan-to-Value Ratio (LVR)</div>
+    <div class="gauge-track">
+      <div class="gauge-zones">
+        <div class="gz-safe"></div><div class="gz-warn"></div><div class="gz-med"></div><div class="gz-high"></div>
+      </div>
+      <div class="gauge-needle" id="gauge-needle"></div>
+    </div>
+    <div class="gauge-labels"><span>60%</span><span>80%</span><span>85%</span><span>90%</span><span>95%+</span></div>
+    <div class="lvr-value-row">
+      <div class="lv-box"><div class="lv-lbl">Your LVR</div><div class="lv-val" id="lvr-val">0%</div></div>
+      <div class="lv-box"><div class="lv-lbl">Deposit %</div><div class="lv-val" id="dep-pct">0%</div></div>
+      <div class="lv-box"><div class="lv-lbl">Loan Amount</div><div class="lv-val" id="loan-amt" style="font-size:14px;">$0</div></div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="sec-lbl" id="result-lbl" style="display:none">LMI Result <span class="more" id="open-save">💾 Save</span></div>
+  <div class="result-card" id="result-card" style="display:none">
+    <div class="rc-lmi-hero">
+      <div class="rc-lbl">Estimated LMI Premium</div>
+      <div class="rc-amount" id="lmi-result">$0</div>
+      <div class="rc-note" id="lmi-note">Based on Genworth/QBE sliding scale</div>
+      <div class="rc-stamp" id="lmi-stamp"></div>
+    </div>
+    <div class="info-grid">
+      <div class="ig-box"><div class="ig-lbl">LMI Capitalised</div><div class="ig-val" id="lmi-cap">$0</div></div>
+      <div class="ig-box"><div class="ig-lbl">Total Loan (incl. LMI)</div><div class="ig-val" id="total-loan">$0</div></div>
+      <div class="ig-box"><div class="ig-lbl">Monthly Repayment</div><div class="ig-val" id="monthly-rep">$0</div></div>
+      <div class="ig-box"><div class="ig-lbl">Extra Monthly (LMI)</div><div class="ig-val" id="extra-monthly">$0</div></div>
+    </div>
+  </div>
+
+  <!-- LMI TIERS TABLE -->
+  <div class="sec-lbl" id="tiers-lbl" style="display:none">LMI Rate Tiers (Genworth 2026)</div>
+  <div class="tiers-card" id="tiers-card" style="display:none">
+    <div id="tiers-rows"></div>
+    <div class="sec-lbl" style="margin:14px 0 8px">LMI Cost Comparison</div>
+    <div class="bar-chart" id="bar-chart"></div>
+  </div>
+
+  <!-- SAVE / SAVED -->
+  <div class="save-bar" id="save-bar" style="display:none">
+    <div style="font-size:22px">💾</div>
+    <div><strong style="font-size:13px;color:#1A0A00;display:block;">Save This LMI Calculation</strong><span style="font-size:10px;color:#92400E;">Store for comparison</span></div>
+    <button class="sb-action" id="save-bar-btn">Save Now</button>
+  </div>
+  <div class="sec-lbl">Saved Calculations <span class="more" id="clear-all">Clear all</span></div>
+  <div id="saved-list"><div style="background:#fff;border-radius:14px;padding:18px;text-align:center;color:#9CA3AF;font-size:12px;border:1px dashed rgba(124,45,18,0.15);">No saved calculations yet.</div></div>
+
+  <div class="sec-lbl">About LMI</div>
+  <div class="tip-card">
+    <div class="tip-title">🛡️ LMI Facts (Australia 2026)</div>
+    <div class="tip-item"><div class="tip-bullet">1</div><div>LMI protects the lender (not you) if you default. It's required by most lenders when LVR exceeds 80%.</div></div>
+    <div class="tip-item"><div class="tip-bullet">2</div><div>Rates are based on Genworth & QBE sliding scale tables — the larger and higher the LVR, the higher the premium.</div></div>
+    <div class="tip-item"><div class="tip-bullet">3</div><div>You can capitalise LMI (add to loan) but this means paying interest on the insurance premium over your whole loan term.</div></div>
+    <div class="tip-item"><div class="tip-bullet">4</div><div>First Home Guarantee (FHBG) lets eligible first-home buyers purchase with 5% deposit without paying LMI.</div></div>
+    <div class="tip-item"><div class="tip-bullet">5</div><div>Some professions (doctors, lawyers, accountants) get LMI waivers from certain lenders with up to 90% LVR.</div></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="save-modal">
+  <div class="modal-box">
+    <div class="modal-title">💾 Save LMI Calculation</div>
+    <div class="modal-sub" id="modal-desc">Saving your LMI calculation</div>
+    <input class="modal-field" id="save-label" placeholder="Label (e.g. First Home – Parramatta)" maxlength="40">
+    <div class="modal-btns">
+      <button class="modal-cancel" id="modal-cancel">Cancel</button>
+      <button class="modal-save" id="modal-confirm">Save ⭐</button>
+    </div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let ownerType = 'owner';
+let calcResult = null;
+let saved = JSON.parse(localStorage.getItem('au_lmi_saves') || '[]');
+
+document.querySelectorAll('.tog-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tog-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    ownerType = this.dataset.owner;
+  });
+});
+
+const LMI_TIERS = [
+  { lvr: '≤ 80%', label: 'No LMI', rate: 0, color: '#16a34a', bg: '#F0FDF4', text: '#166534' },
+  { lvr: '80.01–85%', label: 'Low LMI', rate: 0.0077, color: '#d97706', bg: '#FFFBEB', text: '#92400E' },
+  { lvr: '85.01–90%', label: 'Medium', rate: 0.0196, color: '#ea580c', bg: '#FFF7ED', text: '#9A3412' },
+  { lvr: '90.01–95%', label: 'High', rate: 0.0384, color: '#dc2626', bg: '#FEF2F2', text: '#991B1B' },
+  { lvr: '95.01%+', label: 'Very High', rate: 0.0486, color: '#7f1d1d', bg: '#FEE2E2', text: '#7f1d1d' },
+];
+
+function calcLMI(loanAmt, lvr, ownerType) {
+  let rate = 0;
+  if (lvr <= 80) rate = 0;
+  else if (lvr <= 85) rate = 0.0077;
+  else if (lvr <= 90) rate = 0.0196;
+  else if (lvr <= 95) rate = 0.0384;
+  else rate = 0.0486;
+  if (ownerType === 'invest') rate *= 1.15; // investment surcharge
+  const lmi = loanAmt * rate;
+  const gst = lmi * 0.10;
+  const stamp = lmi * 0.09; // ~9% stamp duty on LMI varies by state
+  return { lmi, gst, stamp, total: lmi + gst + stamp, rate };
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('en-AU'); }
+
+document.getElementById('calc-btn').addEventListener('click', calculate);
+document.getElementById('reset-btn').addEventListener('click', () => {
+  document.getElementById('prop-val').value = '750000';
+  document.getElementById('deposit').value = '75000';
+  document.getElementById('term').value = '30';
+  hideResults();
+});
+
+function hideResults() {
+  ['gauge-lbl','gauge-card','result-lbl','result-card','tiers-lbl','tiers-card','save-bar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+function calculate() {
+  const propVal = parseFloat(document.getElementById('prop-val').value) || 0;
+  const deposit = parseFloat(document.getElementById('deposit').value) || 0;
+  const term = parseInt(document.getElementById('term').value) || 30;
+
+  if (deposit >= propVal) return alert('Deposit must be less than property value.');
+  const loanAmt = propVal - deposit;
+  const lvr = (loanAmt / propVal) * 100;
+  const depPct = (deposit / propVal) * 100;
+
+  const { lmi, gst, stamp, total, rate } = calcLMI(loanAmt, lvr, ownerType);
+
+  const monthlyRate = 0.0609 / 12;
+  const n = term * 12;
+  function calcRepay(loan) {
+    if (monthlyRate === 0) return loan / n;
+    return loan * (monthlyRate * Math.pow(1+monthlyRate,n)) / (Math.pow(1+monthlyRate,n) - 1);
+  }
+
+  const baseRepay = calcRepay(loanAmt);
+  const capRepay = calcRepay(loanAmt + total);
+  const extraMonthly = capRepay - baseRepay;
+
+  calcResult = { propVal, loanAmt, deposit, lvr, depPct, lmi, gst, stamp, total, rate, term, baseRepay, capRepay, extraMonthly };
+
+  // GAUGE
+  const gaugePos = Math.min(100, Math.max(0, (lvr - 60) / 40 * 100));
+  document.getElementById('gauge-needle').style.left = gaugePos + '%';
+  document.getElementById('lvr-val').textContent = lvr.toFixed(1) + '%';
+  document.getElementById('lvr-val').className = 'lv-val ' + (lvr <= 80 ? 'safe' : lvr <= 90 ? 'warn' : 'danger');
+  document.getElementById('dep-pct').textContent = depPct.toFixed(1) + '%';
+  document.getElementById('loan-amt').textContent = fmt(loanAmt);
+
+  // RESULT
+  document.getElementById('lmi-result').textContent = lvr <= 80 ? '$0' : fmt(total);
+  document.getElementById('lmi-note').textContent = lvr <= 80
+    ? '✅ No LMI required — your LVR is at or below 80%!'
+    : `LMI (${(rate*100).toFixed(2)}%) + GST + Stamp Duty`;
+  document.getElementById('lmi-stamp').textContent = lvr <= 80 ? '' : `Base: ${fmt(lmi)} · GST: ${fmt(gst)} · Stamp Duty: ${fmt(stamp)}`;
+  document.getElementById('lmi-cap').textContent = fmt(total);
+  document.getElementById('total-loan').textContent = fmt(loanAmt + total);
+  document.getElementById('monthly-rep').textContent = fmt(capRepay) + '/mo';
+  document.getElementById('extra-monthly').textContent = fmt(extraMonthly) + '/mo';
+
+  // TIERS TABLE
+  const tiersEl = document.getElementById('tiers-rows');
+  const currentTierIdx = lvr <= 80 ? 0 : lvr <= 85 ? 1 : lvr <= 90 ? 2 : lvr <= 95 ? 3 : 4;
+  tiersEl.innerHTML = LMI_TIERS.map((t, i) => `
+    <div class="tier-row ${i === currentTierIdx ? 'active-tier' : ''}">
+      <div class="tier-badge" style="background:${t.bg};color:${t.text}">${t.label}</div>
+      <div class="tier-info">
+        <div class="tier-lvr">LVR ${t.lvr}</div>
+        <div class="tier-desc">${i === 0 ? 'Standard requirement' : 'Premium of loan amount'}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="tier-rate" style="color:${t.color}">${t.rate === 0 ? '—' : (t.rate*100).toFixed(2) + '%'}</div>
+        <div class="tier-arrow">${i === currentTierIdx ? '◀ Your LVR' : ''}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // BAR CHART
+  const barEl = document.getElementById('bar-chart');
+  const samples = [600000, 750000, 900000, 1000000];
+  const maxLMI = samples.reduce((m, p) => Math.max(m, calcLMI(p * (lvr/100), lvr, ownerType).total), 0);
+  barEl.innerHTML = samples.map(p => {
+    const l = calcLMI(p * (lvr/100), lvr, ownerType).total;
+    const pct = maxLMI > 0 ? (l / maxLMI * 100).toFixed(0) : 0;
+    return `<div class="bc-row">
+      <div class="bc-lbl">$${(p/1000).toFixed(0)}K prop</div>
+      <div class="bc-track"><div class="bc-fill" style="width:${pct}%"></div></div>
+      <div class="bc-val">${l > 0 ? fmt(l) : '—'}</div>
+    </div>`;
+  }).join('');
+
+  ['gauge-lbl','gauge-card','result-lbl','result-card','tiers-lbl','tiers-card','save-bar'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = '';
+  });
+}
+
+// SAVE
+function openModal() {
+  if (!calcResult) return;
+  document.getElementById('modal-desc').textContent = `LMI for $${Math.round(calcResult.propVal/1000)}K prop · LVR ${calcResult.lvr.toFixed(1)}%`;
+  document.getElementById('save-label').value = '';
+  document.getElementById('save-modal').classList.add('open');
+}
+document.getElementById('open-save').addEventListener('click', openModal);
+document.getElementById('save-bar-btn').addEventListener('click', openModal);
+document.getElementById('modal-cancel').addEventListener('click', () => document.getElementById('save-modal').classList.remove('open'));
+document.getElementById('save-modal').addEventListener('click', function(e){if(e.target===this)this.classList.remove('open');});
+document.getElementById('modal-confirm').addEventListener('click', () => {
+  if (!calcResult) return;
+  const label = document.getElementById('save-label').value.trim() || 'LMI Calculation';
+  saved.unshift({ id: Date.now(), label, ...calcResult });
+  localStorage.setItem('au_lmi_saves', JSON.stringify(saved));
+  document.getElementById('save-modal').classList.remove('open');
+  renderSaved();
+});
+document.getElementById('clear-all').addEventListener('click', () => {
+  saved = []; localStorage.setItem('au_lmi_saves', '[]'); renderSaved();
+});
+function renderSaved() {
+  const el = document.getElementById('saved-list');
+  if (!saved.length) { el.innerHTML = '<div style="background:#fff;border-radius:14px;padding:18px;text-align:center;color:#9CA3AF;font-size:12px;border:1px dashed rgba(124,45,18,0.15);">No saved calculations yet.</div>'; return; }
+  el.innerHTML = saved.map(c => `<div class="saved-card slide-up">
+    <div class="sc-icon">🛡️</div>
+    <div class="sc-body"><div class="sc-title">${c.label}</div><div class="sc-sub">LVR ${c.lvr.toFixed(1)}% · $${Math.round(c.propVal/1000)}K property</div></div>
+    <div class="sc-rate">${fmt(c.total)}</div>
+    <div class="sc-del" onclick="delSaved(${c.id})">✕</div>
+  </div>`).join('');
+}
+function delSaved(id) { saved = saved.filter(s=>s.id!==id); localStorage.setItem('au_lmi_saves',JSON.stringify(saved)); renderSaved(); }
+renderSaved();
+</script>
+</body>
+</html>

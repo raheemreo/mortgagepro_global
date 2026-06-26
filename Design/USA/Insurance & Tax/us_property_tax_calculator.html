@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Property Tax Calculator</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --bg:#F0F4FF; --card:#FFFFFF;
+    --muted:#4A5C7A; --border:rgba(27,63,114,0.09);
+    --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --slate:#334155; --slate2:#1E293B; --green:#15803D; --green-lt:#F0FDF4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(155deg,#1E293B 0%,#334155 55%,#0B1D3A 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🏛️';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.rd{color:#FCA5A5;} .rs-v.gn{color:#6EE7B7;}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* RESULT HERO */
+  .result-hero{background:linear-gradient(135deg,#1E293B,#334155);border-radius:18px;padding:18px;box-shadow:0 8px 28px rgba(30,41,59,0.40);margin-bottom:10px;position:relative;overflow:hidden;}
+  .result-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(253,211,77,0.08);}
+  .rh-label{font-size:9.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:34px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:4px 0 2px;}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.58);}
+  .rh-row{display:flex;gap:8px;margin-top:14px;}
+  .rh-box{flex:1;background:rgba(255,255,255,0.10);border-radius:10px;padding:9px 10px;}
+  .rh-box-lbl{font-size:8.5px;color:rgba(255,255,255,0.50);}
+  .rh-box-val{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+  .rh-box-val.gold{color:var(--gold-lt);}
+
+  /* INPUT CARD */
+  .input-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .inp-group{margin-bottom:15px;}
+  .inp-group:last-child{margin-bottom:0;}
+  .inp-label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+  .inp-label .hint{font-size:10px;font-weight:700;color:var(--slate);text-transform:none;letter-spacing:0;}
+  input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(to right,#334155 0%,#334155 50%,#CBD5E1 50%,#CBD5E1 100%);outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#1E293B;border:3px solid #fff;box-shadow:0 2px 8px rgba(30,41,59,0.3);}
+  .range-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px;font-weight:600;}
+  .state-select-wrap{position:relative;}
+  .state-select{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:700;color:var(--navy);background:var(--bg);outline:none;-webkit-appearance:none;font-family:'Helvetica Neue',Arial,sans-serif;cursor:pointer;}
+  .state-select:focus{border-color:var(--slate);background:#fff;}
+  .select-arrow{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none;}
+  .ex-btn{flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s;}
+
+  /* CALCULATE BUTTON */
+  .calc-btn{width:100%;background:linear-gradient(135deg,#334155,#1E293B);border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(30,41,59,0.40);font-family:Georgia,serif;letter-spacing:0.3px;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,box-shadow .12s;}
+  .calc-btn:active{transform:scale(.98);box-shadow:0 2px 8px rgba(30,41,59,0.30);}
+  .calc-btn:hover{background:linear-gradient(135deg,#475569,#334155);}
+
+  /* STATS / CHARTS SECTION */
+  .stats-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .stats-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+  .stats-title span{font-size:14px;}
+
+  /* BAR CHART */
+  .bar-chart{display:flex;flex-direction:column;gap:9px;}
+  .bar-row{display:flex;align-items:center;gap:9px;}
+  .bar-label{font-size:10px;font-weight:700;color:var(--muted);width:70px;text-align:right;flex-shrink:0;}
+  .bar-track{flex:1;height:10px;background:#EFF6FF;border-radius:5px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:5px;transition:width .6s cubic-bezier(.34,1.56,.64,1);}
+  .bar-val{font-size:10px;font-weight:800;color:var(--navy);width:52px;text-align:right;flex-shrink:0;font-family:Georgia,serif;}
+
+  /* PIE / DONUT RING */
+  .donut-wrap{display:flex;align-items:center;gap:16px;margin-bottom:14px;}
+  .donut-svg{width:86px;height:86px;flex-shrink:0;}
+  .donut-legend{flex:1;display:flex;flex-direction:column;gap:7px;}
+  .dl-row{display:flex;align-items:center;gap:7px;}
+  .dl-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+  .dl-name{font-size:10.5px;font-weight:700;color:var(--navy);}
+  .dl-val{font-size:10.5px;font-weight:800;color:var(--muted);margin-left:auto;font-family:Georgia,serif;}
+
+  /* SAVE BANNER */
+  .save-bar{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1.5px solid #86EFAC;border-radius:14px;padding:13px 15px;display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  .save-bar.saved{background:linear-gradient(135deg,#F0FDF4,#BBF7D0);border-color:#22C55E;}
+  .save-txt{flex:1;}
+  .save-title{font-size:12px;font-weight:800;color:#15803D;font-family:Georgia,serif;}
+  .save-sub{font-size:9.5px;color:#166534;margin-top:1px;}
+  .save-btn{background:#15803D;color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;transition:background .15s;}
+  .save-btn:hover{background:#166534;}
+  .save-btn.saved-state{background:#BBF7D0;color:#15803D;}
+
+  /* SAVED LIST */
+  .saved-list{display:flex;flex-direction:column;gap:8px;}
+  .saved-item{background:var(--card);border-radius:13px;padding:12px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .si-icon{font-size:18px;}
+  .si-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .si-detail{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .si-tax{font-size:14px;font-weight:800;color:var(--slate);font-family:Georgia,serif;margin-left:auto;}
+  .si-del{width:26px;height:26px;border-radius:8px;background:#FEF2F2;border:none;color:#B91C1C;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .empty-saved{text-align:center;padding:18px;color:var(--muted);font-size:12px;}
+
+  /* STATE TABLE */
+  .state-table{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border);}
+  .st-head{background:linear-gradient(135deg,#1E293B,#334155);display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:10px 13px;}
+  .st-th{font-size:9px;font-weight:800;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:0.5px;}
+  .st-th:first-child{text-align:left;}
+  .st-th:not(:first-child){text-align:center;}
+  .st-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:10px 13px;border-bottom:1px solid var(--border);align-items:center;transition:background .15s;cursor:pointer;}
+  .st-row:last-child{border-bottom:none;}
+  .st-row:hover{background:var(--bg);}
+  .st-row.sel{background:#F1F5F9;}
+  .st-cell{font-size:11px;font-weight:700;color:var(--navy);text-align:center;}
+  .st-cell:first-child{text-align:left;font-size:11.5px;font-weight:800;font-family:Georgia,serif;}
+  .st-cell .flag{margin-right:5px;}
+  .rate-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9.5px;font-weight:800;}
+  .rate-hi{background:#FEF2F2;color:#B91C1C;}
+  .rate-md{background:#FFF7ED;color:#C2410C;}
+  .rate-lo{background:#F0FDF4;color:#15803D;}
+
+  /* EXEMPTION CARD */
+  .exempt-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .exempt-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+  .exempt-row:last-child{border-bottom:none;}
+  .exempt-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .exempt-desc{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .exempt-val{font-size:13px;font-weight:800;color:#15803D;font-family:Georgia,serif;}
+
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tc{background:var(--card);border-radius:16px;padding:14px 12px;box-shadow:var(--sh);border:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden;transition:transform .15s;}
+  .tc:active{transform:scale(.97);}
+  .tc.sl{background:linear-gradient(140deg,#334155,#1E293B);}
+  .tc.nv{background:linear-gradient(140deg,#0B1D3A,#1B3F72);}
+  .tc.gd{background:linear-gradient(140deg,#D97706,#B45309);}
+  .tc.rd{background:linear-gradient(140deg,#B91C1C,#991B1B);}
+  .ti{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:9px;}
+  .tc:not(.sl):not(.nv):not(.gd):not(.rd) .ti{background:var(--bg);}
+  .tc.sl .ti,.tc.nv .ti,.tc.gd .ti,.tc.rd .ti{background:rgba(255,255,255,0.15);}
+  .tn{font-size:12.5px;font-weight:800;color:var(--navy);line-height:1.2;font-family:Georgia,serif;}
+  .tc.sl .tn,.tc.nv .tn,.tc.gd .tn,.tc.rd .tn{color:#fff;}
+  .td{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .tc.sl .td,.tc.nv .td,.tc.gd .td,.tc.rd .td{color:rgba(255,255,255,0.58);}
+  .ta{position:absolute;bottom:11px;right:11px;font-size:14px;color:rgba(11,29,58,0.16);}
+  .tc.sl .ta,.tc.nv .ta,.tc.gd .ta,.tc.rd .ta{color:rgba(255,255,255,0.22);}
+  .bge{display:inline-flex;padding:2px 7px;border-radius:20px;font-size:8.5px;font-weight:700;margin-top:5px;}
+  .bge-g{background:#F0FDF4;color:#15803D;}
+  .bge-r{background:#FEF2F2;color:#B91C1C;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  /* TOAST */
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1E293B;color:#fff;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero{animation:fadeUp .35s ease both .05s;}
+  .input-card{animation:fadeUp .35s ease both .10s;}
+  .stats-card,.state-table,.exempt-card{animation:fadeUp .35s ease both .15s;}
+  .g2{animation:fadeUp .35s ease both .22s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏛️</div>
+      <div class="hdr-title">Property Tax Calc</div>
+      <div class="hdr-sub">By State & County Rate · All 50 States · 2025</div>
+    </div>
+    <div class="icon-btn">🗺️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">US Avg Rate</div><div class="rs-v">1.07%</div><div class="rs-n">Effective 2025</div></div>
+    <div class="rs"><div class="rs-l">Highest</div><div class="rs-v rd">NJ 2.23%</div><div class="rs-n">New Jersey</div></div>
+    <div class="rs"><div class="rs-l">Lowest</div><div class="rs-v gn">HI 0.29%</div><div class="rs-n">Hawaii</div></div>
+    <div class="rs"><div class="rs-l">No Prop Tax</div><div class="rs-v">N/A</div><div class="rs-n">All states tax</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- RESULT HERO -->
+  <div class="sec" style="margin-top:0">Your Tax Estimate <span class="more">PITI Impact →</span></div>
+  <div class="result-hero">
+    <div class="rh-label">Annual Property Tax</div>
+    <div class="rh-amount" id="annualTax">—</div>
+    <div class="rh-sub" id="taxSub">Enter details below and tap Calculate</div>
+    <div class="rh-row">
+      <div class="rh-box"><div class="rh-box-lbl">Monthly (PITI)</div><div class="rh-box-val" id="monthlyTax">—</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">Effective Rate</div><div class="rh-box-val gold" id="effectiveRate">—</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">After Exemption</div><div class="rh-box-val" id="afterExempt">—</div></div>
+    </div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="sec">Property Details <span class="more" onclick="resetCalc()">Reset</span></div>
+  <div class="input-card">
+    <div class="inp-group">
+      <div class="inp-label">Assessed Value <span class="hint" id="valueDisplay">$300,000</span></div>
+      <input type="range" id="valueSlider" min="50000" max="2000000" step="10000" value="300000" oninput="liveDisplay()">
+      <div class="range-labels"><span>$50K</span><span>$500K</span><span>$1M</span><span>$2M</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">State</div>
+      <div class="state-select-wrap">
+        <select class="state-select" id="stateSelect">
+          <option value="NJ">🏙️ New Jersey — 2.23%</option>
+          <option value="IL">🌆 Illinois — 2.08%</option>
+          <option value="CT">🦌 Connecticut — 1.79%</option>
+          <option value="NY">🗽 New York — 1.72%</option>
+          <option value="WI">🧀 Wisconsin — 1.73%</option>
+          <option value="TX" selected>🤠 Texas — 1.60%</option>
+          <option value="NE">🌾 Nebraska — 1.54%</option>
+          <option value="MI">🚗 Michigan — 1.44%</option>
+          <option value="OH">🌻 Ohio — 1.53%</option>
+          <option value="PA">🔔 Pennsylvania — 1.49%</option>
+          <option value="IA">🌽 Iowa — 1.46%</option>
+          <option value="VT">🍁 Vermont — 1.90%</option>
+          <option value="WA">🌲 Washington — 0.87%</option>
+          <option value="OR">🌿 Oregon — 0.90%</option>
+          <option value="FL">🌴 Florida — 0.83%</option>
+          <option value="GA">🍑 Georgia — 0.87%</option>
+          <option value="NC">🏔️ North Carolina — 0.70%</option>
+          <option value="AZ">🌵 Arizona — 0.51%</option>
+          <option value="CO">🏔️ Colorado — 0.48%</option>
+          <option value="CA">🎬 California — 0.76%</option>
+          <option value="NV">🎰 Nevada — 0.52%</option>
+          <option value="TN">🎸 Tennessee — 0.48%</option>
+          <option value="SC">🌊 South Carolina — 0.52%</option>
+          <option value="AL">🌺 Alabama — 0.40%</option>
+          <option value="WY">🤠 Wyoming — 0.56%</option>
+          <option value="DC">🏛️ DC — 0.55%</option>
+          <option value="HI">🌺 Hawaii — 0.29%</option>
+        </select>
+        <div class="select-arrow">▼</div>
+      </div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Homestead Exemption (if applicable)</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="setExempt(0,this)" class="ex-btn">None</button>
+        <button onclick="setExempt(25000,this)" class="ex-btn sel" style="border-color:var(--slate);background:#F1F5F9;color:var(--slate);font-weight:800;">$25K</button>
+        <button onclick="setExempt(50000,this)" class="ex-btn">$50K</button>
+        <button onclick="setExempt(100000,this)" class="ex-btn">$100K</button>
+      </div>
+    </div>
+
+    <!-- CALCULATE BUTTON -->
+    <button class="calc-btn" onclick="runCalc()">
+      <span style="font-size:18px;">🧮</span> Calculate Property Tax
+    </button>
+  </div>
+
+  <!-- VISUAL STATS (shown after calc) -->
+  <div id="statsSection" style="display:none;">
+
+    <!-- SAVE BAR -->
+    <div class="save-bar" id="saveBar">
+      <div style="font-size:22px;">💾</div>
+      <div class="save-txt">
+        <div class="save-title" id="saveTitle">Save This Calculation</div>
+        <div class="save-sub" id="saveSub">Tap to save for later comparison</div>
+      </div>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()">Save</button>
+    </div>
+
+    <!-- BREAKDOWN CHART -->
+    <div class="sec">Tax Breakdown Analysis <span class="more">Details →</span></div>
+    <div class="stats-card">
+      <div class="stats-title"><span>📊</span> Annual Cost Breakdown</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" viewBox="0 0 86 86">
+          <circle cx="43" cy="43" r="33" fill="none" stroke="#EFF6FF" stroke-width="12"/>
+          <circle cx="43" cy="43" r="33" fill="none" stroke="#334155" stroke-width="12"
+            stroke-dasharray="207.3 207.3" stroke-dashoffset="0"
+            stroke-linecap="round" transform="rotate(-90 43 43)" id="donutBase"/>
+          <circle cx="43" cy="43" r="33" fill="none" stroke="#6EE7B7" stroke-width="12"
+            stroke-dasharray="0 207.3" stroke-dashoffset="0"
+            stroke-linecap="round" transform="rotate(-90 43 43)" id="donutExempt"/>
+          <text x="43" y="40" text-anchor="middle" font-size="9" font-weight="800" fill="#1E293B" id="donutPct">—</text>
+          <text x="43" y="51" text-anchor="middle" font-size="7" fill="#4A5C7A">Rate</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="dl-row"><div class="dl-dot" style="background:#334155;"></div><span class="dl-name">Full Tax</span><span class="dl-val" id="lgFull">—</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#6EE7B7;"></div><span class="dl-name">Exemption Savings</span><span class="dl-val" id="lgSave">—</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#1E293B;"></div><span class="dl-name">You Owe</span><span class="dl-val" id="lgOwe">—</span></div>
+        </div>
+      </div>
+
+      <!-- STATE COMPARISON BARS -->
+      <div class="stats-title" style="margin-top:4px;margin-bottom:10px;"><span>📍</span> vs. Other States (your value)</div>
+      <div class="bar-chart" id="stateCompBars"></div>
+    </div>
+
+    <!-- 5-YEAR PROJECTION -->
+    <div class="sec">5-Year Tax Projection <span class="more">Assume 3% growth</span></div>
+    <div class="stats-card">
+      <div class="stats-title"><span>📈</span> Projected Annual Tax (3% appreciation)</div>
+      <div class="bar-chart" id="projBars"></div>
+      <div style="margin-top:12px;background:var(--bg);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;font-weight:700;color:var(--muted);">5-Year Total</span>
+        <span style="font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;" id="fiveYrTotal">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVED CALCULATIONS -->
+  <div class="sec" id="savedSec" style="display:none;">Saved Calculations <span class="more" onclick="clearSaved()">Clear All</span></div>
+  <div class="saved-list" id="savedList"></div>
+
+  <!-- STATE RATE TABLE -->
+  <div class="sec">State Property Tax Rates <span class="more">All 50 →</span></div>
+  <div class="state-table">
+    <div class="st-head">
+      <div class="st-th">State</div>
+      <div class="st-th" style="text-align:center">Rate</div>
+      <div class="st-th" style="text-align:center">$300K Home</div>
+      <div class="st-th" style="text-align:center">Rank</div>
+    </div>
+    <div class="st-row"><div class="st-cell"><span class="flag">🏙️</span>New Jersey</div><div class="st-cell"><span class="rate-pill rate-hi">2.23%</span></div><div class="st-cell">$6,690</div><div class="st-cell">51st</div></div>
+    <div class="st-row"><div class="st-cell"><span class="flag">🌆</span>Illinois</div><div class="st-cell"><span class="rate-pill rate-hi">2.08%</span></div><div class="st-cell">$6,240</div><div class="st-cell">50th</div></div>
+    <div class="st-row"><div class="st-cell"><span class="flag">🤠</span>Texas</div><div class="st-cell"><span class="rate-pill rate-md">1.60%</span></div><div class="st-cell">$4,800</div><div class="st-cell">43rd</div></div>
+    <div class="st-row"><div class="st-cell"><span class="flag">🚗</span>Michigan</div><div class="st-cell"><span class="rate-pill rate-md">1.44%</span></div><div class="st-cell">$4,320</div><div class="st-cell">40th</div></div>
+    <div class="st-row"><div class="st-cell"><span class="flag">🎬</span>California</div><div class="st-cell"><span class="rate-pill rate-lo">0.76%</span></div><div class="st-cell">$2,280</div><div class="st-cell">16th</div></div>
+    <div class="st-row"><div class="st-cell"><span class="flag">🌴</span>Florida</div><div class="st-cell"><span class="rate-pill rate-lo">0.83%</span></div><div class="st-cell">$2,490</div><div class="st-cell">20th</div></div>
+    <div class="st-row"><div class="st-cell"><span class="flag">🌺</span>Hawaii</div><div class="st-cell"><span class="rate-pill rate-lo">0.29%</span></div><div class="st-cell">$870</div><div class="st-cell">1st</div></div>
+  </div>
+
+  <!-- EXEMPTIONS -->
+  <div class="sec">Common Exemptions <span class="more">By State →</span></div>
+  <div class="exempt-card">
+    <div class="exempt-row"><div><div class="exempt-name">🏠 Homestead Exemption</div><div class="exempt-desc">Primary residence reduction · most states offer this</div></div><div class="exempt-val">$25K–$100K</div></div>
+    <div class="exempt-row"><div><div class="exempt-name">👴 Senior Citizens</div><div class="exempt-desc">Age 65+ freeze or reduction · varies by state</div></div><div class="exempt-val">Up to $50K</div></div>
+    <div class="exempt-row"><div><div class="exempt-name">🎖️ Veterans / Disabled</div><div class="exempt-desc">100% disabled vets may qualify for full exemption</div></div><div class="exempt-val">100% off</div></div>
+    <div class="exempt-row"><div><div class="exempt-name">📜 CA Prop 13</div><div class="exempt-desc">Limits increases to 2%/yr · purchase price base</div></div><div class="exempt-val">2% cap</div></div>
+    <div class="exempt-row"><div><div class="exempt-name">🌟 TX Homestead Cap</div><div class="exempt-desc">Appraised value increase capped at 10%/yr</div></div><div class="exempt-val">10% cap</div></div>
+  </div>
+
+  <!-- RELATED TOOLS -->
+  <div class="sec">Related Tools <span class="more">All →</span></div>
+  <div class="g2">
+    <div class="tc sl"><div class="ti">📊</div><div class="tn">PITI Calculator</div><div class="td">Add tax to mortgage payment</div><div class="ta">›</div></div>
+    <div class="tc nv"><div class="ti">🏠</div><div class="tn">Closing Costs</div><div class="td">Transfer taxes included</div><div class="ta">›</div></div>
+    <div class="tc gd"><div class="ti">📋</div><div class="tn">Tax Deduction</div><div class="td">SALT deduction $10K cap</div><div class="bge bge-g">2025 Rules</div><div class="ta">›</div></div>
+    <div class="tc rd"><div class="ti">📉</div><div class="tn">Appeal Guide</div><div class="td">Contest your assessment</div><div class="ta">›</div></div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STATE_RATES = {NJ:2.23,IL:2.08,CT:1.79,VT:1.90,NY:1.72,WI:1.73,TX:1.60,NE:1.54,OH:1.53,PA:1.49,IA:1.46,MI:1.44,WA:0.87,GA:0.87,FL:0.83,CA:0.76,OR:0.90,NC:0.70,SC:0.52,NV:0.52,WY:0.56,DC:0.55,AZ:0.51,CO:0.48,TN:0.48,AL:0.40,HI:0.29};
+const STATE_NAMES = {NJ:'New Jersey',IL:'Illinois',CT:'Connecticut',VT:'Vermont',NY:'New York',WI:'Wisconsin',TX:'Texas',NE:'Nebraska',OH:'Ohio',PA:'Pennsylvania',IA:'Iowa',MI:'Michigan',WA:'Washington',GA:'Georgia',FL:'Florida',CA:'California',OR:'Oregon',NC:'North Carolina',SC:'South Carolina',NV:'Nevada',WY:'Wyoming',DC:'District of Columbia',AZ:'Arizona',CO:'Colorado',TN:'Tennessee',AL:'Alabama',HI:'Hawaii'};
+const COMP_STATES = [{code:'NJ',name:'New Jersey',rate:2.23},{code:'TX',name:'Texas',rate:1.60},{code:'OH',name:'Ohio',rate:1.53},{code:'US',name:'US Average',rate:1.07},{code:'FL',name:'Florida',rate:0.83},{code:'HI',name:'Hawaii',rate:0.29}];
+
+let exemptAmt = 25000;
+let savedCalcs = JSON.parse(localStorage.getItem('ptax_saved')||'[]');
+let lastResult = null;
+
+function fmt(n){return '$'+n.toLocaleString('en-US',{maximumFractionDigits:0});}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+function setExempt(e,btn){
+  exemptAmt=e;
+  document.querySelectorAll('.ex-btn').forEach(b=>{b.style.border='1.5px solid var(--border)';b.style.background='var(--bg)';b.style.color='var(--muted)';b.style.fontWeight='700';});
+  btn.style.border='1.5px solid var(--slate)';btn.style.background='#F1F5F9';btn.style.color='var(--slate)';btn.style.fontWeight='800';
+}
+
+function liveDisplay(){
+  const v=+document.getElementById('valueSlider').value;
+  document.getElementById('valueDisplay').textContent=fmt(v);
+  // update slider gradient
+  const pct=((v-50000)/(2000000-50000))*100;
+  document.getElementById('valueSlider').style.background=`linear-gradient(to right,#334155 0%,#334155 ${pct}%,#CBD5E1 ${pct}%,#CBD5E1 100%)`;
+}
+
+function resetCalc(){
+  document.getElementById('valueSlider').value=300000;
+  document.getElementById('stateSelect').value='TX';
+  exemptAmt=25000;
+  document.querySelectorAll('.ex-btn').forEach((b,i)=>{if(i===1){b.style.border='1.5px solid var(--slate)';b.style.background='#F1F5F9';b.style.color='var(--slate)';b.style.fontWeight='800';}else{b.style.border='1.5px solid var(--border)';b.style.background='var(--bg)';b.style.color='var(--muted)';b.style.fontWeight='700';}});
+  liveDisplay();
+  document.getElementById('annualTax').textContent='—';
+  document.getElementById('monthlyTax').textContent='—';
+  document.getElementById('effectiveRate').textContent='—';
+  document.getElementById('afterExempt').textContent='—';
+  document.getElementById('taxSub').textContent='Enter details below and tap Calculate';
+  document.getElementById('statsSection').style.display='none';
+  document.getElementById('saveBtn').textContent='Save';
+  document.getElementById('saveBtn').className='save-btn';
+  lastResult=null;
+}
+
+function runCalc(){
+  const value=+document.getElementById('valueSlider').value;
+  const state=document.getElementById('stateSelect').value;
+  const rate=STATE_RATES[state]||1.07;
+  const stateName=STATE_NAMES[state]||state;
+  const taxableVal=Math.max(0,value-exemptAmt);
+  const annualTax=Math.round(taxableVal*rate/100);
+  const fullTax=Math.round(value*rate/100);
+  const monthlyTax=Math.round(annualTax/12);
+  const savings=fullTax-annualTax;
+
+  document.getElementById('annualTax').textContent=fmt(fullTax);
+  document.getElementById('monthlyTax').textContent=fmt(monthlyTax);
+  document.getElementById('effectiveRate').textContent=rate.toFixed(2)+'%';
+  document.getElementById('afterExempt').textContent=fmt(annualTax);
+  document.getElementById('taxSub').textContent=stateName+' · '+rate.toFixed(2)+'% effective rate · '+fmt(value)+' assessed value';
+
+  lastResult={value,state,stateName,rate,fullTax,annualTax,monthlyTax,savings,exemptAmt};
+
+  // Show stats
+  document.getElementById('statsSection').style.display='block';
+  document.getElementById('saveBtn').textContent='Save';
+  document.getElementById('saveBtn').className='save-btn';
+  document.getElementById('saveTitle').textContent='Save This Calculation';
+  document.getElementById('saveSub').textContent=stateName+' · '+fmt(value)+' · '+fmt(annualTax)+'/yr';
+
+  // Donut
+  const totalCirc=207.3;
+  const exemptFrac=savings/fullTax;
+  const exemptDash=exemptFrac*totalCirc;
+  document.getElementById('donutBase').setAttribute('stroke-dasharray',totalCirc+' '+totalCirc);
+  document.getElementById('donutExempt').setAttribute('stroke-dasharray',exemptDash+' '+totalCirc);
+  document.getElementById('donutExempt').setAttribute('stroke-dashoffset',-(totalCirc-exemptDash));
+  document.getElementById('donutPct').textContent=rate.toFixed(2)+'%';
+  document.getElementById('lgFull').textContent=fmt(fullTax);
+  document.getElementById('lgSave').textContent=savings>0?'-'+fmt(savings):'$0';
+  document.getElementById('lgOwe').textContent=fmt(annualTax);
+
+  // State comparison bars
+  const maxTax=COMP_STATES.reduce((m,s)=>Math.max(m,Math.round(value*s.rate/100)),0);
+  const barsHtml=COMP_STATES.map(s=>{
+    const t=Math.round(value*s.rate/100);
+    const pct=Math.round((t/maxTax)*100);
+    const isSelected=s.code===state||s.code==='US';
+    const col=s.code===state?'#334155':(s.code==='US'?'#94A3B8':'#CBD5E1');
+    return`<div class="bar-row"><div class="bar-label" style="font-size:9px;width:72px;">${s.name.split(' ')[0]}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col};"></div></div><div class="bar-val">${fmt(t)}</div></div>`;
+  }).join('');
+  document.getElementById('stateCompBars').innerHTML=barsHtml;
+
+  // 5-year projection
+  let projHtml='';let tot=0;
+  for(let y=1;y<=5;y++){
+    const projVal=Math.round(value*Math.pow(1.03,y));
+    const projTax=Math.round(Math.max(0,projVal-exemptAmt)*rate/100);
+    tot+=projTax;
+    const maxProj=Math.round(Math.max(0,value*Math.pow(1.03,5)-exemptAmt)*rate/100);
+    const pct=Math.round((projTax/maxProj)*100);
+    projHtml+=`<div class="bar-row"><div class="bar-label">Year ${y}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:linear-gradient(to right,#334155,#475569);"></div></div><div class="bar-val">${fmt(projTax)}</div></div>`;
+  }
+  document.getElementById('projBars').innerHTML=projHtml;
+  document.getElementById('fiveYrTotal').textContent=fmt(tot);
+
+  renderSaved();
+}
+
+function saveCalc(){
+  if(!lastResult){showToast('Run a calculation first');return;}
+  const btn=document.getElementById('saveBtn');
+  if(btn.textContent==='Saved ✓'){showToast('Already saved!');return;}
+  savedCalcs.unshift({...lastResult,id:Date.now(),date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});
+  if(savedCalcs.length>10) savedCalcs.pop();
+  localStorage.setItem('ptax_saved',JSON.stringify(savedCalcs));
+  btn.textContent='Saved ✓';
+  btn.className='save-btn saved-state';
+  showToast('✅ Calculation saved!');
+  renderSaved();
+}
+
+function deleteCalc(id){
+  savedCalcs=savedCalcs.filter(c=>c.id!==id);
+  localStorage.setItem('ptax_saved',JSON.stringify(savedCalcs));
+  renderSaved();
+}
+
+function clearSaved(){
+  savedCalcs=[];
+  localStorage.removeItem('ptax_saved');
+  renderSaved();
+}
+
+function renderSaved(){
+  const sec=document.getElementById('savedSec');
+  const list=document.getElementById('savedList');
+  if(!savedCalcs.length){sec.style.display='none';list.innerHTML='';return;}
+  sec.style.display='flex';
+  list.innerHTML=savedCalcs.map(c=>`
+    <div class="saved-item">
+      <div class="si-icon">🏛️</div>
+      <div style="flex:1;min-width:0;">
+        <div class="si-name">${c.stateName}</div>
+        <div class="si-detail">${fmt(c.value)} · ${c.rate.toFixed(2)}% · ${c.date}</div>
+      </div>
+      <div class="si-tax">${fmt(c.annualTax)}/yr</div>
+      <button class="si-del" onclick="deleteCalc(${c.id})">✕</button>
+    </div>`).join('');
+}
+
+liveDisplay();
+renderSaved();
+</script>
+</body>
+</html>

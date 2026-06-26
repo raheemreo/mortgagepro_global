@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cash-on-Cash Return</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --gold:#D97706; --gold-lt:#FCD34D;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --slate:#334155; --slate2:#1E293B;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* ── HEADER ── */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#334155 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'📊';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* ── LAYOUT ── */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* ── INPUT CARD ── */
+  .calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .calc-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .calc-card-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#334155,#1E293B);display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .calc-card-title{font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .calc-card-sub{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .field{margin-bottom:13px;}
+  .field label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .field input,.field select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700;color:var(--navy);font-family:'Helvetica Neue',Arial,sans-serif;outline:none;transition:border-color .2s;}
+  .field input:focus{border-color:#334155;background:#fff;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  /* ── CALCULATE BUTTON ── */
+  .calc-btn{width:100%;background:linear-gradient(135deg,#334155,#1E293B);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(51,65,85,0.45);font-family:Georgia,serif;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,box-shadow .12s;letter-spacing:0.2px;}
+  .calc-btn:active{transform:scale(.98);}
+  .calc-btn:hover{background:linear-gradient(135deg,#475569,#334155);}
+
+  /* ── RESULT CARD ── */
+  .result-card{background:linear-gradient(148deg,#334155,#1E293B);border-radius:20px;padding:18px;box-shadow:var(--sh2);position:relative;overflow:hidden;display:none;}
+  .result-card.show{display:block;animation:fadeUp .35s ease both;}
+  .result-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .result-lbl{font-size:10px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;}
+  .result-big{font-size:46px;font-weight:800;color:var(--gold-lt);font-family:Georgia,serif;line-height:1;}
+  .result-sub{font-size:11px;color:rgba(255,255,255,0.60);margin-top:4px;}
+  .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .rg-item{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 12px;}
+  .rg-lbl{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+  .rg-val{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .rg-val.gold{color:var(--gold-lt);} .rg-val.grn{color:#6EE7B7;}
+
+  /* ── SAVE BAR ── */
+  .save-bar{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1.5px solid #86EFAC;border-radius:14px;padding:13px 15px;display:none;align-items:center;gap:12px;margin-bottom:12px;}
+  .save-bar.visible{display:flex;animation:fadeUp .3s ease both;}
+  .save-txt{flex:1;}
+  .save-title-txt{font-size:12px;font-weight:800;color:#15803D;font-family:Georgia,serif;}
+  .save-sub-txt{font-size:9.5px;color:#166534;margin-top:1px;}
+  .save-action-btn{background:#15803D;color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;transition:background .15s;}
+  .save-action-btn:hover{background:#166534;}
+  .save-action-btn.done{background:#BBF7D0;color:#15803D;pointer-events:none;}
+
+  /* ── STATS CHARTS ── */
+  .stats-section{display:none;}
+  .stats-section.visible{display:block;animation:fadeUp .35s ease both;}
+  .chart-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+
+  /* Horizontal bars */
+  .bar-group{display:flex;flex-direction:column;gap:10px;}
+  .bar-item{display:flex;flex-direction:column;gap:4px;}
+  .bar-header{display:flex;justify-content:space-between;align-items:center;}
+  .bar-name{font-size:10.5px;font-weight:700;color:var(--navy);}
+  .bar-amount{font-size:11px;font-weight:800;font-family:Georgia,serif;}
+  .bar-track{height:10px;background:#EFF6FF;border-radius:5px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:5px;transition:width .7s cubic-bezier(.34,1.56,.64,1);}
+
+  /* CoC gauge */
+  .gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:8px 0 4px;}
+  .gauge-arc-svg{width:200px;height:110px;}
+  .gauge-val-big{font-size:28px;font-weight:800;font-family:Georgia,serif;text-anchor:middle;}
+  .gauge-val-lbl{font-size:11px;fill:var(--muted);text-anchor:middle;}
+
+  /* Year-over-year projection bars */
+  .proj-bars{display:flex;align-items:flex-end;gap:5px;height:70px;margin-bottom:8px;}
+  .pb{flex:1;border-radius:4px 4px 0 0;transition:height .6s ease;position:relative;}
+  .pb-lbl{font-size:8px;font-weight:700;color:var(--muted);text-align:center;margin-top:3px;}
+
+  /* Investment summary */
+  .invest-summary{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 15px;margin-bottom:10px;}
+  .is-title{font-size:12.5px;font-weight:800;color:#92400E;font-family:Georgia,serif;margin-bottom:10px;}
+  .is-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .is-item{text-align:center;}
+  .is-lbl{font-size:8.5px;color:#B45309;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
+  .is-val{font-size:16px;font-weight:800;color:#92400E;font-family:Georgia,serif;}
+
+  /* Benchmark table */
+  .bench-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .bench-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .bench-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+  .bench-row:last-child{border-bottom:none;}
+  .bench-name{font-size:11.5px;color:var(--navy);font-weight:600;}
+  .bench-range{font-size:11px;color:var(--muted);}
+  .bench-badge{padding:3px 9px;border-radius:20px;font-size:9.5px;font-weight:800;}
+  .badge-poor{background:#FEE2E2;color:#B91C1C;} .badge-ok{background:#FEF3C7;color:#92400E;}
+  .badge-good{background:#D1FAE5;color:#15803D;} .badge-great{background:#CCFBF1;color:#0F766E;}
+  .badge-exc{background:#EDE9FE;color:#6D28D9;}
+  .your-row{background:rgba(27,63,114,0.06);border-radius:8px;padding:8px 10px !important;border:1px solid rgba(27,63,114,0.12);}
+
+  /* ── SAVED LIST ── */
+  .saved-section{display:none;}
+  .saved-section.visible{display:block;}
+  .saved-list{display:flex;flex-direction:column;gap:8px;}
+  .saved-item{background:var(--card);border-radius:13px;padding:12px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .si-icon{font-size:18px;flex-shrink:0;}
+  .si-body{flex:1;min-width:0;}
+  .si-name{font-size:11.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .si-detail{font-size:9px;color:var(--muted);margin-top:1px;}
+  .si-coc{font-size:15px;font-weight:800;font-family:Georgia,serif;flex-shrink:0;}
+  .si-del{width:26px;height:26px;border-radius:8px;background:#FEF2F2;border:none;color:#B91C1C;cursor:pointer;font-size:11px;flex-shrink:0;}
+
+  /* ── INFO LIST ── */
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  /* ── BOTTOM NAV ── */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  /* ── TOAST ── */
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#0B1D3A;color:#fff;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .calc-card{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📊</div>
+      <div class="hdr-title">Cash-on-Cash Return</div>
+      <div class="hdr-sub">Annual CoC · IRR · Equity Multiple · USA 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Avg CoC</div><div class="rs-v gold">6–8%</div><div class="rs-n">Good target</div></div>
+    <div class="rs"><div class="rs-l">S&amp;P 500</div><div class="rs-v">10.5%</div><div class="rs-n">Hist. avg</div></div>
+    <div class="rs"><div class="rs-l">Investor Rate</div><div class="rs-v">7.25%</div><div class="rs-n">30-yr avg</div></div>
+    <div class="rs"><div class="rs-l">Min Target</div><div class="rs-v">8%+</div><div class="rs-n">Many pros</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">Investment Inputs <span class="more">NAREIT Data →</span></div>
+
+  <!-- INPUT CARD -->
+  <div class="calc-card">
+    <div class="calc-card-hdr">
+      <div class="calc-card-icon">📊</div>
+      <div>
+        <div class="calc-card-title">Cash-on-Cash Analyzer</div>
+        <div class="calc-card-sub">Annual pre-tax cash return on invested cash</div>
+      </div>
+    </div>
+    <div class="field"><label>Total Cash Invested (All-In)</label><input type="number" id="cashIn" value="95000" placeholder="Down pmt + closing + repairs"></div>
+    <div class="field-row">
+      <div class="field"><label>Gross Annual Rent</label><input type="number" id="grossRent" value="31200" placeholder="$31,200"></div>
+      <div class="field"><label>Vacancy Rate (%)</label><input type="number" id="vacancy" value="7" step="1" placeholder="7%"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Annual Operating Exp.</label><input type="number" id="opEx" value="9800" placeholder="$9,800"></div>
+      <div class="field"><label>Annual Debt Service</label><input type="number" id="debtService" value="14400" placeholder="$14,400"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Hold Period (yrs)</label><input type="number" id="hold" value="5" step="1" min="1" max="30" placeholder="5"></div>
+      <div class="field"><label>Appreciation/yr (%)</label><input type="number" id="appRate" value="4" step="0.5" placeholder="4%"></div>
+    </div>
+    <div class="field"><label>Purchase Price</label><input type="number" id="purchasePrice" value="380000" placeholder="$380,000"></div>
+
+    <!-- CALCULATE BUTTON -->
+    <button class="calc-btn" onclick="runCalc()">
+      <span style="font-size:18px;">📊</span> Calculate Cash-on-Cash Return
+    </button>
+  </div>
+
+  <!-- RESULT CARD (hidden until calc) -->
+  <div class="result-card" id="resultCard">
+    <div class="result-lbl">Cash-on-Cash Return (Year 1)</div>
+    <div class="result-big" id="coc">—</div>
+    <div class="result-sub" id="resultSub">—</div>
+    <div class="result-grid">
+      <div class="rg-item"><div class="rg-lbl">Annual Cash Flow</div><div class="rg-val gold" id="annualCF">—</div></div>
+      <div class="rg-item"><div class="rg-lbl">Monthly Cash Flow</div><div class="rg-val grn" id="monthlyCF">—</div></div>
+      <div class="rg-item"><div class="rg-lbl">Total Return (CoC+App)</div><div class="rg-val" id="totalReturn">—</div></div>
+      <div class="rg-item"><div class="rg-lbl">Equity Multiple</div><div class="rg-val" id="eqMultiple">—</div></div>
+    </div>
+  </div>
+
+  <!-- SAVE BAR -->
+  <div class="save-bar" id="saveBar">
+    <div style="font-size:22px;">💾</div>
+    <div class="save-txt">
+      <div class="save-title-txt" id="saveTitle">Save This Analysis</div>
+      <div class="save-sub-txt" id="saveSub">Tap to save for later comparison</div>
+    </div>
+    <button class="save-action-btn" id="saveBtn" onclick="saveCalc()">Save</button>
+  </div>
+
+  <!-- VISUAL STATS (shown after calc) -->
+  <div class="stats-section" id="statsSection">
+
+    <!-- CoC Gauge -->
+    <div class="sec">Return Analysis <span class="more">Full Details →</span></div>
+    <div class="chart-card">
+      <div class="chart-title"><span>🎯</span> CoC Return Gauge</div>
+      <div class="gauge-wrap">
+        <svg class="gauge-arc-svg" viewBox="0 0 200 110">
+          <!-- Track arc -->
+          <path d="M 15 100 A 85 85 0 0 1 185 100" fill="none" stroke="#EFF6FF" stroke-width="18" stroke-linecap="round"/>
+          <!-- Color zones -->
+          <path d="M 15 100 A 85 85 0 0 1 62 27" fill="none" stroke="#FEE2E2" stroke-width="18" stroke-linecap="round"/>
+          <path d="M 62 27 A 85 85 0 0 1 100 15" fill="none" stroke="#FEF3C7" stroke-width="18" stroke-linecap="round"/>
+          <path d="M 100 15 A 85 85 0 0 1 155 35" fill="none" stroke="#D1FAE5" stroke-width="18" stroke-linecap="round"/>
+          <path d="M 155 35 A 85 85 0 0 1 185 100" fill="none" stroke="#CCFBF1" stroke-width="18" stroke-linecap="round"/>
+          <!-- Needle -->
+          <line id="gaugeNeedle" x1="100" y1="100" x2="100" y2="25" stroke="#334155" stroke-width="3" stroke-linecap="round" transform="rotate(0 100 100)"/>
+          <circle cx="100" cy="100" r="6" fill="#334155"/>
+          <!-- Labels -->
+          <text x="12" y="115" font-size="9" fill="#B91C1C" font-weight="700">&lt;4%</text>
+          <text x="55" y="22" font-size="9" fill="#D97706" font-weight="700">6%</text>
+          <text x="90" y="10" font-size="9" fill="#15803D" font-weight="700">10%</text>
+          <text x="158" y="38" font-size="9" fill="#0F766E" font-weight="700">15%+</text>
+          <!-- Center value -->
+          <text id="gaugeText" x="100" y="88" text-anchor="middle" font-size="22" font-weight="800" fill="#0B1D3A" font-family="Georgia,serif">—</text>
+          <text x="100" y="102" text-anchor="middle" font-size="9" fill="#4A5C7A">Cash-on-Cash</text>
+        </svg>
+      </div>
+      <!-- Return breakdown bars -->
+      <div class="bar-group" id="returnBars"></div>
+    </div>
+
+    <!-- Year-by-Year Cash Flow Projection -->
+    <div class="chart-card">
+      <div class="chart-title"><span>📈</span> Year-by-Year Cash Flow</div>
+      <div class="proj-bars" id="projBars"></div>
+      <div style="display:flex;justify-content:space-around;font-size:9px;font-weight:700;color:var(--muted);margin-bottom:12px;" id="projLabels"></div>
+      <div style="background:var(--bg);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="projSummary"></div>
+    </div>
+
+    <!-- Investment Summary -->
+    <div class="invest-summary" id="investSummary">
+      <div class="is-title" id="isTitle">💼 Investment Summary</div>
+      <div class="is-grid">
+        <div class="is-item"><div class="is-lbl">Cash Invested</div><div class="is-val" id="s_cashIn">—</div></div>
+        <div class="is-item"><div class="is-lbl">Total Cash Back</div><div class="is-val" id="s_cashBack">—</div></div>
+        <div class="is-item"><div class="is-lbl">Net Profit</div><div class="is-val" id="s_profit">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="saved-section" id="savedSection">
+    <div class="sec">Saved Analyses <span class="more" onclick="clearSaved()">Clear All</span></div>
+    <div class="saved-list" id="savedList"></div>
+  </div>
+
+  <!-- BENCHMARK TABLE -->
+  <div class="sec">CoC Return Benchmarks <span class="more">BiggerPockets →</span></div>
+  <div class="bench-card">
+    <div class="bench-row"><div><div class="bench-name">Poor</div><div class="bench-range">Below 4%</div></div><div class="bench-badge badge-poor">Avoid</div></div>
+    <div class="bench-row"><div><div class="bench-name">Acceptable</div><div class="bench-range">4% – 6%</div></div><div class="bench-badge badge-ok">Low Bar</div></div>
+    <div class="bench-row your-row" id="yourRow">
+      <div><div class="bench-name" style="font-weight:800;color:var(--navy);">Your Property</div><div class="bench-range" id="yourRange">— CoC</div></div>
+      <div class="bench-badge" id="yourBadge">—</div>
+    </div>
+    <div class="bench-row"><div><div class="bench-name">Good</div><div class="bench-range">6% – 10%</div></div><div class="bench-badge badge-good">Target</div></div>
+    <div class="bench-row"><div><div class="bench-name">Great</div><div class="bench-range">10% – 15%</div></div><div class="bench-badge badge-great">Excellent</div></div>
+    <div class="bench-row"><div><div class="bench-name">Exceptional</div><div class="bench-range">15%+</div></div><div class="bench-badge badge-exc">Rare Find</div></div>
+  </div>
+
+  <div class="sec">What Pros Look For <span class="more">BiggerPockets →</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">💡</div><div><div class="in">CoC vs Cap Rate</div><div class="is">CoC measures YOUR cash return · Cap Rate is property-level regardless of financing</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Leverage Boosts CoC</div><div class="is">Using debt amplifies CoC — but also increases risk if rents fall</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📈</div><div><div class="in">Force Appreciation</div><div class="is">BRRRR strategy: Buy · Rehab · Rent · Refi · Repeat</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📉</div><div><div class="in">Rising Rates Impact</div><div class="is">7%+ investor mortgages compress CoC vs 2021 levels</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let lastResult = null;
+let savedCalcs = JSON.parse(localStorage.getItem('coc_saved') || '[]');
+
+function fmt(n){ return (n<0?'-$':'$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+function fmtK(n){ return '$' + Math.round(Math.abs(n)/1000) + 'K'; }
+function pct(n){ return n.toFixed(1) + '%'; }
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function runCalc() {
+  const cashIn = parseFloat(document.getElementById('cashIn').value) || 0;
+  const grossRent = parseFloat(document.getElementById('grossRent').value) || 0;
+  const vacPct = (parseFloat(document.getElementById('vacancy').value) || 0) / 100;
+  const opEx = parseFloat(document.getElementById('opEx').value) || 0;
+  const debtService = parseFloat(document.getElementById('debtService').value) || 0;
+  const hold = Math.max(1, parseInt(document.getElementById('hold').value) || 5);
+  const appRate = (parseFloat(document.getElementById('appRate').value) || 0) / 100;
+  const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 0;
+
+  if (!cashIn || !grossRent) { showToast('⚠️ Enter cash invested and gross rent'); return; }
+
+  const egi = grossRent * (1 - vacPct);
+  const annualCF = egi - opEx - debtService;
+  const cocVal = cashIn > 0 ? (annualCF / cashIn) * 100 : 0;
+  const totalReturnVal = cocVal + appRate * 100;
+  const salePrice = purchasePrice * Math.pow(1 + appRate, hold);
+  const totalCashFlow = annualCF * hold;
+  const equity = salePrice - purchasePrice;
+  const totalReturn5 = totalCashFlow + equity;
+  const eqMultiple = cashIn > 0 ? (cashIn + totalReturn5) / cashIn : 1;
+  const totalCashBack = cashIn + totalReturn5;
+
+  // Update result card
+  document.getElementById('coc').textContent = pct(cocVal);
+  document.getElementById('resultSub').textContent =
+    cocVal >= 15 ? '🌟 Exceptional — top-tier investor return' :
+    cocVal >= 10 ? '⭐ Great — exceeds most investor benchmarks' :
+    cocVal >= 6  ? '✓ Good — meets 6–8% investor threshold' :
+    cocVal >= 4  ? '⚠️ Acceptable — below typical investor target' :
+                   '✗ Poor — below minimum investment threshold';
+  document.getElementById('annualCF').textContent = fmt(annualCF);
+  document.getElementById('monthlyCF').textContent = fmt(annualCF / 12) + '/mo';
+  document.getElementById('totalReturn').textContent = pct(totalReturnVal);
+  document.getElementById('eqMultiple').textContent = eqMultiple.toFixed(2) + '×';
+  document.getElementById('resultCard').classList.add('show');
+
+  document.getElementById('s_cashIn').textContent = fmtK(cashIn);
+  document.getElementById('s_cashBack').textContent = fmtK(totalCashBack);
+  document.getElementById('s_profit').textContent = fmtK(totalReturn5);
+  document.getElementById('isTitle').textContent = `💼 ${hold}-Year Investment Summary`;
+
+  // Benchmark row
+  document.getElementById('yourRange').textContent = pct(cocVal) + ' CoC';
+  const badge = document.getElementById('yourBadge');
+  if (cocVal >= 15){ badge.className='bench-badge badge-exc'; badge.textContent='⭐ You'; }
+  else if(cocVal>=10){ badge.className='bench-badge badge-great'; badge.textContent='🌟 You'; }
+  else if(cocVal>=6){ badge.className='bench-badge badge-good'; badge.textContent='✓ You'; }
+  else if(cocVal>=4){ badge.className='bench-badge badge-ok'; badge.textContent='~ You'; }
+  else { badge.className='bench-badge badge-poor'; badge.textContent='✗ You'; }
+
+  lastResult = { cashIn, grossRent, vacPct, opEx, debtService, hold, appRate, purchasePrice, annualCF, cocVal, totalReturnVal, eqMultiple, totalCashBack, totalReturn5, date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) };
+
+  // Save bar
+  const sb = document.getElementById('saveBar');
+  sb.classList.add('visible');
+  document.getElementById('saveTitle').textContent = 'Save This CoC Analysis';
+  document.getElementById('saveSub').textContent = `CoC: ${pct(cocVal)} · Cash Flow: ${fmt(annualCF)}/yr`;
+  document.getElementById('saveBtn').textContent = 'Save';
+  document.getElementById('saveBtn').className = 'save-action-btn';
+
+  renderStats(lastResult, hold);
+  document.getElementById('statsSection').classList.add('visible');
+  renderSaved();
+}
+
+function renderStats(r, hold) {
+  // Gauge needle rotation: map coc 0–20% to -90° to +90°
+  const clampedCoc = Math.min(20, Math.max(0, r.cocVal));
+  const needleAngle = (clampedCoc / 20) * 180 - 90;
+  document.getElementById('gaugeNeedle').setAttribute('transform', `rotate(${needleAngle} 100 100)`);
+  document.getElementById('gaugeText').textContent = pct(r.cocVal);
+
+  // Return component bars
+  const maxR = Math.max(r.cocVal, r.totalReturnVal, 10);
+  const bars = [
+    { label: 'Cash-on-Cash Return', val: r.cocVal, col: '#334155', suffix: '%' },
+    { label: 'Appreciation Return', val: r.appRate * 100, col: '#D97706', suffix: '%' },
+    { label: 'Total Blended Return', val: r.totalReturnVal, col: '#15803D', suffix: '%' },
+  ];
+  document.getElementById('returnBars').innerHTML = bars.map(b => `
+    <div class="bar-item">
+      <div class="bar-header">
+        <span class="bar-name">${b.label}</span>
+        <span class="bar-amount" style="color:${b.col}">${b.val.toFixed(1)}${b.suffix}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,(b.val/maxR)*100)}%;background:${b.col};"></div></div>
+    </div>`).join('');
+
+  // Year-by-year projection (cash flow grows with appreciation assumption on rents too)
+  const maxYrs = Math.min(hold, 10);
+  const yearCFs = [];
+  for (let y = 1; y <= maxYrs; y++) {
+    yearCFs.push(r.annualCF * Math.pow(1 + r.appRate * 0.5, y - 1));
+  }
+  const maxCF = Math.max(...yearCFs.map(Math.abs), 1);
+  document.getElementById('projBars').innerHTML = yearCFs.map((v, i) => {
+    const h = Math.max(4, (Math.abs(v) / maxCF) * 62);
+    const col = v >= 0 ? (i === maxYrs - 1 ? '#15803D' : '#6EE7B7') : '#FCA5A5';
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;"><div class="pb" style="width:100%;height:${h}px;background:${col};"></div><div class="pb-lbl">Y${i+1}</div></div>`;
+  }).join('');
+
+  document.getElementById('projSummary').innerHTML = `
+    <div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;margin-bottom:3px;">Peak Yr CF</div><div style="font-size:14px;font-weight:800;color:#334155;font-family:Georgia,serif;">${fmt(yearCFs[yearCFs.length-1])}</div></div>
+    <div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;margin-bottom:3px;">Equity Multiple</div><div style="font-size:14px;font-weight:800;color:#334155;font-family:Georgia,serif;">${r.eqMultiple.toFixed(2)}×</div></div>`;
+}
+
+function saveCalc() {
+  if (!lastResult) { showToast('Run a calculation first'); return; }
+  const btn = document.getElementById('saveBtn');
+  if (btn.classList.contains('done')) { showToast('Already saved!'); return; }
+  savedCalcs.unshift({ ...lastResult, id: Date.now() });
+  if (savedCalcs.length > 8) savedCalcs.pop();
+  localStorage.setItem('coc_saved', JSON.stringify(savedCalcs));
+  btn.textContent = 'Saved ✓';
+  btn.classList.add('done');
+  showToast('✅ Analysis saved!');
+  renderSaved();
+}
+
+function deleteCalc(id) {
+  savedCalcs = savedCalcs.filter(c => c.id !== id);
+  localStorage.setItem('coc_saved', JSON.stringify(savedCalcs));
+  renderSaved();
+}
+
+function clearSaved() {
+  savedCalcs = [];
+  localStorage.removeItem('coc_saved');
+  renderSaved();
+}
+
+function renderSaved() {
+  const sec = document.getElementById('savedSection');
+  const list = document.getElementById('savedList');
+  if (!savedCalcs.length) { sec.classList.remove('visible'); return; }
+  sec.classList.add('visible');
+  list.innerHTML = savedCalcs.map(c => {
+    const col = c.cocVal >= 10 ? '#15803D' : c.cocVal >= 6 ? '#D97706' : '#B91C1C';
+    return `<div class="saved-item">
+      <div class="si-icon">📊</div>
+      <div class="si-body">
+        <div class="si-name">${fmtK(c.cashIn)} Invested · ${c.hold}yr Hold</div>
+        <div class="si-detail">CF: ${fmt(c.annualCF)}/yr · EM: ${c.eqMultiple.toFixed(2)}× · ${c.date||''}</div>
+      </div>
+      <div class="si-coc" style="color:${col}">${c.cocVal.toFixed(1)}%</div>
+      <button class="si-del" onclick="deleteCalc(${c.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+renderSaved();
+</script>
+</body>
+</html>

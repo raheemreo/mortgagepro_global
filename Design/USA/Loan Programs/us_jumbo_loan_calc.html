@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jumbo Loan Calculator</title>
+<style>
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);--sh2:0 8px 36px rgba(11,29,58,0.18);
+    --grn:#15803D;--danger:#FEF2F2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#334155 55%,#1E293B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🏢';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;transition:background .2s;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  .jumbo-banner{background:linear-gradient(135deg,#0B1D3A,#334155);border-radius:16px;padding:15px;margin-bottom:12px;display:flex;align-items:center;gap:12px;}
+  .jb-icon{font-size:30px;}
+  .jb-title{font-size:14px;font-weight:800;color:var(--gold-lt);font-family:Georgia,serif;}
+  .jb-sub{font-size:9.5px;color:rgba(255,255,255,0.55);margin-top:2px;}
+
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .inp-box{background:var(--card);border-radius:14px;padding:13px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--gold);}
+  .inp-box label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:9px;color:var(--muted);margin-top:3px;}
+
+  /* BUTTON ROW */
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:6px;}
+  .calc-btn{background:linear-gradient(135deg,#334155,#1E293B);border:none;border-radius:13px;padding:14px 18px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(51,65,85,0.35);font-family:Georgia,serif;transition:transform .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .calc-btn:active{transform:scale(0.97);}
+  .save-btn{background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:14px 16px;font-size:13px;font-weight:800;color:var(--navy);cursor:pointer;box-shadow:var(--sh);font-family:Georgia,serif;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .save-btn:hover{background:var(--bg);border-color:var(--gold);}
+  .save-btn.saved{background:#F0FDF4;border-color:var(--grn);color:var(--grn);}
+
+  /* TOAST */
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  /* RESULT HERO */
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#334155);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:10px;}
+  .rh-label{font-size:9.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:36px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;margin:6px 0 4px;}
+  .rh-amount span{font-size:16px;color:var(--gold-lt);}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.50);}
+  .rh-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;}
+  .rh-stat{background:rgba(255,255,255,0.10);border-radius:10px;padding:9px 8px;text-align:center;}
+  .rh-stat-l{font-size:8px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.4px;}
+  .rh-stat-v{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+
+  /* BREAKDOWN GRID */
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:14px;padding:13px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:20px;margin-bottom:6px;}
+  .bk-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:17px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .bk-sub{font-size:9px;color:var(--muted);}
+
+  /* DONUT CHART */
+  .donut-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .donut-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .donut-wrap{display:flex;align-items:center;gap:16px;}
+  .donut-svg-wrap{position:relative;width:110px;height:110px;flex-shrink:0;}
+  .donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+  .donut-center-val{font-size:18px;font-weight:800;color:var(--navy);font-family:Georgia,serif;line-height:1;}
+  .donut-center-lbl{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;}
+  .donut-legend{flex:1;display:flex;flex-direction:column;gap:8px;}
+  .legend-row{display:flex;align-items:center;gap:8px;}
+  .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .legend-label{font-size:10px;color:var(--muted);font-weight:600;flex:1;}
+  .legend-val{font-size:10px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+
+  /* AMORT PREVIEW */
+  .amort-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .amort-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .amort-bars{display:flex;flex-direction:column;gap:8px;}
+  .ab-row{display:flex;align-items:center;gap:8px;}
+  .ab-year{font-size:9px;font-weight:700;color:var(--muted);width:32px;flex-shrink:0;}
+  .ab-track{flex:1;height:16px;background:#EEF2F8;border-radius:8px;overflow:hidden;display:flex;}
+  .ab-principal{height:100%;background:linear-gradient(90deg,#1B3F72,#2563EB);transition:width .6s ease;}
+  .ab-interest{height:100%;background:linear-gradient(90deg,#D97706,#F59E0B);transition:width .6s ease;}
+  .ab-balance{font-size:9px;font-weight:800;color:var(--muted);width:38px;text-align:right;flex-shrink:0;}
+  .amort-legend{display:flex;gap:12px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+  .al-dot{width:8px;height:8px;border-radius:50%;}
+  .al-lbl{font-size:9px;color:var(--muted);font-weight:600;}
+
+  /* REQUIREMENTS */
+  .req-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .req-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+  .req-row:last-child{border-bottom:none;}
+  .req-label{font-size:11px;font-weight:700;color:var(--navy);font-family:Georgia,serif;}
+  .req-val{font-size:10.5px;font-weight:800;color:var(--gold);}
+  .req-val.ok{color:var(--grn);}
+  .req-val.bad{color:#B91C1C;}
+
+  .limit-card{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:14px 15px;margin-bottom:10px;}
+  .lc-title{font-size:12.5px;font-weight:800;color:#92400E;font-family:Georgia,serif;margin-bottom:10px;}
+  .lc-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(245,158,11,0.25);}
+  .lc-row:last-child{border-bottom:none;}
+  .lc-k{font-size:10px;color:#92400E;font-weight:600;}
+  .lc-v{font-size:10px;font-weight:800;color:#B45309;}
+
+  /* SAVED */
+  .saved-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+  .saved-item{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .saved-info{flex:1;}
+  .saved-name{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .saved-meta{font-size:9px;color:var(--muted);margin-top:2px;}
+  .saved-amt{font-size:15px;font-weight:800;color:var(--blue);font-family:Georgia,serif;}
+  .saved-del{width:28px;height:28px;border-radius:8px;background:var(--danger);border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .empty-saved{text-align:center;padding:20px;color:var(--muted);font-size:12px;}
+
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.breakdown-grid,.req-card,.limit-card,.jumbo-banner,.ilist{animation:fadeUp .35s ease both .05s;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+  .calculating{animation:pulse .6s ease infinite;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏢</div>
+      <div class="hdr-title">Jumbo Loan Calculator</div>
+      <div class="hdr-sub">Above $766,550 Conforming Limit · Non-QM</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Jumbo 30-Yr</div><div class="rs-v">7.04%</div><div class="rs-n">Jun 2025</div></div>
+    <div class="rs"><div class="rs-l">Jumbo 15-Yr</div><div class="rs-v">6.62%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">Conf. Limit</div><div class="rs-v gold">$766K</div><div class="rs-n">2025 FHFA</div></div>
+    <div class="rs"><div class="rs-l">Min. Down</div><div class="rs-v">10–20%</div><div class="rs-n">Typical</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="jumbo-banner">
+    <div class="jb-icon">🏢</div>
+    <div>
+      <div class="jb-title">Luxury & High-Value Home Financing</div>
+      <div class="jb-sub">2025 conforming limit: $766,550 standard · $1,149,825 high-cost</div>
+    </div>
+  </div>
+
+  <div class="sec" style="margin-top:0">Loan Details <span class="more">Compare Lenders →</span></div>
+  <div class="input-grid">
+    <div class="inp-box">
+      <label>Home Price ($)</label>
+      <input type="number" id="homePrice" value="1200000">
+      <div class="inp-hint">Must exceed $766,550</div>
+    </div>
+    <div class="inp-box">
+      <label>Down Payment (%)</label>
+      <input type="number" id="downPct" value="20" step="1" min="5" max="50">
+      <div class="inp-hint">Typically 10–30%</div>
+    </div>
+    <div class="inp-box">
+      <label>Interest Rate (%)</label>
+      <input type="number" id="rate" value="7.04" step="0.01">
+      <div class="inp-hint">Jumbo avg Jun 2025</div>
+    </div>
+    <div class="inp-box">
+      <label>Loan Term</label>
+      <select id="term">
+        <option value="30" selected>30 Years</option>
+        <option value="20">20 Years</option>
+        <option value="15">15 Years</option>
+        <option value="10">10 Years</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>Credit Score</label>
+      <select id="creditScore">
+        <option value="700">700–719</option>
+        <option value="720" selected>720–759</option>
+        <option value="760">760–850</option>
+      </select>
+      <div class="inp-hint">Jumbo req: 700+ min</div>
+    </div>
+    <div class="inp-box">
+      <label>Annual Income ($)</label>
+      <input type="number" id="annualIncome" value="350000">
+      <div class="inp-hint">Used for DTI check</div>
+    </div>
+  </div>
+  <div class="input-grid">
+    <div class="inp-box">
+      <label>Property Tax ($/yr)</label>
+      <input type="number" id="propTax" value="15000">
+    </div>
+    <div class="inp-box">
+      <label>Home Insurance ($/yr)</label>
+      <input type="number" id="insurance" value="4800">
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="calc-btn" id="calcBtn" onclick="runCalculate()">🏢 Calculate Jumbo Payment</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+  </div>
+
+  <div class="sec">Monthly Payment Breakdown</div>
+  <div class="result-hero">
+    <div class="rh-label">Total Monthly Payment (PITI)</div>
+    <div class="rh-amount" id="totalPayment">— <span>/mo</span></div>
+    <div class="rh-sub" id="loanSummary">Enter details and tap Calculate</div>
+    <div class="rh-stats">
+      <div class="rh-stat"><div class="rh-stat-l">Front DTI</div><div class="rh-stat-v" id="dtiStat">—</div></div>
+      <div class="rh-stat"><div class="rh-stat-l">Loan Amt</div><div class="rh-stat-v" id="loanStat">—</div></div>
+      <div class="rh-stat"><div class="rh-stat-l">Total Interest</div><div class="rh-stat-v" id="tiStat">—</div></div>
+    </div>
+  </div>
+
+  <!-- DONUT PIE CHART -->
+  <div class="donut-card">
+    <div class="donut-title">📊 Payment Composition</div>
+    <div class="donut-wrap">
+      <div class="donut-svg-wrap">
+        <svg viewBox="0 0 110 110" width="110" height="110">
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#EEF2F8" stroke-width="18"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#1B3F72" stroke-width="18"
+            id="donutPI" stroke-dasharray="0 251" stroke-dashoffset="-62.75"
+            style="transition:stroke-dasharray .7s ease;"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#D97706" stroke-width="18"
+            id="donutPMI" stroke-dasharray="0 251" stroke-dashoffset="-62.75"
+            style="transition:stroke-dasharray .7s ease;"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#4A5C7A" stroke-width="18"
+            id="donutTax" stroke-dasharray="0 251" stroke-dashoffset="-62.75"
+            style="transition:stroke-dasharray .7s ease;"/>
+          <circle cx="55" cy="55" r="40" fill="none" stroke="#334155" stroke-width="18"
+            id="donutIns" stroke-dasharray="0 251" stroke-dashoffset="-62.75"
+            style="transition:stroke-dasharray .7s ease;"/>
+        </svg>
+        <div class="donut-center">
+          <div class="donut-center-val" id="donutCenterVal">—</div>
+          <div class="donut-center-lbl">per month</div>
+        </div>
+      </div>
+      <div class="donut-legend">
+        <div class="legend-row"><div class="legend-dot" style="background:#1B3F72"></div><div class="legend-label">P&I</div><div class="legend-val" id="lgPI">—</div></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#D97706"></div><div class="legend-label">PMI</div><div class="legend-val" id="lgPMI">—</div></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#4A5C7A"></div><div class="legend-label">Tax</div><div class="legend-val" id="lgTax">—</div></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#334155"></div><div class="legend-label">Insurance</div><div class="legend-val" id="lgIns">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAILED BREAKDOWN -->
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">💵</div><div class="bk-label">Principal & Interest</div><div class="bk-value" id="pi">—</div><div class="bk-sub">Base mortgage</div></div>
+    <div class="bk-card"><div class="bk-icon">📊</div><div class="bk-label">PMI</div><div class="bk-value" id="pmiVal">—</div><div class="bk-sub">None at 20%+ down</div></div>
+    <div class="bk-card"><div class="bk-icon">🏛️</div><div class="bk-label">Property Tax</div><div class="bk-value" id="tax">—</div><div class="bk-sub">Monthly escrow</div></div>
+    <div class="bk-card"><div class="bk-icon">🔥</div><div class="bk-label">Home Insurance</div><div class="bk-value" id="ins">—</div><div class="bk-sub">Monthly escrow</div></div>
+    <div class="bk-card"><div class="bk-icon">📈</div><div class="bk-label">Front-End DTI</div><div class="bk-value" id="dti">—</div><div class="bk-sub">Housing / gross income</div></div>
+    <div class="bk-card"><div class="bk-icon">💰</div><div class="bk-label">Total Interest</div><div class="bk-value" id="totalInterest">—</div><div class="bk-sub">Over loan life</div></div>
+  </div>
+
+  <!-- AMORTIZATION PREVIEW -->
+  <div class="amort-card">
+    <div class="amort-title">📅 Amortization Snapshot</div>
+    <div class="amort-bars" id="amortBars">
+      <div style="text-align:center;padding:15px;color:var(--muted);font-size:11px;">Calculate to see amortization</div>
+    </div>
+    <div class="amort-legend">
+      <div style="display:flex;align-items:center;gap:5px;"><div class="al-dot" style="background:#1B3F72;width:8px;height:8px;border-radius:50%;"></div><div class="al-lbl">Principal paid</div></div>
+      <div style="display:flex;align-items:center;gap:5px;"><div class="al-dot" style="background:#D97706;width:8px;height:8px;border-radius:50%;"></div><div class="al-lbl">Interest paid</div></div>
+      <div style="margin-left:auto;font-size:9px;color:var(--muted);font-weight:600;" id="amortFooter"></div>
+    </div>
+  </div>
+
+  <div class="sec">Jumbo Loan Requirements</div>
+  <div class="req-card">
+    <div class="req-row"><div class="req-label">Loan Amount Check</div><div class="req-val" id="reqLoanAmt">—</div></div>
+    <div class="req-row"><div class="req-label">Min. Credit Score</div><div class="req-val" id="reqCredit">—</div></div>
+    <div class="req-row"><div class="req-label">Min. Down Payment</div><div class="req-val" id="reqDown">—</div></div>
+    <div class="req-row"><div class="req-label">Max DTI</div><div class="req-val" id="reqDTI">—</div></div>
+    <div class="req-row"><div class="req-label">Cash Reserves Required</div><div class="req-val ok">✅ 6–18 months PITI</div></div>
+    <div class="req-row"><div class="req-label">Full Doc Required</div><div class="req-val ok">✅ Tax returns + bank stmts</div></div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="sec">Saved Calculations <span class="more" onclick="clearSaved()">Clear All</span></div>
+  <div class="saved-list" id="savedList">
+    <div class="empty-saved">No saved calculations yet.<br>Tap 🔖 Save after calculating.</div>
+  </div>
+
+  <div class="sec">2025 Conforming Loan Limits</div>
+  <div class="limit-card">
+    <div class="lc-title">📋 FHFA 2025 Conforming Limits</div>
+    <div class="lc-row"><div class="lc-k">Standard 1-Unit (most counties)</div><div class="lc-v">$766,550</div></div>
+    <div class="lc-row"><div class="lc-k">High-Cost 1-Unit (CA, NY, DC, HI)</div><div class="lc-v">$1,149,825</div></div>
+    <div class="lc-row"><div class="lc-k">Standard 2-Unit</div><div class="lc-v">$981,500</div></div>
+    <div class="lc-row"><div class="lc-k">Standard 3-Unit</div><div class="lc-v">$1,186,350</div></div>
+    <div class="lc-row"><div class="lc-k">Standard 4-Unit</div><div class="lc-v">$1,474,400</div></div>
+    <div class="lc-row"><div class="lc-k">Anything above → Jumbo</div><div class="lc-v">Non-conforming</div></div>
+  </div>
+
+  <div class="sec">Jumbo Lender Resources</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🏦</div><div><div class="in">Top Jumbo Lenders 2025</div><div class="is">Chase · Wells Fargo · Bank of America · Flagstar</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📋</div><div><div class="in">Documentation Required</div><div class="is">2 yrs tax returns · 2 mo bank stmts · W-2s</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🔄</div><div><div class="in">Jumbo ARM Options</div><div class="is">5/1, 7/1, 10/1 ARMs at lower initial rates</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">💳</div><div><div class="in">Jumbo vs. Conforming</div><div class="is">No GSE backing · Lender portfolio loans · Stricter standards</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let lastResult = null;
+let savedCalcs = JSON.parse(localStorage.getItem('jumbo_saves') || '[]');
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+function runCalculate(){
+  const btn=document.getElementById('calcBtn');
+  btn.classList.add('calculating');
+  btn.textContent='⏳ Calculating…';
+  setTimeout(()=>{calculate();btn.classList.remove('calculating');btn.innerHTML='🏢 Calculate Jumbo Payment';},400);
+}
+
+function calculate(){
+  const price       = parseFloat(document.getElementById('homePrice').value)||0;
+  const downPct     = parseFloat(document.getElementById('downPct').value)/100||0;
+  const rateAnnual  = parseFloat(document.getElementById('rate').value)/100||0;
+  const termYrs     = parseInt(document.getElementById('term').value);
+  const annualIncome= parseFloat(document.getElementById('annualIncome').value)||1;
+  const propTaxAnnual=parseFloat(document.getElementById('propTax').value)||0;
+  const insAnnual   = parseFloat(document.getElementById('insurance').value)||0;
+  const score       = parseInt(document.getElementById('creditScore').value);
+
+  const downAmt   = price*downPct;
+  const loanAmt   = price-downAmt;
+  const months    = termYrs*12;
+  const mr        = rateAnnual/12;
+  const pi        = mr===0 ? loanAmt/months : loanAmt*(mr*Math.pow(1+mr,months))/(Math.pow(1+mr,months)-1);
+  const pmi       = downPct<0.20 ? (loanAmt*0.0080)/12 : 0;
+  const taxMo     = propTaxAnnual/12;
+  const insMo     = insAnnual/12;
+  const total     = pi+pmi+taxMo+insMo;
+  const totalInterest = (pi*months)-loanAmt;
+  const dti       = ((total/(annualIncome/12))*100).toFixed(1);
+  const tiStr     = totalInterest>=1000000 ? '$'+(totalInterest/1000000).toFixed(2)+'M' : '$'+Math.round(totalInterest/1000)+'K';
+
+  // Hero
+  document.getElementById('totalPayment').innerHTML = '$'+Math.round(total).toLocaleString()+' <span>/mo</span>';
+  document.getElementById('loanSummary').textContent = `Loan: $${Math.round(loanAmt).toLocaleString()} · Down: $${Math.round(downAmt).toLocaleString()} (${(downPct*100).toFixed(0)}%) · ${downPct>=0.20?'No PMI':'PMI applies'}`;
+  document.getElementById('dtiStat').textContent = dti+'%';
+  document.getElementById('loanStat').textContent = loanAmt>=1000000?'$'+(loanAmt/1000000).toFixed(2)+'M':'$'+Math.round(loanAmt/1000)+'K';
+  document.getElementById('tiStat').textContent = tiStr;
+
+  // Breakdown
+  document.getElementById('pi').textContent = fmt(pi);
+  document.getElementById('pmiVal').textContent = pmi>0?fmt(pmi):'$0';
+  document.getElementById('tax').textContent = fmt(taxMo);
+  document.getElementById('ins').textContent = fmt(insMo);
+  document.getElementById('dti').textContent = dti+'%';
+  document.getElementById('totalInterest').textContent = tiStr;
+
+  // Donut chart
+  const circ = 2*Math.PI*40; // ~251
+  const piPct  = pi/total;
+  const pmiPct = pmi/total;
+  const taxPct = taxMo/total;
+  const insPct = insMo/total;
+  let offset = -62.75; // start at top
+  function setDonut(id, pct){
+    const el = document.getElementById(id);
+    const dash = pct*circ;
+    el.style.strokeDasharray = dash+' '+(circ-dash);
+    el.style.strokeDashoffset = offset;
+    offset -= dash;
+  }
+  setDonut('donutPI', piPct);
+  setDonut('donutPMI', pmiPct);
+  setDonut('donutTax', taxPct);
+  setDonut('donutIns', insPct);
+  document.getElementById('donutCenterVal').textContent = '$'+Math.round(total/100)*100>0?'$'+Math.round(total).toLocaleString():'—';
+  document.getElementById('lgPI').textContent = fmt(pi);
+  document.getElementById('lgPMI').textContent = fmt(pmi);
+  document.getElementById('lgTax').textContent = fmt(taxMo);
+  document.getElementById('lgIns').textContent = fmt(insMo);
+
+  // Amortization snapshot (every 5 years)
+  const snapYears = [1,5,10,15,20,25,30].filter(y=>y<=termYrs);
+  let balance = loanAmt;
+  let totalPaidPrincipal = 0;
+  let totalPaidInterest  = 0;
+  const snapData = [];
+  for(let m=1;m<=months;m++){
+    const interestPmt = balance*mr;
+    const principalPmt = pi-interestPmt;
+    totalPaidPrincipal += principalPmt;
+    totalPaidInterest  += interestPmt;
+    balance -= principalPmt;
+    if(snapYears.includes(Math.floor(m/12)) && m%12===0){
+      snapData.push({yr:m/12, bal:Math.max(0,balance), totP:totalPaidPrincipal, totI:totalPaidInterest});
+    }
+  }
+  const maxTot = snapData.length>0 ? snapData[snapData.length-1].totP + snapData[snapData.length-1].totI : 1;
+  document.getElementById('amortBars').innerHTML = snapData.map(d=>{
+    const pW = (d.totP/maxTot*100).toFixed(1);
+    const iW = (d.totI/maxTot*100).toFixed(1);
+    const balStr = d.bal>=1000000?'$'+(d.bal/1000000).toFixed(1)+'M':'$'+Math.round(d.bal/1000)+'K';
+    return `<div class="ab-row">
+      <div class="ab-year">Yr ${d.yr}</div>
+      <div class="ab-track">
+        <div class="ab-principal" style="width:${pW}%"></div>
+        <div class="ab-interest" style="width:${iW}%"></div>
+      </div>
+      <div class="ab-balance">${balStr}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('amortFooter').textContent = `Balance remaining at each year`;
+
+  // Requirements
+  const isJumbo = loanAmt>766550;
+  const reqLA = document.getElementById('reqLoanAmt');
+  reqLA.textContent = isJumbo?`✅ $${Math.round(loanAmt).toLocaleString()} – Jumbo`:`⚠️ $${Math.round(loanAmt).toLocaleString()} – Conforming (not jumbo)`;
+  reqLA.className = 'req-val'+(isJumbo?' ok':'');
+  const reqC = document.getElementById('reqCredit');
+  reqC.textContent = score>=700?`✅ ${score} – Qualifies`:`❌ ${score} – Need 700+`;
+  reqC.className = 'req-val'+(score>=700?' ok':' bad');
+  document.getElementById('reqDown').textContent = `${downPct>=0.10?'✅':'⚠️'} ${(downPct*100).toFixed(0)}% – ${downPct>=0.20?'Standard':downPct>=0.10?'Accepted by some lenders':'Below typical minimum'}`;
+  const reqD = document.getElementById('reqDTI');
+  reqD.textContent = parseFloat(dti)<=43?`✅ ${dti}% – Within 43% max`:`❌ ${dti}% – Exceeds 43% max`;
+  reqD.className = 'req-val'+(parseFloat(dti)<=43?' ok':' bad');
+
+  lastResult = {price, downPct:(downPct*100).toFixed(0), termYrs, total:Math.round(total), dti, tiStr, ts:Date.now()};
+}
+
+function saveCalc(){
+  if(!lastResult){showToast('⚠️ Calculate first before saving');return;}
+  savedCalcs.unshift(lastResult);
+  if(savedCalcs.length>10) savedCalcs.pop();
+  localStorage.setItem('jumbo_saves', JSON.stringify(savedCalcs));
+  renderSaved();
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');btn.innerHTML='✅ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},2000);
+  showToast('✅ Calculation saved!');
+}
+
+function clearSaved(){
+  if(savedCalcs.length===0){showToast('Nothing to clear');return;}
+  savedCalcs=[];localStorage.removeItem('jumbo_saves');renderSaved();showToast('🗑️ All saves cleared');
+}
+
+function deleteSaved(idx){
+  savedCalcs.splice(idx,1);localStorage.setItem('jumbo_saves',JSON.stringify(savedCalcs));renderSaved();
+}
+
+function renderSaved(){
+  const list=document.getElementById('savedList');
+  if(savedCalcs.length===0){list.innerHTML='<div class="empty-saved">No saved calculations yet.<br>Tap 🔖 Save after calculating.</div>';return;}
+  list.innerHTML = savedCalcs.map((s,i)=>{
+    const d=new Date(s.ts);
+    return `<div class="saved-item">
+      <div class="saved-info">
+        <div class="saved-name">$${(s.price/1000000).toFixed(2)}M · ${s.downPct}% down · ${s.termYrs}yr</div>
+        <div class="saved-meta">DTI ${s.dti}% · Interest ${s.tiStr} · ${d.toLocaleDateString()}</div>
+      </div>
+      <div class="saved-amt">$${s.total.toLocaleString()}</div>
+      <button class="saved-del" onclick="deleteSaved(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+renderSaved();
+calculate();
+</script>
+</body>
+</html>

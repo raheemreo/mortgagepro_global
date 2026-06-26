@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offset Account – Australia Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#1A0A00 0%,#0F766E 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;text-decoration:none;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#115E59;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#0F766E;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+.input-card{background:linear-gradient(145deg,#0F766E,#115E59);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(15,118,110,0.28);position:relative;overflow:hidden;}
+.input-card::before{content:'🏦';position:absolute;right:8px;top:8px;font-size:65px;opacity:0.07;}
+.ic-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.ic-title{font-size:18px;font-weight:800;color:#fff;margin:5px 0 16px;font-family:Georgia,serif;}
+.ic-title span{color:#FFD700;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.field-row.single{grid-template-columns:1fr;}
+.field-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:11px 13px;}
+.field-box label{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.field-box input{background:transparent;border:none;outline:none;font-size:16px;font-weight:800;color:#fff;width:100%;font-family:Georgia,serif;}
+.field-box .prefix{font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:2px;}
+.calc-btn{margin-top:14px;width:100%;background:#002868;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;}
+
+/* SAVINGS HERO */
+.savings-hero{background:linear-gradient(145deg,#064E3B,#065F46);border-radius:20px;padding:20px;text-align:center;box-shadow:0 6px 24px rgba(6,78,59,0.3);}
+.sh-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.sh-saving{font-size:48px;font-weight:800;color:#6EE7B7;font-family:Georgia,serif;line-height:1;}
+.sh-lbl{font-size:13px;color:rgba(255,255,255,0.7);margin-top:4px;}
+.sh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+.sh-box{background:rgba(255,255,255,0.08);border-radius:10px;padding:9px;text-align:center;}
+.sh-box-lbl{font-size:9px;color:rgba(255,255,255,0.5);margin-bottom:3px;}
+.sh-box-val{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+
+/* COMPARISON TABLE */
+.comp-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(15,118,110,0.1);border:1px solid rgba(15,118,110,0.1);}
+.comp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.comp-title{font-size:14px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+.comp-sub{font-size:10px;color:#115E59;margin-top:1px;}
+.comp-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px 0;border-bottom:1px solid rgba(15,118,110,0.08);}
+.comp-row:last-child{border-bottom:none;}
+.comp-row.header-row{background:#F0FDF4;margin:0 -6px;padding:8px 6px;border-radius:8px;}
+.comp-cell{font-size:11px;color:#1A0A00;font-weight:600;}
+.comp-cell.hdr{font-size:9px;color:#115E59;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+.comp-cell.green{color:#16a34a;font-weight:800;}
+.comp-cell.red{color:#dc2626;}
+
+/* CHART */
+.chart-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(15,118,110,0.1);border:1px solid rgba(15,118,110,0.1);}
+.chart-wrap{height:160px;position:relative;}
+
+/* YEARS SAVED */
+.years-banner{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1px solid #6EE7B7;border-radius:15px;padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.yb-icon{font-size:32px;}
+.yb-title{font-size:15px;font-weight:800;color:#064E3B;font-family:Georgia,serif;}
+.yb-sub{font-size:11px;color:#065F46;margin-top:2px;}
+
+/* SAVE BAR */
+.save-bar{background:#fff;border:1px solid rgba(15,118,110,0.15);border-radius:14px;padding:12px 15px;display:flex;align-items:center;gap:10px;margin-top:10px;}
+.save-bar .sb-action{background:#0F766E;color:#fff;font-size:11px;font-weight:800;padding:7px 13px;border-radius:9px;border:none;cursor:pointer;margin-left:auto;}
+.saved-card{background:#fff;border-radius:14px;padding:13px 14px;box-shadow:0 2px 10px rgba(15,118,110,0.06);border:1px solid rgba(15,118,110,0.1);display:flex;align-items:center;gap:11px;margin-bottom:8px;}
+.sc-icon{width:38px;height:38px;border-radius:10px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.sc-body{flex:1;}
+.sc-title{font-size:13px;font-weight:700;color:#1A0A00;}
+.sc-sub{font-size:10px;color:#115E59;margin-top:1px;}
+.sc-rate{font-size:13px;font-weight:800;color:#16a34a;font-family:Georgia,serif;white-space:nowrap;}
+.sc-del{font-size:15px;color:rgba(26,10,0,0.2);margin-left:8px;cursor:pointer;padding:4px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,10,0,0.55);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#fff;border-radius:22px 22px 0 0;padding:24px 20px 40px;width:100%;max-width:420px;}
+.modal-title{font-size:17px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:4px;}
+.modal-sub{font-size:11px;color:#115E59;margin-bottom:16px;}
+.modal-field{background:#ECFDF5;border:1.5px solid rgba(15,118,110,0.2);border-radius:11px;padding:12px 14px;width:100%;font-size:14px;color:#1A0A00;outline:none;margin-bottom:12px;}
+.modal-btns{display:flex;gap:10px;}
+.modal-cancel{flex:1;padding:13px;border-radius:12px;font-size:13px;font-weight:700;background:#ECFDF5;color:#1A0A00;border:1px solid rgba(15,118,110,0.2);cursor:pointer;}
+.modal-save{flex:2;padding:13px;border-radius:12px;font-size:13px;font-weight:800;background:#0F766E;color:#fff;border:none;cursor:pointer;}
+.tip-card{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1px solid #6EE7B7;border-radius:15px;padding:13px 15px;}
+.tip-title{font-size:13px;font-weight:800;color:#064E3B;font-family:Georgia,serif;margin-bottom:8px;}
+.tip-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;font-size:11px;color:#065F46;line-height:1.4;}
+.tip-bullet{width:16px;height:16px;border-radius:50%;background:#0F766E;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(15,118,110,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.slide-up{animation:slideUp 0.35s ease forwards;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <a href="screen_australia.html" class="back-btn">←</a>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏦</span><div class="hdr-title">Offset Account</div><div class="hdr-sub">AUD · Interest Savings · Term Reduction</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Variable</div><div class="rs-val">6.09%</div><div class="rs-note">Big 4 Avg</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Offset Effect</div><div class="rs-val grn">= Rate</div><div class="rs-note">Tax-free</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">HISA Rate</div><div class="rs-val">5.00%</div><div class="rs-note">Best avail.</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Offset Adv.</div><div class="rs-val gold">+1.09%</div><div class="rs-note">vs savings</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Loan & Offset Details <span class="more" id="reset-btn">Reset ↺</span></div>
+  <div class="input-card">
+    <div class="ic-tag">Offset Account Interest Savings Calculator</div>
+    <div class="ic-title">See how much <span>offset saves</span> you</div>
+    <div class="field-row">
+      <div class="field-box">
+        <label>Loan Balance</label>
+        <div class="prefix">AUD $</div>
+        <input type="number" id="loan-bal" value="675000" placeholder="675000">
+      </div>
+      <div class="field-box">
+        <label>Offset Balance</label>
+        <div class="prefix">AUD $</div>
+        <input type="number" id="offset-bal" value="50000" placeholder="50000">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-box">
+        <label>Interest Rate %</label>
+        <input type="number" id="rate" value="6.09" step="0.01">
+      </div>
+      <div class="field-box">
+        <label>Remaining Term (yrs)</label>
+        <input type="number" id="term" value="28" min="1" max="30">
+      </div>
+    </div>
+    <div class="field-row single">
+      <div class="field-box">
+        <label>Monthly Offset Contribution (optional)</label>
+        <div class="prefix">AUD $</div>
+        <input type="number" id="monthly-contrib" value="500" placeholder="0">
+      </div>
+    </div>
+    <button class="calc-btn" id="calc-btn">🏦 Calculate Offset Savings</button>
+  </div>
+
+  <!-- SAVINGS HERO -->
+  <div class="sec-lbl" id="savings-lbl" style="display:none">Total Savings <span class="more" id="open-save">💾 Save</span></div>
+  <div class="savings-hero" id="savings-hero" style="display:none">
+    <div class="sh-tag">Total interest saved with offset</div>
+    <div class="sh-saving" id="total-saved">$0</div>
+    <div class="sh-lbl" id="saved-lbl-sub">over your remaining loan term</div>
+    <div class="sh-grid">
+      <div class="sh-box"><div class="sh-box-lbl">Monthly Saving</div><div class="sh-box-val" id="monthly-saved">$0</div></div>
+      <div class="sh-box"><div class="sh-box-lbl">Years Saved</div><div class="sh-box-val" id="years-saved">0</div></div>
+      <div class="sh-box"><div class="sh-box-lbl">Effective Rate</div><div class="sh-box-val" id="eff-rate">0%</div></div>
+    </div>
+  </div>
+
+  <!-- COMPARISON TABLE -->
+  <div class="sec-lbl" id="comp-lbl" style="display:none">Without vs With Offset</div>
+  <div class="comp-card" id="comp-card" style="display:none">
+    <div class="comp-header"><div><div class="comp-title">Side-by-Side Comparison</div><div class="comp-sub">Same rate, same term — offset makes the difference</div></div></div>
+    <div class="comp-row header-row">
+      <div class="comp-cell hdr">Metric</div>
+      <div class="comp-cell hdr">Without Offset</div>
+      <div class="comp-cell hdr">With Offset ✅</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-cell">Monthly Repay</div>
+      <div class="comp-cell red" id="c-monthly-no">—</div>
+      <div class="comp-cell green" id="c-monthly-yes">—</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-cell">Total Interest</div>
+      <div class="comp-cell red" id="c-interest-no">—</div>
+      <div class="comp-cell green" id="c-interest-yes">—</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-cell">Total Repaid</div>
+      <div class="comp-cell" id="c-total-no">—</div>
+      <div class="comp-cell green" id="c-total-yes">—</div>
+    </div>
+    <div class="comp-row">
+      <div class="comp-cell">Effective Balance</div>
+      <div class="comp-cell" id="c-effbal-no">—</div>
+      <div class="comp-cell green" id="c-effbal-yes">—</div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="sec-lbl" id="chart-lbl" style="display:none">Balance Over Time</div>
+  <div class="chart-card" id="chart-card" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div><div style="font-size:14px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;">Loan Balance Trajectory</div><div style="font-size:10px;color:#115E59;margin-top:1px;">With vs without offset account</div></div>
+    </div>
+    <div class="chart-wrap"><canvas id="balChart"></canvas></div>
+    <div style="display:flex;gap:16px;margin-top:8px;font-size:10px;color:#115E59;">
+      <span><span style="display:inline-block;width:12px;height:3px;background:#dc2626;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Without Offset</span>
+      <span><span style="display:inline-block;width:12px;height:3px;background:#0F766E;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>With Offset</span>
+    </div>
+  </div>
+
+  <!-- YEARS SAVED BANNER -->
+  <div class="years-banner" id="years-banner" style="display:none;margin-top:0;">
+    <div class="yb-icon">⏰</div>
+    <div><div class="yb-title" id="years-banner-title">You save X years</div><div class="yb-sub" id="years-banner-sub">off your loan term</div></div>
+  </div>
+
+  <!-- SAVE BAR -->
+  <div class="save-bar" id="save-bar" style="display:none">
+    <div style="font-size:22px">💾</div>
+    <div><strong style="font-size:13px;color:#1A0A00;display:block;">Save This Calculation</strong><span style="font-size:10px;color:#115E59;">Store for future reference</span></div>
+    <button class="sb-action" id="save-bar-btn">Save Now</button>
+  </div>
+
+  <div class="sec-lbl">Saved Calculations <span class="more" id="clear-all">Clear all</span></div>
+  <div id="saved-list"><div style="background:#fff;border-radius:14px;padding:18px;text-align:center;color:#9CA3AF;font-size:12px;border:1px dashed rgba(15,118,110,0.15);">No saved calculations yet.</div></div>
+
+  <div class="sec-lbl">Offset Tips</div>
+  <div class="tip-card">
+    <div class="tip-title">🏦 Offset Account Guide (Australia)</div>
+    <div class="tip-item"><div class="tip-bullet">1</div><div>Every dollar in your offset reduces the loan balance used to calculate interest — effectively earning your mortgage rate tax-free.</div></div>
+    <div class="tip-item"><div class="tip-bullet">2</div><div>In 2026, best HISA rates sit around 5.00%. Your mortgage at 6.09% means offset beats savings by ~1.09% (pre-tax equivalent: ~1.56% for a 30% taxpayer).</div></div>
+    <div class="tip-item"><div class="tip-bullet">3</div><div>Park your salary in the offset before paying bills — even a few days' difference saves measurable interest over time.</div></div>
+    <div class="tip-item"><div class="tip-bullet">4</div><div>100% offset accounts (most common in Australia) give full dollar-for-dollar reduction. Partial offset accounts only reduce a portion — read the fine print.</div></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="save-modal">
+  <div class="modal-box">
+    <div class="modal-title">💾 Save Calculation</div>
+    <div class="modal-sub" id="modal-desc">Saving your offset calculation</div>
+    <input class="modal-field" id="save-label" placeholder="Label (e.g. Main PPOR Offset)" maxlength="40">
+    <div class="modal-btns">
+      <button class="modal-cancel" id="modal-cancel">Cancel</button>
+      <button class="modal-save" id="modal-confirm">Save ⭐</button>
+    </div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+let balChart = null;
+let calcResult = null;
+let saved = JSON.parse(localStorage.getItem('au_offset_saves') || '[]');
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('en-AU'); }
+
+function calcMonthly(loan, r, n) {
+  if (r === 0) return loan / n;
+  return loan * (r * Math.pow(1+r, n)) / (Math.pow(1+r, n) - 1);
+}
+
+function calcTotalInterest(loan, r, n) {
+  return calcMonthly(loan, r, n) * n - loan;
+}
+
+function calcPayoffMonths(loan, monthlyPayment, r) {
+  if (r === 0) return Math.ceil(loan / monthlyPayment);
+  return Math.ceil(-Math.log(1 - (loan * r) / monthlyPayment) / Math.log(1 + r));
+}
+
+document.getElementById('calc-btn').addEventListener('click', calculate);
+document.getElementById('reset-btn').addEventListener('click', () => {
+  document.getElementById('loan-bal').value = '675000';
+  document.getElementById('offset-bal').value = '50000';
+  document.getElementById('rate').value = '6.09';
+  document.getElementById('term').value = '28';
+  document.getElementById('monthly-contrib').value = '500';
+  ['savings-lbl','savings-hero','comp-lbl','comp-card','chart-lbl','chart-card','years-banner','save-bar'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+});
+
+function calculate() {
+  const loan = parseFloat(document.getElementById('loan-bal').value) || 0;
+  const offset = parseFloat(document.getElementById('offset-bal').value) || 0;
+  const annualRate = parseFloat(document.getElementById('rate').value) || 6.09;
+  const termYrs = parseInt(document.getElementById('term').value) || 28;
+  const contrib = parseFloat(document.getElementById('monthly-contrib').value) || 0;
+  const r = annualRate / 100 / 12;
+  const n = termYrs * 12;
+  const effectiveLoan = Math.max(0, loan - offset);
+
+  const monthlyNo = calcMonthly(loan, r, n);
+  const monthlyYes = calcMonthly(effectiveLoan, r, n) + contrib;
+  const intNo = calcTotalInterest(loan, r, n);
+  const intYes = calcTotalInterest(effectiveLoan, r, n);
+  const totalNo = loan + intNo;
+  const totalYes = effectiveLoan + intYes;
+  const monthlySave = monthlyNo - monthlyYes + contrib;
+  const totalSaved = intNo - intYes;
+  const effRate = effectiveLoan > 0 ? (annualRate * effectiveLoan / loan) : 0;
+
+  // Months to pay off with extra contributions
+  const monthsNew = calcPayoffMonths(effectiveLoan, monthlyNo, r);
+  const yearsSaved = (n - monthsNew) / 12;
+
+  calcResult = { loan, offset, annualRate, termYrs, effectiveLoan, monthlyNo, monthlyYes, intNo, intYes, totalNo, totalYes, totalSaved, monthlySave, effRate, yearsSaved };
+
+  document.getElementById('total-saved').textContent = fmt(totalSaved);
+  document.getElementById('monthly-saved').textContent = fmt(monthlySave > 0 ? monthlySave : intNo - intYes > 0 ? (intNo - intYes)/n : 0);
+  document.getElementById('years-saved').textContent = yearsSaved > 0 ? yearsSaved.toFixed(1) + ' yrs' : '< 1 yr';
+  document.getElementById('eff-rate').textContent = effRate.toFixed(2) + '%';
+
+  document.getElementById('c-monthly-no').textContent = fmt(monthlyNo) + '/mo';
+  document.getElementById('c-monthly-yes').textContent = fmt(calcMonthly(effectiveLoan, r, n)) + '/mo';
+  document.getElementById('c-interest-no').textContent = fmt(intNo);
+  document.getElementById('c-interest-yes').textContent = fmt(intYes);
+  document.getElementById('c-total-no').textContent = fmt(totalNo);
+  document.getElementById('c-total-yes').textContent = fmt(totalYes);
+  document.getElementById('c-effbal-no').textContent = fmt(loan);
+  document.getElementById('c-effbal-yes').textContent = fmt(effectiveLoan);
+
+  document.getElementById('years-banner-title').textContent = yearsSaved > 0
+    ? `Save ${yearsSaved.toFixed(1)} years off your loan!`
+    : 'Great start — keep growing your offset!';
+  document.getElementById('years-banner-sub').textContent =
+    `By maintaining $${offset.toLocaleString()} in offset + $${contrib.toLocaleString()}/mo contributions`;
+
+  drawChart(loan, effectiveLoan, r, n, monthlyNo);
+
+  ['savings-lbl','savings-hero','comp-lbl','comp-card','chart-lbl','chart-card','years-banner','save-bar'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = '';
+  });
+}
+
+function drawChart(loan, effLoan, r, n, payment) {
+  const labels = [], dataNo = [], dataYes = [];
+  let balNo = loan, balYes = effLoan;
+  const step = Math.max(1, Math.floor(n / 24));
+  for (let m = 0; m <= n; m += step) {
+    labels.push('Yr ' + Math.round(m/12));
+    dataNo.push(Math.max(0, Math.round(balNo)));
+    dataYes.push(Math.max(0, Math.round(balYes)));
+    for (let i = 0; i < step; i++) {
+      const iNo = balNo * r; const pNo = payment - iNo; balNo = Math.max(0, balNo - pNo);
+      const iYes = balYes * r; const pYes = payment - iYes; balYes = Math.max(0, balYes - pYes);
+    }
+  }
+  const ctx = document.getElementById('balChart').getContext('2d');
+  if (balChart) balChart.destroy();
+  balChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Without Offset', data: dataNo, borderColor: '#dc2626', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false },
+        { label: 'With Offset', data: dataYes, borderColor: '#0F766E', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': $' + c.parsed.y.toLocaleString() }}},
+      scales: {
+        x: { display: true, ticks: { color: '#92400E', font: { size: 9 }, maxTicksLimit: 6 }, grid: { display: false }},
+        y: { display: true, ticks: { color: '#92400E', font: { size: 9 }, callback: v => '$' + (v/1000).toFixed(0)+'K', maxTicksLimit: 5 }, grid: { color: 'rgba(15,118,110,0.08)' }}
+      }
+    }
+  });
+}
+
+function openModal() {
+  if (!calcResult) return;
+  document.getElementById('modal-desc').textContent = `Offset: $${calcResult.offset.toLocaleString()} saving ${fmt(calcResult.totalSaved)}`;
+  document.getElementById('save-label').value = '';
+  document.getElementById('save-modal').classList.add('open');
+}
+document.getElementById('open-save').addEventListener('click', openModal);
+document.getElementById('save-bar-btn').addEventListener('click', openModal);
+document.getElementById('modal-cancel').addEventListener('click', () => document.getElementById('save-modal').classList.remove('open'));
+document.getElementById('save-modal').addEventListener('click', function(e){if(e.target===this)this.classList.remove('open');});
+document.getElementById('modal-confirm').addEventListener('click', () => {
+  if (!calcResult) return;
+  const label = document.getElementById('save-label').value.trim() || 'Offset Calculation';
+  saved.unshift({ id: Date.now(), label, ...calcResult });
+  localStorage.setItem('au_offset_saves', JSON.stringify(saved));
+  document.getElementById('save-modal').classList.remove('open');
+  renderSaved();
+});
+document.getElementById('clear-all').addEventListener('click', () => { saved=[]; localStorage.setItem('au_offset_saves','[]'); renderSaved(); });
+function renderSaved() {
+  const el = document.getElementById('saved-list');
+  if (!saved.length) { el.innerHTML='<div style="background:#fff;border-radius:14px;padding:18px;text-align:center;color:#9CA3AF;font-size:12px;border:1px dashed rgba(15,118,110,0.15);">No saved calculations yet.</div>'; return; }
+  el.innerHTML = saved.map(c => `<div class="saved-card slide-up">
+    <div class="sc-icon">🏦</div>
+    <div class="sc-body"><div class="sc-title">${c.label}</div><div class="sc-sub">Offset: $${c.offset.toLocaleString()} · ${c.annualRate}% rate</div></div>
+    <div class="sc-rate">${fmt(c.totalSaved)} saved</div>
+    <div class="sc-del" onclick="delSaved(${c.id})">✕</div>
+  </div>`).join('');
+}
+function delSaved(id){saved=saved.filter(s=>s.id!==id);localStorage.setItem('au_offset_saves',JSON.stringify(saved));renderSaved();}
+renderSaved();
+</script>
+</body>
+</html>

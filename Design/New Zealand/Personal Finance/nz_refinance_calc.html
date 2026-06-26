@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refinance Calculator · NZ</title>
+<style>
+  :root {
+    --black:#0A0F0D;--forest:#0D3B2E;--fern:#1A6B4A;--silver:#C0C8C1;
+    --teal:#0D9488;--sky:#0EA5E9;--red:#C0392B;--gold:#D4A017;--gold-lt:#F5D060;
+    --bg:#EDF5F2;--card:#FFFFFF;--muted:#4A6358;--border:rgba(13,59,46,0.09);
+    --sh:0 4px 20px rgba(10,15,13,0.09);--sh2:0 8px 36px rgba(10,15,13,0.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--black);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(158deg,#0A0F0D 0%,#0F5D4A 40%,#0D9488 75%,#0EA5E9 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(245,208,96,0.06);}
+  .header::after{content:'🔁';position:absolute;right:12px;top:44px;font-size:78px;opacity:0.08;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.11);border:1px solid rgba(255,255,255,0.19);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;display:block;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:0.4px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .badge{font-size:9px;font-weight:700;color:#0D9488;background:#F0FDFA;border:1px solid #99F6E4;padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+  .badge-r{font-size:9px;font-weight:700;color:#C0392B;background:#FEF2F2;border:1px solid #FECACA;padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+  .calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;animation:fadeUp .35s ease both;}
+  .calc-card h3{font-size:14px;font-weight:800;color:var(--black);margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+  .calc-card p{font-size:10px;color:var(--muted);margin-bottom:14px;font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.5;}
+  .field{margin-bottom:12px;}
+  .field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .field input,.field select{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-weight:700;color:var(--black);background:var(--bg);outline:none;font-family:'Palatino Linotype',Palatino,Georgia,serif;transition:border-color .2s;}
+  .field input:focus,.field select:focus{border-color:var(--teal);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .field-hint{font-size:9px;color:var(--muted);margin-top:4px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  /* Break fee box */
+  .breakfee-info{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:13px;padding:12px 14px;margin-bottom:12px;}
+  .breakfee-info .bt{font-size:12px;font-weight:800;color:#92400E;margin-bottom:4px;}
+  .breakfee-info .bs{font-size:9.5px;color:#B45309;font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.5;}
+
+  .calc-btn{width:100%;padding:14px;background:linear-gradient(135deg,#0D9488,#0D3B2E);border:none;border-radius:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(13,148,136,0.35);font-family:'Palatino Linotype',Palatino,Georgia,serif;margin-top:4px;transition:opacity .15s;}
+  .calc-btn:active{opacity:.85;}
+
+  /* Results */
+  .results-card{background:linear-gradient(148deg,#0A0F0D,#0F5D4A);border-radius:20px;padding:18px;box-shadow:var(--sh2);margin-bottom:14px;display:none;}
+  .results-card.show{display:block;animation:fadeUp .35s ease both;}
+  .res-title{font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:12px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .res-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:13px;padding:11px 12px;}
+  .res-box.green{background:rgba(26,107,74,0.25);border-color:rgba(110,231,183,0.4);}
+  .res-box.amber{background:rgba(212,160,23,0.2);border-color:rgba(245,208,96,0.4);}
+  .res-box label{font-size:8.5px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;letter-spacing:0.4px;}
+  .res-box .rv{font-size:16px;font-weight:800;color:#fff;}
+  .res-box.green .rv{color:#6EE7B7;}
+  .res-box.amber .rv{color:var(--gold-lt);}
+  .res-box .rs2{font-size:8.5px;color:rgba(255,255,255,0.4);margin-top:2px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  /* Waterfall / timeline chart */
+  .timeline{margin:14px 0;}
+  .tl-item{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .tl-bar-wrap{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.08);overflow:hidden;}
+  .tl-bar-fill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(0.34,1.56,0.64,1);}
+  .tl-label{font-size:9px;color:rgba(255,255,255,0.6);font-family:'Helvetica Neue',Arial,sans-serif;white-space:nowrap;}
+  .tl-val{font-size:10px;font-weight:700;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;white-space:nowrap;min-width:70px;text-align:right;}
+
+  /* Break even indicator */
+  .breakeven-bar{margin:12px 0;}
+  .be-label{font-size:9.5px;color:rgba(255,255,255,0.6);font-family:'Helvetica Neue',Arial,sans-serif;margin-bottom:6px;}
+  .be-track{height:14px;border-radius:7px;background:rgba(255,255,255,0.08);position:relative;overflow:hidden;}
+  .be-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#6EE7B7,#F5D060);transition:width .7s ease;}
+  .be-marker{position:absolute;top:50%;transform:translateY(-50%);width:3px;height:18px;background:#fff;border-radius:2px;z-index:2;}
+  .be-val{font-size:11px;font-weight:800;color:var(--gold-lt);margin-top:6px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .save-btn{width:100%;padding:13px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.22);border-radius:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Palatino Linotype',Palatino,Georgia,serif;display:flex;align-items:center;justify-content:center;gap:7px;transition:background .2s;margin-top:10px;}
+  .save-btn:active{background:rgba(255,255,255,0.18);}
+
+  /* Bank comparison */
+  .bank-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .bank-card h3{font-size:14px;font-weight:800;color:var(--black);margin-bottom:12px;}
+  .bank-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+  .bank-row:last-child{border-bottom:none;}
+  .bank-name{font-size:12px;font-weight:800;color:var(--black);}
+  .bank-rate{font-size:13px;font-weight:800;color:var(--fern);}
+  .bank-note{font-size:9px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .best-badge{background:#ECFDF5;color:#065F46;font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:20px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--forest);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:200;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,15,13,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ni.active .ni-lb{color:var(--fern);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔁</div>
+      <div class="hdr-title">Refinance Calculator</div>
+      <div class="hdr-sub">Break Fee · Savings · Break-Even · NZ Banks</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">1-Yr Fixed</div><div class="rs-v gold">6.59%</div><div class="rs-n">Best NZ</div></div>
+    <div class="rs"><div class="rs-l">2-Yr Fixed</div><div class="rs-v">6.35%</div><div class="rs-n">Kiwibank</div></div>
+    <div class="rs"><div class="rs-l">Floating</div><div class="rs-v">8.64%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">OCR</div><div class="rs-v gold">5.50%</div><div class="rs-n">RBNZ</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Break Fee Explainer -->
+  <div class="sec" style="margin-top:0">NZ Break Fee <span class="badge-r">Fixed Rate Warning</span></div>
+  <div class="breakfee-info">
+    <div class="bt">⚠️ NZ Break Costs Can Be Significant</div>
+    <div class="bs">NZ banks calculate break fees based on wholesale interest rate movement. If rates have fallen since you fixed, break costs can be tens of thousands of dollars. Always get a formal break cost quote from your bank before refinancing.</div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="sec">Your Refinance Details <span class="badge">Step by Step</span></div>
+  <div class="calc-card">
+    <h3>🔁 Current Loan</h3>
+    <p>Enter your existing mortgage details to calculate break fees and savings from refinancing.</p>
+    <div class="field-row">
+      <div class="field">
+        <label>Remaining Balance (NZD)</label>
+        <input type="number" id="curBal" value="520000" step="10000">
+      </div>
+      <div class="field">
+        <label>Current Fixed Rate (%)</label>
+        <input type="number" id="curRate" value="7.29" step="0.01">
+        <div class="field-hint">Your locked-in rate</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Remaining Fixed Term (months)</label>
+        <input type="number" id="curTermMos" value="18" min="1" max="60">
+      </div>
+      <div class="field">
+        <label>Remaining Loan Term (years)</label>
+        <input type="number" id="curLoanTerm" value="24" min="1" max="30">
+      </div>
+    </div>
+
+    <h3 style="margin-top:14px">🏦 New Loan / Refinance</h3>
+    <div class="field-row">
+      <div class="field">
+        <label>New Rate (%)</label>
+        <input type="number" id="newRate" value="6.59" step="0.01">
+      </div>
+      <div class="field">
+        <label>New Term (years)</label>
+        <input type="number" id="newTerm" value="24" min="1" max="30">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Wholesale Rate When Fixed (%)</label>
+        <input type="number" id="wsFixed" value="5.80" step="0.01">
+        <div class="field-hint">Rate at fixing date (NZ swap)</div>
+      </div>
+      <div class="field">
+        <label>Current Wholesale Rate (%)</label>
+        <input type="number" id="wsCurrent" value="4.90" step="0.01">
+        <div class="field-hint">Today's NZ swap rate</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Cashback / Incentive (NZD)</label>
+        <input type="number" id="cashback" value="3000" step="500">
+        <div class="field-hint">New lender cashback offer</div>
+      </div>
+      <div class="field">
+        <label>Legal / Admin Costs (NZD)</label>
+        <input type="number" id="legal" value="1500" step="100">
+        <div class="field-hint">Solicitor + discharge fees</div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🔁 Calculate Refinance</button>
+  </div>
+
+  <!-- Results -->
+  <div class="results-card" id="results">
+    <div class="res-title">Refinance Analysis</div>
+    <div class="res-grid">
+      <div class="res-box amber">
+        <label>Estimated Break Fee</label>
+        <div class="rv" id="breakFee">—</div>
+        <div class="rs2">NZ formula estimate</div>
+      </div>
+      <div class="res-box">
+        <label>Net Cost to Refinance</label>
+        <div class="rv" id="netCost">—</div>
+        <div class="rs2">Fees − Cashback</div>
+      </div>
+      <div class="res-box">
+        <label>Old Monthly Payment</label>
+        <div class="rv" id="oldPmt">—</div>
+        <div class="rs2">Current mortgage</div>
+      </div>
+      <div class="res-box green">
+        <label>New Monthly Payment</label>
+        <div class="rv" id="newPmt">—</div>
+        <div class="rs2">After refinancing</div>
+      </div>
+      <div class="res-box green">
+        <label>Monthly Saving</label>
+        <div class="rv" id="monthSave">—</div>
+        <div class="rs2">Per month gained</div>
+      </div>
+      <div class="res-box">
+        <label>Total Interest Saved</label>
+        <div class="rv" id="intSave">—</div>
+        <div class="rs2">Over loan life</div>
+      </div>
+    </div>
+
+    <!-- Break-even indicator -->
+    <div class="breakeven-bar">
+      <div class="be-label">Break-Even Point</div>
+      <div class="be-track">
+        <div class="be-fill" id="beFill" style="width:0%"></div>
+        <div class="be-marker" id="beMarker" style="left:70%"></div>
+      </div>
+      <div class="be-val" id="beVal">—</div>
+    </div>
+
+    <!-- Timeline chart -->
+    <div class="timeline" id="timeline"></div>
+
+    <button class="save-btn" onclick="saveCalc()">💾 Save This Calculation</button>
+  </div>
+
+  <!-- Saved -->
+  <div id="savedSection" style="display:none">
+    <div class="sec">Saved Calculations <span class="badge">Local</span></div>
+    <div id="savedList"></div>
+  </div>
+
+  <!-- Bank Comparison -->
+  <div class="sec">NZ Bank Rates (Jun 2025) <span class="badge">Compare</span></div>
+  <div class="bank-card">
+    <h3>🏦 Current 1-Year Fixed Rates</h3>
+    <div class="bank-row">
+      <div><div class="bank-name">🥝 Kiwibank</div><div class="bank-note">NZ-owned · cashback available</div></div>
+      <div style="text-align:right"><div class="bank-rate">6.55%</div><span class="best-badge">Best Rate</span></div>
+    </div>
+    <div class="bank-row">
+      <div><div class="bank-name">🏦 ANZ</div><div class="bank-note">Simplicity PLUS · flexi</div></div>
+      <div style="text-align:right"><div class="bank-rate">6.59%</div></div>
+    </div>
+    <div class="bank-row">
+      <div><div class="bank-name">🏦 ASB</div><div class="bank-note">FastTrack offset</div></div>
+      <div style="text-align:right"><div class="bank-rate">6.59%</div></div>
+    </div>
+    <div class="bank-row">
+      <div><div class="bank-name">🏦 BNZ</div><div class="bank-note">TotalMoney offset</div></div>
+      <div style="text-align:right"><div class="bank-rate">6.59%</div></div>
+    </div>
+    <div class="bank-row">
+      <div><div class="bank-name">🏦 Westpac</div><div class="bank-note">Choices · offset</div></div>
+      <div style="text-align:right"><div class="bank-rate">6.65%</div></div>
+    </div>
+    <div class="bank-row">
+      <div><div class="bank-name">🏦 SBS Bank</div><div class="bank-note">Non-bank option</div></div>
+      <div style="text-align:right"><div class="bank-rate">6.79%</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">✅ Saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇳🇿</div><div class="ni-lb">NZ Tools</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+  function fmt(n){return 'NZ$'+Math.round(n).toLocaleString('en-NZ');}
+  function pmt(P,r,n){if(r===0)return P/n;const mr=r/12;return P*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1);}
+
+  function calculate(){
+    const curBal    = parseFloat(document.getElementById('curBal').value)    ||520000;
+    const curRate   = parseFloat(document.getElementById('curRate').value)   /100||0.0729;
+    const curTermMos= parseInt(document.getElementById('curTermMos').value)  ||18;
+    const curLoanTerm=parseInt(document.getElementById('curLoanTerm').value) ||24;
+    const newRate   = parseFloat(document.getElementById('newRate').value)   /100||0.0659;
+    const newTerm   = parseInt(document.getElementById('newTerm').value)     ||24;
+    const wsFixed   = parseFloat(document.getElementById('wsFixed').value)   /100||0.058;
+    const wsCurrent = parseFloat(document.getElementById('wsCurrent').value) /100||0.049;
+    const cashback  = parseFloat(document.getElementById('cashback').value)  ||3000;
+    const legal     = parseFloat(document.getElementById('legal').value)     ||1500;
+
+    // NZ break fee formula: balance × (wsFixed - wsCurrent) × remaining months / 12
+    const rateDiff = wsFixed - wsCurrent;
+    const breakFee = rateDiff > 0 ? curBal * rateDiff * (curTermMos/12) : 0;
+
+    const netCost  = breakFee + legal - cashback;
+    const oldPmt   = pmt(curBal, curRate, curLoanTerm*12);
+    const newPmt   = pmt(curBal, newRate, newTerm*12);
+    const monthSave= oldPmt - newPmt;
+    const breakEvenMonths = monthSave > 0 ? Math.ceil(netCost / monthSave) : Infinity;
+
+    const totalIntOld = oldPmt * curLoanTerm * 12 - curBal;
+    const totalIntNew = newPmt * newTerm * 12 - curBal;
+    const intSave = totalIntOld - totalIntNew - breakFee - legal + cashback;
+
+    document.getElementById('breakFee').textContent = fmt(breakFee);
+    document.getElementById('netCost').textContent  = fmt(netCost);
+    document.getElementById('oldPmt').textContent   = fmt(oldPmt);
+    document.getElementById('newPmt').textContent   = fmt(newPmt);
+    document.getElementById('monthSave').textContent= fmt(monthSave);
+    document.getElementById('intSave').textContent  = fmt(intSave);
+
+    // Break-even bar
+    const beMonths = Math.min(breakEvenMonths, 60);
+    const pctFill  = Math.min((beMonths/60)*100, 100);
+    document.getElementById('beFill').style.width   = pctFill + '%';
+    document.getElementById('beMarker').style.left  = pctFill + '%';
+    document.getElementById('beVal').textContent    = breakEvenMonths === Infinity
+      ? 'Never break even — refinancing not recommended'
+      : `Break-even: ${breakEvenMonths} months (${(breakEvenMonths/12).toFixed(1)} years)`;
+
+    // Timeline bars
+    const items = [
+      {label:'Break Fee', val:breakFee, color:'#FCA5A5'},
+      {label:'Legal Costs', val:legal, color:'#FCD34D'},
+      {label:'Cashback', val:cashback, color:'#6EE7B7'},
+      {label:'Monthly Saving', val:monthSave, color:'#67E8F9'},
+      {label:'Annual Saving', val:monthSave*12, color:'#6EE7B7'},
+      {label:'Total Int Saved', val:Math.max(0,intSave), color:'#86EFAC'}
+    ];
+    const maxVal = Math.max(...items.map(a=>a.val));
+    document.getElementById('timeline').innerHTML = items.map(a=>`
+      <div class="tl-item">
+        <div class="tl-dot" style="background:${a.color}"></div>
+        <div class="tl-bar-wrap"><div class="tl-bar-fill" style="width:${maxVal>0?(a.val/maxVal*100).toFixed(1):0}%;background:${a.color}"></div></div>
+        <div class="tl-label">${a.label}</div>
+        <div class="tl-val">${fmt(a.val)}</div>
+      </div>`).join('');
+
+    document.getElementById('results').classList.add('show');
+
+    window._last = {breakFee:fmt(breakFee), monthSave:fmt(monthSave), intSave:fmt(Math.max(0,intSave)), beMonths:breakEvenMonths};
+  }
+
+  function saveCalc(){
+    if(!window._last)return;
+    const saved=JSON.parse(localStorage.getItem('nz_refi_saves')||'[]');
+    saved.unshift({date:new Date().toLocaleDateString('en-NZ'),...window._last});
+    localStorage.setItem('nz_refi_saves',JSON.stringify(saved.slice(0,5)));
+    renderSaved();
+    showToast('✅ Calculation Saved!');
+  }
+
+  function renderSaved(){
+    const saved=JSON.parse(localStorage.getItem('nz_refi_saves')||'[]');
+    if(!saved.length){document.getElementById('savedSection').style.display='none';return;}
+    document.getElementById('savedSection').style.display='block';
+    document.getElementById('savedList').innerHTML=saved.map((s,i)=>`
+      <div style="background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:10px;margin-bottom:9px" onclick="deleteSave(${i})">
+        <div style="font-size:22px">💾</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:800;color:var(--black)">Break Fee: ${s.breakFee} · Saves: ${s.monthSave}/mo</div>
+          <div style="font-size:9.5px;color:var(--muted);font-family:Helvetica Neue,Arial,sans-serif;margin-top:2px">Break-even: ${s.beMonths===Infinity?'Never':s.beMonths+' months'} · ${s.date}</div>
+        </div>
+        <div style="font-size:12px;color:#C0392B;font-weight:700">✕</div>
+      </div>`).join('');
+  }
+
+  function deleteSave(i){
+    const saved=JSON.parse(localStorage.getItem('nz_refi_saves')||'[]');
+    saved.splice(i,1);
+    localStorage.setItem('nz_refi_saves',JSON.stringify(saved));
+    renderSaved();
+  }
+
+  function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2500);
+  }
+
+  renderSaved();
+</script>
+</body>
+</html>

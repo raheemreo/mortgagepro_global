@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoC Rate History – Canada Mortgage Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F0F7F4;color:#0A2E1A;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0A2E1A 0%,#1A5C35 60%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;text-align:center;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.grn{color:#6EDFA0;}.rs-val.red{color:#FF8A9A;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.current-card{background:linear-gradient(145deg,#0A2E1A,#1A5C35);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(10,46,26,0.25);margin-bottom:10px;}
+.current-card::before{content:'🏦';position:absolute;right:-5px;top:-10px;font-size:75px;opacity:0.07;}
+.cc-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.cc-val{font-size:42px;font-weight:800;color:#6EDFA0;font-family:Georgia,serif;letter-spacing:-2px;margin:4px 0;}
+.cc-sub{font-size:12px;color:rgba(255,255,255,0.6);}
+.cc-row{display:flex;gap:8px;margin-top:14px;}
+.cc-box{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.cc-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.cc-box .v{font-size:13px;font-weight:800;color:#fff;}
+.cc-box .v.grn{color:#6EDFA0;}.cc-box .v.red{color:#FF8A9A;}
+/* Chart */
+.chart-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:10px;}
+.chart-area{position:relative;height:160px;margin-top:8px;}
+svg.boc-chart{width:100%;height:100%;}
+.chart-legend{display:flex;gap:14px;margin-top:8px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#4A7C5F;}
+.leg-dot{width:10px;height:10px;border-radius:50%;}
+/* Timeline */
+.timeline{position:relative;padding-left:28px;}
+.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,#1A5C35,#C8102E,#1A5C35);}
+.tl-item{position:relative;margin-bottom:14px;}
+.tl-dot{position:absolute;left:-22px;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #1A5C35;}
+.tl-dot.cut{background:#1A5C35;box-shadow:0 0 0 2px #1A5C35;}
+.tl-dot.hike{background:#C8102E;box-shadow:0 0 0 2px #C8102E;}
+.tl-dot.hold{background:#F59E0B;box-shadow:0 0 0 2px #F59E0B;}
+.tl-card{background:#fff;border-radius:12px;padding:11px 13px;box-shadow:0 2px 8px rgba(10,46,26,0.07);border:1px solid rgba(26,92,53,0.08);}
+.tl-date{font-size:10px;color:#4A7C5F;font-weight:600;}
+.tl-row{display:flex;align-items:center;justify-content:space-between;margin-top:3px;}
+.tl-desc{font-size:12px;font-weight:700;color:#0A2E1A;}
+.tl-rate{font-size:14px;font-weight:800;font-family:Georgia,serif;}
+.tl-rate.cut{color:#1A5C35;}.tl-rate.hike{color:#C8102E;}.tl-rate.hold{color:#F59E0B;}
+.tl-change{font-size:10px;padding:3px 8px;border-radius:8px;font-weight:700;}
+.tl-change.cut{background:#F0FDF4;color:#166534;}
+.tl-change.hike{background:#FEF2F2;color:#991B1B;}
+.tl-change.hold{background:#FFFBEB;color:#92400E;}
+.impact-card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:10px;}
+.ic-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F0F7F4;}
+.ic-row:last-child{border-bottom:none;}
+.ic-lbl{font-size:12px;color:#4A7C5F;}
+.ic-val{font-size:13px;font-weight:700;color:#0A2E1A;}
+.ic-val.grn{color:#1A5C35;}.ic-val.red{color:#C8102E;}
+.next-card{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 15px;display:flex;align-items:center;gap:11px;margin-bottom:10px;}
+.nc-icon{font-size:24px;flex-shrink:0;}
+.nc-title{font-size:13px;font-weight:800;color:#92400E;font-family:Georgia,serif;}
+.nc-sub{font-size:10px;color:#B45309;margin-top:2px;line-height:1.4;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,92,53,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,46,26,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#4A7C5F;}
+.ni.active .ni-lb{color:#1A5C35;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">📉</span><div class="hdr-title">BoC Rate History</div><div class="hdr-sub">Bank of Canada · Overnight Rate · 2024–2026</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">Current BoC</div><div class="rs-val grn">2.25%</div><div class="rs-note">Held Mar'26</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Peak 2023</div><div class="rs-val red">5.00%</div><div class="rs-note">Jul'23</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Total Cuts</div><div class="rs-val grn">−2.75%</div><div class="rs-note">Jun'24–Dec'25</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Prime Rate</div><div class="rs-val">4.45%</div><div class="rs-note">+220bps</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Current Rate</div>
+  <div class="current-card">
+    <div class="cc-tag">Bank of Canada Overnight Rate</div>
+    <div class="cc-val">2.25%</div>
+    <div class="cc-sub">Held — March 18, 2026 · Next decision: June 4, 2026</div>
+    <div class="cc-row">
+      <div class="cc-box"><label>Prime Rate</label><div class="v">4.45%</div></div>
+      <div class="cc-box"><label>Variable Mtg</label><div class="v">~4.95%</div></div>
+      <div class="cc-box"><label>vs 2023 Peak</label><div class="v grn">−2.75%</div></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Rate Chart (2022–2026)</div>
+  <div class="chart-card">
+    <div style="font-size:12px;font-weight:700;color:#0A2E1A;margin-bottom:2px;">BoC Overnight Rate</div>
+    <div style="font-size:10px;color:#4A7C5F;">Hike cycle 2022–23 → Cut cycle 2024–25 → Hold 2026</div>
+    <div class="chart-area">
+      <svg class="boc-chart" viewBox="0 0 360 160" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1A5C35" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#1A5C35" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Y axis labels -->
+        <text x="2" y="14" font-size="8" fill="#4A7C5F">5.0%</text>
+        <text x="2" y="52" font-size="8" fill="#4A7C5F">4.0%</text>
+        <text x="2" y="90" font-size="8" fill="#4A7C5F">3.0%</text>
+        <text x="2" y="128" font-size="8" fill="#4A7C5F">2.0%</text>
+        <text x="2" y="152" font-size="8" fill="#4A7C5F">1.0%</text>
+        <!-- Grid lines -->
+        <line x1="28" y1="10" x2="355" y2="10" stroke="#F0F7F4" stroke-width="1"/>
+        <line x1="28" y1="48" x2="355" y2="48" stroke="#F0F7F4" stroke-width="1"/>
+        <line x1="28" y1="86" x2="355" y2="86" stroke="#F0F7F4" stroke-width="1"/>
+        <line x1="28" y1="124" x2="355" y2="124" stroke="#F0F7F4" stroke-width="1"/>
+        <!-- Rate path: scale: 5%=10px, 0%=160px => y = 160 - rate*30 -->
+        <!-- Points: Jan22=0.25→y=152.5, Mar22=0.5→y=145, Apr22=1.0→y=130, Jun22=1.5→y=115, Jul22=2.5→y=85, Sep22=3.25→y=62.5, Oct22=3.75→y=47.5, Jan23=4.25→y=32.5, Mar23=4.5→y=25, Jun23=4.75→y=17.5, Jul23=5.0→y=10, Sep23–Jun24=5.0→y=10, Jun24=4.75→y=17.5, Jul24=4.5→y=25, Sep24=4.25→y=32.5, Oct24=3.75→y=47.5, Dec24=3.25→y=62.5, Jan25=3.0→y=70, Mar25=2.75→y=77.5, Apr25=2.75→y=77.5, Jun25=2.5→y=85, Jul25=2.5→y=85, Sep25=2.25→y=92.5, Oct25=2.25→y=92.5, Dec25=2.25→y=92.5, Jan26=2.25→y=92.5, Mar26=2.25→y=92.5 -->
+        <!-- X spread: 28 to 355 over ~26 data points, step ~12.5 -->
+        <polyline points="28,152.5 40,145 53,130 66,115 79,85 92,62.5 105,47.5 118,32.5 131,25 144,17.5 157,10 170,10 183,17.5 196,25 209,32.5 222,47.5 235,62.5 248,70 261,77.5 274,77.5 287,77.5 300,85 313,92.5 326,92.5 339,92.5 352,92.5" fill="none" stroke="#1A5C35" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polygon points="28,152.5 40,145 53,130 66,115 79,85 92,62.5 105,47.5 118,32.5 131,25 144,17.5 157,10 170,10 183,17.5 196,25 209,32.5 222,47.5 235,62.5 248,70 261,77.5 274,77.5 287,77.5 300,85 313,92.5 326,92.5 339,92.5 352,92.5 352,160 28,160" fill="url(#lineGrad)"/>
+        <!-- Peak marker -->
+        <circle cx="157" cy="10" r="4" fill="#C8102E"/>
+        <text x="148" y="7" font-size="8" fill="#C8102E">5.00%</text>
+        <!-- Current marker -->
+        <circle cx="352" cy="92.5" r="4" fill="#6EDFA0"/>
+        <text x="325" y="89" font-size="8" fill="#1A5C35">2.25%</text>
+        <!-- X labels -->
+        <text x="22" y="158" font-size="8" fill="#4A7C5F">Jan'22</text>
+        <text x="95" y="158" font-size="8" fill="#4A7C5F">Oct'22</text>
+        <text x="148" y="158" font-size="8" fill="#4A7C5F">Jul'23</text>
+        <text x="216" y="158" font-size="8" fill="#4A7C5F">Oct'24</text>
+        <text x="285" y="158" font-size="8" fill="#4A7C5F">Mar'25</text>
+        <text x="332" y="158" font-size="8" fill="#4A7C5F">Mar'26</text>
+      </svg>
+    </div>
+    <div class="chart-legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#C8102E"></div>Peak 5.00%</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#6EDFA0"></div>Current 2.25%</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#1A5C35"></div>BoC Policy Rate</div>
+    </div>
+  </div>
+
+  <div class="next-card">
+    <div class="nc-icon">📅</div>
+    <div><div class="nc-title">Next BoC Decision: June 4, 2026</div><div class="nc-sub">Consensus: Hold at 2.25%. Middle East energy risks and trade uncertainty cited. BoC watching inflation closely — March CPI 1.8%. Hike risk rises if energy inflation broadens.</div></div>
+  </div>
+
+  <div class="sec-lbl">Rate Impact on Mortgages</div>
+  <div class="impact-card">
+    <div class="ic-row"><span class="ic-lbl">Variable mortgage rate (est.)</span><span class="ic-val">~4.95% (Prime −0.5%)</span></div>
+    <div class="ic-row"><span class="ic-lbl">5-yr fixed rate (market)</span><span class="ic-val">4.99%</span></div>
+    <div class="ic-row"><span class="ic-lbl">Monthly pmt change per $100K since peak</span><span class="ic-val grn">−$73/mo saved</span></div>
+    <div class="ic-row"><span class="ic-lbl">$500K mortgage — monthly saving vs 2023</span><span class="ic-val grn">~$365/mo</span></div>
+    <div class="ic-row"><span class="ic-lbl">2026 BoC forecast (consensus)</span><span class="ic-val" style="color:#F59E0B">Hold 2.25%</span></div>
+    <div class="ic-row"><span class="ic-lbl">Next hike risk</span><span class="ic-val red">If energy inflation broadens</span></div>
+  </div>
+
+  <div class="sec-lbl">Decision History (2024–2026)</div>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot hold"></div>
+      <div class="tl-card">
+        <div class="tl-date">March 18, 2026</div>
+        <div class="tl-row"><span class="tl-desc">Hold — Middle East energy risk</span><span class="tl-rate hold">2.25%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change hold">No Change</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot hold"></div>
+      <div class="tl-card">
+        <div class="tl-date">January 29, 2026</div>
+        <div class="tl-row"><span class="tl-desc">Hold — trade uncertainty (US tariffs)</span><span class="tl-rate hold">2.25%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change hold">No Change</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot cut"></div>
+      <div class="tl-card">
+        <div class="tl-date">December 10, 2025</div>
+        <div class="tl-row"><span class="tl-desc">Cut — weak growth, 1.8% CPI</span><span class="tl-rate cut">2.25%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change cut">−25bps</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot cut"></div>
+      <div class="tl-card">
+        <div class="tl-date">October 23, 2025</div>
+        <div class="tl-row"><span class="tl-desc">Cut — GDP contraction Q4</span><span class="tl-rate cut">2.50%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change cut">−25bps</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot cut"></div>
+      <div class="tl-card">
+        <div class="tl-date">March 12, 2025</div>
+        <div class="tl-row"><span class="tl-desc">Cut — trade uncertainty</span><span class="tl-rate cut">2.75%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change cut">−25bps</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot cut"></div>
+      <div class="tl-card">
+        <div class="tl-date">January 29, 2025</div>
+        <div class="tl-row"><span class="tl-desc">Cut — inflation at 2% target</span><span class="tl-rate cut">3.00%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change cut">−25bps</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot cut"></div>
+      <div class="tl-card">
+        <div class="tl-date">December 11, 2024</div>
+        <div class="tl-row"><span class="tl-desc">Jumbo cut — weak jobs data</span><span class="tl-rate cut">3.25%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change cut">−50bps</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot cut"></div>
+      <div class="tl-card">
+        <div class="tl-date">October 23, 2024</div>
+        <div class="tl-row"><span class="tl-desc">Jumbo cut — recession fears</span><span class="tl-rate cut">3.75%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change cut">−50bps</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot cut"></div>
+      <div class="tl-card">
+        <div class="tl-date">September 4, 2024</div>
+        <div class="tl-row"><span class="tl-desc">Cut — CPI eased to 2.5%</span><span class="tl-rate cut">4.25%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change cut">−25bps</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot cut"></div>
+      <div class="tl-card">
+        <div class="tl-date">July 24, 2024</div>
+        <div class="tl-row"><span class="tl-desc">Cut — inflation eased</span><span class="tl-rate cut">4.50%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change cut">−25bps</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot cut"></div>
+      <div class="tl-card">
+        <div class="tl-date">June 5, 2024</div>
+        <div class="tl-row"><span class="tl-desc">First cut since 2020</span><span class="tl-rate cut">4.75%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change cut">−25bps · Cycle begins</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot hike"></div>
+      <div class="tl-card">
+        <div class="tl-date">July 12, 2023</div>
+        <div class="tl-row"><span class="tl-desc">Final hike — peak rate</span><span class="tl-rate hike">5.00%</span></div>
+        <div style="font-size:10px;color:#4A7C5F;margin-top:3px;"><span class="tl-change hike">+25bps · Cycle peak</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🍁</div><div class="ni-lb">Canada</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affordability – UK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:120px;height:120px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.save-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.save-btn{font-size:13px;font-weight:700;width:auto;padding:0 12px;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.gold{color:#FFD700;}.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;}
+.card{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.inp-group{margin-bottom:12px;}
+.inp-label{font-size:11px;font-weight:700;color:#5C5C8A;margin-bottom:5px;display:flex;justify-content:space-between;}
+.inp-wrap{position:relative;}
+.inp-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#1a1a5e;}
+.inp-suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#5C5C8A;}
+input[type=number],select{width:100%;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:11px;padding:11px 36px 11px 28px;font-size:15px;font-weight:700;color:#0D0D2B;outline:none;-moz-appearance:textfield;}
+input[type=number]:focus,select:focus{border-color:#1a1a5e;}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+select{padding-left:12px;cursor:pointer;}
+.radio-group{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.radio-btn{background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:10px;padding:9px;text-align:center;cursor:pointer;font-size:12px;font-weight:700;color:#5C5C8A;transition:all .2s;}
+.radio-btn.active{background:#0D0D2B;border-color:#0D0D2B;color:#fff;}
+.btn-calc{width:100%;background:linear-gradient(135deg,#C8102E,#8B0A1E);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(200,16,46,0.35);margin-top:4px;}
+.result-hero{background:linear-gradient(145deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:20px;position:relative;overflow:hidden;margin-bottom:10px;}
+.result-hero::before{content:'💷';position:absolute;right:8px;top:-4px;font-size:65px;opacity:0.07;}
+.rh-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.7px;}
+.rh-val{font-size:32px;font-weight:800;color:#fff;font-family:Georgia,serif;margin:4px 0;}
+.rh-sub{font-size:12px;color:rgba(255,255,255,0.6);}
+.rh-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(255,215,0,0.18);border:1px solid rgba(255,215,0,0.35);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#FFD700;margin-top:8px;}
+.metrics-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.met-card{background:#fff;border-radius:15px;padding:13px;box-shadow:0 3px 10px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);}
+.met-lbl{font-size:10px;color:#5C5C8A;margin-bottom:3px;}
+.met-val{font-size:18px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.met-val.red{color:#C8102E;}.met-val.grn{color:#059669;}.met-val.gold{color:#B45309;}
+.met-sub{font-size:10px;color:#5C5C8A;margin-top:2px;}
+/* Gauge chart */
+.gauge-wrap{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;text-align:center;}
+.gauge-title{font-size:12px;font-weight:800;color:#0D0D2B;margin-bottom:12px;font-family:Georgia,serif;text-align:left;}
+.gauge-svg{width:100%;max-width:300px;}
+/* Lender bands */
+.bands{background:#fff;border-radius:17px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:10px;}
+.bands-title{font-size:12px;font-weight:800;color:#0D0D2B;margin-bottom:12px;font-family:Georgia,serif;}
+.band-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:10px;margin-bottom:6px;}
+.band-row:last-child{margin-bottom:0;}
+.br-left{font-size:12px;font-weight:700;}.br-right{font-size:13px;font-weight:800;font-family:Georgia,serif;}
+.br-sub{font-size:10px;font-weight:400;opacity:.7;}
+.band-conservative{background:#FEF2F2;}.br-left.c{color:#991B1B;}.br-right.c{color:#C8102E;}
+.band-standard{background:#EEF2FF;}.br-left.s{color:#3730A3;}.br-right.s{color:#1a1a5e;}
+.band-max{background:#F0FDF4;}.br-left.m{color:#065F46;}.br-right.m{color:#059669;}
+/* Monthly breakdown */
+.mthly{background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #A5B4FC;border-radius:15px;padding:14px;margin-bottom:10px;}
+.mthly-title{font-size:12px;font-weight:800;color:#1e1b4b;font-family:Georgia,serif;margin-bottom:10px;}
+.mthly-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(165,180,252,0.3);font-size:12px;}
+.mthly-row:last-child{border-bottom:none;font-weight:800;color:#1e1b4b;}
+.mthly-row span:first-child{color:#4338ca;}
+.mthly-row span:last-child{font-weight:700;color:#0D0D2B;}
+.saved-item{background:#fff;border-radius:13px;padding:12px 14px;box-shadow:0 2px 8px rgba(13,13,43,0.06);border:1px solid rgba(26,26,94,0.08);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.si-left .si-name{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.si-left .si-date{font-size:10px;color:#5C5C8A;margin-top:2px;}
+.si-right .si-val{font-size:14px;font-weight:800;color:#059669;}
+.si-right .si-del{font-size:11px;color:#C8102E;cursor:pointer;margin-top:2px;}
+.empty-saved{text-align:center;color:#5C5C8A;font-size:12px;padding:16px 0;}
+.hidden{display:none;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇬🇧</span><div class="hdr-title">Affordability</div><div class="hdr-sub">Max Borrowing · GBP</div></div>
+    <div class="save-btn" onclick="saveCalc()">💾 Save</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">4× Salary</div><div class="rs-val">Standard</div><div class="rs-note">Most lenders</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">4.5× Salary</div><div class="rs-val">Common</div><div class="rs-note">Many banks</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">5× Salary</div><div class="rs-val">Max</div><div class="rs-note">High earners</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">BoE Stress</div><div class="rs-val gold">8%</div><div class="rs-note">Test rate</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Income Details</div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">Application Type</label>
+      <div class="radio-group">
+        <div class="radio-btn active" id="rb-solo" onclick="setType('solo')">👤 Solo</div>
+        <div class="radio-btn" id="rb-joint" onclick="setType('joint')">👫 Joint</div>
+      </div>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">Annual Salary (Applicant 1)</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="sal1" value="55000" min="0"></div>
+    </div>
+    <div class="inp-group" id="sal2wrap" style="display:none">
+      <label class="inp-label">Annual Salary (Applicant 2)</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="sal2" value="35000" min="0"></div>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">Other Income (bonus, rental, etc.)</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="otherInc" value="0" min="0"></div>
+    </div>
+  </div>
+  <div class="sec-lbl">Commitments & Deposit</div>
+  <div class="card">
+    <div class="inp-group">
+      <label class="inp-label">Monthly Debt Payments</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="debt" value="200" min="0"></div>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">Monthly Living Costs</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="living" value="1500" min="0"></div>
+    </div>
+    <div class="inp-group">
+      <label class="inp-label">Deposit Available</label>
+      <div class="inp-wrap"><span class="inp-prefix">£</span><input type="number" id="deposit" value="50000" min="0"></div>
+    </div>
+    <div class="inp-group" style="margin-bottom:0">
+      <label class="inp-label">Interest Rate (for stress test)</label>
+      <div class="inp-wrap"><input type="number" id="rate" value="4.75" min="0" max="20" step="0.01" style="padding-left:12px"><span class="inp-suffix">%</span></div>
+    </div>
+  </div>
+  <button class="btn-calc" onclick="calculate()">💷 Calculate Affordability</button>
+
+  <div id="results" class="hidden" style="margin-top:16px">
+    <div class="result-hero">
+      <div class="rh-lbl">Maximum Borrowing</div>
+      <div class="rh-val" id="maxBorrow">—</div>
+      <div class="rh-sub" id="maxPropSub">—</div>
+      <div class="rh-tag" id="multTag">—</div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="met-card">
+        <div class="met-lbl">Max Property</div>
+        <div class="met-val gold" id="maxProp">—</div>
+        <div class="met-sub">With deposit</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">Monthly Payment</div>
+        <div class="met-val" id="monthlyPmt">—</div>
+        <div class="met-sub" id="pmtSub">25yr term</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">Income Multiple</div>
+        <div class="met-val grn" id="incMult">—</div>
+        <div class="met-sub">Used</div>
+      </div>
+      <div class="met-card">
+        <div class="met-lbl">LTV Ratio</div>
+        <div class="met-val" id="ltv">—</div>
+        <div class="met-sub">Loan to value</div>
+      </div>
+    </div>
+
+    <div class="gauge-wrap">
+      <div class="gauge-title">Borrowing vs. Stress-Test Capacity</div>
+      <svg class="gauge-svg" viewBox="0 0 300 160">
+        <defs>
+          <linearGradient id="gaugeGrad" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stop-color="#059669"/>
+            <stop offset="50%" stop-color="#B45309"/>
+            <stop offset="100%" stop-color="#C8102E"/>
+          </linearGradient>
+        </defs>
+        <path d="M30,130 A120,120 0 0,1 270,130" fill="none" stroke="#F5F5F8" stroke-width="24" stroke-linecap="round"/>
+        <path d="M30,130 A120,120 0 0,1 270,130" fill="none" stroke="url(#gaugeGrad)" stroke-width="24" stroke-linecap="round" opacity="0.25"/>
+        <path id="gaugeArc" d="M30,130 A120,120 0 0,1 270,130" fill="none" stroke="url(#gaugeGrad)" stroke-width="24" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377" style="transition:stroke-dashoffset 1s ease"/>
+        <text id="gaugeText" x="150" y="115" text-anchor="middle" font-size="22" font-weight="800" fill="#0D0D2B" font-family="Georgia,serif">0%</text>
+        <text x="150" y="135" text-anchor="middle" font-size="11" fill="#5C5C8A">of max capacity used</text>
+        <text x="30" y="152" text-anchor="middle" font-size="10" fill="#059669">Low</text>
+        <text x="150" y="158" text-anchor="middle" font-size="10" fill="#B45309">Medium</text>
+        <text x="270" y="152" text-anchor="middle" font-size="10" fill="#C8102E">High</text>
+      </svg>
+    </div>
+
+    <div class="bands">
+      <div class="bands-title">Lender Borrowing Bands</div>
+      <div class="band-row band-conservative">
+        <div><div class="br-left c">Conservative (4×)</div><div class="br-sub c">Halifax, HSBC (standard)</div></div>
+        <div class="br-right c" id="band4x">—</div>
+      </div>
+      <div class="band-row band-standard">
+        <div><div class="br-left s">Standard (4.5×)</div><div class="br-sub s">Nationwide, Barclays</div></div>
+        <div class="br-right s" id="band45x">—</div>
+      </div>
+      <div class="band-row band-max">
+        <div><div class="br-left m">Maximum (5×)</div><div class="br-sub m">Specialist / high earner</div></div>
+        <div class="br-right m" id="band5x">—</div>
+      </div>
+    </div>
+
+    <div class="mthly">
+      <div class="mthly-title">💰 Monthly Budget Check</div>
+      <div class="mthly-row"><span>Gross Monthly Income</span><span id="bdGross">—</span></div>
+      <div class="mthly-row"><span>Tax & NI (est. 28%)</span><span id="bdTax">—</span></div>
+      <div class="mthly-row"><span>Net Monthly Income</span><span id="bdNet">—</span></div>
+      <div class="mthly-row"><span>Debt Payments</span><span id="bdDebt">—</span></div>
+      <div class="mthly-row"><span>Living Costs</span><span id="bdLiving">—</span></div>
+      <div class="mthly-row"><span>Mortgage Payment</span><span id="bdMortgage">—</span></div>
+      <div class="mthly-row"><span>Remaining</span><span id="bdRemaining">—</span></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl" style="margin-top:8px">Saved Calculations</div>
+  <div id="savedList"><div class="empty-saved">No saved calculations yet.</div></div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+let appType='solo';
+let saved=JSON.parse(localStorage.getItem('afford_saved')||'[]');
+let lastResult=null;
+function fmt(n){return'£'+Math.round(n).toLocaleString('en-GB');}
+function pmt(r,n,pv){if(r===0)return pv/n;return pv*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
+function setType(t){appType=t;document.getElementById('rb-solo').classList.toggle('active',t==='solo');document.getElementById('rb-joint').classList.toggle('active',t==='joint');document.getElementById('sal2wrap').style.display=t==='joint'?'block':'none';}
+
+function calculate(){
+  const s1=parseFloat(document.getElementById('sal1').value)||0;
+  const s2=appType==='joint'?(parseFloat(document.getElementById('sal2').value)||0):0;
+  const other=parseFloat(document.getElementById('otherInc').value)||0;
+  const debt=parseFloat(document.getElementById('debt').value)||0;
+  const living=parseFloat(document.getElementById('living').value)||0;
+  const dep=parseFloat(document.getElementById('deposit').value)||0;
+  const r=parseFloat(document.getElementById('rate').value)||4.75;
+  const totalIncome=s1+s2+(other*0.6);
+  const maxBorrow=totalIncome*4.5;
+  const maxProp=maxBorrow+dep;
+  const mult=maxBorrow/totalIncome;
+  const ltv=(maxBorrow/maxProp*100);
+  const rMo=r/100/12;
+  const monthlyPmt=pmt(rMo,300,maxBorrow);
+  const grossMo=totalIncome/12;
+  const taxMo=grossMo*0.28;
+  const netMo=grossMo-taxMo;
+  const remaining=netMo-debt-living-monthlyPmt;
+  const stressRate=8;
+  const stressPmt=pmt(stressRate/100/12,300,maxBorrow);
+  const stressMax=netMo-debt-living;
+  const capacityPct=Math.min((stressPmt/stressMax)*100,100);
+
+  document.getElementById('maxBorrow').textContent=fmt(maxBorrow);
+  document.getElementById('maxPropSub').textContent='Max property: '+fmt(maxProp)+' with '+fmt(dep)+' deposit';
+  document.getElementById('multTag').textContent='Income multiple: '+mult.toFixed(1)+'× · LTV: '+ltv.toFixed(0)+'%';
+  document.getElementById('maxProp').textContent=fmt(maxProp);
+  document.getElementById('monthlyPmt').textContent=fmt(monthlyPmt)+'/mo';
+  document.getElementById('pmtSub').textContent='At '+r+'% / 25yr';
+  document.getElementById('incMult').textContent=mult.toFixed(1)+'×';
+  document.getElementById('ltv').textContent=ltv.toFixed(1)+'%';
+  document.getElementById('band4x').textContent=fmt(totalIncome*4);
+  document.getElementById('band45x').textContent=fmt(totalIncome*4.5);
+  document.getElementById('band5x').textContent=fmt(totalIncome*5);
+  document.getElementById('bdGross').textContent=fmt(grossMo);
+  document.getElementById('bdTax').textContent='-'+fmt(taxMo);
+  document.getElementById('bdNet').textContent=fmt(netMo);
+  document.getElementById('bdDebt').textContent='-'+fmt(debt);
+  document.getElementById('bdLiving').textContent='-'+fmt(living);
+  document.getElementById('bdMortgage').textContent='-'+fmt(monthlyPmt);
+  document.getElementById('bdRemaining').textContent=(remaining>=0?'':'−')+fmt(Math.abs(remaining));
+  // Gauge
+  const arcLen=377;
+  const offset=arcLen*(1-capacityPct/100);
+  setTimeout(()=>{document.getElementById('gaugeArc').style.strokeDashoffset=offset;},50);
+  document.getElementById('gaugeText').textContent=Math.round(capacityPct)+'%';
+
+  lastResult={totalIncome,maxBorrow,maxProp,dep,mult,ltv,monthlyPmt,r};
+  document.getElementById('results').classList.remove('hidden');
+}
+
+function saveCalc(){
+  if(!lastResult){calculate();}
+  if(!lastResult)return;
+  const r=lastResult;
+  const item={id:Date.now(),name:fmt(r.maxBorrow)+' borrowing',date:new Date().toLocaleDateString('en-GB'),maxProp:r.maxProp,pmt:r.monthlyPmt};
+  saved.unshift(item);if(saved.length>10)saved.pop();
+  localStorage.setItem('afford_saved',JSON.stringify(saved));renderSaved();
+}
+function deleteSaved(id){saved=saved.filter(s=>s.id!==id);localStorage.setItem('afford_saved',JSON.stringify(saved));renderSaved();}
+function renderSaved(){
+  const el=document.getElementById('savedList');
+  if(!saved.length){el.innerHTML='<div class="empty-saved">No saved calculations yet.</div>';return;}
+  el.innerHTML=saved.map(s=>`<div class="saved-item"><div class="si-left"><div class="si-name">${s.name}</div><div class="si-date">${s.date} · Max property: £${Math.round(s.maxProp/1000)}k</div></div><div class="si-right"><div class="si-val">£${Math.round(s.pmt)}/mo</div><div class="si-del" onclick="deleteSaved(${s.id})">✕ Remove</div></div></div>`).join('');
+}
+renderSaved();
+</script>
+</body>
+</html>

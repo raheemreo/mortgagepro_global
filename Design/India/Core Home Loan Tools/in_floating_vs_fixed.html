@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Floating vs Fixed – MortgagePro India</title>
+<style>
+:root{--saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;--navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;--teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;--muted:#7A5C3A;--border:rgba(255,107,0,0.10);--sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .tag{font-size:9px;font-weight:700;background:#FFF3E0;color:var(--saffron);padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+.calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.field-wrap{margin-bottom:13px;}
+.field-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;margin-bottom:5px;}
+.field-row{display:flex;align-items:center;gap:8px;}
+.field-input{flex:1;background:#FFF8F0;border:1.5px solid var(--border);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;transition:border-color .2s;}
+.field-input:focus{border-color:var(--saffron);}
+.field-unit{font-size:11px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;min-width:32px;}
+.slider-wrap{margin-top:6px;}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--saffron) var(--pct,40%),#F0E0D0 var(--pct,40%));outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--saffron);box-shadow:0 2px 8px rgba(255,107,0,0.4);cursor:pointer;}
+
+/* VS Cards */
+.vs-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.vs-card{border-radius:18px;padding:16px;position:relative;overflow:hidden;}
+.vs-float{background:linear-gradient(148deg,var(--navy),var(--chakra));box-shadow:var(--sh2);}
+.vs-fixed{background:linear-gradient(148deg,var(--saffron),var(--saffron2));box-shadow:0 10px 40px rgba(255,107,0,0.25);}
+.vs-label{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,0.50);font-family:'Trebuchet MS',sans-serif;}
+.vs-icon{font-size:24px;display:block;margin:8px 0 6px;}
+.vs-type{font-size:15px;font-weight:800;color:#fff;}
+.vs-rate{font-size:22px;font-weight:800;color:var(--ochre-lt);margin:4px 0;}
+.vs-emi{font-size:11px;color:rgba(255,255,255,0.70);font-family:'Trebuchet MS',sans-serif;}
+.vs-emi strong{color:#fff;}
+.vs-badge{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.18);padding:3px 8px;border-radius:20px;font-size:8px;font-weight:700;color:#fff;font-family:'Trebuchet MS',sans-serif;}
+
+/* Diff highlight */
+.diff-card{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;border-radius:18px;padding:15px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;}
+.diff-icon{font-size:26px;flex-shrink:0;}
+.diff-title{font-size:13px;font-weight:800;color:var(--green2);}
+.diff-sub{font-size:10px;color:var(--green);margin-top:3px;font-family:'Trebuchet MS',sans-serif;}
+.diff-val{margin-left:auto;text-align:right;flex-shrink:0;}
+.diff-amount{font-size:18px;font-weight:800;color:var(--green2);}
+.diff-note{font-size:9px;color:var(--green);font-family:'Trebuchet MS',sans-serif;}
+
+/* Bar comparison chart */
+.chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.chart-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.chart-title span{font-size:10px;font-weight:600;color:var(--saffron);font-family:'Trebuchet MS',sans-serif;}
+.compare-row{display:flex;align-items:stretch;gap:10px;margin-bottom:12px;}
+.compare-label{font-size:10px;font-weight:700;color:var(--muted);width:72px;font-family:'Trebuchet MS',sans-serif;flex-shrink:0;display:flex;align-items:center;}
+.compare-bars{flex:1;display:flex;flex-direction:column;gap:5px;}
+.mini-bar-wrap{display:flex;align-items:center;gap:6px;}
+.mini-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0;}
+.mini-bar-track{flex:1;height:8px;background:#F0E0D0;border-radius:4px;overflow:hidden;}
+.mini-bar-fill{height:100%;border-radius:4px;transition:width .6s;}
+.mini-val{font-size:10px;font-weight:800;color:var(--navy);width:52px;text-align:right;font-family:'Trebuchet MS',sans-serif;flex-shrink:0;}
+
+/* RBI rate history */
+.hist-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.hist-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.hist-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.hist-scroll::-webkit-scrollbar{display:none;}
+.hist-item{flex-shrink:0;text-align:center;min-width:52px;}
+.hist-bar-wrap{height:60px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px;}
+.hist-bar{width:28px;border-radius:5px 5px 0 0;background:linear-gradient(180deg,var(--chakra),var(--navy));transition:height .5s;}
+.hist-rate{font-size:9px;font-weight:800;color:var(--navy);font-family:'Trebuchet MS',sans-serif;}
+.hist-yr{font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+
+/* Verdict */
+.verdict-card{border-radius:18px;padding:16px;margin-bottom:14px;}
+.verdict-float{background:linear-gradient(135deg,var(--navy),var(--chakra));box-shadow:var(--sh2);}
+.verdict-fixed{background:linear-gradient(135deg,#FFF3E0,#FFEDD5);border:1.5px solid #FDBA74;}
+.verdict-title{font-size:12px;font-weight:800;color:#fff;margin-bottom:8px;}
+.verdict-title.dark{color:var(--navy);}
+.verdict-pts{list-style:none;}
+.verdict-pts li{font-size:10.5px;color:rgba(255,255,255,0.80);font-family:'Trebuchet MS',sans-serif;padding:3px 0;display:flex;align-items:flex-start;gap:6px;}
+.verdict-pts li.dark{color:var(--navy);}
+.verdict-pts li::before{content:'✓';color:#86EFAC;font-weight:800;flex-shrink:0;}
+.verdict-pts li.dark::before{color:var(--green);}
+
+.tip-card{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1.5px solid #93C5FD;border-radius:15px;padding:13px 14px;margin-bottom:14px;display:flex;gap:11px;align-items:flex-start;}
+.tip-icon{font-size:20px;flex-shrink:0;}
+.tip-text{font-size:10.5px;color:#1E3A8A;font-family:'Trebuchet MS',sans-serif;line-height:1.5;}
+.tip-text strong{font-family:'Book Antiqua',Palatino,Georgia,serif;font-size:11.5px;}
+
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;}
+.save-btn{width:100%;background:linear-gradient(135deg,var(--green),var(--green2));border:none;border-radius:13px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(4,106,56,0.30);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}.fu2{animation:fadeUp .38s ease both .09s;}.fu3{animation:fadeUp .38s ease both .14s;}.fu4{animation:fadeUp .38s ease both .19s;}.fu5{animation:fadeUp .38s ease both .24s;}
+.saved-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 22px;border-radius:30px;font-size:12px;font-weight:700;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .35s;z-index:200;white-space:nowrap;}
+.saved-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">📉</div>
+      <div class="hdr-title">Floating <span>vs Fixed</span></div>
+      <div class="hdr-sub">Rate type comparison · MCLR · RBI repo linked</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Repo Rate</div><div class="rs-v saf">6.25%</div><div class="rs-n">RBI Jun'25</div></div>
+    <div class="rs"><div class="rs-l">SBI Float</div><div class="rs-v">8.50%</div><div class="rs-n">EBLR linked</div></div>
+    <div class="rs"><div class="rs-l">Fixed Avg</div><div class="rs-v">9.50%</div><div class="rs-n">2yr lock-in</div></div>
+    <div class="rs"><div class="rs-l">Spread</div><div class="rs-v">+1.00%</div><div class="rs-n">Float vs Fixed</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Loan Parameters <span class="tag">Compare Rates</span></div>
+  <div class="calc-card fu1">
+    <div class="field-wrap">
+      <div class="field-label">Loan Amount (₹)</div>
+      <div class="field-row"><input class="field-input" id="loan" type="number" value="6000000" oninput="syncSlider('loan','sldL',500000,30000000);calc()"><span class="field-unit">₹</span></div>
+      <div class="slider-wrap"><input type="range" id="sldL" min="500000" max="30000000" step="100000" value="6000000" oninput="syncInput('sldL','loan');calc()"></div>
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Floating Rate (% p.a.)</div>
+      <div class="field-row"><input class="field-input" id="floatR" type="number" value="8.50" step="0.05" oninput="syncSlider('floatR','sldF',6,14);calc()"><span class="field-unit">%</span></div>
+      <div class="slider-wrap"><input type="range" id="sldF" min="6" max="14" step="0.05" value="8.50" oninput="syncInput('sldF','floatR');calc()"></div>
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Fixed Rate (% p.a.)</div>
+      <div class="field-row"><input class="field-input" id="fixedR" type="number" value="9.50" step="0.05" oninput="syncSlider('fixedR','sldX',6,16);calc()"><span class="field-unit">%</span></div>
+      <div class="slider-wrap"><input type="range" id="sldX" min="6" max="16" step="0.05" value="9.50" oninput="syncInput('sldX','fixedR');calc()"></div>
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Loan Tenure (Years)</div>
+      <div class="field-row"><input class="field-input" id="tenure" type="number" value="20" oninput="syncSlider('tenure','sldT',5,30);calc()"><span class="field-unit">yr</span></div>
+      <div class="slider-wrap"><input type="range" id="sldT" min="5" max="30" step="1" value="20" oninput="syncInput('sldT','tenure');calc()"></div>
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Expected Rate Change (Float, %)</div>
+      <div class="field-row"><input class="field-input" id="rateChange" type="number" value="-0.50" step="0.25" oninput="syncSlider('rateChange','sldRC',-2,3);calc()"><span class="field-unit">%</span></div>
+      <div class="slider-wrap"><input type="range" id="sldRC" min="-2" max="3" step="0.25" value="-0.50" oninput="syncInput('sldRC','rateChange');calc()"></div>
+    </div>
+    <button class="calc-btn" onclick="calc()">☸ Compare Floating vs Fixed</button>
+  </div>
+
+  <!-- VS cards -->
+  <div class="vs-cards fu2">
+    <div class="vs-card vs-float">
+      <div class="vs-badge">EBLR Linked</div>
+      <div class="vs-label">Floating Rate</div>
+      <span class="vs-icon">📈</span>
+      <div class="vs-type">Floating EMI</div>
+      <div class="vs-rate" id="floatRateShow">8.50%</div>
+      <div class="vs-emi">EMI: <strong id="floatEmiShow">₹52,068</strong></div>
+    </div>
+    <div class="vs-card vs-fixed">
+      <div class="vs-badge" style="background:rgba(255,107,0,0.20);color:#9A3412;">Lock-in</div>
+      <div class="vs-label" style="color:rgba(154,52,18,0.70);">Fixed Rate</div>
+      <span class="vs-icon">🔒</span>
+      <div class="vs-type" style="color:#9A3412;">Fixed EMI</div>
+      <div class="vs-rate" style="color:#9A3412;" id="fixedRateShow">9.50%</div>
+      <div class="vs-emi" style="color:rgba(154,52,18,0.80);">EMI: <strong style="color:#9A3412;" id="fixedEmiShow">₹55,844</strong></div>
+    </div>
+  </div>
+
+  <!-- Diff highlight -->
+  <div class="diff-card fu2">
+    <div class="diff-icon">💰</div>
+    <div>
+      <div class="diff-title">Total Savings (Float wins by)</div>
+      <div class="diff-sub">Over full loan tenure · post expected rate cut</div>
+    </div>
+    <div class="diff-val">
+      <div class="diff-amount" id="diffAmt">₹9.06 L</div>
+      <div class="diff-note" id="diffNote">Floating cheaper</div>
+    </div>
+  </div>
+
+  <!-- Bar comparison -->
+  <div class="chart-card fu3">
+    <div class="chart-title">Cost Analysis <span>Lifetime</span></div>
+    <div class="compare-row">
+      <div class="compare-label">Total EMI Paid</div>
+      <div class="compare-bars">
+        <div class="mini-bar-wrap"><div class="mini-dot" style="background:var(--chakra);"></div><div class="mini-bar-track"><div class="mini-bar-fill" id="bFloatEmi" style="background:linear-gradient(90deg,var(--chakra),var(--navy));width:75%;"></div></div><div class="mini-val" id="bvFloatEmi">₹1.25Cr</div></div>
+        <div class="mini-bar-wrap"><div class="mini-dot" style="background:var(--saffron);"></div><div class="mini-bar-track"><div class="mini-bar-fill" id="bFixedEmi" style="background:linear-gradient(90deg,var(--saffron),var(--saffron2));width:85%;"></div></div><div class="mini-val" id="bvFixedEmi">₹1.34Cr</div></div>
+      </div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-label">Total Interest</div>
+      <div class="compare-bars">
+        <div class="mini-bar-wrap"><div class="mini-dot" style="background:var(--chakra);"></div><div class="mini-bar-track"><div class="mini-bar-fill" id="bFloatInt" style="background:linear-gradient(90deg,var(--chakra),var(--navy));width:55%;"></div></div><div class="mini-val" id="bvFloatInt">₹64.9L</div></div>
+        <div class="mini-bar-wrap"><div class="mini-dot" style="background:var(--saffron);"></div><div class="mini-bar-track"><div class="mini-bar-fill" id="bFixedInt" style="background:linear-gradient(90deg,var(--saffron),var(--saffron2));width:70%;"></div></div><div class="mini-val" id="bvFixedInt">₹74.0L</div></div>
+      </div>
+    </div>
+    <div class="compare-row" style="margin-bottom:0;">
+      <div class="compare-label">Monthly EMI</div>
+      <div class="compare-bars">
+        <div class="mini-bar-wrap"><div class="mini-dot" style="background:var(--chakra);"></div><div class="mini-bar-track"><div class="mini-bar-fill" id="bFloatM" style="background:linear-gradient(90deg,var(--chakra),var(--navy));width:72%;"></div></div><div class="mini-val" id="bvFloatM">₹52,068</div></div>
+        <div class="mini-bar-wrap"><div class="mini-dot" style="background:var(--saffron);"></div><div class="mini-bar-track"><div class="mini-bar-fill" id="bFixedM" style="background:linear-gradient(90deg,var(--saffron),var(--saffron2));width:79%;"></div></div><div class="mini-val" id="bvFixedM">₹55,844</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RBI repo rate history -->
+  <div class="hist-card fu3">
+    <div class="hist-title">📊 RBI Repo Rate History</div>
+    <div class="hist-scroll">
+      <div class="hist-item"><div class="hist-bar-wrap"><div class="hist-bar" style="height:54px;"></div></div><div class="hist-rate">6.50%</div><div class="hist-yr">2019</div></div>
+      <div class="hist-item"><div class="hist-bar-wrap"><div class="hist-bar" style="height:46px;background:linear-gradient(180deg,#0D9488,#0F766E);"></div></div><div class="hist-rate">4.00%</div><div class="hist-yr">2020</div></div>
+      <div class="hist-item"><div class="hist-bar-wrap"><div class="hist-bar" style="height:40px;background:linear-gradient(180deg,#046A38,#07543A);"></div></div><div class="hist-rate">4.00%</div><div class="hist-yr">2021</div></div>
+      <div class="hist-item"><div class="hist-bar-wrap"><div class="hist-bar" style="height:58px;background:linear-gradient(180deg,var(--saffron),var(--saffron2));"></div></div><div class="hist-rate">6.50%</div><div class="hist-yr">2022</div></div>
+      <div class="hist-item"><div class="hist-bar-wrap"><div class="hist-bar" style="height:60px;background:linear-gradient(180deg,var(--saffron),var(--saffron2));"></div></div><div class="hist-rate">6.50%</div><div class="hist-yr">2023</div></div>
+      <div class="hist-item"><div class="hist-bar-wrap"><div class="hist-bar" style="height:60px;background:linear-gradient(180deg,var(--saffron),var(--saffron2));"></div></div><div class="hist-rate">6.50%</div><div class="hist-yr">2024</div></div>
+      <div class="hist-item"><div class="hist-bar-wrap"><div class="hist-bar" style="height:54px;background:linear-gradient(180deg,var(--green),var(--green2));"></div></div><div class="hist-rate">6.25%</div><div class="hist-yr">2025</div></div>
+    </div>
+  </div>
+
+  <!-- Verdicts -->
+  <div class="sec fu4">When to Choose</div>
+  <div style="display:flex;flex-direction:column;gap:10px;" class="fu4">
+    <div class="verdict-card verdict-float">
+      <div class="verdict-title">📈 Choose Floating When…</div>
+      <ul class="verdict-pts">
+        <li>RBI rate cuts expected (current cycle — Jun 2025)</li>
+        <li>Loan tenure &gt; 10 years (rate averages out)</li>
+        <li>You can absorb minor EMI fluctuations</li>
+        <li>Switching bank (balance transfer) possible</li>
+      </ul>
+    </div>
+    <div class="verdict-card verdict-fixed" style="margin-bottom:0;">
+      <div class="verdict-title dark">🔒 Choose Fixed When…</div>
+      <ul class="verdict-pts">
+        <li class="dark">You need EMI certainty (fixed income households)</li>
+        <li class="dark">RBI rate hike cycle expected</li>
+        <li class="dark">Short tenure (&lt; 5 years) — rate risk minimal</li>
+        <li class="dark">Penalty-free part-prepayment not required</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip-card fu5" style="margin-top:14px;">
+    <div class="tip-icon">💡</div>
+    <div class="tip-text"><strong>RBI EBLR Rule (2019):</strong> All floating-rate loans from banks must be linked to an External Benchmark Lending Rate (repo rate). HFCs like HDFC still use PLBR. Foreclosure charges banned on floating-rate home loans for individuals per RBI circular.</div>
+  </div>
+
+  <button class="save-btn fu5" onclick="saveCalc()">💾 Save This Comparison</button>
+</div>
+
+<div class="saved-toast" id="toast">✅ Comparison Saved!</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<script>
+function syncSlider(i,s,min,max){let v=parseFloat(document.getElementById(i).value);v=Math.min(Math.max(v,min),max);document.getElementById(s).value=v;ubg(s,min,max);}
+function syncInput(s,i){let v=document.getElementById(s).value;document.getElementById(i).value=v;ubg(s,parseFloat(document.getElementById(s).min),parseFloat(document.getElementById(s).max));}
+function ubg(id,min,max){let el=document.getElementById(id);let pct=((el.value-min)/(max-min))*100;el.style.setProperty('--pct',pct+'%');}
+function fmt(n){if(n>=10000000)return'₹'+(n/10000000).toFixed(2)+' Cr';if(n>=100000)return'₹'+(n/100000).toFixed(1)+' L';return'₹'+Math.round(n).toLocaleString('en-IN');}
+function fmtS(n){if(n>=10000000)return'₹'+(n/10000000).toFixed(2)+'Cr';if(n>=100000)return'₹'+(n/100000).toFixed(1)+'L';return'₹'+Math.round(n).toLocaleString('en-IN');}
+function emi(p,r,n){r=r/12/100;return p*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);}
+function calc(){
+  let loan=parseFloat(document.getElementById('loan').value)||6000000;
+  let fr=parseFloat(document.getElementById('floatR').value)||8.50;
+  let xr=parseFloat(document.getElementById('fixedR').value)||9.50;
+  let t=parseInt(document.getElementById('tenure').value)||20;
+  let rc=parseFloat(document.getElementById('rateChange').value)||0;
+  let n=t*12;
+  let fEmi=emi(loan,fr,n);
+  let xEmi=emi(loan,xr,n);
+  let fAdj=emi(loan,fr+rc,n); // adjusted floating after rate change
+  let fTotal=fAdj*n;
+  let xTotal=xEmi*n;
+  let fInt=fTotal-loan;
+  let xInt=xTotal-loan;
+  let diff=xTotal-fTotal;
+  document.getElementById('floatRateShow').textContent=fr+'%';
+  document.getElementById('fixedRateShow').textContent=xr+'%';
+  document.getElementById('floatEmiShow').textContent='₹'+Math.round(fEmi).toLocaleString('en-IN');
+  document.getElementById('fixedEmiShow').textContent='₹'+Math.round(xEmi).toLocaleString('en-IN');
+  document.getElementById('diffAmt').textContent=fmt(Math.abs(diff));
+  document.getElementById('diffNote').textContent=diff>0?'Floating cheaper':'Fixed cheaper';
+  // bars
+  let maxT=Math.max(fTotal,xTotal);
+  document.getElementById('bFloatEmi').style.width=(fTotal/maxT*90)+'%';
+  document.getElementById('bFixedEmi').style.width=(xTotal/maxT*90)+'%';
+  document.getElementById('bvFloatEmi').textContent=fmtS(fTotal);
+  document.getElementById('bvFixedEmi').textContent=fmtS(xTotal);
+  let maxI=Math.max(fInt,xInt);
+  document.getElementById('bFloatInt').style.width=(fInt/maxI*90)+'%';
+  document.getElementById('bFixedInt').style.width=(xInt/maxI*90)+'%';
+  document.getElementById('bvFloatInt').textContent=fmtS(fInt);
+  document.getElementById('bvFixedInt').textContent=fmtS(xInt);
+  let maxM=Math.max(fEmi,xEmi);
+  document.getElementById('bFloatM').style.width=(fEmi/maxM*90)+'%';
+  document.getElementById('bFixedM').style.width=(xEmi/maxM*90)+'%';
+  document.getElementById('bvFloatM').textContent='₹'+Math.round(fEmi).toLocaleString('en-IN');
+  document.getElementById('bvFixedM').textContent='₹'+Math.round(xEmi).toLocaleString('en-IN');
+}
+function saveCalc(){let t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+['sldL','sldF','sldX','sldT','sldRC'].forEach(id=>{let el=document.getElementById(id);ubg(id,parseFloat(el.min),parseFloat(el.max));});
+calc();
+</script>
+</body>
+</html>

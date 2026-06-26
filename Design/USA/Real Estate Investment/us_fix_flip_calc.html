@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fix & Flip Calculator</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --gold:#D97706; --gold-lt:#FCD34D;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --slate:#334155; --grn:#15803D;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  /* ── HEADER ── */
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#334155 50%,#1E293B 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🔨';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  /* ── LAYOUT ── */
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* ── INPUT CARD ── */
+  .calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .calc-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .calc-card-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#334155,#1E293B);display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .calc-card-title{font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .calc-card-sub{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .field{margin-bottom:13px;}
+  .field label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .field input,.field select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700;color:var(--navy);font-family:'Helvetica Neue',Arial,sans-serif;outline:none;transition:border-color .2s;}
+  .field input:focus{border-color:#334155;background:#fff;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  /* ── CALCULATE BUTTON ── */
+  .calc-btn{width:100%;background:linear-gradient(135deg,#334155,#1E293B);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(51,65,85,0.45);font-family:Georgia,serif;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,box-shadow .12s;letter-spacing:0.2px;}
+  .calc-btn:active{transform:scale(.98);}
+  .calc-btn:hover{background:linear-gradient(135deg,#475569,#334155);}
+
+  /* ── VERDICT CARD ── */
+  .verdict{border-radius:20px;padding:18px;box-shadow:var(--sh2);position:relative;overflow:hidden;display:none;}
+  .verdict.show{display:block;animation:fadeUp .35s ease both;}
+  .verdict-win{background:linear-gradient(148deg,#15803D,#166534);}
+  .verdict-meh{background:linear-gradient(148deg,#D97706,#B45309);}
+  .verdict-lose{background:linear-gradient(148deg,#B91C1C,#991B1B);}
+  .verdict::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.07);}
+  .verdict-lbl{font-size:10px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;}
+  .verdict-big{font-size:40px;font-weight:800;color:var(--gold-lt);font-family:Georgia,serif;line-height:1;}
+  .verdict-sub{font-size:11px;color:rgba(255,255,255,0.65);margin-top:4px;}
+  .verdict-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .vg{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:11px 12px;}
+  .vg-lbl{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+  .vg-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .vg-val.gold{color:var(--gold-lt);}
+
+  /* ── SAVE BAR ── */
+  .save-bar{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1.5px solid #86EFAC;border-radius:14px;padding:13px 15px;display:none;align-items:center;gap:12px;margin-bottom:12px;}
+  .save-bar.visible{display:flex;animation:fadeUp .3s ease both;}
+  .save-txt{flex:1;}
+  .save-title-txt{font-size:12px;font-weight:800;color:#15803D;font-family:Georgia,serif;}
+  .save-sub-txt{font-size:9.5px;color:#166534;margin-top:1px;}
+  .save-action-btn{background:#15803D;color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;transition:background .15s;}
+  .save-action-btn:hover{background:#166534;}
+  .save-action-btn.done{background:#BBF7D0;color:#15803D;pointer-events:none;}
+
+  /* ── STATS CHARTS ── */
+  .stats-section{display:none;}
+  .stats-section.visible{display:block;animation:fadeUp .35s ease both;}
+  .chart-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+
+  /* Horizontal cost bars */
+  .bar-group{display:flex;flex-direction:column;gap:9px;}
+  .bar-item{display:flex;flex-direction:column;gap:3px;}
+  .bar-header{display:flex;justify-content:space-between;align-items:center;}
+  .bar-name{font-size:10.5px;font-weight:700;color:var(--navy);}
+  .bar-amount{font-size:11px;font-weight:800;font-family:Georgia,serif;}
+  .bar-track{height:10px;background:#EFF6FF;border-radius:5px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:5px;transition:width .7s cubic-bezier(.34,1.56,.64,1);}
+
+  /* SVG Donut */
+  .donut-row{display:flex;align-items:center;gap:16px;margin-bottom:14px;}
+  .donut-svg{width:90px;height:90px;flex-shrink:0;}
+  .donut-legend{flex:1;display:flex;flex-direction:column;gap:7px;}
+  .dl-row{display:flex;align-items:center;gap:7px;}
+  .dl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .dl-label{font-size:10px;font-weight:700;color:var(--navy);flex:1;}
+  .dl-val{font-size:10.5px;font-weight:800;font-family:Georgia,serif;color:var(--muted);}
+
+  /* Scenario comparison */
+  .scenario-row{display:flex;gap:8px;margin-bottom:10px;}
+  .sc-item{flex:1;border-radius:12px;padding:11px 10px;text-align:center;}
+  .sc-lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,0.65);text-transform:uppercase;margin-bottom:4px;}
+  .sc-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .sc-sub{font-size:8.5px;color:rgba(255,255,255,0.55);margin-top:2px;}
+
+  /* Waterfall */
+  .waterfall{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .wf-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .wf-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+  .wf-row:last-child{border-bottom:none;}
+  .wf-name{font-size:11px;color:var(--muted);}
+  .wf-amt{font-size:12.5px;font-weight:800;font-family:Georgia,serif;}
+  .wf-pos{color:#15803D;} .wf-neg{color:#B91C1C;} .wf-neutral{color:var(--navy);}
+  .wf-total{background:var(--navy);border-radius:10px;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+  .wf-total-lbl{font-size:11px;font-weight:800;color:rgba(255,255,255,0.70);}
+  .wf-total-amt{font-size:17px;font-weight:800;color:var(--gold-lt);font-family:Georgia,serif;}
+
+  /* 70% Rule */
+  .rule-card{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:14px 15px;}
+  .rule-title{font-size:12.5px;font-weight:800;color:#92400E;font-family:Georgia,serif;margin-bottom:5px;}
+  .rule-sub{font-size:9.5px;color:#B45309;margin-bottom:10px;}
+  .rule-formula{background:rgba(217,119,6,0.15);border-radius:10px;padding:10px 12px;font-size:11.5px;font-weight:700;color:#92400E;text-align:center;margin-bottom:8px;font-family:Georgia,serif;}
+  .rule-result{display:flex;justify-content:space-between;align-items:center;}
+  .rule-lbl{font-size:10px;color:#B45309;font-weight:700;}
+  .rule-val{font-size:18px;font-weight:800;color:#92400E;font-family:Georgia,serif;}
+
+  /* Saved list */
+  .saved-section{display:none;}
+  .saved-section.visible{display:block;}
+  .saved-list{display:flex;flex-direction:column;gap:8px;}
+  .saved-item{background:var(--card);border-radius:13px;padding:12px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .si-icon{font-size:18px;flex-shrink:0;}
+  .si-body{flex:1;min-width:0;}
+  .si-name{font-size:11.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .si-detail{font-size:9px;color:var(--muted);margin-top:1px;}
+  .si-profit{font-size:14px;font-weight:800;font-family:Georgia,serif;flex-shrink:0;}
+  .si-del{width:26px;height:26px;border-radius:8px;background:#FEF2F2;border:none;color:#B91C1C;cursor:pointer;font-size:11px;flex-shrink:0;}
+
+  /* Info list */
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .ii{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .in{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .is{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .ich{font-size:16px;color:rgba(11,29,58,0.18);margin-left:auto;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#0B1D3A;color:#fff;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .calc-card{animation:fadeUp .35s ease both .05s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔨</div>
+      <div class="hdr-title">Fix &amp; Flip Calc</div>
+      <div class="hdr-sub">ARV · Rehab · Profit · 70% Rule · USA 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Avg Flip Profit</div><div class="rs-v gold">$66K</div><div class="rs-n">ATTOM Q1 2024</div></div>
+    <div class="rs"><div class="rs-l">ROI Avg</div><div class="rs-v">28%</div><div class="rs-n">US Avg</div></div>
+    <div class="rs"><div class="rs-l">Hard Money</div><div class="rs-v">11–14%</div><div class="rs-n">Short term</div></div>
+    <div class="rs"><div class="rs-l">Flip Rate</div><div class="rs-v">8.1%</div><div class="rs-n">Of all sales</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">Deal Details <span class="more">ATTOM Data →</span></div>
+
+  <!-- INPUT CARD -->
+  <div class="calc-card">
+    <div class="calc-card-hdr">
+      <div class="calc-card-icon">🔨</div>
+      <div>
+        <div class="calc-card-title">Fix &amp; Flip Profit Analyzer</div>
+        <div class="calc-card-sub">ARV · All-In Cost · Net Profit · ROI</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>After Repair Value (ARV)</label><input type="number" id="arv" value="425000" placeholder="$425,000"></div>
+      <div class="field"><label>Purchase Price</label><input type="number" id="purchasePrice" value="240000" placeholder="$240,000"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Rehab / Repair Cost</label><input type="number" id="rehab" value="55000" placeholder="$55,000"></div>
+      <div class="field"><label>Hold Period (months)</label><input type="number" id="holdMonths" value="5" step="1" min="1" placeholder="5"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Hard Money Rate (%/yr)</label><input type="number" id="hardRate" value="12" step="0.5" placeholder="12%"></div>
+      <div class="field"><label>Loan % of Purchase</label><input type="number" id="loanPct" value="80" step="5" placeholder="80%"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Closing Costs Buy (%)</label><input type="number" id="buyClose" value="2" step="0.5" placeholder="2%"></div>
+      <div class="field"><label>Selling Costs % ARV</label><input type="number" id="sellClose" value="8" step="0.5" placeholder="8%"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Holding Costs/mo</label><input type="number" id="holdCosts" value="1200" placeholder="$1,200"></div>
+      <div class="field"><label>Misc / Contingency</label><input type="number" id="misc" value="5000" placeholder="$5,000"></div>
+    </div>
+
+    <!-- CALCULATE BUTTON -->
+    <button class="calc-btn" onclick="runCalc()">
+      <span style="font-size:18px;">🔨</span> Analyze Fix &amp; Flip Deal
+    </button>
+  </div>
+
+  <!-- VERDICT (hidden until calc) -->
+  <div class="verdict" id="verdictCard">
+    <div class="verdict-lbl">Net Profit</div>
+    <div class="verdict-big" id="netProfit">—</div>
+    <div class="verdict-sub" id="verdictSub">—</div>
+    <div class="verdict-grid">
+      <div class="vg"><div class="vg-lbl">ROI on Cash</div><div class="vg-val gold" id="roi">—</div></div>
+      <div class="vg"><div class="vg-lbl">Annualized ROI</div><div class="vg-val" id="annRoi">—</div></div>
+      <div class="vg"><div class="vg-lbl">All-In Cost</div><div class="vg-val" id="allIn">—</div></div>
+      <div class="vg"><div class="vg-lbl">Profit/Month</div><div class="vg-val" id="profitMo">—</div></div>
+    </div>
+  </div>
+
+  <!-- SAVE BAR -->
+  <div class="save-bar" id="saveBar">
+    <div style="font-size:22px;">💾</div>
+    <div class="save-txt">
+      <div class="save-title-txt" id="saveTitle">Save This Deal Analysis</div>
+      <div class="save-sub-txt" id="saveSub">Tap to save for comparison</div>
+    </div>
+    <button class="save-action-btn" id="saveBtn" onclick="saveCalc()">Save</button>
+  </div>
+
+  <!-- VISUAL STATS (shown after calc) -->
+  <div class="stats-section" id="statsSection">
+
+    <!-- Cost donut breakdown -->
+    <div class="sec">Deal Analytics <span class="more">Full Details →</span></div>
+    <div class="chart-card">
+      <div class="chart-title"><span>🍩</span> Cost Breakdown vs ARV</div>
+      <div class="donut-row">
+        <svg class="donut-svg" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="34" fill="none" stroke="#EFF6FF" stroke-width="13"/>
+          <circle cx="45" cy="45" r="34" fill="none" stroke="#334155" stroke-width="13"
+            stroke-dasharray="213.6 213.6" stroke-linecap="round"
+            transform="rotate(-90 45 45)" id="donutBuy"/>
+          <circle cx="45" cy="45" r="34" fill="none" stroke="#D97706" stroke-width="13"
+            stroke-dasharray="0 213.6" stroke-linecap="round"
+            transform="rotate(-90 45 45)" id="donutRehab"/>
+          <circle cx="45" cy="45" r="34" fill="none" stroke="#B91C1C" stroke-width="13"
+            stroke-dasharray="0 213.6" stroke-linecap="round"
+            transform="rotate(-90 45 45)" id="donutOther"/>
+          <circle cx="45" cy="45" r="34" fill="none" stroke="#6EE7B7" stroke-width="13"
+            stroke-dasharray="0 213.6" stroke-linecap="round"
+            transform="rotate(-90 45 45)" id="donutProfit"/>
+          <text x="45" y="42" text-anchor="middle" font-size="9" font-weight="800" fill="#0B1D3A" id="donutLabel">—</text>
+          <text x="45" y="52" text-anchor="middle" font-size="7" fill="#4A5C7A">ROI</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="dl-row"><div class="dl-dot" style="background:#334155;"></div><span class="dl-label">Purchase</span><span class="dl-val" id="lgBuy">—</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#D97706;"></div><span class="dl-label">Rehab</span><span class="dl-val" id="lgRehab">—</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#B91C1C;"></div><span class="dl-label">Other Costs</span><span class="dl-val" id="lgOther">—</span></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#6EE7B7;"></div><span class="dl-label">Net Profit</span><span class="dl-val" id="lgProfit">—</span></div>
+        </div>
+      </div>
+      <!-- Scenario comparison strip -->
+      <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:8px;">📐 Scenario Comparison</div>
+      <div class="scenario-row" id="scenarioRow"></div>
+    </div>
+
+    <!-- Horizontal cost bars -->
+    <div class="chart-card">
+      <div class="chart-title"><span>📊</span> Cost Breakdown vs ARV</div>
+      <div class="bar-group" id="costBars"></div>
+    </div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="saved-section" id="savedSection">
+    <div class="sec">Saved Deals <span class="more" onclick="clearSaved()">Clear All</span></div>
+    <div class="saved-list" id="savedList"></div>
+  </div>
+
+  <!-- WATERFALL -->
+  <div class="sec">Profit Waterfall <span class="more">Export →</span></div>
+  <div class="waterfall">
+    <div class="wf-title">💰 Deal Profit Waterfall</div>
+    <div class="wf-row"><span class="wf-name">After Repair Value (ARV)</span><span class="wf-amt wf-pos" id="wf_arv">—</span></div>
+    <div class="wf-row"><span class="wf-name">(-) Purchase Price</span><span class="wf-amt wf-neg" id="wf_buy">—</span></div>
+    <div class="wf-row"><span class="wf-name">(-) Rehab Costs</span><span class="wf-amt wf-neg" id="wf_rehab">—</span></div>
+    <div class="wf-row"><span class="wf-name">(-) Financing / Interest</span><span class="wf-amt wf-neg" id="wf_finance">—</span></div>
+    <div class="wf-row"><span class="wf-name">(-) Buying Closing Costs</span><span class="wf-amt wf-neg" id="wf_buyClose">—</span></div>
+    <div class="wf-row"><span class="wf-name">(-) Selling Costs</span><span class="wf-amt wf-neg" id="wf_sellClose">—</span></div>
+    <div class="wf-row"><span class="wf-name">(-) Holding Costs</span><span class="wf-amt wf-neg" id="wf_hold">—</span></div>
+    <div class="wf-row"><span class="wf-name">(-) Misc / Contingency</span><span class="wf-amt wf-neg" id="wf_misc">—</span></div>
+    <div class="wf-total">
+      <div class="wf-total-lbl">Net Profit (Pre-Tax)</div>
+      <div class="wf-total-amt" id="wf_net">—</div>
+    </div>
+  </div>
+
+  <!-- 70% RULE -->
+  <div class="sec">70% Rule Check <span class="more">Learn More →</span></div>
+  <div class="rule-card">
+    <div class="rule-title">📐 The 70% Rule</div>
+    <div class="rule-sub">Maximum allowable offer = 70% of ARV minus repair costs</div>
+    <div class="rule-formula">Max Offer = (ARV × 70%) − Rehab = <span id="rule_formula">—</span></div>
+    <div class="rule-result">
+      <div><div class="rule-lbl">Max Allowable Offer</div><div class="rule-val" id="rule_max">—</div></div>
+      <div><div class="rule-lbl">Your Purchase Price</div><div class="rule-val" id="rule_yours">—</div></div>
+      <div style="padding:6px 12px;border-radius:20px;font-size:10px;font-weight:800;color:#fff;" id="rule_verdict">—</div>
+    </div>
+  </div>
+
+  <div class="sec">Flip Tips &amp; Market Data <span class="more">ATTOM →</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📍</div><div><div class="in">Best Flip Markets 2024</div><div class="is">Pittsburgh · Baltimore · Memphis · Detroit (high ROI markets)</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏗️</div><div><div class="in">Rehab Cost Guide (Per Sq Ft)</div><div class="is">Cosmetic $15–$40 · Mid $40–$80 · Full gut $80–$150+/sqft</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">⏱️</div><div><div class="in">Speed = Profit</div><div class="is">Every extra month costs holding + financing fees of $2K–$5K+</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">⚠️</div><div><div class="in">Short-Term Capital Gains Tax</div><div class="is">Held &lt;1 yr taxed as ordinary income (up to 37% federal)</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let lastResult = null;
+let savedCalcs = JSON.parse(localStorage.getItem('flip_saved') || '[]');
+
+function fmt(n){ return (n<0?'-$':'$') + Math.abs(Math.round(n)).toLocaleString('en-US'); }
+function pct(n){ return n.toFixed(1) + '%'; }
+function fmtK(n){ return '$' + Math.round(Math.abs(n)/1000) + 'K'; }
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function runCalc() {
+  const arv = parseFloat(document.getElementById('arv').value) || 0;
+  const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 0;
+  const rehab = parseFloat(document.getElementById('rehab').value) || 0;
+  const holdMonths = Math.max(1, parseFloat(document.getElementById('holdMonths').value) || 5);
+  const hardRate = (parseFloat(document.getElementById('hardRate').value) || 12) / 100;
+  const loanPct = (parseFloat(document.getElementById('loanPct').value) || 80) / 100;
+  const buyClosePct = (parseFloat(document.getElementById('buyClose').value) || 2) / 100;
+  const sellClosePct = (parseFloat(document.getElementById('sellClose').value) || 8) / 100;
+  const holdCostsM = parseFloat(document.getElementById('holdCosts').value) || 1200;
+  const misc = parseFloat(document.getElementById('misc').value) || 5000;
+
+  if (!arv || !purchasePrice) { showToast('⚠️ Enter ARV and purchase price'); return; }
+
+  const loanAmt = purchasePrice * loanPct;
+  const financing = loanAmt * hardRate * (holdMonths / 12);
+  const buyClosing = purchasePrice * buyClosePct;
+  const sellClosing = arv * sellClosePct;
+  const holdTotal = holdCostsM * holdMonths;
+  const totalCost = purchasePrice + rehab + financing + buyClosing + sellClosing + holdTotal + misc;
+  const netProfit = arv - totalCost;
+  const cashInvested = purchasePrice * (1 - loanPct) + rehab + buyClosing + misc;
+  const roi = cashInvested > 0 ? (netProfit / cashInvested) * 100 : 0;
+  const annRoi = roi / (holdMonths / 12);
+  const profitMo = netProfit / holdMonths;
+  const otherCosts = financing + buyClosing + sellClosing + holdTotal + misc;
+
+  // Verdict card
+  const vc = document.getElementById('verdictCard');
+  vc.className = 'verdict show ' + (netProfit >= 40000 ? 'verdict-win' : netProfit >= 0 ? 'verdict-meh' : 'verdict-lose');
+  document.getElementById('netProfit').textContent = fmt(netProfit);
+  document.getElementById('verdictSub').textContent = netProfit >= 50000 ? `✓ Strong deal — ${pct(roi)} ROI on cash invested` : netProfit >= 0 ? `⚠️ Thin margin — ${pct(roi)} ROI on cash invested` : '✗ Loss — recalculate or renegotiate purchase price';
+  document.getElementById('roi').textContent = pct(roi);
+  document.getElementById('annRoi').textContent = pct(annRoi);
+  document.getElementById('allIn').textContent = fmt(totalCost);
+  document.getElementById('profitMo').textContent = fmt(profitMo) + '/mo';
+
+  // Waterfall
+  document.getElementById('wf_arv').textContent = fmt(arv);
+  document.getElementById('wf_buy').textContent = '-' + fmt(purchasePrice);
+  document.getElementById('wf_rehab').textContent = '-' + fmt(rehab);
+  document.getElementById('wf_finance').textContent = '-' + fmt(financing);
+  document.getElementById('wf_buyClose').textContent = '-' + fmt(buyClosing);
+  document.getElementById('wf_sellClose').textContent = '-' + fmt(sellClosing);
+  document.getElementById('wf_hold').textContent = '-' + fmt(holdTotal);
+  document.getElementById('wf_misc').textContent = '-' + fmt(misc);
+  document.getElementById('wf_net').textContent = fmt(netProfit);
+  document.getElementById('wf_net').style.color = netProfit >= 0 ? 'var(--gold-lt)' : '#FCA5A5';
+
+  // 70% Rule
+  const mao = arv * 0.70 - rehab;
+  document.getElementById('rule_formula').textContent = `(${fmtK(arv)} × 70%) − ${fmtK(rehab)}`;
+  document.getElementById('rule_max').textContent = fmt(mao);
+  document.getElementById('rule_yours').textContent = fmt(purchasePrice);
+  const rv = document.getElementById('rule_verdict');
+  if (purchasePrice <= mao){ rv.style.background='#15803D'; rv.textContent='✓ Under MAO'; }
+  else { rv.style.background='#B91C1C'; rv.textContent='✗ Over MAO'; }
+
+  lastResult = { arv, purchasePrice, rehab, holdMonths, financing, buyClosing, sellClosing, holdTotal, misc, otherCosts, totalCost, netProfit, cashInvested, roi, annRoi, profitMo, date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) };
+
+  // Save bar
+  const sb = document.getElementById('saveBar');
+  sb.classList.add('visible');
+  document.getElementById('saveTitle').textContent = 'Save This Deal Analysis';
+  document.getElementById('saveSub').textContent = `ARV: ${fmtK(arv)} · Profit: ${fmt(netProfit)} · ROI: ${pct(roi)}`;
+  document.getElementById('saveBtn').textContent = 'Save';
+  document.getElementById('saveBtn').className = 'save-action-btn';
+
+  renderStats(lastResult);
+  document.getElementById('statsSection').classList.add('visible');
+  renderSaved();
+}
+
+function renderStats(r) {
+  // Donut: segments of ARV pie
+  const circ = 213.6;
+  const buyFrac = r.purchasePrice / r.arv;
+  const rehabFrac = r.rehab / r.arv;
+  const otherFrac = r.otherCosts / r.arv;
+  const profitFrac = Math.max(0, r.netProfit / r.arv);
+  const buyDash = buyFrac * circ;
+  const rehabDash = rehabFrac * circ;
+  const otherDash = otherFrac * circ;
+  const profitDash = profitFrac * circ;
+
+  document.getElementById('donutBuy').setAttribute('stroke-dasharray', `${buyDash} ${circ}`);
+  document.getElementById('donutBuy').setAttribute('stroke-dashoffset', '0');
+  document.getElementById('donutRehab').setAttribute('stroke-dasharray', `${rehabDash} ${circ}`);
+  document.getElementById('donutRehab').setAttribute('stroke-dashoffset', `${-buyDash}`);
+  document.getElementById('donutOther').setAttribute('stroke-dasharray', `${otherDash} ${circ}`);
+  document.getElementById('donutOther').setAttribute('stroke-dashoffset', `${-(buyDash + rehabDash)}`);
+  document.getElementById('donutProfit').setAttribute('stroke-dasharray', `${profitDash} ${circ}`);
+  document.getElementById('donutProfit').setAttribute('stroke-dashoffset', `${-(buyDash + rehabDash + otherDash)}`);
+  document.getElementById('donutLabel').textContent = r.roi.toFixed(0) + '%';
+  document.getElementById('lgBuy').textContent = fmt(r.purchasePrice);
+  document.getElementById('lgRehab').textContent = fmt(r.rehab);
+  document.getElementById('lgOther').textContent = fmt(r.otherCosts);
+  document.getElementById('lgProfit').textContent = fmt(r.netProfit);
+
+  // Scenario comparison (conservative -10%, base, optimistic +10% ARV)
+  const scenarios = [
+    { label: 'Conservative', arv: r.arv * 0.90, col: '#B91C1C' },
+    { label: 'Base Case', arv: r.arv, col: '#334155' },
+    { label: 'Optimistic', arv: r.arv * 1.10, col: '#15803D' },
+  ];
+  document.getElementById('scenarioRow').innerHTML = scenarios.map(s => {
+    const p = s.arv - r.totalCost;
+    const bg = s.col;
+    return `<div class="sc-item" style="background:${bg};"><div class="sc-lbl">${s.label}</div><div class="sc-val">${fmt(p)}</div><div class="sc-sub">${fmtK(s.arv)} ARV</div></div>`;
+  }).join('');
+
+  // Cost bars (all as % of ARV)
+  const costItems = [
+    { label: 'Purchase Price', val: r.purchasePrice, col: '#334155' },
+    { label: 'Rehab Costs', val: r.rehab, col: '#D97706' },
+    { label: 'Selling Costs', val: r.sellClosing, col: '#B91C1C' },
+    { label: 'Financing', val: r.financing, col: '#6D28D9' },
+    { label: 'Holding Costs', val: r.holdTotal, col: '#0F766E' },
+    { label: 'Buy Close + Misc', val: r.buyClosing + r.misc, col: '#64748B' },
+  ];
+  const maxCost = Math.max(...costItems.map(c => c.val));
+  document.getElementById('costBars').innerHTML = costItems.map(b => `
+    <div class="bar-item">
+      <div class="bar-header">
+        <span class="bar-name">${b.label}</span>
+        <span class="bar-amount" style="color:${b.col}">${fmt(b.val)}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,(b.val/maxCost)*100)}%;background:${b.col};"></div></div>
+    </div>`).join('');
+}
+
+function saveCalc() {
+  if (!lastResult) { showToast('Run a calculation first'); return; }
+  const btn = document.getElementById('saveBtn');
+  if (btn.classList.contains('done')) { showToast('Already saved!'); return; }
+  savedCalcs.unshift({ ...lastResult, id: Date.now() });
+  if (savedCalcs.length > 8) savedCalcs.pop();
+  localStorage.setItem('flip_saved', JSON.stringify(savedCalcs));
+  btn.textContent = 'Saved ✓';
+  btn.classList.add('done');
+  showToast('✅ Deal saved!');
+  renderSaved();
+}
+
+function deleteCalc(id) {
+  savedCalcs = savedCalcs.filter(c => c.id !== id);
+  localStorage.setItem('flip_saved', JSON.stringify(savedCalcs));
+  renderSaved();
+}
+
+function clearSaved() {
+  savedCalcs = [];
+  localStorage.removeItem('flip_saved');
+  renderSaved();
+}
+
+function renderSaved() {
+  const sec = document.getElementById('savedSection');
+  const list = document.getElementById('savedList');
+  if (!savedCalcs.length) { sec.classList.remove('visible'); return; }
+  sec.classList.add('visible');
+  list.innerHTML = savedCalcs.map(c => {
+    const col = c.netProfit >= 40000 ? '#15803D' : c.netProfit >= 0 ? '#D97706' : '#B91C1C';
+    return `<div class="saved-item">
+      <div class="si-icon">🔨</div>
+      <div class="si-body">
+        <div class="si-name">ARV ${fmtK(c.arv)} · Buy ${fmtK(c.purchasePrice)}</div>
+        <div class="si-detail">Rehab: ${fmtK(c.rehab)} · ROI: ${c.roi.toFixed(1)}% · ${c.date||''}</div>
+      </div>
+      <div class="si-profit" style="color:${col}">${fmt(c.netProfit)}</div>
+      <button class="si-del" onclick="deleteCalc(${c.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+renderSaved();
+</script>
+</body>
+</html>

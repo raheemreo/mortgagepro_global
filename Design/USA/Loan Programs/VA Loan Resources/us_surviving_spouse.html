@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surviving Spouse Benefits</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+    --purple:#4C1D95;--purple-lt:#7C3AED;--green:#15803D;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#4C1D95 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🪖';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+  .content{padding:14px 14px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;}
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px;}
+  .inp-box{background:var(--card);border-radius:13px;padding:12px 13px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--blue);}
+  .inp-box.full{grid-column:1/-1;}
+  .inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:13.5px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;background:transparent;-webkit-appearance:none;}
+  .inp-hint{font-size:8.5px;color:var(--muted);margin-top:3px;}
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#1B3F72);border-radius:18px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;}
+  .result-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:22px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.3;margin:5px 0 4px;}
+  .rh-sub{font-size:9.5px;color:rgba(255,255,255,0.48);}
+  .save-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:9px;padding:6px 11px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;transition:background .2s;z-index:2;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(76,29,149,0.40);border-color:rgba(124,58,237,0.60);}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .saved-section{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;display:none;}
+  .saved-section.has-saves{display:block;}
+  .saved-item{background:#F8FAFF;border-radius:10px;padding:10px 12px;margin-bottom:7px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .saved-item:last-child{margin-bottom:0;}
+  .si-info{flex:1;}
+  .si-title{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-del{font-size:14px;cursor:pointer;color:#B91C1C;padding:2px 5px;opacity:.6;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#1B3F72,#0B1D3A);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(27,63,114,0.32);font-family:'DM Serif Display',serif;margin-top:3px;}
+  /* Savings banner */
+  .savings-banner{background:linear-gradient(135deg,#0B1D3A,#4C1D95);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;}
+  .sb-icon{font-size:28px;}
+  .sb-title{font-size:13px;font-weight:700;color:var(--gold-lt);font-family:'DM Serif Display',serif;}
+  .sb-sub{font-size:9.5px;color:rgba(255,255,255,0.55);margin-top:2px;}
+  /* comparison bars */
+  .compare-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+  .cmp-row{margin-bottom:10px;}
+  .cmp-row:last-child{margin-bottom:0;}
+  .cmp-header{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .cmp-label{font-size:10px;font-weight:700;color:var(--navy);}
+  .cmp-vals{font-size:9.5px;color:var(--muted);}
+  .cmp-track{height:10px;background:#EEF2F8;border-radius:5px;overflow:visible;position:relative;}
+  .cmp-va{height:100%;border-radius:5px;background:linear-gradient(90deg,#1B3F72,#4C1D95);transition:width .5s;}
+  .cmp-conv{height:6px;border-radius:3px;background:rgba(185,28,28,0.35);position:absolute;top:2px;transition:width .5s;}
+  .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .bk-card{background:var(--card);border-radius:13px;padding:12px;border:1px solid var(--border);box-shadow:var(--sh);}
+  .bk-icon{font-size:18px;margin-bottom:5px;}
+  .bk-label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .bk-value{font-size:15px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin:3px 0;}
+  .bk-sub{font-size:8.5px;color:var(--muted);}
+  .doc-card{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .doc-row{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .doc-row:last-child{border-bottom:none;}
+  .doc-check{width:18px;height:18px;border-radius:6px;border:1.5px solid var(--border);flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;transition:all .15s;}
+  .doc-check.checked{background:var(--green);border-color:var(--green);}
+  .doc-text{flex:1;}
+  .doc-name{font-size:11px;font-weight:700;color:var(--navy);}
+  .doc-note{font-size:9px;color:var(--muted);margin-top:2px;}
+  .elig-card{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:9px;}
+  .elig-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;}
+  .elig-row:last-child{border-bottom:none;}
+  .elig-label{font-size:11px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .elig-val{font-size:10.5px;font-weight:700;color:#15803D;text-align:right;}
+  .elig-val.gold{color:var(--gold);}
+  .note-strip{background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.25);border-radius:12px;padding:10px 12px;font-size:9.5px;color:#92400E;line-height:1.5;margin-bottom:10px;}
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:18px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero,.savings-banner,.compare-card,.breakdown-grid,.doc-card,.elig-card{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🪖</div>
+      <div class="hdr-title">Surviving Spouse Benefits</div>
+      <div class="hdr-sub">VA home loan eligibility for spouses</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Funding Fee</div><div class="rs-v gold">Exempt</div><div class="rs-n">$0 If Qualified</div></div>
+    <div class="rs"><div class="rs-l">Down Payment</div><div class="rs-v">0%</div><div class="rs-n">Same as Veterans</div></div>
+    <div class="rs"><div class="rs-l">Benefit Window</div><div class="rs-v">Lifetime</div><div class="rs-n">No Expiration</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="note-strip">🎖️ Unremarried surviving spouses of veterans who died in service or from a service-connected cause may qualify for a VA-guaranteed home loan — $0 down, no PMI, and typically no funding fee.</div>
+
+  <div class="sec">Check Your Likely Eligibility</div>
+  <div class="input-grid">
+    <div class="inp-box full">
+      <label>Circumstance of Death</label>
+      <select id="deathCause" onchange="checkEligibility()">
+        <option value="service" selected>Died on active duty or from service-connected cause</option>
+        <option value="totaldis">Rated totally disabled, died (any cause)</option>
+        <option value="mia">Missing in Action / POW 90+ days</option>
+        <option value="other">Other / not sure</option>
+      </select>
+    </div>
+    <div class="inp-box full">
+      <label>Remarriage Status</label>
+      <select id="remarriage" onchange="checkEligibility()">
+        <option value="never" selected>Never remarried</option>
+        <option value="after57">Remarried at 57+, on/after Dec 16, 2003</option>
+        <option value="before57">Remarried before age 57</option>
+      </select>
+    </div>
+    <div class="inp-box full">
+      <label>Receiving DIC Benefits?</label>
+      <select id="dicStatus" onchange="checkEligibility()">
+        <option value="yes" selected>Yes</option>
+        <option value="no">No / Not Sure</option>
+      </select>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="checkEligibility()">🪖 Check My Eligibility</button>
+
+  <div class="sec">Result</div>
+  <div class="result-hero">
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+    <div class="rh-label">Likely VA Loan Eligibility</div>
+    <div class="rh-amount" id="eligResult">✅ Likely Eligible</div>
+    <div class="rh-sub" id="eligSub">Apply for your COE using VA Form 26-1817</div>
+  </div>
+
+  <div class="saved-section" id="savedSection">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📂 Saved Checks</div>
+    <div id="savedList"></div>
+  </div>
+
+  <div class="savings-banner">
+    <div class="sb-icon">⭐</div>
+    <div>
+      <div class="sb-title">Funding Fee Fully Waived</div>
+      <div class="sb-sub">On a $450,000 loan, that's ~$9,675 you don't pay at closing vs. a 1st-use veteran</div>
+    </div>
+  </div>
+
+  <div class="compare-card">
+    <div class="chart-title">⚖️ Surviving Spouse vs. Standard VA Borrower</div>
+    <div class="cmp-row">
+      <div class="cmp-header"><div class="cmp-label">Funding Fee Owed</div><div class="cmp-vals"><span style="color:#1B3F72;font-weight:700;">Spouse $0</span> vs <span style="color:#B91C1C;">Veteran ~2.15%</span></div></div>
+      <div class="cmp-track" style="height:12px;"><div class="cmp-va" style="width:1%;height:12px;min-width:4px;"></div><div class="cmp-conv" style="width:70%;height:8px;top:2px;"></div></div>
+    </div>
+    <div class="cmp-row">
+      <div class="cmp-header"><div class="cmp-label">Down Payment Required</div><div class="cmp-vals"><span style="color:#1B3F72;font-weight:700;">Spouse $0</span> vs <span style="color:#B91C1C;">Conv. ~20%</span></div></div>
+      <div class="cmp-track" style="height:12px;"><div class="cmp-va" style="width:1%;height:12px;min-width:4px;"></div><div class="cmp-conv" style="width:80%;height:8px;top:2px;"></div></div>
+    </div>
+    <div style="font-size:8.5px;color:var(--muted);margin-top:6px;">■ Navy = Surviving Spouse &nbsp;|&nbsp; ■ Red = Comparison Borrower</div>
+  </div>
+
+  <div class="breakdown-grid">
+    <div class="bk-card"><div class="bk-icon">✅</div><div class="bk-label">Funding Fee</div><div class="bk-value" style="color:#15803D;">$0</div><div class="bk-sub">If COE shows code 06/07</div></div>
+    <div class="bk-card"><div class="bk-icon">🏠</div><div class="bk-label">Min. Down Payment</div><div class="bk-value">$0</div><div class="bk-sub">Same as veteran benefit</div></div>
+    <div class="bk-card"><div class="bk-icon">📋</div><div class="bk-label">Form Required</div><div class="bk-value" style="font-size:13px;">26-1817</div><div class="bk-sub">Determination of eligibility</div></div>
+    <div class="bk-card"><div class="bk-icon">⏳</div><div class="bk-label">Benefit Expiration</div><div class="bk-value" style="font-size:13px;">None</div><div class="bk-sub">Lifetime benefit</div></div>
+  </div>
+
+  <div class="sec">Documents You'll Likely Need</div>
+  <div class="doc-card">
+    <div class="doc-row"><div class="doc-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div><div class="doc-text"><div class="doc-name">Veteran's DD Form 214</div><div class="doc-note">Discharge or separation papers of the deceased veteran</div></div></div>
+    <div class="doc-row"><div class="doc-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div><div class="doc-text"><div class="doc-name">Marriage License</div><div class="doc-note">To verify your relationship to the veteran</div></div></div>
+    <div class="doc-row"><div class="doc-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div><div class="doc-text"><div class="doc-name">Death Certificate</div><div class="doc-note">Confirms service-connected or qualifying death</div></div></div>
+    <div class="doc-row"><div class="doc-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div><div class="doc-text"><div class="doc-name">VA Form 26-1817</div><div class="doc-note">Request for Determination of Loan Guaranty Eligibility — Unmarried Surviving Spouses</div></div></div>
+    <div class="doc-row"><div class="doc-check" onclick="this.classList.toggle('checked'); this.textContent=this.classList.contains('checked')?'✓':'';">​</div><div class="doc-text"><div class="doc-name">DIC Award Letter (if applicable)</div><div class="doc-note">Streamlines the process if you already receive DIC</div></div></div>
+  </div>
+
+  <div class="sec">Key Eligibility Rules</div>
+  <div class="elig-card">
+    <div class="elig-row"><div class="elig-label">Service-Connected Death</div><div class="elig-val">✅ Directly qualifies</div></div>
+    <div class="elig-row"><div class="elig-label">MIA / POW 90+ Days</div><div class="elig-val">✅ Qualifies</div></div>
+    <div class="elig-row"><div class="elig-label">Remarried at 57+ (after 12/16/03)</div><div class="elig-val">✅ Retains eligibility</div></div>
+    <div class="elig-row"><div class="elig-label">Remarried Before Age 57</div><div class="elig-val gold">⚡ Generally loses eligibility</div></div>
+    <div class="elig-row"><div class="elig-label">Receiving DIC</div><div class="elig-val">✅ Streamlines COE process</div></div>
+    <div class="elig-row"><div class="elig-label">Not Receiving DIC</div><div class="elig-val gold">⚡ More documentation needed</div></div>
+  </div>
+
+  <div class="note-strip">💡 The "10-year rule": if the veteran was rated 100% Permanent and Total for at least 10 years before death, the surviving spouse generally qualifies for DIC — and the related VA loan benefit — even if the death itself wasn't service-connected.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let savedChecks = JSON.parse(localStorage.getItem('va_spouse_saves') || '[]');
+
+function checkEligibility(){
+  const cause = document.getElementById('deathCause').value;
+  const remarriage = document.getElementById('remarriage').value;
+  const dic = document.getElementById('dicStatus').value;
+
+  let eligible = true;
+  let title, sub;
+
+  if (remarriage === 'before57') {
+    eligible = false;
+    title = '⚠️ Likely Not Eligible';
+    sub = 'Remarriage before age 57 generally ends VA loan eligibility — confirm with VA';
+  } else if (cause === 'other') {
+    eligible = false;
+    title = '❓ Eligibility Unclear';
+    sub = 'Speak with a VA-approved lender or Regional Loan Center to confirm your category';
+  } else {
+    title = '✅ Likely Eligible';
+    sub = dic === 'yes'
+      ? 'Apply for your COE using VA Form 26-1817 — DIC status streamlines processing'
+      : 'Apply for your COE using VA Form 26-1817 — extra documentation may be requested';
+  }
+
+  document.getElementById('eligResult').textContent = title;
+  document.getElementById('eligSub').textContent = sub;
+}
+
+function saveCalc() {
+  const cause = document.getElementById('deathCause').options[document.getElementById('deathCause').selectedIndex].text;
+  const result = document.getElementById('eligResult').textContent;
+  const entry = { id:Date.now(), label:`Spouse Check – ${result}`, payment:cause.substring(0,40), date:new Date().toLocaleDateString() };
+  savedChecks.unshift(entry);
+  if (savedChecks.length>5) savedChecks=savedChecks.slice(0,5);
+  localStorage.setItem('va_spouse_saves',JSON.stringify(savedChecks));
+  renderSaved();
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');btn.textContent='✅ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},2000);
+  showToast('Eligibility check saved!');
+}
+function deleteSave(id){ savedChecks=savedChecks.filter(s=>s.id!==id); localStorage.setItem('va_spouse_saves',JSON.stringify(savedChecks)); renderSaved(); }
+function renderSaved(){
+  const sec=document.getElementById('savedSection'); const list=document.getElementById('savedList');
+  if(!savedChecks.length){sec.classList.remove('has-saves');return;}
+  sec.classList.add('has-saves');
+  list.innerHTML=savedChecks.map(s=>`<div class="saved-item"><div class="si-info"><div class="si-title">${s.label}</div><div class="si-sub">${s.payment} · ${s.date}</div></div><div class="si-del" onclick="deleteSave(${s.id})">✕</div></div>`).join('');
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+checkEligibility();
+renderSaved();
+</script>
+</body>
+</html>

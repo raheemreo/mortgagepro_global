@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIP Calculator – India Financial Tools</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#9333EA 82%,#6D28D9 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .info{font-size:11px;font-weight:600;color:var(--chakra);text-transform:none;letter-spacing:0;}
+.calc-card{background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.field{margin-bottom:16px;}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field-row{display:flex;align-items:center;gap:8px;}
+.inp{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:11px 14px;font-size:15px;font-weight:800;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--saffron);}
+.inp-unit{background:rgba(255,107,0,0.08);border:1.5px solid var(--border);border-radius:11px;padding:11px 12px;font-size:12px;font-weight:800;color:var(--saffron);white-space:nowrap;font-family:'Trebuchet MS',sans-serif;}
+.slider-wrap{margin-top:7px;}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;background:linear-gradient(90deg,var(--saffron) var(--pct,50%),rgba(255,107,0,0.15) var(--pct,50%));border-radius:4px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--saffron);border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(255,107,0,0.4);cursor:pointer;}
+.slider-labels{display:flex;justify-content:space-between;margin-top:4px;}
+.slider-labels span{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.toggle-row{display:flex;gap:6px;flex-wrap:wrap;}
+.tgl{padding:8px 10px;border-radius:10px;font-size:10.5px;font-weight:800;text-align:center;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font-family:'Trebuchet MS',sans-serif;transition:all .2s;}
+.tgl.active{background:var(--saffron);color:#fff;border-color:var(--saffron);box-shadow:0 4px 14px rgba(255,107,0,0.35);}
+.calc-btn{width:100%;background:linear-gradient(135deg,#9333EA,#6D28D9);border:none;border-radius:13px;padding:15px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(147,51,234,0.38);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;transition:transform .15s;}
+.calc-btn:active{transform:scale(.97);}
+.result-card{background:linear-gradient(148deg,#6D28D9,#9333EA);border-radius:22px;padding:20px;box-shadow:var(--sh2);position:relative;overflow:hidden;margin-bottom:14px;}
+.result-card::after{content:'☸';position:absolute;right:14px;bottom:12px;font-size:54px;color:rgba(255,255,255,0.06);}
+.res-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.7px;font-family:'Trebuchet MS',sans-serif;}
+.res-big{font-size:32px;font-weight:800;color:var(--ochre-lt);margin:4px 0 14px;line-height:1;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.res-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:10px 12px;}
+.res-box-lbl{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.res-box-val{font-size:16px;font-weight:800;color:#fff;margin-top:3px;}
+.res-box-val.grn{color:#86EFAC;}
+.res-box-val.saf{color:var(--ochre-lt);}
+.save-btn{width:100%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.20);border-radius:11px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Trebuchet MS',sans-serif;letter-spacing:.3px;margin-top:10px;transition:background .2s;}
+.save-btn:hover{background:rgba(255,255,255,0.20);}
+.chart-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.chart-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.chart-title span{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;font-weight:600;}
+/* Area chart via canvas-like SVG */
+.area-svg{width:100%;height:150px;display:block;}
+.legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+/* Fund comparison */
+.fund-list{display:flex;flex-direction:column;gap:9px;}
+.fund-item{background:var(--card);border-radius:15px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;}
+.fund-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:rgba(147,51,234,0.08);}
+.fund-name{font-size:12px;font-weight:800;color:var(--navy);}
+.fund-cat{font-size:9px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.fund-ret{margin-left:auto;text-align:right;}
+.fund-ret .v{font-size:15px;font-weight:800;color:#9333EA;}
+.fund-ret .l{font-size:8.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+/* CAGR meter */
+.cagr-bar-wrap{margin-top:12px;}
+.cagr-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cagr-lbl{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;width:100px;flex-shrink:0;}
+.cagr-bar-bg{flex:1;height:8px;background:rgba(255,107,0,0.10);border-radius:4px;overflow:hidden;}
+.cagr-fill{height:100%;border-radius:4px;transition:width .5s;}
+.cagr-pct{font-size:10px;font-weight:800;color:var(--navy);width:38px;text-align:right;font-family:'Trebuchet MS',sans-serif;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#9333EA;color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:800;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .3s;z-index:200;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .10s;}
+.fu3{animation:fadeUp .38s ease both .16s;}
+.fu4{animation:fadeUp .38s ease both .22s;}
+.fu5{animation:fadeUp .38s ease both .28s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="javascript:history.back()">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">📈</div>
+      <div class="hdr-title">SIP <span>Calculator</span></div>
+      <div class="hdr-sub">Mutual Fund SIP · SEBI India · Wealth Projector</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Nifty 50</div><div class="rs-v saf">22,643</div><div class="rs-n">1-yr+28%</div></div>
+    <div class="rs"><div class="rs-l">Avg Large</div><div class="rs-v grn">14.2%</div><div class="rs-n">5-yr CAGR</div></div>
+    <div class="rs"><div class="rs-l">Avg Mid</div><div class="rs-v grn">18.6%</div><div class="rs-n">5-yr CAGR</div></div>
+    <div class="rs"><div class="rs-l">Inflation</div><div class="rs-v">5.1%</div><div class="rs-n">CPI 2024</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">SIP Details <span class="info">SEBI Mutual Funds ⓘ</span></div>
+  <div class="calc-card fu1">
+    <div class="field">
+      <label>Monthly SIP Amount</label>
+      <div class="field-row">
+        <span class="inp-unit">₹</span>
+        <input class="inp" type="number" id="sip" value="10000" min="500" oninput="updateSlider('sipRange',this.value,500,200000);calc()">
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="sipRange" min="500" max="200000" value="10000" oninput="syncInput('sip',this.value);calc()">
+        <div class="slider-labels"><span>₹500</span><span>₹2L</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Expected Annual Return (CAGR)</label>
+      <div class="toggle-row" id="retToggle">
+        <div class="tgl" onclick="setToggle('retToggle',this,'8','ret');calc()">8% Conservative</div>
+        <div class="tgl active" onclick="setToggle('retToggle',this,'12','ret');calc()">12% Moderate</div>
+        <div class="tgl" onclick="setToggle('retToggle',this,'15','ret');calc()">15% Growth</div>
+        <div class="tgl" onclick="setToggle('retToggle',this,'18','ret');calc()">18% Aggressive</div>
+      </div>
+      <input type="hidden" id="ret" value="12">
+    </div>
+    <div class="field">
+      <label>Investment Duration</label>
+      <div class="field-row">
+        <input class="inp" type="number" id="dur" value="15" min="1" max="40" oninput="updateSlider('durRange',this.value,1,40);calc()">
+        <span class="inp-unit">Yrs</span>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="durRange" min="1" max="40" value="15" oninput="syncInput('dur',this.value);calc()">
+        <div class="slider-labels"><span>1 yr</span><span>40 yrs</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Annual SIP Step-Up (Top-Up)</label>
+      <div class="toggle-row" id="stepToggle">
+        <div class="tgl active" onclick="setToggle('stepToggle',this,'0','step');calc()">None</div>
+        <div class="tgl" onclick="setToggle('stepToggle',this,'5','step');calc()">5%</div>
+        <div class="tgl" onclick="setToggle('stepToggle',this,'10','step');calc()">10%</div>
+        <div class="tgl" onclick="setToggle('stepToggle',this,'15','step');calc()">15%</div>
+      </div>
+      <input type="hidden" id="step" value="0">
+    </div>
+    <button class="calc-btn" onclick="calc()">📈 Calculate SIP Returns</button>
+  </div>
+
+  <div class="result-card fu2" id="resultCard">
+    <div class="res-label">Total Wealth Created</div>
+    <div class="res-big" id="maturity">₹0</div>
+    <div class="res-grid">
+      <div class="res-box">
+        <div class="res-box-lbl">Total Invested</div>
+        <div class="res-box-val saf" id="invested">₹0</div>
+      </div>
+      <div class="res-box">
+        <div class="res-box-lbl">Returns Earned</div>
+        <div class="res-box-val grn" id="returns">₹0</div>
+      </div>
+      <div class="res-box">
+        <div class="res-box-lbl">Wealth Ratio</div>
+        <div class="res-box-val" id="ratio">0x</div>
+      </div>
+      <div class="res-box">
+        <div class="res-box-lbl">XIRR (approx)</div>
+        <div class="res-box-val" id="xirr">0%</div>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveCalc()">📥 Save Calculation</button>
+  </div>
+
+  <!-- GROWTH CHART -->
+  <div class="sec fu3">Wealth Growth Curve <span class="info">Compounding effect</span></div>
+  <div class="chart-card fu3">
+    <div class="chart-title">SIP Growth vs Simple Savings <span id="chartSub">15-year view</span></div>
+    <svg class="area-svg" id="areaSvg" viewBox="0 0 360 140" preserveAspectRatio="none"></svg>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#9333EA"></div>SIP Corpus</div>
+      <div class="leg-item"><div class="leg-dot" style="background:rgba(147,51,234,0.25)"></div>Amount Invested</div>
+    </div>
+  </div>
+
+  <!-- CAGR COMPARISON -->
+  <div class="sec fu3">Return Scenario Comparison <span class="info">Same SIP, diff CAGR</span></div>
+  <div class="chart-card fu4">
+    <div class="chart-title">What ₹<span id="sipLbl">10,000</span>/mo becomes in <span id="durLbl">15</span> yrs</div>
+    <div class="cagr-bar-wrap" id="cagrBars"></div>
+  </div>
+
+  <!-- TOP SIP FUNDS (real data 2024) -->
+  <div class="sec fu4">Top Performing MFs 2025 <span class="info">5-yr CAGR</span></div>
+  <div class="fund-list fu5">
+    <div class="fund-item"><div class="fund-icon">📊</div><div><div class="fund-name">Nippon India Small Cap</div><div class="fund-cat">Small Cap · Direct Growth</div></div><div class="fund-ret"><div class="v">32.4%</div><div class="l">5-yr CAGR</div></div></div>
+    <div class="fund-item"><div class="fund-icon">🏢</div><div><div class="fund-name">Quant Mid Cap Fund</div><div class="fund-cat">Mid Cap · Direct Growth</div></div><div class="fund-ret"><div class="v">28.7%</div><div class="l">5-yr CAGR</div></div></div>
+    <div class="fund-item"><div class="fund-icon">🌟</div><div><div class="fund-name">Mirae Asset Large & Mid</div><div class="fund-cat">Large & Mid Cap</div></div><div class="fund-ret"><div class="v">19.1%</div><div class="l">5-yr CAGR</div></div></div>
+    <div class="fund-item"><div class="fund-icon">🛡️</div><div><div class="fund-name">HDFC Flexi Cap Fund</div><div class="fund-cat">Flexi Cap · Direct</div></div><div class="fund-ret"><div class="v">16.8%</div><div class="l">5-yr CAGR</div></div></div>
+    <div class="fund-item"><div class="fund-icon">⚡</div><div><div class="fund-name">Parag Parikh Flexi Cap</div><div class="fund-cat">Flexi Cap · Intl exposure</div></div><div class="fund-ret"><div class="v">18.3%</div><div class="l">5-yr CAGR</div></div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">📥 SIP plan saved!</div>
+
+<script>
+function fmt(n){return '₹'+n.toLocaleString('en-IN',{maximumFractionDigits:0});}
+function syncInput(id,val){document.getElementById(id).value=val;}
+function updateSlider(id,val,mn,mx){const sl=document.getElementById(id);sl.value=Math.min(mx,Math.max(mn,val));sl.style.setProperty('--pct',((sl.value-mn)/(mx-mn)*100)+'%');}
+function setToggle(groupId,el,val,hidId){
+  document.querySelectorAll('#'+groupId+' .tgl').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(hidId).value=val;
+}
+
+function calcSIP(sip,r,months,stepPct){
+  const mRate=r/100/12;
+  let corpus=0,invested=0,curSip=sip;
+  const pts=[];
+  for(let m=1;m<=months;m++){
+    if(m>1&&(m-1)%12===0&&stepPct>0) curSip*=(1+stepPct/100);
+    corpus=(corpus+curSip)*(1+mRate);
+    invested+=curSip;
+    if(m%12===0||m===months) pts.push({m,corpus,invested});
+  }
+  return{corpus,invested,pts};
+}
+
+function calc(){
+  const sip=parseFloat(document.getElementById('sip').value)||10000;
+  const ret=parseFloat(document.getElementById('ret').value)||12;
+  const dur=parseInt(document.getElementById('dur').value)||15;
+  const step=parseFloat(document.getElementById('step').value)||0;
+  const months=dur*12;
+  const {corpus,invested,pts}=calcSIP(sip,ret,months,step);
+  const returns_=corpus-invested;
+  document.getElementById('maturity').textContent=fmt(corpus);
+  document.getElementById('invested').textContent=fmt(invested);
+  document.getElementById('returns').textContent=fmt(returns_);
+  document.getElementById('ratio').textContent=(corpus/invested).toFixed(2)+'x';
+  document.getElementById('xirr').textContent=ret.toFixed(1)+'%';
+  document.getElementById('sipLbl').textContent=sip.toLocaleString('en-IN');
+  document.getElementById('durLbl').textContent=dur;
+  document.getElementById('chartSub').textContent=dur+'-year view';
+  drawArea(pts);
+  drawCagrBars(sip,dur,step);
+  window._lastCalc={sip,ret,dur,step,corpus,invested,returns:returns_};
+}
+
+function drawArea(pts){
+  if(!pts.length) return;
+  const W=360,H=140,pad=10;
+  const maxV=pts[pts.length-1].corpus;
+  const scX=i=>(i/(pts.length-1))*(W-pad*2)+pad;
+  const scY=v=>H-pad-(v/maxV)*(H-pad*2);
+  const corpusPts=pts.map((p,i)=>`${scX(i)},${scY(p.corpus)}`).join(' ');
+  const investPts=pts.map((p,i)=>`${scX(i)},${scY(p.invested)}`).join(' ');
+  const areaCorpus=`${pad},${H-pad} `+corpusPts+` ${W-pad},${H-pad}`;
+  const areaInvest=`${pad},${H-pad} `+investPts+` ${W-pad},${H-pad}`;
+  document.getElementById('areaSvg').innerHTML=`
+    <defs>
+      <linearGradient id="gC" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#9333EA" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#9333EA" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="gI" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FF6B00" stop-opacity="0.20"/>
+        <stop offset="100%" stop-color="#FF6B00" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <polygon points="${areaInvest}" fill="url(#gI)"/>
+    <polygon points="${areaCorpus}" fill="url(#gC)"/>
+    <polyline points="${investPts}" fill="none" stroke="rgba(255,107,0,0.5)" stroke-width="1.5"/>
+    <polyline points="${corpusPts}" fill="none" stroke="#9333EA" stroke-width="2.5"/>
+  `;
+}
+
+function drawCagrBars(sip,dur,step){
+  const scenarios=[{r:8,lbl:'8% Debt'},{r:12,lbl:'12% Large'},{r:15,lbl:'15% Mid'},{r:18,lbl:'18% Small'}];
+  const max=calcSIP(sip,18,dur*12,step).corpus;
+  document.getElementById('cagrBars').innerHTML=scenarios.map(s=>{
+    const c=calcSIP(sip,s.r,dur*12,step).corpus;
+    const w=Math.round(c/max*100);
+    const colors={8:'#1A3A8F',12:'#046A38',15:'#FF6B00',18:'#9333EA'};
+    return `<div class="cagr-row">
+      <div class="cagr-lbl">${s.lbl}</div>
+      <div class="cagr-bar-bg"><div class="cagr-fill" style="width:${w}%;background:${colors[s.r]}"></div></div>
+      <div class="cagr-pct">${fmt(c).replace('₹','₹')}</div>
+    </div>`;
+  }).join('');
+}
+
+function saveCalc(){
+  if(!window._lastCalc) return;
+  try{const saves=JSON.parse(localStorage.getItem('sip_saves')||'[]');saves.push({...window._lastCalc,date:new Date().toLocaleDateString('en-IN')});localStorage.setItem('sip_saves',JSON.stringify(saves));}catch(e){}
+  const t=document.getElementById('toast');
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+['sipRange','durRange'].forEach(id=>{
+  const sl=document.getElementById(id);
+  sl.style.setProperty('--pct',((sl.value-sl.min)/(sl.max-sl.min)*100)+'%');
+  sl.addEventListener('input',function(){this.style.setProperty('--pct',((this.value-this.min)/(this.max-this.min)*100)+'%');});
+});
+calc();
+</script>
+</body>
+</html>

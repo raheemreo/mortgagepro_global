@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoneyHub NZ Mortgage Guide</title>
+<style>
+  :root {
+    --black:   #0A0F0D;
+    --forest:  #0D3B2E;
+    --fern:    #1A6B4A;
+    --silver:  #C0C8C1;
+    --teal:    #0D9488;
+    --sky:     #0EA5E9;
+    --red:     #C0392B;
+    --gold:    #D4A017;
+    --gold-lt: #F5D060;
+    --bg:      #EDF5F2;
+    --card:    #FFFFFF;
+    --muted:   #4A6358;
+    --border:  rgba(13,59,46,0.09);
+    --sh:      0 4px 20px rgba(10,15,13,0.09);
+    --sh2:     0 8px 36px rgba(10,15,13,0.18);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Palatino Linotype', Palatino, Georgia, serif;
+    background: var(--bg);
+    color: var(--black);
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(158deg, #0A0F0D 0%, #0D3B2E 45%, #1A6B4A 80%, #C0392B 100%);
+    padding: 46px 20px 0;
+    position: relative; overflow: hidden;
+  }
+  .header::before {
+    content: ''; position: absolute; top: -50px; right: -50px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(245,208,96,0.06);
+  }
+  .header::after {
+    content: '🤝'; position: absolute; right: 12px; top: 44px;
+    font-size: 78px; opacity: 0.09;
+  }
+  .hdr-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; position: relative; z-index: 2;
+  }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(255,255,255,0.11); border: 1px solid rgba(255,255,255,0.19);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #fff; cursor: pointer; text-decoration: none;
+  }
+  .hdr-center { text-align: center; }
+  .hdr-flag   { font-size: 28px; display: block; }
+  .hdr-title  { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+  .hdr-sub    { font-size: 10px; color: rgba(255,255,255,0.50); margin-top: 1px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  .rate-strip {
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 14px 14px 0 0; padding: 11px 14px;
+    display: grid; grid-template-columns: repeat(4,1fr);
+    position: relative; z-index: 2; margin-top: 4px;
+  }
+  .rs { text-align: center; position: relative; }
+  .rs:not(:last-child)::after {
+    content: ''; position: absolute; right: 0; top: 15%;
+    height: 70%; width: 1px; background: rgba(255,255,255,0.13);
+  }
+  .rs-l { font-size: 8.5px; color: rgba(255,255,255,0.46); text-transform: uppercase; letter-spacing: 0.4px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .rs-v { font-size: 13px; font-weight: 800; color: #fff; line-height: 1.15; }
+  .rs-v.gold { color: var(--gold-lt); }
+  .rs-v.up::after { content: '↑'; font-size: 9px; color: #6EE7B7; }
+  .rs-v.dn::after { content: '↓'; font-size: 9px; color: #FCA5A5; }
+  .rs-n { font-size: 8px; color: rgba(255,255,255,0.36); margin-top: 1px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  /* ── CONTENT ── */
+  .content { padding: 15px 15px 110px; }
+  .sec {
+    font-size: 10.5px; font-weight: 800; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin: 20px 0 10px; display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+  .sec .more { font-size: 11px; font-weight: 600; color: var(--fern); text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+  /* Hero Mortgage Calculator */
+  .hero {
+    background: linear-gradient(148deg, #0A0F0D, #0D3B2E);
+    border-radius: 20px; padding: 19px;
+    position: relative; overflow: hidden; box-shadow: var(--sh2);
+    animation: fadeUp .35s ease both .04s;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: rgba(26,107,74,0.22);
+  }
+  .h-tag  { font-size: 9.5px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.8px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .h-title { font-size: 17px; font-weight: 800; color: #fff; margin: 4px 0 13px; line-height: 1.25; }
+  .h-title span { color: var(--gold-lt); }
+  .h-row { display: flex; gap: 7px; margin-bottom: 8px; }
+  .h-box {
+    flex: 1; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px; padding: 8px 10px;
+  }
+  .h-box label { font-size: 8.5px; color: rgba(255,255,255,0.45); display: block; margin-bottom: 4px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .h-box input, .h-box select {
+    width: 100%; background: transparent; border: none; outline: none;
+    font-size: 13px; font-weight: 800; color: #fff;
+    font-family: 'Palatino Linotype', Palatino, Georgia, serif;
+  }
+  .h-box input::placeholder { color: rgba(255,255,255,0.4); font-size: 12px; }
+  .h-box select option { color: #000; font-size: 13px; }
+  .result-row {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 12px; padding: 11px 13px; margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+  }
+  .res-item { text-align: center; }
+  .res-label { font-size: 8px; color: rgba(255,255,255,0.44); text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .res-val   { font-size: 14px; font-weight: 800; color: var(--gold-lt); margin-top: 2px; }
+  .res-val.sm { font-size: 11px; }
+  .h-btn {
+    width: 100%; background: linear-gradient(135deg, var(--fern), #0D3B2E);
+    border: none; border-radius: 12px; padding: 13px;
+    font-size: 13px; font-weight: 800; color: #fff; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(26,107,74,0.40); font-family: Palatino,'Palatino Linotype',Georgia,serif;
+    transition: opacity .15s; margin-top: 4px;
+  }
+  .h-btn:active { opacity: .85; }
+  .h-btn.gold-btn {
+    background: linear-gradient(135deg, var(--gold), #A07810);
+    box-shadow: 0 4px 16px rgba(212,160,23,0.38); margin-top: 8px;
+  }
+
+  /* Lender comparison table */
+  .lender-card {
+    background: var(--card); border-radius: 16px;
+    box-shadow: var(--sh); border: 1px solid var(--border); overflow: hidden;
+    margin-bottom: 10px; animation: fadeUp .35s ease both .08s;
+  }
+  .lc-head {
+    display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    padding: 9px 13px; background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .lc-hcell { font-size: 8.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  .lc-hcell:first-child { text-align: left; }
+  .lc-row {
+    display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    padding: 11px 13px; border-bottom: 1px solid var(--border);
+    align-items: center; cursor: pointer; transition: background .15s;
+  }
+  .lc-row:last-child { border-bottom: none; }
+  .lc-row:active { background: var(--bg); }
+  .lc-row.best { background: linear-gradient(90deg, rgba(26,107,74,0.05), transparent); }
+  .lc-name { display: flex; align-items: center; gap: 7px; }
+  .lc-icon { font-size: 16px; }
+  .lc-nm   { font-size: 12px; font-weight: 800; color: var(--black); }
+  .lc-cell { text-align: center; }
+  .lc-rate { font-size: 13px; font-weight: 800; color: var(--fern); }
+  .lc-rate.hi { color: var(--red); }
+  .lc-rate.mid { color: var(--gold); }
+  .best-tag {
+    display: inline-flex; background: #ECFDF5; color: #065F46;
+    padding: 2px 7px; border-radius: 20px; font-size: 8px; font-weight: 800;
+    font-family: 'Helvetica Neue', Arial, sans-serif; margin-top: 1px;
+  }
+  .lc-mo { font-size: 10.5px; font-weight: 700; color: var(--black); }
+
+  /* Bar charts */
+  .chart-card {
+    background: var(--card); border-radius: 16px; padding: 15px 14px;
+    box-shadow: var(--sh); border: 1px solid var(--border); margin-bottom: 10px;
+  }
+  .chart-title { font-size: 13px; font-weight: 800; color: var(--black); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .chart-title span { font-size: 9.5px; font-weight: 500; color: var(--fern); font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  /* Grouped bar: rate by term */
+  .bars-group { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 0 4px; }
+  .bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar-seg { width: 100%; border-radius: 5px 5px 0 0; min-height: 4px; transition: height .6s cubic-bezier(.4,0,.2,1); }
+  .bar-val-lbl { font-size: 8.5px; font-weight: 800; color: var(--fern); font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .bar-x-lbl   { font-size: 8px; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; white-space: nowrap; }
+
+  /* Cost breakdown donut */
+  .donut-row { display: flex; align-items: center; gap: 16px; }
+  .donut-legend { flex: 1; }
+  .dl-item { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .dl-dot  { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .dl-lbl  { font-size: 10px; font-weight: 700; color: var(--black); font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .dl-val  { font-size: 10px; font-weight: 800; color: var(--muted); margin-left: auto; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  /* Steps / guide cards */
+  .step-card {
+    background: var(--card); border-radius: 15px; padding: 14px;
+    box-shadow: var(--sh); border: 1px solid var(--border);
+    display: flex; gap: 12px; margin-bottom: 9px;
+  }
+  .step-num {
+    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; color: #fff;
+  }
+  .step-num.g1 { background: linear-gradient(135deg, var(--fern), var(--forest)); }
+  .step-num.g2 { background: linear-gradient(135deg, var(--teal), #0F766E); }
+  .step-num.g3 { background: linear-gradient(135deg, var(--sky), #0369A1); }
+  .step-num.g4 { background: linear-gradient(135deg, var(--gold), #A07810); }
+  .step-num.g5 { background: linear-gradient(135deg, var(--red), #922B21); }
+  .step-num.g6 { background: linear-gradient(135deg, #6D28D9, #4C1D95); }
+  .step-body { flex: 1; }
+  .step-title { font-size: 13px; font-weight: 800; color: var(--black); }
+  .step-desc  { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.5; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .step-tag   { display: inline-flex; padding: 2px 8px; border-radius: 20px; font-size: 8.5px; font-weight: 800; margin-top: 5px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .tag-g { background: #ECFDF5; color: #065F46; }
+  .tag-b { background: #EFF6FF; color: #1D4ED8; }
+  .tag-o { background: #FFF7ED; color: #C2410C; }
+  .tag-r { background: #FEF2F2; color: #C0392B; }
+  .tag-t { background: #F0FDFA; color: #0F766E; }
+  .tag-p { background: #F5F3FF; color: #6D28D9; }
+
+  /* Quick tips */
+  .tip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 10px; animation: fadeUp .35s ease both .20s; }
+  .tip-card {
+    background: var(--card); border-radius: 14px; padding: 13px 12px;
+    box-shadow: var(--sh); border: 1px solid var(--border); cursor: pointer; transition: transform .15s;
+  }
+  .tip-card:active { transform: scale(.97); }
+  .tip-icon  { font-size: 22px; margin-bottom: 7px; display: block; }
+  .tip-title { font-size: 12px; font-weight: 800; color: var(--black); }
+  .tip-desc  { font-size: 9.5px; color: var(--muted); margin-top: 3px; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.4; }
+  .tip-card.dk { background: linear-gradient(140deg, #0A0F0D, #0D3B2E); }
+  .tip-card.dk .tip-title, .tip-card.dk .tip-desc { color: rgba(255,255,255,0.85); }
+  .tip-card.dk .tip-desc { color: rgba(255,255,255,0.55); }
+  .tip-card.fn { background: linear-gradient(140deg, #1A6B4A, #0D3B2E); }
+  .tip-card.fn .tip-title { color: #fff; }
+  .tip-card.fn .tip-desc  { color: rgba(255,255,255,0.6); }
+  .tip-card.tl { background: linear-gradient(140deg, #0D9488, #0F766E); }
+  .tip-card.tl .tip-title { color: #fff; }
+  .tip-card.tl .tip-desc  { color: rgba(255,255,255,0.6); }
+  .tip-card.gd { background: linear-gradient(140deg, #D4A017, #A07810); }
+  .tip-card.gd .tip-title { color: #fff; }
+  .tip-card.gd .tip-desc  { color: rgba(255,255,255,0.6); }
+
+  /* Saved calcs */
+  .saved-item {
+    background: var(--card); border-radius: 14px; padding: 12px 14px;
+    box-shadow: var(--sh); border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 11px; margin-bottom: 8px;
+  }
+  .saved-icon { font-size: 20px; flex-shrink: 0; }
+  .saved-title { font-size: 12px; font-weight: 800; color: var(--black); }
+  .saved-sub   { font-size: 9.5px; color: var(--muted); margin-top: 2px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .saved-val  { margin-left: auto; font-size: 14px; font-weight: 800; color: var(--fern); white-space: nowrap; }
+  .del-btn {
+    width: 26px; height: 26px; border-radius: 8px; background: #FEF2F2;
+    border: none; color: var(--red); font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  /* Rate compare mini cards */
+  .hscroll { display: flex; gap: 9px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+  .hscroll::-webkit-scrollbar { display: none; }
+  .mrc {
+    flex-shrink: 0; width: 112px; background: var(--card);
+    border-radius: 15px; padding: 13px 11px;
+    box-shadow: var(--sh); border: 1px solid var(--border); cursor: pointer;
+  }
+  .mrc-icon { font-size: 20px; margin-bottom: 6px; display: block; }
+  .mrc-lbl  { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .mrc-val  { font-size: 17px; font-weight: 800; color: var(--black); margin: 2px 0; }
+  .mrc-sub  { font-size: 9px; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .mrc-chg  { font-size: 9px; font-weight: 700; margin-top: 4px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .up { color: #15803D; } .dn { color: #C0392B; }
+
+  /* Warning banner */
+  .warn-banner {
+    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+    border: 1px solid #F59E0B; border-radius: 14px; padding: 13px 14px;
+    display: flex; align-items: center; gap: 11px; margin-bottom: 10px;
+    animation: fadeUp .35s ease both .12s;
+  }
+  .wb-icon  { font-size: 22px; }
+  .wb-title { font-size: 12.5px; font-weight: 800; color: #92400E; }
+  .wb-sub   { font-size: 9.5px; color: #B45309; margin-top: 2px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  /* Info list */
+  .ilist { display: flex; flex-direction: column; gap: 9px; }
+  .ic {
+    background: var(--card); border-radius: 14px; padding: 13px 14px;
+    box-shadow: var(--sh); border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .ii  { width: 38px; height: 38px; border-radius: 11px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .in  { font-size: 12.5px; font-weight: 800; color: var(--black); }
+  .is  { font-size: 9.5px; color: var(--muted); margin-top: 2px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .ich { font-size: 16px; color: rgba(10,15,13,0.18); margin-left: auto; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--forest); color: #fff; padding: 11px 20px; border-radius: 30px;
+    font-size: 12px; font-weight: 700; opacity: 0; transition: all .3s; z-index: 200;
+    pointer-events: none; white-space: nowrap; font-family: 'Helvetica Neue', Arial, sans-serif;
+    box-shadow: var(--sh2);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Bottom Nav */
+  .bnav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 420px; background: var(--card);
+    border-top: 1px solid var(--border); display: flex;
+    padding: 10px 0 18px; box-shadow: 0 -4px 20px rgba(10,15,13,0.07); z-index: 100;
+  }
+  .ni  { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+  .ni-ic { font-size: 19px; }
+  .ni-lb { font-size: 10px; font-weight: 600; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .ni.active .ni-lb { color: var(--fern); }
+
+  /* Amortization mini table */
+  .amort-table { width: 100%; border-collapse: collapse; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .amort-table th { font-size: 8.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; padding: 6px 6px; background: var(--bg); text-align: center; }
+  .amort-table td { font-size: 10.5px; font-weight: 700; color: var(--black); padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: center; }
+  .amort-table tr:last-child td { border-bottom: none; }
+  .amort-table td.lbl { text-align: left; font-size: 10px; color: var(--muted); }
+  .amort-table td.grn { color: var(--fern); }
+  .amort-table td.red { color: var(--red); }
+
+  /* Line chart SVG */
+  .line-chart { animation: fadeUp .35s ease both .16s; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  @keyframes fillBar { from{width:0}to{} }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="hdr-top">
+    <a href="screen_newzealand.html" class="icon-btn">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇳🇿</div>
+      <div class="hdr-title">MoneyHub Mortgage Guide</div>
+      <div class="hdr-sub">Independent NZ Mortgage Comparison · 2025 Rates</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">1-Yr Fixed</div><div class="rs-v dn">6.59%</div><div class="rs-n">ANZ / ASB</div></div>
+    <div class="rs"><div class="rs-l">2-Yr Fixed</div><div class="rs-v">6.35%</div><div class="rs-n">Kiwibank</div></div>
+    <div class="rs"><div class="rs-l">Floating</div><div class="rs-v">8.64%</div><div class="rs-n">Variable</div></div>
+    <div class="rs"><div class="rs-l">OCR</div><div class="rs-v gold">5.50%</div><div class="rs-n">RBNZ</div></div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Mortgage Calculator Hero -->
+  <div class="sec" style="margin-top:0">NZ Mortgage Calculator <span class="more">Advanced →</span></div>
+  <div class="hero">
+    <div class="h-tag">MoneyHub NZ · Independent Mortgage Guide 2025</div>
+    <div class="h-title">Calculate your <span>NZ Home Loan</span><br>& compare all lenders</div>
+
+    <div class="h-row">
+      <div class="h-box">
+        <label>Property Value (NZD)</label>
+        <input type="number" id="propVal" value="850000" placeholder="e.g. 850000" oninput="calcMortgage()">
+      </div>
+      <div class="h-box">
+        <label>Deposit (NZD)</label>
+        <input type="number" id="deposit" value="170000" placeholder="e.g. 170000" oninput="calcMortgage()">
+      </div>
+    </div>
+    <div class="h-row">
+      <div class="h-box">
+        <label>Interest Rate</label>
+        <select id="intRate" onchange="calcMortgage()">
+          <option value="6.19">6.19% — 5-Yr Fixed</option>
+          <option value="6.29">6.29% — 3-Yr Fixed</option>
+          <option value="6.35">6.35% — 2-Yr Fixed</option>
+          <option value="6.59" selected>6.59% — 1-Yr Fixed</option>
+          <option value="8.64">8.64% — Floating</option>
+          <option value="8.70">8.70% — Revolving</option>
+        </select>
+      </div>
+      <div class="h-box">
+        <label>Loan Term</label>
+        <select id="loanTerm" onchange="calcMortgage()">
+          <option value="30" selected>30 years</option>
+          <option value="25">25 years</option>
+          <option value="20">20 years</option>
+          <option value="15">15 years</option>
+          <option value="10">10 years</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="result-row" id="resultRow">
+      <div class="res-item">
+        <div class="res-label">Monthly</div>
+        <div class="res-val" id="res-monthly">$4,447</div>
+      </div>
+      <div class="res-item">
+        <div class="res-label">Total Interest</div>
+        <div class="res-val" id="res-interest">$621K</div>
+      </div>
+      <div class="res-item">
+        <div class="res-label">LVR</div>
+        <div class="res-val" id="res-lvr">80%</div>
+      </div>
+    </div>
+    <div class="result-row">
+      <div class="res-item">
+        <div class="res-label">Loan Amount</div>
+        <div class="res-val res-val.sm" id="res-loan">$680,000</div>
+      </div>
+      <div class="res-item">
+        <div class="res-label">Total Repaid</div>
+        <div class="res-val" id="res-total">$1.30M</div>
+      </div>
+      <div class="res-item">
+        <div class="res-label">LVR Status</div>
+        <div class="res-val" id="res-lvrStatus" style="font-size:10px;color:#6EE7B7">✓ OK</div>
+      </div>
+    </div>
+
+    <button class="h-btn" onclick="calcMortgage()">🏠 Calculate My NZ Mortgage</button>
+    <button class="h-btn gold-btn" onclick="saveCalc()">💾 Save This Calculation</button>
+  </div>
+
+  <!-- Cost Breakdown Donut -->
+  <div class="sec">Loan Cost Breakdown <span class="more">30yr View</span></div>
+  <div class="chart-card" style="animation: fadeUp .35s ease both .07s;">
+    <div class="chart-title">Principal vs Interest Paid <span id="breakdownSub">Over 30 years</span></div>
+    <div class="donut-row">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="46" fill="none" stroke="#EDF5F2" stroke-width="18"/>
+        <!-- Principal arc -->
+        <circle id="principalArc" cx="60" cy="60" r="46" fill="none" stroke="var(--fern)" stroke-width="18"
+          stroke-linecap="butt" stroke-dasharray="289" stroke-dashoffset="289"
+          transform="rotate(-90 60 60)" style="transition:stroke-dashoffset .8s ease"/>
+        <!-- Interest arc -->
+        <circle id="interestArc" cx="60" cy="60" r="46" fill="none" stroke="var(--red)" stroke-width="18"
+          stroke-linecap="butt" stroke-dasharray="289" stroke-dashoffset="289"
+          transform="rotate(-90 60 60)" style="transition:stroke-dashoffset .8s ease"/>
+        <text x="60" y="56" text-anchor="middle" fill="var(--black)" font-size="11" font-weight="800" font-family="Palatino">
+          <tspan id="donutCenter">$680K</tspan>
+        </text>
+        <text x="60" y="70" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">Borrowed</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="dl-item">
+          <div class="dl-dot" style="background:var(--fern)"></div>
+          <div class="dl-lbl">Principal</div>
+          <div class="dl-val" id="legendPrincipal">$680K</div>
+        </div>
+        <div class="dl-item">
+          <div class="dl-dot" style="background:var(--red)"></div>
+          <div class="dl-lbl">Total Interest</div>
+          <div class="dl-val" id="legendInterest">$621K</div>
+        </div>
+        <div class="dl-item">
+          <div class="dl-dot" style="background:var(--gold)"></div>
+          <div class="dl-lbl">Total Repaid</div>
+          <div class="dl-val" id="legendTotal">$1.30M</div>
+        </div>
+        <div style="margin-top:8px;padding:6px 9px;background:var(--bg);border-radius:8px;">
+          <div style="font-size:9px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;">Interest ratio</div>
+          <div style="font-size:13px;font-weight:800;color:var(--red)" id="intRatio">48%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rate Comparison Bar Chart -->
+  <div class="sec">NZ Rate Comparison <span class="more">Live Rates →</span></div>
+  <div class="chart-card" style="animation: fadeUp .35s ease both .09s;">
+    <div class="chart-title">Fixed Rate Terms · All Major Lenders <span>June 2025</span></div>
+    <div class="bars-group" id="rateBarGroup">
+      <!-- Built by JS -->
+    </div>
+    <div style="display:flex;justify-content:center;gap:12px;margin-top:10px;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:var(--fern)"></div>Best rate</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:var(--teal)"></div>Market avg</div>
+    </div>
+  </div>
+
+  <!-- OCR Rate History Line Chart -->
+  <div class="sec">OCR Rate History <span class="more">Since 2020</span></div>
+  <div class="chart-card line-chart">
+    <div class="chart-title">RBNZ OCR vs 1-Year Fixed Rate <span>2020–2025</span></div>
+    <svg viewBox="0 0 360 160" width="100%" style="overflow:visible">
+      <!-- Grid lines -->
+      <g stroke="var(--border)" stroke-width="1">
+        <line x1="40" y1="20"  x2="350" y2="20"/>
+        <line x1="40" y1="50"  x2="350" y2="50"/>
+        <line x1="40" y1="80"  x2="350" y2="80"/>
+        <line x1="40" y1="110" x2="350" y2="110"/>
+        <line x1="40" y1="140" x2="350" y2="140"/>
+      </g>
+      <!-- Y axis labels -->
+      <text x="34" y="23"  text-anchor="end" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">9%</text>
+      <text x="34" y="53"  text-anchor="end" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">7%</text>
+      <text x="34" y="83"  text-anchor="end" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">5%</text>
+      <text x="34" y="113" text-anchor="end" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">3%</text>
+      <text x="34" y="143" text-anchor="end" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">1%</text>
+      <!-- X axis labels -->
+      <text x="60"  y="157" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">2020</text>
+      <text x="115" y="157" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">2021</text>
+      <text x="170" y="157" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">2022</text>
+      <text x="225" y="157" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">2023</text>
+      <text x="280" y="157" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">2024</text>
+      <text x="340" y="157" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="'Helvetica Neue',Arial,sans-serif">2025</text>
+      <!-- OCR line (green) — 0.25%, 0.25%, 3.5%, 5.5%, 5.5%, 5.5% mapped to SVG y -->
+      <!-- y = 140 - ((rate-1)/8)*120 -->
+      <polyline points="60,137 115,137 170,95 225,50 280,50 340,50"
+        fill="none" stroke="var(--fern)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <!-- 1yr Fixed rate line (sky) — 2.59%, 2.19%, 5.85%, 7.15%, 6.89%, 6.59% -->
+      <polyline points="60,112 115,120 170,46 225,20 280,27 340,36"
+        fill="none" stroke="var(--sky)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="none"/>
+      <!-- Area fills -->
+      <polygon points="60,137 115,137 170,95 225,50 280,50 340,50 340,140 60,140"
+        fill="rgba(26,107,74,0.08)"/>
+      <!-- Dots OCR -->
+      <circle cx="60"  cy="137" r="4" fill="var(--fern)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="115" cy="137" r="4" fill="var(--fern)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="170" cy="95"  r="4" fill="var(--fern)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="225" cy="50"  r="4" fill="var(--fern)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="280" cy="50"  r="4" fill="var(--fern)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="340" cy="50"  r="4" fill="var(--fern)" stroke="#fff" stroke-width="1.5"/>
+      <!-- Dots 1yr fixed -->
+      <circle cx="60"  cy="112" r="4" fill="var(--sky)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="115" cy="120" r="4" fill="var(--sky)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="170" cy="46"  r="4" fill="var(--sky)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="225" cy="20"  r="4" fill="var(--sky)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="280" cy="27"  r="4" fill="var(--sky)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="340" cy="36"  r="4" fill="var(--sky)" stroke="#fff" stroke-width="1.5"/>
+      <!-- Label callouts -->
+      <text x="344" y="33"  fill="var(--sky)" font-size="8" font-weight="700" font-family="'Helvetica Neue',Arial,sans-serif">6.59%</text>
+      <text x="344" y="54"  fill="var(--fern)" font-size="8" font-weight="700" font-family="'Helvetica Neue',Arial,sans-serif">5.50%</text>
+    </svg>
+    <div style="display:flex;justify-content:center;gap:16px;margin-top:4px;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--muted)"><div style="width:10px;height:3px;background:var(--fern);border-radius:2px"></div>OCR Rate</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--muted)"><div style="width:10px;height:3px;background:var(--sky);border-radius:2px"></div>1-Yr Fixed Rate</div>
+    </div>
+  </div>
+
+  <!-- Lender Rate Table -->
+  <div class="sec">NZ Lender Rates Comparison <span class="more">June 2025</span></div>
+  <div class="lender-card">
+    <div class="lc-head">
+      <div class="lc-hcell">Lender</div>
+      <div class="lc-hcell">1-Yr</div>
+      <div class="lc-hcell">2-Yr</div>
+      <div class="lc-hcell">Monthly*</div>
+    </div>
+    <div class="lc-row best">
+      <div class="lc-name"><div class="lc-icon">🥝</div><div><div class="lc-nm">Kiwibank</div><div class="best-tag">BEST RATE</div></div></div>
+      <div class="lc-cell"><div class="lc-rate">6.55%</div></div>
+      <div class="lc-cell"><div class="lc-rate">6.25%</div></div>
+      <div class="lc-cell"><div class="lc-mo" id="kiwibankMo">$4,427</div></div>
+    </div>
+    <div class="lc-row">
+      <div class="lc-name"><div class="lc-icon">🏦</div><div class="lc-nm">ANZ</div></div>
+      <div class="lc-cell"><div class="lc-rate mid">6.59%</div></div>
+      <div class="lc-cell"><div class="lc-rate">6.35%</div></div>
+      <div class="lc-cell"><div class="lc-mo" id="anzMo">$4,447</div></div>
+    </div>
+    <div class="lc-row">
+      <div class="lc-name"><div class="lc-icon">🏦</div><div class="lc-nm">ASB Bank</div></div>
+      <div class="lc-cell"><div class="lc-rate mid">6.59%</div></div>
+      <div class="lc-cell"><div class="lc-rate">6.35%</div></div>
+      <div class="lc-cell"><div class="lc-mo" id="asbMo">$4,447</div></div>
+    </div>
+    <div class="lc-row">
+      <div class="lc-name"><div class="lc-icon">🏦</div><div class="lc-nm">BNZ</div></div>
+      <div class="lc-cell"><div class="lc-rate mid">6.59%</div></div>
+      <div class="lc-cell"><div class="lc-rate">6.35%</div></div>
+      <div class="lc-cell"><div class="lc-mo" id="bnzMo">$4,447</div></div>
+    </div>
+    <div class="lc-row">
+      <div class="lc-name"><div class="lc-icon">🏦</div><div class="lc-nm">Westpac</div></div>
+      <div class="lc-cell"><div class="lc-rate hi">6.65%</div></div>
+      <div class="lc-cell"><div class="lc-rate mid">6.39%</div></div>
+      <div class="lc-cell"><div class="lc-mo" id="westpacMo">$4,478</div></div>
+    </div>
+    <div class="lc-row">
+      <div class="lc-name"><div class="lc-icon">🏦</div><div class="lc-nm">SBS / TSB</div></div>
+      <div class="lc-cell"><div class="lc-rate">6.55%</div></div>
+      <div class="lc-cell"><div class="lc-rate">6.29%</div></div>
+      <div class="lc-cell"><div class="lc-mo" id="sbsMo">$4,427</div></div>
+    </div>
+    <div style="padding:9px 13px;font-size:8.5px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;border-top:1px solid var(--border);">
+      *Monthly repayments calculated on $680K loan, 30-year P&I. Rates as of June 2025.
+    </div>
+  </div>
+
+  <!-- Live Rate scroll -->
+  <div class="sec">Rate Scroll by Term <span class="more">All Terms →</span></div>
+  <div class="hscroll">
+    <div class="mrc"><span class="mrc-icon">🏠</span><div class="mrc-lbl">6 Month</div><div class="mrc-val">6.89%</div><div class="mrc-sub">ANZ / BNZ</div><div class="mrc-chg dn">↓ -0.06</div></div>
+    <div class="mrc"><span class="mrc-icon">📅</span><div class="mrc-lbl">1-Yr Fixed</div><div class="mrc-val">6.59%</div><div class="mrc-sub">ANZ / ASB</div><div class="mrc-chg dn">↓ -0.10</div></div>
+    <div class="mrc"><span class="mrc-icon">📆</span><div class="mrc-lbl">2-Yr Fixed</div><div class="mrc-val">6.35%</div><div class="mrc-sub">Kiwibank</div><div class="mrc-chg dn">↓ -0.05</div></div>
+    <div class="mrc"><span class="mrc-icon">📊</span><div class="mrc-lbl">3-Yr Fixed</div><div class="mrc-val">6.29%</div><div class="mrc-sub">Westpac</div><div class="mrc-chg dn">↓ -0.06</div></div>
+    <div class="mrc"><span class="mrc-icon">📈</span><div class="mrc-lbl">5-Yr Fixed</div><div class="mrc-val">6.19%</div><div class="mrc-sub">BNZ / Avg</div><div class="mrc-chg dn">↓ -0.04</div></div>
+    <div class="mrc"><span class="mrc-icon">🔄</span><div class="mrc-lbl">Floating</div><div class="mrc-val">8.64%</div><div class="mrc-sub">Variable</div><div class="mrc-chg">→ 0.00</div></div>
+  </div>
+
+  <!-- Amortisation preview table -->
+  <div class="sec">Amortisation Preview <span class="more">Full Schedule</span></div>
+  <div class="chart-card" style="animation: fadeUp .35s ease both .14s; overflow-x:auto;">
+    <div class="chart-title">First 5 Years · P&I Breakdown <span id="amortSub">6.59% · 30yr</span></div>
+    <table class="amort-table" id="amortTable">
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Monthly</th>
+          <th>Principal</th>
+          <th>Interest</th>
+          <th>Balance</th>
+        </tr>
+      </thead>
+      <tbody id="amortBody">
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DTI Banner -->
+  <div class="warn-banner">
+    <div class="wb-icon">⚠️</div>
+    <div>
+      <div class="wb-title">DTI Cap: 6× Your Gross Income</div>
+      <div class="wb-sub">RBNZ debt-to-income limit effective 1 July 2024. On $100K income, max loan = $600K.</div>
+    </div>
+  </div>
+
+  <!-- 6-Step Guide -->
+  <div class="sec">6-Step Mortgage Guide <span class="more">MoneyHub →</span></div>
+  <div style="animation: fadeUp .35s ease both .15s;">
+    <div class="step-card">
+      <div class="step-num g1">1</div>
+      <div class="step-body">
+        <div class="step-title">Check Your Credit Score</div>
+        <div class="step-desc">Get your free credit report from Centrix or Equifax NZ. Most major banks require a score above 650. Check for errors — they're more common than you think.</div>
+        <span class="step-tag tag-g">Free via Centrix.co.nz</span>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num g2">2</div>
+      <div class="step-body">
+        <div class="step-title">Confirm Your Deposit & LVR</div>
+        <div class="step-desc">Owner-occupiers need min 20% deposit (80% LVR). Investors need 35% deposit. First-home buyers can use KiwiSaver first-home withdrawal + HomeStart Grant to boost deposit.</div>
+        <span class="step-tag tag-t">RBNZ LVR rules from 2024</span>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num g3">3</div>
+      <div class="step-body">
+        <div class="step-title">Get Pre-Approval (Conditional Approval)</div>
+        <div class="step-desc">Apply to 2–3 lenders or use a mortgage broker. Pre-approval typically valid for 90 days. Provide 3 months bank statements, 2 payslips, ID, and existing debt details.</div>
+        <span class="step-tag tag-b">Valid 90 days · Free to apply</span>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num g4">4</div>
+      <div class="step-body">
+        <div class="step-title">Choose Fixed vs Floating</div>
+        <div class="step-desc">Fixed rates offer certainty and are currently lower than floating (6.59% vs 8.64%). Most NZ borrowers choose 1–2 year fixed, then refix. Split lending is popular: part fixed, part floating.</div>
+        <span class="step-tag tag-o">1-yr fixed most popular 2025</span>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num g5">5</div>
+      <div class="step-body">
+        <div class="step-title">Understand All Costs</div>
+        <div class="step-desc">Budget for: legal fees ($1,500–$3,000), LIM report ($300–$500), building inspection ($500–$1,000), valuation ($700–$1,200), and bank establishment fees ($0–$500). Total: ~$5,000–$8,000.</div>
+        <span class="step-tag tag-r">Budget $5K–$8K in extras</span>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num g6">6</div>
+      <div class="step-body">
+        <div class="step-title">Settlement & Ongoing Management</div>
+        <div class="step-desc">Settlement day: your solicitor handles transfer. Set up automatic payments. Review your rate every time your fixed term expires — refixing at a better rate saves thousands.</div>
+        <span class="step-tag tag-p">Review rate at each term end</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Tips Grid -->
+  <div class="sec">MoneyHub Quick Tips <span class="more">All Tips →</span></div>
+  <div class="tip-grid">
+    <div class="tip-card dk">
+      <span class="tip-icon">💡</span>
+      <div class="tip-title">Use a Broker</div>
+      <div class="tip-desc">NZ mortgage brokers are free to you — paid by banks. They access all lenders and can negotiate rates not offered directly.</div>
+    </div>
+    <div class="tip-card fn">
+      <span class="tip-icon">📉</span>
+      <div class="tip-title">Rates Falling</div>
+      <div class="tip-desc">RBNZ cutting OCR in 2025. Fixed rates expected to fall to ~5.5%–6% by end of 2025. Shorter terms may be smart now.</div>
+    </div>
+    <div class="tip-card tl">
+      <span class="tip-icon">🔄</span>
+      <div class="tip-title">Refix Strategy</div>
+      <div class="tip-desc">With rates expected to fall, consider 1-yr fixed and refix at lower rates. Break fees apply if you refix early on fixed term.</div>
+    </div>
+    <div class="tip-card gd">
+      <span class="tip-icon">💰</span>
+      <div class="tip-title">Extra Repayments</div>
+      <div class="tip-desc">Paying $100/week extra on a $680K loan at 6.59% saves ~$147K interest and cuts 8 years off a 30yr term.</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">🛡️</span>
+      <div class="tip-title">Avoid LEM Fees</div>
+      <div class="tip-desc">Low Equity Margin: banks add 0.25%–1.5% if deposit < 20%. Save above 20% to avoid ongoing fee cost.</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">🥝</span>
+      <div class="tip-title">KiwiSaver Boost</div>
+      <div class="tip-desc">First-home buyers can withdraw KiwiSaver (after 3 yrs) + $10K HomeStart grant for new builds to boost deposit.</div>
+    </div>
+  </div>
+
+  <!-- Saved Calculations -->
+  <div class="sec">Saved Calculations <span class="more" onclick="clearSaved()">Clear All</span></div>
+  <div id="savedList">
+    <div style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;font-family:'Helvetica Neue',Arial,sans-serif;">No saved calculations yet. Use the calculator above and tap 💾 Save.</div>
+  </div>
+
+  <!-- MoneyHub Resources -->
+  <div class="sec">MoneyHub & NZ Resources <span class="more">All Links →</span></div>
+  <div class="ilist">
+    <div class="ic" onclick="window.open('https://www.moneyhub.co.nz/mortgage-rates.html','_blank')">
+      <div class="ii">🤝</div>
+      <div><div class="in">MoneyHub NZ Mortgage Rates</div><div class="is">Independent comparison of all NZ lender rates</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic" onclick="window.open('https://www.moneyhub.co.nz/mortgage-guide.html','_blank')">
+      <div class="ii">📖</div>
+      <div><div class="in">MoneyHub Mortgage Guide</div><div class="is">Step-by-step NZ mortgage application guide</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic" onclick="window.open('https://www.rbnz.govt.nz/monetary-policy/official-cash-rate-decisions','_blank')">
+      <div class="ii">🏛️</div>
+      <div><div class="in">RBNZ OCR Rate Decisions</div><div class="is">Official Cash Rate history and future schedule</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic" onclick="window.open('https://www.sorted.org.nz/tools/mortgage-calculator','_blank')">
+      <div class="ii">🧮</div>
+      <div><div class="in">Sorted.org.nz Calculator</div><div class="is">Government-backed NZ financial tools</div></div>
+      <div class="ich">›</div>
+    </div>
+    <div class="ic" onclick="window.open('https://www.anz.co.nz/personal/home-loans/','_blank')">
+      <div class="ii">🏦</div>
+      <div><div class="in">ANZ NZ Home Loans</div><div class="is">NZ's largest mortgage lender — apply online</div></div>
+      <div class="ich">›</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🌿</div><div class="ni-lb">New Zealand</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+  function fmt(n) {
+    if (n >= 1000000) return '$' + (n/1000000).toFixed(2) + 'M';
+    if (n >= 1000)    return '$' + Math.round(n/1000) + 'K';
+    return '$' + Math.round(n).toLocaleString();
+  }
+  function fmtFull(n) { return '$' + Math.round(n).toLocaleString('en-NZ'); }
+
+  function calcMortgage() {
+    const propVal  = parseFloat(document.getElementById('propVal').value)  || 850000;
+    const dep      = parseFloat(document.getElementById('deposit').value)   || 170000;
+    const rate     = parseFloat(document.getElementById('intRate').value)   / 100;
+    const years    = parseInt(document.getElementById('loanTerm').value)    || 30;
+
+    const principal = Math.max(propVal - dep, 0);
+    const n  = years * 12;
+    const r  = rate / 12;
+    const mo = r === 0 ? principal/n : principal * (r * Math.pow(1+r, n)) / (Math.pow(1+r, n) - 1);
+    const totalPaid = mo * n;
+    const totalInt  = totalPaid - principal;
+    const lvr = propVal > 0 ? Math.round((principal / propVal) * 100) : 0;
+
+    document.getElementById('res-monthly').textContent  = fmtFull(mo);
+    document.getElementById('res-interest').textContent = fmt(totalInt);
+    document.getElementById('res-lvr').textContent      = lvr + '%';
+    document.getElementById('res-loan').textContent     = fmt(principal);
+    document.getElementById('res-total').textContent    = fmt(totalPaid);
+
+    const lvrStatus = document.getElementById('res-lvrStatus');
+    if (lvr <= 80)      { lvrStatus.textContent = '✓ Owner-occ OK'; lvrStatus.style.color = '#6EE7B7'; }
+    else if (lvr <= 65) { lvrStatus.textContent = '✓ Investor OK'; lvrStatus.style.color = '#6EE7B7'; }
+    else                { lvrStatus.textContent = '⚠ LVR High'; lvrStatus.style.color = '#FCA5A5'; }
+
+    // Update donut chart
+    const circ = 289;
+    const intFrac = totalInt / totalPaid;
+    const prinFrac = principal / totalPaid;
+    const intOffset  = circ - circ * intFrac;
+    const prinOffset = circ - circ * prinFrac;
+    // Principal: starts at -90deg, goes around first
+    document.getElementById('principalArc').style.strokeDashoffset = circ - circ * prinFrac;
+    // Interest: starts where principal ends
+    const intStart = -(circ * prinFrac) - circ;
+    document.getElementById('interestArc').setAttribute('stroke-dashoffset', circ - circ * intFrac);
+    // Rotate interest arc to start after principal
+    const principalDeg = -90 + (prinFrac * 360);
+    document.getElementById('interestArc').setAttribute('transform', `rotate(${principalDeg} 60 60)`);
+
+    document.getElementById('donutCenter').textContent = fmt(principal);
+    document.getElementById('legendPrincipal').textContent = fmt(principal);
+    document.getElementById('legendInterest').textContent  = fmt(totalInt);
+    document.getElementById('legendTotal').textContent     = fmt(totalPaid);
+    document.getElementById('intRatio').textContent        = Math.round(intFrac * 100) + '%';
+    document.getElementById('breakdownSub').textContent    = 'Over ' + years + ' years';
+
+    // Lender monthly payments update
+    const lenders = [
+      { id: 'kiwibankMo', rate: 6.55 },
+      { id: 'anzMo',      rate: 6.59 },
+      { id: 'asbMo',      rate: 6.59 },
+      { id: 'bnzMo',      rate: 6.59 },
+      { id: 'westpacMo',  rate: 6.65 },
+      { id: 'sbsMo',      rate: 6.55 },
+    ];
+    lenders.forEach(l => {
+      const lr = l.rate / 100 / 12;
+      const lmo = principal * (lr * Math.pow(1+lr,n)) / (Math.pow(1+lr,n)-1);
+      document.getElementById(l.id).textContent = fmtFull(lmo);
+    });
+
+    // Amortisation table
+    buildAmortTable(principal, rate, n, mo, years);
+    document.getElementById('amortSub').textContent = (rate*100).toFixed(2) + '% · ' + years + 'yr';
+  }
+
+  function buildAmortTable(principal, annualRate, n, mo, years) {
+    const r = annualRate / 12;
+    let balance = principal;
+    const tbody = document.getElementById('amortBody');
+    tbody.innerHTML = '';
+    const showYears = Math.min(5, years);
+    for (let y = 1; y <= showYears; y++) {
+      let yearInterest = 0, yearPrincipal = 0;
+      for (let m = 0; m < 12; m++) {
+        const int = balance * r;
+        const prin = mo - int;
+        yearInterest   += int;
+        yearPrincipal  += prin;
+        balance = Math.max(balance - prin, 0);
+      }
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="lbl">Year ${y}</td>
+        <td>${fmtFull(mo)}</td>
+        <td class="grn">${fmt(yearPrincipal)}</td>
+        <td class="red">${fmt(yearInterest)}</td>
+        <td>${fmt(balance)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Rate bar chart
+  function buildRateChart() {
+    const terms = ['6-Mo','1-Yr','2-Yr','3-Yr','5-Yr','Float'];
+    const best  = [6.75, 6.55, 6.25, 6.19, 6.15, 8.64];
+    const avg   = [6.89, 6.59, 6.35, 6.29, 6.19, 8.64];
+    const maxRate = 9.5; const minRate = 6.0;
+    const maxH = 100;
+
+    const container = document.getElementById('rateBarGroup');
+    container.innerHTML = '';
+
+    terms.forEach((term, i) => {
+      const bH = Math.round(((best[i] - minRate) / (maxRate - minRate)) * maxH);
+      const aH = Math.round(((avg[i]  - minRate) / (maxRate - minRate)) * maxH);
+      const item = document.createElement('div');
+      item.className = 'bar-item';
+      item.innerHTML = `
+        <div class="bar-val-lbl">${avg[i]}%</div>
+        <div style="display:flex;gap:2px;align-items:flex-end;height:${maxH}px">
+          <div class="bar-seg" style="background:var(--fern);height:${bH}px;width:14px;border-radius:4px 4px 0 0"></div>
+          <div class="bar-seg" style="background:var(--teal);height:${aH}px;width:14px;border-radius:4px 4px 0 0;opacity:0.7"></div>
+        </div>
+        <div class="bar-x-lbl">${term}</div>
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  function saveCalc() {
+    const propVal  = document.getElementById('propVal').value  || 850000;
+    const dep      = document.getElementById('deposit').value  || 170000;
+    const rateStr  = document.getElementById('intRate').options[document.getElementById('intRate').selectedIndex].text.split(' ')[0];
+    const years    = document.getElementById('loanTerm').value || 30;
+    const monthly  = document.getElementById('res-monthly').textContent;
+    const now      = new Date().toLocaleDateString('en-NZ', {day:'numeric',month:'short',year:'numeric'});
+    const saved    = JSON.parse(localStorage.getItem('mh_calcs') || '[]');
+    const item     = { id: Date.now(), propVal, dep, rateStr, years, monthly, date: now };
+    saved.unshift(item);
+    if (saved.length > 6) saved.pop();
+    localStorage.setItem('mh_calcs', JSON.stringify(saved));
+    renderSaved();
+    showToast('💾 Saved! ' + rateStr + ' · ' + monthly + '/mo');
+  }
+
+  function renderSaved() {
+    const saved = JSON.parse(localStorage.getItem('mh_calcs') || '[]');
+    const container = document.getElementById('savedList');
+    if (!saved.length) {
+      container.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:16px 0;font-family:\'Helvetica Neue\',Arial,sans-serif;">No saved calculations yet. Use the calculator above and tap 💾 Save.</div>';
+      return;
+    }
+    container.innerHTML = saved.map(s => `
+      <div class="saved-item">
+        <div class="saved-icon">🏠</div>
+        <div>
+          <div class="saved-title">$${Number(s.propVal).toLocaleString('en-NZ')} · ${s.rateStr}</div>
+          <div class="saved-sub">${s.years}yr · Deposit $${Number(s.dep).toLocaleString('en-NZ')} · ${s.date}</div>
+        </div>
+        <div class="saved-val">${s.monthly}<div style="font-size:8.5px;color:var(--muted);font-weight:600;font-family:'Helvetica Neue',Arial,sans-serif;text-align:right">/month</div></div>
+        <button class="del-btn" onclick="deleteCalc(${s.id})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function deleteCalc(id) {
+    let saved = JSON.parse(localStorage.getItem('mh_calcs') || '[]');
+    saved = saved.filter(s => s.id !== id);
+    localStorage.setItem('mh_calcs', JSON.stringify(saved));
+    renderSaved();
+    showToast('🗑 Calculation removed');
+  }
+
+  function clearSaved() {
+    localStorage.removeItem('mh_calcs');
+    renderSaved();
+    showToast('🗑 All calculations cleared');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // Init
+  buildRateChart();
+  calcMortgage();
+  renderSaved();
+</script>
+</body>
+</html>

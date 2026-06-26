@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHA 203(k) Rehab Loan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{
+  --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;
+  --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+  --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+  --green:#15803D;--green-dk:#166534;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 60%,#166534 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::after{content:'🔨';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;}
+.hdr-flag{font-size:26px;}
+.hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+.rs-v.gold{color:var(--gold-lt);}
+.rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+.content{padding:14px 14px 110px;}
+.sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;display:flex;align-items:center;justify-content:space-between;}
+.sec .badge{font-size:9px;font-weight:700;background:#ECFDF5;color:#166534;padding:3px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+.hero{background:linear-gradient(140deg,#0B1D3A,#15803D);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:12px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.h-tag{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.h-title{font-size:17px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;margin:5px 0 6px;line-height:1.25;}
+.h-title span{color:var(--gold-lt);}
+.h-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-bottom:13px;line-height:1.5;}
+.tier-row{display:flex;gap:8px;}
+.tier-box{flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.15);border-radius:11px;padding:10px 8px;text-align:center;}
+.tier-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;}
+.tier-box .v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;}
+
+/* TOGGLE */
+.toggle-row{display:flex;gap:8px;margin-bottom:10px;}
+.tog-btn{flex:1;padding:11px 8px;border-radius:13px;border:1.5px solid var(--border);background:var(--card);font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer;text-align:center;transition:all .18s;}
+.tog-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+/* COMPARE LIMITED VS STANDARD */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+.cg-card{border-radius:15px;padding:14px;box-shadow:var(--sh2);}
+.cg-card.limited{background:linear-gradient(140deg,#1B3F72,#0B1D3A);}
+.cg-card.standard{background:linear-gradient(140deg,#15803D,#166534);}
+.cg-title{font-size:14px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;margin-bottom:2px;}
+.cg-subtitle{font-size:8.5px;color:rgba(255,255,255,0.5);margin-bottom:10px;}
+.cg-row{margin-bottom:8px;}
+.cg-label{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.3px;}
+.cg-val{font-size:10.5px;font-weight:700;color:#fff;line-height:1.3;}
+
+/* CALCULATOR */
+.input-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.input-card h3{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.inp-box{background:var(--bg);border-radius:13px;padding:11px 13px;border:1.5px solid var(--border);}
+.inp-box:focus-within{border-color:var(--green);}
+.inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:14px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;background:transparent;-webkit-appearance:none;}
+.inp-hint{font-size:8.5px;color:var(--muted);margin-top:3px;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(21,128,61,0.32);font-family:'DM Serif Display',serif;}
+
+/* RESULT */
+.result-card{border-radius:16px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;display:none;}
+.result-card.show{display:block;animation:fadeUp .32s ease both;}
+.result-card.ok{background:linear-gradient(140deg,#0B1D3A,#15803D);}
+.result-card.exceed{background:linear-gradient(140deg,#7F1D1D,#B91C1C);}
+.rc-label{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.rc-amount{font-size:30px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.1;margin:6px 0 4px;}
+.rc-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-bottom:12px;}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rc-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.rc-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:2px;}
+.rc-box .v{font-size:13px;font-weight:700;color:#fff;}
+.rc-box .v.warn{color:#FCA5A5;}
+.rc-box .v.gold{color:var(--gold-lt);}
+.save-btn-inline{width:100%;margin-top:12px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:10px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;}
+.save-btn-inline.saved{background:rgba(21,128,61,0.4);border-color:rgba(21,128,61,0.6);}
+
+/* STACKED BAR */
+.chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:13px;}
+.stack-track{height:24px;border-radius:8px;overflow:hidden;display:flex;margin-bottom:10px;}
+.stack-seg{height:100%;transition:width .5s ease;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;}
+.stack-legend{display:flex;flex-direction:column;gap:6px;}
+.sl-row{display:flex;align-items:center;gap:7px;}
+.sl-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;}
+.sl-txt{font-size:9.5px;color:var(--muted);flex:1;}
+.sl-val{font-size:10px;font-weight:700;color:var(--navy);}
+
+.ilist{display:flex;flex-direction:column;gap:8px;}
+.ic{background:var(--card);border-radius:13px;padding:12px 13px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+.ii{width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.in{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+.is{font-size:9px;color:var(--muted);margin-top:2px;}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:18px;}
+.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+.ni.active .ni-lb{color:var(--green);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.hero,.compare-grid,.input-card,.chart-card{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔨</div>
+      <div class="hdr-title">FHA 203(k) Rehab Loan</div>
+      <div class="hdr-sub">Purchase + Renovation in One Loan · 2026</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Limited Cap</div><div class="rs-v">$75,000</div><div class="rs-n">Non-structural</div></div>
+    <div class="rs"><div class="rs-l">Standard Cap</div><div class="rs-v gold">County Limit</div><div class="rs-n">Structural OK</div></div>
+    <div class="rs"><div class="rs-l">Min Down</div><div class="rs-v">3.5%</div><div class="rs-n">580+ FICO</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">203(k) Overview <span class="badge">2026 Limits</span></div>
+  <div class="hero">
+    <div class="h-tag">FHA Section 203(k) Rehabilitation Mortgage Insurance</div>
+    <div class="h-title">Buy a fixer-upper, <span>finance the fix</span> in one loan</div>
+    <div class="h-sub">Instead of a separate renovation loan, 203(k) wraps purchase price + repair costs into a single FHA mortgage, with funds released to contractors as work is completed via an escrow account.</div>
+    <div class="tier-row">
+      <div class="tier-box"><label>Loan Types</label><div class="v">Limited / Standard</div></div>
+      <div class="tier-box"><label>Rate Premium</label><div class="v">~+1% vs Standard FHA</div></div>
+      <div class="tier-box"><label>Occupancy</label><div class="v">Primary Residence</div></div>
+    </div>
+  </div>
+
+  <!-- Comparison -->
+  <div class="sec">Limited vs. Standard 203(k)</div>
+  <div class="compare-grid">
+    <div class="cg-card limited">
+      <div class="cg-title">Limited</div>
+      <div class="cg-subtitle">Streamlined · Cosmetic Repairs</div>
+      <div class="cg-row"><div class="cg-label">Max Rehab Amount</div><div class="cg-val">$75,000</div></div>
+      <div class="cg-row"><div class="cg-label">Work Allowed</div><div class="cg-val">Paint, flooring, kitchens, baths — no structural</div></div>
+      <div class="cg-row"><div class="cg-label">Consultant Needed?</div><div class="cg-val">No</div></div>
+      <div class="cg-row"><div class="cg-label">Typical Timeline</div><div class="cg-val">30–45 days to close</div></div>
+    </div>
+    <div class="cg-card standard">
+      <div class="cg-title">Standard</div>
+      <div class="cg-subtitle">Full · Structural Repairs</div>
+      <div class="cg-row"><div class="cg-label">Max Rehab Amount</div><div class="cg-val">Up to county FHA limit</div></div>
+      <div class="cg-row"><div class="cg-label">Work Allowed</div><div class="cg-val">Foundation, additions, major remodels</div></div>
+      <div class="cg-row"><div class="cg-label">Consultant Needed?</div><div class="cg-val">Yes — HUD-approved</div></div>
+      <div class="cg-row"><div class="cg-label">Typical Timeline</div><div class="cg-val">60–90 days to close</div></div>
+    </div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="sec">203(k) Loan Estimator</div>
+  <div class="input-card">
+    <h3>🔨 Calculate Your Combined Loan</h3>
+    <div class="toggle-row">
+      <div class="tog-btn active" id="t-limited" onclick="setType('limited')">Limited 203(k)</div>
+      <div class="tog-btn" id="t-standard" onclick="setType('standard')">Standard 203(k)</div>
+    </div>
+    <div class="input-grid">
+      <div class="inp-box">
+        <label>Purchase Price ($)</label>
+        <input type="number" id="purchasePrice" value="280000" step="5000">
+      </div>
+      <div class="inp-box">
+        <label>Renovation Budget ($)</label>
+        <input type="number" id="rehabBudget" value="60000" step="1000">
+        <div class="inp-hint" id="rehabHint">Max $75,000 for Limited</div>
+      </div>
+      <div class="inp-box">
+        <label>Credit Score</label>
+        <select id="creditScore">
+          <option value="720">720+ (Excellent)</option>
+          <option value="680">680–719 (Good)</option>
+          <option value="620" selected>620–679 (Fair)</option>
+          <option value="580">580–619 (Min 3.5%)</option>
+        </select>
+      </div>
+      <div class="inp-box">
+        <label>County FHA Limit ($)</label>
+        <input type="number" id="countyLimit" value="541287" step="1000">
+        <div class="inp-hint">Floor: $541,287 nationwide</div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calc203k()">🔨 Calculate 203(k) Loan</button>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="rc-label">Total Combined Loan Amount</div>
+    <div class="rc-amount" id="totalLoan">$340,000</div>
+    <div class="rc-sub" id="resultSub">Purchase $280,000 + Rehab $60,000 — within county limit</div>
+    <div class="rc-grid">
+      <div class="rc-box"><label>Down Payment (3.5%)</label><div class="v" id="rcDown">$11,900</div></div>
+      <div class="rc-box"><label>Base Loan (Pre-MIP)</label><div class="v" id="rcBase">$328,100</div></div>
+      <div class="rc-box"><label>UFMIP (1.75%)</label><div class="v gold" id="rcUfmip">$5,742</div></div>
+      <div class="rc-box"><label>Final Loan w/ UFMIP</label><div class="v" id="rcFinal">$333,842</div></div>
+      <div class="rc-box"><label>10% Contingency Reserve</label><div class="v" id="rcContingency">$6,000</div></div>
+      <div class="rc-box"><label>Within County Limit?</label><div class="v" id="rcLimitCheck">✅ Yes</div></div>
+    </div>
+    <button class="save-btn-inline" id="saveBtn" onclick="saveCalc()">🔖 Save This Estimate</button>
+  </div>
+
+  <!-- Cost Breakdown Chart -->
+  <div class="sec">Loan Composition</div>
+  <div class="chart-card">
+    <div class="chart-title">📊 Where Your 203(k) Loan Goes</div>
+    <div class="stack-track" id="stackTrack">
+      <div class="stack-seg" id="seg-purchase" style="background:#15803D;width:70%;">70%</div>
+      <div class="stack-seg" id="seg-rehab" style="background:#D97706;width:15%;">15%</div>
+      <div class="stack-seg" id="seg-contingency" style="background:#1B3F72;width:8%;">8%</div>
+      <div class="stack-seg" id="seg-ufmip" style="background:#B91C1C;width:7%;">7%</div>
+    </div>
+    <div class="stack-legend">
+      <div class="sl-row"><div class="sl-dot" style="background:#15803D;"></div><div class="sl-txt">Purchase Price</div><div class="sl-val" id="leg-purchase">$280,000</div></div>
+      <div class="sl-row"><div class="sl-dot" style="background:#D97706;"></div><div class="sl-txt">Renovation Budget</div><div class="sl-val" id="leg-rehab">$60,000</div></div>
+      <div class="sl-row"><div class="sl-dot" style="background:#1B3F72;"></div><div class="sl-txt">10% Contingency Reserve</div><div class="sl-val" id="leg-contingency">$6,000</div></div>
+      <div class="sl-row"><div class="sl-dot" style="background:#B91C1C;"></div><div class="sl-txt">UFMIP (financed)</div><div class="sl-val" id="leg-ufmip">$5,742</div></div>
+    </div>
+  </div>
+
+  <!-- Eligible Repairs -->
+  <div class="sec">What 203(k) Funds Can Cover</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🛁</div><div><div class="in">Kitchen & Bathroom Remodels</div><div class="is">Both Limited and Standard — most common use case</div></div></div>
+    <div class="ic"><div class="ii">🏗️</div><div><div class="in">Structural Repairs (Standard Only)</div><div class="is">Foundation, room additions, load-bearing walls</div></div></div>
+    <div class="ic"><div class="ii">🌡️</div><div><div class="in">HVAC, Plumbing & Electrical</div><div class="is">System replacement or major repairs, both loan types</div></div></div>
+    <div class="ic"><div class="ii">♿</div><div><div class="in">Accessibility Improvements</div><div class="is">Ramps, widened doorways, grab bars for accessibility</div></div></div>
+    <div class="ic"><div class="ii">🏚️</div><div><div class="in">Health & Safety Hazard Removal</div><div class="is">Lead paint, mold, pest damage — both loan types</div></div></div>
+    <div class="ic"><div class="ii">🚫</div><div><div class="in">Luxury Items Excluded</div><div class="is">Pools, outdoor kitchens, tennis courts not eligible</div></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let loanType = 'limited';
+function setType(t){
+  loanType = t;
+  document.getElementById('t-limited').classList.toggle('active', t==='limited');
+  document.getElementById('t-standard').classList.toggle('active', t==='standard');
+  document.getElementById('rehabHint').textContent = t==='limited' ? 'Max $75,000 for Limited' : 'No fixed cap — limited by county FHA limit';
+}
+
+function fmt(n){ return '$'+Math.round(n).toLocaleString('en-US'); }
+
+function calc203k(){
+  const price = parseFloat(document.getElementById('purchasePrice').value)||0;
+  let rehab  = parseFloat(document.getElementById('rehabBudget').value)||0;
+  const score = parseInt(document.getElementById('creditScore').value);
+  const countyLimit = parseFloat(document.getElementById('countyLimit').value)||541287;
+
+  let capExceeded = false;
+  if(loanType === 'limited' && rehab > 75000){
+    rehab = 75000;
+    capExceeded = true;
+  }
+
+  const contingency = rehab * 0.10;
+  const combinedBeforeMIP = price + rehab + contingency;
+  const downPct = score >= 580 ? 0.035 : 0.10;
+  const downAmt = combinedBeforeMIP * downPct;
+  const baseLoan = combinedBeforeMIP - downAmt;
+  const ufmip = baseLoan * 0.0175;
+  const finalLoan = baseLoan + ufmip;
+
+  const withinLimit = finalLoan <= countyLimit;
+
+  const card = document.getElementById('resultCard');
+  card.classList.remove('ok','exceed');
+  card.classList.add(withinLimit ? 'ok' : 'exceed', 'show');
+
+  document.getElementById('totalLoan').textContent = fmt(finalLoan);
+  document.getElementById('resultSub').textContent = 'Purchase '+fmt(price)+' + Rehab '+fmt(rehab)+(capExceeded?' (capped at Limited max)':'')+(withinLimit?' — within county limit':' — EXCEEDS county limit');
+  document.getElementById('rcDown').textContent = fmt(downAmt);
+  document.getElementById('rcBase').textContent = fmt(baseLoan);
+  document.getElementById('rcUfmip').textContent = fmt(ufmip);
+  document.getElementById('rcFinal').textContent = fmt(finalLoan);
+  document.getElementById('rcContingency').textContent = fmt(contingency);
+  document.getElementById('rcLimitCheck').textContent = withinLimit ? '✅ Yes' : '❌ Exceeds Limit';
+  document.getElementById('rcLimitCheck').className = 'v '+(withinLimit?'':'warn');
+
+  // Stacked bar
+  const total = price + rehab + contingency + ufmip;
+  function pct(v){ return Math.max((v/total*100),2).toFixed(1)+'%'; }
+  document.getElementById('seg-purchase').style.width = pct(price);
+  document.getElementById('seg-purchase').textContent = Math.round(price/total*100)+'%';
+  document.getElementById('seg-rehab').style.width = pct(rehab);
+  document.getElementById('seg-rehab').textContent = Math.round(rehab/total*100)+'%';
+  document.getElementById('seg-contingency').style.width = pct(contingency);
+  document.getElementById('seg-contingency').textContent = Math.round(contingency/total*100)+'%';
+  document.getElementById('seg-ufmip').style.width = pct(ufmip);
+  document.getElementById('seg-ufmip').textContent = Math.round(ufmip/total*100)+'%';
+  document.getElementById('leg-purchase').textContent = fmt(price);
+  document.getElementById('leg-rehab').textContent = fmt(rehab);
+  document.getElementById('leg-contingency').textContent = fmt(contingency);
+  document.getElementById('leg-ufmip').textContent = fmt(ufmip);
+}
+
+function saveCalc(){
+  const data = {
+    date: new Date().toLocaleDateString(),
+    type: loanType,
+    total: document.getElementById('totalLoan').textContent
+  };
+  const saves = JSON.parse(localStorage.getItem('fha_203k_saves')||'[]');
+  saves.unshift(data);
+  if(saves.length>5) saves.length=5;
+  localStorage.setItem('fha_203k_saves', JSON.stringify(saves));
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved'); btn.textContent='✅ Saved';
+  showToast('203(k) estimate saved!');
+  setTimeout(()=>{btn.classList.remove('saved'); btn.textContent='🔖 Save This Estimate';}, 2000);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VA Benefits & Home Loans</title>
+<style>
+  :root {
+    --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--crimson:#991B1B;
+    --gold:#D97706;--gold-lt:#FCD34D;--white:#FFFFFF;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09);--sh:0 4px 20px rgba(11,29,58,0.10);
+    --sh2:0 8px 36px rgba(11,29,58,0.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 50%,#7C2020 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🪖';position:absolute;right:12px;top:48px;font-size:68px;opacity:0.08;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-v.grn{color:#6EE7B7;}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .tag{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF2F2;color:var(--red);}
+  .sec .tag-b{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#EFF6FF;color:#1D4ED8;}
+
+  /* HERO */
+  .hero-va{background:linear-gradient(148deg,#0B1D3A,#7C2020);border-radius:20px;padding:18px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .hero-va::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .hv-tag{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+  .hv-title{font-size:17px;font-weight:800;color:#fff;margin:4px 0 10px;font-family:Georgia,serif;line-height:1.25;}
+  .hv-title span{color:var(--gold-lt);}
+  .hv-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .hv-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px;text-align:center;}
+  .hv-box .lbl{font-size:7.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;}
+  .hv-box .val{font-size:13px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .hv-box .val.gold{color:var(--gold-lt);}
+  .hv-box .val.grn{color:#6EE7B7;}
+
+  /* BENEFIT BADGES */
+  .benefit-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+  .benefit-card{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border:1px solid var(--border);text-align:center;}
+  .bc-ico{font-size:24px;margin-bottom:6px;}
+  .bc-val{font-size:16px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .bc-lbl{font-size:9px;color:var(--muted);margin-top:3px;}
+  .bc-badge{font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;margin-top:5px;display:inline-flex;}
+  .bc-badge.g{background:#F0FDF4;color:#15803D;}
+  .bc-badge.r{background:#FEF2F2;color:#B91C1C;}
+  .bc-badge.b{background:#EFF6FF;color:#1D4ED8;}
+
+  /* CALC */
+  .calc-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .calc-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .calc-title .ico{width:32px;height:32px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px;}
+  .field label{font-size:9.5px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.4px;}
+  .field input,.field select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--navy);outline:none;font-family:inherit;}
+  .field input:focus,.field select:focus{border-color:var(--blue);background:#fff;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#0B1D3A,#7C2020);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:Georgia,serif;margin-top:4px;}
+  .save-btn{width:100%;background:transparent;border:1.5px solid var(--blue);border-radius:12px;padding:11px;font-size:12px;font-weight:800;color:var(--blue);cursor:pointer;margin-top:8px;}
+
+  /* RESULT */
+  .result-box{background:linear-gradient(135deg,#0B1D3A,#7C2020);border-radius:16px;padding:14px;margin-top:12px;display:none;}
+  .result-box.show{display:block;}
+  .rb-title{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;}
+  .rb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .rb-item{background:rgba(255,255,255,0.08);border-radius:10px;padding:10px;}
+  .rb-item .rl{font-size:8.5px;color:rgba(255,255,255,0.50);margin-bottom:3px;}
+  .rb-item .rv{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .rb-item .rv.gold{color:var(--gold-lt);}
+  .rb-item .rv.grn{color:#6EE7B7;}
+  .rb-item.full{grid-column:1/-1;}
+  .rb-savings{background:rgba(110,231,183,0.12);border:1px solid rgba(110,231,183,0.3);border-radius:10px;padding:10px;margin-top:8px;}
+  .rb-savings .sl{font-size:9px;color:rgba(255,255,255,0.5);margin-bottom:3px;}
+  .rb-savings .sv{font-size:18px;font-weight:800;color:#6EE7B7;font-family:Georgia,serif;}
+
+  /* FUNDING FEE TABLE */
+  .fee-table{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .ft-header{background:linear-gradient(135deg,#0B1D3A,#1B3F72);padding:11px 14px;display:flex;justify-content:space-between;align-items:center;}
+  .ft-header-title{font-size:11px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+  .ft-header-sub{font-size:9px;color:rgba(255,255,255,0.5);}
+  .ft-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:9px 14px;border-bottom:1px solid var(--border);font-size:10px;}
+  .ft-row.head{background:var(--bg);font-weight:800;color:var(--muted);font-size:9px;text-transform:uppercase;}
+  .ft-row .c{color:var(--navy);font-weight:700;}
+  .ft-row .c.grn{color:#15803D;font-weight:800;}
+  .ft-row .c.gold{color:var(--gold);font-weight:800;}
+  .ft-row.hi{background:#F0FDF4;}
+
+  /* SVG PIE CHART */
+  .chart-wrap{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:10px;}
+  .pie-container{display:flex;gap:12px;align-items:center;}
+  .pie-legend{flex:1;}
+  .legend-item{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+  .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .legend-label{font-size:10px;color:var(--muted);font-weight:600;}
+  .legend-val{font-size:10px;font-weight:800;color:var(--navy);margin-left:auto;}
+
+  /* INFO LIST */
+  .ilist{display:flex;flex-direction:column;gap:9px;}
+  .ic{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;}
+  .ii{width:36px;height:36px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;}
+  .ic-body .in{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .ic-body .is{font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+  .ic-body .is strong{color:var(--navy);}
+
+  /* SAVED */
+  .saved-list{display:flex;flex-direction:column;gap:8px;}
+  .saved-item{background:var(--card);border-radius:12px;padding:11px 13px;border:1px solid var(--border);box-shadow:var(--sh);display:flex;align-items:center;justify-content:space-between;}
+  .si-left .si-name{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .si-left .si-meta{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-amount{font-size:14px;font-weight:800;color:#15803D;font-family:Georgia,serif;}
+  .si-del{font-size:16px;cursor:pointer;color:var(--muted);padding:4px;}
+
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
+  .toast.show{opacity:1;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .calc-card,.benefit-grid,.fee-table,.chart-wrap,.ilist{animation:fadeUp .35s ease both;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🪖</div>
+      <div class="hdr-title">VA Benefits & Home Loans</div>
+      <div class="hdr-sub">Entitlement · COE · Funding Fee · 0% Down · 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">VA 30-Yr</div><div class="rs-v grn">6.25%</div><div class="rs-n">Avg 2025</div></div>
+    <div class="rs"><div class="rs-l">Down Pmt</div><div class="rs-v gold">0%</div><div class="rs-n">Eligible</div></div>
+    <div class="rs"><div class="rs-l">Fund. Fee</div><div class="rs-v">2.15%</div><div class="rs-n">1st Use</div></div>
+    <div class="rs"><div class="rs-l">Loan Limit</div><div class="rs-v">No Limit</div><div class="rs-n">Full Entit.</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">VA Loan Overview <span class="tag">Veterans Only</span></div>
+  <div class="hero-va">
+    <div class="hv-tag">U.S. Department of Veterans Affairs · 2025</div>
+    <div class="hv-title"><span>$0 Down</span> · No PMI · Competitive<br>Rates for Service Members</div>
+    <div class="hv-row">
+      <div class="hv-box"><div class="lbl">Down Pmt</div><div class="val gold">$0</div></div>
+      <div class="hv-box"><div class="lbl">PMI</div><div class="val grn">None</div></div>
+      <div class="hv-box"><div class="lbl">Min Score</div><div class="val">620</div></div>
+      <div class="hv-box"><div class="lbl">VA Rate</div><div class="val">6.25%</div></div>
+    </div>
+  </div>
+
+  <!-- BENEFIT BADGES -->
+  <div class="sec">Key VA Benefits <span class="tag-b">Active 2025</span></div>
+  <div class="benefit-grid">
+    <div class="benefit-card"><div class="bc-ico">💰</div><div class="bc-val">$0</div><div class="bc-lbl">Down Payment Required</div><div class="bc-badge g">0% Down</div></div>
+    <div class="benefit-card"><div class="bc-ico">🚫</div><div class="bc-val">None</div><div class="bc-lbl">PMI (Private Mort. Ins.)</div><div class="bc-badge g">Big Savings</div></div>
+    <div class="benefit-card"><div class="bc-ico">📉</div><div class="bc-val">6.25%</div><div class="bc-lbl">Average VA Rate 2025</div><div class="bc-badge b">vs 6.82% Conv.</div></div>
+    <div class="benefit-card"><div class="bc-ico">🔄</div><div class="bc-val">Unlimited</div><div class="bc-lbl">Loan Assumption</div><div class="bc-badge b">Transferable</div></div>
+    <div class="benefit-card"><div class="bc-ico">🏥</div><div class="bc-val">Waived</div><div class="bc-lbl">Funding Fee (Disabled)</div><div class="bc-badge g">10%+ Rating</div></div>
+    <div class="benefit-card"><div class="bc-ico">♻️</div><div class="bc-val">Reusable</div><div class="bc-lbl">VA Entitlement Benefit</div><div class="bc-badge b">Multiple Use</div></div>
+  </div>
+
+  <!-- VA LOAN CALCULATOR -->
+  <div class="sec">VA Loan Calculator <span class="tag">Save Results</span></div>
+  <div class="calc-card">
+    <div class="calc-title"><div class="ico">🪖</div>VA Mortgage & Savings Calculator</div>
+    <div class="field-row">
+      <div class="field"><label>Home Price ($)</label><input type="number" id="homePrice" value="425000"></div>
+      <div class="field"><label>Loan Term</label>
+        <select id="loanTerm">
+          <option value="30" selected>30 Years</option>
+          <option value="15">15 Years</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Service Type</label>
+        <select id="serviceType">
+          <option value="active" selected>Active Duty / Veteran</option>
+          <option value="reserve">Reserves / Guard</option>
+          <option value="subsequent">Subsequent Use (VA)</option>
+        </select>
+      </div>
+      <div class="field"><label>Down Payment ($)</label><input type="number" id="downPmt" value="0" placeholder="0 for full VA"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Disability Rating</label>
+        <select id="disability">
+          <option value="none" selected>None / Below 10%</option>
+          <option value="waived">10%+ (Fee Waived)</option>
+        </select>
+      </div>
+      <div class="field"><label>Annual Income ($)</label><input type="number" id="income" value="90000"></div>
+    </div>
+    <button class="calc-btn" onclick="calcVA()">🪖 Calculate VA Loan & Savings</button>
+
+    <div class="result-box" id="resultBox">
+      <div class="rb-title">🇺🇸 VA Loan Results · 2025</div>
+      <div class="rb-grid">
+        <div class="rb-item"><div class="rl">Loan Amount</div><div class="rv" id="r-loan">—</div></div>
+        <div class="rb-item"><div class="rl">Monthly Payment</div><div class="rv gold" id="r-monthly">—</div></div>
+        <div class="rb-item"><div class="rl">VA Funding Fee</div><div class="rv" id="r-fee">—</div></div>
+        <div class="rb-item"><div class="rl">Total Interest Paid</div><div class="rv" id="r-interest">—</div></div>
+        <div class="rb-item"><div class="rl">DTI Ratio</div><div class="rv" id="r-dti">—</div></div>
+        <div class="rb-item"><div class="rl">VA Rate Used</div><div class="rv grn">6.25%</div></div>
+        <div class="rb-item full">
+          <div class="rl">PMI Saved vs Conventional (Life of Loan)</div>
+          <div class="rv grn" id="r-pmisave">—</div>
+        </div>
+      </div>
+      <div class="rb-savings"><div class="sl">💡 Total Savings vs Conventional Loan</div><div class="sv" id="r-totalsave">—</div></div>
+      <button class="save-btn" onclick="saveCalc()">🔖 Save This Calculation</button>
+    </div>
+  </div>
+
+  <!-- PIE CHART -->
+  <div class="chart-wrap" id="chartWrap" style="display:none">
+    <div class="chart-title">📊 Monthly Payment Breakdown</div>
+    <div class="pie-container">
+      <svg id="pieSVG" width="120" height="120" viewBox="0 0 120 120"></svg>
+      <div class="pie-legend" id="pieLegend"></div>
+    </div>
+  </div>
+
+  <!-- FUNDING FEE TABLE -->
+  <div class="sec">VA Funding Fee Table <span class="tag-b">2025 Official</span></div>
+  <div class="fee-table">
+    <div class="ft-header">
+      <div class="ft-header-title">🏛️ VA Funding Fee · 2025</div>
+      <div class="ft-header-sub">Per VA.gov official rates</div>
+    </div>
+    <div class="ft-row head"><div>Loan Type</div><div>Down Pmt</div><div>1st Use</div><div>Sub. Use</div></div>
+    <div class="ft-row hi"><div class="c">Purchase/Constr.</div><div class="c">&lt;5%</div><div class="c grn">2.15%</div><div class="c gold">3.30%</div></div>
+    <div class="ft-row"><div class="c">Purchase/Constr.</div><div class="c">5–10%</div><div class="c grn">1.50%</div><div class="c gold">1.50%</div></div>
+    <div class="ft-row"><div class="c">Purchase/Constr.</div><div class="c">10%+</div><div class="c grn">1.25%</div><div class="c gold">1.25%</div></div>
+    <div class="ft-row hi"><div class="c">Cash-Out Refi</div><div class="c">N/A</div><div class="c grn">2.15%</div><div class="c gold">3.30%</div></div>
+    <div class="ft-row"><div class="c">IRRRL</div><div class="c">N/A</div><div class="c grn">0.50%</div><div class="c grn">0.50%</div></div>
+    <div class="ft-row"><div class="c" style="color:#15803D;font-weight:800;">Disabled Veteran</div><div class="c">Any</div><div class="c grn">Waived</div><div class="c grn">Waived</div></div>
+  </div>
+
+  <!-- ELIGIBILITY INFO -->
+  <div class="sec">VA Eligibility Requirements <span class="tag">Service Periods</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🎖️</div><div class="ic-body"><div class="in">Active Duty Service</div><div class="is"><strong>90 days</strong> continuous active duty during wartime or <strong>181 days</strong> during peacetime. Currently serving active duty members qualify after 90 days.</div></div></div>
+    <div class="ic"><div class="ii">🏕️</div><div class="ic-body"><div class="in">National Guard / Reserves</div><div class="is"><strong>6 years</strong> of service OR 90 days of active duty under Title 10 orders. Must have been honorably discharged or be currently serving.</div></div></div>
+    <div class="ic"><div class="ii">💍</div><div class="ic-body"><div class="in">Surviving Spouses</div><div class="is">Unremarried surviving spouse of veteran who died in service or from service-connected disability. Also eligible if veteran was POW/MIA.</div></div></div>
+    <div class="ic"><div class="ii">📋</div><div class="ic-body"><div class="in">Certificate of Eligibility (COE)</div><div class="is">Obtain via VA.gov eBenefits portal, lender can pull automatically, or mail VA Form 26-1880. Most lenders obtain same day.</div></div></div>
+    <div class="ic"><div class="ii">🏠</div><div class="ic-body"><div class="in">Occupancy Requirement</div><div class="is">Must intend to occupy the home as <strong>primary residence</strong> within 60 days of closing. Spouses may satisfy occupancy for deployed veterans.</div></div></div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="sec">Saved Calculations <span id="savedCount" class="tag">0 Saved</span></div>
+  <div class="saved-list" id="savedList"><div style="font-size:11px;color:var(--muted);text-align:center;padding:12px;">No saved calculations yet.</div></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const fundingFees = {
+  active: {lt5: 0.0215, lt10: 0.0150, gte10: 0.0125},
+  reserve: {lt5: 0.0230, lt10: 0.0165, gte10: 0.0140},
+  subsequent: {lt5: 0.0330, lt10: 0.0150, gte10: 0.0125}
+};
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+
+function calcVA(){
+  const price = parseFloat(document.getElementById('homePrice').value)||425000;
+  const term = parseInt(document.getElementById('loanTerm').value)||30;
+  const service = document.getElementById('serviceType').value;
+  const downPmt = parseFloat(document.getElementById('downPmt').value)||0;
+  const disability = document.getElementById('disability').value;
+  const income = parseFloat(document.getElementById('income').value)||90000;
+
+  const downPct = downPmt / price;
+  const loanAmt = price - downPmt;
+  const vaRate = 0.0625;
+  const convRate = 0.0682;
+  const n = term * 12;
+  const mr = vaRate / 12;
+  const payment = loanAmt * (mr * Math.pow(1+mr,n)) / (Math.pow(1+mr,n)-1);
+
+  // Funding fee
+  let feePct = 0;
+  if(disability === 'none'){
+    const fees = fundingFees[service];
+    feePct = downPct < 0.05 ? fees.lt5 : downPct < 0.10 ? fees.lt10 : fees.gte10;
+  }
+  const fundingFeeAmt = loanAmt * feePct;
+  const totalLoan = loanAmt + fundingFeeAmt;
+  const totalInterest = (payment * n) - loanAmt;
+
+  // PMI savings vs conventional
+  const convPMIMonthly = (loanAmt * 0.008) / 12; // avg PMI 0.8%/yr
+  const pmiMonths = Math.ceil((1-(0.80 - downPct)) * n); // approx months until 80% LTV
+  const pmiSaved = Math.max(0, convPMIMonthly * Math.min(pmiMonths, n));
+  const rateSavings = (convRate - vaRate) / 12 * loanAmt * n * 0.45; // simplified
+  const totalSaved = pmiSaved + rateSavings;
+
+  // DTI
+  const monthlyIncome = income / 12;
+  const dti = (payment / monthlyIncome * 100).toFixed(1);
+
+  document.getElementById('r-loan').textContent = fmt(loanAmt);
+  document.getElementById('r-monthly').textContent = fmt(payment)+'/mo';
+  document.getElementById('r-fee').textContent = disability==='waived'?'WAIVED ✅':fmt(fundingFeeAmt)+' ('+((feePct)*100).toFixed(2)+'%)';
+  document.getElementById('r-interest').textContent = fmt(totalInterest);
+  document.getElementById('r-dti').textContent = dti+'%';
+  document.getElementById('r-pmisave').textContent = fmt(pmiSaved);
+  document.getElementById('r-totalsave').textContent = fmt(totalSaved)+' saved vs Conventional';
+  document.getElementById('resultBox').classList.add('show');
+
+  renderPie(payment, fundingFeeAmt/n, loanAmt/n);
+  document.getElementById('chartWrap').style.display='block';
+
+  window._lastCalc = {price, term, service, downPmt, loanAmt, payment, fundingFeeAmt, totalInterest, dti, pmiSaved, totalSaved};
+}
+
+function renderPie(payment, feeMonthly, principal){
+  const interest = payment - principal - feeMonthly;
+  const total = payment;
+  const items = [
+    {label:'Principal', val:principal, color:'#1B3F72'},
+    {label:'Interest', val:interest, color:'#B91C1C'},
+    {label:'Fund. Fee (monthly)', val:feeMonthly, color:'#D97706'},
+  ];
+  let startAngle = -Math.PI/2;
+  const cx=60,cy=60,r=50;
+  let paths='';
+  items.forEach(it=>{
+    const slice = (it.val/total)*2*Math.PI;
+    const endAngle = startAngle+slice;
+    const x1=cx+r*Math.cos(startAngle), y1=cy+r*Math.sin(startAngle);
+    const x2=cx+r*Math.cos(endAngle), y2=cy+r*Math.sin(endAngle);
+    const large=slice>Math.PI?1:0;
+    paths+=`<path d="M${cx},${cy} L${x1},${y1} A${r},${r},0,${large},1,${x2},${y2} Z" fill="${it.color}"/>`;
+    startAngle=endAngle;
+  });
+  document.getElementById('pieSVG').innerHTML=paths+`<circle cx="${cx}" cy="${cy}" r="22" fill="${getComputedStyle(document.body).getPropertyValue('--card')||'#fff'}"/>`;
+  document.getElementById('pieLegend').innerHTML=items.map(it=>`
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${it.color}"></div>
+      <div class="legend-label">${it.label}</div>
+      <div class="legend-val">$${Math.round(it.val).toLocaleString()}</div>
+    </div>`).join('');
+}
+
+function saveCalc(){
+  if(!window._lastCalc)return;
+  const saves=JSON.parse(localStorage.getItem('vaSaves')||'[]');
+  const c=window._lastCalc;
+  saves.unshift({id:Date.now(),name:`VA Loan · $${Math.round(c.price).toLocaleString()}`,meta:`Payment: $${Math.round(c.payment).toLocaleString()}/mo · Saved: $${Math.round(c.totalSaved).toLocaleString()}`,amount:'$'+Math.round(c.totalSaved).toLocaleString(),date:new Date().toLocaleDateString()});
+  localStorage.setItem('vaSaves',JSON.stringify(saves.slice(0,10)));
+  renderSaved(); showToast('✅ Saved!');
+}
+
+function renderSaved(){
+  const saves=JSON.parse(localStorage.getItem('vaSaves')||'[]');
+  document.getElementById('savedCount').textContent=saves.length+' Saved';
+  const list=document.getElementById('savedList');
+  if(!saves.length){list.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px;">No saved calculations yet.</div>';return;}
+  list.innerHTML=saves.map(s=>`<div class="saved-item"><div class="si-left"><div class="si-name">${s.name}</div><div class="si-meta">${s.meta} · ${s.date}</div></div><div class="si-amount">${s.amount}</div><div class="si-del" onclick="delSave(${s.id})">🗑</div></div>`).join('');
+}
+function delSave(id){
+  const saves=JSON.parse(localStorage.getItem('vaSaves')||'[]').filter(s=>s.id!==id);
+  localStorage.setItem('vaSaves',JSON.stringify(saves));
+  renderSaved(); showToast('🗑 Deleted');
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+renderSaved();
+</script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DTI Ratio – Australia Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;text-decoration:none;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#BBF7D0;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#7C2D12;text-transform:none;letter-spacing:0;cursor:pointer;}
+.input-card{background:linear-gradient(145deg,#1A0A00,#7C2D12);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(26,10,0,0.28);position:relative;overflow:hidden;margin-bottom:0;}
+.input-card::before{content:'📊';position:absolute;right:8px;top:8px;font-size:65px;opacity:0.07;}
+.ic-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.ic-title{font-size:18px;font-weight:800;color:#fff;margin:5px 0 16px;font-family:Georgia,serif;}
+.ic-title span{color:#FFD700;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.field-row.single{grid-template-columns:1fr;}
+.field-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:11px 13px;}
+.field-box label{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.field-box input,.field-box select{background:transparent;border:none;outline:none;font-size:16px;font-weight:800;color:#fff;width:100%;font-family:Georgia,serif;}
+.field-box select option{background:#1A0A00;}
+.field-box .prefix{font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:2px;}
+.calc-btn{margin-top:14px;width:100%;background:#002868;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;}
+
+/* DTI GAUGE */
+.dti-gauge-card{background:#fff;border-radius:20px;padding:20px;box-shadow:0 4px 20px rgba(26,10,0,0.1);border:1px solid rgba(124,45,18,0.1);}
+.gauge-arc-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:14px;}
+.dti-number{font-size:52px;font-weight:800;font-family:Georgia,serif;line-height:1;margin:8px 0;}
+.dti-status{font-size:13px;font-weight:700;padding:4px 14px;border-radius:20px;display:inline-block;}
+.status-bars{display:flex;gap:0;height:8px;border-radius:4px;overflow:hidden;margin:12px 0 6px;}
+.sb-green{flex:5;background:#16a34a;}.sb-yellow{flex:1;background:#d97706;}.sb-orange{flex:1;background:#ea580c;}.sb-red{flex:1;background:#dc2626;}
+.sb-labels{display:flex;justify-content:space-between;font-size:9px;color:#92400E;}
+
+.dti-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.db-box{background:#FFF8F0;border-radius:12px;padding:12px;text-align:center;}
+.db-lbl{font-size:9px;color:#92400E;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.db-val{font-size:16px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;}
+
+.debt-bar-wrap{margin-top:14px;}
+.debt-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.dbr-lbl{font-size:10px;color:#92400E;width:90px;flex-shrink:0;}
+.dbr-track{flex:1;height:8px;border-radius:4px;background:#FFF8F0;overflow:hidden;}
+.dbr-fill{height:100%;border-radius:4px;}
+.dbr-val{font-size:10px;font-weight:700;color:#1A0A00;width:50px;text-align:right;flex-shrink:0;}
+
+.save-bar{background:#fff;border:1px solid rgba(124,45,18,0.12);border-radius:14px;padding:12px 15px;display:flex;align-items:center;gap:10px;margin-top:10px;}
+.save-bar .sb-action{background:#7C2D12;color:#FFD700;font-size:11px;font-weight:800;padding:7px 13px;border-radius:9px;border:none;cursor:pointer;margin-left:auto;}
+.saved-card{background:#fff;border-radius:14px;padding:13px 14px;box-shadow:0 2px 10px rgba(26,10,0,0.06);border:1px solid rgba(124,45,18,0.08);display:flex;align-items:center;gap:11px;margin-bottom:8px;}
+.sc-icon{width:38px;height:38px;border-radius:10px;background:#FFF8F0;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.sc-body{flex:1;}
+.sc-title{font-size:13px;font-weight:700;color:#1A0A00;}
+.sc-sub{font-size:10px;color:#92400E;margin-top:1px;}
+.sc-rate{font-size:13px;font-weight:800;font-family:Georgia,serif;white-space:nowrap;}
+.sc-del{font-size:15px;color:rgba(26,10,0,0.2);margin-left:8px;cursor:pointer;padding:4px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,10,0,0.55);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#fff;border-radius:22px 22px 0 0;padding:24px 20px 40px;width:100%;max-width:420px;}
+.modal-title{font-size:17px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:4px;}
+.modal-sub{font-size:11px;color:#92400E;margin-bottom:16px;}
+.modal-field{background:#FFF8F0;border:1.5px solid rgba(124,45,18,0.2);border-radius:11px;padding:12px 14px;width:100%;font-size:14px;color:#1A0A00;outline:none;margin-bottom:12px;}
+.modal-btns{display:flex;gap:10px;}
+.modal-cancel{flex:1;padding:13px;border-radius:12px;font-size:13px;font-weight:700;background:#FFF8F0;color:#1A0A00;border:1px solid rgba(124,45,18,0.2);cursor:pointer;}
+.modal-save{flex:2;padding:13px;border-radius:12px;font-size:13px;font-weight:800;background:#7C2D12;color:#FFD700;border:none;cursor:pointer;}
+.tip-card{background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:1px solid #FCA5A5;border-radius:15px;padding:13px 15px;}
+.tip-title{font-size:13px;font-weight:800;color:#7C2D12;font-family:Georgia,serif;margin-bottom:8px;}
+.tip-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;font-size:11px;color:#92400E;line-height:1.4;}
+.tip-bullet{width:16px;height:16px;border-radius:50%;background:#EA580C;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.slide-up{animation:slideUp 0.35s ease forwards;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <a href="screen_australia.html" class="back-btn">←</a>
+    <div class="hdr-title-wrap"><span class="hdr-flag">📊</span><div class="hdr-title">DTI Ratio</div><div class="hdr-sub">AUD · APRA Guidelines · Serviceability</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">APRA Max</div><div class="rs-val grn">6.0x</div><div class="rs-note">Income</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Big 4 Limit</div><div class="rs-val">6–7x</div><div class="rs-note">Varies</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Buffer Rate</div><div class="rs-val gold">+3.0%</div><div class="rs-note">APRA</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Serviceability</div><div class="rs-val">9.09%</div><div class="rs-note">Test rate</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Income & Debt Details <span class="more" id="reset-btn">Reset ↺</span></div>
+  <div class="input-card">
+    <div class="ic-tag">Debt-to-Income Ratio Calculator</div>
+    <div class="ic-title">APRA <span>Serviceability</span> Check</div>
+    <div class="field-row">
+      <div class="field-box">
+        <label>Gross Annual Income</label>
+        <div class="prefix">AUD $</div>
+        <input type="number" id="income" value="120000" placeholder="120000">
+      </div>
+      <div class="field-box">
+        <label>Partner Income (opt.)</label>
+        <div class="prefix">AUD $</div>
+        <input type="number" id="partner-income" value="0" placeholder="0">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-box">
+        <label>Proposed Loan Amount</label>
+        <div class="prefix">AUD $</div>
+        <input type="number" id="new-loan" value="600000" placeholder="600000">
+      </div>
+      <div class="field-box">
+        <label>Existing Debt Total</label>
+        <div class="prefix">AUD $</div>
+        <input type="number" id="existing-debt" value="20000" placeholder="0">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-box">
+        <label>Interest Rate %</label>
+        <input type="number" id="rate" value="6.09" step="0.01">
+      </div>
+      <div class="field-box">
+        <label>Loan Term (yrs)</label>
+        <input type="number" id="term" value="30">
+      </div>
+    </div>
+    <button class="calc-btn" id="calc-btn">📊 Check DTI Ratio</button>
+  </div>
+
+  <div class="sec-lbl" id="result-lbl" style="display:none">DTI Result <span class="more" id="open-save">💾 Save</span></div>
+  <div class="dti-gauge-card" id="gauge-card" style="display:none">
+    <div class="gauge-arc-wrap">
+      <div style="font-size:11px;color:#92400E;text-transform:uppercase;letter-spacing:0.6px;">Your Debt-to-Income Ratio</div>
+      <div class="dti-number" id="dti-number">0x</div>
+      <div class="dti-status" id="dti-status">–</div>
+    </div>
+    <div class="status-bars">
+      <div class="sb-green"></div><div class="sb-yellow"></div><div class="sb-orange"></div><div class="sb-red"></div>
+    </div>
+    <div class="sb-labels"><span>0x</span><span>5x ✅</span><span>6x ⚠️</span><span>7x+</span></div>
+    <div class="dti-breakdown">
+      <div class="db-box"><div class="db-lbl">Total Income</div><div class="db-val" id="total-income">$0</div></div>
+      <div class="db-box"><div class="db-lbl">Total Debt</div><div class="db-val" id="total-debt">$0</div></div>
+      <div class="db-box"><div class="db-lbl">Monthly Repay</div><div class="db-val" id="monthly-repay">$0</div></div>
+      <div class="db-box"><div class="db-lbl">Buffer Test Rate</div><div class="db-val" id="buffer-rate">9.09%</div></div>
+      <div class="db-box"><div class="db-lbl">Buffer Repay</div><div class="db-val" id="buffer-repay">$0</div></div>
+      <div class="db-box"><div class="db-lbl">Max Borrowing</div><div class="db-val" id="max-borrow">$0</div></div>
+    </div>
+    <div style="margin-top:14px;font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px;">Debt Breakdown</div>
+    <div class="debt-bar-wrap" id="debt-bars"></div>
+  </div>
+
+  <div class="save-bar" id="save-bar" style="display:none">
+    <div style="font-size:22px">💾</div>
+    <div><strong style="font-size:13px;color:#1A0A00;display:block;">Save This DTI Check</strong><span style="font-size:10px;color:#92400E;">Store for reference</span></div>
+    <button class="sb-action" id="save-bar-btn">Save Now</button>
+  </div>
+  <div class="sec-lbl">Saved Calculations <span class="more" id="clear-all">Clear all</span></div>
+  <div id="saved-list"><div style="background:#fff;border-radius:14px;padding:18px;text-align:center;color:#9CA3AF;font-size:12px;border:1px dashed rgba(124,45,18,0.15);">No saved calculations yet.</div></div>
+
+  <div class="sec-lbl">About DTI in Australia</div>
+  <div class="tip-card">
+    <div class="tip-title">📊 APRA DTI & Serviceability Rules</div>
+    <div class="tip-item"><div class="tip-bullet">1</div><div>APRA's macroprudential guidance targets DTI ratios above 6x as "high" — most major lenders use 6–7x as a hard cap.</div></div>
+    <div class="tip-item"><div class="tip-bullet">2</div><div>All lenders must apply a 3% serviceability buffer above the actual rate. At 6.09% that means testing at 9.09%.</div></div>
+    <div class="tip-item"><div class="tip-bullet">3</div><div>Credit cards are assessed at 3.8% of limit per month regardless of actual usage — cancel unused cards before applying.</div></div>
+    <div class="tip-item"><div class="tip-bullet">4</div><div>From June 2026, APRA proposed lowering the buffer to 2.5% for some borrowers switching lenders — refinancers may benefit.</div></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="save-modal">
+  <div class="modal-box">
+    <div class="modal-title">💾 Save DTI Check</div>
+    <div class="modal-sub" id="modal-desc">Saving your DTI check</div>
+    <input class="modal-field" id="save-label" placeholder="Label (e.g. Pre-approval check)" maxlength="40">
+    <div class="modal-btns">
+      <button class="modal-cancel" id="modal-cancel">Cancel</button>
+      <button class="modal-save" id="modal-confirm">Save ⭐</button>
+    </div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let calcResult=null;
+let saved=JSON.parse(localStorage.getItem('au_dti_saves')||'[]');
+function fmt(n){return '$'+Math.round(n).toLocaleString('en-AU');}
+function calcMonthly(loan,r,n){if(r===0)return loan/n;return loan*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
+
+document.getElementById('calc-btn').addEventListener('click',calculate);
+document.getElementById('reset-btn').addEventListener('click',()=>{
+  document.getElementById('income').value='120000';
+  document.getElementById('partner-income').value='0';
+  document.getElementById('new-loan').value='600000';
+  document.getElementById('existing-debt').value='20000';
+  document.getElementById('rate').value='6.09';
+  document.getElementById('term').value='30';
+  ['result-lbl','gauge-card','save-bar'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+});
+
+function calculate(){
+  const income=parseFloat(document.getElementById('income').value)||0;
+  const partnerIncome=parseFloat(document.getElementById('partner-income').value)||0;
+  const newLoan=parseFloat(document.getElementById('new-loan').value)||0;
+  const existingDebt=parseFloat(document.getElementById('existing-debt').value)||0;
+  const rate=parseFloat(document.getElementById('rate').value)||6.09;
+  const term=parseInt(document.getElementById('term').value)||30;
+  const totalIncome=income+partnerIncome;
+  const totalDebt=newLoan+existingDebt;
+  const dti=totalIncome>0?totalDebt/totalIncome:0;
+  const r=rate/100/12;
+  const br=(rate+3)/100/12;
+  const n=term*12;
+  const monthly=calcMonthly(newLoan,r,n);
+  const bufferRepay=calcMonthly(newLoan,br,n);
+  const maxBorrow=totalIncome>0?Math.min(totalIncome*6,bufferRepay>0?totalIncome*12*0.3/br*(Math.pow(1+br,n))/(Math.pow(1+br,n)-1):0):0;
+
+  calcResult={income,partnerIncome,newLoan,existingDebt,rate,term,totalIncome,totalDebt,dti,monthly,bufferRepay,maxBorrow};
+
+  const dtiEl=document.getElementById('dti-number');
+  const statusEl=document.getElementById('dti-status');
+  dtiEl.textContent=dti.toFixed(2)+'x';
+  let statusText,statusColor,statusBg;
+  if(dti<=5){statusText='✅ Excellent – Well within limits';statusColor='#166534';statusBg='#F0FDF4';}
+  else if(dti<=6){statusText='⚠️ Acceptable – Monitor closely';statusColor='#92400E';statusBg='#FFFBEB';}
+  else if(dti<=7){statusText='🔶 High – Lender discretion';statusColor='#9A3412';statusBg='#FFF7ED';}
+  else{statusText='🔴 Very High – Likely declined';statusColor='#991B1B';statusBg='#FEF2F2';}
+  dtiEl.style.color=statusColor;
+  statusEl.textContent=statusText;
+  statusEl.style.background=statusBg;
+  statusEl.style.color=statusColor;
+
+  document.getElementById('total-income').textContent=fmt(totalIncome);
+  document.getElementById('total-debt').textContent=fmt(totalDebt);
+  document.getElementById('monthly-repay').textContent=fmt(monthly)+'/mo';
+  document.getElementById('buffer-rate').textContent=(rate+3).toFixed(2)+'%';
+  document.getElementById('buffer-repay').textContent=fmt(bufferRepay)+'/mo';
+  document.getElementById('max-borrow').textContent=fmt(maxBorrow);
+
+  const maxDebt=totalDebt;
+  const debtItems=[
+    {label:'New Mortgage',val:newLoan,color:'#002868'},
+    {label:'Existing Debt',val:existingDebt,color:'#EA580C'},
+  ];
+  document.getElementById('debt-bars').innerHTML=debtItems.map(d=>`<div class="debt-bar-row">
+    <div class="dbr-lbl">${d.label}</div>
+    <div class="dbr-track"><div class="dbr-fill" style="width:${maxDebt>0?(d.val/maxDebt*100).toFixed(0):0}%;background:${d.color};height:100%;border-radius:4px;"></div></div>
+    <div class="dbr-val">${fmt(d.val)}</div>
+  </div>`).join('');
+
+  ['result-lbl','gauge-card','save-bar'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
+}
+
+function openModal(){if(!calcResult)return;document.getElementById('modal-desc').textContent=`DTI ${calcResult.dti.toFixed(2)}x · Income ${fmt(calcResult.totalIncome)}`;document.getElementById('save-label').value='';document.getElementById('save-modal').classList.add('open');}
+document.getElementById('open-save').addEventListener('click',openModal);
+document.getElementById('save-bar-btn').addEventListener('click',openModal);
+document.getElementById('modal-cancel').addEventListener('click',()=>document.getElementById('save-modal').classList.remove('open'));
+document.getElementById('save-modal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+document.getElementById('modal-confirm').addEventListener('click',()=>{
+  if(!calcResult)return;
+  const label=document.getElementById('save-label').value.trim()||'DTI Check';
+  saved.unshift({id:Date.now(),label,...calcResult});
+  localStorage.setItem('au_dti_saves',JSON.stringify(saved));
+  document.getElementById('save-modal').classList.remove('open');
+  renderSaved();
+});
+document.getElementById('clear-all').addEventListener('click',()=>{saved=[];localStorage.setItem('au_dti_saves','[]');renderSaved();});
+function renderSaved(){
+  const el=document.getElementById('saved-list');
+  if(!saved.length){el.innerHTML='<div style="background:#fff;border-radius:14px;padding:18px;text-align:center;color:#9CA3AF;font-size:12px;border:1px dashed rgba(124,45,18,0.15);">No saved calculations yet.</div>';return;}
+  el.innerHTML=saved.map(c=>`<div class="saved-card slide-up">
+    <div class="sc-icon">📊</div>
+    <div class="sc-body"><div class="sc-title">${c.label}</div><div class="sc-sub">Income: ${fmt(c.totalIncome)} · Debt: ${fmt(c.totalDebt)}</div></div>
+    <div class="sc-rate" style="color:${c.dti<=6?'#16a34a':'#dc2626'}">${c.dti.toFixed(2)}x DTI</div>
+    <div class="sc-del" onclick="delSaved(${c.id})">✕</div>
+  </div>`).join('');
+}
+function delSaved(id){saved=saved.filter(s=>s.id!==id);localStorage.setItem('au_dti_saves',JSON.stringify(saved));renderSaved();}
+renderSaved();
+</script>
+</body>
+</html>

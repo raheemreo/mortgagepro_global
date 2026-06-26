@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>502 Direct vs. Guaranteed</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+    --grn:#15803D;--grn-dk:#166534;--red:#B91C1C;--purple:#7C3AED;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 45%,#78350F 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+  .header::after{content:'🌾';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+  .content{padding:14px 14px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;}
+
+  /* Program toggle */
+  .prog-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0;background:var(--card);border-radius:14px;padding:4px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:12px;}
+  .pt-btn{border:none;border-radius:11px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;}
+  .pt-btn.active.direct{background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;box-shadow:0 3px 10px rgba(124,58,237,0.3);}
+  .pt-btn.active.guaranteed{background:linear-gradient(135deg,#15803D,#166534);color:#fff;box-shadow:0 3px 10px rgba(21,128,61,0.3);}
+
+  /* Hero comparison cards */
+  .hero-direct{background:linear-gradient(140deg,#2D1B69,#7C3AED);border-radius:18px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;}
+  .hero-direct::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .hero-guaranteed{background:linear-gradient(140deg,#0B1D3A,#15803D);border-radius:18px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;}
+  .hero-guaranteed::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-amount{font-size:30px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.1;margin:5px 0 4px;}
+  .rh-sub{font-size:9.5px;color:rgba(255,255,255,0.48);}
+  .prog-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-top:8px;}
+
+  /* Side-by-side compare table */
+  .compare-card{background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .compare-header{display:grid;grid-template-columns:1.3fr 1fr 1fr;background:#F8FAFF;padding:10px 12px;border-bottom:1px solid var(--border);}
+  .ch-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .ch-direct{font-size:10px;font-weight:700;color:var(--purple);text-align:center;}
+  .ch-guar{font-size:10px;font-weight:700;color:var(--grn);text-align:center;}
+  .compare-row{display:grid;grid-template-columns:1.3fr 1fr 1fr;padding:10px 12px;border-bottom:1px solid var(--border);align-items:center;}
+  .compare-row:last-child{border-bottom:none;}
+  .compare-row:nth-child(odd){background:#FAFBFF;}
+  .cr-label{font-size:10.5px;font-weight:600;color:var(--navy);}
+  .cr-sub{font-size:8.5px;color:var(--muted);margin-top:2px;}
+  .cr-direct{font-size:10px;font-weight:700;color:var(--purple);text-align:center;}
+  .cr-guar{font-size:10px;font-weight:700;color:var(--grn);text-align:center;}
+  .tag-better{font-size:8px;background:#DCFCE7;color:var(--grn-dk);padding:2px 6px;border-radius:8px;font-weight:700;}
+  .tag-lower{font-size:8px;background:#EDE9FE;color:var(--purple);padding:2px 6px;border-radius:8px;font-weight:700;}
+
+  /* Eligibility checker */
+  .elig-check-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .ec-title{font-size:13px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+  .inp-box{background:#F8FAFF;border-radius:11px;padding:11px 13px;border:1.5px solid var(--border);margin-bottom:8px;transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--grn);}
+  .inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:14px;font-weight:600;color:var(--navy);font-family:'DM Sans',sans-serif;background:transparent;}
+  .inp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+  .check-btn{width:100%;background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:11px;padding:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'DM Serif Display',serif;}
+
+  /* Result panel */
+  .rec-panel{border-radius:14px;padding:14px;margin-top:10px;display:none;}
+  .rec-panel.show{display:block;}
+  .rec-panel.direct{background:linear-gradient(135deg,#F5F3FF,#EDE9FE);border:1px solid #C4B5FD;}
+  .rec-panel.guaranteed{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid #86EFAC;}
+  .rec-panel.both{background:linear-gradient(135deg,#FFF7ED,#FEF3C7);border:1px solid #FCD34D;}
+  .rec-title{font-size:14px;font-weight:700;font-family:'DM Serif Display',serif;margin-bottom:8px;}
+  .rec-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.06);}
+  .rec-row:last-child{border-bottom:none;}
+  .rec-k{font-size:10px;font-weight:600;}
+  .rec-v{font-size:10px;font-weight:700;}
+
+  /* Rate visual bar chart */
+  .chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:13px;}
+  .bar-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;}
+  .bc-item{text-align:center;}
+  .bc-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
+  .bc-bar-wrap{height:120px;display:flex;align-items:flex-end;justify-content:center;gap:8px;}
+  .bc-bar{width:40px;border-radius:6px 6px 0 0;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;}
+  .bc-bar-label{font-size:8px;font-weight:700;color:#fff;}
+  .bc-val{font-size:11px;font-weight:700;margin-top:5px;font-family:'DM Serif Display',serif;}
+
+  /* Process timeline */
+  .timeline{display:flex;flex-direction:column;gap:0;}
+  .tl-item{display:flex;gap:12px;position:relative;}
+  .tl-item:not(:last-child)::before{content:'';position:absolute;left:15px;top:30px;width:2px;height:calc(100% - 8px);background:var(--border);}
+  .tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;z-index:1;}
+  .tl-dot.direct{background:#EDE9FE;border:2px solid #C4B5FD;}
+  .tl-dot.guar{background:#DCFCE7;border:2px solid #86EFAC;}
+  .tl-content{flex:1;padding-bottom:14px;}
+  .tl-title{font-size:11px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .tl-sub{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.4;}
+  .tl-time{font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;margin-top:4px;}
+  .tl-time.direct{background:#EDE9FE;color:var(--purple);}
+  .tl-time.guar{background:#DCFCE7;color:var(--grn-dk);}
+
+  /* Info tip cards */
+  .tip-card{border-radius:13px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;}
+  .tip-card.green{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid #86EFAC;}
+  .tip-card.purple{background:linear-gradient(135deg,#F5F3FF,#EDE9FE);border:1px solid #C4B5FD;}
+  .tip-card.gold{background:linear-gradient(135deg,#FFF7ED,#FEF3C7);border:1px solid #FCD34D;}
+  .tip-icon{font-size:20px;flex-shrink:0;}
+  .tip-title{font-size:11px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+  .tip-text{font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.5;}
+
+  /* Bottom nav */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:18px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--grn);}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .animate{animation:fadeUp .32s ease both .04s;}
+  .save-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:9px;padding:6px 11px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;transition:background .2s;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(21,128,61,0.40);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_usda_loan_calc.html" class="icon-btn" style="text-decoration:none;">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🌾</div>
+      <div class="hdr-title">502 Direct vs. Guaranteed</div>
+      <div class="hdr-sub">USDA Rural Housing Loan Programs · 2025</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Direct Rate</div><div class="rs-v gold">4.75%</div><div class="rs-n">Subsidized</div></div>
+    <div class="rs"><div class="rs-l">Guar. Rate</div><div class="rs-v">6.35%</div><div class="rs-n">Market rate</div></div>
+    <div class="rs"><div class="rs-l">Direct Max</div><div class="rs-v">$377K</div><div class="rs-n">Most states</div></div>
+    <div class="rs"><div class="rs-l">Loan Limit</div><div class="rs-v gold">None</div><div class="rs-n">Guaranteed</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Toggle -->
+  <div class="prog-toggle animate">
+    <button class="pt-btn direct active" id="btnDirect" onclick="showProgram('direct')">🏛️ 502 Direct</button>
+    <button class="pt-btn guaranteed" id="btnGuaranteed" onclick="showProgram('guaranteed')">🏦 502 Guaranteed</button>
+  </div>
+
+  <!-- Direct hero -->
+  <div class="hero-direct animate" id="directHero">
+    <button class="save-btn" onclick="saveProgramInfo('502 Direct')">🔖 Save</button>
+    <div class="rh-label">USDA 502 Direct Loan</div>
+    <div class="rh-amount">4.75%</div>
+    <div class="rh-sub">Gov't subsidized · Applied directly through USDA Rural Development</div>
+    <span class="prog-badge" style="background:rgba(196,181,253,0.25);color:#C4B5FD;border:1px solid rgba(196,181,253,0.3);">🏛️ Very Low to Low Income · USDA Administers Directly</span>
+  </div>
+
+  <!-- Guaranteed hero -->
+  <div class="hero-guaranteed animate" id="guaranteedHero" style="display:none;">
+    <button class="save-btn" onclick="saveProgramInfo('502 Guaranteed')">🔖 Save</button>
+    <div class="rh-label">USDA 502 Guaranteed Loan</div>
+    <div class="rh-amount">6.35%</div>
+    <div class="rh-sub">Market rate · Applied through USDA-approved private lenders</div>
+    <span class="prog-badge" style="background:rgba(134,239,172,0.2);color:#86EFAC;border:1px solid rgba(134,239,172,0.3);">🏦 Moderate Income · Lender Administered · 90% of USDA Loans</span>
+  </div>
+
+  <!-- Find Your Program -->
+  <div class="sec">Find Your Program</div>
+  <div class="elig-check-card animate">
+    <div class="ec-title">🎯 Which Program Fits You?</div>
+    <div class="inp-grid">
+      <div class="inp-box">
+        <label>Annual Household Income ($)</label>
+        <input type="number" id="hhIncome" placeholder="65,000" value="65000">
+      </div>
+      <div class="inp-box">
+        <label>Household Size</label>
+        <select id="hhSizeCheck">
+          <option value="1">1 Person</option>
+          <option value="2">2 People</option>
+          <option value="3">3 People</option>
+          <option value="4" selected>4 People</option>
+          <option value="5">5 People</option>
+          <option value="6">6 People</option>
+          <option value="7">7 People</option>
+          <option value="8">8+ People</option>
+        </select>
+      </div>
+    </div>
+    <div class="inp-box">
+      <label>State / Region</label>
+      <select id="regionCheck">
+        <option value="standard">Standard Cost Area</option>
+        <option value="high">High Cost Area (CA, HI, AK, etc.)</option>
+      </select>
+    </div>
+    <button class="check-btn" onclick="recommendProgram()">🌾 Find My USDA Program</button>
+
+    <div class="rec-panel" id="recPanel">
+      <div class="rec-title" id="recTitle"></div>
+      <div id="recRows"></div>
+    </div>
+  </div>
+
+  <!-- Side-by-side comparison -->
+  <div class="sec">Side-by-Side Comparison</div>
+  <div class="compare-card animate">
+    <div class="compare-header">
+      <div class="ch-label">Feature</div>
+      <div class="ch-direct">502 Direct</div>
+      <div class="ch-guar">502 Guar.</div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Lender</div><div class="cr-sub">Who processes loan</div></div>
+      <div class="cr-direct">USDA/Gov't</div>
+      <div class="cr-guar">Private Bank</div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Income Target</div><div class="cr-sub">Qualifying range</div></div>
+      <div class="cr-direct">Very Low–Low<br><span class="tag-lower">≤50–80% AMI</span></div>
+      <div class="cr-guar">Moderate<br><span class="tag-better">≤115% AMI</span></div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Interest Rate</div><div class="cr-sub">2025 approximate</div></div>
+      <div class="cr-direct" style="color:var(--purple);">4.75%<br><span class="tag-lower">Subsidized</span></div>
+      <div class="cr-guar">6.35%<br><span style="font-size:8px;color:var(--muted);">Market</span></div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Payment Subsidy</div><div class="cr-sub">Rate reduction assist</div></div>
+      <div class="cr-direct">✅ Yes<br><span class="tag-lower">As low as 1%</span></div>
+      <div class="cr-guar">❌ None</div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Down Payment</div><div class="cr-sub">Required upfront</div></div>
+      <div class="cr-direct">$0</div>
+      <div class="cr-guar">$0</div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Upfront Fee</div><div class="cr-sub">Guarantee fee</div></div>
+      <div class="cr-direct">None<br><span class="tag-lower">No fee</span></div>
+      <div class="cr-guar">1.00%<br><span style="font-size:8px;color:var(--muted);">Financed</span></div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Annual Fee</div><div class="cr-sub">Ongoing MIP equiv.</div></div>
+      <div class="cr-direct">None</div>
+      <div class="cr-guar">0.35%/yr</div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Loan Limit</div><div class="cr-sub">Max loan amount</div></div>
+      <div class="cr-direct">~$377K<br><span style="font-size:8px;color:var(--muted);">Varies by area</span></div>
+      <div class="cr-guar">No limit<br><span class="tag-better">Income cap only</span></div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Loan Term</div><div class="cr-sub">Fixed term only</div></div>
+      <div class="cr-direct">33–38 yrs</div>
+      <div class="cr-guar">30 yrs</div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Credit Score</div><div class="cr-sub">USDA minimum</div></div>
+      <div class="cr-direct">None<br><span style="font-size:8px;color:var(--muted);">Manual UW</span></div>
+      <div class="cr-guar">640+<br><span style="font-size:8px;color:var(--muted);">Lender req.</span></div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Processing Time</div><div class="cr-sub">Typical closing</div></div>
+      <div class="cr-direct">60–90 days</div>
+      <div class="cr-guar">30–45 days<br><span class="tag-better">Faster</span></div>
+    </div>
+    <div class="compare-row">
+      <div><div class="cr-label">Market Share</div><div class="cr-sub">of USDA volume</div></div>
+      <div class="cr-direct">~10%</div>
+      <div class="cr-guar">~90%<br><span class="tag-better">Most popular</span></div>
+    </div>
+  </div>
+
+  <!-- Rate visual -->
+  <div class="sec">Rate & Cost Comparison</div>
+  <div class="chart-card animate">
+    <div class="chart-title">📊 Effective Rate vs. Monthly Payment ($250K Home)</div>
+    <div class="bar-compare">
+      <div class="bc-item">
+        <div class="bc-label" style="color:var(--purple);">🏛️ 502 Direct</div>
+        <div class="bc-bar-wrap">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">4.75%</div>
+            <div class="bc-bar" style="height:70px;background:linear-gradient(180deg,#7C3AED,#5B21B6);">
+              <span class="bc-bar-label">Direct</span>
+            </div>
+            <div class="bc-val" style="color:var(--purple);">$1,304</div>
+            <div style="font-size:8px;color:var(--muted);">/mo P&I</div>
+          </div>
+        </div>
+      </div>
+      <div class="bc-item">
+        <div class="bc-label" style="color:var(--grn);">🏦 502 Guar.</div>
+        <div class="bc-bar-wrap">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">6.35%</div>
+            <div class="bc-bar" style="height:105px;background:linear-gradient(180deg,#15803D,#166534);">
+              <span class="bc-bar-label">Guar.</span>
+            </div>
+            <div class="bc-val" style="color:var(--grn);">$1,562</div>
+            <div style="font-size:8px;color:var(--muted);">/mo P&I</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#F0FDF4;border-radius:10px;padding:10px 12px;border:1px solid #86EFAC;">
+      <div style="font-size:10px;font-weight:700;color:var(--grn-dk);">💡 Direct saves ~$258/mo vs Guaranteed</div>
+      <div style="font-size:9px;color:#166534;margin-top:3px;">Over 30 yrs = ~$92,880 in savings — but Direct has stricter income/area limits</div>
+    </div>
+  </div>
+
+  <!-- Process timeline -->
+  <div class="sec">Application Process</div>
+  <div style="background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;">
+    <div class="chart-title" style="margin-bottom:14px;">🔄 Step-by-Step Process</div>
+    <div class="prog-toggle" style="margin-bottom:14px;">
+      <button class="pt-btn direct active" id="tlBtnD" onclick="showTimeline('direct')">Direct</button>
+      <button class="pt-btn guaranteed" id="tlBtnG" onclick="showTimeline('guaranteed')">Guaranteed</button>
+    </div>
+
+    <div class="timeline" id="timelineDirect">
+      <div class="tl-item">
+        <div class="tl-dot direct">1</div>
+        <div class="tl-content">
+          <div class="tl-title">Contact Local USDA RD Office</div>
+          <div class="tl-sub">Find your state's Rural Development office at rd.usda.gov · Schedule an appointment</div>
+          <span class="tl-time direct">Day 1</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot direct">2</div>
+        <div class="tl-content">
+          <div class="tl-title">Submit Form RD 410-4</div>
+          <div class="tl-sub">Application for Rural Assistance with income documentation, tax returns (2 yrs), bank statements</div>
+          <span class="tl-time direct">Week 1–2</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot direct">3</div>
+        <div class="tl-content">
+          <div class="tl-title">USDA Underwrites Directly</div>
+          <div class="tl-sub">USDA reviews income eligibility, credit, and property. No private lender involved.</div>
+          <span class="tl-time direct">Week 3–6</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot direct">4</div>
+        <div class="tl-content">
+          <div class="tl-title">Subsidy Determination</div>
+          <div class="tl-sub">USDA calculates your payment subsidy to reduce effective rate — as low as 1%</div>
+          <span class="tl-time direct">Week 6–8</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot direct">5</div>
+        <div class="tl-content">
+          <div class="tl-title">Closing with USDA</div>
+          <div class="tl-sub">USDA funds the loan directly. No private lender closing fees typical with banks.</div>
+          <span class="tl-time direct">Week 10–12</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline" id="timelineGuar" style="display:none;">
+      <div class="tl-item">
+        <div class="tl-dot guar">1</div>
+        <div class="tl-content">
+          <div class="tl-title">Choose USDA-Approved Lender</div>
+          <div class="tl-sub">Banks, credit unions, mortgage companies — over 1,800 approved lenders nationwide</div>
+          <span class="tl-time guar">Day 1</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot guar">2</div>
+        <div class="tl-content">
+          <div class="tl-title">Pre-Qualification & Application</div>
+          <div class="tl-sub">Lender pulls credit (640+ preferred), verifies income, submits GUS (Guaranteed Underwriting System)</div>
+          <span class="tl-time guar">Week 1–2</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot guar">3</div>
+        <div class="tl-content">
+          <div class="tl-title">Lender Underwrites Loan</div>
+          <div class="tl-sub">Private lender completes underwriting; GUS provides Accept/Refer/Caution determination</div>
+          <span class="tl-time guar">Week 2–4</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot guar">4</div>
+        <div class="tl-content">
+          <div class="tl-title">USDA Issues Conditional Commitment</div>
+          <div class="tl-sub">Lender submits to USDA for guarantee approval — typically 2–5 business days</div>
+          <span class="tl-time guar">Week 4–5</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot guar">5</div>
+        <div class="tl-content">
+          <div class="tl-title">Closing with Private Lender</div>
+          <div class="tl-sub">Standard closing process. USDA guarantees 90% of loan to lender. 1% upfront fee financed.</div>
+          <span class="tl-time guar">Week 5–7</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div class="sec">Key Insights</div>
+  <div class="tip-card purple animate">
+    <div class="tip-icon">🏛️</div>
+    <div>
+      <div class="tip-title">502 Direct: Deepest Subsidy</div>
+      <div class="tip-text">For households at 50–80% of Area Median Income (AMI). Payment subsidy can reduce your effective rate to as low as 1%. Must apply directly through USDA Rural Development office — not through a bank.</div>
+    </div>
+  </div>
+  <div class="tip-card green animate">
+    <div class="tip-icon">🏦</div>
+    <div>
+      <div class="tip-title">502 Guaranteed: More Accessible</div>
+      <div class="tip-text">For households up to 115% AMI. Apply through any of 1,800+ approved lenders nationwide. Faster processing (30–45 days) and no loan limit makes it the choice for 90% of USDA borrowers.</div>
+    </div>
+  </div>
+  <div class="tip-card gold animate">
+    <div class="tip-icon">⚠️</div>
+    <div>
+      <div class="tip-title">Recapture Rule — Direct Only</div>
+      <div class="tip-text">If you sell or refinance a 502 Direct loan within 9 years, USDA may "recapture" some of the subsidy received. Plan to stay or ask USDA about the recapture calculation before selling.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🌾</div><div class="ni-lb">Programs</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">📋</div><div class="ni-lb">Limits</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// 2025 Income limits – 115% AMI (Guaranteed) and 80% AMI (Direct)
+const limits2025={
+  standard:{guaranteed:[103500,112450,126500,140550,151800,163050,174300,185550],
+            direct:[50200,57350,64500,71600,77350,83100,88800,94550]},
+  high:{guaranteed:[135600,154900,174250,193550,208900,224300,239650,255050],
+        direct:[65500,74800,84200,93500,101000,108500,115950,123450]}
+};
+
+function showProgram(type){
+  document.getElementById('directHero').style.display = type==='direct'?'block':'none';
+  document.getElementById('guaranteedHero').style.display = type==='guaranteed'?'block':'none';
+  document.getElementById('btnDirect').className = 'pt-btn direct'+(type==='direct'?' active':'');
+  document.getElementById('btnGuaranteed').className = 'pt-btn guaranteed'+(type==='guaranteed'?' active':'');
+}
+
+function showTimeline(type){
+  document.getElementById('timelineDirect').style.display = type==='direct'?'flex':'none';
+  document.getElementById('timelineGuar').style.display = type==='guaranteed'?'flex':'none';
+  document.getElementById('tlBtnD').className = 'pt-btn direct'+(type==='direct'?' active':'');
+  document.getElementById('tlBtnG').className = 'pt-btn guaranteed'+(type==='guaranteed'?' active':'');
+}
+
+function recommendProgram(){
+  const income = parseFloat(document.getElementById('hhIncome').value)||0;
+  const size = parseInt(document.getElementById('hhSizeCheck').value)||4;
+  const region = document.getElementById('regionCheck').value;
+  const lims = limits2025[region];
+  const idx = Math.min(size-1,7);
+  const guarLimit = lims.guaranteed[idx];
+  const directLimit = lims.direct[idx];
+
+  const panel = document.getElementById('recPanel');
+  const title = document.getElementById('recTitle');
+  const rows = document.getElementById('recRows');
+  panel.className = 'rec-panel show';
+
+  let rec='';
+  let color='';
+  let rowsHTML='';
+
+  if(income <= directLimit){
+    rec='🏛️ You Qualify for 502 Direct'; color='direct';
+    rowsHTML=`
+      <div class="rec-row"><span class="rec-k" style="color:#6D28D9;">Your Income</span><span class="rec-v" style="color:#7C3AED;">$${income.toLocaleString()}/yr</span></div>
+      <div class="rec-row"><span class="rec-k" style="color:#6D28D9;">Direct Limit (${size}-person)</span><span class="rec-v" style="color:#7C3AED;">$${directLimit.toLocaleString()}</span></div>
+      <div class="rec-row"><span class="rec-k" style="color:#6D28D9;">Also Qualifies for Guaranteed</span><span class="rec-v" style="color:#7C3AED;">✅ Yes</span></div>
+      <div class="rec-row"><span class="rec-k" style="color:#6D28D9;">Recommended Rate</span><span class="rec-v" style="color:#7C3AED;">As low as 1% (subsidized)</span></div>
+      <div style="font-size:9.5px;color:#6D28D9;margin-top:8px;line-height:1.5;">Contact your local USDA Rural Development office to apply. The 502 Direct subsidy can reduce your payment significantly. You may also choose Guaranteed for faster processing.</div>`;
+  } else if(income <= guarLimit){
+    rec='🏦 You Qualify for 502 Guaranteed'; color='guaranteed';
+    rowsHTML=`
+      <div class="rec-row"><span class="rec-k" style="color:#166534;">Your Income</span><span class="rec-v" style="color:#15803D;">$${income.toLocaleString()}/yr</span></div>
+      <div class="rec-row"><span class="rec-k" style="color:#166534;">Guaranteed Limit (${size}-person)</span><span class="rec-v" style="color:#15803D;">$${guarLimit.toLocaleString()}</span></div>
+      <div class="rec-row"><span class="rec-k" style="color:#166534;">Direct Program</span><span class="rec-v" style="color:#B91C1C;">❌ Over income cap</span></div>
+      <div class="rec-row"><span class="rec-k" style="color:#166534;">Typical Rate</span><span class="rec-v" style="color:#15803D;">~6.35% (market)</span></div>
+      <div style="font-size:9.5px;color:#166534;margin-top:8px;line-height:1.5;">Apply through any USDA-approved lender. No down payment required. 1% upfront guarantee fee is financed into your loan. Faster 30–45 day close.</div>`;
+  } else {
+    rec='❌ Over Income Limits for Both Programs'; color='both';
+    rowsHTML=`
+      <div class="rec-row"><span class="rec-k">Your Income</span><span class="rec-v">$${income.toLocaleString()}/yr</span></div>
+      <div class="rec-row"><span class="rec-k">Guaranteed Limit (${size}-person)</span><span class="rec-v" style="color:var(--red);">$${guarLimit.toLocaleString()}</span></div>
+      <div class="rec-row"><span class="rec-k">Income Over Limit</span><span class="rec-v" style="color:var(--red);">$${(income-guarLimit).toLocaleString()}</span></div>
+      <div style="font-size:9.5px;color:#92400E;margin-top:8px;line-height:1.5;">Consider FHA (3.5% down) or conventional loans. Fannie/Freddie HomeReady or Home Possible programs may also help with low down payments.</div>`;
+  }
+
+  panel.className = `rec-panel show ${color}`;
+  title.textContent = rec;
+  title.style.color = color==='direct'?'#7C3AED':color==='guaranteed'?'#15803D':'#92400E';
+  rows.innerHTML = rowsHTML;
+  showToast('Program recommendation ready ✅');
+}
+
+function saveProgramInfo(program){
+  showToast(`🔖 ${program} info saved!`);
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FHA Property Standards</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{
+  --navy:#0B1D3A;--blue:#1B3F72;--red:#B91C1C;--gold:#D97706;--gold-lt:#FCD34D;
+  --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+  --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+  --green:#15803D;--green-dk:#166534;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 60%,#166534 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::after{content:'🏠';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;}
+.hdr-flag{font-size:26px;}
+.hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+.rs-v.gold{color:var(--gold-lt);}
+.rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+.content{padding:14px 14px 110px;}
+.sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;display:flex;align-items:center;justify-content:space-between;}
+.sec .badge{font-size:9px;font-weight:700;background:#ECFDF5;color:#166534;padding:3px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+.hero{background:linear-gradient(140deg,#0B1D3A,#15803D);border-radius:18px;padding:18px;box-shadow:var(--sh2);margin-bottom:12px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.h-tag{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.h-title{font-size:17px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;margin:5px 0 6px;line-height:1.25;}
+.h-title span{color:var(--gold-lt);}
+.h-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-bottom:13px;line-height:1.5;}
+.tier-row{display:flex;gap:8px;}
+.tier-box{flex:1;background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.15);border-radius:11px;padding:10px 8px;text-align:center;}
+.tier-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;}
+.tier-box .v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;}
+
+/* THE 3 S's */
+.three-s-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.s-card{background:var(--card);border-radius:14px;padding:13px 10px;text-align:center;box-shadow:var(--sh);border:1px solid var(--border);}
+.s-letter{font-size:24px;font-weight:700;color:var(--green);font-family:'DM Serif Display',serif;}
+.s-label{font-size:10px;font-weight:700;color:var(--navy);margin-top:3px;}
+.s-desc{font-size:8.5px;color:var(--muted);margin-top:3px;line-height:1.3;}
+
+/* INTERACTIVE CHECKLIST */
+.checklist-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.checklist-card h3{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:4px;}
+.checklist-sub{font-size:9px;color:var(--muted);margin-bottom:12px;}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.check-item:last-child{border-bottom:none;}
+.check-box{width:22px;height:22px;border-radius:7px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .2s;margin-top:1px;}
+.check-box.checked{background:var(--green);border-color:var(--green);color:#fff;}
+.check-text{flex:1;}
+.check-title{font-size:11.5px;font-weight:700;color:var(--navy);}
+.check-detail{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+/* PROGRESS RESULT */
+.result-card{border-radius:16px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;display:none;}
+.result-card.show{display:block;animation:fadeUp .32s ease both;}
+.result-card.pass{background:linear-gradient(140deg,#0B1D3A,#15803D);}
+.result-card.partial{background:linear-gradient(140deg,#92400E,#D97706);}
+.result-card.fail{background:linear-gradient(140deg,#7F1D1D,#B91C1C);}
+.rc-icon{font-size:30px;margin-bottom:6px;}
+.rc-title{font-size:17px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;}
+.rc-sub{font-size:10.5px;color:rgba(255,255,255,0.65);margin-top:4px;margin-bottom:12px;line-height:1.5;}
+.progress-bar-wrap{margin-bottom:8px;}
+.progress-track{background:rgba(255,255,255,0.15);border-radius:8px;height:12px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#86EFAC,#FCD34D);transition:width .5s ease;}
+.progress-label{font-size:10px;color:rgba(255,255,255,0.7);margin-top:5px;text-align:center;}
+.save-btn-inline{width:100%;margin-top:12px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:10px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;}
+.save-btn-inline.saved{background:rgba(21,128,61,0.4);border-color:rgba(21,128,61,0.6);}
+
+/* COST CHART */
+.chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+.chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:13px;}
+.bar-group{margin-bottom:10px;}
+.bar-label{font-size:9.5px;font-weight:600;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between;}
+.bar-track{background:#EEF2F8;border-radius:8px;height:22px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:10px;font-size:9px;font-weight:700;color:#fff;}
+
+/* ACCEPTABLE VS NOT */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+.cg-card{border-radius:14px;padding:13px;box-shadow:var(--sh);border:1.5px solid var(--border);}
+.cg-card.ok{background:#F0FDF4;border-color:#86EFAC;}
+.cg-card.no{background:#FEF2F2;border-color:#FCA5A5;}
+.cg-head{font-size:11px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.cg-card.ok .cg-head{color:#166534;}
+.cg-card.no .cg-head{color:#991B1B;}
+.cg-list{font-size:9.5px;color:var(--navy);line-height:1.9;}
+
+.ilist{display:flex;flex-direction:column;gap:8px;}
+.ic{background:var(--card);border-radius:13px;padding:12px 13px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+.ii{width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.in{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;}
+.is{font-size:9px;color:var(--muted);margin-top:2px;}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:18px;}
+.ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+.ni.active .ni-lb{color:var(--green);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.hero,.three-s-grid,.checklist-card,.chart-card,.compare-grid{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏠</div>
+      <div class="hdr-title">Property Standards</div>
+      <div class="hdr-sub">HUD Minimum Property Requirements · Appraisal</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Appraisal Cost</div><div class="rs-v">$300–600</div><div class="rs-n">Buyer pays</div></div>
+    <div class="rs"><div class="rs-l">Validity</div><div class="rs-v gold">180 Days</div><div class="rs-n">From issue</div></div>
+    <div class="rs"><div class="rs-l">Handbook</div><div class="rs-v">4000.1</div><div class="rs-n">HUD Reference</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">FHA Property Standards <span class="badge">HUD Handbook 4000.1</span></div>
+  <div class="hero">
+    <div class="h-tag">FHA Minimum Property Standards (MPS) & Requirements (MPR)</div>
+    <div class="h-title">Every FHA home must be <span>safe, sound, and secure</span></div>
+    <div class="h-sub">A specially trained FHA appraiser checks the home twice: once for market value, once against HUD's habitability checklist. Fail it, and repairs are required before closing.</div>
+    <div class="tier-row">
+      <div class="tier-box"><label>New Construction</label><div class="v">MPS Rules</div></div>
+      <div class="tier-box"><label>Existing Homes</label><div class="v">MPR Rules</div></div>
+      <div class="tier-box"><label>First-Time Buyers</label><div class="v">80%+ of FHA</div></div>
+    </div>
+  </div>
+
+  <!-- The 3 S's -->
+  <div class="sec">The Three Pillars</div>
+  <div class="three-s-grid">
+    <div class="s-card"><div class="s-letter">S</div><div class="s-label">Safety</div><div class="s-desc">No hazards to health or life — exposed wiring, gas leaks, lead paint</div></div>
+    <div class="s-card"><div class="s-letter">S</div><div class="s-label">Security</div><div class="s-desc">Property protects occupants & investment — locks, access, boundaries</div></div>
+    <div class="s-card"><div class="s-letter">S</div><div class="s-label">Soundness</div><div class="s-desc">Structurally stable — foundation, roof, systems all functional</div></div>
+  </div>
+
+  <!-- Interactive Checklist -->
+  <div class="sec">Pre-Appraisal Self-Check</div>
+  <div class="checklist-card">
+    <h3>✅ Will Your Home Pass?</h3>
+    <div class="checklist-sub">Tap each item to mark it as confirmed. This is a guide only — the FHA appraiser makes the final call.</div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text"><div class="check-title">Roof in good condition</div><div class="check-detail">No major leaks, missing shingles, or structural sagging</div></div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text"><div class="check-title">Foundation is stable</div><div class="check-detail">No major cracks, shifting, or signs of water intrusion</div></div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text"><div class="check-title">Electrical system is safe</div><div class="check-detail">No exposed wiring, all outlets functional, panel up to code</div></div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text"><div class="check-title">Plumbing & water heater work</div><div class="check-detail">Functioning hot/cold water, no leaks, working water heater</div></div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text"><div class="check-title">Heating system functional</div><div class="check-detail">Permanent heat source able to maintain 50°F+ in main rooms</div></div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text"><div class="check-title">No peeling paint (pre-1978 homes)</div><div class="check-detail">Lead-based paint hazard check for homes built before 1978</div></div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text"><div class="check-title">Safe access to property</div><div class="check-detail">Adequate pedestrian/vehicle access from a public or private street</div></div></div>
+    <div class="check-item" onclick="toggleCheck(this)"><div class="check-box">✓</div><div class="check-text"><div class="check-title">No standing water / drainage issues</div><div class="check-detail">Proper grading directs water away from the foundation</div></div></div>
+  </div>
+
+  <button class="save-btn-inline" style="background:linear-gradient(135deg,#15803D,#166534);box-shadow:0 4px 14px rgba(21,128,61,0.32);border:none;color:#fff;font-family:'DM Serif Display',serif;font-size:13px;padding:13px;margin-bottom:10px;" onclick="calculateScore()">🏠 Calculate My Readiness Score</button>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <div class="rc-icon" id="rcIcon">✅</div>
+    <div class="rc-title" id="rcTitle">Likely to Pass</div>
+    <div class="rc-sub" id="rcSub">8 of 8 items confirmed. Your home shows strong signs of meeting FHA's minimum standards.</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:100%"></div></div>
+      <div class="progress-label" id="progressLabel">8 / 8 Items Confirmed</div>
+    </div>
+    <button class="save-btn-inline" id="saveBtn" onclick="saveCalc()">🔖 Save This Checklist</button>
+  </div>
+
+  <!-- Acceptable vs Not -->
+  <div class="sec">What Gets a Pass vs. a Repair Order</div>
+  <div class="compare-grid">
+    <div class="cg-card ok">
+      <div class="cg-head">✅ Usually Forgiven (Cosmetic)</div>
+      <div class="cg-list">• Worn carpet/flooring<br>• Outdated finishes<br>• Small drywall holes<br>• Faded paint (post-1978)<br>• Minor cabinet wear</div>
+    </div>
+    <div class="cg-card no">
+      <div class="cg-head">❌ Requires Repair First</div>
+      <div class="cg-list">• Exposed/frayed wiring<br>• Active roof leaks<br>• Broken windows<br>• No working heat source<br>• Peeling paint (pre-1978)</div>
+    </div>
+  </div>
+
+  <!-- Cost breakdown -->
+  <div class="sec">Appraisal & Inspection Costs</div>
+  <div class="chart-card">
+    <div class="chart-title">💰 Typical Buyer Costs at Closing</div>
+    <div class="bar-group">
+      <div class="bar-label"><span>FHA Appraisal Fee</span><span>$300–$600</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:45%;background:linear-gradient(90deg,#1B3F72,#0B1D3A);">~$450</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>General Home Inspection (Optional)</span><span>$300–$500</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:38%;background:linear-gradient(90deg,#D97706,#B45309);">~$400</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Larger Property Inspection</span><span>$500–$700+</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:55%;background:linear-gradient(90deg,#15803D,#166534);">~$600</div></div>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:4px;">FHA appraisal is mandatory and paid by the buyer. A separate full home inspection is optional but strongly recommended — the appraisal alone does not replace it.</div>
+  </div>
+
+  <!-- Updates -->
+  <div class="sec">2025–2026 Rule Updates</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">🌊</div><div><div class="in">New Flood Elevation Rule (Jan 2025)</div><div class="is">New construction in flood zones needs lowest floor 2ft above base flood elevation</div></div></div>
+    <div class="ic"><div class="ii">📝</div><div><div class="in">Streamlined Appraisal Protocols</div><div class="is">HUD Mortgagee Letter 2025-18 aligns some FHA steps closer to conventional appraisals</div></div></div>
+    <div class="ic"><div class="ii">🔍</div><div><div class="in">Value Reconsideration Process</div><div class="is">Updated borrower-initiated process to dispute a low appraisal value</div></div></div>
+    <div class="ic"><div class="ii">📋</div><div><div class="in">Appraisal Valid 180 Days</div><div class="is">Must close within validity window or a new appraisal may be required</div></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function toggleCheck(el){
+  el.querySelector('.check-box').classList.toggle('checked');
+}
+
+function calculateScore(){
+  const items = document.querySelectorAll('.check-item');
+  const checked = document.querySelectorAll('.check-box.checked').length;
+  const total = items.length;
+  const pct = Math.round((checked/total)*100);
+
+  const card = document.getElementById('resultCard');
+  card.classList.remove('pass','partial','fail');
+
+  if(pct >= 87){
+    card.classList.add('pass','show');
+    document.getElementById('rcIcon').textContent = '✅';
+    document.getElementById('rcTitle').textContent = 'Likely to Pass';
+    document.getElementById('rcSub').textContent = checked+' of '+total+' items confirmed. Your home shows strong signs of meeting FHA minimum standards.';
+  } else if(pct >= 50){
+    card.classList.add('partial','show');
+    document.getElementById('rcIcon').textContent = '⚠️';
+    document.getElementById('rcTitle').textContent = 'Repairs May Be Needed';
+    document.getElementById('rcSub').textContent = checked+' of '+total+' items confirmed. Some issues could trigger an appraiser repair request before closing.';
+  } else {
+    card.classList.add('fail','show');
+    document.getElementById('rcIcon').textContent = '❌';
+    document.getElementById('rcTitle').textContent = 'Significant Issues Likely';
+    document.getElementById('rcSub').textContent = checked+' of '+total+' items confirmed. Address these before ordering the FHA appraisal to avoid delays.';
+  }
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressLabel').textContent = checked+' / '+total+' Items Confirmed';
+}
+
+function saveCalc(){
+  const checked = document.querySelectorAll('.check-box.checked').length;
+  const data = { date: new Date().toLocaleDateString(), score: checked+'/8 items' };
+  const saves = JSON.parse(localStorage.getItem('fha_property_saves')||'[]');
+  saves.unshift(data);
+  if(saves.length>5) saves.length=5;
+  localStorage.setItem('fha_property_saves', JSON.stringify(saves));
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved'); btn.textContent='✅ Saved';
+  showToast('Checklist saved!');
+  setTimeout(()=>{btn.classList.remove('saved'); btn.textContent='🔖 Save This Checklist';}, 2000);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stamp Duty by State – Australia Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF8F0;color:#1A0A00;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#1A0A00 0%,#7C2D12 55%,#002868 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,215,0,0.06);}
+.header::after{content:'';position:absolute;bottom:-30px;left:20px;width:110px;height:110px;border-radius:50%;background:rgba(0,40,104,0.2);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.tab-strip{display:flex;gap:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;overflow:hidden;position:relative;z-index:2;margin-top:4px;}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer;transition:all 0.2s;}
+.tab.active{background:rgba(255,255,255,0.18);color:#fff;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#7C2D12;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* Input Card */
+.input-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:14px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.input-group{display:flex;flex-direction:column;gap:4px;}
+.input-group label{font-size:10px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.5px;}
+.inp{background:#FFF8F0;border:1px solid rgba(124,45,18,0.2);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;color:#1A0A00;width:100%;outline:none;font-family:Georgia,serif;}
+.inp:focus{border-color:#7C2D12;background:#fff;}
+select.inp{appearance:none;cursor:pointer;}
+.state-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.st-btn{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid rgba(124,45,18,0.2);background:#FFF8F0;color:#7C2D12;cursor:pointer;transition:all 0.18s;}
+.st-btn.active{background:#7C2D12;color:#fff;border-color:#7C2D12;}
+.prop-toggle{display:flex;gap:6px;margin-bottom:10px;}
+.pt-btn{flex:1;padding:8px;border-radius:10px;font-size:11px;font-weight:700;border:1.5px solid rgba(124,45,18,0.18);background:#FFF8F0;color:#7C2D12;cursor:pointer;text-align:center;transition:all 0.18s;}
+.pt-btn.active{background:#002868;color:#fff;border-color:#002868;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#7C2D12,#002868);border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;margin-top:4px;box-shadow:0 4px 14px rgba(124,45,18,0.3);}
+
+/* Result Card */
+.result-card{background:linear-gradient(145deg,#1A0A00,#7C2D12);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,10,0,0.28);margin-bottom:14px;display:none;}
+.result-card.show{display:block;}
+.result-card::before{content:'🏛️';position:absolute;right:10px;top:5px;font-size:70px;opacity:0.08;}
+.rc-label{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.rc-state{font-size:13px;font-weight:800;color:#FFD700;margin:3px 0 12px;}
+.rc-main{font-size:32px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;}
+.rc-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+.rc-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);border-radius:11px;padding:10px;}
+.rc-box-lbl{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+.rc-box-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+.rc-box-val.gold{color:#FFD700;}
+.rc-box-val.grn{color:#BBF7D0;}
+.save-btn{margin-top:13px;width:100%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:12px;padding:11px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.save-btn:active{background:rgba(255,255,255,0.2);}
+
+/* Bar Chart */
+.chart-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:14px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.bar-state{font-size:11px;font-weight:700;color:#92400E;width:30px;flex-shrink:0;}
+.bar-track{flex:1;height:22px;background:#FFF8F0;border-radius:6px;overflow:hidden;position:relative;}
+.bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:700;color:#fff;transition:width 0.6s cubic-bezier(.4,0,.2,1);}
+.bar-amt{font-size:11px;font-weight:700;color:#1A0A00;white-space:nowrap;min-width:50px;text-align:right;}
+
+/* Breakdown table */
+.breakdown{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(26,10,0,0.08);border:1px solid rgba(124,45,18,0.08);margin-bottom:14px;display:none;}
+.breakdown.show{display:block;}
+.bd-title{font-size:13px;font-weight:800;color:#1A0A00;font-family:Georgia,serif;margin-bottom:12px;}
+.bd-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(124,45,18,0.07);}
+.bd-row:last-child{border-bottom:none;}
+.bd-range{font-size:11px;color:#7C2D12;font-weight:600;}
+.bd-rate{font-size:12px;font-weight:800;color:#1A0A00;}
+.bd-tax{font-size:11px;color:#002868;font-weight:700;}
+
+/* Concession Banner */
+.concession{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;border-radius:15px;padding:13px 15px;margin-bottom:10px;display:none;}
+.concession.show{display:block;}
+.con-title{font-size:13px;font-weight:800;color:#1E3A8A;font-family:Georgia,serif;}
+.con-sub{font-size:10px;color:#1D4ED8;margin-top:3px;}
+.con-saving{font-size:20px;font-weight:800;color:#1E3A8A;font-family:Georgia,serif;margin-top:8px;}
+.con-saving span{font-size:11px;font-weight:500;color:#1D4ED8;}
+
+/* Total cost breakdown */
+.total-card{background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border:1px solid rgba(124,45,18,0.2);border-radius:15px;padding:13px 15px;margin-bottom:10px;display:none;}
+.total-card.show{display:block;}
+
+/* Donut chart */
+.donut-wrap{display:flex;align-items:center;gap:16px;margin-top:10px;}
+.donut-svg{flex-shrink:0;}
+.donut-legend{flex:1;}
+.dl-item{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.dl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.dl-lbl{font-size:11px;color:#7C2D12;font-weight:600;}
+.dl-val{font-size:12px;font-weight:800;color:#1A0A00;margin-left:auto;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(124,45,18,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(26,10,0,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#92400E;}
+.ni.active .ni-lb{color:#7C2D12;}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1A0A00;color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;opacity:0;transition:opacity 0.3s;z-index:200;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏛️</span><div class="hdr-title">Stamp Duty</div><div class="hdr-sub">State-by-State Calculator · 2024–25</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="tab-strip">
+    <div class="tab active" onclick="switchTab('calculator',this)">Calculator</div>
+    <div class="tab" onclick="switchTab('compare',this)">Compare States</div>
+    <div class="tab" onclick="switchTab('rates',this)">Rate Tables</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- TAB: CALCULATOR -->
+  <div id="tab-calculator">
+    <div class="sec-lbl" style="margin-top:0">Property Details</div>
+    <div class="input-card">
+      <div class="input-row">
+        <div class="input-group">
+          <label>Property Value</label>
+          <input class="inp" type="number" id="propValue" value="750000" placeholder="750000">
+        </div>
+        <div class="input-group">
+          <label>State / Territory</label>
+          <select class="inp" id="stateSelect" onchange="updateStateButtons()">
+            <option value="NSW">NSW</option>
+            <option value="VIC">VIC</option>
+            <option value="QLD">QLD</option>
+            <option value="WA">WA</option>
+            <option value="SA">SA</option>
+            <option value="TAS">TAS</option>
+            <option value="ACT">ACT</option>
+            <option value="NT">NT</option>
+          </select>
+        </div>
+      </div>
+      <div class="state-tabs" id="stateTabs">
+        <div class="st-btn active" onclick="selectState('NSW',this)">NSW</div>
+        <div class="st-btn" onclick="selectState('VIC',this)">VIC</div>
+        <div class="st-btn" onclick="selectState('QLD',this)">QLD</div>
+        <div class="st-btn" onclick="selectState('WA',this)">WA</div>
+        <div class="st-btn" onclick="selectState('SA',this)">SA</div>
+        <div class="st-btn" onclick="selectState('TAS',this)">TAS</div>
+        <div class="st-btn" onclick="selectState('ACT',this)">ACT</div>
+        <div class="st-btn" onclick="selectState('NT',this)">NT</div>
+      </div>
+      <div class="sec-lbl" style="margin-top:4px;margin-bottom:8px;">Buyer Type</div>
+      <div class="prop-toggle">
+        <div class="pt-btn active" onclick="selectBuyer('first',this)">🏡 First Home</div>
+        <div class="pt-btn" onclick="selectBuyer('owner',this)">🏠 Owner-Occ</div>
+        <div class="pt-btn" onclick="selectBuyer('investor',this)">📈 Investor</div>
+      </div>
+      <div class="sec-lbl" style="margin-top:4px;margin-bottom:8px;">Property Type</div>
+      <div class="prop-toggle">
+        <div class="pt-btn active" onclick="selectPropType('established',this)">🏘️ Established</div>
+        <div class="pt-btn" onclick="selectPropType('new',this)">🏗️ New Build</div>
+        <div class="pt-btn" onclick="selectPropType('vacant',this)">🌱 Vacant Land</div>
+      </div>
+      <button class="calc-btn" onclick="calculateStampDuty()">🏛️ Calculate Stamp Duty</button>
+    </div>
+
+    <!-- Result -->
+    <div class="result-card" id="resultCard">
+      <div class="rc-label">Stamp Duty Payable</div>
+      <div class="rc-state" id="rc-state-lbl">NSW — Owner Occupier</div>
+      <div class="rc-main" id="rc-duty">$0</div>
+      <div class="rc-sub" id="rc-sub-lbl">on a $750,000 established property</div>
+      <div class="rc-grid">
+        <div class="rc-box"><div class="rc-box-lbl">Effective Rate</div><div class="rc-box-val gold" id="rc-eff-rate">0.00%</div></div>
+        <div class="rc-box"><div class="rc-box-lbl">Marginal Rate</div><div class="rc-box-val" id="rc-marg-rate">—</div></div>
+        <div class="rc-box"><div class="rc-box-lbl">Total Purchase Cost</div><div class="rc-box-val grn" id="rc-total">$0</div></div>
+        <div class="rc-box"><div class="rc-box-lbl">Settlement Savings</div><div class="rc-box-val" id="rc-concession">—</div></div>
+      </div>
+      <button class="save-btn" onclick="saveCalc()">💾 Save This Calculation</button>
+    </div>
+
+    <!-- Concession -->
+    <div class="concession" id="concessionCard">
+      <div class="con-title">🎉 First Home Buyer Concession</div>
+      <div class="con-sub" id="concession-sub">You may be eligible for a stamp duty concession or exemption.</div>
+      <div class="con-saving" id="concession-saving">—</div>
+    </div>
+
+    <!-- Total Cost Donut -->
+    <div class="total-card" id="totalCard">
+      <div class="bd-title" style="font-family:Georgia,serif;font-size:13px;font-weight:800;color:#7C2D12;margin-bottom:10px;">Total Purchase Costs</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="90" height="90" viewBox="0 0 90 90" id="donutSvg">
+          <circle cx="45" cy="45" r="36" fill="none" stroke="#FFEDD5" stroke-width="14"/>
+          <circle cx="45" cy="45" r="36" fill="none" stroke="#7C2D12" stroke-width="14"
+            stroke-dasharray="0 226" stroke-dashoffset="57" id="dutyArc" style="transition:stroke-dasharray 0.7s cubic-bezier(.4,0,.2,1)"/>
+          <circle cx="45" cy="45" r="36" fill="none" stroke="#002868" stroke-width="14"
+            stroke-dasharray="0 226" stroke-dashoffset="57" id="propArc" style="transition:all 0.7s 0.1s cubic-bezier(.4,0,.2,1)"/>
+          <text x="45" y="49" text-anchor="middle" font-size="10" font-weight="800" fill="#1A0A00" font-family="Georgia,serif" id="donutPct">0%</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="dl-item"><div class="dl-dot" style="background:#002868"></div><div class="dl-lbl">Property Value</div><div class="dl-val" id="dl-prop">$0</div></div>
+          <div class="dl-item"><div class="dl-dot" style="background:#7C2D12"></div><div class="dl-lbl">Stamp Duty</div><div class="dl-val" id="dl-duty">$0</div></div>
+          <div class="dl-item"><div class="dl-dot" style="background:#D97706"></div><div class="dl-lbl">Est. Legal & Other</div><div class="dl-val" id="dl-other">~$3,500</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breakdown Table -->
+    <div class="breakdown" id="breakdownCard">
+      <div class="bd-title">Calculation Breakdown</div>
+      <div id="breakdownRows"></div>
+    </div>
+  </div>
+
+  <!-- TAB: COMPARE -->
+  <div id="tab-compare" style="display:none;">
+    <div class="sec-lbl" style="margin-top:0">Stamp Duty Comparison <span class="more">All States</span></div>
+    <div class="input-card">
+      <div class="input-group" style="margin-bottom:10px;">
+        <label>Property Value for Comparison</label>
+        <input class="inp" type="number" id="compareValue" value="750000" oninput="renderComparison()" placeholder="750000">
+      </div>
+      <div class="prop-toggle">
+        <div class="pt-btn active" onclick="selectCompareBuyer('first',this)">🏡 First Home</div>
+        <div class="pt-btn" onclick="selectCompareBuyer('owner',this)">🏠 Owner-Occ</div>
+        <div class="pt-btn" onclick="selectCompareBuyer('investor',this)">📈 Investor</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Stamp Duty by State 🗺️</div>
+      <div id="comparisonBars"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Effective Rate by State</div>
+      <div id="rateComparisonBars"></div>
+    </div>
+  </div>
+
+  <!-- TAB: RATES -->
+  <div id="tab-rates" style="display:none;">
+    <div class="sec-lbl" style="margin-top:0">Rate Tables 2024–25</div>
+    <div id="rateTableContainer"></div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦘</div><div class="ni-lb">Australia</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">💾 Calculation saved!</div>
+
+<script>
+// ─── Stamp Duty Data (2024-25, AUS) ───────────────────────────────────────────
+// Each state: brackets for owner-occ, first-home thresholds & concessions
+const SD = {
+  NSW: {
+    name: 'New South Wales',
+    owner: [
+      {min:0,max:16000,base:0,rate:1.25},{min:16000,max:35000,base:200,rate:1.5},
+      {min:35000,max:93000,base:485,rate:1.75},{min:93000,max:351000,base:1500,rate:3.5},
+      {min:351000,max:1168000,base:10530,rate:4.5},{min:1168000,max:3505000,base:47295,rate:5.5},
+      {min:3505000,max:Infinity,base:175735,rate:7.0}
+    ],
+    // First home buyer: exempt <$650k, conc $650k-$800k
+    fhb:{exemptTo:800000,exemptBelow:650000,concThreshold:800000,note:'Full exemption <$650K · Concessional $650K–$800K'},
+    marginalRateAt750:'4.5%'
+  },
+  VIC: {
+    name: 'Victoria',
+    owner: [
+      {min:0,max:25000,base:0,rate:1.4},{min:25000,max:130000,base:350,rate:2.4},
+      {min:130000,max:440000,base:2870,rate:5.0},{min:440000,max:550000,base:18370,rate:6.0},
+      {min:550000,max:960000,base:24970,rate:6.0},{min:960000,max:2000000,base:49570,rate:5.5},
+      {min:2000000,max:Infinity,base:106770,rate:6.5}
+    ],
+    fhb:{exemptTo:600000,exemptBelow:600000,concThreshold:750000,note:'Full exemption <$600K · Concession up to $750K'},
+    marginalRateAt750:'6.0%'
+  },
+  QLD: {
+    name: 'Queensland',
+    owner: [
+      {min:0,max:5000,base:0,rate:0},{min:5000,max:75000,base:0,rate:1.5},
+      {min:75000,max:540000,base:1050,rate:3.5},{min:540000,max:1000000,base:17325,rate:4.5},
+      {min:1000000,max:Infinity,base:38025,rate:5.75}
+    ],
+    fhb:{exemptTo:700000,exemptBelow:500000,concThreshold:700000,note:'Full exemption <$500K new · Concession <$700K'},
+    marginalRateAt750:'4.5%'
+  },
+  WA: {
+    name: 'Western Australia',
+    owner: [
+      {min:0,max:120000,base:0,rate:1.9},{min:120000,max:150000,base:2280,rate:2.85},
+      {min:150000,max:360000,base:3135,rate:3.8},{min:360000,max:725000,base:11115,rate:4.75},
+      {min:725000,max:Infinity,base:28453,rate:5.15}
+    ],
+    fhb:{exemptTo:530000,exemptBelow:430000,concThreshold:530000,note:'Full exemption <$430K · Concession $430K–$530K'},
+    marginalRateAt750:'5.15%'
+  },
+  SA: {
+    name: 'South Australia',
+    owner: [
+      {min:0,max:12000,base:0,rate:1.0},{min:12000,max:30000,base:120,rate:2.0},
+      {min:30000,max:50000,base:480,rate:3.0},{min:50000,max:100000,base:1080,rate:3.5},
+      {min:100000,max:200000,base:2830,rate:4.0},{min:200000,max:250000,base:6830,rate:4.25},
+      {min:250000,max:300000,base:8955,rate:4.75},{min:300000,max:500000,base:11330,rate:5.0},
+      {min:500000,max:Infinity,base:21330,rate:5.5}
+    ],
+    fhb:{exemptTo:0,exemptBelow:0,concThreshold:0,note:'No stamp duty concession — First Home Owners Grant available'},
+    marginalRateAt750:'5.5%'
+  },
+  TAS: {
+    name: 'Tasmania',
+    owner: [
+      {min:0,max:3000,base:50,rate:0},{min:3000,max:25000,base:50,rate:1.75},
+      {min:25000,max:75000,base:435,rate:2.25},{min:75000,max:200000,base:1560,rate:3.5},
+      {min:200000,max:375000,base:5935,rate:4.0},{min:375000,max:725000,base:12935,rate:4.25},
+      {min:725000,max:Infinity,base:27810,rate:4.5}
+    ],
+    fhb:{exemptTo:750000,exemptBelow:600000,concThreshold:750000,note:'50% concession for FHB <$750K from 1 Jul 2024'},
+    marginalRateAt750:'4.25%'
+  },
+  ACT: {
+    name: 'Australian Capital Territory',
+    owner: [
+      {min:0,max:200000,base:0,rate:0},{min:200000,max:300000,base:0,rate:4.17},
+      {min:300000,max:500000,base:4170,rate:2.79},{min:500000,max:750000,base:9750,rate:3.8},
+      {min:750000,max:1000000,base:19250,rate:4.74},{min:1000000,max:1455000,base:31100,rate:5.9},
+      {min:1455000,max:Infinity,base:57945,rate:6.40}
+    ],
+    fhb:{exemptTo:1000000,exemptBelow:1000000,concThreshold:1000000,note:'Home Buyer Concession Scheme — No duty below $1M'},
+    marginalRateAt750:'4.74%'
+  },
+  NT: {
+    name: 'Northern Territory',
+    owner: [
+      {min:0,max:525000,base:0,rate:0}, // formula-based
+      {min:525000,max:3000000,base:0,rate:4.95},
+      {min:3000000,max:5000000,base:122625,rate:5.75},
+      {min:5000000,max:Infinity,base:237625,rate:5.75}
+    ],
+    fhb:{exemptTo:650000,exemptBelow:500000,concThreshold:650000,note:'First Home Owner Discount up to $26,730'},
+    marginalRateAt750:'4.95%',
+    ntFormula:true
+  }
+};
+
+function calcDuty(value, stateKey) {
+  const s = SD[stateKey];
+  if (!s) return 0;
+  if (stateKey === 'NT' && value <= 525000) {
+    // NT uses formula: (0.06571441 * V^2 / 1000) + 15
+    return Math.max(0, (0.06571441 * value * value / 1000000) + 15);
+  }
+  const brackets = s.owner;
+  let duty = 0;
+  for (let b of brackets) {
+    if (value <= b.min) break;
+    const taxable = Math.min(value, b.max) - b.min;
+    if (taxable <= 0) continue;
+    duty = b.base + (taxable * b.rate / 100);
+    if (value <= b.max) break;
+  }
+  return Math.round(duty);
+}
+
+function calcFHBDuty(value, stateKey) {
+  const s = SD[stateKey];
+  const fhb = s.fhb;
+  if (fhb.exemptBelow && value <= fhb.exemptBelow) return 0;
+  if (fhb.concThreshold && value <= fhb.concThreshold && fhb.exemptBelow) {
+    // Pro-rata concession
+    const full = calcDuty(value, stateKey);
+    const ratio = (value - fhb.exemptBelow) / (fhb.concThreshold - fhb.exemptBelow);
+    return Math.round(full * ratio);
+  }
+  if (stateKey === 'TAS' && value <= 750000) {
+    return Math.round(calcDuty(value, stateKey) * 0.5);
+  }
+  if (stateKey === 'ACT' && value <= 1000000) return 0;
+  return calcDuty(value, stateKey);
+}
+
+let selectedState = 'NSW';
+let buyerType = 'first';
+let propType = 'established';
+let compareBuyer = 'first';
+
+function selectState(st, el) {
+  selectedState = st;
+  document.getElementById('stateSelect').value = st;
+  document.querySelectorAll('.st-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+function updateStateButtons() {
+  selectedState = document.getElementById('stateSelect').value;
+  document.querySelectorAll('.st-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === selectedState);
+  });
+}
+function selectBuyer(t, el) {
+  buyerType = t;
+  el.closest('.prop-toggle').querySelectorAll('.pt-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+function selectPropType(t, el) {
+  propType = t;
+  el.closest('.prop-toggle').querySelectorAll('.pt-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+function selectCompareBuyer(t, el) {
+  compareBuyer = t;
+  el.closest('.prop-toggle').querySelectorAll('.pt-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderComparison();
+}
+
+function fmt(n) { return '$'+Math.round(n).toLocaleString('en-AU'); }
+function fmtShort(n) { return n>=1000 ? '$'+(n/1000).toFixed(1)+'K' : '$'+n; }
+
+function calculateStampDuty() {
+  const val = parseFloat(document.getElementById('propValue').value) || 750000;
+  const s = SD[selectedState];
+  let duty;
+  if (buyerType === 'first') duty = calcFHBDuty(val, selectedState);
+  else duty = calcDuty(val, selectedState);
+
+  const effRate = ((duty / val) * 100).toFixed(2) + '%';
+  const total = val + duty + 3500;
+
+  document.getElementById('rc-state-lbl').textContent = selectedState + ' — ' + (buyerType === 'first' ? 'First Home Buyer' : buyerType === 'owner' ? 'Owner Occupier' : 'Investor');
+  document.getElementById('rc-duty').textContent = fmt(duty);
+  document.getElementById('rc-sub-lbl').textContent = 'on a ' + fmt(val) + ' ' + propType + ' property';
+  document.getElementById('rc-eff-rate').textContent = effRate;
+  document.getElementById('rc-marg-rate').textContent = s.marginalRateAt750 || '—';
+  document.getElementById('rc-total').textContent = fmt(total);
+
+  let concSaving = 0;
+  if (buyerType === 'first') {
+    const ownerDuty = calcDuty(val, selectedState);
+    concSaving = ownerDuty - duty;
+  }
+  document.getElementById('rc-concession').textContent = concSaving > 0 ? fmt(concSaving)+' saved' : '—';
+
+  document.getElementById('resultCard').classList.add('show');
+
+  // Concession banner
+  const conCard = document.getElementById('concessionCard');
+  if (buyerType === 'first' && s.fhb.note) {
+    conCard.classList.add('show');
+    document.getElementById('concession-sub').textContent = s.fhb.note;
+    document.getElementById('concession-saving').innerHTML = concSaving > 0 ? fmt(concSaving)+' <span>concession saving</span>' : 'Check eligibility with your state';
+  } else conCard.classList.remove('show');
+
+  // Donut
+  const totalCard = document.getElementById('totalCard');
+  totalCard.classList.add('show');
+  const circum = 2 * Math.PI * 36;
+  const dutyFrac = duty / total;
+  const propFrac = val / total;
+  const dutyDash = (dutyFrac * circum).toFixed(1);
+  const propDash = (propFrac * circum).toFixed(1);
+  const dutyOffset = (circum * 0.25).toFixed(1); // start at top
+  const propOffset = (circum * 0.25 - dutyFrac * circum).toFixed(1);
+  document.getElementById('dutyArc').setAttribute('stroke-dasharray', dutyDash+' '+(circum - dutyDash));
+  document.getElementById('dutyArc').setAttribute('stroke-dashoffset', dutyOffset);
+  document.getElementById('propArc').setAttribute('stroke-dasharray', propDash+' '+(circum - propDash));
+  document.getElementById('propArc').setAttribute('stroke-dashoffset', propOffset);
+  document.getElementById('donutPct').textContent = (dutyFrac * 100).toFixed(1)+'%';
+  document.getElementById('dl-prop').textContent = fmt(val);
+  document.getElementById('dl-duty').textContent = fmt(duty);
+
+  // Breakdown
+  renderBreakdown(val, selectedState);
+  document.getElementById('breakdownCard').classList.add('show');
+}
+
+function renderBreakdown(val, stateKey) {
+  const s = SD[stateKey];
+  const brackets = s.owner;
+  let html = '';
+  let cumDuty = 0;
+  for (let b of brackets) {
+    if (val <= b.min) break;
+    const taxable = Math.min(val, b.max) - b.min;
+    if (taxable <= 0) continue;
+    const tax = Math.round(b.base + taxable * b.rate / 100 - cumDuty);
+    const rangeEnd = b.max === Infinity ? '+' : '$'+b.max.toLocaleString('en-AU');
+    html += `<div class="bd-row">
+      <div class="bd-range">$${b.min.toLocaleString('en-AU')} – ${rangeEnd}</div>
+      <div class="bd-rate">${b.rate}%</div>
+      <div class="bd-tax">${fmt(b.base + taxable * b.rate / 100)}</div>
+    </div>`;
+    cumDuty = b.base + taxable * b.rate / 100;
+    if (val <= b.max) break;
+  }
+  document.getElementById('breakdownRows').innerHTML = html;
+}
+
+function renderComparison() {
+  const val = parseFloat(document.getElementById('compareValue').value) || 750000;
+  const states = ['NSW','VIC','QLD','WA','SA','TAS','ACT','NT'];
+  const colors = ['#7C2D12','#002868','#D97706','#0F766E','#7C3AED','#BE185D','#0369A1','#B45309'];
+  const duties = states.map((st,i) => ({
+    st, name: st,
+    duty: compareBuyer === 'first' ? calcFHBDuty(val, st) : calcDuty(val, st),
+    color: colors[i]
+  }));
+  const max = Math.max(...duties.map(d => d.duty));
+  let html = '';
+  duties.sort((a,b) => a.duty - b.duty);
+  duties.forEach(d => {
+    const pct = max > 0 ? Math.round((d.duty / max) * 100) : 0;
+    html += `<div class="bar-row">
+      <div class="bar-state">${d.st}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${d.color}">${pct > 30 ? fmtShort(d.duty) : ''}</div></div>
+      <div class="bar-amt">${fmtShort(d.duty)}</div>
+    </div>`;
+  });
+  document.getElementById('comparisonBars').innerHTML = html;
+
+  // Effective rate bars
+  let rateHtml = '';
+  const dutiesForRate = states.map((st,i) => ({
+    st, rate: (compareBuyer === 'first' ? calcFHBDuty(val, st) : calcDuty(val, st)) / val * 100, color: colors[i]
+  }));
+  const maxRate = Math.max(...dutiesForRate.map(d => d.rate));
+  dutiesForRate.sort((a,b) => a.rate - b.rate).forEach(d => {
+    const pct = maxRate > 0 ? Math.round((d.rate / maxRate) * 100) : 0;
+    rateHtml += `<div class="bar-row">
+      <div class="bar-state">${d.st}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${d.color}">${pct > 30 ? d.rate.toFixed(2)+'%' : ''}</div></div>
+      <div class="bar-amt">${d.rate.toFixed(2)}%</div>
+    </div>`;
+  });
+  document.getElementById('rateComparisonBars').innerHTML = rateHtml;
+}
+
+function renderRateTables() {
+  const states = Object.keys(SD);
+  let html = '';
+  states.forEach(st => {
+    const s = SD[st];
+    html += `<div class="chart-card" style="margin-bottom:12px;">
+      <div class="chart-title">${st} — ${s.name}</div>`;
+    s.owner.forEach(b => {
+      const end = b.max === Infinity ? 'Above' : '$'+b.max.toLocaleString('en-AU');
+      html += `<div class="bd-row">
+        <div class="bd-range">$${b.min.toLocaleString('en-AU')} – ${end}</div>
+        <div class="bd-rate">${b.rate}%</div>
+      </div>`;
+    });
+    if (s.fhb.note) html += `<div style="font-size:10px;color:#1D4ED8;margin-top:8px;padding-top:6px;border-top:1px solid rgba(124,45,18,0.07);">🏡 FHB: ${s.fhb.note}</div>`;
+    html += `</div>`;
+  });
+  document.getElementById('rateTableContainer').innerHTML = html;
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['calculator','compare','rates'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === name ? 'block' : 'none';
+  });
+  if (name === 'compare') renderComparison();
+  if (name === 'rates') renderRateTables();
+}
+
+function saveCalc() {
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+// Init
+calculateStampDuty();
+</script>
+</body>
+</html>

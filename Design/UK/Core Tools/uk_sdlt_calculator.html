@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDLT Calculator – UK Mortgage Tools</title>
+<style>
+/* ── RESET & BASE ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+
+/* ── HEADER ── */
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#C8102E 33%,#fff 33% 66%,#012169 66%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.hdr-title span{color:#FFD700;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#90EE90;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+
+/* ── CONTENT ── */
+.content{padding:16px 16px 110px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#1a1a5e;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* ── BUYER TYPE TABS ── */
+.buyer-tabs{display:flex;gap:0;border-radius:14px;overflow:hidden;border:1.5px solid rgba(26,26,94,0.15);margin-bottom:14px;}
+.bt{flex:1;padding:11px 6px;text-align:center;cursor:pointer;background:#fff;transition:all .15s;border-right:1px solid rgba(26,26,94,0.10);}
+.bt:last-child{border-right:none;}
+.bt.active{background:linear-gradient(135deg,#0D0D2B,#1a1a5e);color:#fff;}
+.bt-title{font-size:11px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.bt.active .bt-title{color:#FFD700;}
+.bt-sub{font-size:8.5px;color:#5C5C8A;margin-top:2px;}
+.bt.active .bt-sub{color:rgba(255,255,255,0.60);}
+
+/* ── FORM CARD ── */
+.form-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 4px 20px rgba(13,13,43,0.09);border:1px solid rgba(26,26,94,0.07);margin-bottom:14px;}
+.field{margin-bottom:14px;}
+.field label{font-size:10px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px;}
+.field input,.field select{width:100%;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.14);border-radius:12px;padding:12px 14px;font-size:14px;font-weight:700;color:#0D0D2B;font-family:'Helvetica Neue',Arial,sans-serif;outline:none;appearance:none;-webkit-appearance:none;}
+.field input:focus,.field select:focus{border-color:#4F46E5;box-shadow:0 0 0 3px rgba(79,70,229,0.10);}
+.sel-wrap{position:relative;}
+.sel-wrap::after{content:'▼';position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:10px;color:#5C5C8A;pointer-events:none;}
+.input-hint{font-size:9.5px;color:#5C5C8A;margin-top:4px;line-height:1.4;}
+.calc-btn{width:100%;background:#C8102E;border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(200,16,46,0.38);margin-top:4px;font-family:Georgia,serif;letter-spacing:.2px;}
+.calc-btn:active{transform:scale(.98);}
+
+/* ── RESULT HERO ── */
+.result-hero{background:linear-gradient(148deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:20px;box-shadow:0 10px 36px rgba(13,13,43,0.24);margin-bottom:14px;position:relative;overflow:hidden;}
+.result-hero::before{content:'🏛️';position:absolute;right:12px;bottom:8px;font-size:60px;opacity:.07;}
+.rh-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;}
+.rh-amount{font-size:30px;font-weight:800;color:#FFD700;margin:6px 0 14px;font-family:Georgia,serif;line-height:1;}
+.rh-amount small{font-size:14px;color:rgba(255,255,255,0.45);font-family:'Helvetica Neue',Arial,sans-serif;}
+.rh-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rh-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:10px 12px;}
+.rh-box label{font-size:8px;color:rgba(255,255,255,0.40);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;}
+.rh-box .v{font-size:14px;font-weight:800;color:#fff;}
+.rh-box .v.red{color:#FF8A9A;}.rh-box .v.grn{color:#90EE90;}.rh-box .v.gold{color:#FFD700;}
+.rh-divider{border:none;border-top:1px solid rgba(255,255,255,0.10);margin:12px 0;}
+.rh-bottom{display:flex;justify-content:space-between;align-items:flex-end;}
+.rh-bl label{font-size:9px;color:rgba(255,255,255,0.40);text-transform:uppercase;letter-spacing:.4px;}
+.rh-bl .v{font-size:16px;font-weight:800;color:#fff;margin-top:2px;}
+.rh-badge{padding:6px 12px;border-radius:20px;font-size:10px;font-weight:800;}
+
+/* ── DONUT CHART ── */
+.chart-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.07);margin-bottom:14px;}
+.cc-title{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.cc-title span{font-size:10px;font-weight:600;color:#4F46E5;}
+.donut-wrap{display:flex;align-items:center;gap:16px;}
+.legend{flex:1;display:flex;flex-direction:column;gap:9px;}
+.leg-row{display:flex;align-items:center;gap:8px;}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.leg-lbl{font-size:10px;font-weight:700;color:#0D0D2B;}
+.leg-val{font-size:10px;font-weight:800;color:#1a1a5e;margin-left:auto;font-family:Georgia,serif;}
+
+/* ── BAND BREAKDOWN TABLE ── */
+.band-table{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.07);margin-bottom:14px;}
+.bt-hdr{background:linear-gradient(135deg,#0D0D2B,#1a1a5e);padding:12px 16px;display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;}
+.bt-hcell{font-size:9px;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:.4px;}
+.bt-row{padding:11px 16px;display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;border-bottom:1px solid rgba(26,26,94,0.06);}
+.bt-row:last-child{border-bottom:none;}
+.bt-row:nth-child(even){background:rgba(79,70,229,0.03);}
+.bt-cell{font-size:10.5px;font-weight:600;color:#0D0D2B;}
+.bt-cell.rate{font-weight:800;color:#C8102E;}
+.bt-cell.tax{font-weight:800;color:#4F46E5;}
+.bt-cell.hi{background:rgba(200,16,46,0.08);border-radius:6px;padding:2px 5px;font-size:10px;}
+
+/* ── VISUAL BAR CHART ── */
+.bar-chart{display:flex;flex-direction:column;gap:9px;margin-bottom:14px;}
+.bar-row{display:flex;align-items:center;gap:8px;}
+.bar-label{font-size:10px;font-weight:700;color:#0D0D2B;width:76px;flex-shrink:0;line-height:1.2;}
+.bar-track{flex:1;height:26px;background:#EEF2FF;border-radius:7px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:7px;display:flex;align-items:center;padding-left:8px;font-size:9.5px;font-weight:800;color:#fff;transition:width .6s ease;}
+.bar-amt{font-size:10px;font-weight:800;color:#1a1a5e;width:52px;text-align:right;flex-shrink:0;font-family:Georgia,serif;}
+
+/* ── REGION NOTES ── */
+.region-card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 3px 14px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.07);margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.rc-icon{width:40px;height:40px;border-radius:11px;background:#F5F5F8;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.rc-name{font-size:12.5px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.rc-sub{font-size:10px;color:#5C5C8A;margin-top:2px;}
+.rc-chev{font-size:16px;color:rgba(13,13,43,0.18);margin-left:auto;}
+
+/* ── SAVE BUTTON ── */
+.save-btn{width:100%;background:linear-gradient(135deg,#047857,#065F46);border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(4,120,87,0.32);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;font-family:Georgia,serif;}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#047857;color:#fff;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(4,120,87,0.35);z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+/* ── INFO BANNER ── */
+.info-banner{background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #A5B4FC;border-radius:14px;padding:13px 15px;display:flex;align-items:flex-start;gap:11px;margin-bottom:14px;}
+.ib-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+.ib-title{font-size:12px;font-weight:800;color:#1e1b4b;font-family:Georgia,serif;}
+.ib-sub{font-size:9.5px;color:#4338ca;margin-top:3px;line-height:1.4;}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.10);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .35s ease both .04s;}.fu2{animation:fadeUp .35s ease both .10s;}
+.fu3{animation:fadeUp .35s ease both .16s;}.fu4{animation:fadeUp .35s ease both .22s;}
+.fu5{animation:fadeUp .35s ease both .28s;}.fu6{animation:fadeUp .35s ease both .34s;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ SDLT Calculation Saved!</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap">
+      <span class="hdr-flag">🏛️</span>
+      <div class="hdr-title">Stamp Duty <span>SDLT</span></div>
+      <div class="hdr-sub">England & N.Ireland · Land Transaction Tax · LBTT</div>
+    </div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">FTB Relief</div><div class="rs-val gold">£425K</div><div class="rs-note">0% threshold</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Standard</div><div class="rs-val">£250K</div><div class="rs-note">0% band</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">2nd Home</div><div class="rs-val red">+3%</div><div class="rs-note">Surcharge</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Top Rate</div><div class="rs-val red">12%</div><div class="rs-note">&gt; £1.5M</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- BUYER TYPE -->
+  <div class="sec-lbl fu1" style="margin-top:0">Buyer Type <span class="more">HMRC Rates →</span></div>
+  <div class="buyer-tabs fu1">
+    <div class="bt active" id="bt-ftb" onclick="setBuyer('ftb')">
+      <div class="bt-title">First-Time</div>
+      <div class="bt-sub">FTB relief</div>
+    </div>
+    <div class="bt" id="bt-std" onclick="setBuyer('std')">
+      <div class="bt-title">Standard</div>
+      <div class="bt-sub">Main home</div>
+    </div>
+    <div class="bt" id="bt-2nd" onclick="setBuyer('2nd')">
+      <div class="bt-title">2nd Home</div>
+      <div class="bt-sub">+3% surcharge</div>
+    </div>
+    <div class="bt" id="bt-btl" onclick="setBuyer('btl')">
+      <div class="bt-title">Buy-to-Let</div>
+      <div class="bt-sub">+3% surcharge</div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-card fu1">
+    <div class="field">
+      <label>Property Purchase Price (£)</label>
+      <input type="number" id="propPrice" value="380000" min="0" step="5000" oninput="calcSDLT()"/>
+      <div class="input-hint">UK average house price: £285,000 (Feb 2025, HM Land Registry)</div>
+    </div>
+
+    <div class="field">
+      <label>Region</label>
+      <div class="sel-wrap">
+        <select id="regionSel" onchange="calcSDLT()">
+          <option value="england">England (SDLT)</option>
+          <option value="scotland">Scotland (LBTT)</option>
+          <option value="wales">Wales (LTT)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Property Type</label>
+      <div class="sel-wrap">
+        <select id="propType" onchange="calcSDLT()">
+          <option value="residential">Residential</option>
+          <option value="commercial">Commercial / Mixed</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calcSDLT()">👑 Calculate Stamp Duty</button>
+  </div>
+
+  <!-- RESULT HERO -->
+  <div class="sec-lbl fu2">Your SDLT Result <span class="more">Breakdown ↓</span></div>
+  <div class="result-hero fu2">
+    <div class="rh-tag">Stamp Duty Land Tax — England</div>
+    <div class="rh-amount" id="rhAmount">£8,500 <small>total SDLT</small></div>
+    <div class="rh-grid">
+      <div class="rh-box"><label>Effective Rate</label><div class="v gold" id="rhEff">2.24%</div></div>
+      <div class="rh-box"><label>Buyer Type</label><div class="v" id="rhBuyer">First-Time Buyer</div></div>
+      <div class="rh-box"><label>Property Value</label><div class="v" id="rhProp">£380,000</div></div>
+      <div class="rh-box"><label>SDLT Saving vs Std</label><div class="v grn" id="rhSaving">£2,500</div></div>
+    </div>
+    <hr class="rh-divider"/>
+    <div class="rh-bottom">
+      <div class="rh-bl"><label>Total Cost (Price + SDLT)</label><div class="v" id="rhTotal">£388,500</div></div>
+      <div class="rh-badge" id="rhStatusBadge" style="background:rgba(144,238,144,0.15);color:#90EE90;">✓ FTB Relief</div>
+    </div>
+  </div>
+
+  <!-- DONUT CHART -->
+  <div class="chart-card fu3">
+    <div class="cc-title">Cost Distribution <span>Visual Split</span></div>
+    <div class="donut-wrap">
+      <svg viewBox="0 0 120 120" width="120" height="120" style="flex-shrink:0;">
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#EEF2FF" stroke-width="20"/>
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#C8102E" stroke-width="20"
+          stroke-dasharray="14 250" stroke-dashoffset="0" stroke-linecap="butt"
+          transform="rotate(-90 60 60)" id="sdltArc"/>
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#1a1a5e" stroke-width="20"
+          stroke-dasharray="250 14" stroke-dashoffset="-14" stroke-linecap="butt"
+          transform="rotate(-90 60 60)" id="priceArc"/>
+        <text x="60" y="56" text-anchor="middle" font-size="11" font-weight="800" fill="#0D0D2B" font-family="Georgia,serif" id="piePct">2.2%</text>
+        <text x="60" y="68" text-anchor="middle" font-size="7.5" fill="#5C5C8A" font-family="Arial,sans-serif">of price</text>
+      </svg>
+      <div class="legend">
+        <div class="leg-row"><div class="leg-dot" style="background:#1a1a5e"></div><div class="leg-lbl">Property Price</div><div class="leg-val" id="lgPrice">£380,000</div></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#C8102E"></div><div class="leg-lbl">SDLT Due</div><div class="leg-val" id="lgSDLT">£8,500</div></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#4F46E5"></div><div class="leg-lbl">Total Outlay</div><div class="leg-val" id="lgTotal">£388,500</div></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#047857"></div><div class="leg-lbl">FTB Saving</div><div class="leg-val" id="lgSaving">£2,500</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAND BREAKDOWN -->
+  <div class="sec-lbl fu3">Band-by-Band Breakdown <span class="more">HMRC</span></div>
+  <div class="band-table fu4">
+    <div class="bt-hdr">
+      <div class="bt-hcell">Band</div>
+      <div class="bt-hcell">Rate</div>
+      <div class="bt-hcell">Taxable</div>
+      <div class="bt-hcell">Tax</div>
+    </div>
+    <div id="bandRows"><!-- JS --></div>
+  </div>
+
+  <!-- VISUAL COMPARISON BAR -->
+  <div class="chart-card fu4">
+    <div class="cc-title">Buyer Type Comparison <span>Same £380K Property</span></div>
+    <div class="bar-chart" id="compareChart"><!-- JS --></div>
+  </div>
+
+  <!-- SAVE -->
+  <button class="save-btn fu5" onclick="saveCalc()">💾 Save This Calculation</button>
+
+  <!-- REGIONAL NOTES -->
+  <div class="sec-lbl fu5">Other UK Regions <span class="more">Compare</span></div>
+  <div class="region-card fu5">
+    <div class="rc-icon">🏴󠁧󠁢󠁳󠁣󠁴󠁿</div>
+    <div>
+      <div class="rc-name">Scotland — LBTT</div>
+      <div class="rc-sub">Land & Buildings Transaction Tax · Different bands · No FTB relief above £175K</div>
+    </div>
+    <div class="rc-chev">›</div>
+  </div>
+  <div class="region-card fu5">
+    <div class="rc-icon">🏴󠁧󠁢󠁷󠁬󠁳󠁿</div>
+    <div>
+      <div class="rc-name">Wales — LTT</div>
+      <div class="rc-sub">Land Transaction Tax · 0% up to £225K · Higher bands differ from England</div>
+    </div>
+    <div class="rc-chev">›</div>
+  </div>
+
+  <!-- INFO NOTICE -->
+  <div class="info-banner fu6">
+    <div class="ib-icon">⚠️</div>
+    <div>
+      <div class="ib-title">Important Notice</div>
+      <div class="ib-sub">Rates reflect HMRC SDLT thresholds effective from 1 April 2025 (temporary FTB threshold reverted to £300K). Verify with HMRC or a solicitor before completion. Figures are estimates only.</div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">👑</div><div class="ni-lb">UK</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+/* ─── SDLT LOGIC (England, from 1 April 2025) ───
+   Standard bands:
+   £0–£250K      → 0%
+   £250K–£925K   → 5%
+   £925K–£1.5M   → 10%
+   > £1.5M       → 12%
+
+   FTB (post-Apr 2025 reversion):
+   £0–£300K      → 0%   (FTB threshold reverted from £425K to £300K on 31 Mar 2025)
+   £300K–£500K   → 5%
+   > £500K       → standard rates apply (no FTB relief)
+
+   2nd home / BTL: standard bands + 3% surcharge on entire price
+*/
+
+let buyerType = 'ftb';
+
+const BANDS_STD = [
+  {from:0,      to:250000,  rate:0},
+  {from:250000, to:925000,  rate:5},
+  {from:925000, to:1500000, rate:10},
+  {from:1500000,to:Infinity,rate:12},
+];
+const BANDS_FTB = [
+  {from:0,      to:300000,  rate:0},
+  {from:300000, to:500000,  rate:5},
+  {from:500000, to:925000,  rate:5},   // reverts to standard above £500K
+  {from:925000, to:1500000, rate:10},
+  {from:1500000,to:Infinity,rate:12},
+];
+// Scotland LBTT (residential, from Apr 2024)
+const BANDS_LBTT = [
+  {from:0,      to:145000,  rate:0},
+  {from:145000, to:250000,  rate:2},
+  {from:250000, to:325000,  rate:5},
+  {from:325000, to:750000,  rate:10},
+  {from:750000, to:Infinity,rate:12},
+];
+// Wales LTT (from Oct 2022)
+const BANDS_LTT = [
+  {from:0,      to:225000,  rate:0},
+  {from:225000, to:400000,  rate:6},
+  {from:400000, to:750000,  rate:7.5},
+  {from:750000, to:1500000, rate:10},
+  {from:1500000,to:Infinity,rate:12},
+];
+
+function setBuyer(t) {
+  buyerType = t;
+  ['ftb','std','2nd','btl'].forEach(k => document.getElementById('bt-'+k).classList.toggle('active', k===t));
+  calcSDLT();
+}
+
+function computeSDLT(price, bands, surcharge=0) {
+  let total = 0;
+  const rows = [];
+  for (const b of bands) {
+    if (price <= b.from) break;
+    const taxable = Math.min(price, b.to) - b.from;
+    const tax = Math.round(taxable * (b.rate + surcharge) / 100);
+    rows.push({ band: fmtBand(b.from, b.to), rate: b.rate+surcharge, taxable, tax });
+    total += tax;
+  }
+  return { total, rows };
+}
+
+function fmtBand(from, to) {
+  const f = from === 0 ? '£0' : '£'+fmt(from);
+  const t = to === Infinity ? '+' : '–£'+fmt(to);
+  return f + t;
+}
+
+function fmt(n) {
+  return n >= 1000000 ? (n/1000000).toFixed(2)+'M' : n.toLocaleString('en-GB');
+}
+function fmtP(n) {
+  if(n >= 1000000) return '£'+(n/1000000).toFixed(3)+'M';
+  return '£'+n.toLocaleString('en-GB');
+}
+
+function calcSDLT() {
+  const price  = parseFloat(document.getElementById('propPrice').value) || 380000;
+  const region = document.getElementById('regionSel').value;
+
+  let bands, surcharge = 0, regionLabel = 'England (SDLT)', taxName = 'SDLT';
+  if (region === 'scotland') { bands = BANDS_LBTT; regionLabel = 'Scotland (LBTT)'; taxName = 'LBTT'; }
+  else if (region === 'wales') { bands = BANDS_LTT; regionLabel = 'Wales (LTT)'; taxName = 'LTT'; }
+  else {
+    if (buyerType === 'ftb' && price <= 500000) bands = BANDS_FTB;
+    else bands = BANDS_STD;
+    if (buyerType === '2nd' || buyerType === 'btl') surcharge = 3;
+  }
+
+  const { total: sdlt, rows } = computeSDLT(price, bands, surcharge);
+  const { total: stdSDLT } = computeSDLT(price, BANDS_STD, 0);
+  const saving = Math.max(0, stdSDLT - sdlt);
+  const effRate = price > 0 ? (sdlt / price * 100).toFixed(2) : '0.00';
+  const totalCost = price + sdlt;
+
+  // Label
+  const buyerLabels = { ftb:'First-Time Buyer', std:'Standard Buyer', '2nd':'2nd Home (+3%)', btl:'Buy-to-Let (+3%)' };
+  document.getElementById('rhAmount').innerHTML = fmtP(sdlt)+' <small>total '+taxName+'</small>';
+  document.getElementById('rhEff').textContent   = effRate+'%';
+  document.getElementById('rhBuyer').textContent = buyerLabels[buyerType] || 'Standard';
+  document.getElementById('rhProp').textContent  = fmtP(price);
+  document.getElementById('rhSaving').textContent = saving > 0 ? fmtP(saving)+' saved' : '—';
+  document.getElementById('rhTotal').textContent  = fmtP(totalCost);
+  document.querySelector('.rh-tag').textContent   = taxName+' — '+regionLabel;
+
+  // Badge
+  const badge = document.getElementById('rhStatusBadge');
+  if (buyerType === 'ftb' && region === 'england') {
+    badge.style.background='rgba(144,238,144,0.15)'; badge.style.color='#90EE90'; badge.textContent='✓ FTB Relief';
+  } else if (surcharge > 0) {
+    badge.style.background='rgba(255,138,154,0.15)'; badge.style.color='#FF8A9A'; badge.textContent='+3% Surcharge';
+  } else {
+    badge.style.background='rgba(255,215,0,0.12)'; badge.style.color='#FFD700'; badge.textContent='Standard Rate';
+  }
+
+  // Donut
+  const circ = 2 * Math.PI * 42;
+  const frac = Math.min(sdlt / price, 0.999);
+  document.getElementById('sdltArc').setAttribute('stroke-dasharray',(circ*frac)+' '+(circ*(1-frac)));
+  document.getElementById('priceArc').setAttribute('stroke-dasharray',(circ*(1-frac))+' '+(circ*frac));
+  document.getElementById('priceArc').setAttribute('stroke-dashoffset',-(circ*frac));
+  document.getElementById('piePct').textContent = effRate+'%';
+  document.getElementById('lgPrice').textContent = fmtP(price);
+  document.getElementById('lgSDLT').textContent  = fmtP(sdlt);
+  document.getElementById('lgTotal').textContent = fmtP(totalCost);
+  document.getElementById('lgSaving').textContent = saving > 0 ? fmtP(saving) : '—';
+
+  // Band table
+  const BAND_COLORS = ['#EEF2FF','#DBEAFE','#EDE9FE','#FEF3C7','#FEF2F2'];
+  document.getElementById('bandRows').innerHTML = rows.map((r,i) => `
+    <div class="bt-row">
+      <div class="bt-cell">${r.band}</div>
+      <div class="bt-cell rate">${r.rate}%</div>
+      <div class="bt-cell">${r.taxable > 0 ? fmtP(r.taxable) : '—'}</div>
+      <div class="bt-cell tax">${r.tax > 0 ? fmtP(r.tax) : '£0'}</div>
+    </div>`).join('');
+
+  // Comparison bar chart
+  const scenarios = [
+    { label:'First-Time Buyer', sdlt: (() => { const b = price<=500000?BANDS_FTB:BANDS_STD; return computeSDLT(price,b,0).total; })(), color:'#047857' },
+    { label:'Standard Buyer',   sdlt: computeSDLT(price,BANDS_STD,0).total, color:'#1a1a5e' },
+    { label:'2nd Home / BTL',   sdlt: computeSDLT(price,BANDS_STD,3).total, color:'#C8102E' },
+  ];
+  const maxSDLT = Math.max(...scenarios.map(s=>s.sdlt), 1);
+  document.getElementById('compareChart').innerHTML = scenarios.map(s => `
+    <div class="bar-row">
+      <div class="bar-label">${s.label}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(s.sdlt/maxSDLT*100).toFixed(1)}%;background:${s.color};">
+          ${s.sdlt > 0 ? '' : '£0'}
+        </div>
+      </div>
+      <div class="bar-amt">${fmtP(s.sdlt)}</div>
+    </div>`).join('');
+
+  window._sdltCalc = { price, sdlt, effRate, buyerType, region: regionLabel, totalCost, saving };
+}
+
+function saveCalc() {
+  const saved = JSON.parse(localStorage.getItem('sdltSaved')||'[]');
+  saved.unshift({ ...window._sdltCalc, date: new Date().toLocaleDateString('en-GB') });
+  localStorage.setItem('sdltSaved', JSON.stringify(saved.slice(0,20)));
+  const t = document.getElementById('toast');
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+calcSDLT();
+</script>
+</body>
+</html>

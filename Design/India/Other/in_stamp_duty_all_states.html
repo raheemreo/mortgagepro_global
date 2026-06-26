@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stamp Duty by State – MortgagePro India</title>
+<style>
+/* ═══════════════════════════════
+   TOKENS  —  Saffron · Ashoka · Deep Emerald
+═══════════════════════════════ */
+:root{
+  --saffron:  #FF6B00;
+  --saffron2: #E05A00;
+  --ochre:    #F5A623;
+  --ochre-lt: #FFDEA0;
+  --navy:     #0B1F48;
+  --chakra:   #1A3A8F;
+  --green:    #046A38;
+  --green2:   #07543A;
+  --teal:     #0D9488;
+  --white:    #FFFFFF;
+  --bg:       #FFF8F0;
+  --card:     #FFFFFF;
+  --muted:    #7A5C3A;
+  --border:   rgba(255,107,0,0.10);
+  --sh:       0 4px 20px rgba(11,31,72,0.09);
+  --sh2:      0 10px 40px rgba(11,31,72,0.18);
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{
+  font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg); color:var(--navy);
+  max-width:420px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255,107,0,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(4,106,56,0.04) 0%, transparent 50%);
+  pointer-events:none; z-index:0;
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(158deg, #0B1F48 0%, #1A3A8F 40%, #FF6B00 82%, #E05A00 100%);
+  padding:46px 18px 0; position:relative; overflow:hidden;
+}
+.header::before{
+  content:'☸'; position:absolute; right:-10px; top:30px;
+  font-size:130px; color:rgba(255,255,255,0.06); line-height:1;
+}
+.header::after{
+  content:''; position:absolute; bottom:0; left:0; width:100%; height:3px;
+  background:linear-gradient(90deg, #FF6B00 33.3%, #FFFFFF 33.3% 66.6%, #046A38 66.6%);
+}
+.hdr-top{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px; position:relative; z-index:2;
+}
+.icon-btn{
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; color:#fff; cursor:pointer;
+}
+.hdr-center{ text-align:center; position:relative; z-index:2; }
+.hdr-flag  { font-size:28px; display:block; }
+.hdr-title { font-size:20px; font-weight:800; color:#fff; letter-spacing:-.3px; }
+.hdr-title span{ color:var(--ochre-lt); }
+.hdr-sub   { font-size:10px; color:rgba(255,255,255,0.50); margin-top:1px; font-family:'Trebuchet MS',sans-serif; }
+.rate-strip{
+  background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0; padding:11px 14px;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  position:relative; z-index:2; margin-top:4px;
+}
+.rs{ text-align:center; position:relative; }
+.rs:not(:last-child)::after{
+  content:''; position:absolute; right:0; top:15%;
+  height:70%; width:1px; background:rgba(255,255,255,0.13);
+}
+.rs-l{ font-size:8px; color:rgba(255,255,255,0.46); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif; }
+.rs-v{ font-size:15px; font-weight:800; color:#fff; line-height:1.15; }
+.rs-v.saf{ color:var(--ochre-lt); }
+.rs-v.grn{ color:#86EFAC; }
+.rs-n{ font-size:8px; color:rgba(255,255,255,0.36); margin-top:1px; font-family:'Trebuchet MS',sans-serif; }
+
+/* CONTENT */
+.content{ padding:16px 15px 112px; position:relative; z-index:1; }
+.sec{
+  font-size:10.5px; font-weight:800; color:var(--muted);
+  text-transform:uppercase; letter-spacing:1px;
+  margin:22px 0 11px; display:flex; align-items:center; justify-content:space-between;
+  font-family:'Trebuchet MS',sans-serif;
+}
+.sec .chip{
+  font-size:10px; font-weight:700; color:var(--green); background:#ECFDF5;
+  border-radius:20px; padding:3px 9px; text-transform:none; letter-spacing:0;
+}
+
+/* CALCULATOR HERO */
+.calc-hero{
+  background:linear-gradient(148deg, var(--navy), var(--chakra));
+  border-radius:22px; padding:18px;
+  position:relative; overflow:hidden; box-shadow:var(--sh2);
+  margin-bottom:4px;
+}
+.calc-hero::before{
+  content:''; position:absolute; top:-50px; right:-50px;
+  width:180px; height:180px; border-radius:50%;
+  background:rgba(255,107,0,0.16);
+}
+.calc-hero::after{
+  content:'☸'; position:absolute; right:14px; bottom:12px;
+  font-size:54px; color:rgba(255,255,255,0.06);
+}
+.ch-tag{ font-size:9px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:.8px; font-family:'Trebuchet MS',sans-serif; }
+.ch-title{ font-size:17px; font-weight:800; color:#fff; margin:4px 0 14px; line-height:1.2; }
+.ch-title span{ color:var(--ochre-lt); }
+
+/* FORM ELEMENTS */
+.field{ margin-bottom:11px; }
+.field label{ font-size:9px; color:rgba(255,255,255,0.50); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:4px; font-family:'Trebuchet MS',sans-serif; }
+.field select, .field input{
+  width:100%; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18);
+  border-radius:10px; padding:10px 12px; font-size:14px; font-weight:700;
+  color:#fff; outline:none; font-family:'Book Antiqua',Palatino,Georgia,serif;
+  appearance:none; -webkit-appearance:none;
+}
+.field select option{ background:#0B1F48; color:#fff; }
+.field input::placeholder{ color:rgba(255,255,255,0.35); }
+.field-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+.calc-btn{
+  margin-top:4px; width:100%;
+  background:linear-gradient(135deg, var(--saffron), var(--saffron2));
+  border:none; border-radius:13px; padding:13px;
+  font-size:14px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,107,0,0.42);
+  font-family:'Book Antiqua',Palatino,Georgia,serif;
+  letter-spacing:.3px; position:relative; z-index:2;
+}
+.calc-btn:active{ transform:scale(.97); }
+
+/* RESULTS PANEL */
+.result-panel{
+  background:var(--card); border-radius:18px; padding:16px;
+  box-shadow:var(--sh2); border:1px solid var(--border); margin-bottom:11px;
+  display:none;
+}
+.result-panel.show{ display:block; }
+.rp-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.rp-title{ font-size:14px; font-weight:800; color:var(--navy); }
+.save-btn{
+  background:linear-gradient(135deg, var(--green), var(--green2));
+  color:#fff; font-size:10px; font-weight:800; padding:7px 14px;
+  border-radius:9px; border:none; cursor:pointer; font-family:'Trebuchet MS',sans-serif;
+  display:flex; align-items:center; gap:4px;
+}
+.save-btn:active{ transform:scale(.96); }
+.save-btn.saved{ background:linear-gradient(135deg,#6EE7B7,#34D399); color:#065F46; }
+
+.res-grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:14px; }
+.res-box{
+  border-radius:13px; padding:11px 12px;
+  background:rgba(255,107,0,0.05); border:1px solid rgba(255,107,0,0.12);
+}
+.res-box.accent{ background:linear-gradient(135deg, rgba(255,107,0,0.12), rgba(224,90,0,0.08)); border-color:rgba(255,107,0,0.25); }
+.res-box.green{ background:linear-gradient(135deg, rgba(4,106,56,0.08), rgba(7,84,58,0.05)); border-color:rgba(4,106,56,0.20); }
+.res-box.navy{ background:linear-gradient(135deg, rgba(11,31,72,0.07), rgba(26,58,143,0.05)); border-color:rgba(11,31,72,0.15); }
+.res-lbl{ font-size:8.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif; }
+.res-val{ font-size:17px; font-weight:800; color:var(--navy); margin-top:3px; line-height:1; }
+.res-val.saf{ color:var(--saffron); }
+.res-val.grn{ color:var(--green); }
+.res-sub{ font-size:9px; color:var(--muted); margin-top:2px; font-family:'Trebuchet MS',sans-serif; }
+
+/* DONUT CHART */
+.chart-wrap{ margin:14px 0 10px; text-align:center; }
+.chart-wrap svg{ overflow:visible; }
+.chart-legend{ display:flex; justify-content:center; gap:16px; margin-top:10px; flex-wrap:wrap; }
+.cl-item{ display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; }
+.cl-dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+/* BREAKDOWN BAR */
+.breakdown{ margin-top:12px; }
+.bd-row{ display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+.bd-label{ font-size:10px; font-weight:700; color:var(--navy); width:120px; flex-shrink:0; font-family:'Trebuchet MS',sans-serif; }
+.bd-bar-wrap{ flex:1; background:rgba(11,31,72,0.06); border-radius:99px; height:8px; overflow:hidden; }
+.bd-bar{ height:100%; border-radius:99px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+.bd-amount{ font-size:10px; font-weight:800; color:var(--navy); width:72px; text-align:right; font-family:'Trebuchet MS',sans-serif; }
+
+/* STATE CARDS */
+.state-card{
+  background:var(--card); border-radius:17px; padding:14px 15px;
+  box-shadow:var(--sh); border:1px solid var(--border);
+  cursor:pointer; margin-bottom:9px; transition:transform .15s;
+  position:relative; overflow:hidden;
+}
+.state-card:active{ transform:scale(.98); }
+.state-card::before{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+  border-radius:4px 0 0 4px;
+}
+.state-card.cat-high::before{ background:var(--saffron); }
+.state-card.cat-mid::before{ background:var(--ochre); }
+.state-card.cat-low::before{ background:var(--green); }
+
+.sc-top{ display:flex; align-items:flex-start; justify-content:space-between; }
+.sc-left{ display:flex; align-items:center; gap:10px; }
+.sc-icon{ font-size:22px; }
+.sc-name{ font-size:13.5px; font-weight:800; color:var(--navy); }
+.sc-state{ font-size:9px; color:var(--muted); margin-top:1px; font-family:'Trebuchet MS',sans-serif; }
+.sc-rate{
+  background:linear-gradient(135deg, var(--saffron), var(--saffron2));
+  color:#fff; font-size:13px; font-weight:800;
+  padding:5px 11px; border-radius:9px;
+  font-family:'Trebuchet MS',sans-serif;
+}
+.sc-rate.low{ background:linear-gradient(135deg, var(--green), var(--green2)); }
+.sc-rate.mid{ background:linear-gradient(135deg, var(--ochre), #B45309); }
+
+.sc-bottom{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:11px;
+  padding-top:10px; border-top:1px solid var(--border);
+}
+.sc-b-item{ text-align:center; }
+.sc-b-lbl{ font-size:8px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-family:'Trebuchet MS',sans-serif; }
+.sc-b-val{ font-size:11px; font-weight:800; color:var(--navy); margin-top:2px; }
+
+.sc-tags{ display:flex; gap:5px; margin-top:8px; flex-wrap:wrap; }
+.tag{
+  font-size:8px; font-weight:700; padding:2px 7px; border-radius:20px;
+  font-family:'Trebuchet MS',sans-serif;
+}
+.tag-s{ background:#FFF3E0; color:#E05A00; }
+.tag-g{ background:#ECFDF5; color:#065F46; }
+.tag-b{ background:#EFF6FF; color:#1D4ED8; }
+.tag-o{ background:#FFF7ED; color:#C2410C; }
+.tag-m{ background:#F5F3FF; color:#6D28D9; }
+
+/* FILTER BAR */
+.filter-bar{ display:flex; gap:7px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; margin-bottom:12px; }
+.filter-bar::-webkit-scrollbar{ display:none; }
+.fb-chip{
+  flex-shrink:0; padding:6px 13px; border-radius:20px;
+  font-size:10px; font-weight:700; cursor:pointer;
+  background:rgba(255,107,0,0.08); color:var(--saffron);
+  border:1px solid rgba(255,107,0,0.18); font-family:'Trebuchet MS',sans-serif;
+  transition:all .15s;
+}
+.fb-chip.active{ background:var(--saffron); color:#fff; border-color:var(--saffron); }
+.fb-chip.active-g{ background:var(--green); color:#fff; border-color:var(--green); }
+
+/* SEARCH BAR */
+.search-bar{
+  display:flex; align-items:center; gap:9px;
+  background:var(--card); border-radius:13px; padding:10px 14px;
+  box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px;
+}
+.search-bar input{
+  flex:1; border:none; outline:none; font-size:13px; color:var(--navy);
+  font-family:'Book Antiqua',Palatino,Georgia,serif; background:transparent;
+}
+.search-bar input::placeholder{ color:var(--muted); font-size:12px; }
+.search-icon{ font-size:16px; }
+
+/* SUMMARY BANNER */
+.sum-banner{
+  background:linear-gradient(135deg, #ECFDF5, #D1FAE5);
+  border:1.5px solid #6EE7B7; border-radius:17px;
+  padding:13px 15px; margin-bottom:11px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+}
+.sb-item{ text-align:center; }
+.sb-lbl{ font-size:8px; color:var(--green2); text-transform:uppercase; letter-spacing:.4px; font-family:'Trebuchet MS',sans-serif; font-weight:700; }
+.sb-val{ font-size:16px; font-weight:800; color:var(--green2); margin-top:3px; }
+
+/* SAVED CALC LIST */
+.saved-section{ margin-top:4px; }
+.saved-item{
+  background:var(--card); border-radius:13px; padding:11px 13px;
+  box-shadow:var(--sh); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:7px; cursor:pointer;
+}
+.si-left{ display:flex; flex-direction:column; gap:2px; }
+.si-name{ font-size:11.5px; font-weight:800; color:var(--navy); }
+.si-meta{ font-size:9px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; }
+.si-right{ font-size:14px; font-weight:800; color:var(--saffron); }
+.si-del{ font-size:12px; margin-left:8px; cursor:pointer; }
+
+/* BOTTOM NAV */
+.bnav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:420px; background:var(--card);
+  border-top:1px solid var(--border); display:flex;
+  padding:10px 0 20px; box-shadow:0 -4px 22px rgba(11,31,72,0.09); z-index:100;
+}
+.ni{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+.ni-ic{ font-size:19px; line-height:1; }
+.ni-lb{ font-size:10px; font-weight:700; color:var(--muted); font-family:'Trebuchet MS',sans-serif; }
+.ni.active .ni-lb{ color:var(--saffron); }
+
+/* TOAST */
+.toast{
+  position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(60px);
+  background:var(--navy); color:#fff; font-size:12px; font-weight:700;
+  padding:10px 20px; border-radius:99px; z-index:200;
+  font-family:'Trebuchet MS',sans-serif;
+  box-shadow:var(--sh2); opacity:0; transition:all .3s ease;
+  white-space:nowrap;
+}
+.toast.show{ transform:translateX(-50%) translateY(0); opacity:1; }
+
+/* ANIMATIONS */
+@keyframes fadeUp{ from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+.fu1{ animation:fadeUp .38s ease both .04s; }
+.fu2{ animation:fadeUp .38s ease both .09s; }
+.fu3{ animation:fadeUp .38s ease both .14s; }
+.fu4{ animation:fadeUp .38s ease both .19s; }
+.fu5{ animation:fadeUp .38s ease both .24s; }
+.fu6{ animation:fadeUp .38s ease both .29s; }
+.fu7{ animation:fadeUp .38s ease both .34s; }
+@keyframes pop{ 0%{transform:scale(1);}50%{transform:scale(1.06);}100%{transform:scale(1);} }
+.pop{ animation:pop .3s ease; }
+
+/* SECTION DIVIDER */
+.divider{
+  height:1px; background:var(--border); margin:6px 0 16px;
+}
+
+/* EXPAND / COLLAPSE */
+.expandable{ display:none; }
+.expandable.open{ display:block; }
+.expand-toggle{
+  display:flex; align-items:center; justify-content:space-between;
+  cursor:pointer; padding-top:10px; margin-top:10px;
+  border-top:1px dashed rgba(255,107,0,0.18);
+  font-size:10px; font-weight:700; color:var(--saffron);
+  font-family:'Trebuchet MS',sans-serif;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════  HEADER  ══════ -->
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏛️</div>
+      <div class="hdr-title">Stamp Duty <span>by State</span></div>
+      <div class="hdr-sub">All 28 States + 8 UTs · 2025 Rates · Registration Charges</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">Lowest</div>
+      <div class="rs-v grn">2%</div>
+      <div class="rs-n">HP / Mizoram</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Highest</div>
+      <div class="rs-v saf">7%</div>
+      <div class="rs-n">Tamil Nadu</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Avg Reg.</div>
+      <div class="rs-v">1%</div>
+      <div class="rs-n">National</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">States</div>
+      <div class="rs-v">36</div>
+      <div class="rs-n">Incl. UTs</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════  CONTENT  ══════ -->
+<div class="content">
+
+  <!-- STAMP DUTY CALCULATOR -->
+  <div class="sec fu1" style="margin-top:0">Stamp Duty Calculator <span class="chip">Instant Result</span></div>
+  <div class="calc-hero fu1">
+    <div class="ch-tag">भारत · Stamp Duty & Registration Charges</div>
+    <div class="ch-title">Calculate <span>Total Cost</span> of Property Registration</div>
+
+    <div class="field">
+      <label>Select State / UT</label>
+      <select id="stateSelect" onchange="onStateChange()">
+        <option value="">— Choose State —</option>
+        <option value="MH">Maharashtra</option>
+        <option value="DL">Delhi</option>
+        <option value="KA">Karnataka</option>
+        <option value="TN">Tamil Nadu</option>
+        <option value="TS">Telangana</option>
+        <option value="UP">Uttar Pradesh</option>
+        <option value="GJ">Gujarat</option>
+        <option value="RJ">Rajasthan</option>
+        <option value="WB">West Bengal</option>
+        <option value="HR">Haryana</option>
+        <option value="PB">Punjab</option>
+        <option value="MP">Madhya Pradesh</option>
+        <option value="BR">Bihar</option>
+        <option value="OR">Odisha</option>
+        <option value="KL">Kerala</option>
+        <option value="AP">Andhra Pradesh</option>
+        <option value="HP">Himachal Pradesh</option>
+        <option value="UA">Uttarakhand</option>
+        <option value="AS">Assam</option>
+        <option value="JH">Jharkhand</option>
+        <option value="CG">Chhattisgarh</option>
+        <option value="GA">Goa</option>
+        <option value="MZ">Mizoram</option>
+        <option value="NL">Nagaland</option>
+        <option value="MN">Manipur</option>
+        <option value="TR">Tripura</option>
+        <option value="SK">Sikkim</option>
+        <option value="AR">Arunachal Pradesh</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Gender of Buyer</label>
+      <select id="genderSelect" onchange="onGenderChange()">
+        <option value="male">Male</option>
+        <option value="female">Female (Concession may apply)</option>
+        <option value="joint">Joint (Male + Female)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Property Value (₹)</label>
+      <input type="number" id="propValue" placeholder="e.g. 7500000" inputmode="numeric" oninput="onValueInput(this)">
+    </div>
+    <div class="field-row">
+      <div class="field" style="margin-bottom:0">
+        <label>Property Type</label>
+        <select id="propType">
+          <option value="residential">Residential</option>
+          <option value="commercial">Commercial</option>
+          <option value="agricultural">Agricultural</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Construction Status</label>
+        <select id="constrStatus">
+          <option value="ready">Ready Possession</option>
+          <option value="under">Under Construction</option>
+        </select>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🏛️ Calculate Stamp Duty & Charges</button>
+  </div>
+
+  <!-- RESULTS PANEL -->
+  <div class="result-panel fu2" id="resultPanel">
+    <div class="rp-head">
+      <div class="rp-title" id="resultTitle">Result</div>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()">💾 Save</button>
+    </div>
+
+    <!-- Summary Boxes -->
+    <div class="res-grid">
+      <div class="res-box accent">
+        <div class="res-lbl">Stamp Duty</div>
+        <div class="res-val saf" id="r_stamp">—</div>
+        <div class="res-sub" id="r_stamp_pct">—</div>
+      </div>
+      <div class="res-box navy">
+        <div class="res-lbl">Registration Fee</div>
+        <div class="res-val" id="r_reg">—</div>
+        <div class="res-sub" id="r_reg_pct">—</div>
+      </div>
+      <div class="res-box green">
+        <div class="res-lbl">Other Charges</div>
+        <div class="res-val grn" id="r_other">—</div>
+        <div class="res-sub" id="r_other_desc">—</div>
+      </div>
+      <div class="res-box accent" style="background:linear-gradient(135deg,rgba(11,31,72,0.10),rgba(26,58,143,0.07));border-color:rgba(11,31,72,0.22)">
+        <div class="res-lbl">Total Cost</div>
+        <div class="res-val" id="r_total" style="color:var(--navy)">—</div>
+        <div class="res-sub">All-in charges</div>
+      </div>
+    </div>
+
+    <!-- Donut Chart -->
+    <div class="chart-wrap">
+      <svg id="donutChart" width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="70" fill="none" stroke="rgba(11,31,72,0.07)" stroke-width="22"/>
+        <circle id="donutStamp" cx="90" cy="90" r="70" fill="none" stroke="#FF6B00" stroke-width="22"
+          stroke-dasharray="440" stroke-dashoffset="440" stroke-linecap="round"
+          transform="rotate(-90 90 90)" style="transition:stroke-dashoffset .8s ease"/>
+        <circle id="donutReg" cx="90" cy="90" r="70" fill="none" stroke="#0B1F48" stroke-width="22"
+          stroke-dasharray="440" stroke-dashoffset="440" stroke-linecap="round"
+          transform="rotate(-90 90 90)" style="transition:stroke-dashoffset .8s ease .1s"/>
+        <circle id="donutOther" cx="90" cy="90" r="70" fill="none" stroke="#046A38" stroke-width="22"
+          stroke-dasharray="440" stroke-dashoffset="440" stroke-linecap="round"
+          transform="rotate(-90 90 90)" style="transition:stroke-dashoffset .8s ease .2s"/>
+        <text x="90" y="84" text-anchor="middle" font-size="12" fill="#7A5C3A" font-family="Trebuchet MS,sans-serif" font-weight="700">Total Cost</text>
+        <text id="donutCenter" x="90" y="102" text-anchor="middle" font-size="15" fill="#0B1F48" font-family="Book Antiqua,serif" font-weight="800">—</text>
+      </svg>
+      <div class="chart-legend">
+        <div class="cl-item"><div class="cl-dot" style="background:#FF6B00"></div>Stamp Duty</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#0B1F48"></div>Registration</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#046A38"></div>Other Charges</div>
+      </div>
+    </div>
+
+    <!-- Breakdown Bars -->
+    <div class="breakdown">
+      <div class="bd-row">
+        <div class="bd-label">Stamp Duty</div>
+        <div class="bd-bar-wrap"><div class="bd-bar" id="bar_stamp" style="background:linear-gradient(90deg,#FF6B00,#E05A00);width:0%"></div></div>
+        <div class="bd-amount" id="bamt_stamp">—</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-label">Registration Fee</div>
+        <div class="bd-bar-wrap"><div class="bd-bar" id="bar_reg" style="background:linear-gradient(90deg,#0B1F48,#1A3A8F);width:0%"></div></div>
+        <div class="bd-amount" id="bamt_reg">—</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-label">Other Charges</div>
+        <div class="bd-bar-wrap"><div class="bd-bar" id="bar_other" style="background:linear-gradient(90deg,#046A38,#07543A);width:0%"></div></div>
+        <div class="bd-amount" id="bamt_other">—</div>
+      </div>
+      <div class="bd-row" style="border-top:2px solid var(--border);padding-top:8px;margin-top:4px">
+        <div class="bd-label" style="font-size:11px;font-weight:800;color:var(--saffron)">Total</div>
+        <div class="bd-bar-wrap"><div class="bd-bar" style="background:linear-gradient(90deg,#F5A623,#FF6B00);width:100%"></div></div>
+        <div class="bd-amount" id="bamt_total" style="color:var(--saffron);font-size:11px">—</div>
+      </div>
+    </div>
+
+    <!-- State Specific Notes -->
+    <div id="stateNotes" style="margin-top:12px;background:rgba(255,107,0,0.05);border:1px solid rgba(255,107,0,0.15);border-radius:12px;padding:11px 13px;">
+      <div style="font-size:11px;font-weight:800;color:var(--navy);margin-bottom:5px;">📋 State-Specific Notes</div>
+      <div id="stateNotesText" style="font-size:10px;color:var(--muted);line-height:1.6;font-family:'Trebuchet MS',sans-serif;"></div>
+    </div>
+  </div>
+
+  <!-- SAVED CALCULATIONS -->
+  <div id="savedSection" style="display:none">
+    <div class="sec fu3">Saved Calculations <span class="chip">My Records</span></div>
+    <div id="savedList" class="saved-section fu3"></div>
+  </div>
+
+  <!-- SUMMARY STATS -->
+  <div class="sec fu3">India Stamp Duty Overview <span class="chip">2025</span></div>
+  <div class="sum-banner fu3">
+    <div class="sb-item">
+      <div class="sb-lbl">Avg Stamp Duty</div>
+      <div class="sb-val">5.2%</div>
+    </div>
+    <div class="sb-item">
+      <div class="sb-lbl">Avg Reg. Fee</div>
+      <div class="sb-val">1.0%</div>
+    </div>
+    <div class="sb-item">
+      <div class="sb-lbl">States w/ Concession</div>
+      <div class="sb-val">14</div>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar fu4">
+    <div class="fb-chip active" onclick="filterStates('all',this)">All States</div>
+    <div class="fb-chip" onclick="filterStates('low',this)" style="color:var(--green);border-color:rgba(4,106,56,0.25);background:rgba(4,106,56,0.07)">Low Duty</div>
+    <div class="fb-chip" onclick="filterStates('high',this)">High Duty</div>
+    <div class="fb-chip" onclick="filterStates('concession',this)" style="color:#1D4ED8;border-color:rgba(29,78,216,0.25);background:rgba(29,78,216,0.06)">Women Concession</div>
+    <div class="fb-chip" onclick="filterStates('metro',this)">Metro Surcharge</div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-bar fu4">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="stateSearch" placeholder="Search state or city…" oninput="searchStates(this.value)">
+  </div>
+
+  <!-- ALL STATE CARDS -->
+  <div id="stateCards" class="fu5"></div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni" onclick="goHome()"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  REAL STATE DATA — 2025 Rates (India)
+// ══════════════════════════════════════════════
+const STATES = [
+  { code:'MH', icon:'🌆', name:'Maharashtra', capital:'Mumbai', category:'high',
+    male:6, female:5, joint:5.5, reg:1, metro:1,
+    other:'Local Body Tax 1% (MCGM area)', notes:'Metro cess 1% applies in Mumbai, Pune, Nagpur, Thane. Women get 1% concession. Maximum stamp duty capped at ₹30,000 for agreements. Registration fee 1% of property value (max ₹30,000 for agreements). Surcharge in Mumbai: LBT 1%.', concession:true, metroSurcharge:true,
+    tags:['tag-s','Metro Surcharge','tag-g','Women -1%','tag-b','PSU Banks'] },
+  { code:'DL', icon:'🏙️', name:'Delhi', capital:'New Delhi', category:'mid',
+    male:6, female:4, joint:5, reg:1, metro:0,
+    other:'—', notes:'Women buyers get 2% concession on stamp duty (4% vs 6%). Registration fee is 1% of agreement value. No metro surcharge. Property in DDA colonies may have additional charges. NDMC area properties have the same rates.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 4%','tag-b','Men 6%'] },
+  { code:'KA', icon:'💻', name:'Karnataka', capital:'Bengaluru', category:'mid',
+    male:5, female:5, joint:5, reg:1, metro:0,
+    other:'BBMP Cess up to 0.5%', notes:'Stamp duty is 5% for both male and female. Registration charge 1%. Additional BBMP cess up to 0.5% for Bengaluru properties. Property valued below ₹20 lakh has concessional duty of 2%. Agricultural land has different rates.', concession:false, metroSurcharge:false,
+    tags:['tag-o','Flat 5%','tag-b','BBMP +0.5%'] },
+  { code:'TN', icon:'🌊', name:'Tamil Nadu', capital:'Chennai', category:'high',
+    male:7, female:7, joint:7, reg:4, metro:0,
+    other:'Transfer duty 0.5%', notes:'Highest combined rate in India: 7% stamp duty + 4% registration = 11% total. No gender concession. Transfer duty of 0.5% additional. Gift deed: 7%. Properties in Chennai Corporation area attract additional local charges.', concession:false, metroSurcharge:false,
+    tags:['tag-s','Highest 11%','tag-o','No Concession'] },
+  { code:'TS', icon:'🏗️', name:'Telangana', capital:'Hyderabad', category:'low',
+    male:4, female:4, joint:4, reg:0.5, metro:0,
+    other:'Transfer duty 1.5%', notes:'Stamp duty 4% + Registration 0.5% + Transfer duty 1.5% = 6% total. No gender concession. Gift deeds also 4%. Properties in GHMC area may have additional local body taxes. Sub-registrar offices provide e-registration facility.', concession:false, metroSurcharge:false,
+    tags:['tag-g','Low 4%','tag-b','6% Total'] },
+  { code:'UP', icon:'🕌', name:'Uttar Pradesh', capital:'Lucknow', category:'high',
+    male:7, female:6, joint:6.5, reg:1, metro:0,
+    other:'Municipal tax varies', notes:'7% for male, 6% for female buyers. Registration 1%. Additional municipal surcharge in Lucknow, Agra, Kanpur, Varanasi urban areas. Gift deeds attract 2% stamp duty (max ₹5,000 for near relatives).', concession:true, metroSurcharge:false,
+    tags:['tag-s','7% Male','tag-g','Women 6%'] },
+  { code:'GJ', icon:'🏭', name:'Gujarat', capital:'Ahmedabad', category:'mid',
+    male:4.9, female:3.9, joint:4.4, reg:1, metro:0,
+    other:'Revenue surcharge 1%', notes:'Stamp duty 4.9% (male) / 3.9% (female) + 1% surcharge = effective ~5.9% / 4.9%. Registration fee 1%. Urban areas in Ahmedabad, Surat, Vadodara attract same rates. E-registration available via SRO online portal.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 3.9%','tag-o','+1% Surcharge'] },
+  { code:'RJ', icon:'🏰', name:'Rajasthan', capital:'Jaipur', category:'high',
+    male:6, female:5, joint:5.5, reg:1, metro:0,
+    other:'Surcharge 10% of duty', notes:'6% (male), 5% (female), plus 10% surcharge on stamp duty amount. Registration 1%. Agricultural land: 5%. In Jaipur Municipal Corporation area, additional urban improvement trust charges may apply.', concession:true, metroSurcharge:false,
+    tags:['tag-s','6% + Surcharge','tag-g','Women 5%'] },
+  { code:'WB', icon:'🎶', name:'West Bengal', capital:'Kolkata', category:'high',
+    male:7, female:7, joint:7, reg:1, metro:1,
+    other:'Local body tax 1% (KMC)', notes:'7% stamp duty + 1% registration + 1% KMC (Kolkata Municipal Corporation) cess = 9% total in Kolkata. No gender concession. Same rate across urban and semi-urban areas. Agricultural land: 5%.', concession:false, metroSurcharge:true,
+    tags:['tag-s','9% in Kolkata','tag-o','KMC +1%'] },
+  { code:'HR', icon:'🌾', name:'Haryana', capital:'Chandigarh', category:'high',
+    male:7, female:5, joint:6, reg:0, metro:0,
+    other:'Registry fee ₹100-₹15,000', notes:'7% (male), 5% (female). No separate registration percentage — fixed registry fee from ₹100 to ₹15,000 based on value slab. Properties in Gurgaon, Faridabad, Panchkula: same duty. Urban areas: additional Haryana Urban Development Authority charges may apply.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 5%','tag-b','Fixed Reg Fee'] },
+  { code:'PB', icon:'🌻', name:'Punjab', capital:'Chandigarh', category:'mid',
+    male:5, female:3, joint:4, reg:1, metro:0,
+    other:'—', notes:'5% (male), 3% (female) — highest concession in India. Registration 1%. Properties in Chandigarh (UT): separate rates. Agricultural land: 5%. Gift to blood relative: 3% (male) / 1% (female).', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 3% ⭐','tag-s','Best Concession'] },
+  { code:'MP', icon:'🌿', name:'Madhya Pradesh', capital:'Bhopal', category:'high',
+    male:7.5, female:7.5, joint:7.5, reg:3, metro:0,
+    other:'Jantri surcharge', notes:'7.5% stamp duty + 3% registration = 10.5% total — among the highest. No gender concession. Jantri (circle rate) surcharge applies. Properties in Bhopal, Indore, Jabalpur urban areas same rates. Gift deed: 5%.', concession:false, metroSurcharge:false,
+    tags:['tag-s','10.5% Total','tag-o','No Concession'] },
+  { code:'BR', icon:'🏛️', name:'Bihar', capital:'Patna', category:'high',
+    male:6, female:5.7, joint:5.8, reg:2, metro:0,
+    other:'—', notes:'6% stamp duty (male), 5.7% (female). Registration 2%. Total: 8% for male. Properties in Patna Municipal Corporation area same rates. Gift deed: 1.8%. Agricultural land: 5.7%.', concession:true, metroSurcharge:false,
+    tags:['tag-s','8% Total (Male)','tag-g','Women 7.7%'] },
+  { code:'OR', icon:'🌴', name:'Odisha', capital:'Bhubaneswar', category:'mid',
+    male:5, female:4, joint:4.5, reg:2, metro:0,
+    other:'—', notes:'5% (male) + 2% registration = 7% total. Female buyers get 1% concession on stamp duty. Agricultural land: 3%. Gift deed to relative: 2%. Properties in BMC (Bhubaneswar) area have same rates.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 4%','tag-b','Reg 2%'] },
+  { code:'KL', icon:'🌊', name:'Kerala', capital:'Thiruvananthapuram', category:'mid',
+    male:8, female:8, joint:8, reg:2, metro:0,
+    other:'—', notes:'8% stamp duty for all (no gender concession) + 2% registration = 10% total. The highest in south India after Tamil Nadu total. Agricultural land: 8%. Gift deed: 2% (between relatives). Patta transfer fee separate.', concession:false, metroSurcharge:false,
+    tags:['tag-s','10% Total','tag-o','No Concession'] },
+  { code:'AP', icon:'🌾', name:'Andhra Pradesh', capital:'Vijayawada', category:'mid',
+    male:5, female:5, joint:5, reg:1, metro:0,
+    other:'Transfer duty 1.5%', notes:'5% stamp duty + 1% registration + 1.5% transfer duty = 7.5% total. No gender concession. Properties in Vijayawada, Visakhapatnam, Tirupati same rates. Gift deed to close family: 2%.', concession:false, metroSurcharge:false,
+    tags:['tag-o','7.5% Total','tag-b','Transfer duty 1.5%'] },
+  { code:'HP', icon:'🏔️', name:'Himachal Pradesh', capital:'Shimla', category:'low',
+    male:6, female:4, joint:5, reg:2, metro:0,
+    other:'—', notes:'6% (male), 4% (female). Registration 2%. Among the lowest effective rates for women. Agricultural land: 8%. Properties in tribal areas may have different rates. Gift deed to near relatives: 2%.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 4%','tag-b','Reg 2%'] },
+  { code:'UA', icon:'🏔️', name:'Uttarakhand', capital:'Dehradun', category:'mid',
+    male:5, female:3.75, joint:4.5, reg:2, metro:0,
+    other:'—', notes:'5% (male), 3.75% (female). Registration 2%. Tourist/hill station properties same rate. Agricultural land: 5%. Gift deed: 2%. Properties in Dehradun Municipal Corporation area same.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 3.75%','tag-b','Hill State'] },
+  { code:'AS', icon:'🌿', name:'Assam', capital:'Guwahati', category:'mid',
+    male:6, female:5, joint:5.5, reg:1, metro:0,
+    other:'—', notes:'6% (male), 5% (female). Registration 1%. Properties in GMC (Guwahati) area same. Tea garden land: separate rates. Agricultural land: 6%. Gift deed: 3%.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 5%','tag-o','NE State'] },
+  { code:'JH', icon:'⛏️', name:'Jharkhand', capital:'Ranchi', category:'mid',
+    male:4, female:4, joint:4, reg:3, metro:0,
+    other:'—', notes:'4% stamp duty + 3% registration = 7% total. No gender concession. Properties in Ranchi, Dhanbad, Jamshedpur urban areas. Agricultural land: 4%. Tribal land transactions have separate regulations.', concession:false, metroSurcharge:false,
+    tags:['tag-o','7% Total','tag-b','No Concession'] },
+  { code:'CG', icon:'🌾', name:'Chhattisgarh', capital:'Raipur', category:'low',
+    male:5, female:4, joint:4.5, reg:4, metro:0,
+    other:'—', notes:'5% (male), 4% (female). Registration 4% (high). Total: 9% for male. Properties in Raipur, Bilaspur urban areas. Agricultural land: 3%. Gift deed: 4%.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 4%','tag-s','High Reg 4%'] },
+  { code:'GA', icon:'🌴', name:'Goa', capital:'Panaji', category:'low',
+    male:3.5, female:2.5, joint:3, reg:0.5, metro:0,
+    other:'—', notes:'Lowest combined rate in India. 3.5% (male), 2.5% (female). Registration 0.5%. Total for female: 3%. No metro surcharge. Tourist properties same rate. Gift deed: 2%. Inheritance: 0.5%.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Lowest Rates ⭐','tag-b','Women 2.5%'] },
+  { code:'MZ', icon:'🌿', name:'Mizoram', capital:'Aizawl', category:'low',
+    male:2, female:2, joint:2, reg:1, metro:0,
+    other:'—', notes:'Lowest stamp duty in India at 2% for all buyers. No gender concession. Registration 1%. Total: 3% only. Village community land has different regulations. NE special provisions apply.', concession:false, metroSurcharge:false,
+    tags:['tag-g','Lowest 2% ⭐','tag-b','NE State'] },
+  { code:'NL', icon:'🌿', name:'Nagaland', capital:'Kohima', category:'low',
+    male:3, female:3, joint:3, reg:1, metro:0,
+    other:'—', notes:'3% stamp duty + 1% registration = 4% total. No gender concession. Tribal land governed by customary law and may not require stamp duty. Special NE provisions.', concession:false, metroSurcharge:false,
+    tags:['tag-g','Low 4% Total','tag-b','NE State'] },
+  { code:'MN', icon:'🌿', name:'Manipur', capital:'Imphal', category:'low',
+    male:7, female:6, joint:6.5, reg:1, metro:0,
+    other:'—', notes:'7% (male), 6% (female). Registration 1%. Though duty rates are mid-high, overall transactions lower. Tribal hill areas: customary law applies. No metro surcharge.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 6%','tag-b','NE State'] },
+  { code:'TR', icon:'🌿', name:'Tripura', capital:'Agartala', category:'mid',
+    male:5, female:4, joint:4.5, reg:1, metro:0,
+    other:'—', notes:'5% (male), 4% (female). Registration 1%. Agricultural land: 5%. Gift deed: 2%. Tribal land has special regulations under TTAADC.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 4%','tag-b','NE State'] },
+  { code:'SK', icon:'🏔️', name:'Sikkim', capital:'Gangtok', category:'low',
+    male:4, female:3, joint:3.5, reg:0.5, metro:0,
+    other:'—', notes:'4% (male), 3% (female). Registration 0.5%. Very low total cost. Non-Sikkimese cannot own land; restrictions on property purchase for outsiders under special law.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Low 3.5%','tag-s','Restricted Buyers'] },
+  { code:'AR', icon:'🏔️', name:'Arunachal Pradesh', capital:'Itanagar', category:'low',
+    male:6, female:5, joint:5.5, reg:1, metro:0,
+    other:'—', notes:'6% (male), 5% (female). Registration 1%. Only Arunachali tribal people can own land under Inner Line Permit system. Non-tribal residents require special permission.', concession:true, metroSurcharge:false,
+    tags:['tag-g','Women 5%','tag-s','ILP Required'] },
+];
+
+let savedCalcs = JSON.parse(localStorage.getItem('stampDutySaved') || '[]');
+let currentCalc = null;
+let activeFilter = 'all';
+
+function fmt(n){
+  if(n>=10000000) return '₹'+(n/10000000).toFixed(2)+' Cr';
+  if(n>=100000) return '₹'+(n/100000).toFixed(2)+' L';
+  return '₹'+Math.round(n).toLocaleString('en-IN');
+}
+function fmtPct(n){ return n.toFixed(2)+'%'; }
+
+function onStateChange(){ /* live update placeholder */ }
+function onGenderChange(){ /* live update placeholder */ }
+function onValueInput(el){
+  const v = parseFloat(el.value);
+  if(v > 0) el.style.borderColor = 'rgba(4,106,56,0.50)';
+  else el.style.borderColor = 'rgba(255,255,255,0.18)';
+}
+
+function calculate(){
+  const stateCode = document.getElementById('stateSelect').value;
+  const gender    = document.getElementById('genderSelect').value;
+  const propVal   = parseFloat(document.getElementById('propValue').value);
+
+  if(!stateCode){ showToast('⚠️ Please select a state'); return; }
+  if(!propVal || propVal <= 0){ showToast('⚠️ Enter a valid property value'); return; }
+
+  const state = STATES.find(s => s.code === stateCode);
+  const dutyPct = gender==='male' ? state.male : gender==='female' ? state.female : state.joint;
+  const regPct  = state.reg;
+  const metroAdd = state.metroSurcharge ? state.metro : 0;
+
+  const stampAmt = propVal * (dutyPct/100);
+  const regAmt   = propVal * (regPct/100);
+  const metroAmt = propVal * (metroAdd/100);
+  const totalAmt = stampAmt + regAmt + metroAmt;
+
+  // Update result panel
+  document.getElementById('resultTitle').textContent = state.name + ' — Stamp Duty Result';
+  document.getElementById('r_stamp').textContent  = fmt(stampAmt);
+  document.getElementById('r_stamp_pct').textContent = fmtPct(dutyPct) + ' of property value';
+  document.getElementById('r_reg').textContent    = fmt(regAmt);
+  document.getElementById('r_reg_pct').textContent = fmtPct(regPct) + ' registration';
+  document.getElementById('r_other').textContent  = metroAmt > 0 ? fmt(metroAmt) : (state.other !== '—' ? 'See notes' : '₹0');
+  document.getElementById('r_other_desc').textContent = metroAmt>0 ? 'Metro/local cess' : state.other;
+  document.getElementById('r_total').textContent  = fmt(totalAmt);
+
+  // Donut chart update
+  const circ = 2 * Math.PI * 70; // ≈ 440
+  const stampFrac = stampAmt/totalAmt, regFrac = regAmt/totalAmt, otherFrac = (totalAmt-stampAmt-regAmt)/totalAmt;
+  const stampDash = circ * stampFrac, regDash = circ * regFrac, otherDash = circ * otherFrac;
+  const stampOffset = 0, regOffset = -(stampDash), otherOffset = -(stampDash+regDash);
+
+  function setArc(id, dash, offset){
+    const el = document.getElementById(id);
+    const fullCirc = 440;
+    el.setAttribute('stroke-dasharray', dash.toFixed(1)+' '+(fullCirc-dash).toFixed(1));
+    el.setAttribute('stroke-dashoffset', offset.toFixed(1));
+  }
+  // Reset first
+  document.getElementById('donutStamp').setAttribute('stroke-dasharray','0 440');
+  document.getElementById('donutReg').setAttribute('stroke-dasharray','0 440');
+  document.getElementById('donutOther').setAttribute('stroke-dasharray','0 440');
+  setTimeout(()=>{
+    setArc('donutStamp', circ*stampFrac, 0);
+    setArc('donutReg', circ*regFrac, -(circ*stampFrac));
+    setArc('donutOther', circ*otherFrac, -(circ*(stampFrac+regFrac)));
+  }, 50);
+  document.getElementById('donutCenter').textContent = fmt(totalAmt).replace('₹','₹');
+
+  // Bars
+  document.getElementById('bar_stamp').style.width = (stampAmt/totalAmt*100).toFixed(1)+'%';
+  document.getElementById('bar_reg').style.width   = (regAmt/totalAmt*100).toFixed(1)+'%';
+  document.getElementById('bar_other').style.width = ((totalAmt-stampAmt-regAmt)/totalAmt*100).toFixed(1)+'%';
+  document.getElementById('bamt_stamp').textContent = fmt(stampAmt);
+  document.getElementById('bamt_reg').textContent   = fmt(regAmt);
+  document.getElementById('bamt_other').textContent = fmt(totalAmt-stampAmt-regAmt);
+  document.getElementById('bamt_total').textContent = fmt(totalAmt);
+
+  // State notes
+  document.getElementById('stateNotesText').textContent = state.notes;
+
+  // Store current
+  currentCalc = { state:state.name, gender, propVal, dutyPct, regPct, stampAmt, regAmt, totalAmt, date: new Date().toLocaleDateString('en-IN') };
+
+  const panel = document.getElementById('resultPanel');
+  panel.classList.add('show');
+  panel.classList.add('pop');
+  setTimeout(()=> panel.classList.remove('pop'), 300);
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function saveCalc(){
+  if(!currentCalc){ showToast('⚠️ Calculate first'); return; }
+  savedCalcs.unshift(currentCalc);
+  if(savedCalcs.length > 10) savedCalcs.pop();
+  try{ localStorage.setItem('stampDutySaved', JSON.stringify(savedCalcs)); }catch(e){}
+  renderSaved();
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '✅ Saved!';
+  btn.classList.add('saved');
+  setTimeout(()=>{ btn.textContent='💾 Save'; btn.classList.remove('saved'); }, 2000);
+  showToast('✅ Calculation saved!');
+}
+
+function renderSaved(){
+  const sec  = document.getElementById('savedSection');
+  const list = document.getElementById('savedList');
+  if(!savedCalcs.length){ sec.style.display='none'; return; }
+  sec.style.display='block';
+  list.innerHTML = savedCalcs.map((c,i)=>`
+    <div class="saved-item fu3">
+      <div class="si-left">
+        <div class="si-name">${c.state} — ${c.gender}</div>
+        <div class="si-meta">${fmt(c.propVal)} · ${c.date}</div>
+      </div>
+      <div style="display:flex;align-items:center">
+        <div class="si-right">${fmt(c.totalAmt)}</div>
+        <div class="si-del" onclick="delSaved(${i})" title="Delete">🗑️</div>
+      </div>
+    </div>`).join('');
+}
+
+function delSaved(i){
+  savedCalcs.splice(i,1);
+  try{ localStorage.setItem('stampDutySaved', JSON.stringify(savedCalcs)); }catch(e){}
+  renderSaved();
+  showToast('🗑️ Deleted');
+}
+
+// ══ STATE CARDS ══
+function renderStateCards(list){
+  const container = document.getElementById('stateCards');
+  container.innerHTML = list.map(s=>{
+    const catClass = s.male <= 3.5 ? 'cat-low' : s.male <= 5.5 ? 'cat-mid' : 'cat-high';
+    const rateClass = s.male <= 3.5 ? 'low' : s.male <= 5.5 ? 'mid' : '';
+    const totalMale = (s.male+s.reg+s.metro).toFixed(1);
+    const totalFemale = (s.female+s.reg+s.metro).toFixed(1);
+    const tagsHTML = s.tags.reduce((acc,t,i)=>{
+      if(i%2===0) return acc + `<span class="tag ${t}">`;
+      return acc + t + `</span> `;
+    },'');
+    return `
+    <div class="state-card ${catClass}" onclick="selectAndCalc('${s.code}')">
+      <div class="sc-top">
+        <div class="sc-left">
+          <span class="sc-icon">${s.icon}</span>
+          <div>
+            <div class="sc-name">${s.name}</div>
+            <div class="sc-state">${s.capital}</div>
+          </div>
+        </div>
+        <div class="sc-rate ${rateClass}">${s.male}%</div>
+      </div>
+      <div class="sc-bottom">
+        <div class="sc-b-item">
+          <div class="sc-b-lbl">Male</div>
+          <div class="sc-b-val">${s.male}%</div>
+        </div>
+        <div class="sc-b-item">
+          <div class="sc-b-lbl">Female</div>
+          <div class="sc-b-val">${s.female}%</div>
+        </div>
+        <div class="sc-b-item">
+          <div class="sc-b-lbl">Reg Fee</div>
+          <div class="sc-b-val">${s.reg}%</div>
+        </div>
+      </div>
+      <div class="sc-tags">${tagsHTML}</div>
+      <div class="expand-toggle" onclick="event.stopPropagation();toggleNote(this)">
+        📋 State Notes <span>▼</span>
+      </div>
+      <div class="expandable">
+        <p style="font-size:10px;color:var(--muted);line-height:1.6;font-family:'Trebuchet MS',sans-serif;margin-top:8px">${s.notes}</p>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleNote(el){
+  const exp = el.nextElementSibling;
+  exp.classList.toggle('open');
+  el.querySelector('span').textContent = exp.classList.contains('open') ? '▲' : '▼';
+}
+
+function selectAndCalc(code){
+  document.getElementById('stateSelect').value = code;
+  document.getElementById('propValue').scrollIntoView({behavior:'smooth'});
+  document.getElementById('propValue').focus();
+}
+
+function filterStates(type, el){
+  activeFilter = type;
+  document.querySelectorAll('.fb-chip').forEach(c=>c.classList.remove('active','active-g'));
+  el.classList.add(type==='low'?'active-g':'active');
+  let filtered = STATES;
+  if(type==='low') filtered = STATES.filter(s=>s.male<=4);
+  if(type==='high') filtered = STATES.filter(s=>s.male>=6.5);
+  if(type==='concession') filtered = STATES.filter(s=>s.concession);
+  if(type==='metro') filtered = STATES.filter(s=>s.metroSurcharge);
+  renderStateCards(filtered);
+}
+
+function searchStates(q){
+  const filtered = STATES.filter(s=>
+    s.name.toLowerCase().includes(q.toLowerCase()) ||
+    s.capital.toLowerCase().includes(q.toLowerCase()) ||
+    s.code.toLowerCase().includes(q.toLowerCase())
+  );
+  renderStateCards(filtered);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2500);
+}
+
+function goHome(){ /* navigate home */ }
+
+// Init
+renderStateCards(STATES);
+renderSaved();
+</script>
+</body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UK Mortgage Calculator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F5F5F8;color:#0D0D2B;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0D0D2B 0%,#1a1a5e 55%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.header::after{content:'🏠';position:absolute;right:12px;top:42px;font-size:72px;opacity:0.07;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#90EE90;}.rs-val.gold{color:#FFD700;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#1a1a5e;text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* CALC CARD */
+.calc-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 8px 32px rgba(13,13,43,0.10);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.cc-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.cc-icon{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#0D0D2B,#1a1a5e);display:flex;align-items:center;justify-content:center;font-size:19px;}
+.cc-title{font-size:15px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.cc-sub{font-size:10px;color:#5C5C8A;margin-top:1px;}
+.field{margin-bottom:12px;}
+.field label{font-size:10px;font-weight:700;color:#5C5C8A;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+.field input,.field select{width:100%;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700;color:#0D0D2B;font-family:'Helvetica Neue',Arial,sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+.field input:focus{border-color:#1a1a5e;box-shadow:0 0 0 3px rgba(26,26,94,0.08);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.radio-group{display:flex;gap:8px;margin-top:2px;}
+.radio-btn{flex:1;background:#F5F5F8;border:1.5px solid rgba(26,26,94,0.12);border-radius:10px;padding:9px 6px;text-align:center;font-size:12px;font-weight:700;color:#5C5C8A;cursor:pointer;transition:all .2s;}
+.radio-btn.active{background:#0D0D2B;border-color:#0D0D2B;color:#fff;}
+.calc-btn{width:100%;background:linear-gradient(135deg,#C8102E,#8B0A1E);border:none;border-radius:12px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(200,16,46,0.35);margin-top:4px;transition:transform .1s,box-shadow .1s;}
+.calc-btn:active{transform:scale(0.98);}
+
+/* RESULT CARD */
+.result-card{background:linear-gradient(148deg,#0D0D2B,#1a1a5e);border-radius:20px;padding:18px;box-shadow:0 8px 32px rgba(13,13,43,0.28);position:relative;overflow:hidden;margin-bottom:12px;}
+.result-card::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(200,16,46,0.12);}
+.rc-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.rc-lbl{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px;}
+.rc-big{font-size:40px;font-weight:800;color:#FFD700;font-family:Georgia,serif;line-height:1;}
+.rc-sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;}
+.save-btn{background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:10px;padding:8px 13px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.rg-item{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 12px;}
+.rg-lbl{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+.rg-val{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rg-val.gold{color:#FFD700;}.rg-val.grn{color:#90EE90;}.rg-val.red{color:#FF8A9A;}
+
+/* AFFORDABILITY GAUGE */
+.gauge-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.gauge-title{font-size:12px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:12px;}
+.track-wrap{position:relative;height:14px;background:linear-gradient(90deg,#C8102E 0%,#D97706 33%,#1a1a5e 66%,#15803D 100%);border-radius:20px;margin-bottom:6px;}
+.track-marker{position:absolute;top:-5px;width:24px;height:24px;background:#fff;border:3px solid #0D0D2B;border-radius:50%;transform:translateX(-50%);transition:left .6s cubic-bezier(.34,1.56,.64,1);}
+.track-labels{display:flex;justify-content:space-between;font-size:9px;font-weight:700;color:#5C5C8A;}
+.gauge-badge-wrap{text-align:center;margin-top:10px;}
+.gauge-badge{display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:800;}
+.gb-high{background:#FEE2E2;color:#991B1B;}
+.gb-med{background:#FEF3C7;color:#92400E;}
+.gb-low{background:#D1FAE5;color:#15803D;}
+
+/* PIE CHART */
+.pie-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.pie-title{font-size:12px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:14px;}
+.pie-wrap{display:flex;align-items:center;gap:16px;}
+.pie-legend{flex:1;display:flex;flex-direction:column;gap:8px;}
+.pl-item{display:flex;align-items:center;gap:8px;}
+.pl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.pl-name{font-size:10.5px;color:#5C5C8A;flex:1;}
+.pl-val{font-size:11px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+
+/* AMORT PREVIEW */
+.amort-card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 3px 14px rgba(13,13,43,0.08);border:1px solid rgba(26,26,94,0.08);margin-bottom:12px;}
+.amort-title{font-size:12px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;margin-bottom:12px;}
+.amort-bars{display:flex;align-items:flex-end;gap:3px;height:60px;}
+.ab-col{flex:1;display:flex;flex-direction:column;gap:0;align-items:center;}
+.ab-interest{border-radius:3px 3px 0 0;}
+.ab-principal{border-radius:0;}
+.ab-yr{font-size:7px;color:#5C5C8A;margin-top:3px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0D0D2B;color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;white-space:nowrap;opacity:0;transition:opacity .25s,transform .25s;z-index:200;pointer-events:none;border:1px solid rgba(255,255,255,0.1);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* SAVED */
+.saved-list{display:flex;flex-direction:column;gap:8px;}
+.saved-item{background:#fff;border-radius:14px;padding:13px 14px;box-shadow:0 3px 14px rgba(13,13,43,0.07);border:1px solid rgba(26,26,94,0.08);cursor:pointer;}
+.si-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.si-name{font-size:13px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;}
+.si-date{font-size:9px;color:#5C5C8A;}
+.si-metrics{display:flex;gap:10px;flex-wrap:wrap;}
+.si-m{font-size:10px;color:#5C5C8A;}
+.si-m strong{font-weight:800;color:#0D0D2B;}
+.si-del{background:none;border:none;font-size:14px;cursor:pointer;opacity:0.4;padding:2px 4px;}
+.empty-state{text-align:center;padding:32px 20px;color:#5C5C8A;}
+.empty-state .ei{font-size:36px;margin-bottom:8px;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,26,94,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(13,13,43,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#5C5C8A;}
+.ni.active .ni-lb{color:#1a1a5e;font-weight:800;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.calc-card{animation:fadeUp .3s ease both .05s;}
+.result-card{animation:fadeUp .3s ease both .12s;}
+.gauge-card{animation:fadeUp .3s ease both .17s;}
+.pie-card{animation:fadeUp .3s ease both .22s;}
+.amort-card{animation:fadeUp .3s ease both .27s;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn" onclick="history.back()">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🏠</span><div class="hdr-title">Mortgage Calculator</div><div class="hdr-sub">Repayment · Interest Only · GBP</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">2-Yr Fixed</div><div class="rs-val red">4.75%</div><div class="rs-note">Jun 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">5-Yr Fixed</div><div class="rs-val">4.35%</div><div class="rs-note">Best buy</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">BoE Base</div><div class="rs-val gold">4.25%</div><div class="rs-note">May 2025</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Tracker</div><div class="rs-val grn">4.50%</div><div class="rs-note">Base+0.25</div></div>
+  </div>
+</div>
+
+<div id="mainView" class="content">
+  <div class="sec-lbl" style="margin-top:0">Mortgage Details</div>
+  <div class="calc-card">
+    <div class="cc-hdr">
+      <div class="cc-icon">🏠</div>
+      <div><div class="cc-title">UK Mortgage Calculator</div><div class="cc-sub">Repayment or Interest-Only · 2025 rates</div></div>
+    </div>
+    <div class="field"><label>Repayment Type</label>
+      <div class="radio-group">
+        <div class="radio-btn active" id="rt-rep" onclick="setType('repayment')">Repayment</div>
+        <div class="radio-btn" id="rt-io" onclick="setType('interest')">Interest Only</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Property Value (£)</label><input type="number" id="propVal" value="380000" oninput="calculate()"></div>
+      <div class="field"><label>Deposit (£)</label><input type="number" id="deposit" value="57000" oninput="calculate()"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Interest Rate (%)</label><input type="number" id="rate" value="4.75" step="0.05" oninput="calculate()"></div>
+      <div class="field"><label>Term (Years)</label><input type="number" id="term" value="25" min="5" max="40" oninput="calculate()"></div>
+    </div>
+    <div class="field"><label>Mortgage Type</label>
+      <select id="mtype" onchange="calculate()">
+        <option value="residential">Residential</option>
+        <option value="btl">Buy-to-Let</option>
+        <option value="remortgage">Remortgage</option>
+      </select>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🏠 Calculate Mortgage</button>
+  </div>
+
+  <div class="result-card">
+    <div class="rc-top">
+      <div>
+        <div class="rc-lbl">Monthly Payment</div>
+        <div class="rc-big" id="monthlyPayment">£1,923</div>
+        <div class="rc-sub" id="rc-sub-text">Repayment · 4.75% · 25 yrs</div>
+      </div>
+      <button class="save-btn" onclick="saveCalc()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 13H3a1 1 0 01-1-1V3a1 1 0 011-1h7l3 3v8a1 1 0 01-1 1z"/><polyline points="9,1 9,5 4,5"/></svg>
+        Save
+      </button>
+    </div>
+    <div class="result-grid">
+      <div class="rg-item"><div class="rg-lbl">Loan Amount</div><div class="rg-val gold" id="loanAmt">£323,000</div></div>
+      <div class="rg-item"><div class="rg-lbl">Total Repaid</div><div class="rg-val" id="totalRepaid">£576,900</div></div>
+      <div class="rg-item"><div class="rg-lbl">Total Interest</div><div class="rg-val red" id="totalInterest">£253,900</div></div>
+      <div class="rg-item"><div class="rg-lbl">LTV Ratio</div><div class="rg-val" id="ltvRatio">85.0%</div></div>
+    </div>
+  </div>
+
+  <!-- AFFORDABILITY GAUGE -->
+  <div class="gauge-card">
+    <div class="gauge-title">Payment-to-Income Stress Test</div>
+    <div class="track-wrap"><div class="track-marker" id="gaugeMarker" style="left:60%"></div></div>
+    <div class="track-labels"><span>Affordable</span><span>Moderate</span><span>Stretched</span><span>High Risk</span></div>
+    <div class="gauge-badge-wrap"><span class="gauge-badge" id="gaugeBadge">✓ Moderate</span></div>
+  </div>
+
+  <!-- PIE CHART -->
+  <div class="pie-card">
+    <div class="pie-title">📊 Total Cost Breakdown</div>
+    <div class="pie-wrap">
+      <div style="position:relative;flex-shrink:0;">
+        <svg id="pieSvg" width="110" height="110" viewBox="0 0 110 110"></svg>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+          <div style="font-size:14px;font-weight:800;color:#0D0D2B;font-family:Georgia,serif;" id="pieCenterPct">44%</div>
+          <div style="font-size:8.5px;color:#5C5C8A;font-weight:700;">Interest</div>
+        </div>
+      </div>
+      <div class="pie-legend" id="pieLegend"></div>
+    </div>
+  </div>
+
+  <!-- AMORTIZATION PREVIEW -->
+  <div class="amort-card">
+    <div class="amort-title">📅 Principal vs Interest Over Time</div>
+    <div class="amort-bars" id="amortBars"></div>
+    <div style="display:flex;justify-content:center;gap:16px;margin-top:10px;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#5C5C8A;"><div style="width:10px;height:10px;background:#C8102E;border-radius:2px;"></div>Interest</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#5C5C8A;"><div style="width:10px;height:10px;background:#1a1a5e;border-radius:2px;"></div>Principal</div>
+    </div>
+  </div>
+</div>
+
+<!-- SAVED VIEW -->
+<div id="savedView" class="content" style="display:none;">
+  <div class="sec-lbl" style="margin-top:0">Saved Calculations</div>
+  <div id="savedContainer"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni" onclick="history.back()"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active" id="tab-calc"><div class="ni-ic">🏠</div><div class="ni-lb">Mortgage</div></div>
+  <div class="ni" id="tab-saved" onclick="switchTab('saved')"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let repaymentType = 'repayment';
+let lastResult = null;
+
+function setType(t){
+  repaymentType = t;
+  document.getElementById('rt-rep').className = 'radio-btn' + (t==='repayment'?' active':'');
+  document.getElementById('rt-io').className = 'radio-btn' + (t==='interest'?' active':'');
+  calculate();
+}
+
+function fmt(n){return '£'+Math.round(Math.abs(n)).toLocaleString('en-GB');}
+function pct(n){return n.toFixed(1)+'%';}
+
+function calculate(){
+  const propVal = parseFloat(document.getElementById('propVal').value)||380000;
+  const deposit = parseFloat(document.getElementById('deposit').value)||57000;
+  const annualRate = parseFloat(document.getElementById('rate').value)||4.75;
+  const termYrs = parseInt(document.getElementById('term').value)||25;
+
+  const loan = propVal - deposit;
+  const ltv = (loan/propVal)*100;
+  const mRate = annualRate/100/12;
+  const n = termYrs*12;
+
+  let monthly;
+  if(repaymentType==='repayment'){
+    monthly = mRate===0 ? loan/n : loan * mRate * Math.pow(1+mRate,n) / (Math.pow(1+mRate,n)-1);
+  } else {
+    monthly = loan * mRate;
+  }
+
+  const totalRepaid = repaymentType==='repayment' ? monthly*n : monthly*n + loan;
+  const totalInterest = totalRepaid - loan;
+  const interestPct = (totalInterest/totalRepaid)*100;
+
+  lastResult = {propVal,deposit,annualRate,termYrs,loan,ltv,monthly,totalRepaid,totalInterest,interestPct};
+
+  document.getElementById('monthlyPayment').textContent = fmt(monthly);
+  document.getElementById('rc-sub-text').textContent = (repaymentType==='repayment'?'Repayment':'Interest Only')+' · '+annualRate+'% · '+termYrs+' yrs';
+  document.getElementById('loanAmt').textContent = fmt(loan);
+  document.getElementById('totalRepaid').textContent = fmt(totalRepaid);
+  document.getElementById('totalInterest').textContent = fmt(totalInterest);
+  document.getElementById('ltvRatio').textContent = pct(ltv);
+  document.getElementById('ltvRatio').className = 'rg-val '+(ltv>90?'red':ltv>75?'gold':'grn');
+
+  // Gauge – payment as % of typical income (£45k UK avg)
+  const avgAnnual = 45000;
+  const ptoi = (monthly*12)/avgAnnual*100;
+  const mPos = Math.min(95,Math.max(5,(ptoi/60)*100));
+  document.getElementById('gaugeMarker').style.left = mPos+'%';
+  const badge = document.getElementById('gaugeBadge');
+  if(ptoi<28){badge.className='gauge-badge gb-low';badge.textContent='✓ Affordable ('+ptoi.toFixed(0)+'% of avg income)';}
+  else if(ptoi<40){badge.className='gauge-badge gb-med';badge.textContent='⚠ Moderate ('+ptoi.toFixed(0)+'% of avg income)';}
+  else{badge.className='gauge-badge gb-high';badge.textContent='✗ Stretched ('+ptoi.toFixed(0)+'% of avg income)';}
+
+  // Pie donut
+  drawDonut([
+    {label:'Principal',value:loan,color:'#1a1a5e'},
+    {label:'Interest',value:totalInterest,color:'#C8102E'},
+  ]);
+  document.getElementById('pieCenterPct').textContent = interestPct.toFixed(0)+'%';
+
+  // Amort bars
+  drawAmortBars(loan, mRate, n, termYrs);
+}
+
+function drawDonut(segs){
+  const svg = document.getElementById('pieSvg');
+  const cx=55,cy=55,r=38,sw=16;
+  const total = segs.reduce((s,x)=>s+x.value,0);
+  svg.innerHTML='';
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  bg.setAttribute('cx',cx);bg.setAttribute('cy',cy);bg.setAttribute('r',r);
+  bg.setAttribute('fill','none');bg.setAttribute('stroke','#EEF2FF');bg.setAttribute('stroke-width',sw);
+  svg.appendChild(bg);
+  const circ = 2*Math.PI*r; let offset=0;
+  segs.forEach(seg=>{
+    const ratio=seg.value/total;
+    const arc=ratio*circ-1.5;
+    const el=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    el.setAttribute('cx',cx);el.setAttribute('cy',cy);el.setAttribute('r',r);
+    el.setAttribute('fill','none');el.setAttribute('stroke',seg.color);el.setAttribute('stroke-width',sw);
+    el.setAttribute('stroke-dasharray',arc+' '+circ);
+    el.setAttribute('stroke-dashoffset',-(offset*circ));
+    el.style.transform='rotate(-90deg)';el.style.transformOrigin='55px 55px';
+    svg.appendChild(el);
+    offset+=ratio;
+  });
+  const legend=document.getElementById('pieLegend');
+  legend.innerHTML=segs.map(s=>`<div class="pl-item"><div class="pl-dot" style="background:${s.color}"></div><div class="pl-name">${s.label}</div><div class="pl-val">${fmt(s.value)}</div></div>`).join('');
+}
+
+function drawAmortBars(loan,mRate,n,termYrs){
+  const container=document.getElementById('amortBars');
+  // sample 5-year intervals
+  const intervals = [];
+  const maxYrs = Math.min(termYrs,30);
+  const step = maxYrs<=10?1:maxYrs<=20?2:5;
+  let balance=loan;
+  let yData=[];
+  for(let mo=1;mo<=n;mo++){
+    const int=balance*mRate;
+    const monthly=mRate===0?loan/n:loan*mRate*Math.pow(1+mRate,n)/(Math.pow(1+mRate,n)-1);
+    const prin=monthly-int;
+    balance-=prin;
+    if(mo%(step*12)===0||mo===n){
+      yData.push({yr:Math.round(mo/12),int:int*12,prin:prin*12});
+    }
+  }
+  // limit to 8 bars
+  if(yData.length>8) yData = yData.filter((_,i)=>i%(Math.ceil(yData.length/8))===0).slice(0,8);
+  const maxVal = Math.max(...yData.map(d=>d.int+d.prin));
+  container.innerHTML = yData.map(d=>{
+    const totalH = 54;
+    const intH = Math.max(2,(d.int/(maxVal))*totalH);
+    const prinH = Math.max(2,(d.prin/(maxVal))*totalH);
+    return `<div class="ab-col">
+      <div class="ab-interest" style="width:100%;height:${intH}px;background:#C8102E;opacity:0.85;"></div>
+      <div class="ab-principal" style="width:100%;height:${prinH}px;background:#1a1a5e;"></div>
+      <div class="ab-yr">Yr ${d.yr}</div>
+    </div>`;
+  }).join('');
+}
+
+// SAVE
+function getSaved(){try{return JSON.parse(localStorage.getItem('ukMortSaved')||'[]');}catch{return[];}}
+function setSaved(a){localStorage.setItem('ukMortSaved',JSON.stringify(a));}
+
+function saveCalc(){
+  if(!lastResult)return;
+  const {propVal,deposit,annualRate,termYrs,loan,monthly,totalInterest,ltv}=lastResult;
+  const saved=getSaved();
+  const entry={id:Date.now(),date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+    label:fmt(propVal)+' · '+annualRate+'% · '+termYrs+'yr',
+    monthly:Math.round(monthly),totalInterest:Math.round(totalInterest),ltv:ltv.toFixed(1),
+    inputs:{propVal,deposit,annualRate,termYrs,type:repaymentType}};
+  saved.unshift(entry);
+  if(saved.length>20)saved.pop();
+  setSaved(saved);
+  showToast('✓ Calculation saved');
+}
+
+function loadSaved(id){
+  const entry=getSaved().find(e=>e.id===id);
+  if(!entry)return;
+  const i=entry.inputs;
+  document.getElementById('propVal').value=i.propVal;
+  document.getElementById('deposit').value=i.deposit;
+  document.getElementById('rate').value=i.annualRate;
+  document.getElementById('term').value=i.termYrs;
+  setType(i.type||'repayment');
+  switchTab('calc');
+  showToast('Loaded: '+entry.label);
+}
+
+function deleteSaved(id,e){
+  e.stopPropagation();
+  setSaved(getSaved().filter(s=>s.id!==id));
+  renderSaved();
+  showToast('Deleted');
+}
+
+function renderSaved(){
+  const saved=getSaved();
+  const c=document.getElementById('savedContainer');
+  if(!saved.length){c.innerHTML=`<div class="empty-state"><div class="ei">🔖</div><div>No saved calculations yet.</div><div style="margin-top:4px;font-size:11px">Hit <strong>Save</strong> after calculating to store here.</div></div>`;return;}
+  c.innerHTML=`<div class="saved-list">${saved.map(s=>`
+    <div class="saved-item" onclick="loadSaved(${s.id})">
+      <div class="si-top"><div><div class="si-name">${s.label}</div><div class="si-date">${s.date}</div></div><button class="si-del" onclick="deleteSaved(${s.id},event)">🗑</button></div>
+      <div class="si-metrics">
+        <div class="si-m">Monthly <strong>${fmt(s.monthly)}</strong></div>
+        <div class="si-m">Interest <strong>${fmt(s.totalInterest)}</strong></div>
+        <div class="si-m">LTV <strong>${s.ltv}%</strong></div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function switchTab(t){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  if(t==='saved'){
+    document.getElementById('mainView').style.display='none';
+    document.getElementById('savedView').style.display='';
+    document.getElementById('tab-saved').classList.add('active');
+    renderSaved();
+  } else {
+    document.getElementById('mainView').style.display='';
+    document.getElementById('savedView').style.display='none';
+    document.getElementById('tab-calc').classList.add('active');
+  }
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+calculate();
+</script>
+</body>
+</html>

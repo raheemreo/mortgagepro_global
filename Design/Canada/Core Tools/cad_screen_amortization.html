@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amortization Schedule – Canada Tools</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:#F0F7F4;color:#0A2E1A;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0A2E1A 0%,#1A5C35 60%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;text-align:center;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:'Playfair Display',serif;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:15px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.save-btn{display:flex;align-items:center;gap:5px;background:#1A5C35;color:#fff;border:none;border-radius:20px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.save-btn.saved{background:#6EDFA0;color:#0A2E1A;}
+.input-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(10,46,26,0.09);border:1px solid rgba(26,92,53,0.09);margin-bottom:12px;}
+.field{margin-bottom:13px;}.field:last-child{margin-bottom:0;}
+.field label{font-size:10px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;}
+.field-row{display:flex;align-items:center;background:#F0F7F4;border-radius:11px;border:1.5px solid rgba(26,92,53,0.12);overflow:hidden;transition:border-color 0.2s;}
+.field-row:focus-within{border-color:#1A5C35;}
+.field-prefix{padding:0 11px;font-size:13px;font-weight:700;color:#1A5C35;}
+.field-input{flex:1;background:none;border:none;outline:none;font-size:16px;font-weight:800;color:#0A2E1A;padding:12px 0;font-family:'DM Sans',sans-serif;}
+.field-suffix{padding:0 11px;font-size:12px;font-weight:600;color:#4A7C5F;}
+.toggle-row{display:flex;background:#F0F7F4;border-radius:11px;padding:4px;gap:4px;border:1.5px solid rgba(26,92,53,0.1);}
+.tog-btn{flex:1;padding:9px 4px;border-radius:8px;border:none;font-size:12px;font-weight:700;background:none;color:#4A7C5F;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.tog-btn.active{background:#1A5C35;color:#fff;box-shadow:0 2px 8px rgba(26,92,53,0.25);}
+.summary-card{background:linear-gradient(145deg,#0A2E1A,#1A5C35);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(10,46,26,0.25);position:relative;overflow:hidden;margin-bottom:12px;}
+.summary-card::before{content:'🍁';position:absolute;right:-5px;top:-10px;font-size:75px;opacity:0.07;}
+.sc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.sc-main{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.sc-amount{font-size:32px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;margin-top:3px;letter-spacing:-1px;}
+.sc-freq{font-size:11px;color:rgba(255,255,255,0.55);}
+.sc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.sc-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:11px;padding:9px 10px;}
+.sc-box-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;}
+.sc-box-val{font-size:12px;font-weight:800;color:#fff;margin-top:2px;font-family:'Playfair Display',serif;}
+.sc-box-val.grn{color:#6EDFA0;}.sc-box-val.red{color:#FF8A9A;}
+
+/* Improved chart with SVG */
+.chart-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:12px;}
+.chart-title{font-size:13px;font-weight:700;color:#0A2E1A;margin-bottom:4px;font-family:'Playfair Display',serif;}
+.chart-sub{font-size:10px;color:#4A7C5F;margin-bottom:14px;}
+.chart-svg-wrap{overflow:hidden;}
+.chart-legend{display:flex;gap:14px;margin-top:10px;}
+.leg-item{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:8px;height:8px;border-radius:2px;}
+.leg-lbl{font-size:10px;color:#4A7C5F;font-weight:600;}
+
+/* Milestones */
+.milestone-card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:12px;}
+.milestone-title{font-size:13px;font-weight:700;color:#0A2E1A;font-family:'Playfair Display',serif;margin-bottom:12px;}
+.ms-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(26,92,53,0.06);}
+.ms-row:last-child{border-bottom:none;}
+.ms-badge{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.ms-text{flex:1;}
+.ms-name{font-size:12px;font-weight:700;color:#0A2E1A;}
+.ms-sub{font-size:10px;color:#4A7C5F;margin-top:1px;}
+.ms-val{font-size:12px;font-weight:800;color:#1A5C35;font-family:'Playfair Display',serif;}
+
+.year-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none;}
+.year-tabs::-webkit-scrollbar{display:none;}
+.year-tab{flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid rgba(26,92,53,0.15);background:#fff;font-size:11px;font-weight:700;color:#4A7C5F;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;}
+.year-tab.active{background:#1A5C35;color:#fff;border-color:#1A5C35;}
+.table-card{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);margin-bottom:12px;}
+.table-header{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;background:#F0F7F4;padding:9px 12px;border-bottom:1px solid rgba(26,92,53,0.1);}
+.th{font-size:9px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:0.5px;}
+.table-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;padding:10px 12px;border-bottom:1px solid rgba(26,92,53,0.05);align-items:center;}
+.table-row:last-child{border-bottom:none;}
+.table-row:nth-child(even){background:#FAFFFE;}
+.td{font-size:11px;font-weight:600;color:#0A2E1A;}
+.td.period{font-size:10px;color:#4A7C5F;}
+.td.int{color:#C8102E;}
+.td.prin{color:#1A5C35;font-weight:700;}
+
+.calc-btn{width:100%;background:#C8102E;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(200,16,46,0.35);margin-top:14px;font-family:'DM Sans',sans-serif;transition:transform 0.1s;}
+.calc-btn:active{transform:scale(0.98);}
+.saved-list{margin-bottom:12px;}
+.saved-item{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 2px 8px rgba(10,46,26,0.07);border:1px solid rgba(26,92,53,0.08);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.saved-item-name{font-size:12px;font-weight:700;color:#0A2E1A;}
+.saved-item-sub{font-size:10px;color:#4A7C5F;margin-top:2px;}
+.saved-item-val{font-size:14px;font-weight:800;color:#1A5C35;font-family:'Playfair Display',serif;}
+.saved-item-del{background:none;border:none;color:#ccc;font-size:16px;cursor:pointer;margin-left:8px;}
+.saved-item-del:hover{color:#C8102E;}
+.empty-saved{text-align:center;padding:18px;color:#4A7C5F;font-size:12px;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0A2E1A;color:#fff;padding:10px 20px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:200;}
+.toast.show{opacity:1;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,92,53,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,46,26,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#4A7C5F;}
+.ni.active .ni-lb{color:#1A5C35;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">📅</span><div class="hdr-title">Amortization</div><div class="hdr-sub">Bi-Weekly Schedule · Canadian Compounding</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">5-Yr Fixed</div><div class="rs-val">4.99%</div><div class="rs-note">Best rate</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Compound</div><div class="rs-val" style="font-size:12px">Semi-Ann.</div><div class="rs-note">CA standard</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Max Amort.</div><div class="rs-val">25 yr</div><div class="rs-note">Insured</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">30 yr</div><div class="rs-val" style="font-size:11px">FTB/New</div><div class="rs-note">Dec 2024 rule</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Mortgage Details</div>
+  <div class="input-card">
+    <div class="field">
+      <label>Mortgage Amount</label>
+      <div class="field-row">
+        <div class="field-prefix">CA$</div>
+        <input class="field-input" id="loanAmt" type="number" value="585000" oninput="generate()">
+      </div>
+    </div>
+    <div class="field">
+      <label>Annual Interest Rate</label>
+      <div class="field-row">
+        <input class="field-input" id="rate" type="number" value="4.99" step="0.01" oninput="generate()" style="padding-left:12px;">
+        <div class="field-suffix">%</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Amortization</label>
+      <div class="toggle-row" id="amortToggle">
+        <button class="tog-btn" onclick="setAmort(15)">15 yr</button>
+        <button class="tog-btn" onclick="setAmort(20)">20 yr</button>
+        <button class="tog-btn active" onclick="setAmort(25)">25 yr</button>
+        <button class="tog-btn" onclick="setAmort(30)">30 yr</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Payment Frequency</label>
+      <div class="toggle-row" id="freqToggle">
+        <button class="tog-btn" onclick="setFreq('monthly')">Monthly</button>
+        <button class="tog-btn active" onclick="setFreq('biweekly')">Bi-Weekly</button>
+        <button class="tog-btn" onclick="setFreq('weekly')">Weekly</button>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="generate()">📅 Generate Schedule</button>
+  </div>
+
+  <div class="sec-lbl">
+    <span>Payment Summary</span>
+    <button class="save-btn" id="saveBtn" onclick="saveCalc()">🔖 Save</button>
+  </div>
+  <div class="summary-card">
+    <div class="sc-top">
+      <div><div class="sc-main" id="freqLabel">Bi-Weekly Payment</div><div class="sc-amount" id="paymentAmt">CA$1,672</div><div class="sc-freq" id="freqSub">Every 2 weeks · 650 payments total</div></div>
+    </div>
+    <div class="sc-grid">
+      <div class="sc-box"><div class="sc-box-lbl">Total Paid</div><div class="sc-box-val" id="totalPaid">CA$1,086,800</div></div>
+      <div class="sc-box"><div class="sc-box-lbl">Total Interest</div><div class="sc-box-val red" id="totalInt">CA$501,800</div></div>
+      <div class="sc-box"><div class="sc-box-lbl">Interest %</div><div class="sc-box-val red" id="intPct">46.2%</div></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Principal vs. Interest Over Time</div>
+  <div class="chart-card">
+    <div class="chart-title">Annual Payment Breakdown</div>
+    <div class="chart-sub">First 10 years shown · hover a bar for details</div>
+    <div class="chart-svg-wrap">
+      <svg id="chartSvg" width="100%" height="110" viewBox="0 0 360 110" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="chart-legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#1A5C35"></div><div class="leg-lbl">Principal</div></div>
+      <div class="leg-item"><div class="leg-dot" style="background:#C8102E"></div><div class="leg-lbl">Interest</div></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Key Milestones</div>
+  <div class="milestone-card">
+    <div class="milestone-title">Your Mortgage Journey</div>
+    <div class="ms-row"><div class="ms-badge" style="background:#FEF3C7">⚖️</div><div class="ms-text"><div class="ms-name">Equity Crossover</div><div class="ms-sub" id="ms1sub">When principal paid > interest paid</div></div><div class="ms-val" id="ms1val">Yr 14</div></div>
+    <div class="ms-row"><div class="ms-badge" style="background:#DCF4E8">🎯</div><div class="ms-text"><div class="ms-name">25% Equity</div><div class="ms-sub" id="ms2sub">Balance = 75% of original loan</div></div><div class="ms-val" id="ms2val">Yr 7</div></div>
+    <div class="ms-row"><div class="ms-badge" style="background:#DCF4E8">🏆</div><div class="ms-text"><div class="ms-name">50% Equity</div><div class="ms-sub" id="ms3sub">Balance = 50% of original loan</div></div><div class="ms-val" id="ms3val">Yr 17</div></div>
+    <div class="ms-row"><div class="ms-badge" style="background:#D1FAE5">🎉</div><div class="ms-text"><div class="ms-name">Mortgage Free</div><div class="ms-sub" id="ms4sub">Full payoff date</div></div><div class="ms-val" id="ms4val">Yr 25</div></div>
+  </div>
+
+  <div class="sec-lbl">Annual Summary</div>
+  <div class="year-tabs" id="yearTabs"></div>
+  <div class="table-card">
+    <div class="table-header"><div class="th">Period</div><div class="th">Payment</div><div class="th">Interest</div><div class="th">Balance</div></div>
+    <div id="tableBody"></div>
+  </div>
+
+  <div class="sec-lbl">
+    <span>📌 Saved Schedules</span>
+    <button class="save-btn" onclick="clearSaved()" style="background:#eee;color:#666;">Clear All</button>
+  </div>
+  <div class="saved-list" id="savedList"><div class="empty-saved">No saved schedules yet.</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🍁</div><div class="ni-lb">Canada</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let amort=25,freq='biweekly',schedule=[],selectedYear=1;
+let savedCalcs=JSON.parse(localStorage.getItem('amort_saved')||'[]');
+function setAmort(y){amort=y;document.querySelectorAll('#amortToggle .tog-btn').forEach((b,i)=>{b.classList.toggle('active',[15,20,25,30][i]===y)});generate();}
+function setFreq(f){freq=f;document.querySelectorAll('#freqToggle .tog-btn').forEach((b,i)=>{b.classList.toggle('active',['monthly','biweekly','weekly'][i]===f)});generate();}
+function fmt(n){return 'CA$'+Math.round(n).toLocaleString('en-CA');}
+function fmtS(n){return '$'+Math.round(n).toLocaleString('en-CA');}
+
+function generate(){
+  const loan=parseFloat(document.getElementById('loanAmt').value)||0;
+  const annualRate=parseFloat(document.getElementById('rate').value)||4.99;
+  const ea=Math.pow(1+annualRate/200,2)-1;
+  const perPeriod=freq==='monthly'?ea/12:freq==='biweekly'?ea/26:ea/52;
+  const periods=freq==='monthly'?amort*12:freq==='biweekly'?amort*26:amort*52;
+  const pmt=loan*perPeriod/(1-Math.pow(1+perPeriod,-periods));
+
+  schedule=[];
+  let balance=loan;
+  for(let i=1;i<=periods;i++){
+    const intCharge=balance*perPeriod;
+    const prin=Math.min(pmt-intCharge,balance);
+    balance=Math.max(0,balance-prin);
+    schedule.push({period:i,payment:pmt,interest:intCharge,principal:prin,balance});
+  }
+
+  const totalPaid=pmt*periods;
+  const totalInt=totalPaid-loan;
+  const freqLabel=freq==='monthly'?'Monthly':freq==='biweekly'?'Bi-Weekly':'Weekly';
+  const freqSub=freq==='monthly'?'Every month':(freq==='biweekly'?'Every 2 weeks':'Every week');
+  document.getElementById('freqLabel').textContent=freqLabel+' Payment';
+  document.getElementById('paymentAmt').textContent=fmt(pmt);
+  document.getElementById('freqSub').textContent=`${freqSub} · ${periods} payments total`;
+  document.getElementById('totalPaid').textContent=fmt(totalPaid);
+  document.getElementById('totalInt').textContent=fmt(totalInt);
+  document.getElementById('intPct').textContent=(totalInt/totalPaid*100).toFixed(1)+'%';
+
+  buildSvgChart();
+  calcMilestones(loan);
+  buildYearTabs();
+  renderTable(selectedYear);
+}
+
+function buildSvgChart(){
+  const ppY=freq==='monthly'?12:freq==='biweekly'?26:52;
+  const years=Math.min(amort,10);
+  const svg=document.getElementById('chartSvg');
+  const W=360,H=100,pad=4;
+  const barW=(W-(years-1)*3)/years;
+  let maxTotal=0;
+  const yearData=[];
+  for(let y=1;y<=years;y++){
+    const s=(y-1)*ppY,e=Math.min(y*ppY,schedule.length);
+    let yi=0,yp=0;
+    for(let i=s;i<e;i++){yi+=schedule[i].interest;yp+=schedule[i].principal;}
+    const total=yi+yp;if(total>maxTotal)maxTotal=total;
+    yearData.push({y,yi,yp,total});
+  }
+  let svgContent='';
+  yearData.forEach((d,i)=>{
+    const x=i*(barW+3)+pad;
+    const intH=Math.round(d.yi/maxTotal*(H-20));
+    const prinH=Math.round(d.yp/maxTotal*(H-20));
+    svgContent+=`<rect x="${x}" y="${H-20-intH-prinH}" width="${barW-pad}" height="${prinH}" rx="2" fill="#1A5C35" opacity="0.9"/>`;
+    svgContent+=`<rect x="${x}" y="${H-20-intH}" width="${barW-pad}" height="${intH}" rx="2" fill="#C8102E" opacity="0.85"/>`;
+    svgContent+=`<text x="${x+(barW-pad)/2}" y="${H-4}" text-anchor="middle" font-size="8" fill="#4A7C5F" font-family="DM Sans,sans-serif">Yr${d.y}</text>`;
+  });
+  svg.innerHTML=svgContent;
+}
+
+function calcMilestones(loan){
+  const ppY=freq==='monthly'?12:freq==='biweekly'?26:52;
+  let crossoverYr='—',eq25='—',eq50='—';
+  let cumulativeInt=0,cumulativePrin=0;
+  for(let i=0;i<schedule.length;i++){
+    cumulativeInt+=schedule[i].interest;
+    cumulativePrin+=schedule[i].principal;
+    const yr=Math.ceil((i+1)/ppY);
+    if(crossoverYr==='—'&&cumulativePrin>=cumulativeInt)crossoverYr=`Yr ${yr}`;
+    if(eq25==='—'&&schedule[i].balance<=loan*0.75)eq25=`Yr ${yr}`;
+    if(eq50==='—'&&schedule[i].balance<=loan*0.50)eq50=`Yr ${yr}`;
+  }
+  document.getElementById('ms1val').textContent=crossoverYr;
+  document.getElementById('ms2val').textContent=eq25;
+  document.getElementById('ms3val').textContent=eq50;
+  document.getElementById('ms4val').textContent=`Yr ${amort}`;
+}
+
+function buildYearTabs(){
+  const tabs=document.getElementById('yearTabs');tabs.innerHTML='';
+  for(let y=1;y<=amort;y++){
+    const btn=document.createElement('button');
+    btn.className='year-tab'+(y===selectedYear?' active':'');
+    btn.textContent='Year '+y;
+    btn.onclick=()=>{selectedYear=y;document.querySelectorAll('.year-tab').forEach((b,i)=>b.classList.toggle('active',i+1===y));renderTable(y);};
+    tabs.appendChild(btn);
+  }
+}
+
+function renderTable(year){
+  const ppY=freq==='monthly'?12:freq==='biweekly'?26:52;
+  const start=(year-1)*ppY,end=Math.min(year*ppY,schedule.length);
+  const tbody=document.getElementById('tableBody');tbody.innerHTML='';
+  const step=freq==='monthly'?1:freq==='biweekly'?2:4;
+  for(let i=start;i<end;i+=step){
+    const r=schedule[i];
+    const periodLabel=freq==='monthly'?`Mo ${r.period}`:`Pmt ${r.period}`;
+    tbody.innerHTML+=`<div class="table-row"><div class="td period">${periodLabel}</div><div class="td">${fmtS(r.payment)}</div><div class="td int">${fmtS(r.interest)}</div><div class="td">${fmtS(r.balance)}</div></div>`;
+  }
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function saveCalc(){
+  const loan=parseFloat(document.getElementById('loanAmt').value)||0;
+  const rate=parseFloat(document.getElementById('rate').value)||4.99;
+  const ppY=freq==='monthly'?12:freq==='biweekly'?26:52;
+  const ea=Math.pow(1+rate/200,2)-1;
+  const r=ea/ppY;const n=amort*ppY;
+  const pmt=loan*r/(1-Math.pow(1+r,-n));
+  const totalPaid=pmt*n;
+  const totalInt=totalPaid-loan;
+  const freqLabel=freq==='monthly'?'Monthly':freq==='biweekly'?'Bi-Weekly':'Weekly';
+  savedCalcs.unshift({id:Date.now(),loan,rate,amort,freq:freqLabel,pmt:Math.round(pmt),totalInt:Math.round(totalInt),date:new Date().toLocaleDateString('en-CA',{month:'short',day:'numeric'})});
+  if(savedCalcs.length>5)savedCalcs.pop();
+  localStorage.setItem('amort_saved',JSON.stringify(savedCalcs));
+  renderSaved();showToast('✅ Schedule saved!');
+  const btn=document.getElementById('saveBtn');btn.classList.add('saved');btn.textContent='✓ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.textContent='🔖 Save';},2000);
+}
+function clearSaved(){savedCalcs=[];localStorage.setItem('amort_saved',JSON.stringify(savedCalcs));renderSaved();showToast('🗑️ Cleared');}
+function renderSaved(){
+  const list=document.getElementById('savedList');
+  if(!savedCalcs.length){list.innerHTML='<div class="empty-saved">No saved schedules yet.</div>';return;}
+  list.innerHTML=savedCalcs.map(c=>`<div class="saved-item"><div><div class="saved-item-name">CA$${c.loan.toLocaleString()} · ${c.rate}% · ${c.amort}yr</div><div class="saved-item-sub">${c.date} · ${c.freq}</div></div><div style="text-align:right"><div class="saved-item-val">CA$${c.pmt.toLocaleString()}/pmt</div><div style="font-size:10px;color:#C8102E">CA$${c.totalInt.toLocaleString()} int</div></div><button class="saved-item-del" onclick="delSaved(${c.id})">✕</button></div>`).join('');
+}
+function delSaved(id){savedCalcs=savedCalcs.filter(c=>c.id!==id);localStorage.setItem('amort_saved',JSON.stringify(savedCalcs));renderSaved();}
+renderSaved();generate();
+</script>
+</body>
+</html>

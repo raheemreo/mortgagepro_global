@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emergency Fund Calculator</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D; --white:#FFFFFF;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10);
+    --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --green:#15803D; --green-lt:#DCFCE7; --green-dk:#166534;
+    --amber:#B45309; --amber-lt:#FEF3C7;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#15803D 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🛡️';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-v.green{color:#86EFAC;}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* HERO */
+  .result-hero{background:linear-gradient(148deg,#14532D,#15803D);border-radius:20px;padding:19px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:14px;}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.08);}
+  .rh-tag{font-size:9.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-main{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;margin:4px 0 2px;}
+  .rh-main span{font-size:22px;}
+  .rh-sub{font-size:10px;color:rgba(255,255,255,0.60);}
+  .rh-bars{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-bar-item{background:rgba(255,255,255,0.12);border-radius:10px;padding:9px 10px;}
+  .rh-bar-lbl{font-size:8px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.4px;}
+  .rh-bar-val{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+  .rh-bar-sub{font-size:8px;color:rgba(255,255,255,0.40);margin-top:1px;}
+
+  /* INPUT CARD */
+  .input-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .input-card-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .ic-icon{width:30px;height:30px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .field{margin-bottom:13px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;}
+  .field-row{display:flex;align-items:center;background:var(--bg);border-radius:11px;border:1.5px solid var(--border);overflow:hidden;transition:border-color .2s;}
+  .field-row:focus-within{border-color:var(--green);}
+  .field-prefix{padding:0 10px;font-size:14px;font-weight:800;color:var(--muted);background:transparent;}
+  .field-input{flex:1;border:none;background:transparent;padding:11px 8px 11px 0;font-size:14px;font-weight:700;color:var(--navy);outline:none;}
+  .field-suffix{padding:0 10px;font-size:11px;font-weight:700;color:var(--muted);}
+  .pill-row{display:flex;gap:7px;flex-wrap:wrap;}
+  .pill{padding:7px 13px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;}
+  .pill.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .pill.active-green{background:#15803D;color:#fff;border-color:#15803D;}
+  .calc-btn{width:100%;background:linear-gradient(135deg,#15803D,#14532D);border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(21,128,61,0.35);font-family:Georgia,serif;margin-top:4px;transition:transform .15s;}
+  .calc-btn:active{transform:scale(.98);}
+
+  /* SAVE BUTTON */
+  .save-btn{width:100%;background:var(--card);border:1.5px solid var(--gold);border-radius:14px;padding:13px;font-size:13px;font-weight:800;color:var(--gold);cursor:pointer;font-family:Georgia,serif;margin-top:8px;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .save-btn:active{transform:scale(.98);background:var(--bg);}
+  .save-btn.saved{background:#DCFCE7;border-color:#15803D;color:#15803D;}
+
+  /* STATUS CARD */
+  .status-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .status-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+
+  /* GAUGE */
+  .gauge-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:16px;}
+  .gauge-svg{overflow:visible;}
+  .gauge-label{font-size:10px;color:var(--muted);font-weight:600;margin-top:4px;text-align:center;}
+
+  /* MONTH BARS */
+  .month-bars{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+  .mb-item{border-radius:14px;padding:12px 10px;text-align:center;position:relative;overflow:hidden;}
+  .mb-item.opt3{background:linear-gradient(145deg,#FEF3C7,#FDE68A);border:1px solid #FCD34D;}
+  .mb-item.opt4{background:linear-gradient(145deg,#DCFCE7,#BBF7D0);border:1px solid #86EFAC;}
+  .mb-item.opt6{background:linear-gradient(145deg,#EFF6FF,#DBEAFE);border:1px solid #93C5FD;}
+  .mb-lbl{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .mb-val{font-size:20px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:4px 0 2px;}
+  .mb-sub{font-size:9px;color:var(--muted);}
+  .mb-badge{display:inline-flex;padding:2px 8px;border-radius:10px;font-size:8px;font-weight:700;margin-top:5px;}
+
+  /* PROGRESS */
+  .progress-track{background:rgba(27,63,114,0.08);border-radius:8px;height:10px;overflow:hidden;margin-top:12px;}
+  .progress-fill-green{height:100%;border-radius:8px;background:linear-gradient(135deg,#15803D,#22C55E);transition:width .6s ease;}
+  .progress-labels{display:flex;justify-content:space-between;margin-top:5px;}
+  .progress-labels span{font-size:9px;color:var(--muted);font-weight:600;}
+
+  /* BREAKDOWN TABLE */
+  .breakdown-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+  .breakdown-row:last-child{border-bottom:none;}
+  .br-left{display:flex;align-items:center;gap:10px;}
+  .br-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .br-label{font-size:11px;font-weight:700;color:var(--navy);}
+  .br-sub{font-size:9px;color:var(--muted);}
+  .br-val{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+
+  /* ALERT CARD */
+  .alert-card{border-radius:16px;padding:14px 15px;margin-bottom:12px;}
+  .alert-card.warn{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #FCD34D;}
+  .alert-card.danger{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border:1px solid #FECACA;}
+  .alert-card.good{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid #86EFAC;}
+  .alert-title{font-size:12px;font-weight:800;font-family:Georgia,serif;margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+  .alert-title.warn{color:#92400E;}
+  .alert-title.danger{color:#B91C1C;}
+  .alert-title.good{color:#15803D;}
+  .alert-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .alert-row:last-child{margin-bottom:0;}
+  .alert-lbl{font-size:10.5px;font-weight:600;}
+  .alert-lbl.warn{color:#92400E;}
+  .alert-lbl.danger{color:#991B1B;}
+  .alert-lbl.good{color:#166534;}
+  .alert-val{font-size:12px;font-weight:800;font-family:Georgia,serif;}
+  .alert-val.warn{color:#B45309;}
+  .alert-val.danger{color:#B91C1C;}
+  .alert-val.good{color:#15803D;}
+
+  /* SAVINGS RATE CHART */
+  .chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12.5px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .bar-chart{display:flex;align-items:flex-end;gap:6px;height:100px;margin-bottom:8px;}
+  .bc-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .bc-bar{width:100%;border-radius:6px 6px 0 0;transition:height .5s ease;position:relative;}
+  .bc-lbl{font-size:8.5px;color:var(--muted);font-weight:600;text-align:center;}
+  .bc-val{font-size:8px;color:var(--navy);font-weight:800;position:absolute;top:-16px;left:50%;transform:translateX(-50%);white-space:nowrap;}
+
+  /* TIPS */
+  .tips-list{display:flex;flex-direction:column;gap:9px;}
+  .tip-row{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;}
+  .tip-icon{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .tip-body{flex:1;}
+  .tip-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .tip-desc{font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
+  .tip-badge{display:inline-flex;padding:2px 7px;border-radius:12px;font-size:8.5px;font-weight:700;margin-top:5px;}
+  .tb-g{background:#DCFCE7;color:#15803D;}
+  .tb-b{background:#EFF6FF;color:#1D4ED8;}
+  .tb-o{background:#FEF3C7;color:#B45309;}
+
+  /* SAVED */
+  .saved-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .saved-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+  .saved-row:last-child{border-bottom:none;}
+  .saved-info{display:flex;flex-direction:column;}
+  .saved-name{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .saved-meta{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .saved-del{font-size:13px;color:var(--red);cursor:pointer;padding:6px;}
+  .saved-empty{font-size:11px;color:var(--muted);text-align:center;padding:14px 0;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);max-width:380px;width:90%;background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;font-size:12.5px;font-weight:700;text-align:center;box-shadow:var(--sh2);opacity:0;pointer-events:none;transition:all .3s ease;z-index:200;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* NAV */
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--green);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .result-hero{animation:fadeUp .35s ease both .05s;}
+  .input-card{animation:fadeUp .35s ease both .10s;}
+  .status-card,.alert-card,.chart-card{animation:fadeUp .35s ease both .16s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_down_payment.html" class="icon-btn" style="text-decoration:none;">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🛡️</div>
+      <div class="hdr-title">Emergency Fund</div>
+      <div class="hdr-sub">3–6 months of expenses · Keep reserves after closing</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Min Target</div><div class="rs-v green">3 mo</div><div class="rs-n">Bare minimum</div></div>
+    <div class="rs"><div class="rs-l">Ideal</div><div class="rs-v gold">6 mo</div><div class="rs-n">Recommended</div></div>
+    <div class="rs"><div class="rs-l">Avg US HH</div><div class="rs-v">$6,081</div><div class="rs-n">Monthly spend</div></div>
+    <div class="rs"><div class="rs-l">HY Savings</div><div class="rs-v">4.5–5%</div><div class="rs-n">APY 2025</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Your Emergency Fund <span class="more" onclick="calculate()">Recalculate</span></div>
+
+  <!-- Hero -->
+  <div class="result-hero">
+    <div class="rh-tag">6-Month Emergency Fund Target</div>
+    <div class="rh-main"><span>$</span><span id="heroTarget">36,486</span></div>
+    <div class="rh-sub" id="heroSub">Based on your monthly expenses · 6-month cushion</div>
+    <div class="rh-bars">
+      <div class="rh-bar-item">
+        <div class="rh-bar-lbl">3-Month Min</div>
+        <div class="rh-bar-val" id="hero3mo">$18,243</div>
+        <div class="rh-bar-sub">Bare minimum</div>
+      </div>
+      <div class="rh-bar-item">
+        <div class="rh-bar-lbl">Currently Saved</div>
+        <div class="rh-bar-val" id="heroCurr">$12,000</div>
+        <div class="rh-bar-sub" id="heroSavedSub">33% of goal</div>
+      </div>
+      <div class="rh-bar-item">
+        <div class="rh-bar-lbl">Months to Goal</div>
+        <div class="rh-bar-val" id="heroMonths">20 mo</div>
+        <div class="rh-bar-sub" id="heroRate">@ $1,200/mo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="sec">Monthly Expenses <span class="more" id="resetBtn" onclick="resetForm()">Reset</span></div>
+  <div class="input-card">
+    <div class="input-card-title"><div class="ic-icon">💰</div>Expense Breakdown</div>
+
+    <div class="field">
+      <label>Monthly Housing (Rent/Mortgage + HOA)</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="housing" type="number" value="2200" step="100" min="0">
+        <span class="field-suffix">/mo</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Utilities (Electric, Gas, Water, Internet)</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="utilities" type="number" value="320" step="10" min="0">
+        <span class="field-suffix">/mo</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Groceries & Food</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="food" type="number" value="650" step="25" min="0">
+        <span class="field-suffix">/mo</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Transportation (Car payment, Gas, Insurance)</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="transport" type="number" value="580" step="25" min="0">
+        <span class="field-suffix">/mo</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Health Insurance & Medical</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="health" type="number" value="420" step="25" min="0">
+        <span class="field-suffix">/mo</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Minimum Debt Payments (CC, Student Loans)</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="debt" type="number" value="350" step="25" min="0">
+        <span class="field-suffix">/mo</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Other Essentials (Phone, Childcare, etc.)</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="other" type="number" value="280" step="25" min="0">
+        <span class="field-suffix">/mo</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-card">
+    <div class="input-card-title"><div class="ic-icon">🏦</div>Current Savings & Goals</div>
+    <div class="field">
+      <label>Current Emergency Fund Saved</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="currSaved" type="number" value="12000" step="500" min="0">
+      </div>
+    </div>
+    <div class="field">
+      <label>Monthly Contribution to Emergency Fund</label>
+      <div class="field-row">
+        <span class="field-prefix">$</span>
+        <input class="field-input" id="monthlyAdd" type="number" value="1200" step="100" min="0">
+        <span class="field-suffix">/mo</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Target Coverage</label>
+      <div class="pill-row">
+        <div class="pill" data-months="3">3 mo</div>
+        <div class="pill active-green" data-months="6">6 mo</div>
+        <div class="pill" data-months="9">9 mo</div>
+        <div class="pill" data-months="12">12 mo</div>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🛡️ Calculate Emergency Fund</button>
+    <button class="save-btn" id="saveBtn" onclick="saveCalculation()">💾 Save This Calculation</button>
+  </div>
+
+  <!-- 3 / 6 Month Comparison -->
+  <div class="sec">Coverage Scenarios</div>
+  <div class="month-bars">
+    <div class="mb-item opt3">
+      <div class="mb-lbl">3 months</div>
+      <div class="mb-val" id="mb3val">$18K</div>
+      <div class="mb-sub" id="mb3sub">Min. target</div>
+      <span class="mb-badge" style="background:#FEF3C7;color:#92400E;">Minimum</span>
+    </div>
+    <div class="mb-item opt4">
+      <div class="mb-lbl">6 months</div>
+      <div class="mb-val" id="mb6val">$36K</div>
+      <div class="mb-sub" id="mb6sub">Recommended</div>
+      <span class="mb-badge" style="background:#DCFCE7;color:#15803D;">✓ Ideal</span>
+    </div>
+    <div class="mb-item opt6">
+      <div class="mb-lbl">12 months</div>
+      <div class="mb-val" id="mb12val">$73K</div>
+      <div class="mb-sub" id="mb12sub">Max security</div>
+      <span class="mb-badge" style="background:#EFF6FF;color:#1D4ED8;">Premium</span>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="status-card">
+    <div class="status-title">Savings Progress to 6-Month Goal</div>
+    <div class="progress-track">
+      <div class="progress-fill-green" id="progFill" style="width:33%;"></div>
+    </div>
+    <div class="progress-labels">
+      <span>$0</span>
+      <span id="savedLabel">Saved: $12K</span>
+      <span id="goalLabel">Goal: $36K</span>
+    </div>
+
+    <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:10px;display:flex;align-items:center;gap:10px;">
+      <div style="font-size:20px;">⏱️</div>
+      <div>
+        <div style="font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;" id="timeMsg">At $1,200/mo → <span style="color:#15803D;">20 months to reach goal</span></div>
+        <div style="font-size:9.5px;color:var(--muted);margin-top:2px;" id="timeSub">$12,000 saved · $24,486 more needed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Expense Breakdown Chart -->
+  <div class="chart-card">
+    <div class="chart-title">Monthly Expense Breakdown</div>
+    <div class="bar-chart" id="expenseChart"></div>
+    <div id="breakdownRows"></div>
+  </div>
+
+  <!-- Status Indicator -->
+  <div class="alert-card" id="statusAlert">
+    <div class="alert-title" id="alertTitle">⚠️ Fund Underfunded</div>
+    <div class="alert-row"><div class="alert-lbl warn">Current Saved</div><div class="alert-val warn" id="alCurr">$12,000</div></div>
+    <div class="alert-row"><div class="alert-lbl warn">6-Month Target</div><div class="alert-val warn" id="alTarget">$36,486</div></div>
+    <div class="alert-row"><div class="alert-lbl warn">Gap to Fill</div><div class="alert-val warn" id="alGap">$24,486</div></div>
+    <div class="alert-row"><div class="alert-lbl warn">Months to Goal</div><div class="alert-val warn" id="alMonths">20 months</div></div>
+  </div>
+
+  <!-- After Closing Reminder -->
+  <div class="sec">Post-Closing Homeowner Tips</div>
+  <div class="tips-list">
+    <div class="tip-row"><div class="tip-icon">🏦</div><div class="tip-body"><div class="tip-title">Use a High-Yield Savings Account</div><div class="tip-desc">Top HYSAs (Marcus, Ally, SoFi) offer 4.5–5.0% APY in 2025. Your $36K earns ~$1,620/yr in interest while staying liquid.</div><span class="tip-badge tb-g">4.5–5% APY</span></div></div>
+    <div class="tip-row"><div class="tip-icon">📊</div><div class="tip-body"><div class="tip-title">Keep Fund Separate from Down Payment</div><div class="tip-desc">Never co-mingle your emergency fund with your down payment savings. Lenders may flag funds used for closing as "depleted reserves."</div><span class="tip-badge tb-b">Lender Tip</span></div></div>
+    <div class="tip-row"><div class="tip-icon">🔄</div><div class="tip-body"><div class="tip-title">Replenish After Any Withdrawal</div><div class="tip-desc">After using emergency funds (e.g., a roof leak or job loss), rebuild within 6–12 months. Set an automatic monthly transfer to stay on track.</div><span class="tip-badge tb-o">Best Practice</span></div></div>
+    <div class="tip-row"><div class="tip-icon">📋</div><div class="tip-body"><div class="tip-title">Lenders Want 2–6 Months Reserves</div><div class="tip-desc">Many conventional and jumbo loan programs require proof of 2–6 months of PITI (Principal, Interest, Taxes, Insurance) in reserves after closing.</div><span class="tip-badge tb-b">Qualification Tip</span></div></div>
+  </div>
+
+  <!-- Saved Calculations -->
+  <div class="sec" style="margin-top:20px;">Saved Scenarios <span class="more" onclick="clearAll()">Clear All</span></div>
+  <div class="saved-card">
+    <div id="savedList"><div class="saved-empty">No saved scenarios yet. Tap "Save This Calculation" above.</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni" onclick="window.location='us_down_payment.html'"><div class="ni-ic">🏠</div><div class="ni-lb">Down Pmt</div></div>
+  <div class="ni active"><div class="ni-ic">🛡️</div><div class="ni-lb">Emergency</div></div>
+  <div class="ni" onclick="window.location='home_maintenance.html'"><div class="ni-ic">🔧</div><div class="ni-lb">Maintenance</div></div>
+  <div class="ni" onclick="window.location='fico_booster.html'"><div class="ni-ic">💳</div><div class="ni-lb">FICO</div></div>
+</div>
+
+<script>
+let targetMonths = 6;
+
+document.querySelectorAll('[data-months]').forEach(p => {
+  p.addEventListener('click', () => {
+    targetMonths = +p.dataset.months;
+    document.querySelectorAll('[data-months]').forEach(x => x.classList.remove('active-green','active'));
+    p.classList.add('active-green');
+    calculate();
+  });
+});
+
+['housing','utilities','food','transport','health','debt','other','currSaved','monthlyAdd'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calculate);
+});
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+function fmtK(n){return n>=1000?'$'+(n/1000).toFixed(0)+'K':fmt(n);}
+
+function calculate() {
+  const housing = +document.getElementById('housing').value||0;
+  const utilities = +document.getElementById('utilities').value||0;
+  const food = +document.getElementById('food').value||0;
+  const transport = +document.getElementById('transport').value||0;
+  const health = +document.getElementById('health').value||0;
+  const debt = +document.getElementById('debt').value||0;
+  const other = +document.getElementById('other').value||0;
+  const currSaved = +document.getElementById('currSaved').value||0;
+  const monthlyAdd = +document.getElementById('monthlyAdd').value||0;
+
+  const totalMonthly = housing + utilities + food + transport + health + debt + other;
+  const target6 = totalMonthly * targetMonths;
+  const target3 = totalMonthly * 3;
+  const target12 = totalMonthly * 12;
+
+  // Hero
+  document.getElementById('heroTarget').textContent = Math.round(target6).toLocaleString();
+  document.getElementById('heroSub').textContent = `Based on $${Math.round(totalMonthly).toLocaleString()}/mo expenses · ${targetMonths}-month cushion`;
+  document.getElementById('hero3mo').textContent = fmtK(target3);
+  document.getElementById('heroCurr').textContent = fmtK(currSaved);
+  const pctSaved = target6 > 0 ? Math.round(currSaved / target6 * 100) : 0;
+  document.getElementById('heroSavedSub').textContent = pctSaved + '% of goal';
+
+  const needed = Math.max(0, target6 - currSaved);
+  const months = needed <= 0 ? 0 : (monthlyAdd > 0 ? Math.ceil(needed / monthlyAdd) : 999);
+  document.getElementById('heroMonths').textContent = months === 0 ? '✓ Done' : (months === 999 ? 'N/A' : months + ' mo');
+  document.getElementById('heroRate').textContent = '@ ' + fmt(monthlyAdd) + '/mo';
+
+  // Scenarios
+  document.getElementById('mb3val').textContent = fmtK(target3);
+  document.getElementById('mb3sub').textContent = fmt(totalMonthly) + '/mo × 3';
+  document.getElementById('mb6val').textContent = fmtK(target6);
+  document.getElementById('mb6sub').textContent = fmt(totalMonthly) + '/mo × ' + targetMonths;
+  document.getElementById('mb12val').textContent = fmtK(target12);
+  document.getElementById('mb12sub').textContent = fmt(totalMonthly) + '/mo × 12';
+
+  // Progress bar
+  const pct = target6 > 0 ? Math.min(100, currSaved / target6 * 100) : 0;
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('savedLabel').textContent = 'Saved: ' + fmtK(currSaved);
+  document.getElementById('goalLabel').textContent = 'Goal: ' + fmtK(target6);
+  document.getElementById('timeMsg').innerHTML = 'At ' + fmt(monthlyAdd) + '/mo → <span style="color:#15803D;">' + (months === 0 ? 'Goal reached! 🎉' : months === 999 ? 'Increase contributions' : months + ' months to reach goal') + '</span>';
+  document.getElementById('timeSub').textContent = fmtK(currSaved) + ' saved · ' + (needed > 0 ? fmt(needed) + ' more needed' : 'Goal reached!');
+
+  // Bar chart
+  const cats = [
+    {label:'Housing', val:housing, color:'#1B3F72'},
+    {label:'Utilities', val:utilities, color:'#15803D'},
+    {label:'Food', val:food, color:'#D97706'},
+    {label:'Transport', val:transport, color:'#B91C1C'},
+    {label:'Health', val:health, color:'#7C3AED'},
+    {label:'Debt', val:debt, color:'#0891B2'},
+    {label:'Other', val:other, color:'#9CA3AF'},
+  ];
+  const maxVal = Math.max(...cats.map(c => c.val), 1);
+  document.getElementById('expenseChart').innerHTML = cats.map(c => `
+    <div class="bc-bar-wrap">
+      <div class="bc-bar" style="height:${Math.max(4,(c.val/maxVal*80))}px;background:${c.color};">
+        <div class="bc-val">${c.val > 0 ? fmtK(c.val) : ''}</div>
+      </div>
+      <div class="bc-lbl">${c.label}</div>
+    </div>`).join('');
+
+  // Breakdown rows
+  document.getElementById('breakdownRows').innerHTML = cats.filter(c => c.val > 0).map(c => `
+    <div class="breakdown-row">
+      <div class="br-left"><div class="br-dot" style="background:${c.color};"></div><div><div class="br-label">${c.label}</div><div class="br-sub">${totalMonthly > 0 ? Math.round(c.val/totalMonthly*100) : 0}% of expenses</div></div></div>
+      <div class="br-val">${fmt(c.val)}</div>
+    </div>`).join('') + `
+    <div class="breakdown-row" style="background:var(--bg);border-radius:8px;margin:4px -4px;padding:10px 8px;border:none;">
+      <div class="br-left"><div class="br-dot" style="background:var(--navy);"></div><div><div class="br-label" style="color:var(--navy);">Total Monthly</div></div></div>
+      <div class="br-val">${fmt(totalMonthly)}</div>
+    </div>`;
+
+  // Alert status
+  const alertCard = document.getElementById('statusAlert');
+  const alertTitle = document.getElementById('alertTitle');
+  document.getElementById('alCurr').textContent = fmt(currSaved);
+  document.getElementById('alTarget').textContent = fmt(target6);
+  document.getElementById('alGap').textContent = needed > 0 ? fmt(needed) : '$0 — Goal Met!';
+  document.getElementById('alMonths').textContent = months === 0 ? 'Reached! ✓' : months === 999 ? 'Add contributions' : months + ' months';
+
+  if (pct >= 100) {
+    alertCard.className = 'alert-card good';
+    alertTitle.className = 'alert-title good';
+    alertTitle.textContent = '✅ Emergency Fund Fully Funded!';
+    alertCard.querySelectorAll('.alert-lbl').forEach(e => e.className = 'alert-lbl good');
+    alertCard.querySelectorAll('.alert-val').forEach(e => e.className = 'alert-val good');
+  } else if (pct >= 50) {
+    alertCard.className = 'alert-card warn';
+    alertTitle.className = 'alert-title warn';
+    alertTitle.textContent = '⚡ Halfway There — Keep Going!';
+    alertCard.querySelectorAll('.alert-lbl').forEach(e => e.className = 'alert-lbl warn');
+    alertCard.querySelectorAll('.alert-val').forEach(e => e.className = 'alert-val warn');
+  } else {
+    alertCard.className = 'alert-card danger';
+    alertTitle.className = 'alert-title danger';
+    alertTitle.textContent = '⚠️ Fund Underfunded — Take Action';
+    alertCard.querySelectorAll('.alert-lbl').forEach(e => e.className = 'alert-lbl danger');
+    alertCard.querySelectorAll('.alert-val').forEach(e => e.className = 'alert-val danger');
+  }
+}
+
+function resetForm() {
+  document.getElementById('housing').value = 2200;
+  document.getElementById('utilities').value = 320;
+  document.getElementById('food').value = 650;
+  document.getElementById('transport').value = 580;
+  document.getElementById('health').value = 420;
+  document.getElementById('debt').value = 350;
+  document.getElementById('other').value = 280;
+  document.getElementById('currSaved').value = 12000;
+  document.getElementById('monthlyAdd').value = 1200;
+  targetMonths = 6;
+  document.querySelectorAll('[data-months]').forEach(x => x.classList.remove('active-green','active'));
+  document.querySelector('[data-months="6"]').classList.add('active-green');
+  calculate();
+}
+
+// Save/load
+const SAVE_KEY = 'ef_saved';
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function getSaved(){try{return JSON.parse(localStorage.getItem(SAVE_KEY))||[];}catch(e){return [];}}
+function setSaved(arr){localStorage.setItem(SAVE_KEY,JSON.stringify(arr));}
+
+function saveCalculation() {
+  const housing = +document.getElementById('housing').value||0;
+  const utilities = +document.getElementById('utilities').value||0;
+  const food = +document.getElementById('food').value||0;
+  const transport = +document.getElementById('transport').value||0;
+  const health = +document.getElementById('health').value||0;
+  const debt = +document.getElementById('debt').value||0;
+  const other = +document.getElementById('other').value||0;
+  const total = housing+utilities+food+transport+health+debt+other;
+  const currSaved = +document.getElementById('currSaved').value||0;
+  const monthlyAdd = +document.getElementById('monthlyAdd').value||0;
+
+  const entry = {
+    id: Date.now(),
+    name: targetMonths + '-Month Fund: $' + Math.round(total * targetMonths).toLocaleString(),
+    meta: 'Expenses $' + Math.round(total).toLocaleString() + '/mo · Saved $' + currSaved.toLocaleString() + ' · Adding $' + monthlyAdd.toLocaleString() + '/mo',
+    data: {housing,utilities,food,transport,health,debt,other,currSaved,monthlyAdd,targetMonths}
+  };
+  const arr = getSaved();
+  arr.unshift(entry);
+  if(arr.length > 10) arr.pop();
+  setSaved(arr);
+  renderSaved();
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  btn.textContent = '✓ Saved!';
+  showToast('Scenario saved');
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='💾 Save This Calculation';},1600);
+}
+
+function loadCalc(id) {
+  const e = getSaved().find(x => x.id === id);
+  if(!e) return;
+  const d = e.data;
+  document.getElementById('housing').value = d.housing;
+  document.getElementById('utilities').value = d.utilities;
+  document.getElementById('food').value = d.food;
+  document.getElementById('transport').value = d.transport;
+  document.getElementById('health').value = d.health;
+  document.getElementById('debt').value = d.debt;
+  document.getElementById('other').value = d.other;
+  document.getElementById('currSaved').value = d.currSaved;
+  document.getElementById('monthlyAdd').value = d.monthlyAdd;
+  targetMonths = d.targetMonths;
+  document.querySelectorAll('[data-months]').forEach(x => x.classList.remove('active-green','active'));
+  document.querySelector('[data-months="' + targetMonths + '"]').classList.add('active-green');
+  calculate();
+  showToast('Scenario loaded');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function deleteSaved(id,evt) {
+  evt.stopPropagation();
+  setSaved(getSaved().filter(e=>e.id!==id));
+  renderSaved();
+  showToast('Removed');
+}
+
+function clearAll() {
+  setSaved([]);
+  renderSaved();
+  showToast('All cleared');
+}
+
+function renderSaved() {
+  const arr = getSaved();
+  const list = document.getElementById('savedList');
+  if(arr.length===0){list.innerHTML='<div class="saved-empty">No saved scenarios yet. Tap "Save This Calculation" above.</div>';return;}
+  list.innerHTML = arr.map(e => `
+    <div class="saved-row" onclick="loadCalc(${e.id})">
+      <div class="saved-info">
+        <div class="saved-name">${e.name}</div>
+        <div class="saved-meta">${e.meta}</div>
+      </div>
+      <div class="saved-del" onclick="deleteSaved(${e.id},event)">🗑️</div>
+    </div>`).join('');
+}
+
+calculate();
+renderSaved();
+</script>
+</body>
+</html>

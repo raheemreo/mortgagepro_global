@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rent vs Buy Calculator</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --purple: #6D28D9;
+    --purple-dk: #4C1D95;
+    --green: #15803D;
+    --green-dk: #166534;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.10);
+    --sh: 0 4px 20px rgba(11,29,58,0.08);
+    --sh2: 0 8px 36px rgba(11,29,58,0.16);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  /* HEADER */
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#6D28D9 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after { content:'🤝'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  /* CONTENT */
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* INPUT CARDS */
+  .calc-card { background:var(--card); border-radius:20px; padding:18px; box-shadow:var(--sh2); border:1px solid var(--border); margin-bottom:12px; }
+  .calc-card-hdr { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .calc-card-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .icon-vt { background:linear-gradient(135deg,#6D28D9,#4C1D95); }
+  .icon-nv { background:linear-gradient(135deg,#0B1D3A,#1B3F72); }
+  .calc-card-title { font-size:14px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .calc-card-sub { font-size:9.5px; color:var(--muted); margin-top:1px; }
+  .field { margin-bottom:13px; }
+  .field label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:5px; }
+  .field input, .field select { width:100%; background:var(--bg); border:1.5px solid var(--border); border-radius:11px; padding:11px 13px; font-size:14px; font-weight:700; color:var(--navy); font-family:'Helvetica Neue',Arial,sans-serif; outline:none; transition:border-color .2s,box-shadow .2s; }
+  .field input:focus, .field select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(27,63,114,0.10); }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* ACTION BUTTONS */
+  .btn-row { display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:6px; }
+  .calc-btn { background:linear-gradient(135deg,#6D28D9,#4C1D95); border:none; border-radius:12px; padding:14px 18px; font-size:13px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(109,40,217,0.40); font-family:Georgia,serif; transition:transform .15s,box-shadow .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .calc-btn:active { transform:scale(0.97); box-shadow:0 2px 8px rgba(109,40,217,0.30); }
+  .save-btn { background:var(--card); border:2px solid var(--purple); border-radius:12px; padding:14px 14px; font-size:18px; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .save-btn:hover { background:var(--purple); }
+  .save-btn.saved { background:var(--green); border-color:var(--green); }
+
+  /* RESULTS hidden until calculated */
+  .results-section { display:none; }
+  .results-section.visible { display:block; }
+
+  /* VERDICT */
+  .verdict-card { border-radius:20px; padding:18px; box-shadow:var(--sh2); position:relative; overflow:hidden; margin-bottom:12px; }
+  .verdict-buy { background:linear-gradient(148deg,#15803D,#166534); }
+  .verdict-rent { background:linear-gradient(148deg,#6D28D9,#4C1D95); }
+  .verdict-close { background:linear-gradient(148deg,#D97706,#B45309); }
+  .verdict-card::before { content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.08); }
+  .verdict-emoji { font-size:28px; margin-bottom:6px; display:block; }
+  .verdict-title { font-size:20px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .verdict-sub { font-size:11px; color:rgba(255,255,255,0.65); margin-top:5px; }
+  .verdict-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .vg-item { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:11px 12px; }
+  .vg-lbl { font-size:9px; color:rgba(255,255,255,0.50); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; }
+  .vg-val { font-size:16px; font-weight:800; color:#fff; font-family:Georgia,serif; }
+  .vg-val.gold { color:var(--gold-lt); }
+
+  /* CHART CARD */
+  .chart-card { background:var(--card); border-radius:20px; padding:18px; box-shadow:var(--sh2); border:1px solid var(--border); margin-bottom:12px; }
+  .chart-title { font-size:13px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:4px; }
+  .chart-sub { font-size:9.5px; color:var(--muted); margin-bottom:14px; }
+  .chart-legend { display:flex; gap:14px; margin-bottom:10px; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:10px; font-weight:700; color:var(--muted); }
+  .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  /* NET WORTH BARS */
+  .nw-bars { display:flex; flex-direction:column; gap:10px; margin-bottom:10px; }
+  .nw-bar-row { }
+  .nw-bar-label { display:flex; justify-content:space-between; margin-bottom:4px; }
+  .nw-bar-name { font-size:10.5px; font-weight:700; color:var(--navy); }
+  .nw-bar-val { font-size:10.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .nw-bar-track { height:12px; background:var(--bg); border-radius:20px; overflow:hidden; }
+  .nw-bar-fill { height:100%; border-radius:20px; transition:width .7s cubic-bezier(.16,1,.3,1); }
+
+  /* MONTHLY COMPARE */
+  .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .cmp-card { border-radius:16px; padding:15px; }
+  .cmp-rent { background:linear-gradient(140deg,#6D28D9,#4C1D95); }
+  .cmp-buy  { background:linear-gradient(140deg,#15803D,#166534); }
+  .cmp-title { font-size:11px; font-weight:800; color:rgba(255,255,255,0.80); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
+  .cmp-val { font-size:22px; font-weight:800; color:#fff; font-family:Georgia,serif; }
+  .cmp-sub { font-size:9px; color:rgba(255,255,255,0.60); margin-top:3px; }
+  .cmp-items { margin-top:10px; display:flex; flex-direction:column; gap:5px; }
+  .cmp-row { display:flex; justify-content:space-between; font-size:10px; }
+  .cmp-row-lbl { color:rgba(255,255,255,0.60); }
+  .cmp-row-val { color:#fff; font-weight:700; }
+
+  /* BREAK-EVEN */
+  .break-card { background:var(--card); border-radius:16px; padding:15px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+  .break-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:4px; }
+  .break-sub { font-size:9.5px; color:var(--muted); margin-bottom:12px; }
+  .break-bar-wrap { height:10px; background:var(--bg); border-radius:20px; overflow:hidden; margin-bottom:6px; }
+  .break-bar { height:100%; background:linear-gradient(90deg,#6D28D9,#15803D); border-radius:20px; transition:width .7s ease; }
+  .break-labels { display:flex; justify-content:space-between; font-size:9.5px; }
+  .break-labels span { color:var(--muted); font-weight:600; }
+  .break-labels .active { color:var(--navy); font-weight:800; }
+
+  /* COST DONUT */
+  .donut-row { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+  .donut-wrap { flex-shrink:0; }
+  .donut-legend { flex:1; display:flex; flex-direction:column; gap:6px; }
+  .dl-item { display:flex; justify-content:space-between; align-items:center; }
+  .dl-name { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); font-weight:600; }
+  .dl-dot { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+  .dl-val { font-size:10px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+
+  /* SAVED TOAST */
+  .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-80px); background:var(--green); color:#fff; font-size:12px; font-weight:700; padding:10px 18px; border-radius:30px; box-shadow:var(--sh2); z-index:999; transition:transform .3s ease; white-space:nowrap; }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* SAVED HISTORY */
+  .saved-list { display:flex; flex-direction:column; gap:8px; }
+  .saved-item { background:var(--card); border-radius:14px; padding:13px; box-shadow:var(--sh); border:1px solid var(--border); }
+  .si-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .si-label { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .si-time { font-size:9px; color:var(--muted); }
+  .si-vals { display:flex; gap:8px; }
+  .si-tag { font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; }
+  .si-buy { background:#F0FDF4; color:#15803D; }
+  .si-rent { background:#EDE9FE; color:#6D28D9; }
+  .si-close { background:#FFF7ED; color:#D97706; }
+  .si-delete { font-size:14px; cursor:pointer; opacity:0.4; }
+
+  /* INFO LIST */
+  .ilist { display:flex; flex-direction:column; gap:9px; }
+  .ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .is { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .ich { font-size:16px; color:rgba(11,29,58,0.18); margin-left:auto; }
+
+  /* BOTTOM NAV */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+  .calc-card { animation:fadeUp .35s ease both .05s; }
+  .results-section.visible > * { animation:fadeUp .35s ease both; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ Calculation saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🤝</div>
+      <div class="hdr-title">Rent vs Buy</div>
+      <div class="hdr-sub">True Cost Comparison · 2024 USA Market Data</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Median Rent</div><div class="rs-v gold">$1,987</div><div class="rs-n">US Avg 2024</div></div>
+    <div class="rs"><div class="rs-l">Median Price</div><div class="rs-v">$412K</div><div class="rs-n">NAR Q1 2024</div></div>
+    <div class="rs"><div class="rs-l">30-Yr Rate</div><div class="rs-v">6.82%</div><div class="rs-n">Freddie Mac</div></div>
+    <div class="rs"><div class="rs-l">Break-Even</div><div class="rs-v">4.2 yrs</div><div class="rs-n">Nat'l Avg</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Rent Scenario <span class="more">Zillow Data →</span></div>
+  <div class="calc-card">
+    <div class="calc-card-hdr">
+      <div class="calc-card-icon icon-vt">🏠</div>
+      <div>
+        <div class="calc-card-title">Renting Details</div>
+        <div class="calc-card-sub">Current rent + annual increase</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Monthly Rent</label><input type="number" id="rent" value="2200" placeholder="$2,200"></div>
+      <div class="field"><label>Rent Increase/yr (%)</label><input type="number" id="rentIncrease" value="4" step="0.5"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Renters Insurance/mo</label><input type="number" id="rentersIns" value="18"></div>
+      <div class="field"><label>Investment Return (%)</label><input type="number" id="investReturn" value="7" step="0.5"></div>
+    </div>
+  </div>
+
+  <div class="sec" style="margin-top:0">Buy Scenario <span class="more">NAR Data →</span></div>
+  <div class="calc-card">
+    <div class="calc-card-hdr">
+      <div class="calc-card-icon icon-nv">🏡</div>
+      <div>
+        <div class="calc-card-title">Buying Details</div>
+        <div class="calc-card-sub">Full PITI + ownership costs</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Home Price</label><input type="number" id="homePrice" value="420000"></div>
+      <div class="field"><label>Down Payment (%)</label><input type="number" id="downPct" value="20" step="1"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Mortgage Rate (%)</label><input type="number" id="mRate" value="6.82" step="0.01"></div>
+      <div class="field"><label>Loan Term (yrs)</label>
+        <select id="term">
+          <option value="30" selected>30 Years</option>
+          <option value="15">15 Years</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Property Tax/yr (%)</label><input type="number" id="propTaxPct" value="1.1" step="0.1"></div>
+      <div class="field"><label>HOA / Maint./mo</label><input type="number" id="hoa" value="250"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Home Appreciation/yr (%)</label><input type="number" id="appreciation" value="4" step="0.5"></div>
+      <div class="field"><label>Time Horizon (yrs)</label><input type="number" id="years" value="7" step="1" min="1" max="30"></div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="calculate()">🤝 Compare Rent vs Buy</button>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()" title="Save this calculation">🔖</button>
+    </div>
+  </div>
+
+  <!-- RESULTS (hidden until calculated) -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="verdict-card verdict-buy" id="verdictCard">
+      <span class="verdict-emoji" id="verdictEmoji">🏡</span>
+      <div class="verdict-title" id="verdictTitle">Run the comparison above</div>
+      <div class="verdict-sub" id="verdictSub">Enter your numbers and tap Compare</div>
+      <div class="verdict-grid">
+        <div class="vg-item"><div class="vg-lbl">Buy Net Worth</div><div class="vg-val gold" id="buyNW">—</div></div>
+        <div class="vg-item"><div class="vg-lbl">Rent Net Worth</div><div class="vg-val" id="rentNW">—</div></div>
+        <div class="vg-item"><div class="vg-lbl">Break-Even Year</div><div class="vg-val" id="breakEven">—</div></div>
+        <div class="vg-item"><div class="vg-lbl">Monthly Buy Cost</div><div class="vg-val" id="monthlyBuy">—</div></div>
+      </div>
+    </div>
+
+    <!-- NET WORTH BAR CHART -->
+    <div class="chart-card">
+      <div class="chart-title">📊 Net Worth Comparison</div>
+      <div class="chart-sub">After your time horizon — buy equity vs renter investment portfolio</div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#15803D"></div>Buying</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#6D28D9"></div>Renting</div>
+      </div>
+      <div class="nw-bars">
+        <div class="nw-bar-row">
+          <div class="nw-bar-label"><span class="nw-bar-name">🏡 Buy Net Worth</span><span class="nw-bar-val" id="buyNWBar">—</span></div>
+          <div class="nw-bar-track"><div class="nw-bar-fill" id="buyBarFill" style="background:linear-gradient(90deg,#15803D,#22c55e);width:0%"></div></div>
+        </div>
+        <div class="nw-bar-row">
+          <div class="nw-bar-label"><span class="nw-bar-name">🏠 Rent Net Worth</span><span class="nw-bar-val" id="rentNWBar">—</span></div>
+          <div class="nw-bar-track"><div class="nw-bar-fill" id="rentBarFill" style="background:linear-gradient(90deg,#6D28D9,#a78bfa);width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- SVG Line Chart -->
+      <svg id="nwChart" viewBox="0 0 360 120" style="width:100%;display:block;margin-top:8px;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="buyGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#15803D" stop-opacity="0.3"/><stop offset="100%" stop-color="#15803D" stop-opacity="0"/></linearGradient>
+          <linearGradient id="rentGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6D28D9" stop-opacity="0.3"/><stop offset="100%" stop-color="#6D28D9" stop-opacity="0"/></linearGradient>
+        </defs>
+        <text x="4" y="12" font-size="8" fill="#4A5C7A">Net Worth Over Time</text>
+        <!-- grid lines -->
+        <line x1="30" y1="20" x2="355" y2="20" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="30" y1="50" x2="355" y2="50" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="30" y1="80" x2="355" y2="80" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="30" y1="108" x2="355" y2="108" stroke="#E2E8F0" stroke-width="1"/>
+        <path id="buyArea" d="" fill="url(#buyGrad)"/>
+        <path id="rentArea" d="" fill="url(#rentGrad)"/>
+        <path id="buyLine" d="" fill="none" stroke="#15803D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path id="rentLine" d="" fill="none" stroke="#6D28D9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line id="breakLine" x1="0" y1="20" x2="0" y2="108" stroke="#FCD34D" stroke-width="1.5" stroke-dasharray="4,3" opacity="0"/>
+        <text id="breakLineLabel" x="0" y="17" font-size="7.5" fill="#D97706" text-anchor="middle" opacity="0">Break-even</text>
+        <!-- Y axis labels -->
+        <text id="yTop" x="28" y="24" font-size="7.5" fill="#4A5C7A" text-anchor="end">—</text>
+        <text id="yMid" x="28" y="54" font-size="7.5" fill="#4A5C7A" text-anchor="end">—</text>
+        <text id="y0" x="28" y="112" font-size="7.5" fill="#4A5C7A" text-anchor="end">$0</text>
+      </svg>
+    </div>
+
+    <!-- MONTHLY COMPARE -->
+    <div class="sec">Monthly Cost Side-by-Side</div>
+    <div class="compare-grid">
+      <div class="cmp-card cmp-rent">
+        <div class="cmp-title">🏠 Renting</div>
+        <div class="cmp-val" id="rentMonthly">—</div>
+        <div class="cmp-sub">Total monthly cost</div>
+        <div class="cmp-items">
+          <div class="cmp-row"><span class="cmp-row-lbl">Rent</span><span class="cmp-row-val" id="r_rent">—</span></div>
+          <div class="cmp-row"><span class="cmp-row-lbl">Insurance</span><span class="cmp-row-val" id="r_ins">—</span></div>
+        </div>
+      </div>
+      <div class="cmp-card cmp-buy">
+        <div class="cmp-title">🏡 Buying</div>
+        <div class="cmp-val" id="buyMonthly">—</div>
+        <div class="cmp-sub">Total monthly cost</div>
+        <div class="cmp-items">
+          <div class="cmp-row"><span class="cmp-row-lbl">Mortgage P+I</span><span class="cmp-row-val" id="b_pi">—</span></div>
+          <div class="cmp-row"><span class="cmp-row-lbl">Tax + Ins</span><span class="cmp-row-val" id="b_ti">—</span></div>
+          <div class="cmp-row"><span class="cmp-row-lbl">HOA/Maint</span><span class="cmp-row-val" id="b_hoa">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUY COST DONUT -->
+    <div class="chart-card">
+      <div class="chart-title">🏡 Monthly Buy Cost Breakdown</div>
+      <div class="chart-sub">How your buying payment is distributed</div>
+      <div class="donut-row">
+        <div class="donut-wrap">
+          <svg viewBox="0 0 100 100" width="100" height="100">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#EEF2F8" stroke-width="16"/>
+            <circle id="donutPI" cx="50" cy="50" r="38" fill="none" stroke="#15803D" stroke-width="16" stroke-dasharray="0 239" stroke-linecap="butt" transform="rotate(-90 50 50)" style="transition:stroke-dasharray .8s ease"/>
+            <circle id="donutTI" cx="50" cy="50" r="38" fill="none" stroke="#1B3F72" stroke-width="16" stroke-dasharray="0 239" stroke-linecap="butt" transform="rotate(-90 50 50)" style="transition:stroke-dasharray .8s ease"/>
+            <circle id="donutHOA" cx="50" cy="50" r="38" fill="none" stroke="#D97706" stroke-width="16" stroke-dasharray="0 239" stroke-linecap="butt" transform="rotate(-90 50 50)" style="transition:stroke-dasharray .8s ease"/>
+            <text x="50" y="46" text-anchor="middle" font-size="10" font-weight="800" fill="#0B1D3A" id="donutCenter">—</text>
+            <text x="50" y="58" text-anchor="middle" font-size="7" fill="#4A5C7A">/month</text>
+          </svg>
+        </div>
+        <div class="donut-legend">
+          <div class="dl-item"><div class="dl-name"><div class="dl-dot" style="background:#15803D"></div>Principal + Interest</div><div class="dl-val" id="dl_pi">—</div></div>
+          <div class="dl-item"><div class="dl-name"><div class="dl-dot" style="background:#1B3F72"></div>Tax + Insurance</div><div class="dl-val" id="dl_ti">—</div></div>
+          <div class="dl-item"><div class="dl-name"><div class="dl-dot" style="background:#D97706"></div>HOA / Maint.</div><div class="dl-val" id="dl_hoa">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BREAK-EVEN -->
+    <div class="break-card">
+      <div class="break-title">⏱ Break-Even Timeline</div>
+      <div class="break-sub" id="breakSubText">Run the calculation to see break-even</div>
+      <div class="break-bar-wrap"><div class="break-bar" id="breakBar" style="width:0%"></div></div>
+      <div class="break-labels">
+        <span>Year 1</span><span class="active" id="breakLabel">—</span><span id="horizonLabel">—</span>
+      </div>
+    </div>
+
+    <!-- SAVED HISTORY -->
+    <div class="sec">Saved Comparisons <span class="more" onclick="clearSaved()">Clear All</span></div>
+    <div id="savedList" class="saved-list">
+      <div style="text-align:center;padding:20px;font-size:11px;color:var(--muted);">No saved calculations yet — hit 🔖 to save</div>
+    </div>
+
+  </div><!-- end results-section -->
+
+  <div class="sec">What Affects Your Decision <span class="more">Guide →</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📍</div><div><div class="in">Location Matters Most</div><div class="is">SF/NYC favor renting · Austin/Phoenix favor buying</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">⏳</div><div><div class="in">Stay 5+ Years to Buy</div><div class="is">Closing costs (2–5%) need time to recoup via equity</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📈</div><div><div class="in">Home Appreciation (Avg 4%/yr)</div><div class="is">FHFA HPI: homes averaged +4.3%/yr over 30 years</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">💳</div><div><div class="in">Credit Score = Rate Savings</div><div class="is">760+ score saves $200+/mo vs 620 score at same price</div></div><div class="ich">›</div></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmtK(n) { const v = Math.round(n/1000); return (v >= 0 ? '$' : '-$') + Math.abs(v) + 'K'; }
+
+let lastResult = null;
+let savedItems = [];
+
+function calculate() {
+  const rent0      = parseFloat(document.getElementById('rent').value)         || 2200;
+  const rentInc    = parseFloat(document.getElementById('rentIncrease').value)  / 100 || 0.04;
+  const rentersIns = parseFloat(document.getElementById('rentersIns').value)    || 18;
+  const investRet  = parseFloat(document.getElementById('investReturn').value)  / 100 || 0.07;
+  const homePrice  = parseFloat(document.getElementById('homePrice').value)     || 420000;
+  const downPct    = parseFloat(document.getElementById('downPct').value)       / 100 || 0.20;
+  const mRate      = parseFloat(document.getElementById('mRate').value)         / 100 || 0.0682;
+  const term       = parseInt(document.getElementById('term').value)             || 30;
+  const propTaxPct = parseFloat(document.getElementById('propTaxPct').value)    / 100 || 0.011;
+  const hoa        = parseFloat(document.getElementById('hoa').value)           || 250;
+  const appRate    = parseFloat(document.getElementById('appreciation').value)  / 100 || 0.04;
+  const years      = parseInt(document.getElementById('years').value)           || 7;
+
+  const down = homePrice * downPct;
+  const loan = homePrice - down;
+  const mRateM = mRate / 12;
+  const n = term * 12;
+  const pi = loan * mRateM * Math.pow(1+mRateM,n) / (Math.pow(1+mRateM,n)-1);
+  const propTaxM  = homePrice * propTaxPct / 12;
+  const homeInsM  = homePrice * 0.005 / 12;
+  const buyTotal  = pi + propTaxM + homeInsM + hoa;
+
+  // Buy net worth
+  const homeValue = homePrice * Math.pow(1+appRate, years);
+  let loanBal = loan;
+  for (let m=0; m<years*12; m++) {
+    const intM = loanBal * mRateM;
+    const prin = pi - intM;
+    loanBal -= prin;
+  }
+  const closingCosts = homePrice * 0.03;
+  const sellCosts = homeValue * 0.06;
+  const buyEquity = homeValue - Math.max(0, loanBal) - sellCosts;
+  const buyNW = buyEquity - closingCosts;
+
+  // Rent net worth
+  let rentInvestment = down;
+  for (let y=0; y<years; y++) {
+    const rentY = rent0 * Math.pow(1+rentInc, y) + rentersIns;
+    rentInvestment *= (1+investRet);
+    const savingsVsBuy = Math.max(0, buyTotal - rentY) * 12;
+    rentInvestment += savingsVsBuy * (1+investRet/2);
+  }
+  const rentNW = rentInvestment;
+
+  // Break-even year
+  let breakEvenYear = null;
+  let rentNWArr = down;
+  for (let y=1; y<=30; y++) {
+    const hv = homePrice * Math.pow(1+appRate, y);
+    let lb = loan;
+    for (let m=0; m<y*12; m++) { const i=lb*mRateM; lb -= (pi-i); }
+    const buyNWY = hv - Math.max(0,lb) - hv*0.06 - closingCosts;
+    rentNWArr = rentNWArr * (1+investRet) + Math.max(0, buyTotal - (rent0*Math.pow(1+rentInc,y-1)+rentersIns))*12;
+    if (buyNWY > rentNWArr && breakEvenYear === null) breakEvenYear = y;
+  }
+
+  // Year-by-year data for chart
+  const chartYears = Math.min(years + 3, 15);
+  const buyArr = [], rentArr = [];
+  let rInv2 = down;
+  for (let y=0; y<=chartYears; y++) {
+    if (y === 0) { buyArr.push(0); rentArr.push(down); continue; }
+    const hv2 = homePrice * Math.pow(1+appRate, y);
+    let lb2 = loan;
+    for (let m=0; m<y*12; m++) { const i2=lb2*mRateM; lb2-=(pi-i2); }
+    buyArr.push(Math.max(0, hv2 - Math.max(0,lb2) - hv2*0.06 - closingCosts));
+    rInv2 = rInv2*(1+investRet) + Math.max(0, buyTotal-(rent0*Math.pow(1+rentInc,y-1)+rentersIns))*12;
+    rentArr.push(rInv2);
+  }
+
+  const diff  = Math.abs(buyNW - rentNW);
+  const buyWins = buyNW > rentNW;
+  const close = diff < 15000;
+
+  // Update DOM
+  document.getElementById('buyNW').textContent = fmt(buyNW);
+  document.getElementById('rentNW').textContent = fmt(rentNW);
+  document.getElementById('monthlyBuy').textContent = fmt(buyTotal);
+  document.getElementById('breakEven').textContent = breakEvenYear ? `Yr ${breakEvenYear}` : '>30 yrs';
+  document.getElementById('rentMonthly').textContent = fmt(rent0 + rentersIns);
+  document.getElementById('buyMonthly').textContent = fmt(buyTotal);
+  document.getElementById('r_rent').textContent = fmt(rent0);
+  document.getElementById('r_ins').textContent = fmt(rentersIns);
+  document.getElementById('b_pi').textContent  = fmt(pi);
+  document.getElementById('b_ti').textContent  = fmt(propTaxM + homeInsM);
+  document.getElementById('b_hoa').textContent = fmt(hoa);
+  document.getElementById('buyNWBar').textContent  = fmt(buyNW);
+  document.getElementById('rentNWBar').textContent = fmt(rentNW);
+
+  // Verdict card
+  const vc = document.getElementById('verdictCard');
+  vc.className = 'verdict-card ' + (close ? 'verdict-close' : buyWins ? 'verdict-buy' : 'verdict-rent');
+  document.getElementById('verdictEmoji').textContent  = close ? '⚖️' : buyWins ? '🏡' : '🏠';
+  document.getElementById('verdictTitle').textContent  = close ? 'Too Close to Call' : buyWins ? `Buying Wins Over ${years} Years` : `Renting Wins Over ${years} Years`;
+  document.getElementById('verdictSub').textContent    = close ? `Difference under $15,000 — lifestyle matters more` : `${buyWins?'Buying builds':'Renting preserves'} ${fmt(diff)} more net worth over ${years} years`;
+
+  // NW bars
+  const maxNW = Math.max(buyNW, rentNW);
+  if (maxNW > 0) {
+    document.getElementById('buyBarFill').style.width  = Math.max(5, (buyNW/maxNW)*100) + '%';
+    document.getElementById('rentBarFill').style.width = Math.max(5, (rentNW/maxNW)*100) + '%';
+  }
+
+  // Break-even bar
+  const beY = breakEvenYear || years + 10;
+  const pct = Math.min(100, Math.max(5, (beY / years) * 100));
+  document.getElementById('breakBar').style.width = pct + '%';
+  document.getElementById('breakLabel').textContent = breakEvenYear ? `Year ${breakEvenYear} ✓` : `No break-even`;
+  document.getElementById('horizonLabel').textContent = `Year ${years}`;
+  document.getElementById('breakSubText').textContent = breakEvenYear
+    ? (breakEvenYear <= years ? `Buying beats renting after Year ${breakEvenYear} in this scenario` : `Buying doesn't break even within your ${years}-year window`)
+    : 'Renting is more advantageous given these inputs';
+
+  // Donut chart for buy cost
+  const totalM = pi + propTaxM + homeInsM + hoa;
+  const circumference = 2 * Math.PI * 38; // ~238.76
+  const piPct   = pi / totalM;
+  const tiPct   = (propTaxM + homeInsM) / totalM;
+  const hoaPct  = hoa / totalM;
+  const piDash  = piPct  * circumference;
+  const tiDash  = tiPct  * circumference;
+  const hoaDash = hoaPct * circumference;
+  const gap = 0;
+  document.getElementById('donutPI').setAttribute('stroke-dasharray',  `${piDash} ${circumference - piDash}`);
+  document.getElementById('donutTI').setAttribute('stroke-dasharray',  `${tiDash} ${circumference - tiDash}`);
+  document.getElementById('donutTI').setAttribute('transform', `rotate(${(piPct*360)-90} 50 50)`);
+  document.getElementById('donutHOA').setAttribute('stroke-dasharray', `${hoaDash} ${circumference - hoaDash}`);
+  document.getElementById('donutHOA').setAttribute('transform', `rotate(${((piPct+tiPct)*360)-90} 50 50)`);
+  document.getElementById('donutCenter').textContent = fmt(Math.round(totalM));
+  document.getElementById('dl_pi').textContent  = fmt(pi);
+  document.getElementById('dl_ti').textContent  = fmt(propTaxM + homeInsM);
+  document.getElementById('dl_hoa').textContent = fmt(hoa);
+
+  // SVG line chart
+  drawLineChart(buyArr, rentArr, chartYears, breakEvenYear);
+
+  lastResult = { buyNW, rentNW, buyTotal, rent0, rentersIns, years, breakEvenYear, buyWins, close, diff, homePrice, downPct };
+  document.getElementById('resultsSection').classList.add('visible');
+}
+
+function drawLineChart(buyArr, rentArr, years, beYear) {
+  const allVals = [...buyArr, ...rentArr].filter(v => v >= 0);
+  const maxV = Math.max(...allVals);
+  if (maxV <= 0) return;
+  const chartX1 = 30, chartX2 = 355, chartY1 = 20, chartY2 = 108;
+  const W = chartX2 - chartX1, H = chartY2 - chartY1;
+
+  function px(y, v) { return chartX1 + (y / years) * W; }
+  function py(v)    { return chartY2 - Math.max(0, (v / maxV)) * H; }
+
+  let buyPath = '', rentPath = '', buyArea = '', rentArea = '';
+  for (let i=0; i<=years; i++) {
+    const x = px(i), yB = py(buyArr[i] || 0), yR = py(rentArr[i] || 0);
+    buyPath  += (i===0 ? `M${x},${yB}` : ` L${x},${yB}`);
+    rentPath += (i===0 ? `M${x},${yR}` : ` L${x},${yR}`);
+    buyArea  += (i===0 ? `M${x},${chartY2} L${x},${yB}` : ` L${x},${yB}`);
+    rentArea += (i===0 ? `M${x},${chartY2} L${x},${yR}` : ` L${x},${yR}`);
+  }
+  buyArea  += ` L${px(years)},${chartY2} Z`;
+  rentArea += ` L${px(years)},${chartY2} Z`;
+
+  document.getElementById('buyLine').setAttribute('d', buyPath);
+  document.getElementById('rentLine').setAttribute('d', rentPath);
+  document.getElementById('buyArea').setAttribute('d', buyArea);
+  document.getElementById('rentArea').setAttribute('d', rentArea);
+  document.getElementById('yTop').textContent = fmtK(maxV);
+  document.getElementById('yMid').textContent = fmtK(maxV / 2);
+
+  // Break-even line
+  if (beYear && beYear <= years) {
+    const bx = px(beYear);
+    document.getElementById('breakLine').setAttribute('x1', bx);
+    document.getElementById('breakLine').setAttribute('x2', bx);
+    document.getElementById('breakLine').setAttribute('opacity', '1');
+    document.getElementById('breakLineLabel').setAttribute('x', bx);
+    document.getElementById('breakLineLabel').setAttribute('opacity', '1');
+  } else {
+    document.getElementById('breakLine').setAttribute('opacity', '0');
+    document.getElementById('breakLineLabel').setAttribute('opacity', '0');
+  }
+}
+
+function saveCalc() {
+  if (!lastResult) { alert('Run a calculation first!'); return; }
+  const { buyNW, rentNW, years, homePrice, buyWins, close } = lastResult;
+  const label = close ? '⚖️ Close Call' : buyWins ? `🏡 Buy wins (${years}yr)` : `🏠 Rent wins (${years}yr)`;
+  const tagClass = close ? 'si-close' : buyWins ? 'si-buy' : 'si-rent';
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  savedItems.unshift({ label, tagClass, buyNW, rentNW, homePrice, years, time: now, id: Date.now() });
+  renderSaved();
+  showToast('✅ Calculation saved!');
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  setTimeout(() => btn.classList.remove('saved'), 1500);
+}
+
+function renderSaved() {
+  const el = document.getElementById('savedList');
+  if (savedItems.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;font-size:11px;color:var(--muted);">No saved calculations yet — hit 🔖 to save</div>';
+    return;
+  }
+  el.innerHTML = savedItems.map(s => `
+    <div class="saved-item">
+      <div class="si-top">
+        <div class="si-label">${s.label}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="si-time">${s.time}</div>
+          <div class="si-delete" onclick="deleteSaved(${s.id})">✕</div>
+        </div>
+      </div>
+      <div class="si-vals">
+        <span class="si-tag ${s.tagClass}">Buy NW: ${fmt(s.buyNW)}</span>
+        <span class="si-tag si-rent">Rent NW: ${fmt(s.rentNW)}</span>
+      </div>
+    </div>`).join('');
+}
+
+function deleteSaved(id) {
+  savedItems = savedItems.filter(s => s.id !== id);
+  renderSaved();
+}
+
+function clearSaved() {
+  savedItems = [];
+  renderSaved();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

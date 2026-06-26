@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOA Reserve Fund Health</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --gold:#D97706; --gold-lt:#FCD34D;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A; --border:rgba(27,63,114,0.09);
+    --sh:0 4px 20px rgba(11,29,58,0.10); --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --vt:#6D28D9; --vt2:#4C1D95;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#4C1D95 55%,#6D28D9 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::after{content:'⚠️';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* Calculator Card */
+  .calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:12px;}
+  .calc-card-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .calc-card-icon{width:42px;height:42px;border-radius:13px;background:linear-gradient(140deg,#6D28D9,#4C1D95);display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .calc-card-title{font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .calc-card-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+  .input-group{margin-bottom:14px;}
+  .input-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+  .input-row{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;}
+  .input-row:focus-within{border-color:var(--vt);background:#faf5ff;}
+  .input-prefix{padding:12px 11px;font-size:14px;font-weight:700;color:var(--muted);background:rgba(27,63,114,0.05);border-right:1px solid var(--border);}
+  .input-row input{flex:1;border:none;background:transparent;padding:12px;font-size:15px;font-weight:700;color:var(--navy);font-family:Georgia,serif;outline:none;}
+  .input-suffix{padding:12px 11px;font-size:11px;font-weight:700;color:var(--muted);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .btn-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:8px;}
+  .calc-btn{background:linear-gradient(135deg,#6D28D9,#4C1D95);border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(109,40,217,0.40);font-family:Georgia,serif;transition:transform .12s;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .calc-btn:active{transform:scale(.98);}
+  .save-btn{background:var(--card);border:2px solid var(--vt);border-radius:13px;padding:14px 16px;font-size:12px;font-weight:800;color:var(--vt);cursor:pointer;font-family:Georgia,serif;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;}
+  .save-btn.saved{background:#f3e8ff;}
+
+  /* Result Hero */
+  .result-hero{border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--sh2);}
+  .result-hero.healthy{background:linear-gradient(148deg,#15803D,#166534);}
+  .result-hero.caution{background:linear-gradient(148deg,#D97706,#92400E);}
+  .result-hero.critical{background:linear-gradient(148deg,#B91C1C,#7F1D1D);}
+  .result-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.07);}
+  .rh-label{font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.7px;}
+  .rh-val{font-size:38px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1;margin:6px 0 2px;}
+  .rh-sub{font-size:11px;color:rgba(255,255,255,0.75);}
+  .rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .rh-item{background:rgba(255,255,255,0.12);border-radius:11px;padding:9px 8px;text-align:center;}
+  .rh-item-l{font-size:8.5px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.4px;}
+  .rh-item-v{font-size:14px;font-weight:800;color:#fff;font-family:Georgia,serif;margin-top:2px;}
+
+  /* Gauge */
+  .gauge-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .gauge-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+  .gauge-wrap{position:relative;display:flex;justify-content:center;margin-bottom:10px;}
+  .gauge-label{text-align:center;margin-top:6px;}
+  .gauge-pct{font-size:28px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .gauge-sub{font-size:10px;color:var(--muted);}
+  .zone-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;}
+  .zone-item{text-align:center;padding:7px 4px;border-radius:9px;}
+  .zone-item.active{transform:scale(1.05);box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+  .z-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;}
+  .z-val{font-size:12px;font-weight:800;font-family:Georgia,serif;margin-top:2px;}
+  .zone-item.z1{background:#DCFCE7;} .zone-item.z1 .z-label{color:#15803D;} .zone-item.z1 .z-val{color:#15803D;}
+  .zone-item.z2{background:#FEF9C3;} .zone-item.z2 .z-label{color:#92400E;} .zone-item.z2 .z-val{color:#D97706;}
+  .zone-item.z3{background:#FFEDD5;} .zone-item.z3 .z-label{color:#9A3412;} .zone-item.z3 .z-val{color:#EA580C;}
+  .zone-item.z4{background:#FEE2E2;} .zone-item.z4 .z-label{color:#7F1D1D;} .zone-item.z4 .z-val{color:#B91C1C;}
+
+  /* Bar chart */
+  .chart-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .chart-title{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  canvas{width:100%!important;display:block;}
+
+  /* Special Assessment Risk */
+  .risk-card{border-radius:16px;padding:14px 16px;margin-bottom:12px;border:1px solid;}
+  .risk-card.low{background:#F0FDF4;border-color:rgba(21,128,61,0.25);}
+  .risk-card.medium{background:#FFFBEB;border-color:rgba(217,119,6,0.30);}
+  .risk-card.high{background:#FEF2F2;border-color:rgba(185,28,28,0.25);}
+  .risk-title{font-size:12px;font-weight:800;font-family:Georgia,serif;margin-bottom:6px;}
+  .risk-card.low .risk-title{color:#15803D;}
+  .risk-card.medium .risk-title{color:#D97706;}
+  .risk-card.high .risk-title{color:#B91C1C;}
+  .risk-text{font-size:10px;line-height:1.55;color:var(--muted);}
+
+  /* Stat cards */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .stat-card{background:var(--card);border-radius:16px;padding:15px 13px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .stat-card.warn{border-color:rgba(185,28,28,0.20);background:#FFF5F5;}
+  .stat-card.ok{border-color:rgba(21,128,61,0.20);background:#F0FFF4;}
+  .sc-icon{font-size:22px;margin-bottom:6px;}
+  .sc-label{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .sc-val{font-size:20px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .stat-card.warn .sc-val{color:#B91C1C;}
+  .stat-card.ok .sc-val{color:#15803D;}
+  .sc-sub{font-size:9px;color:var(--muted);}
+
+  /* Checklist */
+  .checklist-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+  .cl-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .cl-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+  .cl-item:last-child{border-bottom:none;}
+  .cl-check{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;}
+  .cl-check.yes{background:#DCFCE7;color:#15803D;}
+  .cl-check.no{background:#FEE2E2;color:#B91C1C;}
+  .cl-check.ask{background:#FEF9C3;color:#D97706;}
+  .cl-text{font-size:11px;font-weight:700;color:var(--navy);}
+  .cl-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+
+  /* Tip box */
+  .tip-box{background:linear-gradient(135deg,#F3E8FF,#EDE9FE);border:1px solid rgba(109,40,217,0.18);border-radius:14px;padding:13px 14px;margin-bottom:12px;}
+  .tip-title{font-size:11px;font-weight:800;color:#4C1D95;font-family:Georgia,serif;margin-bottom:5px;}
+  .tip-text{font-size:10px;color:#6D28D9;line-height:1.55;}
+
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--vt);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .fade-in{animation:fadeUp .35s ease both;}
+  .results-section{animation:fadeUp .35s ease both;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">✅ Reserve analysis saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_hoa_fee_impact.html" class="icon-btn">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">⚠️</div>
+      <div class="hdr-title">Reserve Fund Health</div>
+      <div class="hdr-sub">Funding Level · Risk · Special Assessments</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Healthy Level</div><div class="rs-v gold">≥70%</div><div class="rs-n">CAI Standard</div></div>
+    <div class="rs"><div class="rs-l">US HOAs</div><div class="rs-v">70%</div><div class="rs-n">Underfunded</div></div>
+    <div class="rs"><div class="rs-l">Avg Assess.</div><div class="rs-v">$3.8K</div><div class="rs-n">Special / Unit</div></div>
+    <div class="rs"><div class="rs-l">Critical Below</div><div class="rs-v gold">30%</div><div class="rs-n">Danger Zone</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">Reserve Fund Calculator <span class="more" onclick="resetCalc()">Reset</span></div>
+  <div class="calc-card fade-in">
+    <div class="calc-card-header">
+      <div class="calc-card-icon">🏦</div>
+      <div>
+        <div class="calc-card-title">Reserve Fund Analyzer</div>
+        <div class="calc-card-sub">Calculate funding level & special assessment risk</div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="input-group">
+        <label class="input-label">Current Reserves ($)</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="currentReserves" value="185000" min="0"></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Fully Funded Amount</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="fullyFunded" value="400000" min="0"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="input-group">
+        <label class="input-label">Total Units in HOA</label>
+        <div class="input-row"><input type="number" id="totalUnits" value="48" min="1"></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Annual Reserve Contrib.</label>
+        <div class="input-row"><span class="input-prefix">$</span><input type="number" id="annualContrib" value="36000" min="0"></div>
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Next Major Project Cost (est.)</label>
+      <div class="input-row"><span class="input-prefix">$</span><input type="number" id="nextProject" value="120000" min="0"></div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Years Until Next Major Project</label>
+      <div class="input-row"><input type="number" id="yearsOut" value="3" min="1" max="30"><span class="input-suffix">yrs</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="analyzeReserve()">🔍 Analyze Reserve Health</button>
+      <button class="save-btn" id="saveBtn" onclick="saveAnalysis()">🔖 Save</button>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div id="resultsSection" style="display:none">
+
+    <!-- Hero -->
+    <div class="result-hero" id="resultHero">
+      <div class="rh-label">Reserve Funding Level</div>
+      <div class="rh-val" id="fundingPct">—</div>
+      <div class="rh-sub" id="fundingStatus">Analyzing...</div>
+      <div class="rh-grid">
+        <div class="rh-item"><div class="rh-item-l">Shortfall</div><div class="rh-item-v" id="shortfallAmt">—</div></div>
+        <div class="rh-item"><div class="rh-item-l">Per Unit Risk</div><div class="rh-item-v" id="perUnitRisk">—</div></div>
+        <div class="rh-item"><div class="rh-item-l">Yrs to Funded</div><div class="rh-item-v" id="yrsToFunded">—</div></div>
+      </div>
+    </div>
+
+    <!-- Gauge -->
+    <div class="gauge-card results-section">
+      <div class="gauge-title">Reserve Funding Gauge</div>
+      <div class="gauge-wrap">
+        <canvas id="gaugeChart" width="280" height="150"></canvas>
+      </div>
+      <div class="gauge-label">
+        <div class="gauge-pct" id="gaugePct">—</div>
+        <div class="gauge-sub">Percent Funded (CAI Standard)</div>
+      </div>
+      <div class="zone-row">
+        <div class="zone-item z1" id="z1"><div class="z-label">Healthy</div><div class="z-val">≥70%</div></div>
+        <div class="zone-item z2" id="z2"><div class="z-label">Fair</div><div class="z-val">50–69%</div></div>
+        <div class="zone-item z3" id="z3"><div class="z-label">At Risk</div><div class="z-val">30–49%</div></div>
+        <div class="zone-item z4" id="z4"><div class="z-label">Critical</div><div class="z-val">&lt;30%</div></div>
+      </div>
+    </div>
+
+    <!-- Projection Chart -->
+    <div class="chart-card results-section">
+      <div class="chart-title">Reserve Balance vs. Project Deadline</div>
+      <canvas id="projChart" height="120"></canvas>
+    </div>
+
+    <!-- Risk Assessment -->
+    <div id="riskCard" class="risk-card results-section">
+      <div class="risk-title" id="riskTitle">—</div>
+      <div class="risk-text" id="riskText">—</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="g2 results-section">
+      <div class="stat-card" id="assessCard"><div class="sc-icon">💸</div><div class="sc-label">Potential Special Assess.</div><div class="sc-val" id="assessAmt">—</div><div class="sc-sub">If project hits today</div></div>
+      <div class="stat-card"><div class="sc-icon">📅</div><div class="sc-label">Projected Balance</div><div class="sc-val" id="projBalance">—</div><div class="sc-sub">At project deadline</div></div>
+    </div>
+
+  </div>
+
+  <!-- National Data -->
+  <div class="sec">National Reserve Statistics</div>
+  <div class="g2 fade-in">
+    <div class="stat-card warn"><div class="sc-icon">🚨</div><div class="sc-label">HOAs Underfunded</div><div class="sc-val">70%</div><div class="sc-sub">Below 70% funded (CAI)</div></div>
+    <div class="stat-card ok"><div class="sc-icon">✅</div><div class="sc-label">Avg Healthy HOA</div><div class="sc-val">82%</div><div class="sc-sub">Well-run communities</div></div>
+  </div>
+  <div class="g2 fade-in">
+    <div class="stat-card"><div class="sc-icon">💰</div><div class="sc-label">Avg Special Assessment</div><div class="sc-val">$3.8K</div><div class="sc-sub">Per unit (2023–2024)</div></div>
+    <div class="stat-card warn"><div class="sc-icon">⛈️</div><div class="sc-label">Large Assessments</div><div class="sc-val">$10K+</div><div class="sc-sub">Seen post-Surfside FL</div></div>
+  </div>
+
+  <!-- Due Diligence Checklist -->
+  <div class="sec">Buyer Due Diligence Checklist</div>
+  <div class="checklist-card fade-in">
+    <div class="cl-title">📋 Reserve Documents to Request</div>
+    <div class="cl-item">
+      <div class="cl-check yes">✓</div>
+      <div><div class="cl-text">Reserve Study (within 3 years)</div><div class="cl-sub">Professional analysis of all major components & funding timeline</div></div>
+    </div>
+    <div class="cl-item">
+      <div class="cl-check yes">✓</div>
+      <div><div class="cl-text">Last 2 Years' Financials</div><div class="cl-sub">Audited or reviewed statements from a CPA</div></div>
+    </div>
+    <div class="cl-item">
+      <div class="cl-check ask">?</div>
+      <div><div class="cl-text">Pending Special Assessments</div><div class="cl-sub">Ask HOA board directly — not always in documents</div></div>
+    </div>
+    <div class="cl-item">
+      <div class="cl-check ask">?</div>
+      <div><div class="cl-text">Delinquency Rate</div><div class="cl-sub">&gt;15% delinquency = possible Fannie Mae/FHA financing issues</div></div>
+    </div>
+    <div class="cl-item">
+      <div class="cl-check no">!</div>
+      <div><div class="cl-text">Pending Litigation</div><div class="cl-sub">Any active lawsuits against HOA affect insurability & lenders</div></div>
+    </div>
+    <div class="cl-item">
+      <div class="cl-check yes">✓</div>
+      <div><div class="cl-text">Meeting Minutes (12 months)</div><div class="cl-sub">Reveals deferred maintenance, disputes, upcoming projects</div></div>
+    </div>
+  </div>
+
+  <!-- Tip -->
+  <div class="tip-box fade-in">
+    <div class="tip-title">💡 The Surfside Effect (2021)</div>
+    <div class="tip-text">After the Champlain Towers collapse in Surfside, FL, Florida passed <strong>SB 4D</strong> requiring milestone inspections and full reserve funding for condos 3+ stories. Many Florida HOAs have issued $10,000–$100,000+ special assessments per unit. Always check reserve fund health <em>before</em> making an offer.</div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmt(n){return '$'+Math.round(Math.abs(n)).toLocaleString();}
+function fmtK(n){return '$'+Math.round(n/1000)+'K';}
+let lastResult = null;
+
+function resetCalc(){
+  document.getElementById('currentReserves').value=185000;
+  document.getElementById('fullyFunded').value=400000;
+  document.getElementById('totalUnits').value=48;
+  document.getElementById('annualContrib').value=36000;
+  document.getElementById('nextProject').value=120000;
+  document.getElementById('yearsOut').value=3;
+  document.getElementById('resultsSection').style.display='none';
+}
+
+function analyzeReserve(){
+  const curr = parseFloat(document.getElementById('currentReserves').value)||185000;
+  const full = parseFloat(document.getElementById('fullyFunded').value)||400000;
+  const units = parseFloat(document.getElementById('totalUnits').value)||48;
+  const contrib = parseFloat(document.getElementById('annualContrib').value)||36000;
+  const project = parseFloat(document.getElementById('nextProject').value)||120000;
+  const years = parseFloat(document.getElementById('yearsOut').value)||3;
+
+  const pct = Math.min((curr/full)*100, 100);
+  const shortfall = Math.max(full - curr, 0);
+  const perUnit = shortfall / units;
+  const yrsToFull = shortfall > 0 ? Math.ceil(shortfall / contrib) : 0;
+  const projBal = curr + contrib * years;
+  const assessNeeded = Math.max(project - projBal, 0);
+  const assessPerUnit = assessNeeded / units;
+
+  document.getElementById('resultsSection').style.display='block';
+
+  document.getElementById('fundingPct').textContent = pct.toFixed(1)+'%';
+  document.getElementById('shortfallAmt').textContent = fmt(shortfall);
+  document.getElementById('perUnitRisk').textContent = fmt(perUnit);
+  document.getElementById('yrsToFunded').textContent = yrsToFull > 0 ? yrsToFull+'y' : '✅ Full';
+  document.getElementById('gaugePct').textContent = pct.toFixed(1)+'%';
+  document.getElementById('projBalance').textContent = fmtK(projBal);
+  document.getElementById('assessAmt').textContent = assessPerUnit > 0 ? fmt(assessPerUnit)+'/unit' : '✅ Covered';
+
+  const hero = document.getElementById('resultHero');
+  const statusEl = document.getElementById('fundingStatus');
+  let riskClass, riskTitle, riskText, heroClass;
+
+  if(pct >= 70){
+    heroClass='healthy'; riskClass='low';
+    statusEl.textContent = '✅ Healthy Reserve — Low Special Assessment Risk';
+    riskTitle='✅ Low Risk — Well-Funded HOA'; 
+    riskText=`At ${pct.toFixed(1)}% funded, this HOA meets the CAI 70% threshold. Special assessment risk is low. Lenders (including Fannie Mae) view this favorably. Annual contributions appear adequate relative to long-term needs.`;
+  } else if(pct >= 50){
+    heroClass='caution'; riskClass='medium';
+    statusEl.textContent = '⚠️ Fair Funding — Moderate Assessment Possible';
+    riskTitle='⚠️ Moderate Risk — Review Major Projects';
+    riskText=`At ${pct.toFixed(1)}% funded, this HOA is below CAI's healthy threshold. A special assessment is possible if a major project arises. Shortfall of ${fmt(shortfall)} could mean ~${fmt(perUnit)}/unit in future assessments. Request the full reserve study before closing.`;
+  } else if(pct >= 30){
+    heroClass='caution'; riskClass='medium';
+    statusEl.textContent = '🚨 At Risk — High Chance of Special Assessment';
+    riskTitle='🚨 High Risk — Significant Underfunding';
+    riskText=`At ${pct.toFixed(1)}% funded, this HOA is significantly underfunded. A special assessment of ${fmt(perUnit)}/unit or higher is highly probable within the next few years. Some lenders may refuse to finance units in HOAs below 50% funded.`;
+  } else {
+    heroClass='critical'; riskClass='high';
+    statusEl.textContent = '🚨 Critical — Severe Underfunding Danger';
+    riskTitle='🚨 Critical Risk — Avoid Without Expert Review';
+    riskText=`At only ${pct.toFixed(1)}% funded, this is a severely underfunded HOA. Fannie Mae and FHA lenders may refuse to approve loans. A large special assessment of ${fmt(perUnit)}+ per unit is highly likely. Consult a HOA attorney and reserve specialist before purchasing.`;
+  }
+
+  hero.className = `result-hero ${heroClass}`;
+  const rc = document.getElementById('riskCard');
+  rc.className = `risk-card results-section ${riskClass}`;
+  document.getElementById('riskTitle').textContent = riskTitle;
+  document.getElementById('riskText').textContent = riskText;
+
+  const assessCard = document.getElementById('assessCard');
+  assessCard.className = assessPerUnit > 1000 ? 'stat-card warn' : 'stat-card ok';
+
+  // Highlight active zone
+  ['z1','z2','z3','z4'].forEach(z => document.getElementById(z).classList.remove('active'));
+  if(pct>=70) document.getElementById('z1').classList.add('active');
+  else if(pct>=50) document.getElementById('z2').classList.add('active');
+  else if(pct>=30) document.getElementById('z3').classList.add('active');
+  else document.getElementById('z4').classList.add('active');
+
+  setTimeout(()=>{
+    drawGauge(pct);
+    drawProjection(curr, contrib, project, years);
+  }, 50);
+
+  lastResult = {curr, full, units, contrib, project, years, pct, shortfall, perUnit, projBal, assessPerUnit, date: new Date().toLocaleDateString()};
+}
+
+function drawGauge(pct){
+  const canvas = document.getElementById('gaugeChart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W=280, H=150;
+  canvas.width=W; canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+  const cx=140, cy=130, R=110, rIn=75;
+  // Background arc
+  ctx.beginPath(); ctx.arc(cx,cy,R,Math.PI,0); ctx.lineWidth=28; ctx.strokeStyle='#EEF2F8'; ctx.stroke();
+  // Color zones on arc
+  const zones=[
+    {start:0, end:0.30, color:'#B91C1C'},
+    {start:0.30, end:0.50, color:'#EA580C'},
+    {start:0.50, end:0.70, color:'#D97706'},
+    {start:0.70, end:1.00, color:'#15803D'},
+  ];
+  zones.forEach(z=>{
+    ctx.beginPath();
+    const s = Math.PI + z.start*Math.PI;
+    const e = Math.PI + z.end*Math.PI;
+    ctx.arc(cx,cy,R,s,e);
+    ctx.lineWidth=28; ctx.strokeStyle=z.color; ctx.stroke();
+  });
+  // Needle
+  const angle = Math.PI + Math.min(pct/100,1)*Math.PI;
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(angle);
+  ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(0,-90); ctx.lineTo(8,0);
+  ctx.fillStyle='#0B1D3A'; ctx.fill();
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(cx,cy,10,0,2*Math.PI);
+  ctx.fillStyle='#0B1D3A'; ctx.fill();
+  // Labels
+  ctx.fillStyle='#4A5C7A'; ctx.font='bold 9px Helvetica Neue'; ctx.textAlign='center';
+  ctx.fillText('0%', cx-R-2, cy+4);
+  ctx.fillText('100%', cx+R+2, cy+4);
+  ctx.fillText('70%', cx+10, cy-R+14);
+}
+
+function drawProjection(curr, contrib, project, years){
+  const canvas = document.getElementById('projChart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth||350, H=120;
+  canvas.width=W; canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+  const pts = years+1;
+  const maxY = Math.max(curr + contrib*years, project)*1.1;
+  const px=(i)=>30+i*(W-40)/(pts-1);
+  const py=(v)=>H-20-(v/maxY)*(H-30);
+  // Reserve line
+  ctx.beginPath();
+  for(let i=0;i<pts;i++){
+    const v=curr+contrib*i;
+    i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));
+  }
+  ctx.strokeStyle='#6D28D9'; ctx.lineWidth=2.5; ctx.stroke();
+  // Project cost line
+  ctx.beginPath(); ctx.moveTo(30,py(project)); ctx.lineTo(W-10,py(project));
+  ctx.strokeStyle='#B91C1C'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]); ctx.stroke();
+  ctx.setLineDash([]);
+  // Dots
+  for(let i=0;i<pts;i++){
+    const v=curr+contrib*i;
+    ctx.beginPath(); ctx.arc(px(i),py(v),3,0,2*Math.PI);
+    ctx.fillStyle='#6D28D9'; ctx.fill();
+  }
+  // Labels
+  ctx.fillStyle='#0B1D3A'; ctx.font='bold 8.5px Helvetica Neue'; ctx.textAlign='center';
+  for(let i=0;i<pts;i++) ctx.fillText('Y'+i, px(i), H-4);
+  ctx.fillStyle='#B91C1C'; ctx.font='bold 8px Helvetica Neue'; ctx.textAlign='left';
+  ctx.fillText('Project Cost', 35, py(project)-5);
+  ctx.fillStyle='#6D28D9'; ctx.textAlign='right';
+  ctx.fillText('Reserve', W-12, py(curr+contrib*(pts-1))-5);
+}
+
+function saveAnalysis(){
+  if(!lastResult){analyzeReserve();}
+  const saves=JSON.parse(localStorage.getItem('hoa_reserve_saves')||'[]');
+  saves.unshift(lastResult);
+  if(saves.length>10)saves.pop();
+  localStorage.setItem('hoa_reserve_saves',JSON.stringify(saves));
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved'); btn.textContent='✅ Saved';
+  const t=document.getElementById('toast'); t.classList.add('show');
+  setTimeout(()=>{t.classList.remove('show');},2500);
+  setTimeout(()=>{btn.classList.remove('saved');btn.innerHTML='🔖 Save';},3000);
+}
+
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    this.beginPath();this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.quadraticCurveTo(x+w,y,x+w,y+r);
+    this.lineTo(x+w,y+h-r);this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);this.lineTo(x+r,y+h);
+    this.quadraticCurveTo(x,y+h,x,y+h-r);this.lineTo(x,y+r);this.quadraticCurveTo(x,y,x+r,y);this.closePath();
+  };
+}
+</script>
+</body>
+</html>

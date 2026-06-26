@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canada Mortgage Tools</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#F0F7F4;color:#0A2E1A;max-width:420px;margin:0 auto;min-height:100vh;}
+.header{background:linear-gradient(150deg,#0A2E1A 0%,#1A5C35 60%,#C8102E 100%);padding:48px 20px 0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:2;}
+.back-btn,.notif-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;cursor:pointer;}
+.hdr-title-wrap{text-align:center;}
+.hdr-flag{font-size:26px;display:block;text-align:center;}
+.hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.55);}
+.rate-strip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;margin-top:4px;}
+.rs-item{text-align:center;}
+.rs-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.4px;}
+.rs-val{font-size:16px;font-weight:800;color:#fff;font-family:Georgia,serif;}
+.rs-val.red{color:#FF8A9A;}.rs-val.grn{color:#6EDFA0;}
+.rs-div{width:1px;height:30px;background:rgba(255,255,255,0.15);}
+.rs-note{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+.content{padding:16px 16px 100px;}
+.sec-lbl{font-size:11px;font-weight:700;color:#4A7C5F;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.sec-lbl .more{font-size:11px;font-weight:500;color:#1A5C35;text-transform:none;letter-spacing:0;cursor:pointer;}
+.hero-card{background:linear-gradient(145deg,#0A2E1A,#1A5C35);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(10,46,26,0.25);}
+.hero-card::before{content:'🍁';position:absolute;right:-5px;top:-10px;font-size:75px;opacity:0.07;}
+.hc-tag{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.hc-title{font-size:19px;font-weight:800;color:#fff;margin:5px 0 13px;line-height:1.2;font-family:Georgia,serif;}
+.hc-title span{color:#6EDFA0;}
+.hc-row{display:flex;gap:8px;}
+.hc-box{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 10px;}
+.hc-box label{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-bottom:2px;}
+.hc-box .v{font-size:14px;font-weight:800;color:#fff;}
+.hc-btn{margin-top:13px;width:100%;background:#C8102E;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(200,16,46,0.4);}
+.stress-banner{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 15px;display:flex;align-items:center;gap:11px;margin-bottom:10px;}
+.sb-icon{font-size:24px;}.sb-title{font-size:13px;font-weight:800;color:#92400E;font-family:Georgia,serif;}.sb-sub{font-size:10px;color:#B45309;margin-top:2px;}
+.sb-btn{margin-left:auto;background:#F59E0B;color:#fff;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;white-space:nowrap;flex-shrink:0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.tcard{background:#fff;border-radius:17px;padding:15px 13px;box-shadow:0 3px 14px rgba(10,46,26,0.08);border:1px solid rgba(26,92,53,0.08);cursor:pointer;position:relative;overflow:hidden;}
+.tcard.dark{background:linear-gradient(140deg,#0A2E1A,#1A5C35);}
+.tcard.red{background:linear-gradient(140deg,#C8102E,#8B0A1E);}
+.tcard.maple{background:linear-gradient(140deg,#D97706,#B45309);}
+.tic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;}
+.tcard:not(.dark):not(.red):not(.maple) .tic{background:#F0F7F4;}
+.tcard.dark .tic,.tcard.red .tic,.tcard.maple .tic{background:rgba(255,255,255,0.15);}
+.tname{font-size:13px;font-weight:800;color:#0A2E1A;line-height:1.2;font-family:Georgia,serif;}
+.tcard.dark .tname,.tcard.red .tname,.tcard.maple .tname{color:#fff;}
+.tdesc{font-size:10px;color:#4A7C5F;margin-top:3px;}
+.tcard.dark .tdesc,.tcard.red .tdesc,.tcard.maple .tdesc{color:rgba(255,255,255,0.6);}
+.tarr{position:absolute;bottom:12px;right:12px;font-size:15px;color:rgba(10,46,26,0.18);}
+.tcard.dark .tarr,.tcard.red .tarr,.tcard.maple .tarr{color:rgba(255,255,255,0.25);}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-top:5px;}
+.badge-ca{background:#F0FDF4;color:#166534;}.badge-warn{background:#FEF3C7;color:#92400E;}
+.info-card{background:#fff;border-radius:15px;padding:14px;box-shadow:0 3px 14px rgba(10,46,26,0.07);border:1px solid rgba(26,92,53,0.08);display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer;}
+.info-icon{width:40px;height:40px;border-radius:11px;background:#F0F7F4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.info-name{font-size:13px;font-weight:800;color:#0A2E1A;font-family:Georgia,serif;}
+.info-sub{font-size:10px;color:#4A7C5F;margin-top:2px;}
+.info-chev{font-size:18px;color:rgba(10,46,26,0.2);margin-left:auto;}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:#fff;border-top:1px solid rgba(26,92,53,0.1);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,46,26,0.07);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;}.ni-lb{font-size:10px;font-weight:600;color:#4A7C5F;}
+.ni.active .ni-lb{color:#1A5C35;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="back-btn">←</div>
+    <div class="hdr-title-wrap"><span class="hdr-flag">🇨🇦</span><div class="hdr-title">Canada Tools</div><div class="hdr-sub">CAD · BoC Rate · CMHC</div></div>
+    <div class="notif-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs-item"><div class="rs-lbl">5-Yr Fixed</div><div class="rs-val red">4.99%</div><div class="rs-note">↓ -0.1 wk</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">3-Yr Fixed</div><div class="rs-val">5.14%</div><div class="rs-note">BoC</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Variable</div><div class="rs-val grn">5.95%</div><div class="rs-note">Prime−0.5</div></div>
+    <div class="rs-div"></div>
+    <div class="rs-item"><div class="rs-lbl">Stress Test</div><div class="rs-val">7.00%</div><div class="rs-note">Min rate</div></div>
+  </div>
+</div>
+<div class="content">
+  <div class="sec-lbl" style="margin-top:0">Quick Estimate <span class="more">Advanced →</span></div>
+  <div class="hero-card">
+    <div class="hc-tag">Canadian Mortgage Calculator</div>
+    <div class="hc-title">Calculate your <span>CMHC</span><br>insured payment</div>
+    <div class="hc-row">
+      <div class="hc-box"><label>Home Price</label><div class="v">CA$650K</div></div>
+      <div class="hc-box"><label>Down Payment</label><div class="v">10%</div></div>
+      <div class="hc-box"><label>Amort.</label><div class="v">25 yr</div></div>
+    </div>
+    <button class="hc-btn">🍁 Calculate Canadian Mortgage</button>
+  </div>
+  <div class="sec-lbl">Stress Test <span class="more">Learn more →</span></div>
+  <div class="stress-banner">
+    <div class="sb-icon">⚠️</div>
+    <div><div class="sb-title">Mortgage Stress Test</div><div class="sb-sub">Qualify at 7.00% or contract+2% — whichever is higher</div></div>
+    <div class="sb-btn">Test Now</div>
+  </div>
+  <div class="sec-lbl">Core Tools <span class="more">All tools →</span></div>
+  <div class="grid2">
+    <div class="tcard dark"><div class="tic">🏠</div><div class="tname">Mortgage Calc</div><div class="tdesc">Monthly payment + CMHC</div><div class="badge badge-ca">25yr Max</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">🛡️</div><div class="tname">CMHC Insurance</div><div class="tdesc">Premium calculator</div><div class="badge badge-warn">&lt;20% down</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">📊</div><div class="tname">GDS / TDS Ratio</div><div class="tdesc">Gross debt service</div><div class="tarr">›</div></div>
+    <div class="tcard red"><div class="tic">🧪</div><div class="tname">Stress Test Calc</div><div class="tdesc">Can you qualify?</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">💰</div><div class="tname">Affordability</div><div class="tdesc">Max home price, CAD</div><div class="tarr">›</div></div>
+    <div class="tcard maple"><div class="tic">📅</div><div class="tname">Amortization</div><div class="tdesc">Bi-weekly schedule</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">🔄</div><div class="tname">Renewal Planner</div><div class="tdesc">Term renewal analysis</div><div class="tarr">›</div></div>
+    <div class="tcard"><div class="tic">📈</div><div class="tname">Prepayment Calc</div><div class="tdesc">Lump sum savings</div><div class="tarr">›</div></div>
+  </div>
+  <div class="sec-lbl">Province & Resources</div>
+  <div class="info-card"><div class="info-icon">🏛️</div><div><div class="info-name">Land Transfer Tax</div><div class="info-sub">By Province: ON, BC, AB, QC, MB…</div></div><div class="info-chev">›</div></div>
+  <div class="info-card"><div class="info-icon">🏡</div><div><div class="info-name">First-Home Buyer Incentive</div><div class="info-sub">FHBI · RRSP Home Buyers' Plan</div></div><div class="info-chev">›</div></div>
+  <div class="info-card"><div class="info-icon">📉</div><div><div class="info-name">BoC Rate History</div><div class="info-sub">Live Bank of Canada rate tracker</div></div><div class="info-chev">›</div></div>
+  <div class="info-card"><div class="info-icon">🤖</div><div><div class="info-name">Canada AI Advisor</div><div class="info-sub">CMHC rules · stress test guidance</div></div><div class="info-chev">›</div></div>
+</div>
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🍁</div><div class="ni-lb">Canada</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+</body>
+</html>

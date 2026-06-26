@@ -1,0 +1,91 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+**/.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Dart generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio build artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Android local config & signing - CRITICAL
+android/local.properties
+key.properties
+android/key.properties
+android/upload-keystore.jks
+android/release-keystore.jks
+*.jks
+*.keystore
+
+# Gradle
+.gradle/
+android/.gradle/
+
+# Firebase - CRITICAL
+google-services.json
+android/app/google-services.json
+GoogleService-Info.plist
+firebase_app_id_file.json
+.firebaserc
+
+# Firebase logs
+firebase-debug.log
+firebase-debug.*
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Private configuration and environment secrets
+.env
+.env.*
+secrets.json
+secrets.properties
+android/secrets.properties
+ios/Flutter

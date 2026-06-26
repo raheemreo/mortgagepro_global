@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fed Funds Rate · FRED Live</title>
+<style>
+  :root {
+    --navy: #0B1D3A;
+    --blue: #1B3F72;
+    --red: #B91C1C;
+    --crimson: #991B1B;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --white: #FFFFFF;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --muted: #4A5C7A;
+    --border: rgba(27,63,114,0.09);
+    --sh: 0 4px 20px rgba(11,29,58,0.10);
+    --sh2: 0 8px 36px rgba(11,29,58,0.18);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+  /* HEADER */
+  .header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+  .header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .header::after  { content:'🏛️'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+  .icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; text-decoration:none; }
+  .hdr-center { text-align:center; }
+  .hdr-flag { font-size:28px; }
+  .hdr-title { font-size:19px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+  .hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+
+  .rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; z-index:2; margin-top:4px; }
+  .rs { text-align:center; position:relative; }
+  .rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+  .rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+  .rs-v { font-size:15px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+  .rs-v.gold { color:var(--gold-lt); }
+  .rs-v.grn { color:#6EE7B7; }
+  .rs-v.red { color:#FCA5A5; }
+  .rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+  /* CONTENT */
+  .content { padding:15px 15px 110px; }
+  .sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+  .sec .more { font-size:11px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; cursor:pointer; }
+
+  /* HERO RATE CARD */
+  .hero-rate { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:20px; position:relative; overflow:hidden; box-shadow:var(--sh2); animation:fadeUp .35s ease both .05s; }
+  .hero-rate::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:rgba(185,28,28,0.14); }
+  .hr-tag { font-size:9.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.8px; }
+  .hr-main { display:flex; align-items:flex-end; gap:10px; margin:8px 0; }
+  .hr-rate { font-size:48px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; line-height:1; }
+  .hr-range { font-size:14px; color:rgba(255,255,255,0.65); font-weight:700; align-self:center; }
+  .hr-status { display:flex; gap:8px; margin-bottom:12px; }
+  .hr-pill { padding:4px 10px; border-radius:20px; font-size:9.5px; font-weight:800; }
+  .pill-hold { background:rgba(217,119,6,0.25); color:var(--gold-lt); border:1px solid rgba(217,119,6,0.40); }
+  .pill-fomc { background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.75); border:1px solid rgba(255,255,255,0.18); }
+  .hr-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .hr-box { background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:9px 10px; text-align:center; }
+  .hr-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.3px; }
+  .hr-box-val { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+  .hr-box-val.grn { color:#6EE7B7; }
+  .hr-box-val.red { color:#FCA5A5; }
+  .hr-box-val.gold { color:var(--gold-lt); }
+
+  /* CHART AREA */
+  .chart-card { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .12s; }
+  .chart-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between; }
+  .chart-title span { font-size:10px; font-weight:500; color:var(--blue); }
+  .chart-sub { font-size:9.5px; color:var(--muted); margin-bottom:14px; }
+  .chart-wrap { position:relative; height:130px; }
+  svg.rate-chart { width:100%; height:100%; }
+  .chart-tabs { display:flex; gap:6px; margin-bottom:12px; }
+  .ctab { padding:4px 10px; border-radius:20px; font-size:9px; font-weight:700; cursor:pointer; border:1px solid var(--border); color:var(--muted); background:var(--bg); }
+  .ctab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+
+  /* FOMC TABLE */
+  .fomc-card { background:var(--card); border-radius:18px; box-shadow:var(--sh); border:1px solid var(--border); overflow:hidden; margin-bottom:10px; animation:fadeUp .35s ease both .18s; }
+  .fomc-head { background:linear-gradient(135deg,#0B1D3A,#1B3F72); padding:13px 15px; display:flex; align-items:center; gap:10px; }
+  .fomc-head-icon { font-size:20px; }
+  .fomc-head-title { font-size:12.5px; font-weight:800; color:#fff; font-family:Georgia,serif; }
+  .fomc-head-sub { font-size:9px; color:rgba(255,255,255,0.50); margin-top:1px; }
+  .fomc-row { display:flex; align-items:center; padding:11px 15px; border-bottom:1px solid var(--border); gap:10px; }
+  .fomc-row:last-child { border-bottom:none; }
+  .fomc-row.past { opacity:0.55; }
+  .fomc-row.next { background:#F0FDF4; }
+  .fomc-date { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:68px; flex-shrink:0; }
+  .fomc-body { flex:1; }
+  .fomc-name { font-size:10.5px; font-weight:700; color:var(--navy); }
+  .fomc-note { font-size:9px; color:var(--muted); margin-top:1px; }
+  .fomc-result { font-size:11px; font-weight:800; text-align:right; flex-shrink:0; }
+  .fomc-result.hold { color:var(--gold); }
+  .fomc-result.cut { color:#15803D; }
+  .fomc-result.hike { color:var(--red); }
+  .fomc-result.tbd { color:var(--muted); }
+  .fomc-badge { font-size:8px; font-weight:700; padding:2px 6px; border-radius:10px; }
+  .badge-next { background:#DCFCE7; color:#15803D; }
+  .badge-live { background:#FEF9C3; color:#A16207; }
+
+  /* RATE COMPARISON */
+  .rate-compare { background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; animation:fadeUp .35s ease both .22s; }
+  .rc-title { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:12px; }
+  .rc-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .rc-row:last-child { margin-bottom:0; }
+  .rc-lbl { font-size:10px; font-weight:700; color:var(--muted); width:100px; flex-shrink:0; }
+  .rc-bar-wrap { flex:1; height:8px; background:#F1F5F9; border-radius:10px; overflow:hidden; }
+  .rc-bar { height:100%; border-radius:10px; transition:width .6s ease; }
+  .rc-val { font-size:11px; font-weight:800; color:var(--navy); font-family:Georgia,serif; width:42px; text-align:right; flex-shrink:0; }
+
+  /* DOT PLOT */
+  .dot-plot { background:linear-gradient(135deg,#0B1D3A,#1B3F72); border-radius:18px; padding:16px; box-shadow:var(--sh2); margin-bottom:10px; animation:fadeUp .35s ease both .22s; }
+  .dp-title { font-size:12px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-bottom:3px; }
+  .dp-sub { font-size:9.5px; color:rgba(255,255,255,0.45); margin-bottom:12px; }
+  .dp-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .dp-col { text-align:center; }
+  .dp-year { font-size:9px; color:rgba(255,255,255,0.50); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:6px; }
+  .dp-median { font-size:18px; font-weight:800; color:var(--gold-lt); font-family:Georgia,serif; }
+  .dp-range { font-size:8.5px; color:rgba(255,255,255,0.45); margin-top:2px; }
+  .dp-divider { height:1px; background:rgba(255,255,255,0.10); margin:10px 0; }
+  .dp-note { font-size:9px; color:rgba(255,255,255,0.40); text-align:center; }
+
+  /* KEY RATES */
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; animation:fadeUp .35s ease both .25s; }
+  .tc { background:var(--card); border-radius:16px; padding:14px 12px; box-shadow:var(--sh); border:1px solid var(--border); cursor:pointer; position:relative; overflow:hidden; transition:transform .15s; }
+  .tc:active { transform:scale(.97); }
+  .tc.nv { background:linear-gradient(140deg,#0B1D3A,#1B3F72); }
+  .tc.rd { background:linear-gradient(140deg,#B91C1C,#991B1B); }
+  .tc.gd { background:linear-gradient(140deg,#D97706,#B45309); }
+  .tc.tl { background:linear-gradient(140deg,#0F766E,#0D9488); }
+  .tc.sl { background:linear-gradient(140deg,#334155,#1E293B); }
+  .ti { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; margin-bottom:9px; }
+  .tc:not(.nv):not(.rd):not(.gd):not(.tl):not(.sl) .ti { background:var(--bg); }
+  .tc.nv .ti,.tc.rd .ti,.tc.gd .ti,.tc.tl .ti,.tc.sl .ti { background:rgba(255,255,255,0.14); }
+  .tn { font-size:12.5px; font-weight:800; color:var(--navy); line-height:1.2; font-family:Georgia,serif; }
+  .tc.nv .tn,.tc.rd .tn,.tc.gd .tn,.tc.tl .tn,.tc.sl .tn { color:#fff; }
+  .td { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .tc.nv .td,.tc.rd .td,.tc.gd .td,.tc.tl .td,.tc.sl .td { color:rgba(255,255,255,0.58); }
+  .ta { position:absolute; bottom:11px; right:11px; font-size:14px; color:rgba(11,29,58,0.16); }
+  .tc.nv .ta,.tc.rd .ta,.tc.gd .ta,.tc.tl .ta,.tc.sl .ta { color:rgba(255,255,255,0.22); }
+  .bge { display:inline-flex; padding:2px 7px; border-radius:20px; font-size:8.5px; font-weight:700; margin-top:5px; }
+  .bge-b { background:#EFF6FF; color:#1D4ED8; }
+  .bge-r { background:#FEF2F2; color:#B91C1C; }
+  .bge-g { background:#F0FDF4; color:#15803D; }
+  .bge-o { background:#FFF7ED; color:#C2410C; }
+
+  /* INFO LIST */
+  .ilist { display:flex; flex-direction:column; gap:9px; animation:fadeUp .35s ease both .30s; }
+  .ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+  .is { font-size:9.5px; color:var(--muted); margin-top:2px; }
+  .ich { font-size:16px; color:rgba(11,29,58,0.18); margin-left:auto; }
+
+  /* BOTTOM NAV */
+  .bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+  .ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .ni-ic { font-size:19px; }
+  .ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+  .ni.active .ni-lb { color:var(--blue); }
+
+  /* LIVE PULSE */
+  .live-dot { width:7px; height:7px; border-radius:50%; background:#22C55E; display:inline-block; margin-right:5px; animation:pulse 1.6s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-top">
+    <a href="screen_usa.html" class="icon-btn" style="text-decoration:none;">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏛️</div>
+      <div class="hdr-title">Fed Funds Rate</div>
+      <div class="hdr-sub">Federal Reserve · FRED · FOMC 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Fed Funds</div><div class="rs-v gold">4.33%</div><div class="rs-n">FOMC Target</div></div>
+    <div class="rs"><div class="rs-l">SOFR</div><div class="rs-v">4.30%</div><div class="rs-n">Overnight</div></div>
+    <div class="rs"><div class="rs-l">Prime Rate</div><div class="rs-v">7.50%</div><div class="rs-n">WSJ Prime</div></div>
+    <div class="rs"><div class="rs-l">IOER</div><div class="rs-v grn">4.40%</div><div class="rs-n">Interest on Res.</div></div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- Hero Rate -->
+  <div class="sec" style="margin-top:0">Current Rate <span class="more"><span class="live-dot"></span>FRED Live</span></div>
+  <div class="hero-rate">
+    <div class="hr-tag">Federal Open Market Committee · FOMC Target Range</div>
+    <div class="hr-main">
+      <div class="hr-rate">4.25</div>
+      <div class="hr-range">– 4.50%</div>
+    </div>
+    <div class="hr-status">
+      <span class="hr-pill pill-hold">⏸ HOLD — No Change</span>
+      <span class="hr-pill pill-fomc">Last: May 7, 2025</span>
+    </div>
+    <div class="hr-grid">
+      <div class="hr-box">
+        <div class="hr-box-lbl">Peak Rate</div>
+        <div class="hr-box-val gold">5.25–5.50%</div>
+      </div>
+      <div class="hr-box">
+        <div class="hr-box-lbl">Total Cuts</div>
+        <div class="hr-box-val grn">-100 bps</div>
+      </div>
+      <div class="hr-box">
+        <div class="hr-box-lbl">Since Peak</div>
+        <div class="hr-box-val">Sep 2024</div>
+      </div>
+      <div class="hr-box">
+        <div class="hr-box-lbl">Next FOMC</div>
+        <div class="hr-box-val">Jun 17–18</div>
+      </div>
+      <div class="hr-box">
+        <div class="hr-box-lbl">Cut Prob.</div>
+        <div class="hr-box-val grn">~22%</div>
+      </div>
+      <div class="hr-box">
+        <div class="hr-box-lbl">Fed Chair</div>
+        <div class="hr-box-val">J. Powell</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rate History Chart -->
+  <div class="sec">Rate History <span class="more">FRED Data →</span></div>
+  <div class="chart-card">
+    <div class="chart-title">Fed Funds Rate — 2018 to 2025 <span>FRED · FEDFUNDS</span></div>
+    <div class="chart-sub">Federal Reserve target rate — key hiking & cutting cycles</div>
+    <div class="chart-tabs">
+      <div class="ctab active">2018–25</div>
+      <div class="ctab">5 Yr</div>
+      <div class="ctab">10 Yr</div>
+      <div class="ctab">Historical</div>
+    </div>
+    <div class="chart-wrap">
+      <!-- SVG Rate Chart -->
+      <svg class="rate-chart" viewBox="0 0 380 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- Grid lines -->
+        <line x1="0" y1="24" x2="380" y2="24" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="48" x2="380" y2="48" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="72" x2="380" y2="72" stroke="#E2E8F0" stroke-width="1"/>
+        <line x1="0" y1="96" x2="380" y2="96" stroke="#E2E8F0" stroke-width="1"/>
+        <!-- Y-axis labels -->
+        <text x="4" y="20" font-size="8" fill="#94A3B8">6%</text>
+        <text x="4" y="44" font-size="8" fill="#94A3B8">4.5%</text>
+        <text x="4" y="68" font-size="8" fill="#94A3B8">3%</text>
+        <text x="4" y="92" font-size="8" fill="#94A3B8">1.5%</text>
+        <text x="4" y="116" font-size="8" fill="#94A3B8">0%</text>
+        <!-- Rate area fill -->
+        <defs>
+          <linearGradient id="rateGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1B3F72" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#1B3F72" stop-opacity="0.03"/>
+          </linearGradient>
+        </defs>
+        <!-- 
+          Data points (approx, normalized to 0-120 range, 0%=120, 6%=0):
+          2018-Q1: 1.5% → y=84  x=30
+          2018-Q4: 2.5% → y=60  x=70
+          2019-Q3: 2.0% → y=72  x=100
+          2020-Q1: 0.25% → y=114 x=125
+          2020-Q2: 0.25% → y=114 x=140
+          2022-Q1: 0.25% → y=114 x=180
+          2022-Q4: 4.0%  → y=36  x=230
+          2023-Q2: 5.25% → y=4   x=270
+          2023-Q4: 5.50% → y=0   x=295
+          2024-Q3: 5.50% → y=0   x=310
+          2024-Q4: 4.50% → y=20  x=340
+          2025-Q2: 4.25% → y=25  x=375
+        -->
+        <polygon points="30,84 70,60 100,72 125,114 140,114 180,114 230,36 270,4 295,0 310,0 340,20 375,25 375,120 30,120" fill="url(#rateGrad)"/>
+        <polyline points="30,84 70,60 100,72 125,114 140,114 180,114 230,36 270,4 295,0 310,0 340,20 375,25" fill="none" stroke="#1B3F72" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- Current rate dot -->
+        <circle cx="375" cy="25" r="5" fill="#B91C1C"/>
+        <circle cx="375" cy="25" r="9" fill="none" stroke="#B91C1C" stroke-width="1.5" opacity="0.4"/>
+        <!-- Peak annotation -->
+        <circle cx="295" cy="0" r="4" fill="#D97706"/>
+        <text x="260" y="15" font-size="8" fill="#D97706" font-weight="bold">PEAK 5.50%</text>
+        <!-- COVID low annotation -->
+        <text x="128" y="110" font-size="7.5" fill="#94A3B8">COVID Cut</text>
+        <!-- X-axis labels -->
+        <text x="24" y="118" font-size="8" fill="#94A3B8">2018</text>
+        <text x="122" y="118" font-size="8" fill="#94A3B8">2020</text>
+        <text x="175" y="118" font-size="8" fill="#94A3B8">2022</text>
+        <text x="265" y="118" font-size="8" fill="#94A3B8">2023</text>
+        <text x="336" y="118" font-size="8" fill="#94A3B8">2025</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- FOMC 2025 Calendar -->
+  <div class="sec">FOMC 2025 Meeting Calendar <span class="more">Minutes →</span></div>
+  <div class="fomc-card">
+    <div class="fomc-head">
+      <div class="fomc-head-icon">📅</div>
+      <div>
+        <div class="fomc-head-title">Federal Open Market Committee 2025</div>
+        <div class="fomc-head-sub">8 scheduled meetings · Rate decisions &amp; projections</div>
+      </div>
+    </div>
+    <div class="fomc-row past">
+      <div class="fomc-date">Jan 28–29</div>
+      <div class="fomc-body"><div class="fomc-name">Meeting 1</div><div class="fomc-note">No SEP · Rate unchanged · Pause continues</div></div>
+      <div class="fomc-result hold">Hold</div>
+    </div>
+    <div class="fomc-row past">
+      <div class="fomc-date">Mar 18–19</div>
+      <div class="fomc-body"><div class="fomc-name">Meeting 2 + SEP</div><div class="fomc-note">SEP released · 2 cuts projected 2025 · Dot plot revised</div></div>
+      <div class="fomc-result hold">Hold</div>
+    </div>
+    <div class="fomc-row past">
+      <div class="fomc-date">May 6–7</div>
+      <div class="fomc-body"><div class="fomc-name">Meeting 3</div><div class="fomc-note">No SEP · Tariff uncertainty cited · Unanimous hold</div></div>
+      <div class="fomc-result hold">Hold</div>
+    </div>
+    <div class="fomc-row next">
+      <div class="fomc-date">Jun 17–18</div>
+      <div class="fomc-body">
+        <div class="fomc-name">Meeting 4 + SEP <span class="fomc-badge badge-next">NEXT</span></div>
+        <div class="fomc-note">SEP + dot plot · ~22% cut probability (CME FedWatch)</div>
+      </div>
+      <div class="fomc-result tbd">TBD</div>
+    </div>
+    <div class="fomc-row">
+      <div class="fomc-date">Jul 29–30</div>
+      <div class="fomc-body"><div class="fomc-name">Meeting 5</div><div class="fomc-note">No SEP · ~45% cumulative cut probability</div></div>
+      <div class="fomc-result tbd">TBD</div>
+    </div>
+    <div class="fomc-row">
+      <div class="fomc-date">Sep 16–17</div>
+      <div class="fomc-body"><div class="fomc-name">Meeting 6 + SEP</div><div class="fomc-note">SEP released · Most likely first cut window</div></div>
+      <div class="fomc-result tbd">TBD</div>
+    </div>
+    <div class="fomc-row">
+      <div class="fomc-date">Oct 28–29</div>
+      <div class="fomc-body"><div class="fomc-name">Meeting 7</div><div class="fomc-note">No SEP · Pre-election meeting</div></div>
+      <div class="fomc-result tbd">TBD</div>
+    </div>
+    <div class="fomc-row">
+      <div class="fomc-date">Dec 9–10</div>
+      <div class="fomc-body"><div class="fomc-name">Meeting 8 + SEP</div><div class="fomc-note">Year-end SEP · 2026 projections released</div></div>
+      <div class="fomc-result tbd">TBD</div>
+    </div>
+  </div>
+
+  <!-- CME FedWatch / Dot Plot -->
+  <div class="sec">SEP Dot Plot Projections <span class="more">March 2025 →</span></div>
+  <div class="dot-plot">
+    <div class="dp-title">FOMC Median Rate Projections (March 2025 SEP)</div>
+    <div class="dp-sub">Summary of Economic Projections · Federal Reserve</div>
+    <div class="dp-grid">
+      <div class="dp-col">
+        <div class="dp-year">2025</div>
+        <div class="dp-median">3.9%</div>
+        <div class="dp-range">2 cuts · Range 3.75–4.0%</div>
+      </div>
+      <div class="dp-col">
+        <div class="dp-year">2026</div>
+        <div class="dp-median">3.4%</div>
+        <div class="dp-range">2 more cuts</div>
+      </div>
+      <div class="dp-col">
+        <div class="dp-year">2027</div>
+        <div class="dp-median">3.1%</div>
+        <div class="dp-range">1 cut projected</div>
+      </div>
+      <div class="dp-col">
+        <div class="dp-year">Long-Run</div>
+        <div class="dp-median">3.0%</div>
+        <div class="dp-range">Neutral rate est.</div>
+      </div>
+    </div>
+    <div class="dp-divider"></div>
+    <div class="dp-note">Source: Federal Reserve March 2025 SEP · Next update: June 18, 2025</div>
+  </div>
+
+  <!-- Key Rates Comparison -->
+  <div class="sec">Key Rate Comparison <span class="more">All Rates →</span></div>
+  <div class="rate-compare">
+    <div class="rc-title">📊 US Benchmark Rates vs Fed Funds</div>
+    <div class="rc-row">
+      <div class="rc-lbl">Fed Funds</div>
+      <div class="rc-bar-wrap"><div class="rc-bar" style="width:57%;background:linear-gradient(90deg,#1B3F72,#0B1D3A)"></div></div>
+      <div class="rc-val">4.33%</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-lbl">30-Yr Mortgage</div>
+      <div class="rc-bar-wrap"><div class="rc-bar" style="width:85%;background:linear-gradient(90deg,#B91C1C,#991B1B)"></div></div>
+      <div class="rc-val">6.86%</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-lbl">15-Yr Mortgage</div>
+      <div class="rc-bar-wrap"><div class="rc-bar" style="width:76%;background:linear-gradient(90deg,#D97706,#B45309)"></div></div>
+      <div class="rc-val">6.10%</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-lbl">10-Yr Treasury</div>
+      <div class="rc-bar-wrap"><div class="rc-bar" style="width:56%;background:linear-gradient(90deg,#0F766E,#0D9488)"></div></div>
+      <div class="rc-val">4.43%</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-lbl">Prime Rate</div>
+      <div class="rc-bar-wrap"><div class="rc-bar" style="width:94%;background:linear-gradient(90deg,#334155,#1E293B)"></div></div>
+      <div class="rc-val">7.50%</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-lbl">HY Savings APY</div>
+      <div class="rc-bar-wrap"><div class="rc-bar" style="width:52%;background:linear-gradient(90deg,#15803D,#166534)"></div></div>
+      <div class="rc-val">4.20%</div>
+    </div>
+  </div>
+
+  <!-- Tools -->
+  <div class="sec">Related Fed Tools <span class="more">All →</span></div>
+  <div class="g2">
+    <div class="tc nv"><div class="ti">📉</div><div class="tn">FRED Rate History</div><div class="td">Full historical data back to 1954</div><div class="bge bge-b">FEDFUNDS</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🎯</div><div class="tn">FedWatch Tool</div><div class="td">CME probabilities per meeting</div><div class="ta">›</div></div>
+    <div class="tc rd"><div class="ti">📊</div><div class="tn">Yield Curve</div><div class="td">2s10s spread · inversion tracker</div><div class="ta">›</div></div>
+    <div class="tc gd"><div class="ti">💵</div><div class="tn">CPI vs Fed Rate</div><div class="td">Inflation vs policy rate gap</div><div class="ta">›</div></div>
+    <div class="tc"><div class="ti">🏦</div><div class="tn">Treasury Rates</div><div class="td">2yr · 5yr · 10yr · 30yr T-bonds</div><div class="ta">›</div></div>
+    <div class="tc tl"><div class="ti">🌐</div><div class="tn">Global Central Banks</div><div class="td">ECB · BoJ · BoE · RBA rates</div><div class="ta">›</div></div>
+  </div>
+
+  <!-- Economic Context -->
+  <div class="sec">Economic Context <span class="more">Dashboard →</span></div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">📈</div><div><div class="in">CPI Inflation (Apr 2025)</div><div class="is">2.3% YoY · Core CPI 2.8% · Above 2% target</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">💼</div><div><div class="in">Unemployment Rate (Apr 2025)</div><div class="is">4.2% · Nonfarm payrolls +177K · Dual mandate</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🏭</div><div><div class="in">PCE Deflator (Mar 2025)</div><div class="is">2.3% YoY · Fed's preferred inflation gauge</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">📋</div><div><div class="in">FOMC Statement Archives</div><div class="is">Every statement since 1994 · Press conference transcripts</div></div><div class="ich">›</div></div>
+    <div class="ic"><div class="ii">🤖</div><div><div class="in">Fed Rate Impact Calculator</div><div class="is">How rate changes affect your mortgage payment</div></div><div class="ich">›</div></div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+</body>
+</html>

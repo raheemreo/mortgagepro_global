@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PITI Calculator · USA</title>
+<style>
+  :root {
+    --navy:#0B1D3A; --blue:#1B3F72; --red:#B91C1C; --crimson:#991B1B;
+    --gold:#D97706; --gold-lt:#FCD34D;
+    --bg:#F0F4FF; --card:#FFFFFF; --muted:#4A5C7A;
+    --border:rgba(27,63,114,0.09); --sh:0 4px 20px rgba(11,29,58,0.10);
+    --sh2:0 8px 36px rgba(11,29,58,0.18);
+    --green:#15803D; --teal:#0D9488;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .header::after{content:'🦅';position:absolute;right:10px;top:50px;font-size:72px;opacity:0.07;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;font-family:Georgia,serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.52);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:15px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.38);margin-top:1px;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .sec .more{font-size:11px;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+  /* Input Card */
+  .input-card{background:linear-gradient(148deg,#0B1D3A,#1B3F72);border-radius:20px;padding:19px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:10px;}
+  .input-card::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(185,28,28,0.14);}
+  .ic-tag{font-size:9.5px;color:rgba(255,255,255,0.48);text-transform:uppercase;letter-spacing:0.8px;}
+  .ic-title{font-size:17px;font-weight:800;color:#fff;margin:4px 0 14px;font-family:Georgia,serif;}
+  .ic-title span{color:var(--gold-lt);}
+  .inp-group{margin-bottom:11px;position:relative;z-index:2;}
+  .inp-label{font-size:9px;color:rgba(255,255,255,0.55);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;display:flex;justify-content:space-between;}
+  .inp-label span{color:var(--gold-lt);font-size:9px;}
+  .inp{width:100%;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:800;color:#fff;outline:none;font-family:Georgia,serif;}
+  .inp:focus{border-color:rgba(252,211,77,0.50);background:rgba(255,255,255,0.14);}
+  .inp::placeholder{color:rgba(255,255,255,0.30);font-weight:400;font-size:13px;}
+  .inp-row{display:flex;gap:8px;position:relative;z-index:2;}
+  .inp-row .inp-group{flex:1;margin-bottom:0;}
+
+  /* Calculate Button - prominent */
+  .calc-btn{width:100%;background:linear-gradient(135deg,#FCD34D,#D97706);border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;color:#0B1D3A;cursor:pointer;box-shadow:0 6px 20px rgba(217,119,6,0.45);font-family:Georgia,serif;margin-top:14px;position:relative;z-index:2;transition:transform .15s,box-shadow .15s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.2px;}
+  .calc-btn:active{transform:scale(.97);box-shadow:0 3px 10px rgba(217,119,6,0.35);}
+  .calc-btn:hover{box-shadow:0 8px 26px rgba(217,119,6,0.55);}
+  .calc-btn-icon{font-size:18px;}
+
+  select.inp{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.5)' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+  option{background:#1B3F72;color:#fff;}
+
+  /* Results section — hidden until calculated */
+  .results-section{display:none;}
+  .results-section.show{display:block;}
+
+  /* Result Card */
+  .result-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:10px;}
+  .rc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .rc-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .rc-badge{background:#EFF6FF;color:#1D4ED8;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;}
+  .piti-total{text-align:center;background:linear-gradient(148deg,#0B1D3A,#1B3F72);border-radius:16px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden;}
+  .piti-total::after{content:'';position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(185,28,28,0.12);}
+  .pt-label{font-size:9.5px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.6px;}
+  .pt-amount{font-size:40px;font-weight:800;color:#fff;font-family:Georgia,serif;line-height:1.1;}
+  .pt-amount span{font-size:18px;color:var(--gold-lt);}
+  .pt-sub{font-size:9.5px;color:rgba(255,255,255,0.45);margin-top:3px;}
+
+  /* Enhanced PITI breakdown */
+  .piti-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .pb-item{background:var(--bg);border-radius:14px;padding:14px;border:1px solid var(--border);position:relative;overflow:hidden;}
+  .pb-item::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+  .pb-item.nv::before{background:#1B3F72;}
+  .pb-item.rd::before{background:#B91C1C;}
+  .pb-item.gd::before{background:#D97706;}
+  .pb-item.tl::before{background:#0D9488;}
+  .pb-icon{font-size:20px;margin-bottom:6px;}
+  .pb-label{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .pb-value{font-size:18px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:3px 0;}
+  .pb-pct{font-size:9px;color:var(--muted);}
+  .pb-item.nv{background:linear-gradient(140deg,#0B1D3A,#1B3F72);}
+  .pb-item.nv .pb-label,.pb-item.nv .pb-pct{color:rgba(255,255,255,0.55);}
+  .pb-item.nv .pb-value{color:#fff;}
+  .pb-item.rd{background:linear-gradient(140deg,#B91C1C,#991B1B);}
+  .pb-item.rd .pb-label,.pb-item.rd .pb-pct{color:rgba(255,255,255,0.55);}
+  .pb-item.rd .pb-value{color:#fff;}
+  .pb-item.gd{background:linear-gradient(140deg,#D97706,#B45309);}
+  .pb-item.gd .pb-label,.pb-item.gd .pb-pct{color:rgba(255,255,255,0.55);}
+  .pb-item.gd .pb-value{color:#fff;}
+  .pb-item.tl{background:linear-gradient(140deg,#0F766E,#0D9488);}
+  .pb-item.tl .pb-label,.pb-item.tl .pb-pct{color:rgba(255,255,255,0.55);}
+  .pb-item.tl .pb-value{color:#fff;}
+
+  /* Save Button - only in results */
+  .save-btn{width:100%;background:rgba(27,63,114,0.07);border:1.5px solid var(--border);border-radius:11px;padding:12px;font-size:12px;font-weight:800;color:var(--navy);cursor:pointer;margin-top:13px;display:flex;align-items:center;justify-content:center;gap:7px;transition:background .15s;}
+  .save-btn:hover{background:rgba(27,63,114,0.12);}
+  .save-btn.saved{background:rgba(21,128,61,0.10);border-color:#86EFAC;color:var(--green);}
+
+  /* Visual bar */
+  .piti-bar-wrap{margin-top:14px;}
+  .piti-bar-label{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;}
+  .piti-bar{height:16px;border-radius:10px;overflow:hidden;display:flex;}
+  .bar-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+  .bl-item{display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);}
+  .bl-dot{width:9px;height:9px;border-radius:3px;}
+
+  /* Donut Chart */
+  .donut-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .donut-card-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+  .donut-row{display:flex;align-items:center;gap:16px;}
+  .donut-svg-wrap{flex-shrink:0;position:relative;width:120px;height:120px;}
+  .donut-svg-wrap svg{transform:rotate(-90deg);}
+  .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .donut-center-lbl{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;text-align:center;}
+  .donut-center-val{font-size:14px;font-weight:800;color:var(--navy);font-family:Georgia,serif;text-align:center;}
+  .donut-legend{flex:1;display:flex;flex-direction:column;gap:9px;}
+  .dl-row{display:flex;align-items:center;gap:7px;}
+  .dl-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;}
+  .dl-info{flex:1;}
+  .dl-lbl{font-size:11px;font-weight:700;color:var(--navy);}
+  .dl-pct{font-size:9px;color:var(--muted);}
+  .dl-val{font-size:11px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+
+  /* Key Stats Row */
+  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+  .stat-box{background:var(--card);border-radius:14px;padding:13px 10px;box-shadow:var(--sh);border:1px solid var(--border);text-align:center;}
+  .stat-icon{font-size:18px;margin-bottom:4px;}
+  .stat-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .stat-val{font-size:15px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-top:3px;}
+  .stat-val.red{color:var(--red);}
+  .stat-val.green{color:var(--green);}
+  .stat-val.gold{color:var(--gold);}
+
+  /* Interest Erosion Chart */
+  .erosion-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .ec-title{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:3px;}
+  .ec-sub{font-size:9.5px;color:var(--muted);margin-bottom:12px;}
+  .chart-canvas-wrap{position:relative;height:160px;width:100%;}
+  canvas{width:100%;height:100%;display:block;}
+  .chart-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;}
+  .cl-item{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted);}
+  .cl-dot{width:9px;height:9px;border-radius:3px;}
+
+  /* Equity snapshot */
+  .equity-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px;}
+  .eq-box{background:var(--bg);border-radius:10px;padding:9px 6px;text-align:center;border:1px solid var(--border);}
+  .eq-yr{font-size:8.5px;color:var(--muted);font-weight:700;text-transform:uppercase;}
+  .eq-pct{font-size:13px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin:2px 0;}
+  .eq-bar{height:4px;border-radius:2px;background:linear-gradient(to right,#1B3F72,#15803D);margin-top:3px;}
+
+  /* DTI Gauge */
+  .dti-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .dti-row{display:flex;align-items:center;justify-content:space-between;}
+  .dti-info .dti-label{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+  .dti-info .dti-val{font-size:26px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .dti-info .dti-rule{font-size:9.5px;color:var(--muted);}
+  .dti-status{text-align:right;}
+  .dti-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:800;}
+  .dti-badge.good{background:#F0FDF4;color:#15803D;}
+  .dti-badge.warn{background:#FFF7ED;color:#C2410C;}
+  .dti-badge.bad{background:#FEF2F2;color:#B91C1C;}
+  .dti-bar-wrap{margin-top:10px;}
+  .dti-bar-bg{height:8px;background:#E2E8F0;border-radius:10px;overflow:hidden;}
+  .dti-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#15803D,#D97706,#B91C1C);transition:width .6s ease;}
+  .dti-ticks{display:flex;justify-content:space-between;margin-top:3px;}
+  .dti-tick{font-size:8.5px;color:var(--muted);}
+
+  /* Loan Summary */
+  .summary-card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:10px;}
+  .sum-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+  .sum-row:last-child{border-bottom:none;}
+  .sum-key{font-size:11.5px;color:var(--muted);font-weight:600;}
+  .sum-val{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;}
+  .sum-val.gold{color:var(--gold);}
+  .sum-val.red{color:var(--red);}
+  .sum-val.green{color:#15803D;}
+
+  /* Tip Banner */
+  .tip-banner{background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:1px solid #F59E0B;border-radius:15px;padding:13px 15px;margin-bottom:10px;}
+  .tip-title{font-size:11.5px;font-weight:800;color:#92400E;font-family:Georgia,serif;display:flex;align-items:center;gap:7px;}
+  .tip-body{font-size:10px;color:#B45309;margin-top:5px;line-height:1.5;}
+
+  /* Saved Items */
+  .saved-item{background:var(--card);border-radius:14px;padding:13px 14px;box-shadow:var(--sh);border:1px solid var(--border);display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .si-icon{width:34px;height:34px;border-radius:9px;background:#F0FDF4;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .si-info{flex:1;}
+  .si-title{font-size:11.5px;font-weight:800;color:var(--navy);}
+  .si-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-val{font-size:13px;font-weight:800;color:var(--blue);font-family:Georgia,serif;}
+  .si-del{font-size:16px;color:rgba(11,29,58,0.2);cursor:pointer;padding:4px;}
+
+  /* PMI Banner */
+  .pmi-banner{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border:1px solid #FECACA;border-radius:13px;padding:11px 14px;margin-top:10px;display:flex;align-items:center;gap:10px;}
+  .pmi-icon{font-size:20px;}
+  .pmi-text{flex:1;}
+  .pmi-title{font-size:11px;font-weight:800;color:#991B1B;}
+  .pmi-sub{font-size:9.5px;color:#B91C1C;margin-top:2px;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--blue);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .input-card{animation:fadeUp .35s ease both .05s;}
+  .results-section.show>*{animation:fadeUp .35s ease both .08s;}
+
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:var(--gold-lt);padding:10px 22px;border-radius:22px;font-size:12px;font-weight:800;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;}
+
+  /* Pulse animation on calc btn */
+  @keyframes pulse{0%,100%{box-shadow:0 6px 20px rgba(217,119,6,0.45);}50%{box-shadow:0 6px 30px rgba(217,119,6,0.70);}}
+  .calc-btn.idle{animation:pulse 2.5s ease-in-out infinite;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🇺🇸</div>
+      <div class="hdr-title">PITI Calculator</div>
+      <div class="hdr-sub">Principal · Interest · Tax · Insurance</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">30-Yr Fixed</div><div class="rs-v">6.82%</div><div class="rs-n">Freddie Mac</div></div>
+    <div class="rs"><div class="rs-l">15-Yr Fixed</div><div class="rs-v">6.11%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">5/1 ARM</div><div class="rs-v">6.05%</div><div class="rs-n">Avg</div></div>
+    <div class="rs"><div class="rs-l">Fed Funds</div><div class="rs-v gold">5.33%</div><div class="rs-n">FOMC</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Loan Details <span class="more" onclick="resetForm()">Reset →</span></div>
+  <div class="input-card">
+    <div class="ic-tag">USA PITI Calculator · Full Payment Breakdown</div>
+    <div class="ic-title">All-in Monthly <span>PITI Payment</span></div>
+    <div class="inp-group">
+      <div class="inp-label">Home Purchase Price <span>Median US: $420,800</span></div>
+      <input class="inp" id="homePrice" type="number" placeholder="e.g. 420000" value="420000">
+    </div>
+    <div class="inp-row">
+      <div class="inp-group">
+        <div class="inp-label">Down Payment %</div>
+        <select class="inp" id="downPct">
+          <option value="3">3% (Conv)</option>
+          <option value="3.5">3.5% (FHA)</option>
+          <option value="5">5%</option>
+          <option value="10">10%</option>
+          <option value="20" selected>20%</option>
+          <option value="25">25%</option>
+        </select>
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Loan Term</div>
+        <select class="inp" id="term">
+          <option value="30" selected>30 Years</option>
+          <option value="20">20 Years</option>
+          <option value="15">15 Years</option>
+          <option value="10">10 Years</option>
+        </select>
+      </div>
+    </div>
+    <div class="inp-row" style="margin-top:11px;">
+      <div class="inp-group">
+        <div class="inp-label">Interest Rate %</div>
+        <input class="inp" id="rate" type="number" step="0.01" value="6.82">
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Property Tax %/yr</div>
+        <input class="inp" id="taxRate" type="number" step="0.01" value="1.07">
+      </div>
+    </div>
+    <div class="inp-row" style="margin-top:11px;">
+      <div class="inp-group">
+        <div class="inp-label">Home Insurance/yr</div>
+        <input class="inp" id="insurance" type="number" value="1800">
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">HOA Fee/mo</div>
+        <input class="inp" id="hoa" type="number" value="0">
+      </div>
+    </div>
+    <button class="calc-btn idle" id="calcBtn" onclick="calc()">
+      <span class="calc-btn-icon">📊</span> Calculate PITI Payment
+    </button>
+  </div>
+
+  <!-- RESULTS SECTION (hidden until Calculate pressed) -->
+  <div class="results-section" id="resultsSection">
+
+    <!-- Summary Stats Row -->
+    <div class="sec">Quick Stats</div>
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-icon">💰</div>
+        <div class="stat-lbl">Total Interest</div>
+        <div class="stat-val red" id="statTotalInt">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-icon">📅</div>
+        <div class="stat-lbl">Payoff Date</div>
+        <div class="stat-val gold" id="statPayoff">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-icon">🏦</div>
+        <div class="stat-lbl">True Cost</div>
+        <div class="stat-val" id="statTrueCost">—</div>
+      </div>
+    </div>
+
+    <!-- Result Card -->
+    <div class="sec">Monthly PITI Breakdown <span class="more">Amortize →</span></div>
+    <div class="result-card">
+      <div class="rc-header">
+        <div class="rc-title">Total Monthly Payment</div>
+        <div class="rc-badge" id="loanTypeBadge">Conventional</div>
+      </div>
+      <div class="piti-total">
+        <div class="pt-label">Est. Monthly PITI Payment</div>
+        <div class="pt-amount"><span>$</span><span id="totalPITI">—</span></div>
+        <div class="pt-sub" id="loanAmtSub">—</div>
+      </div>
+
+      <!-- PMI warning if applicable -->
+      <div class="pmi-banner" id="pmiBanner" style="display:none;">
+        <div class="pmi-icon">⚠️</div>
+        <div class="pmi-text">
+          <div class="pmi-title">PMI Required</div>
+          <div class="pmi-sub" id="pmiText">~$0/mo · Removed at 20% equity</div>
+        </div>
+      </div>
+
+      <div class="piti-breakdown" style="margin-top:14px;">
+        <div class="pb-item nv"><div class="pb-icon">🏠</div><div class="pb-label">Principal</div><div class="pb-value" id="pVal">—</div><div class="pb-pct" id="pPct">—</div></div>
+        <div class="pb-item rd"><div class="pb-icon">💵</div><div class="pb-label">Interest</div><div class="pb-value" id="iVal">—</div><div class="pb-pct" id="iPct">—</div></div>
+        <div class="pb-item gd"><div class="pb-icon">🏛️</div><div class="pb-label">Property Tax</div><div class="pb-value" id="tVal">—</div><div class="pb-pct" id="tPct">—</div></div>
+        <div class="pb-item tl"><div class="pb-icon">🛡️</div><div class="pb-label">Insurance</div><div class="pb-value" id="insVal">—</div><div class="pb-pct" id="insPct">—</div></div>
+      </div>
+      <div class="piti-bar-wrap">
+        <div class="piti-bar-label">Payment Composition</div>
+        <div class="piti-bar" id="pitiBar"></div>
+        <div class="bar-legend">
+          <div class="bl-item"><div class="bl-dot" style="background:#1B3F72;"></div>Principal</div>
+          <div class="bl-item"><div class="bl-dot" style="background:#B91C1C;"></div>Interest</div>
+          <div class="bl-item"><div class="bl-dot" style="background:#D97706;"></div>Tax</div>
+          <div class="bl-item"><div class="bl-dot" style="background:#0D9488;"></div>Insurance</div>
+        </div>
+      </div>
+      <button class="save-btn" id="saveBtn" onclick="saveCalcResult()">🔖 Save This PITI Calculation</button>
+    </div>
+
+    <!-- Donut Chart -->
+    <div class="sec">Visual Breakdown</div>
+    <div class="donut-card">
+      <div class="donut-card-title">🥧 Where Your Monthly Payment Goes</div>
+      <div class="donut-row">
+        <div class="donut-svg-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="46" fill="none" stroke="#E2E8F0" stroke-width="18"/>
+            <circle id="donutP" cx="60" cy="60" r="46" fill="none" stroke="#1B3F72" stroke-width="18" stroke-dasharray="0 289" stroke-linecap="butt"/>
+            <circle id="donutI" cx="60" cy="60" r="46" fill="none" stroke="#B91C1C" stroke-width="18" stroke-dasharray="0 289" stroke-linecap="butt"/>
+            <circle id="donutT" cx="60" cy="60" r="46" fill="none" stroke="#D97706" stroke-width="18" stroke-dasharray="0 289" stroke-linecap="butt"/>
+            <circle id="donutIns" cx="60" cy="60" r="46" fill="none" stroke="#0D9488" stroke-width="18" stroke-dasharray="0 289" stroke-linecap="butt"/>
+          </svg>
+          <div class="donut-center">
+            <div class="donut-center-lbl">Monthly</div>
+            <div class="donut-center-val" id="donutTotal">—</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <div class="dl-row"><div class="dl-dot" style="background:#1B3F72;"></div><div class="dl-info"><div class="dl-lbl">Principal</div><div class="dl-pct" id="dlPPct">—</div></div><div class="dl-val" id="dlP">—</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#B91C1C;"></div><div class="dl-info"><div class="dl-lbl">Interest</div><div class="dl-pct" id="dlIPct">—</div></div><div class="dl-val" id="dlI">—</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#D97706;"></div><div class="dl-info"><div class="dl-lbl">Tax</div><div class="dl-pct" id="dlTPct">—</div></div><div class="dl-val" id="dlT">—</div></div>
+          <div class="dl-row"><div class="dl-dot" style="background:#0D9488;"></div><div class="dl-info"><div class="dl-lbl">Insurance</div><div class="dl-pct" id="dlInsPct">—</div></div><div class="dl-val" id="dlIns">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interest Erosion Chart -->
+    <div class="sec">Interest Erosion Over Time</div>
+    <div class="erosion-card">
+      <div class="ec-title">📉 How Your Payment Shifts Over Time</div>
+      <div class="ec-sub">Principal share grows as interest erodes year-by-year</div>
+      <div class="chart-canvas-wrap"><canvas id="erosionChart"></canvas></div>
+      <div class="chart-legend">
+        <div class="cl-item"><div class="cl-dot" style="background:#1B3F72;"></div>Principal</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#B91C1C;"></div>Interest</div>
+      </div>
+      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:14px;margin-bottom:6px;">Equity Built (% of Original Loan)</div>
+      <div class="equity-strip" id="equityStrip"></div>
+    </div>
+
+    <!-- DTI Check -->
+    <div class="sec">DTI Quick Check <span class="more">Full DTI →</span></div>
+    <div class="dti-card">
+      <div class="inp-group" style="margin-bottom:10px;">
+        <div class="inp-label" style="color:var(--muted);">Gross Monthly Income</div>
+        <input style="background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:10px 13px;font-size:14px;font-weight:800;color:var(--navy);outline:none;width:100%;font-family:Georgia,serif;" type="number" id="income" value="8500" oninput="calcDTI()" placeholder="e.g. 8500">
+      </div>
+      <div class="dti-row">
+        <div class="dti-info">
+          <div class="dti-label">Front-End DTI</div>
+          <div class="dti-val" id="dtiVal">—</div>
+          <div class="dti-rule">28% rule · Lender max 43%</div>
+        </div>
+        <div class="dti-status">
+          <div class="dti-badge good" id="dtiBadge">—</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px;" id="dtiNote">Enter income above</div>
+        </div>
+      </div>
+      <div class="dti-bar-wrap">
+        <div class="dti-bar-bg"><div class="dti-bar-fill" id="dtiBarFill" style="width:0%;"></div></div>
+        <div class="dti-ticks"><span class="dti-tick">0%</span><span class="dti-tick">28% ideal</span><span class="dti-tick">43% max</span><span class="dti-tick">50%+</span></div>
+      </div>
+    </div>
+
+    <!-- Loan Summary -->
+    <div class="sec">Loan Summary</div>
+    <div class="summary-card">
+      <div class="sum-row"><span class="sum-key">Purchase Price</span><span class="sum-val" id="sPurchase">—</span></div>
+      <div class="sum-row"><span class="sum-key">Down Payment</span><span class="sum-val green" id="sDown">—</span></div>
+      <div class="sum-row"><span class="sum-key">Loan Amount</span><span class="sum-val" id="sLoan">—</span></div>
+      <div class="sum-row"><span class="sum-key">Total Interest Paid</span><span class="sum-val red" id="sTotalInt">—</span></div>
+      <div class="sum-row"><span class="sum-key">Total Cost of Loan</span><span class="sum-val red" id="sTotalCost">—</span></div>
+      <div class="sum-row"><span class="sum-key">PMI Required?</span><span class="sum-val" id="sPMI">—</span></div>
+      <div class="sum-row"><span class="sum-key">Payoff Date</span><span class="sum-val gold" id="sPayoff">—</span></div>
+    </div>
+
+    <!-- Saved Calcs -->
+    <div id="savedSection" style="display:none;margin-top:4px;">
+      <div class="sec">🔖 Saved Calculations <span id="savedCount" style="font-size:9px;font-weight:700;background:#EFF6FF;color:#1D4ED8;padding:2px 8px;border-radius:20px;">0</span></div>
+      <div id="savedList"></div>
+    </div>
+
+    <div class="tip-banner">
+      <div class="tip-title">💡 PITI Pro Tip</div>
+      <div class="tip-body">Lenders use PITI to qualify you. Most conventional lenders cap front-end DTI at <strong>28%</strong> and back-end at <strong>36–43%</strong>. FHA allows up to <strong>31%/43%</strong>. A 20% down payment eliminates PMI, saving $100–$300/mo on a typical loan.</div>
+    </div>
+
+  </div><!-- /results-section -->
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let savedCalcs = [];
+let lastData = null;
+
+function fmt(n) { return n.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+function fmtD(n) { return '$' + fmt(n); }
+function fmtK(n) { return Math.abs(n) >= 1000 ? '$' + (Math.abs(n)/1000).toFixed(1) + 'K' : fmtD(n); }
+
+// Mark inputs as changed so the calc btn pulses
+document.querySelectorAll('.inp').forEach(el => {
+  el.addEventListener('input', () => {
+    const btn = document.getElementById('calcBtn');
+    btn.classList.add('idle');
+  });
+  el.addEventListener('change', () => {
+    const btn = document.getElementById('calcBtn');
+    btn.classList.add('idle');
+  });
+});
+
+function calc() {
+  const btn = document.getElementById('calcBtn');
+  btn.classList.remove('idle');
+
+  const price    = parseFloat(document.getElementById('homePrice').value) || 420000;
+  const downPct  = parseFloat(document.getElementById('downPct').value) || 20;
+  const term     = parseInt(document.getElementById('term').value) || 30;
+  const rate     = parseFloat(document.getElementById('rate').value) || 6.82;
+  const taxRate  = parseFloat(document.getElementById('taxRate').value) || 1.07;
+  const insYr    = parseFloat(document.getElementById('insurance').value) || 1800;
+  const hoa      = parseFloat(document.getElementById('hoa').value) || 0;
+
+  if (!price || price <= 0) { showToast('Enter a valid home price'); return; }
+  if (!rate || rate <= 0 || rate > 30) { showToast('Enter a valid interest rate'); return; }
+
+  const down = price * downPct / 100;
+  const loan = price - down;
+  const n    = term * 12;
+  const r    = rate / 100 / 12;
+
+  let pi;
+  if (r === 0) { pi = loan / n; } else { pi = loan * r * Math.pow(1+r,n) / (Math.pow(1+r,n) - 1); }
+
+  const taxMo  = price * taxRate / 100 / 12;
+  const insMo  = insYr / 12;
+  const pmi    = downPct < 20 ? loan * 0.0085 / 12 : 0;
+  const total  = pi + taxMo + insMo + hoa + pmi;
+
+  const firstInt  = loan * r;
+  const firstP    = pi - firstInt;
+
+  const totalPaidPI = pi * n;
+  const totalInt    = totalPaidPI - loan;
+  const totalCost   = totalPaidPI + down;
+
+  lastData = { price, downPct, down, loan, term, rate, pi, taxMo, insMo, pmi, total, hoa, firstP, firstInt, totalInt, totalCost };
+
+  // Show results section
+  const rs = document.getElementById('resultsSection');
+  rs.classList.add('show');
+
+  // Quick stats row
+  document.getElementById('statTotalInt').textContent = fmtK(totalInt);
+  const payoffDate = new Date(); payoffDate.setFullYear(payoffDate.getFullYear() + term);
+  document.getElementById('statPayoff').textContent = payoffDate.getFullYear();
+  document.getElementById('statTrueCost').textContent = fmtK(totalCost);
+
+  // PITI total
+  document.getElementById('totalPITI').textContent = fmt(total);
+  document.getElementById('pVal').textContent = fmtD(firstP);
+  document.getElementById('iVal').textContent = fmtD(firstInt);
+  document.getElementById('tVal').textContent = fmtD(taxMo);
+  document.getElementById('insVal').textContent = fmtD(insMo + pmi);
+  document.getElementById('loanAmtSub').textContent = `Loan: ${fmtD(loan)} · ${term}-yr @ ${rate}%`;
+
+  // Percentages
+  document.getElementById('pPct').textContent = Math.round(firstP/total*100) + '% of payment';
+  document.getElementById('iPct').textContent = Math.round(firstInt/total*100) + '% of payment';
+  document.getElementById('tPct').textContent = Math.round(taxMo/total*100) + '% of payment';
+  document.getElementById('insPct').textContent = Math.round((insMo+pmi)/total*100) + '% of payment';
+
+  // PMI banner
+  const pmiBanner = document.getElementById('pmiBanner');
+  if (pmi > 0) {
+    pmiBanner.style.display = 'flex';
+    document.getElementById('pmiText').textContent = `~${fmtD(pmi)}/mo · Removed at 20% equity (~${Math.round((0.2*price - down) / (pi - firstInt))} months)`;
+  } else {
+    pmiBanner.style.display = 'none';
+  }
+
+  // Stacked bar
+  const bar = document.getElementById('pitiBar');
+  const pW = firstP/total*100, iW = firstInt/total*100, tW = taxMo/total*100, insW = (insMo+pmi)/total*100;
+  bar.innerHTML = `
+    <div style="flex:0 0 ${pW}%;background:#1B3F72;border-radius:10px 0 0 10px;"></div>
+    <div style="flex:0 0 ${iW}%;background:#B91C1C;"></div>
+    <div style="flex:0 0 ${tW}%;background:#D97706;"></div>
+    <div style="flex:1;min-width:1%;background:#0D9488;border-radius:0 10px 10px 0;"></div>`;
+
+  // Loan type badge
+  document.getElementById('loanTypeBadge').textContent = downPct >= 20 ? 'Conventional' : downPct >= 3.5 ? 'FHA Eligible' : 'Conv 3% Down';
+
+  // Summary
+  document.getElementById('sPurchase').textContent = fmtD(price);
+  document.getElementById('sDown').textContent = fmtD(down) + ' (' + downPct + '%)';
+  document.getElementById('sLoan').textContent = fmtD(loan);
+  document.getElementById('sTotalInt').textContent = fmtD(totalInt);
+  document.getElementById('sTotalCost').textContent = fmtD(totalCost);
+  document.getElementById('sPMI').textContent = downPct >= 20 ? 'No (≥ 20% down)' : 'Yes ~ ' + fmtD(pmi) + '/mo';
+  document.getElementById('sPayoff').textContent = payoffDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
+
+  // Donut
+  renderDonut(firstP, firstInt, taxMo, insMo + pmi, total);
+
+  // Erosion chart
+  renderErosionChart(loan, rate, term);
+
+  calcDTI();
+
+  // Scroll to results
+  setTimeout(() => {
+    document.getElementById('resultsSection').scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 100);
+}
+
+function renderDonut(p, interest, tax, ins, total) {
+  const circ = 2 * Math.PI * 46;
+  const segs = [
+    { id: 'donutP',   val: p,        lbl: 'dlP',   pct: 'dlPPct' },
+    { id: 'donutI',   val: interest, lbl: 'dlI',   pct: 'dlIPct' },
+    { id: 'donutT',   val: tax,      lbl: 'dlT',   pct: 'dlTPct' },
+    { id: 'donutIns', val: ins,      lbl: 'dlIns', pct: 'dlInsPct' }
+  ];
+  let offset = 0;
+  segs.forEach(s => {
+    const dash = Math.max(s.val / total, 0) * circ * 0.99;
+    const el = document.getElementById(s.id);
+    el.setAttribute('stroke-dasharray', dash + ' ' + circ);
+    el.setAttribute('stroke-dashoffset', -offset);
+    offset += dash + circ * 0.005;
+    document.getElementById(s.lbl).textContent = fmtD(s.val);
+    document.getElementById(s.pct).textContent = Math.round(s.val/total*100) + '% of total';
+  });
+  document.getElementById('donutTotal').textContent = fmtD(total);
+}
+
+function renderErosionChart(loan, annualRate, years) {
+  const canvas = document.getElementById('erosionChart');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth;
+  const H = 160;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const r = annualRate / 100 / 12;
+  const n = years * 12;
+  const payment = r === 0 ? loan / n : loan * r * Math.pow(1+r,n) / (Math.pow(1+r,n) - 1);
+
+  const data = [];
+  let bal = loan;
+  for (let y = 1; y <= years; y++) {
+    let yInt = 0, yPrin = 0;
+    for (let m = 0; m < 12; m++) {
+      const intPart = bal * r;
+      const prinPart = Math.min(payment - intPart, bal);
+      yInt += intPart; yPrin += prinPart;
+      bal = Math.max(0, bal - prinPart);
+    }
+    data.push({ year: y, interest: yInt, principal: yPrin });
+  }
+
+  const pad = { l: 8, r: 8, t: 10, b: 22 };
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+  const barWidth = cW / data.length * 0.72;
+  const maxVal = Math.max(...data.map(d => d.interest + d.principal));
+
+  data.forEach((d, i) => {
+    const x = pad.l + (i / data.length) * cW + barWidth * 0.14;
+    const intH = (d.interest / maxVal) * cH;
+    const prinH = (d.principal / maxVal) * cH;
+    ctx.fillStyle = '#B91C1C'; ctx.globalAlpha = 0.82;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, pad.t + cH - intH, barWidth, intH, [2,2,0,0]); ctx.fill(); }
+    else { ctx.fillRect(x, pad.t + cH - intH, barWidth, intH); }
+    ctx.fillStyle = '#1B3F72'; ctx.globalAlpha = 0.9;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, pad.t + cH - intH - prinH, barWidth, prinH, [2,2,0,0]); ctx.fill(); }
+    else { ctx.fillRect(x, pad.t + cH - intH - prinH, barWidth, prinH); }
+    ctx.globalAlpha = 1;
+  });
+
+  ctx.fillStyle = 'rgba(74,92,122,0.7)'; ctx.font = '9px Arial'; ctx.textAlign = 'center';
+  data.forEach((d, i) => {
+    if ((d.year % 5 === 0) || d.year === 1) {
+      const x = pad.l + (i / data.length) * cW + barWidth * 0.6;
+      ctx.fillText('Y' + d.year, x, H - 5);
+    }
+  });
+
+  // Equity strip
+  const equityMilestones = [1, 5, 10, 15, years];
+  let bal2 = loan;
+  const equityData = {};
+  for (let y = 1; y <= years; y++) {
+    for (let m = 0; m < 12; m++) {
+      const intPart = bal2 * r;
+      bal2 = Math.max(0, bal2 - (payment - intPart));
+    }
+    if (equityMilestones.includes(y)) {
+      equityData[y] = Math.round((loan - bal2) / loan * 100);
+    }
+  }
+  const uniqueMilestones = [...new Set(equityMilestones)].filter(y => y <= years);
+  document.getElementById('equityStrip').innerHTML = uniqueMilestones.map(y => `
+    <div class="eq-box">
+      <div class="eq-yr">Yr ${y}</div>
+      <div class="eq-pct">${equityData[y] || 0}%</div>
+      <div class="eq-bar" style="width:${equityData[y] || 0}%;"></div>
+    </div>`).join('');
+}
+
+function calcDTI() {
+  const totalStr = document.getElementById('totalPITI').textContent.replace(/,/g, '');
+  const total = parseFloat(totalStr);
+  if (!total) return;
+  const income = parseFloat(document.getElementById('income').value) || 8500;
+  const dti = total / income * 100;
+  document.getElementById('dtiVal').textContent = dti.toFixed(1) + '%';
+  document.getElementById('dtiBarFill').style.width = Math.min(dti * 2, 100) + '%';
+  if (dti <= 28) {
+    document.getElementById('dtiBadge').className = 'dti-badge good';
+    document.getElementById('dtiBadge').textContent = '✓ Excellent';
+    document.getElementById('dtiNote').textContent = 'Below 28% ideal limit';
+  } else if (dti <= 36) {
+    document.getElementById('dtiBadge').className = 'dti-badge good';
+    document.getElementById('dtiBadge').textContent = '✓ Acceptable';
+    document.getElementById('dtiNote').textContent = 'Within 36% guideline';
+  } else if (dti <= 43) {
+    document.getElementById('dtiBadge').className = 'dti-badge warn';
+    document.getElementById('dtiBadge').textContent = '⚠ Borderline';
+    document.getElementById('dtiNote').textContent = 'Max 43% for most lenders';
+  } else {
+    document.getElementById('dtiBadge').className = 'dti-badge bad';
+    document.getElementById('dtiBadge').textContent = '✗ Too High';
+    document.getElementById('dtiNote').textContent = 'Exceeds lender limits';
+  }
+}
+
+function resetForm() {
+  document.getElementById('homePrice').value = 420000;
+  document.getElementById('downPct').value = 20;
+  document.getElementById('term').value = 30;
+  document.getElementById('rate').value = 6.82;
+  document.getElementById('taxRate').value = 1.07;
+  document.getElementById('insurance').value = 1800;
+  document.getElementById('hoa').value = 0;
+  document.getElementById('resultsSection').classList.remove('show');
+  document.getElementById('calcBtn').classList.add('idle');
+  lastData = null;
+}
+
+function saveCalcResult() {
+  if (!lastData) return;
+  const d = lastData;
+  savedCalcs.unshift({
+    title: `${fmtD(d.price)} · ${d.downPct}% dn · ${d.rate}% · ${d.term}yr`,
+    sub: `PITI: ${fmtD(d.total)}/mo · Loan: ${fmtD(d.loan)}`,
+    val: fmtD(d.total) + '/mo',
+    ts: new Date().toLocaleTimeString()
+  });
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '✅ Saved!'; btn.classList.add('saved');
+  setTimeout(() => { btn.innerHTML = '🔖 Save This PITI Calculation'; btn.classList.remove('saved'); }, 2200);
+  showToast('PITI calculation saved!');
+  renderSaved();
+}
+
+function renderSaved() {
+  const sec = document.getElementById('savedSection');
+  const list = document.getElementById('savedList');
+  if (!savedCalcs.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  document.getElementById('savedCount').textContent = savedCalcs.length;
+  list.innerHTML = savedCalcs.map((s, i) => `
+    <div class="saved-item">
+      <div class="si-icon">💾</div>
+      <div class="si-info">
+        <div class="si-title">${s.title}</div>
+        <div class="si-sub">${s.sub}</div>
+      </div>
+      <div class="si-val">${s.val}</div>
+      <div class="si-del" onclick="deleteSaved(${i})">✕</div>
+    </div>`).join('');
+}
+
+function deleteSaved(i) { savedCalcs.splice(i, 1); renderSaved(); showToast('Removed'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>

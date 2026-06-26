@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Split Premium PMI</title>
+<style>
+:root {
+  --navy: #0B1D3A; --blue: #1B3F72; --red: #B91C1C; --crimson: #991B1B;
+  --gold: #D97706; --gold-lt: #FCD34D; --white: #FFFFFF; --bg: #F0F4FF;
+  --card: #FFFFFF; --muted: #4A5C7A; --border: rgba(27,63,114,0.09);
+  --sh: 0 4px 20px rgba(11,29,58,0.10); --sh2: 0 8px 36px rgba(11,29,58,0.18);
+  --green: #15803D; --teal:#0D9488; --teal-lt:#5EEAD4;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--navy); max-width:420px; margin:0 auto; min-height:100vh; }
+
+.header { background:linear-gradient(155deg,#0B1D3A 0%,#1B3F72 55%,#B91C1C 100%); padding:46px 20px 0; position:relative; overflow:hidden; }
+.header::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+.header::after { content:'🔀'; position:absolute; right:10px; top:50px; font-size:72px; opacity:0.07; }
+.hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; position:relative; z-index:2; }
+.icon-btn { width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; }
+.hdr-center { text-align:center; }
+.hdr-flag { font-size:28px; }
+.hdr-title { font-size:18px; font-weight:800; color:#fff; letter-spacing:-0.3px; font-family:Georgia,serif; }
+.hdr-sub { font-size:10px; color:rgba(255,255,255,0.52); margin-top:1px; }
+.rate-strip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:14px 14px 0 0; padding:11px 14px; display:grid; grid-template-columns:repeat(3,1fr); position:relative; z-index:2; margin-top:4px; }
+.rs { text-align:center; position:relative; }
+.rs:not(:last-child)::after { content:''; position:absolute; right:0; top:15%; height:70%; width:1px; background:rgba(255,255,255,0.14); }
+.rs-l { font-size:8.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.4px; }
+.rs-v { font-size:14px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1.1; }
+.rs-v.gold { color:var(--gold-lt); }
+.rs-v.teal{color:var(--teal-lt);}
+.rs-n { font-size:8px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+.content { padding:15px 15px 110px; }
+.sec { font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; display:flex; align-items:center; justify-content:space-between; }
+.sec .badge { font-size:9px; font-weight:700; background:#F0FDFA; color:#0D9488; padding:3px 8px; border-radius:20px; text-transform:none; letter-spacing:0; }
+
+.hero { background:linear-gradient(148deg,#0B1D3A,#1B3F72); border-radius:20px; padding:19px; position:relative; overflow:hidden; box-shadow:var(--sh2); margin-bottom:12px; }
+.hero::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:rgba(13,148,136,0.18); }
+.h-tag { font-size:9.5px; color:rgba(255,255,255,0.48); text-transform:uppercase; letter-spacing:0.8px; }
+.h-title { font-size:17px; font-weight:800; color:#fff; margin:5px 0 12px; line-height:1.25; font-family:Georgia,serif; }
+.h-title span { color:var(--gold-lt); }
+.h-row { display:flex; gap:7px; }
+.h-box { flex:1; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:9px 10px; }
+.h-box label { font-size:8.5px; color:rgba(255,255,255,0.48); display:block; margin-bottom:2px; }
+.h-box .v { font-size:13px; font-weight:800; color:#fff; }
+.h-box .v.gold { color:var(--gold-lt); }
+.h-box .v.teal { color:var(--teal-lt); }
+
+/* SPLIT VISUAL */
+.split-visual{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.split-visual h3{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:12px;}
+.split-bar{display:flex;height:36px;border-radius:12px;overflow:hidden;margin-bottom:10px;}
+.split-seg{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;transition:width .5s ease;}
+.split-seg.upfront{background:linear-gradient(135deg,#0D9488,#0F766E);}
+.split-seg.monthly{background:linear-gradient(135deg,#D97706,#B45309);}
+.split-labels{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);font-weight:700;}
+
+/* SLIDER FOR SPLIT RATIO */
+.input-card { background:var(--card); border-radius:18px; padding:18px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:12px; }
+.input-card h3{font-size:12px;font-weight:800;color:var(--navy);font-family:Georgia,serif;margin-bottom:14px;}
+.inp-group { margin-bottom:14px; }
+.inp-group:last-child { margin-bottom:0; }
+.inp-label { font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; }
+.inp-label .hint { font-size:9.5px; font-weight:600; color:var(--blue); text-transform:none; letter-spacing:0; }
+input[type=range] { width:100%; -webkit-appearance:none; height:6px; border-radius:3px; background:linear-gradient(to right,var(--blue) 0%,var(--blue) 20%,#CBD5E1 20%,#CBD5E1 100%); outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--navy); border:3px solid #fff; box-shadow:0 2px 8px rgba(11,29,58,0.25); }
+.range-labels { display:flex; justify-content:space-between; font-size:9px; color:var(--muted); margin-top:4px; font-weight:600; }
+.calc-btn { width:100%; background:linear-gradient(135deg,#0D9488,#0F766E); border:none; border-radius:14px; padding:14px; font-size:14px; font-weight:800; color:#fff; cursor:pointer; box-shadow:0 4px 16px rgba(13,148,136,0.35); font-family:Georgia,serif; letter-spacing:0.3px; margin-top:14px; }
+.btn-row { display:flex; gap:10px; margin-top:14px; }
+.btn-row .calc-btn { margin-top:0; flex:1; }
+.save-btn { flex:0 0 52px; background:var(--card); border:1.5px solid var(--teal); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; transition:transform .12s; color:var(--teal); }
+.save-btn:active { transform:scale(.94); }
+.save-btn.saved { background:#F0FDFA; }
+
+/* RESULT */
+.result-hero { background:linear-gradient(135deg,#0D9488,#0F766E); border-radius:18px; padding:18px; box-shadow:0 8px 28px rgba(13,148,136,0.30); margin-bottom:10px; }
+.rh-label { font-size:9.5px; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.8px; }
+.rh-amount { font-size:30px; font-weight:800; color:#fff; font-family:Georgia,serif; line-height:1; margin:4px 0 2px; }
+.rh-sub { font-size:10px; color:rgba(255,255,255,0.60); }
+.rh-row { display:flex; gap:8px; margin-top:14px; }
+.rh-box { flex:1; background:rgba(255,255,255,0.12); border-radius:10px; padding:9px 10px; }
+.rh-box-lbl { font-size:8.5px; color:rgba(255,255,255,0.50); }
+.rh-box-val { font-size:13px; font-weight:800; color:#fff; font-family:Georgia,serif; margin-top:2px; }
+
+.toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff; padding:10px 18px; border-radius:30px; font-size:12px; font-weight:700; box-shadow:var(--sh2); opacity:0; transition:all .25s; z-index:200; pointer-events:none; white-space:nowrap; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* COMPARISON CHART - all 4 types */
+.chart-card { background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:10px; }
+.chart-title { font-size:12px; font-weight:800; color:var(--navy); font-family:Georgia,serif; margin-bottom:13px; }
+.bar-group { margin-bottom:10px; }
+.bar-label { font-size:9.5px; font-weight:700; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; }
+.bar-track { background:#EEF2FF; border-radius:8px; height:22px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:9px; font-weight:800; color:#fff; transition:width .6s ease; }
+
+.saved-card { background:var(--card); border-radius:14px; padding:12px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.saved-card .sd-amt { font-size:14px; font-weight:800; color:var(--teal); font-family:Georgia,serif; }
+.saved-card .sd-meta { font-size:9.5px; color:var(--muted); margin-top:2px; }
+.saved-del { margin-left:auto; font-size:16px; color:#B91C1C; cursor:pointer; padding:4px; }
+.saved-empty { font-size:11px; color:var(--muted); text-align:center; padding:18px 0; }
+
+.ilist { display:flex; flex-direction:column; gap:9px; }
+.ic { background:var(--card); border-radius:14px; padding:13px 14px; box-shadow:var(--sh); border:1px solid var(--border); display:flex; align-items:flex-start; gap:12px; }
+.ii { width:38px; height:38px; border-radius:11px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.in { font-size:12.5px; font-weight:800; color:var(--navy); font-family:Georgia,serif; }
+.is { font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+.bge { display:inline-flex; padding:2px 7px; border-radius:20px; font-size:8.5px; font-weight:700; margin-top:5px; }
+.bge-g { background:#F0FDF4; color:#15803D; }
+.bge-b { background:#EFF6FF; color:#1D4ED8; }
+.bge-t{background:#F0FDFA;color:#0D9488;}
+
+.bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; background:var(--card); border-top:1px solid var(--border); display:flex; padding:10px 0 18px; box-shadow:0 -4px 20px rgba(11,29,58,0.07); z-index:100; }
+.ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+.ni-ic { font-size:19px; }
+.ni-lb { font-size:10px; font-weight:600; color:var(--muted); }
+.ni.active .ni-lb { color:var(--blue); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+.hero,.split-visual,.input-card,.chart-card,.ilist { animation:fadeUp .35s ease both .05s; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🔀</div>
+      <div class="hdr-title">Split Premium PMI</div>
+      <div class="hdr-sub">Partial Upfront + Reduced Monthly · Flexible</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Typical Upfront</div><div class="rs-v gold">0.5–1.0%</div><div class="rs-n">Of loan amount</div></div>
+    <div class="rs"><div class="rs-l">Reduced Monthly</div><div class="rs-v teal">~40–60%</div><div class="rs-n">Of full BPMI</div></div>
+    <div class="rs"><div class="rs-l">Cancellable?</div><div class="rs-v">Yes</div><div class="rs-n">At 80% LTV</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec" style="margin-top:0">What is Split Premium? <span class="badge">Hybrid Option</span></div>
+  <div class="hero">
+    <div class="h-tag">Split Premium Private Mortgage Insurance</div>
+    <div class="h-title">A <span>hybrid</span> — some cash now, lower payments later</div>
+    <div class="h-row">
+      <div class="h-box"><label>Upfront Portion</label><div class="v gold">0.5–1.0%</div></div>
+      <div class="h-box"><label>Monthly Portion</label><div class="v">Reduced</div></div>
+      <div class="h-box"><label>Cancellable?</label><div class="v teal">Yes</div></div>
+    </div>
+  </div>
+
+  <!-- Visual split bar -->
+  <div class="split-visual">
+    <h3>🔀 How Your Premium Splits</h3>
+    <div class="split-bar">
+      <div class="split-seg upfront" id="splitUpfront" style="width:35%;">35% Upfront</div>
+      <div class="split-seg monthly" id="splitMonthly" style="width:65%;">65% Monthly</div>
+    </div>
+    <div class="split-labels"><span>Paid at closing (one-time)</span><span>Paid monthly (cancellable)</span></div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="sec">Split Premium Calculator</div>
+  <div class="input-card">
+    <h3>🔀 Customize Your Split</h3>
+    <div class="inp-group">
+      <div class="inp-label">Loan Amount <span class="hint" id="loanDisplay">$350,000</span></div>
+      <input type="range" id="loanSlider" min="100000" max="1200000" step="5000" value="350000" oninput="updateCalc()">
+      <div class="range-labels"><span>$100K</span><span>$500K</span><span>$1M</span><span>$1.2M</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Full BPMI Equivalent Rate <span class="hint" id="bpmiRateDisplay">0.75%</span></div>
+      <input type="range" id="bpmiRateSlider" min="0.3" max="1.5" step="0.05" value="0.75" oninput="updateCalc()">
+      <div class="range-labels"><span>0.3%</span><span>0.75%</span><span>1.5%</span></div>
+    </div>
+    <div class="inp-group">
+      <div class="inp-label">Upfront Split Percentage <span class="hint" id="splitPctDisplay">35%</span></div>
+      <input type="range" id="splitPctSlider" min="10" max="75" step="5" value="35" oninput="updateCalc()">
+      <div class="range-labels"><span>10%</span><span>35%</span><span>50%</span><span>75%</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="calc-btn" onclick="updateCalc()">Calculate Split Premium</button>
+      <div class="save-btn" id="saveBtn" onclick="saveCalc()">💾</div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-hero" id="resultHero">
+    <div class="rh-label">Your Split Premium Structure</div>
+    <div class="rh-amount" id="upfrontAmount">$919</div>
+    <div class="rh-sub" id="resultSub">Upfront (35% of total premium value) + reduced monthly payment</div>
+    <div class="rh-row">
+      <div class="rh-box"><div class="rh-box-lbl">Monthly Payment</div><div class="rh-box-val" id="monthlyAmount">$142</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">vs Full BPMI</div><div class="rh-box-val" id="fullBpmiMonthly">$219</div></div>
+      <div class="rh-box"><div class="rh-box-lbl">Monthly Savings</div><div class="rh-box-val" id="monthlySavings">$77</div></div>
+    </div>
+  </div>
+
+  <!-- Saved -->
+  <div class="sec">Saved Calculations</div>
+  <div id="savedList"></div>
+
+  <!-- All 4 Types Comparison Chart -->
+  <div class="sec">All PMI Types — Monthly Cost Compared</div>
+  <div class="chart-card">
+    <div class="chart-title">📊 Initial Monthly Cost by PMI Type</div>
+    <div class="bar-group">
+      <div class="bar-label"><span>BPMI (Full Monthly)</span><span id="cBpmi">$219/mo</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#B91C1C,#991B1B);" id="barBpmi">$219</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>Split Premium (This Page)</span><span id="cSplit">$142/mo</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:65%;background:linear-gradient(90deg,#0D9488,#0F766E);" id="barSplit">$142</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>LPMI (Rate-Based Equivalent)</span><span>$0/mo + higher rate</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:0%;background:linear-gradient(90deg,#D97706,#B45309);">$0 direct</div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>SPMI (Single Premium)</span><span>$0/mo, paid upfront</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:0%;background:linear-gradient(90deg,#6D28D9,#5B21B6);">$0 direct</div></div>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:4px;">LPMI and SPMI show $0 monthly because their cost is paid via rate increase or upfront lump sum respectively.</div>
+  </div>
+
+  <!-- Key Facts -->
+  <div class="sec">Split Premium Key Facts</div>
+  <div class="ilist">
+    <div class="ic"><div class="ii">⚖️</div><div><div class="in">Best of Both Worlds</div><div class="is">Lower monthly payment than full BPMI, less cash needed upfront than full SPMI.</div><div class="bge bge-t">Balanced</div></div></div>
+    <div class="ic"><div class="ii">✅</div><div><div class="in">Still Cancellable at 80% LTV</div><div class="is">Unlike LPMI, the ongoing monthly portion of split premium can be cancelled once you reach 20% equity.</div><div class="bge bge-g">Borrower-Friendly</div></div></div>
+    <div class="ic"><div class="ii">💡</div><div><div class="in">Good for Tight Cash-at-Closing Budgets</div><div class="is">If you can't afford a full single premium but want lower monthly payments, split premium bridges the gap.</div><div class="bge bge-b">Flexible Closing Costs</div></div></div>
+    <div class="ic"><div class="ii">📉</div><div><div class="in">Upfront Portion Generally Non-Refundable</div><div class="is">Similar to SPMI, the lump-sum part paid at closing typically isn't refunded if you sell or refinance early.</div></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🦅</div><div class="ni-lb">USA</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+function fmt(n){return '$'+Math.round(n).toLocaleString('en-US');}
+
+function updateCalc(){
+  const loan = +document.getElementById('loanSlider').value;
+  const bpmiRate = +document.getElementById('bpmiRateSlider').value;
+  const splitPct = +document.getElementById('splitPctSlider').value;
+
+  document.getElementById('loanDisplay').textContent = fmt(loan);
+  document.getElementById('bpmiRateDisplay').textContent = bpmiRate.toFixed(2)+'%';
+  document.getElementById('splitPctDisplay').textContent = splitPct+'%';
+
+  const fullBpmiAnnual = loan * bpmiRate / 100;
+  const fullBpmiMonthly = fullBpmiAnnual / 12;
+
+  // Total premium "value" approximated as 5x annual (industry rough proxy for upfront equivalent)
+  const totalPremiumValue = fullBpmiAnnual * 5;
+  const upfrontAmount = totalPremiumValue * (splitPct/100);
+  const remainingMonthlyFactor = 1 - (splitPct/100)*0.9; // upfront covers most of corresponding reduction
+  const monthlyAmount = fullBpmiMonthly * remainingMonthlyFactor;
+  const monthlySavings = fullBpmiMonthly - monthlyAmount;
+
+  document.getElementById('upfrontAmount').textContent = fmt(upfrontAmount);
+  document.getElementById('resultSub').textContent = 'Upfront ('+splitPct+'% split) + reduced monthly payment vs. full BPMI';
+  document.getElementById('monthlyAmount').textContent = fmt(monthlyAmount)+'/mo'.replace('/mo','');
+  document.getElementById('monthlyAmount').textContent = fmt(monthlyAmount);
+  document.getElementById('fullBpmiMonthly').textContent = fmt(fullBpmiMonthly);
+  document.getElementById('monthlySavings').textContent = fmt(monthlySavings);
+
+  document.getElementById('splitUpfront').style.width = splitPct+'%';
+  document.getElementById('splitUpfront').textContent = splitPct+'% Upfront';
+  document.getElementById('splitMonthly').style.width = (100-splitPct)+'%';
+  document.getElementById('splitMonthly').textContent = (100-splitPct)+'% Monthly';
+
+  // Update chart
+  document.getElementById('cBpmi').textContent = fmt(fullBpmiMonthly)+'/mo';
+  document.getElementById('barBpmi').textContent = fmt(fullBpmiMonthly);
+  document.getElementById('cSplit').textContent = fmt(monthlyAmount)+'/mo';
+  document.getElementById('barSplit').style.width = Math.max((monthlyAmount/fullBpmiMonthly*100),5)+'%';
+  document.getElementById('barSplit').textContent = fmt(monthlyAmount);
+}
+
+function saveCalc(){
+  const data = {
+    id: Date.now(),
+    upfront: document.getElementById('upfrontAmount').textContent,
+    monthly: document.getElementById('monthlyAmount').textContent,
+    loan: document.getElementById('loanDisplay').textContent,
+    date: new Date().toLocaleDateString()
+  };
+  const saves = JSON.parse(localStorage.getItem('split_pmi_saves')||'[]');
+  saves.unshift(data);
+  if(saves.length>5) saves.length=5;
+  localStorage.setItem('split_pmi_saves', JSON.stringify(saves));
+  renderSaved();
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saved');
+  showToast('Split premium calculation saved!');
+  setTimeout(()=>btn.classList.remove('saved'), 1500);
+}
+
+function deleteSave(id){
+  let saves = JSON.parse(localStorage.getItem('split_pmi_saves')||'[]');
+  saves = saves.filter(s=>s.id!==id);
+  localStorage.setItem('split_pmi_saves', JSON.stringify(saves));
+  renderSaved();
+}
+
+function renderSaved(){
+  const saves = JSON.parse(localStorage.getItem('split_pmi_saves')||'[]');
+  const list = document.getElementById('savedList');
+  if(!saves.length){ list.innerHTML = '<div class="saved-empty">No saved calculations yet</div>'; return; }
+  list.innerHTML = saves.map(s=>`<div class="saved-card"><div><div class="sd-amt">${s.upfront} + ${s.monthly}/mo</div><div class="sd-meta">${s.loan} loan · ${s.date}</div></div><div class="saved-del" onclick="deleteSave(${s.id})">✕</div></div>`).join('');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+updateCalc();
+renderSaved();
+</script>
+</body>
+</html>

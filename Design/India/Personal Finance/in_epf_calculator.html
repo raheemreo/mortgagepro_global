@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPF Calculator – India Financial Tools</title>
+<style>
+:root{
+  --saffron:#FF6B00; --saffron2:#E05A00; --ochre:#F5A623; --ochre-lt:#FFDEA0;
+  --navy:#0B1F48; --chakra:#1A3A8F; --green:#046A38; --green2:#07543A;
+  --teal:#0D9488; --white:#FFFFFF; --bg:#FFF8F0; --card:#FFFFFF;
+  --muted:#7A5C3A; --border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09); --sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{
+  font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+  background:var(--bg); color:var(--navy);
+  max-width:420px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background-image:
+    radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),
+    radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);
+  pointer-events:none; z-index:0;
+}
+/* HEADER */
+.header{
+  background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#046A38 82%,#07543A 100%);
+  padding:46px 18px 0; position:relative; overflow:hidden;
+}
+.header::before{
+  content:'☸'; position:absolute; right:-10px; top:30px;
+  font-size:130px; color:rgba(255,255,255,0.06); line-height:1;
+}
+.header::after{
+  content:''; position:absolute; bottom:0; left:0; width:100%; height:3px;
+  background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);
+}
+.hdr-top{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px; position:relative; z-index:2;
+}
+.icon-btn{
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; color:#fff; cursor:pointer; text-decoration:none;
+}
+.hdr-center{ text-align:center; position:relative; z-index:2; }
+.hdr-flag{ font-size:28px; display:block; }
+.hdr-title{ font-size:20px; font-weight:800; color:#fff; letter-spacing:-.3px; }
+.hdr-title span{ color:var(--ochre-lt); }
+.hdr-sub{ font-size:10px; color:rgba(255,255,255,0.50); margin-top:1px; font-family:'Trebuchet MS',sans-serif; }
+.rate-strip{
+  background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px 14px 0 0; padding:11px 14px;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  position:relative; z-index:2; margin-top:4px;
+}
+.rs{ text-align:center; position:relative; }
+.rs:not(:last-child)::after{
+  content:''; position:absolute; right:0; top:15%;
+  height:70%; width:1px; background:rgba(255,255,255,0.13);
+}
+.rs-l{ font-size:8px; color:rgba(255,255,255,0.46); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif; }
+.rs-v{ font-size:15px; font-weight:800; color:#fff; line-height:1.15; }
+.rs-v.saf{ color:var(--ochre-lt); }
+.rs-v.grn{ color:#86EFAC; }
+.rs-n{ font-size:8px; color:rgba(255,255,255,0.36); margin-top:1px; font-family:'Trebuchet MS',sans-serif; }
+/* CONTENT */
+.content{ padding:16px 15px 112px; position:relative; z-index:1; }
+.sec{
+  font-size:10.5px; font-weight:800; color:var(--muted);
+  text-transform:uppercase; letter-spacing:1px;
+  margin:22px 0 11px; display:flex; align-items:center; justify-content:space-between;
+  font-family:'Trebuchet MS',sans-serif;
+}
+.sec .info{ font-size:11px; font-weight:600; color:var(--chakra); text-transform:none; letter-spacing:0; }
+/* INPUT CARD */
+.calc-card{
+  background:var(--card); border-radius:22px; padding:20px;
+  box-shadow:var(--sh2); border:1px solid var(--border); margin-bottom:14px;
+}
+.field{ margin-bottom:16px; }
+.field label{
+  font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase;
+  letter-spacing:.6px; display:block; margin-bottom:6px; font-family:'Trebuchet MS',sans-serif;
+}
+.field-row{ display:flex; align-items:center; gap:8px; }
+.inp{
+  flex:1; background:var(--bg); border:1.5px solid var(--border);
+  border-radius:11px; padding:11px 14px; font-size:15px; font-weight:800;
+  color:var(--navy); font-family:'Book Antiqua',Palatino,Georgia,serif;
+  outline:none; transition:border-color .2s;
+}
+.inp:focus{ border-color:var(--saffron); }
+.inp-unit{
+  background:rgba(255,107,0,0.08); border:1.5px solid var(--border);
+  border-radius:11px; padding:11px 12px; font-size:12px; font-weight:800;
+  color:var(--saffron); white-space:nowrap; font-family:'Trebuchet MS',sans-serif;
+}
+.slider-wrap{ margin-top:7px; }
+input[type=range]{
+  width:100%; -webkit-appearance:none; height:4px;
+  background:linear-gradient(90deg, var(--saffron) var(--pct,50%), rgba(255,107,0,0.15) var(--pct,50%));
+  border-radius:4px; outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:18px; height:18px;
+  background:var(--saffron); border-radius:50%; border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(255,107,0,0.4); cursor:pointer;
+}
+.slider-labels{ display:flex; justify-content:space-between; margin-top:4px; }
+.slider-labels span{ font-size:8.5px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; }
+/* TOGGLE */
+.toggle-row{ display:flex; gap:8px; }
+.tgl{
+  flex:1; padding:9px 6px; border-radius:10px; font-size:11px; font-weight:800;
+  text-align:center; cursor:pointer; border:1.5px solid var(--border);
+  background:var(--bg); color:var(--muted); font-family:'Trebuchet MS',sans-serif;
+  transition:all .2s;
+}
+.tgl.active{ background:var(--saffron); color:#fff; border-color:var(--saffron); box-shadow:0 4px 14px rgba(255,107,0,0.35); }
+/* CALC BTN */
+.calc-btn{
+  width:100%; background:linear-gradient(135deg,var(--green),var(--green2));
+  border:none; border-radius:13px; padding:15px;
+  font-size:15px; font-weight:800; color:#fff; cursor:pointer;
+  box-shadow:0 4px 18px rgba(4,106,56,0.38);
+  font-family:'Book Antiqua',Palatino,Georgia,serif; letter-spacing:.3px;
+  transition:transform .15s;
+}
+.calc-btn:active{ transform:scale(.97); }
+/* RESULT CARD */
+.result-card{
+  background:linear-gradient(148deg,var(--navy),var(--chakra));
+  border-radius:22px; padding:20px; box-shadow:var(--sh2);
+  position:relative; overflow:hidden; margin-bottom:14px;
+}
+.result-card::after{ content:'☸'; position:absolute; right:14px; bottom:12px; font-size:54px; color:rgba(255,255,255,0.06); }
+.res-label{ font-size:9px; color:rgba(255,255,255,0.50); text-transform:uppercase; letter-spacing:.7px; font-family:'Trebuchet MS',sans-serif; }
+.res-big{ font-size:32px; font-weight:800; color:var(--ochre-lt); margin:4px 0 14px; line-height:1; }
+.res-grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.res-box{
+  background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.14);
+  border-radius:12px; padding:10px 12px;
+}
+.res-box-lbl{ font-size:8px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif; }
+.res-box-val{ font-size:16px; font-weight:800; color:#fff; margin-top:3px; }
+.res-box-val.grn{ color:#86EFAC; }
+.res-box-val.saf{ color:var(--ochre-lt); }
+/* SAVE BUTTON */
+.save-btn{
+  width:100%; background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.20);
+  border-radius:11px; padding:12px; font-size:13px; font-weight:800; color:#fff;
+  cursor:pointer; font-family:'Trebuchet MS',sans-serif; letter-spacing:.3px;
+  margin-top:10px; transition:background .2s;
+}
+.save-btn:hover{ background:rgba(255,255,255,0.20); }
+/* CHART AREA */
+.chart-card{
+  background:var(--card); border-radius:20px; padding:18px;
+  box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:14px;
+}
+.chart-title{ font-size:12px; font-weight:800; color:var(--navy); margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+.chart-title span{ font-size:9.5px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; font-weight:600; }
+.bar-chart{ display:flex; align-items:flex-end; gap:6px; height:140px; }
+.bar-wrap{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+.bar-stack{ width:100%; border-radius:6px 6px 0 0; min-height:4px; transition:height .5s ease; }
+.bar-lbl{ font-size:7.5px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; text-align:center; }
+.legend{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.leg-item{ display:flex; align-items:center; gap:5px; font-size:9.5px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; }
+.leg-dot{ width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+/* PIE */
+.pie-wrap{ display:flex; align-items:center; gap:18px; margin-top:10px; }
+.pie-labels{ flex:1; }
+.pie-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.pie-lbl{ font-size:10px; color:var(--muted); font-family:'Trebuchet MS',sans-serif; display:flex; align-items:center; gap:6px; }
+.pie-lbl::before{ content:''; width:8px; height:8px; border-radius:2px; background:var(--c, #ccc); display:block; }
+.pie-amt{ font-size:12px; font-weight:800; color:var(--navy); }
+/* BREAKDOWN TABLE */
+.table-card{
+  background:var(--card); border-radius:18px; overflow:hidden;
+  box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:14px;
+}
+.tbl-head{
+  background:linear-gradient(90deg,var(--navy),var(--chakra));
+  display:grid; grid-template-columns:2fr 1fr 1fr 1fr;
+  padding:10px 14px;
+}
+.th{ font-size:8.5px; font-weight:800; color:rgba(255,255,255,0.70); text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif; }
+.tbl-row{
+  display:grid; grid-template-columns:2fr 1fr 1fr 1fr;
+  padding:10px 14px; border-bottom:1px solid var(--border);
+}
+.tbl-row:last-child{ border-bottom:none; }
+.tbl-row:nth-child(even){ background:rgba(255,107,0,0.025); }
+.td{ font-size:10.5px; font-weight:700; color:var(--navy); font-family:'Trebuchet MS',sans-serif; }
+.td.grn{ color:var(--green); }
+/* INFO BOX */
+.info-box{
+  background:linear-gradient(135deg,#ECFDF5,#D1FAE5);
+  border:1.5px solid #6EE7B7; border-radius:17px;
+  padding:14px 15px; margin-bottom:14px;
+}
+.info-box-title{ font-size:12px; font-weight:800; color:var(--green2); margin-bottom:6px; }
+.info-row{ display:flex; justify-content:space-between; margin-bottom:5px; font-family:'Trebuchet MS',sans-serif; }
+.info-row span{ font-size:10px; color:var(--green); }
+.info-row strong{ font-size:10px; color:var(--green2); font-weight:800; }
+/* BOTTOM NAV */
+.bnav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:420px; background:var(--card);
+  border-top:1px solid var(--border); display:flex;
+  padding:10px 0 20px; box-shadow:0 -4px 22px rgba(11,31,72,0.09); z-index:100;
+}
+.ni{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+.ni-ic{ font-size:19px; line-height:1; }
+.ni-lb{ font-size:10px; font-weight:700; color:var(--muted); font-family:'Trebuchet MS',sans-serif; }
+.ni.active .ni-lb{ color:var(--saffron); }
+/* TOAST */
+.toast{
+  position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--green); color:#fff; padding:10px 20px; border-radius:30px;
+  font-size:12px; font-weight:800; font-family:'Trebuchet MS',sans-serif;
+  opacity:0; transition:all .3s; z-index:200; pointer-events:none; white-space:nowrap;
+}
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+/* ANIMATIONS */
+@keyframes fadeUp{ from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+.fu1{ animation:fadeUp .38s ease both .04s; }
+.fu2{ animation:fadeUp .38s ease both .10s; }
+.fu3{ animation:fadeUp .38s ease both .16s; }
+.fu4{ animation:fadeUp .38s ease both .22s; }
+.fu5{ animation:fadeUp .38s ease both .28s; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="javascript:history.back()">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏛️</div>
+      <div class="hdr-title">EPF <span>Calculator</span></div>
+      <div class="hdr-sub">Employee Provident Fund · EPFO India · FY 2025–26</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">EPF Rate</div><div class="rs-v saf">8.25%</div><div class="rs-n">FY 2023–24</div></div>
+    <div class="rs"><div class="rs-l">Employer</div><div class="rs-v">12%</div><div class="rs-n">Of Basic</div></div>
+    <div class="rs"><div class="rs-l">Employee</div><div class="rs-v grn">12%</div><div class="rs-n">Of Basic</div></div>
+    <div class="rs"><div class="rs-l">EPS Share</div><div class="rs-v">8.33%</div><div class="rs-n">Pension</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Input Details <span class="info">EPFO 2025–26 ⓘ</span></div>
+  <div class="calc-card fu1">
+    <div class="field">
+      <label>Basic Salary + DA (Monthly)</label>
+      <div class="field-row">
+        <span class="inp-unit">₹</span>
+        <input class="inp" type="number" id="basic" value="35000" min="1000" oninput="updateSlider('basicRange',this.value,1000,200000);calc()">
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="basicRange" min="1000" max="200000" value="35000" oninput="syncInput('basic',this.value);calc()">
+        <div class="slider-labels"><span>₹1K</span><span>₹2L</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Current EPF Balance</label>
+      <div class="field-row">
+        <span class="inp-unit">₹</span>
+        <input class="inp" type="number" id="existing" value="250000" oninput="calc()">
+      </div>
+    </div>
+    <div class="field">
+      <label>Years to Retirement</label>
+      <div class="field-row">
+        <input class="inp" type="number" id="years" value="25" min="1" max="40" oninput="updateSlider('yearsRange',this.value,1,40);calc()">
+        <span class="inp-unit">Yrs</span>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="yearsRange" min="1" max="40" value="25" oninput="syncInput('years',this.value);calc()">
+        <div class="slider-labels"><span>1 yr</span><span>40 yrs</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Expected Annual Salary Increment</label>
+      <div class="toggle-row" id="incrToggle">
+        <div class="tgl" onclick="setToggle('incrToggle',this,'0');calc()">0%</div>
+        <div class="tgl active" onclick="setToggle('incrToggle',this,'5');calc()">5%</div>
+        <div class="tgl" onclick="setToggle('incrToggle',this,'8');calc()">8%</div>
+        <div class="tgl" onclick="setToggle('incrToggle',this,'10');calc()">10%</div>
+      </div>
+      <input type="hidden" id="incr" value="5">
+    </div>
+    <button class="calc-btn" onclick="calc()">🏛️ Calculate EPF Corpus</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card fu2" id="resultCard">
+    <div class="res-label">Estimated EPF Maturity Corpus</div>
+    <div class="res-big" id="maturity">₹0</div>
+    <div class="res-grid">
+      <div class="res-box">
+        <div class="res-box-lbl">Employee Contribution</div>
+        <div class="res-box-val saf" id="empTotal">₹0</div>
+      </div>
+      <div class="res-box">
+        <div class="res-box-lbl">Employer Contribution</div>
+        <div class="res-box-val" id="emplrTotal">₹0</div>
+      </div>
+      <div class="res-box">
+        <div class="res-box-lbl">Total Interest Earned</div>
+        <div class="res-box-val grn" id="intTotal">₹0</div>
+      </div>
+      <div class="res-box">
+        <div class="res-box-lbl">Monthly Contribution</div>
+        <div class="res-box-val" id="monthlyCont">₹0</div>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveCalc()">📥 Save Calculation</button>
+  </div>
+
+  <!-- GROWTH CHART -->
+  <div class="sec fu3">Corpus Growth Over Time <span class="info">Year-by-year</span></div>
+  <div class="chart-card fu3">
+    <div class="chart-title">EPF Growth Chart <span id="chartSubtitle">25 years projection</span></div>
+    <div class="bar-chart" id="barChart"></div>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--saffron)"></div>Employee</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--chakra)"></div>Employer</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>Interest</div>
+    </div>
+  </div>
+
+  <!-- PIE BREAKDOWN -->
+  <div class="sec fu3">Corpus Breakdown <span class="info">Composition</span></div>
+  <div class="chart-card fu3">
+    <div class="chart-title">Contribution vs Interest Split</div>
+    <div class="pie-wrap">
+      <svg id="pieChart" width="110" height="110" viewBox="0 0 36 36"></svg>
+      <div class="pie-labels">
+        <div class="pie-row">
+          <div class="pie-lbl" style="--c:var(--saffron)">Employee Contrib</div>
+          <div class="pie-amt" id="pEmp">₹0</div>
+        </div>
+        <div class="pie-row">
+          <div class="pie-lbl" style="--c:var(--chakra)">Employer Contrib</div>
+          <div class="pie-amt" id="pEmpr">₹0</div>
+        </div>
+        <div class="pie-row">
+          <div class="pie-lbl" style="--c:var(--green)">Interest Earned</div>
+          <div class="pie-amt" id="pInt">₹0</div>
+        </div>
+        <div class="pie-row">
+          <div class="pie-lbl" style="--c:#9333EA">Existing Balance</div>
+          <div class="pie-amt" id="pExist">₹0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO BOX -->
+  <div class="info-box fu4">
+    <div class="info-box-title">📋 EPF Rules at a Glance · FY 2025–26</div>
+    <div class="info-row"><span>EPF Interest Rate (FY 2023–24)</span><strong>8.25% p.a.</strong></div>
+    <div class="info-row"><span>Employee Contribution</span><strong>12% of Basic+DA</strong></div>
+    <div class="info-row"><span>Employer — EPF (3.67%)</span><strong>₹15,000 wage ceiling</strong></div>
+    <div class="info-row"><span>Employer — EPS (8.33%)</span><strong>Max ₹1,250/month</strong></div>
+    <div class="info-row"><span>Tax Treatment (EEE)</span><strong>Exempt–Exempt–Exempt</strong></div>
+    <div class="info-row"><span>Withdrawal after 5 yrs</span><strong>Fully Tax-Free</strong></div>
+  </div>
+
+  <!-- YEAR-WISE TABLE -->
+  <div class="sec fu4">Year-wise Projection <span class="info">Detailed</span></div>
+  <div class="table-card fu5">
+    <div class="tbl-head">
+      <div class="th">Year</div>
+      <div class="th">Emp Cont</div>
+      <div class="th">Interest</div>
+      <div class="th">Corpus</div>
+    </div>
+    <div id="tblBody"></div>
+  </div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+<div class="toast" id="toast">📥 Calculation saved!</div>
+
+<script>
+const EPF_RATE = 8.25;
+const EMP_PCT = 12, EMPR_EPF = 3.67, EMPR_EPS = 8.33;
+let savedCalcs = [];
+
+function fmt(n){ return '₹'+n.toLocaleString('en-IN',{maximumFractionDigits:0}); }
+function syncInput(id,val){ document.getElementById(id).value=val; }
+function updateSlider(id,val,mn,mx){
+  const sl=document.getElementById(id);
+  sl.value=Math.min(mx,Math.max(mn,val));
+  sl.style.setProperty('--pct', ((sl.value-mn)/(mx-mn)*100)+'%');
+}
+function setToggle(groupId,el,val){
+  document.querySelectorAll('#'+groupId+' .tgl').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const hiddenId = groupId==='incrToggle'?'incr':'other';
+  const hid = document.getElementById(hiddenId); if(hid) hid.value=val;
+}
+
+function calc(){
+  const basic = parseFloat(document.getElementById('basic').value)||35000;
+  const existing = parseFloat(document.getElementById('existing').value)||0;
+  const years = parseInt(document.getElementById('years').value)||25;
+  const incr = parseFloat(document.getElementById('incr').value)||5;
+  const r = EPF_RATE/100/12;
+
+  let corpus = existing, empTotal=0, emplrTotal=0, intTotal=0;
+  let rows=[], barData=[];
+  let curBasic = basic;
+
+  for(let y=1;y<=years;y++){
+    let yearEmp=0, yearEmpr=0, yearInt=0, startCorpus=corpus;
+    for(let m=0;m<12;m++){
+      const empM = curBasic*EMP_PCT/100;
+      const emprM = curBasic*EMPR_EPF/100;
+      const intM = corpus * r;
+      corpus += empM + emprM + intM;
+      yearEmp+=empM; yearEmpr+=emprM; yearInt+=intM;
+    }
+    empTotal+=yearEmp; emplrTotal+=yearEmpr; intTotal+=yearInt;
+    rows.push({y, yearEmp, yearEmpr, yearInt, corpus});
+    barData.push({y, emp:yearEmp, empr:yearEmpr, int:yearInt, corpus});
+    if(incr>0) curBasic*=(1+incr/100);
+  }
+
+  const monthly = basic*(EMP_PCT+EMPR_EPF)/100;
+  document.getElementById('maturity').textContent = fmt(corpus);
+  document.getElementById('empTotal').textContent = fmt(empTotal);
+  document.getElementById('emplrTotal').textContent = fmt(emplrTotal);
+  document.getElementById('intTotal').textContent = fmt(intTotal);
+  document.getElementById('monthlyCont').textContent = fmt(monthly);
+  document.getElementById('pEmp').textContent = fmt(empTotal);
+  document.getElementById('pEmpr').textContent = fmt(emplrTotal);
+  document.getElementById('pInt').textContent = fmt(intTotal);
+  document.getElementById('pExist').textContent = fmt(existing);
+
+  drawBars(barData, years);
+  drawPie(empTotal, emplrTotal, intTotal, existing);
+  drawTable(rows.filter((_,i)=>(i+1)%5===0||i===0||i===rows.length-1));
+  document.getElementById('chartSubtitle').textContent = years+' years projection';
+
+  window._lastCalc = {basic,existing,years,incr,empTotal,emplrTotal,intTotal,corpus,monthly};
+}
+
+function drawBars(data, years){
+  const step = Math.max(1, Math.floor(years/8));
+  const subset = data.filter((_,i)=>i%step===0||i===data.length-1);
+  const maxC = Math.max(...subset.map(d=>d.corpus));
+  const chart = document.getElementById('barChart');
+  chart.innerHTML = '';
+  subset.forEach(d=>{
+    const h = 130;
+    const eH = Math.round(d.emp/maxC*h);
+    const rH = Math.round(d.empr/maxC*h);
+    const iH = Math.round(d.int/maxC*h);
+    chart.innerHTML += `<div class="bar-wrap">
+      <div style="width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:${h}px;gap:1px">
+        <div class="bar-stack" style="background:var(--green);height:${iH}px"></div>
+        <div class="bar-stack" style="background:var(--chakra);height:${rH}px"></div>
+        <div class="bar-stack" style="background:var(--saffron);height:${eH}px"></div>
+      </div>
+      <div class="bar-lbl">Y${d.y}</div>
+    </div>`;
+  });
+}
+
+function drawPie(emp, empr, int_, exist){
+  const total = emp+empr+int_+exist||1;
+  const slices=[
+    {v:emp,c:'#FF6B00'},{v:empr,c:'#1A3A8F'},{v:int_,c:'#046A38'},{v:exist,c:'#9333EA'}
+  ];
+  let cum=0;
+  const paths = slices.map(s=>{
+    const pct=s.v/total;
+    const a1=cum*2*Math.PI-Math.PI/2, a2=(cum+pct)*2*Math.PI-Math.PI/2;
+    const x1=18+16*Math.cos(a1),y1=18+16*Math.sin(a1);
+    const x2=18+16*Math.cos(a2),y2=18+16*Math.sin(a2);
+    const lg=pct>.5?1:0;
+    cum+=pct;
+    if(pct<0.001) return '';
+    return `<path d="M18 18 L${x1} ${y1} A16 16 0 ${lg} 1 ${x2} ${y2} Z" fill="${s.c}" opacity="0.9"/>`;
+  }).join('');
+  document.getElementById('pieChart').innerHTML = paths+'<circle cx="18" cy="18" r="8" fill="white"/>';
+}
+
+function drawTable(rows){
+  document.getElementById('tblBody').innerHTML = rows.map(r=>`
+    <div class="tbl-row">
+      <div class="td">Year ${r.y}</div>
+      <div class="td">${fmt(r.yearEmp)}</div>
+      <div class="td grn">${fmt(r.yearInt)}</div>
+      <div class="td">${fmt(r.corpus)}</div>
+    </div>`).join('');
+}
+
+function saveCalc(){
+  if(!window._lastCalc) return;
+  savedCalcs.push({...window._lastCalc, date:new Date().toLocaleDateString('en-IN')});
+  localStorage.setItem('epf_saves',JSON.stringify(savedCalcs));
+  const t=document.getElementById('toast');
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// init sliders
+['basicRange','yearsRange'].forEach(id=>{
+  const sl=document.getElementById(id);
+  const pct=(sl.value-sl.min)/(sl.max-sl.min)*100;
+  sl.style.setProperty('--pct',pct+'%');
+  sl.addEventListener('input',function(){
+    this.style.setProperty('--pct',((this.value-this.min)/(this.max-this.min)*100)+'%');
+  });
+});
+
+calc();
+</script>
+</body>
+</html>

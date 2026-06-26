@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Loan EMI – India Tools</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .more{font-size:11px;font-weight:600;color:var(--saffron);text-transform:none;letter-spacing:0;cursor:pointer;}
+
+/* INPUT CARD */
+.inp-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px;font-family:'Trebuchet MS',sans-serif;}
+.field-row{display:flex;align-items:center;background:#FFF3E8;border-radius:12px;border:1.5px solid rgba(255,107,0,0.15);overflow:hidden;transition:border-color .2s;}
+.field-row:focus-within{border-color:var(--saffron);}
+.f-pre{padding:0 12px;font-size:14px;font-weight:800;color:var(--saffron);}
+.f-inp{flex:1;background:none;border:none;outline:none;font-size:17px;font-weight:800;color:var(--navy);padding:13px 0;font-family:'Book Antiqua',Palatino,Georgia,serif;}
+.f-suf{padding:0 12px;font-size:12px;font-weight:700;color:var(--muted);}
+.field-note{font-size:10px;color:var(--muted);margin-top:5px;font-family:'Trebuchet MS',sans-serif;}
+.range-slider{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--saffron) var(--pct,50%),#FFD9BB var(--pct,50%));margin-top:8px;cursor:pointer;}
+.range-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--saffron);border:3px solid #fff;box-shadow:0 2px 8px rgba(255,107,0,0.4);}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:10px;margin-top:4px;}
+.calc-btn{flex:1;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;}
+.save-btn{width:54px;background:linear-gradient(135deg,var(--chakra),var(--navy));border:none;border-radius:14px;font-size:18px;cursor:pointer;box-shadow:var(--sh2);display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.save-btn.saved{background:linear-gradient(135deg,var(--green),var(--green2));}
+.save-btn:active{transform:scale(.95);}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;font-family:'Trebuchet MS',sans-serif;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* RESULT HERO */
+.result-hero{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:22px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:12px;}
+.result-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,107,0,0.16);}
+.result-hero::after{content:'☸';position:absolute;right:14px;bottom:12px;font-size:54px;color:rgba(255,255,255,0.06);}
+.rh-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.rh-emi{font-size:38px;font-weight:800;color:var(--ochre-lt);letter-spacing:-1px;margin:4px 0;}
+.rh-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+.rh-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:10px 10px;}
+.rh-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:3px;font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;}
+.rh-box .v{font-size:13px;font-weight:800;color:#fff;}
+.rh-box .v.grn{color:#86EFAC;}
+.rh-box .v.red{color:#FCA5A5;}
+
+/* CHART CARD */
+.chart-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.chart-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.chart-title span{font-size:10px;font-weight:600;color:var(--saffron);font-family:'Trebuchet MS',sans-serif;}
+/* Donut */
+.donut-wrap{display:flex;align-items:center;gap:18px;margin-bottom:14px;}
+.donut-legend{flex:1;}
+.legend-item{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.leg-lbl{font-size:11px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;font-weight:600;}
+.leg-val{font-size:12px;font-weight:800;color:var(--navy);margin-left:auto;}
+/* Year-wise bar chart */
+.bar-chart{margin-top:4px;}
+.bc-title{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-family:'Trebuchet MS',sans-serif;}
+.bc-bars{display:flex;align-items:flex-end;gap:3px;height:60px;}
+.bc-grp{flex:1;display:flex;gap:1px;align-items:flex-end;}
+.bc-bar{flex:1;border-radius:3px 3px 0 0;min-height:3px;transition:height .5s ease;}
+.bc-xlbl{font-size:8px;color:var(--muted);text-align:center;margin-top:4px;font-family:'Trebuchet MS',sans-serif;}
+.bc-legend{display:flex;gap:12px;margin-top:8px;}
+.bc-leg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;font-weight:600;}
+.bc-dot{width:8px;height:8px;border-radius:2px;}
+
+/* AMORTIZATION TABLE */
+.amort-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.amort-table{width:100%;border-collapse:collapse;}
+.amort-table th{font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:6px 4px;text-align:right;font-family:'Trebuchet MS',sans-serif;}
+.amort-table th:first-child{text-align:left;}
+.amort-table td{font-size:11px;font-weight:600;color:var(--navy);padding:8px 4px;border-top:1px solid rgba(255,107,0,0.06);text-align:right;}
+.amort-table td:first-child{text-align:left;font-weight:800;}
+.amort-table tr:last-child td{font-weight:800;color:var(--saffron);}
+
+/* BANK RATES */
+.bank-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,107,0,0.06);}
+.bank-row:last-child{border-bottom:none;}
+.bank-name{font-size:12px;font-weight:800;color:var(--navy);}
+.bank-type{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.bank-rate{font-size:15px;font-weight:800;color:var(--saffron);}
+.bank-tenure{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;text-align:right;}
+
+/* SAVED */
+.saved-item{background:var(--card);border-radius:14px;padding:12px 14px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.si-info{flex:1;min-width:0;}
+.si-name{font-size:12px;font-weight:800;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.si-meta{font-size:10px;color:var(--muted);margin-top:2px;font-family:'Trebuchet MS',sans-serif;}
+.si-emi{font-size:14px;font-weight:800;color:var(--saffron);}
+.si-del{background:none;border:none;font-size:16px;cursor:pointer;padding:4px;color:#ccc;}
+.empty-saved{text-align:center;padding:20px;color:var(--muted);font-size:12px;font-family:'Trebuchet MS',sans-serif;}
+
+/* TIP */
+.tip-card{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:1.5px solid #FDBA74;border-radius:17px;padding:14px 15px;display:flex;gap:12px;margin-bottom:12px;}
+.tip-icon{font-size:22px;flex-shrink:0;}
+.tip-title{font-size:12px;font-weight:800;color:#9A3412;}
+.tip-sub{font-size:10px;color:#C2410C;margin-top:3px;line-height:1.55;font-family:'Trebuchet MS',sans-serif;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast">💾 Calculation Saved!</div>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">💳</div>
+      <div class="hdr-title">Personal <span>Loan EMI</span></div>
+      <div class="hdr-sub">RBI Regulated · SBI · HDFC · ICICI · Axis</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">SBI PL Rate</div><div class="rs-v saf">11.45%</div><div class="rs-n">p.a. 2025</div></div>
+    <div class="rs"><div class="rs-l">HDFC Bank</div><div class="rs-v">10.85%</div><div class="rs-n">p.a.</div></div>
+    <div class="rs"><div class="rs-l">ICICI Bank</div><div class="rs-v">10.80%</div><div class="rs-n">p.a.</div></div>
+    <div class="rs"><div class="rs-l">Max Tenure</div><div class="rs-v grn">7 yrs</div><div class="rs-n">Unsecured</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec fu1" style="margin-top:0">Loan Details</div>
+  <div class="inp-card fu1">
+    <div class="field">
+      <label>Loan Amount</label>
+      <div class="field-row">
+        <div class="f-pre">₹</div>
+        <input class="f-inp" id="loanAmt" type="number" value="500000" min="10000" max="5000000" oninput="syncSlider('loanAmt','sLoan',10000,5000000);calculate()">
+      </div>
+      <input type="range" class="range-slider" id="sLoan" min="10000" max="5000000" step="10000" value="500000" oninput="syncInput('sLoan','loanAmt',10000,5000000);calculate()">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;"><span>₹10K</span><span>₹50L</span></div>
+    </div>
+    <div class="field">
+      <label>Annual Interest Rate</label>
+      <div class="field-row">
+        <input class="f-inp" id="roi" type="number" value="11.45" step="0.05" min="8" max="30" style="padding-left:12px;" oninput="syncSlider('roi','sROI',8,30);calculate()">
+        <div class="f-suf">% p.a.</div>
+      </div>
+      <input type="range" class="range-slider" id="sROI" min="8" max="30" step="0.05" value="11.45" oninput="syncInput('sROI','roi',8,30);calculate()">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;"><span>8%</span><span>30%</span></div>
+    </div>
+    <div class="field">
+      <label>Loan Tenure</label>
+      <div class="field-row">
+        <input class="f-inp" id="tenure" type="number" value="5" min="1" max="7" style="padding-left:12px;" oninput="syncSlider('tenure','sTenure',1,7);calculate()">
+        <div class="f-suf">Years</div>
+      </div>
+      <input type="range" class="range-slider" id="sTenure" min="1" max="7" step="1" value="5" oninput="syncInput('sTenure','tenure',1,7);calculate()">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;"><span>1 yr</span><span>7 yrs</span></div>
+    </div>
+    <div class="field">
+      <label>Processing Fee</label>
+      <div class="field-row">
+        <input class="f-inp" id="procFee" type="number" value="1.5" step="0.1" min="0" max="5" style="padding-left:12px;" oninput="calculate()">
+        <div class="f-suf">% of loan</div>
+      </div>
+      <div class="field-note">Typically 1–3% of loan amount. Deducted upfront from disbursement.</div>
+    </div>
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="calc-btn" onclick="calculate()">☸ Calculate EMI</button>
+      <button class="save-btn" id="saveBtn" onclick="saveCalc()" title="Save">💾</button>
+    </div>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="sec fu2">Your EMI Breakdown</div>
+    <div class="result-hero fu2">
+      <div class="rh-tag">Monthly EMI — Personal Loan</div>
+      <div class="rh-emi" id="emiVal">₹0</div>
+      <div class="rh-grid">
+        <div class="rh-box"><label>Principal</label><div class="v" id="rhPrincipal">₹0</div></div>
+        <div class="rh-box"><label>Total Interest</label><div class="v red" id="rhInterest">₹0</div></div>
+        <div class="rh-box"><label>Total Payable</label><div class="v" id="rhTotal">₹0</div></div>
+        <div class="rh-box"><label>Processing Fee</label><div class="v" id="rhProc">₹0</div></div>
+        <div class="rh-box"><label>Net Disbursed</label><div class="v grn" id="rhDisbursed">₹0</div></div>
+        <div class="rh-box"><label>Cost of Credit</label><div class="v red" id="rhCost">0%</div></div>
+      </div>
+    </div>
+
+    <div class="sec fu3">Visual Analysis <span>Interest vs Principal</span></div>
+    <div class="chart-card fu3">
+      <div class="chart-title">Loan Composition <span id="compPct">0% interest cost</span></div>
+      <div class="donut-wrap">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="46" fill="none" stroke="#FFF3E0" stroke-width="16"/>
+          <circle id="donutInt" cx="60" cy="60" r="46" fill="none" stroke="#FCA5A5" stroke-width="16" stroke-dasharray="289" stroke-dashoffset="289" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+          <circle id="donutPrin" cx="60" cy="60" r="46" fill="none" stroke="#046A38" stroke-width="16" stroke-dasharray="289" stroke-dashoffset="0" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+          <text x="60" y="55" text-anchor="middle" font-size="14" font-weight="800" fill="#0B1F48" font-family="Georgia,serif" id="donutPct">0%</text>
+          <text x="60" y="69" text-anchor="middle" font-size="9" fill="#7A5C3A" font-weight="700">interest</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-item"><div class="leg-dot" style="background:#046A38"></div><div class="leg-lbl">Principal</div><div class="leg-val" id="lgPrin">₹0</div></div>
+          <div class="legend-item"><div class="leg-dot" style="background:#FCA5A5"></div><div class="leg-lbl">Total Interest</div><div class="leg-val" id="lgInt">₹0</div></div>
+          <div class="legend-item"><div class="leg-dot" style="background:#FF6B00"></div><div class="leg-lbl">Processing Fee</div><div class="leg-val" id="lgFee">₹0</div></div>
+        </div>
+      </div>
+      <div class="bar-chart">
+        <div class="bc-title">Year-wise Interest vs Principal Paid</div>
+        <div class="bc-bars" id="bcBars"></div>
+        <div style="display:flex" id="bcLabels"></div>
+        <div class="bc-legend">
+          <div class="bc-leg"><div class="bc-dot" style="background:#046A38"></div>Principal</div>
+          <div class="bc-leg"><div class="bc-dot" style="background:#FCA5A5"></div>Interest</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec fu3">Amortisation Schedule <span>First 5 Years</span></div>
+    <div class="amort-card fu4">
+      <table class="amort-table">
+        <thead>
+          <tr><th>Year</th><th>Principal</th><th>Interest</th><th>Balance</th></tr>
+        </thead>
+        <tbody id="amortBody"></tbody>
+      </table>
+    </div>
+
+    <div class="sec fu4">Tip</div>
+    <div class="tip-card fu4">
+      <div class="tip-icon">💡</div>
+      <div>
+        <div class="tip-title">Prepay to Save Big</div>
+        <div class="tip-sub" id="tipText">A personal loan prepayment after 1 year can drastically cut interest outgo. Most banks allow prepayment after 12 EMIs with a 2–4% foreclosure charge.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">Top Personal Loan Rates 2025</div>
+  <div class="inp-card">
+    <div class="bank-row"><div><div class="bank-name">🏦 SBI Xpress Credit</div><div class="bank-type">Govt. salary · ₹25K–40L</div></div><div style="text-align:right"><div class="bank-rate">11.45%</div><div class="bank-tenure">Up to 7 yrs</div></div></div>
+    <div class="bank-row"><div><div class="bank-name">🏛️ HDFC Personal Loan</div><div class="bank-type">Salaried & Self-employed</div></div><div style="text-align:right"><div class="bank-rate">10.85%</div><div class="bank-tenure">Up to 5 yrs</div></div></div>
+    <div class="bank-row"><div><div class="bank-name">🏢 ICICI Bank</div><div class="bank-type">Insta Loan for existing</div></div><div style="text-align:right"><div class="bank-rate">10.80%</div><div class="bank-tenure">Up to 6 yrs</div></div></div>
+    <div class="bank-row"><div><div class="bank-name">⚡ Axis Bank</div><div class="bank-type">Salary + non-salary</div></div><div style="text-align:right"><div class="bank-rate">11.25%</div><div class="bank-tenure">Up to 5 yrs</div></div></div>
+    <div class="bank-row"><div><div class="bank-name">🌿 Kotak Mahindra</div><div class="bank-type">Instant disbursal</div></div><div style="text-align:right"><div class="bank-rate">10.99%</div><div class="bank-tenure">Up to 5 yrs</div></div></div>
+    <div class="bank-row"><div><div class="bank-name">💼 Bajaj Finserv</div><div class="bank-type">NBFC · Pre-approved</div></div><div style="text-align:right"><div class="bank-rate">13.00%</div><div class="bank-tenure">Up to 8 yrs</div></div></div>
+  </div>
+
+  <div class="sec">Saved Calculations <span id="savedCount"></span></div>
+  <div id="savedList"><div class="empty-saved" id="emptySaved">No saved calculations yet. Hit 💾 after calculating.</div></div>
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const SK='pl_emi_saves';
+let lastResult=null;
+function fmt(n){return '₹'+Math.round(n).toLocaleString('en-IN');}
+function syncSlider(inp,sl,mn,mx){
+  const v=Math.min(mx,Math.max(mn,parseFloat(document.getElementById(inp).value)||mn));
+  const s=document.getElementById(sl);
+  s.value=v;
+  s.style.setProperty('--pct',((v-mn)/(mx-mn)*100)+'%');
+}
+function syncInput(sl,inp,mn,mx){
+  const v=parseFloat(document.getElementById(sl).value);
+  document.getElementById(inp).value=v;
+  document.getElementById(sl).style.setProperty('--pct',((v-mn)/(mx-mn)*100)+'%');
+}
+function calculate(){
+  const P=parseFloat(document.getElementById('loanAmt').value)||0;
+  const r=(parseFloat(document.getElementById('roi').value)||0)/100/12;
+  const n=(parseFloat(document.getElementById('tenure').value)||1)*12;
+  const feeP=(parseFloat(document.getElementById('procFee').value)||0)/100;
+  if(P<=0||r<=0) return;
+  const emi=P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+  const total=emi*n;
+  const interest=total-P;
+  const fee=P*feeP;
+  const disbursed=P-fee;
+  const costPct=(interest+fee)/P*100;
+  const intPct=interest/total*100;
+  document.getElementById('emiVal').textContent=fmt(emi);
+  document.getElementById('rhPrincipal').textContent=fmt(P);
+  document.getElementById('rhInterest').textContent=fmt(interest);
+  document.getElementById('rhTotal').textContent=fmt(total);
+  document.getElementById('rhProc').textContent=fmt(fee);
+  document.getElementById('rhDisbursed').textContent=fmt(disbursed);
+  document.getElementById('rhCost').textContent=costPct.toFixed(1)+'%';
+  // Donut
+  const circ=289;
+  const intArc=circ*(interest/total);
+  document.getElementById('donutPrin').style.strokeDashoffset=(circ-intArc).toString();
+  document.getElementById('donutInt').style.strokeDashoffset=(circ-intArc).toString();
+  // Actually rotate donut correctly
+  document.getElementById('donutPrin').style.strokeDasharray=`${circ-intArc} ${intArc}`;
+  document.getElementById('donutInt').style.strokeDasharray=`${intArc} ${circ-intArc}`;
+  document.getElementById('donutInt').style.strokeDashoffset='0';
+  document.getElementById('donutPct').textContent=intPct.toFixed(0)+'%';
+  document.getElementById('compPct').textContent=intPct.toFixed(1)+'% interest cost';
+  document.getElementById('lgPrin').textContent=fmt(P);
+  document.getElementById('lgInt').textContent=fmt(interest);
+  document.getElementById('lgFee').textContent=fmt(fee);
+  // Bar chart — year-wise
+  const tenYrs=Math.min(7,Math.ceil(n/12));
+  const barsEl=document.getElementById('bcBars');
+  const lblsEl=document.getElementById('bcLabels');
+  barsEl.innerHTML=''; lblsEl.innerHTML='';
+  let bal=P;
+  const yData=[];
+  for(let y=1;y<=tenYrs;y++){
+    let yP=0,yI=0;
+    for(let m=0;m<12;m++){
+      if(bal<=0.01) break;
+      const ip=bal*r; const pp=Math.min(emi-ip,bal);
+      yI+=ip; yP+=pp; bal-=pp;
+    }
+    yData.push({yP,yI});
+  }
+  const maxV=Math.max(...yData.map(d=>d.yP+d.yI),1);
+  yData.forEach((d,i)=>{
+    const ph=Math.max(3,Math.round((d.yP/maxV)*54));
+    const ih=Math.max(3,Math.round((d.yI/maxV)*54));
+    const grp=document.createElement('div'); grp.className='bc-grp';
+    const b1=document.createElement('div'); b1.className='bc-bar'; b1.style.cssText=`height:${ph}px;background:#046A38;`;
+    const b2=document.createElement('div'); b2.className='bc-bar'; b2.style.cssText=`height:${ih}px;background:#FCA5A5;`;
+    grp.appendChild(b1); grp.appendChild(b2); barsEl.appendChild(grp);
+    const lbl=document.createElement('div'); lbl.className='bc-xlbl'; lbl.style.flex='1'; lbl.textContent='Y'+(i+1);
+    lblsEl.appendChild(lbl);
+  });
+  // Amortization table
+  const tbody=document.getElementById('amortBody');
+  tbody.innerHTML=''; bal=P;
+  const showYrs=Math.min(5,tenYrs);
+  for(let y=1;y<=showYrs;y++){
+    let yP=0,yI=0;
+    for(let m=0;m<12;m++){if(bal<=0.01)break;const ip=bal*r;const pp=Math.min(emi-ip,bal);yI+=ip;yP+=pp;bal-=pp;}
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>Year ${y}</td><td>${fmt(yP)}</td><td>${fmt(yI)}</td><td>${fmt(Math.max(0,bal))}</td>`;
+    tbody.appendChild(tr);
+  }
+  document.getElementById('tipText').textContent=`Your ₹${(P/100000).toFixed(0)}L loan at ${(parseFloat(document.getElementById('roi').value)||0)}% for ${(parseFloat(document.getElementById('tenure').value)||1)} years costs ${fmt(interest)} in interest. Consider part-prepayment after 12 EMIs — a ₹${fmt(P*0.2)} lump payment in Year 1 can save ~${fmt(interest*0.18)} in interest.`;
+  document.getElementById('results').style.display='block';
+  lastResult={P,roi:parseFloat(document.getElementById('roi').value),tenure:parseFloat(document.getElementById('tenure').value),emi,interest,total,fee};
+  document.getElementById('saveBtn').classList.remove('saved');
+  document.getElementById('saveBtn').textContent='💾';
+}
+function saveCalc(){
+  if(!lastResult){calculate();return;}
+  const saves=JSON.parse(localStorage.getItem(SK)||'[]');
+  saves.unshift({id:Date.now(),date:new Date().toLocaleDateString('en-IN',{month:'short',day:'numeric'}),...lastResult});
+  if(saves.length>10)saves.length=10;
+  localStorage.setItem(SK,JSON.stringify(saves));
+  document.getElementById('saveBtn').classList.add('saved');
+  document.getElementById('saveBtn').textContent='✓';
+  showToast('💾 EMI Calculation Saved!');
+  renderSaved();
+}
+function deleteSave(id){localStorage.setItem(SK,JSON.stringify(JSON.parse(localStorage.getItem(SK)||'[]').filter(s=>s.id!==id)));renderSaved();}
+function renderSaved(){
+  const saves=JSON.parse(localStorage.getItem(SK)||'[]');
+  const list=document.getElementById('savedList');
+  document.getElementById('savedCount').textContent=saves.length?`(${saves.length})`:'';
+  if(!saves.length){list.innerHTML='';list.appendChild(document.getElementById('emptySaved'));document.getElementById('emptySaved').style.display='';return;}
+  document.getElementById('emptySaved').style.display='none';list.innerHTML='';
+  saves.forEach(s=>{
+    const el=document.createElement('div');el.className='saved-item';
+    el.innerHTML=`<div class="si-info"><div class="si-name">${fmt(s.P)} @ ${s.roi}% · ${s.tenure}yr · ${s.date}</div><div class="si-meta">Interest: ${fmt(s.interest)} · Total: ${fmt(s.total)}</div></div><div class="si-emi">${fmt(s.emi)}<br><span style="font-size:9px;color:var(--muted);">/mo</span></div><button class="si-del" onclick="deleteSave(${s.id})">🗑</button>`;
+    list.appendChild(el);
+  });
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+// Init sliders
+['sLoan','sROI','sTenure'].forEach(id=>{const el=document.getElementById(id);const mn=parseFloat(el.min);const mx=parseFloat(el.max);const v=parseFloat(el.value);el.style.setProperty('--pct',((v-mn)/(mx-mn)*100)+'%');});
+renderSaved();
+calculate();
+</script>
+</body>
+</html>

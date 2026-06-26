@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBI Repo Rate History – MortgagePro</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-v.grn{color:#86EFAC;}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.content{padding:16px 15px 100px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .badge{font-size:10px;font-weight:700;color:var(--green);background:#ECFDF5;padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+/* LIVE RATE CARD */
+.live-card{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:22px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:4px;}
+.live-card::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,107,0,0.16);}
+.live-card::after{content:'☸';position:absolute;right:14px;bottom:12px;font-size:54px;color:rgba(255,255,255,0.06);}
+.lc-tag{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.8px;font-family:'Trebuchet MS',sans-serif;}
+.lc-main{display:flex;align-items:flex-end;gap:12px;margin:8px 0;}
+.lc-rate-big{font-size:54px;font-weight:800;color:var(--ochre-lt);line-height:1;}
+.lc-rate-meta{padding-bottom:6px;}
+.lc-rate-meta .lbl{font-size:10px;color:rgba(255,255,255,0.5);font-family:'Trebuchet MS',sans-serif;}
+.lc-rate-meta .chg{font-size:14px;font-weight:800;color:#86EFAC;margin-top:2px;}
+.lc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+.lc-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:8px 10px;}
+.lc-box label{font-size:8px;color:rgba(255,255,255,0.45);display:block;margin-bottom:2px;font-family:'Trebuchet MS',sans-serif;}
+.lc-box .v{font-size:12px;font-weight:800;color:#fff;}
+
+/* CHART SECTION */
+.chart-card{background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.chart-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.chart-sub{font-size:9.5px;color:var(--muted);margin-bottom:14px;font-family:'Trebuchet MS',sans-serif;}
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:90px;padding:0 2px;}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:4px 4px 0 0;transition:height .4s ease;cursor:pointer;position:relative;}
+.bar.up{background:linear-gradient(180deg,#FF6B00,#E05A00);}
+.bar.down{background:linear-gradient(180deg,#046A38,#07543A);}
+.bar.hold{background:linear-gradient(180deg,#1A3A8F,#0B1F48);}
+.bar-lbl{font-size:7.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;text-align:center;line-height:1.2;}
+.bar-val{font-size:8px;font-weight:800;color:var(--navy);font-family:'Trebuchet MS',sans-serif;}
+.chart-legend{display:flex;gap:12px;margin-top:10px;justify-content:center;}
+.leg{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.leg-dot{width:8px;height:8px;border-radius:2px;}
+
+/* LINE CHART */
+.line-chart-wrap{height:100px;position:relative;margin:8px 0 4px;}
+.line-labels{display:flex;justify-content:space-between;margin-top:4px;}
+.line-lbl{font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+
+/* MPC TABLE */
+.mpc-table{background:var(--card);border-radius:20px;box-shadow:var(--sh);border:1px solid var(--border);overflow:hidden;margin-bottom:12px;}
+.mpc-header{background:linear-gradient(135deg,var(--navy),var(--chakra));padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
+.mpc-header-title{font-size:12px;font-weight:800;color:#fff;}
+.mpc-header-sub{font-size:9px;color:rgba(255,255,255,0.5);font-family:'Trebuchet MS',sans-serif;}
+.mpc-row{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center;}
+.mpc-row:last-child{border-bottom:none;}
+.mpc-row.head{background:rgba(255,107,0,0.04);padding:7px 14px;}
+.mpc-row.head span{font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-family:'Trebuchet MS',sans-serif;}
+.mpc-date{font-size:11px;font-weight:700;color:var(--navy);}
+.mpc-rate{font-size:12px;font-weight:800;color:var(--saffron);}
+.mpc-action{font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;font-family:'Trebuchet MS',sans-serif;text-align:center;}
+.act-hold{background:#EFF6FF;color:#1D4ED8;}
+.act-cut{background:#ECFDF5;color:#065F46;}
+.act-hike{background:#FEF2F2;color:#B91C1C;}
+.mpc-eff{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+
+/* RATE CONTEXT */
+.context-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.ctx-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid var(--border);}
+.ctx-icon{font-size:24px;margin-bottom:6px;}
+.ctx-lbl{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;text-transform:uppercase;letter-spacing:.4px;}
+.ctx-val{font-size:16px;font-weight:800;color:var(--navy);margin:2px 0;}
+.ctx-sub{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+
+/* INFO BANNER */
+.info-banner{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;border-radius:17px;padding:14px 15px;margin-bottom:12px;}
+.ib-title{font-size:12.5px;font-weight:800;color:var(--green2);margin-bottom:4px;}
+.ib-body{font-size:10px;color:var(--green);font-family:'Trebuchet MS',sans-serif;line-height:1.6;}
+
+/* IMPACT TABLE */
+.impact-card{background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:12px;}
+.impact-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.impact-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.impact-row:last-child{border-bottom:none;}
+.imp-lbl{font-size:11px;color:var(--navy);font-weight:600;}
+.imp-val{font-size:11px;font-weight:800;color:var(--saffron);}
+.imp-diff{font-size:9px;font-family:'Trebuchet MS',sans-serif;}
+
+/* BNAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏛️</div>
+      <div class="hdr-title">RBI <span>Repo Rate</span></div>
+      <div class="hdr-sub">Monetary Policy Committee · Since 2000 · Live Data</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs">
+      <div class="rs-l">Current Rate</div>
+      <div class="rs-v saf">6.25%</div>
+      <div class="rs-n">Apr 2025</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Change</div>
+      <div class="rs-v grn">−0.25%</div>
+      <div class="rs-n">Rate Cut</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">SDF Rate</div>
+      <div class="rs-v">6.00%</div>
+      <div class="rs-n">Corridor</div>
+    </div>
+    <div class="rs">
+      <div class="rs-l">Next MPC</div>
+      <div class="rs-v saf">Jun 25</div>
+      <div class="rs-n">2025</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec fu1" style="margin-top:0">Current Monetary Policy <span class="badge">● Live</span></div>
+  <div class="live-card fu1">
+    <div class="lc-tag">RBI Monetary Policy Committee · भारतीय रिज़र्व बैंक</div>
+    <div class="lc-main">
+      <div class="lc-rate-big">6.25%</div>
+      <div class="lc-rate-meta">
+        <div class="lbl">Repo Rate · Apr 2025</div>
+        <div class="chg">↓ Cut by 25 bps</div>
+      </div>
+    </div>
+    <div class="lc-grid">
+      <div class="lc-box"><label>MSF Rate</label><div class="v">6.50%</div></div>
+      <div class="lc-box"><label>SDF Rate</label><div class="v">6.00%</div></div>
+      <div class="lc-box"><label>CRR</label><div class="v">4.00%</div></div>
+      <div class="lc-box"><label>SLR</label><div class="v">18.00%</div></div>
+      <div class="lc-box"><label>Bank Rate</label><div class="v">6.50%</div></div>
+      <div class="lc-box"><label>Stance</label><div class="v" style="font-size:10px;color:var(--ochre-lt)">Accommodative</div></div>
+    </div>
+  </div>
+
+  <div class="sec fu2">Rate Movement (2020–2025) <span class="badge">25 Decisions</span></div>
+  <div class="chart-card fu2">
+    <div class="chart-title">RBI Repo Rate Timeline</div>
+    <div class="chart-sub">Bar height = rate level · Colour = action taken by MPC</div>
+    <div class="bar-chart" id="barChart">
+      <!-- JS fills this -->
+    </div>
+    <div class="chart-legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--saffron)"></div>Rate Hike</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>Rate Cut</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--chakra)"></div>Hold</div>
+    </div>
+  </div>
+
+  <!-- SVG Line Chart -->
+  <div class="chart-card fu2">
+    <div class="chart-title">Historical Rate Trend (2010–2025)</div>
+    <div class="chart-sub">MPC decisions plotted over 15 years</div>
+    <div class="line-chart-wrap">
+      <svg width="100%" height="100" viewBox="0 0 360 100" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FF6B00" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="#FF6B00" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Area fill -->
+        <path d="M0,42 L18,36 L36,30 L54,22 L72,14 L90,18 L108,28 L126,48 L144,68 L162,72 L180,72 L198,60 L216,48 L234,40 L252,35 L270,38 L288,38 L306,35 L324,35 L342,40 L360,42 L360,100 L0,100 Z" fill="url(#lineGrad)"/>
+        <!-- Line -->
+        <polyline points="0,42 18,36 36,30 54,22 72,14 90,18 108,28 126,48 144,68 162,72 180,72 198,60 216,48 234,40 252,35 270,38 288,38 306,35 324,35 342,40 360,42" fill="none" stroke="#FF6B00" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- Y axis reference lines -->
+        <line x1="0" y1="15" x2="360" y2="15" stroke="rgba(11,31,72,0.07)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="0" y1="40" x2="360" y2="40" stroke="rgba(11,31,72,0.07)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="0" y1="65" x2="360" y2="65" stroke="rgba(11,31,72,0.07)" stroke-width="1" stroke-dasharray="4,4"/>
+        <!-- Dots for key events -->
+        <circle cx="72" cy="14" r="4" fill="#FF6B00" stroke="white" stroke-width="1.5"/>
+        <circle cx="162" cy="72" r="4" fill="#046A38" stroke="white" stroke-width="1.5"/>
+        <circle cx="360" cy="42" r="4" fill="#FF6B00" stroke="white" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="line-labels">
+      <span class="line-lbl">2010</span>
+      <span class="line-lbl">2013</span>
+      <span class="line-lbl">2016</span>
+      <span class="line-lbl">2019</span>
+      <span class="line-lbl">2022</span>
+      <span class="line-lbl">2025</span>
+    </div>
+    <!-- Y labels -->
+    <div style="display:flex;justify-content:flex-end;margin-top:2px;">
+      <span style="font-size:8px;color:var(--muted);font-family:'Trebuchet MS',sans-serif">Range: 4.00% – 8.50%</span>
+    </div>
+  </div>
+
+  <div class="sec fu3">Rate Context Indicators</div>
+  <div class="context-grid fu3">
+    <div class="ctx-card">
+      <div class="ctx-icon">📊</div>
+      <div class="ctx-lbl">CPI Inflation</div>
+      <div class="ctx-val" style="color:var(--saffron)">4.83%</div>
+      <div class="ctx-sub">Apr 2025 · Target 4%</div>
+    </div>
+    <div class="ctx-card">
+      <div class="ctx-icon">📈</div>
+      <div class="ctx-lbl">GDP Growth</div>
+      <div class="ctx-val" style="color:var(--green)">7.6%</div>
+      <div class="ctx-sub">FY2025 Estimate</div>
+    </div>
+    <div class="ctx-card">
+      <div class="ctx-icon">💵</div>
+      <div class="ctx-lbl">USD/INR</div>
+      <div class="ctx-val">84.20</div>
+      <div class="ctx-sub">Jun 2025</div>
+    </div>
+    <div class="ctx-card">
+      <div class="ctx-icon">🏦</div>
+      <div class="ctx-lbl">10-Yr G-Sec</div>
+      <div class="ctx-val">6.85%</div>
+      <div class="ctx-sub">Bond Yield</div>
+    </div>
+  </div>
+
+  <div class="sec fu3">MPC Decisions — Recent History</div>
+  <div class="mpc-table fu4">
+    <div class="mpc-header">
+      <div>
+        <div class="mpc-header-title">Monetary Policy Committee Decisions</div>
+        <div class="mpc-header-sub">Last 12 decisions · RBI Act 2016</div>
+      </div>
+    </div>
+    <div class="mpc-row head">
+      <span>Meeting Date</span><span>Rate</span><span>Action</span><span>Effect</span>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Apr 9, 2025</div>
+      <div class="mpc-rate">6.25%</div>
+      <div><span class="mpc-action act-cut">−25 bps</span></div>
+      <div class="mpc-eff">Immediate</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Feb 7, 2025</div>
+      <div class="mpc-rate">6.25%</div>
+      <div><span class="mpc-action act-cut">−25 bps</span></div>
+      <div class="mpc-eff">Feb 8, 2025</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Dec 6, 2024</div>
+      <div class="mpc-rate">6.50%</div>
+      <div><span class="mpc-action act-hold">Hold</span></div>
+      <div class="mpc-eff">Unchanged</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Oct 9, 2024</div>
+      <div class="mpc-rate">6.50%</div>
+      <div><span class="mpc-action act-hold">Hold</span></div>
+      <div class="mpc-eff">Unchanged</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Aug 8, 2024</div>
+      <div class="mpc-rate">6.50%</div>
+      <div><span class="mpc-action act-hold">Hold</span></div>
+      <div class="mpc-eff">Unchanged</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Jun 7, 2024</div>
+      <div class="mpc-rate">6.50%</div>
+      <div><span class="mpc-action act-hold">Hold</span></div>
+      <div class="mpc-eff">Unchanged</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Apr 5, 2024</div>
+      <div class="mpc-rate">6.50%</div>
+      <div><span class="mpc-action act-hold">Hold</span></div>
+      <div class="mpc-eff">Unchanged</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Feb 8, 2024</div>
+      <div class="mpc-rate">6.50%</div>
+      <div><span class="mpc-action act-hold">Hold</span></div>
+      <div class="mpc-eff">Unchanged</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Dec 8, 2023</div>
+      <div class="mpc-rate">6.50%</div>
+      <div><span class="mpc-action act-hold">Hold</span></div>
+      <div class="mpc-eff">Unchanged</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Feb 8, 2023</div>
+      <div class="mpc-rate">6.50%</div>
+      <div><span class="mpc-action act-hike">+25 bps</span></div>
+      <div class="mpc-eff">Feb 9, 2023</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">Dec 7, 2022</div>
+      <div class="mpc-rate">6.25%</div>
+      <div><span class="mpc-action act-hike">+35 bps</span></div>
+      <div class="mpc-eff">Dec 8, 2022</div>
+    </div>
+    <div class="mpc-row">
+      <div class="mpc-date">May 4, 2022</div>
+      <div class="mpc-rate">4.40%</div>
+      <div><span class="mpc-action act-hike">+40 bps</span></div>
+      <div class="mpc-eff">May 5, 2022</div>
+    </div>
+  </div>
+
+  <div class="sec fu4">Impact on ₹50L Home Loan (20 yr)</div>
+  <div class="impact-card fu4">
+    <div class="impact-title">How Rate Changes Affect Your EMI</div>
+    <div class="impact-row">
+      <div>
+        <div class="imp-lbl">At 6.50% (Peak 2024)</div>
+        <div class="imp-diff" style="color:var(--muted)">Repo: 6.50%</div>
+      </div>
+      <div style="text-align:right">
+        <div class="imp-val">₹44,300/mo</div>
+        <div class="imp-diff" style="color:#B91C1C">Higher EMI</div>
+      </div>
+    </div>
+    <div class="impact-row">
+      <div>
+        <div class="imp-lbl">At 6.25% (Apr 2025)</div>
+        <div class="imp-diff" style="color:var(--muted)">Repo: 6.25%</div>
+      </div>
+      <div style="text-align:right">
+        <div class="imp-val">₹43,700/mo</div>
+        <div class="imp-diff" style="color:var(--green)">Save ₹600/mo</div>
+      </div>
+    </div>
+    <div class="impact-row">
+      <div>
+        <div class="imp-lbl">At 5.75% (If Cut Continues)</div>
+        <div class="imp-diff" style="color:var(--muted)">Projected Rate</div>
+      </div>
+      <div style="text-align:right">
+        <div class="imp-val">₹42,200/mo</div>
+        <div class="imp-diff" style="color:var(--green)">Save ₹2,100/mo</div>
+      </div>
+    </div>
+    <div class="impact-row">
+      <div>
+        <div class="imp-lbl">COVID Low (4.00%)</div>
+        <div class="imp-diff" style="color:var(--muted)">May 2020 floor</div>
+      </div>
+      <div style="text-align:right">
+        <div class="imp-val">₹37,100/mo</div>
+        <div class="imp-diff" style="color:var(--green)">Lowest in history</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-banner fu5">
+    <div class="ib-title">📌 How Repo Rate affects Home Loans</div>
+    <div class="ib-body">
+      RBI's Repo Rate is the rate at which commercial banks borrow from RBI. When the repo rate falls, banks typically reduce their EBLR (External Benchmark Lending Rate), directly reducing your floating home loan EMI within 3 months. All new home loans since Oct 2019 are linked to an external benchmark (usually repo rate + spread). A 25 bps repo cut saves approx ₹600–₹800/month on a ₹50L 20-year loan.
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni" onclick="history.back()"><div class="ni-ic">←</div><div class="ni-lb">Back</div></div>
+  <div class="ni"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni active"><div class="ni-ic">🏛️</div><div class="ni-lb">RBI</div></div>
+</div>
+
+<script>
+// Bar chart: recent rates 2020–2025
+const data=[
+  {l:'Mar\n20',v:4.40,t:'cut'},{l:'May\n20',v:4.00,t:'cut'},{l:'May\n22',v:4.40,t:'up'},
+  {l:'Jun\n22',v:4.90,t:'up'},{l:'Aug\n22',v:5.40,t:'up'},{l:'Sep\n22',v:5.90,t:'up'},
+  {l:'Dec\n22',v:6.25,t:'up'},{l:'Feb\n23',v:6.50,t:'up'},{l:'Apr\n23',v:6.50,t:'hold'},
+  {l:'Jun\n23',v:6.50,t:'hold'},{l:'Aug\n23',v:6.50,t:'hold'},{l:'Oct\n23',v:6.50,t:'hold'},
+  {l:'Dec\n23',v:6.50,t:'hold'},{l:'Feb\n24',v:6.50,t:'hold'},{l:'Jun\n24',v:6.50,t:'hold'},
+  {l:'Feb\n25',v:6.25,t:'cut'},{l:'Apr\n25',v:6.25,t:'cut'}
+];
+const min=3.8,max=7.0,range=max-min;
+const chart=document.getElementById('barChart');
+data.forEach(d=>{
+  const pct=((d.v-min)/range)*85+5;
+  const cls=d.t==='up'?'up':d.t==='cut'?'down':'hold';
+  chart.innerHTML+=`<div class="bar-wrap">
+    <div class="bar-val" style="font-size:7px">${d.v}%</div>
+    <div class="bar ${cls}" style="height:${pct}px"></div>
+    <div class="bar-lbl">${d.l}</div>
+  </div>`;
+});
+</script>
+</body>
+</html>

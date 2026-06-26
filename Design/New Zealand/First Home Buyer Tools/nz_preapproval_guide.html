@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NZ Pre-Approval Guide</title>
+<style>
+  :root {
+    --black:#0A0F0D;--forest:#0D3B2E;--fern:#1A6B4A;--silver:#C0C8C1;
+    --teal:#0D9488;--sky:#0EA5E9;--red:#C0392B;--gold:#D4A017;--gold-lt:#F5D060;
+    --bg:#EDF5F2;--card:#FFFFFF;--muted:#4A6358;--border:rgba(13,59,46,0.09);
+    --sh:0 4px 20px rgba(10,15,13,0.09);--sh2:0 8px 36px rgba(10,15,13,0.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--black);max-width:420px;margin:0 auto;min-height:100vh;}
+
+  .header{background:linear-gradient(158deg,#0A0F0D 0%,#0D3B2E 45%,#6D28D9 80%,#0EA5E9 100%);padding:46px 20px 0;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(109,40,217,0.12);}
+  .header::after{content:'💳';position:absolute;right:12px;top:44px;font-size:78px;opacity:0.09;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.11);border:1px solid rgba(255,255,255,0.19);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:28px;display:block;}
+  .hdr-title{font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.3px;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+  .rs-l{font-size:8.5px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:0.4px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .rs-v{font-size:14px;font-weight:800;color:#fff;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .content{padding:15px 15px 110px;}
+  .sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .sec .badge{font-size:9px;font-weight:700;color:#6D28D9;background:#F5F3FF;border:1px solid #C4B5FD;padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+  /* Borrowing Power Hero */
+  .bp-hero{background:linear-gradient(148deg,#0A0F0D,#0D3B2E);border-radius:20px;padding:20px;position:relative;overflow:hidden;box-shadow:var(--sh2);margin-bottom:14px;}
+  .bp-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(109,40,217,0.2);}
+  .bp-tag{font-size:9.5px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.8px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .bp-amount{font-size:36px;font-weight:800;color:var(--gold-lt);line-height:1.1;margin:6px 0 4px;}
+  .bp-sub{font-size:11px;color:rgba(255,255,255,0.55);font-family:'Helvetica Neue',Arial,sans-serif;margin-bottom:14px;}
+  .bp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .bp-box{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.13);border-radius:10px;padding:10px 12px;}
+  .bp-box label{font-size:7.5px;color:rgba(255,255,255,0.42);display:block;margin-bottom:2px;font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;letter-spacing:0.3px;}
+  .bp-box .v{font-size:16px;font-weight:800;color:#fff;}
+  .bp-box .v.purple{color:#C4B5FD;}
+  .bp-box .v.teal{color:#5EEAD4;}
+
+  /* Input */
+  .input-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .input-card h3{font-size:13px;font-weight:800;color:var(--black);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .field input,.field select{width:100%;padding:11px 13px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);font-size:14px;font-weight:700;color:var(--black);font-family:'Palatino Linotype',Palatino,Georgia,serif;outline:none;transition:border-color .2s;appearance:none;}
+  .field input:focus,.field select:focus{border-color:#7C3AED;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .calc-btn{width:100%;padding:14px;border-radius:13px;border:none;background:linear-gradient(135deg,#7C3AED,#4C1D95);font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(109,40,217,0.38);font-family:'Palatino Linotype',Palatino,Georgia,serif;margin-top:4px;transition:transform .12s;}
+  .calc-btn:active{transform:scale(.98);}
+
+  /* DTI Gauge */
+  .gauge-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .gauge-card h3{font-size:13px;font-weight:800;color:var(--black);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+  .gauge-card h3 span{font-size:10px;font-weight:600;color:#7C3AED;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .gauge-wrap{text-align:center;margin-bottom:10px;}
+  .gauge-wrap svg{width:200px;height:110px;}
+  .gauge-label{font-size:22px;font-weight:800;color:var(--black);}
+  .gauge-sub{font-size:10px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .dti-info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;}
+  .di{padding:9px 8px;border-radius:10px;text-align:center;}
+  .di.ok{background:#ECFDF5;}
+  .di.warn{background:#FEF3C7;}
+  .di.bad{background:#FEF2F2;}
+  .di-val{font-size:14px;font-weight:800;}
+  .di.ok .di-val{color:#065F46;}
+  .di.warn .di-val{color:#92400E;}
+  .di.bad .di-val{color:#C0392B;}
+  .di-lbl{font-size:8.5px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  /* Steps */
+  .steps-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .steps-card h3{font-size:13px;font-weight:800;color:var(--black);margin-bottom:12px;}
+  .step-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .step-item:last-child{border-bottom:none;}
+  .step-num{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;margin-top:1px;}
+  .step-num.done{background:#ECFDF5;color:#065F46;}
+  .step-num.active{background:linear-gradient(135deg,#7C3AED,#4C1D95);color:#fff;}
+  .step-num.todo{background:var(--bg);color:var(--muted);}
+  .step-title{font-size:12.5px;font-weight:800;color:var(--black);}
+  .step-sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .step-badge{margin-left:auto;flex-shrink:0;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;font-family:'Helvetica Neue',Arial,sans-serif;}
+  .step-badge.done{background:#ECFDF5;color:#065F46;}
+  .step-badge.active{background:#F5F3FF;color:#7C3AED;}
+  .step-badge.todo{background:var(--bg);color:var(--muted);}
+
+  /* Documents */
+  .docs-card{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+  .docs-card h3{font-size:13px;font-weight:800;color:var(--black);margin-bottom:12px;}
+  .doc-item{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--border);}
+  .doc-item:last-child{border-bottom:none;}
+  .doc-icon{width:32px;height:32px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .doc-name{font-size:12px;font-weight:700;color:var(--black);}
+  .doc-sub{font-size:9.5px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;margin-top:1px;}
+  .doc-tag{margin-left:auto;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;font-family:'Helvetica Neue',Arial,sans-serif;flex-shrink:0;}
+  .doc-tag.must{background:#FEF2F2;color:#C0392B;}
+  .doc-tag.good{background:#ECFDF5;color:#065F46;}
+
+  /* Lender comparison */
+  .lender-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .lc{background:var(--card);border-radius:14px;padding:13px 12px;box-shadow:var(--sh);border:1px solid var(--border);}
+  .lc.best{background:linear-gradient(140deg,#1A6B4A,#0D3B2E);}
+  .lc-name{font-size:13px;font-weight:800;color:var(--black);}
+  .lc.best .lc-name{color:#fff;}
+  .lc-rate{font-size:18px;font-weight:800;color:var(--fern);margin:4px 0 2px;}
+  .lc.best .lc-rate{color:var(--gold-lt);}
+  .lc-sub{font-size:9px;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .lc.best .lc-sub{color:rgba(255,255,255,0.5);}
+  .lc-badge{display:inline-block;font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;margin-top:5px;font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(10,15,13,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:19px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .ni.active .ni-lb{color:var(--fern);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .bp-hero{animation:fadeUp .35s ease both .04s;}
+  .input-card{animation:fadeUp .35s ease both .08s;}
+  .gauge-card{animation:fadeUp .35s ease both .12s;}
+  .steps-card{animation:fadeUp .35s ease both .16s;}
+  .docs-card{animation:fadeUp .35s ease both .20s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a class="icon-btn" href="screen_newzealand.html" style="text-decoration:none">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">💳</div>
+      <div class="hdr-title">Pre-Approval Guide</div>
+      <div class="hdr-sub">Conditional Approval · NZ Banks · 2025</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">DTI Cap</div><div class="rs-v gold">6x</div><div class="rs-n">RBNZ 2024</div></div>
+    <div class="rs"><div class="rs-l">1yr Fixed</div><div class="rs-v">6.59%</div><div class="rs-n">Avg NZ</div></div>
+    <div class="rs"><div class="rs-l">Test Rate</div><div class="rs-v">8.5%+</div><div class="rs-n">Stress test</div></div>
+    <div class="rs"><div class="rs-l">Valid For</div><div class="rs-v">90</div><div class="rs-n">Days (usual)</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec" style="margin-top:0">Borrowing Power <span class="badge">RBNZ DTI 6x</span></div>
+  <div class="bp-hero">
+    <div class="bp-tag">Maximum Pre-Approval Estimate · NZD</div>
+    <div class="bp-amount" id="maxBorrow">$522,000</div>
+    <div class="bp-sub" id="bpSub">Based on $87K income · 6x DTI · 20% deposit needed</div>
+    <div class="bp-row">
+      <div class="bp-box"><label>Your DTI Ratio</label><div class="v purple" id="dtiDisplay">5.2x</div></div>
+      <div class="bp-box"><label>Monthly Payment</label><div class="v teal" id="monthlyPmt">$3,240</div></div>
+      <div class="bp-box"><label>Required Deposit</label><div class="v gold" id="reqDeposit">$130,500</div></div>
+      <div class="bp-box"><label>Total Property</label><div class="v" id="totalProp">$652,500</div></div>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="sec">Your Financial Position</div>
+  <div class="input-card">
+    <h3><span>💼</span> Income & Existing Debt</h3>
+    <div class="field-row">
+      <div class="field">
+        <label>Gross Annual Income</label>
+        <input type="number" id="income" value="87000" oninput="calculate()">
+      </div>
+      <div class="field">
+        <label>Partner Income (if joint)</label>
+        <input type="number" id="partnerIncome" value="0" placeholder="0" oninput="calculate()">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Other Monthly Debt ($)</label>
+        <input type="number" id="otherDebt" value="0" placeholder="Car loan, etc" oninput="calculate()">
+      </div>
+      <div class="field">
+        <label>Deposit Available</label>
+        <input type="number" id="deposit" value="130000" oninput="calculate()">
+      </div>
+    </div>
+    <div class="field">
+      <label>Loan Term</label>
+      <select id="loanTerm" onchange="calculate()">
+        <option value="25">25 years</option>
+        <option value="30" selected>30 years</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Interest Rate (Stress Test)</label>
+      <select id="stressRate" onchange="calculate()">
+        <option value="8.5" selected>8.50% (Bank stress test)</option>
+        <option value="7.0">7.00% (Current rates)</option>
+        <option value="6.59">6.59% (1yr fixed ANZ)</option>
+      </select>
+    </div>
+    <button class="calc-btn" onclick="calculate()">💳 Calculate Pre-Approval</button>
+  </div>
+
+  <!-- DTI Gauge -->
+  <div class="sec">DTI Assessment</div>
+  <div class="gauge-card">
+    <h3>Debt-to-Income Ratio <span>RBNZ 6x Cap</span></h3>
+    <div class="gauge-wrap">
+      <svg id="gaugeSvg" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="gauge-label" id="gaugeNum">5.2x</div>
+      <div class="gauge-sub" id="gaugeSub">Within RBNZ 6x limit</div>
+    </div>
+    <div class="dti-info">
+      <div class="di ok"><div class="di-val">≤ 5x</div><div class="di-lbl">Comfortable</div></div>
+      <div class="di warn"><div class="di-val">5–6x</div><div class="di-lbl">Acceptable</div></div>
+      <div class="di bad"><div class="di-val">> 6x</div><div class="di-lbl">Exceeds Cap</div></div>
+    </div>
+  </div>
+
+  <!-- Pre-Approval Steps -->
+  <div class="sec">Pre-Approval Steps</div>
+  <div class="steps-card">
+    <h3>📋 Your Application Journey</h3>
+    <div class="step-item">
+      <div class="step-num done">✓</div>
+      <div style="flex:1"><div class="step-title">Check Eligibility & Borrowing</div><div class="step-sub">DTI, income, deposit assessment</div></div>
+      <div class="step-badge done">Complete</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num active">2</div>
+      <div style="flex:1"><div class="step-title">Gather Documents</div><div class="step-sub">3 months payslips, bank statements, ID</div></div>
+      <div class="step-badge active">In Progress</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num todo">3</div>
+      <div style="flex:1"><div class="step-title">Choose Lender / Mortgage Broker</div><div class="step-sub">Compare ANZ, ASB, Kiwibank, BNZ, Westpac</div></div>
+      <div class="step-badge todo">Todo</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num todo">4</div>
+      <div style="flex:1"><div class="step-title">Submit Pre-Approval Application</div><div class="step-sub">Online or via broker — usually 1–3 business days</div></div>
+      <div class="step-badge todo">Todo</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num todo">5</div>
+      <div style="flex:1"><div class="step-title">Receive Conditional Approval</div><div class="step-sub">Valid ~90 days · start house-hunting</div></div>
+      <div class="step-badge todo">Todo</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num todo">6</div>
+      <div style="flex:1"><div class="step-title">Unconditional / Formal Approval</div><div class="step-sub">Once property found & valuated</div></div>
+      <div class="step-badge todo">Todo</div>
+    </div>
+  </div>
+
+  <!-- Documents -->
+  <div class="sec">Required Documents</div>
+  <div class="docs-card">
+    <h3>📄 Document Checklist</h3>
+    <div class="doc-item">
+      <div class="doc-icon">🪪</div>
+      <div><div class="doc-name">Photo ID (Passport / Drivers Licence)</div><div class="doc-sub">Must be current and valid</div></div>
+      <div class="doc-tag must">Must Have</div>
+    </div>
+    <div class="doc-item">
+      <div class="doc-icon">💵</div>
+      <div><div class="doc-name">3 Recent Payslips</div><div class="doc-sub">Or last 2 years IR3 if self-employed</div></div>
+      <div class="doc-tag must">Must Have</div>
+    </div>
+    <div class="doc-item">
+      <div class="doc-icon">🏦</div>
+      <div><div class="doc-name">3 Months Bank Statements</div><div class="doc-sub">All accounts — savings, transaction, credit</div></div>
+      <div class="doc-tag must">Must Have</div>
+    </div>
+    <div class="doc-item">
+      <div class="doc-icon">🥝</div>
+      <div><div class="doc-name">KiwiSaver Statement</div><div class="doc-sub">Recent balance & membership length</div></div>
+      <div class="doc-tag must">Must Have</div>
+    </div>
+    <div class="doc-item">
+      <div class="doc-icon">📝</div>
+      <div><div class="doc-name">IRD Number</div><div class="doc-sub">Required for all NZ mortgage applications</div></div>
+      <div class="doc-tag must">Must Have</div>
+    </div>
+    <div class="doc-item">
+      <div class="doc-icon">🏘️</div>
+      <div><div class="doc-name">Existing Property Details</div><div class="doc-sub">Rates notice, insurance if refinancing</div></div>
+      <div class="doc-tag good">If Applicable</div>
+    </div>
+    <div class="doc-item">
+      <div class="doc-icon">💳</div>
+      <div><div class="doc-name">Credit Card & Loan Statements</div><div class="doc-sub">All existing liabilities</div></div>
+      <div class="doc-tag good">If Applicable</div>
+    </div>
+  </div>
+
+  <!-- NZ Lender Rates -->
+  <div class="sec">Compare NZ Lenders</div>
+  <div class="lender-grid">
+    <div class="lc best">
+      <div class="lc-name">🥝 Kiwibank</div>
+      <div class="lc-rate">6.55%</div>
+      <div class="lc-sub">1yr fixed · Best rate</div>
+      <div><div class="lc-badge" style="background:rgba(245,208,96,0.2);color:var(--gold-lt)">Lowest 1yr</div></div>
+    </div>
+    <div class="lc">
+      <div class="lc-name">🏦 ANZ</div>
+      <div class="lc-rate" style="color:var(--fern)">6.59%</div>
+      <div class="lc-sub">1yr fixed · Large network</div>
+      <div><div class="lc-badge" style="background:#ECFDF5;color:#065F46">Popular</div></div>
+    </div>
+    <div class="lc">
+      <div class="lc-name">🏦 ASB Bank</div>
+      <div class="lc-rate" style="color:var(--fern)">6.59%</div>
+      <div class="lc-sub">1yr fixed · Good FHB</div>
+      <div><div class="lc-badge" style="background:#EFF6FF;color:#1D4ED8">FHB Friendly</div></div>
+    </div>
+    <div class="lc">
+      <div class="lc-name">🏦 BNZ</div>
+      <div class="lc-rate" style="color:var(--fern)">6.59%</div>
+      <div class="lc-sub">1yr fixed · Flexible</div>
+      <div><div class="lc-badge" style="background:#FEF3C7;color:#92400E">Classic</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🌿</div><div class="ni-lb">New Zealand</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+  function fmt(n) { return 'NZ$' + Math.round(n).toLocaleString('en-NZ'); }
+
+  function calculate() {
+    const inc = parseFloat(document.getElementById('income').value) || 87000;
+    const partnerInc = parseFloat(document.getElementById('partnerIncome').value) || 0;
+    const totalInc = inc + partnerInc;
+    const otherDebt = parseFloat(document.getElementById('otherDebt').value) || 0;
+    const deposit = parseFloat(document.getElementById('deposit').value) || 0;
+    const term = parseInt(document.getElementById('loanTerm').value);
+    const stressRate = parseFloat(document.getElementById('stressRate').value) / 100 / 12;
+
+    const dtiCap = 6;
+    const maxLoanByDTI = totalInc * dtiCap;
+    const maxLoanByServiceability = (() => {
+      // monthly payment at stress rate for 1
+      const n = term * 12;
+      // Max loan where monthly payment <= 35% of monthly income
+      const maxMonthly = totalInc / 12 * 0.35 - otherDebt;
+      if (stressRate === 0) return maxMonthly * n;
+      return maxMonthly * (1 - Math.pow(1 + stressRate, -n)) / stressRate;
+    })();
+
+    const maxLoan = Math.min(maxLoanByDTI, maxLoanByServiceability);
+    const totalProp = maxLoan + deposit;
+    const dti = maxLoan / totalInc;
+
+    // Monthly payment at stress rate
+    const n = term * 12;
+    const monthly = maxLoan * stressRate / (1 - Math.pow(1 + stressRate, -n));
+    const reqDeposit = maxLoan * 0.25; // 20% of total
+
+    document.getElementById('maxBorrow').textContent = fmt(maxLoan);
+    document.getElementById('bpSub').textContent = `Based on $${Math.round(totalInc/1000)}K income · ${dti.toFixed(1)}x DTI · deposit assessed`;
+    document.getElementById('dtiDisplay').textContent = dti.toFixed(1) + 'x';
+    document.getElementById('monthlyPmt').textContent = fmt(monthly) + '/mo';
+    document.getElementById('reqDeposit').textContent = fmt(maxLoan * 0.20);
+    document.getElementById('totalProp').textContent = fmt(totalProp);
+
+    // Gauge
+    drawGauge(dti, dtiCap);
+    document.getElementById('gaugeNum').textContent = dti.toFixed(1) + 'x';
+    document.getElementById('gaugeSub').textContent = dti <= 5 ? '✅ Comfortable — well within limits' : dti <= 6 ? '⚠️ Acceptable — within RBNZ 6x cap' : '❌ Exceeds RBNZ DTI cap of 6x';
+  }
+
+  function drawGauge(dti, cap) {
+    const svg = document.getElementById('gaugeSvg');
+    const cx = 100, cy = 100, r = 75;
+    // semi-circle from 180° to 0°
+    const startA = Math.PI;
+    const endA = 0;
+    const totalAngle = Math.PI;
+    const pct = Math.min(dti / (cap * 1.2), 1);
+    const needleAngle = Math.PI - pct * Math.PI;
+
+    const colorAt = p => p <= 5/7.2 ? '#6EE7B7' : p <= 6/7.2 ? '#F5D060' : '#FCA5A5';
+    const segments = [
+      { from: 0, to: 5/7.2, color: '#6EE7B7' },
+      { from: 5/7.2, to: 6/7.2, color: '#F5D060' },
+      { from: 6/7.2, to: 1, color: '#FCA5A5' },
+    ];
+
+    let html = '';
+    segments.forEach(s => {
+      const a1 = Math.PI - s.from * Math.PI;
+      const a2 = Math.PI - s.to * Math.PI;
+      const x1 = cx + r * Math.cos(a1), y1 = cy - r * Math.sin(a1);
+      const x2 = cx + r * Math.cos(a2), y2 = cy - r * Math.sin(a2);
+      const ri = r - 16;
+      const ix1 = cx + ri * Math.cos(a1), iy1 = cy - ri * Math.sin(a1);
+      const ix2 = cx + ri * Math.cos(a2), iy2 = cy - ri * Math.sin(a2);
+      const sweep = (s.to - s.from) > 0.5 ? 1 : 0;
+      html += `<path d="M${x1},${y1} A${r},${r} 0 ${sweep} 0 ${x2},${y2} L${ix2},${iy2} A${ri},${ri} 0 ${sweep} 1 ${ix1},${iy1} Z" fill="${s.color}"/>`;
+    });
+
+    // Needle
+    const nx = cx + (r - 10) * Math.cos(needleAngle);
+    const ny = cy - (r - 10) * Math.sin(needleAngle);
+    html += `<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#0A0F0D" stroke-width="3" stroke-linecap="round"/>`;
+    html += `<circle cx="${cx}" cy="${cy}" r="5" fill="#0A0F0D"/>`;
+
+    // Labels
+    ['0', '3', '6', '9'].forEach((l, i) => {
+      const a = Math.PI - (i / 3) * Math.PI;
+      const lx = cx + (r + 10) * Math.cos(a);
+      const ly = cy - (r + 10) * Math.sin(a);
+      html += `<text x="${lx}" y="${ly + 4}" text-anchor="middle" font-size="9" fill="#4A6358" font-family="Helvetica Neue,Arial,sans-serif">${l}x</text>`;
+    });
+
+    svg.innerHTML = html;
+  }
+
+  calculate();
+</script>
+</body>
+</html>

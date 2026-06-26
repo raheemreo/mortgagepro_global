@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Under Construction Loan – MortgagePro India</title>
+<style>
+:root{
+  --saffron:#FF6B00;--saffron2:#E05A00;--ochre:#F5A623;--ochre-lt:#FFDEA0;
+  --navy:#0B1F48;--chakra:#1A3A8F;--green:#046A38;--green2:#07543A;
+  --teal:#0D9488;--white:#FFFFFF;--bg:#FFF8F0;--card:#FFFFFF;
+  --muted:#7A5C3A;--border:rgba(255,107,0,0.10);
+  --sh:0 4px 20px rgba(11,31,72,0.09);--sh2:0 10px 40px rgba(11,31,72,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle at 10% 20%,rgba(255,107,0,0.04) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(4,106,56,0.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+.header{background:linear-gradient(158deg,#0B1F48 0%,#1A3A8F 40%,#FF6B00 82%,#E05A00 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+.header::before{content:'☸';position:absolute;right:-10px;top:30px;font-size:130px;color:rgba(255,255,255,0.06);line-height:1;}
+.header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B00 33.3%,#FFFFFF 33.3% 66.6%,#046A38 66.6%);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:2;}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;cursor:pointer;}
+.hdr-center{text-align:center;position:relative;z-index:2;}
+.hdr-flag{font-size:28px;display:block;}
+.hdr-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.hdr-title span{color:var(--ochre-lt);}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+.rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:14px 14px 0 0;padding:11px 14px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+.rs{text-align:center;position:relative;}
+.rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.13);}
+.rs-l{font-size:8px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.rs-v{font-size:15px;font-weight:800;color:#fff;line-height:1.15;}
+.rs-v.saf{color:var(--ochre-lt);}
+.rs-n{font-size:8px;color:rgba(255,255,255,0.36);margin-top:1px;font-family:'Trebuchet MS',sans-serif;}
+
+.content{padding:16px 15px 112px;position:relative;z-index:1;}
+.sec{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 11px;display:flex;align-items:center;justify-content:space-between;font-family:'Trebuchet MS',sans-serif;}
+.sec .tag{font-size:9px;font-weight:700;background:#FFF3E0;color:var(--saffron);padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0;}
+
+/* Input Card */
+.calc-card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--sh2);border:1px solid var(--border);margin-bottom:14px;}
+.calc-card .card-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.card-icon{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--navy),var(--chakra));display:flex;align-items:center;justify-content:center;font-size:22px;}
+.card-title{font-size:15px;font-weight:800;color:var(--navy);}
+.card-sub{font-size:10px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+
+.field-wrap{margin-bottom:13px;}
+.field-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;margin-bottom:5px;}
+.field-row{display:flex;align-items:center;gap:8px;}
+.field-input{flex:1;background:#FFF8F0;border:1.5px solid var(--border);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700;color:var(--navy);font-family:'Book Antiqua',Palatino,Georgia,serif;outline:none;transition:border-color .2s;}
+.field-input:focus{border-color:var(--saffron);}
+.field-unit{font-size:11px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;min-width:32px;}
+
+.slider-wrap{margin-top:6px;}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--saffron) var(--pct,40%),#F0E0D0 var(--pct,40%));outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--saffron);box-shadow:0 2px 8px rgba(255,107,0,0.4);cursor:pointer;}
+
+/* Toggle */
+.toggle-row{display:flex;gap:8px;margin-bottom:13px;}
+.tog-btn{flex:1;padding:9px 5px;border-radius:11px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:'Trebuchet MS',sans-serif;transition:all .2s;}
+.tog-btn.active{background:linear-gradient(135deg,var(--navy),var(--chakra));color:#fff;border-color:transparent;}
+
+.calc-btn{width:100%;background:linear-gradient(135deg,var(--saffron),var(--saffron2));border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(255,107,0,0.42);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;margin-top:4px;}
+
+/* Result Card */
+.result-card{background:linear-gradient(148deg,var(--navy),var(--chakra));border-radius:20px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden;}
+.result-card::after{content:'☸';position:absolute;right:14px;bottom:10px;font-size:60px;color:rgba(255,255,255,0.05);}
+.result-title{font-size:10px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:.7px;font-family:'Trebuchet MS',sans-serif;margin-bottom:12px;}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.res-box{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:11px 12px;}
+.res-lbl{font-size:8.5px;color:rgba(255,255,255,0.46);text-transform:uppercase;letter-spacing:.5px;font-family:'Trebuchet MS',sans-serif;}
+.res-val{font-size:16px;font-weight:800;color:#fff;margin-top:3px;}
+.res-val.hi{color:var(--ochre-lt);}
+.res-val.gr{color:#86EFAC;}
+.res-note{font-size:9px;color:rgba(255,255,255,0.40);margin-top:3px;font-family:'Trebuchet MS',sans-serif;}
+
+/* Phase timeline */
+.phase-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.phase-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+.phase-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;position:relative;}
+.phase-row:not(:last-child)::after{content:'';position:absolute;left:15px;top:32px;width:2px;height:calc(100% + 4px);background:linear-gradient(180deg,var(--saffron),rgba(255,107,0,0.1));}
+.ph-dot{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--saffron),var(--saffron2));display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.ph-dot.done{background:linear-gradient(135deg,var(--green),var(--green2));}
+.ph-dot.wait{background:rgba(11,31,72,0.10);}
+.ph-info .ph-name{font-size:12px;font-weight:800;color:var(--navy);}
+.ph-info .ph-sub{font-size:9.5px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;margin-top:2px;}
+.ph-amount{margin-left:auto;text-align:right;flex-shrink:0;}
+.ph-amount .amt{font-size:13px;font-weight:800;color:var(--saffron);}
+.ph-amount .per{font-size:9px;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+
+/* Bar chart */
+.chart-card{background:var(--card);border-radius:18px;padding:16px;box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:14px;}
+.chart-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.chart-title span{font-size:10px;font-weight:600;color:var(--saffron);font-family:'Trebuchet MS',sans-serif;}
+.bar-wrap{display:flex;flex-direction:column;gap:9px;}
+.bar-row{display:flex;align-items:center;gap:10px;}
+.bar-lbl{font-size:10px;font-weight:700;color:var(--muted);width:90px;font-family:'Trebuchet MS',sans-serif;flex-shrink:0;}
+.bar-track{flex:1;height:10px;background:#F0E0D0;border-radius:5px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:5px;transition:width .6s ease;}
+.bar-val{font-size:10px;font-weight:800;color:var(--navy);width:52px;text-align:right;font-family:'Trebuchet MS',sans-serif;flex-shrink:0;}
+
+/* Save btn */
+.save-btn{width:100%;background:linear-gradient(135deg,var(--green),var(--green2));border:none;border-radius:13px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(4,106,56,0.30);font-family:'Book Antiqua',Palatino,Georgia,serif;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:8px;}
+
+/* Info tip */
+.tip-card{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border:1.5px solid #6EE7B7;border-radius:15px;padding:13px 14px;margin-bottom:14px;display:flex;gap:11px;align-items:flex-start;}
+.tip-icon{font-size:20px;flex-shrink:0;}
+.tip-text{font-size:10.5px;color:var(--green2);font-family:'Trebuchet MS',sans-serif;line-height:1.5;}
+.tip-text strong{font-family:'Book Antiqua',Palatino,Georgia,serif;font-size:11.5px;}
+
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 20px;box-shadow:0 -4px 22px rgba(11,31,72,0.09);z-index:100;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.ni-ic{font-size:19px;line-height:1;}
+.ni-lb{font-size:10px;font-weight:700;color:var(--muted);font-family:'Trebuchet MS',sans-serif;}
+.ni.active .ni-lb{color:var(--saffron);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fu1{animation:fadeUp .38s ease both .04s;}
+.fu2{animation:fadeUp .38s ease both .09s;}
+.fu3{animation:fadeUp .38s ease both .14s;}
+.fu4{animation:fadeUp .38s ease both .19s;}
+.fu5{animation:fadeUp .38s ease both .24s;}
+
+.saved-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 22px;border-radius:30px;font-size:12px;font-weight:700;font-family:'Trebuchet MS',sans-serif;opacity:0;transition:all .35s;z-index:200;white-space:nowrap;}
+.saved-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <div class="icon-btn" onclick="history.back()">←</div>
+    <div class="hdr-center">
+      <div class="hdr-flag">🏗️</div>
+      <div class="hdr-title">Under <span>Construction</span></div>
+      <div class="hdr-sub">Pre-EMI vs Full EMI · Disbursement Schedule</div>
+    </div>
+    <div class="icon-btn">🔔</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">Repo Rate</div><div class="rs-v saf">6.25%</div><div class="rs-n">RBI Jun'25</div></div>
+    <div class="rs"><div class="rs-l">SBI Rate</div><div class="rs-v">8.50%</div><div class="rs-n">Floating</div></div>
+    <div class="rs"><div class="rs-l">GST</div><div class="rs-v">5%</div><div class="rs-n">UC Property</div></div>
+    <div class="rs"><div class="rs-l">Max Tenure</div><div class="rs-v">30yr</div><div class="rs-n">Home Loan</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec fu1" style="margin-top:0">Loan Setup <span class="tag">Under-Construction</span></div>
+
+  <div class="calc-card fu1">
+    <div class="card-head">
+      <div class="card-icon">🏗️</div>
+      <div><div class="card-title">Under-Construction Loan</div><div class="card-sub">Pre-EMI interest + full EMI comparison</div></div>
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Total Property Value (₹)</div>
+      <div class="field-row">
+        <input class="field-input" id="propVal" type="number" value="7500000" oninput="syncSlider('propVal','sldProp',500000,30000000);calc()">
+        <span class="field-unit">₹</span>
+      </div>
+      <div class="slider-wrap"><input type="range" id="sldProp" min="500000" max="30000000" step="100000" value="7500000" oninput="syncInput('sldProp','propVal');calc()"></div>
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Down Payment (%)</div>
+      <div class="field-row">
+        <input class="field-input" id="downPct" type="number" value="20" oninput="syncSlider('downPct','sldDown',10,40);calc()">
+        <span class="field-unit">%</span>
+      </div>
+      <div class="slider-wrap"><input type="range" id="sldDown" min="10" max="40" step="1" value="20" oninput="syncInput('sldDown','downPct');calc()"></div>
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Interest Rate (% p.a.)</div>
+      <div class="field-row">
+        <input class="field-input" id="rate" type="number" value="8.50" step="0.05" oninput="syncSlider('rate','sldRate',7,13);calc()">
+        <span class="field-unit">%</span>
+      </div>
+      <div class="slider-wrap"><input type="range" id="sldRate" min="7" max="13" step="0.05" value="8.50" oninput="syncInput('sldRate','rate');calc()"></div>
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Loan Tenure (Years)</div>
+      <div class="field-row">
+        <input class="field-input" id="tenure" type="number" value="20" oninput="syncSlider('tenure','sldTen',5,30);calc()">
+        <span class="field-unit">yr</span>
+      </div>
+      <div class="slider-wrap"><input type="range" id="sldTen" min="5" max="30" step="1" value="20" oninput="syncInput('sldTen','tenure');calc()"></div>
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Construction Period (Months)</div>
+      <div class="field-row">
+        <input class="field-input" id="consPeriod" type="number" value="30" oninput="syncSlider('consPeriod','sldCons',6,60);calc()">
+        <span class="field-unit">mo</span>
+      </div>
+      <div class="slider-wrap"><input type="range" id="sldCons" min="6" max="60" step="1" value="30" oninput="syncInput('sldCons','consPeriod');calc()"></div>
+    </div>
+
+    <div class="field-label" style="margin-bottom:6px;">Disbursement Schedule</div>
+    <div class="toggle-row" id="disburseType">
+      <div class="tog-btn active" onclick="setDisburse(this,'uniform')">Uniform</div>
+      <div class="tog-btn" onclick="setDisburse(this,'milestone')">Milestone</div>
+      <div class="tog-btn" onclick="setDisburse(this,'tranche')">3-Tranche</div>
+    </div>
+
+    <button class="calc-btn" onclick="calc()">☸ Calculate Pre-EMI & Full EMI</button>
+  </div>
+
+  <!-- Results -->
+  <div class="result-card fu2" id="resultCard">
+    <div class="result-title">Calculation Results</div>
+    <div class="result-grid">
+      <div class="res-box"><div class="res-lbl">Loan Amount</div><div class="res-val hi" id="rLoan">₹60.0 L</div><div class="res-note">80% of value</div></div>
+      <div class="res-box"><div class="res-lbl">Full EMI</div><div class="res-val" id="rEmi">₹52,068</div><div class="res-note">Post-possession</div></div>
+      <div class="res-box"><div class="res-lbl">Avg Pre-EMI</div><div class="res-val hi" id="rPreEmi">₹25,500</div><div class="res-note">During construction</div></div>
+      <div class="res-box"><div class="res-lbl">Pre-EMI Total</div><div class="res-val" id="rPreTotal">₹7.65 L</div><div class="res-note">Interest only cost</div></div>
+      <div class="res-box"><div class="res-lbl">Total Interest</div><div class="res-val" id="rTotalInt">₹84.96 L</div><div class="res-note">Full tenure</div></div>
+      <div class="res-box"><div class="res-lbl">Total Payable</div><div class="res-val gr" id="rTotalPay">₹1.45 Cr</div><div class="res-note">Principal + Interest</div></div>
+    </div>
+  </div>
+
+  <!-- Bar Chart: Pre-EMI vs Full EMI -->
+  <div class="chart-card fu3">
+    <div class="chart-title">Cost Comparison <span>Breakup</span></div>
+    <div class="bar-wrap">
+      <div class="bar-row">
+        <div class="bar-lbl">Principal</div>
+        <div class="bar-track"><div class="bar-fill" id="bPrincipal" style="width:41%;background:linear-gradient(90deg,var(--chakra),var(--navy));"></div></div>
+        <div class="bar-val" id="bvPrincipal">₹60.0L</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-lbl">Pre-EMI Int.</div>
+        <div class="bar-track"><div class="bar-fill" id="bPreInt" style="width:22%;background:linear-gradient(90deg,var(--ochre),var(--saffron));"></div></div>
+        <div class="bar-val" id="bvPreInt">₹7.65L</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-lbl">Post-EMI Int.</div>
+        <div class="bar-track"><div class="bar-fill" id="bPostInt" style="width:53%;background:linear-gradient(90deg,var(--saffron),var(--saffron2));"></div></div>
+        <div class="bar-val" id="bvPostInt">₹77.3L</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-lbl">GST (5%)</div>
+        <div class="bar-track"><div class="bar-fill" id="bGst" style="width:14%;background:linear-gradient(90deg,var(--teal),#0F766E);"></div></div>
+        <div class="bar-val" id="bvGst">₹30.0L</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disbursement Phase Timeline -->
+  <div class="phase-card fu4">
+    <div class="phase-title">📋 Disbursement Phases</div>
+    <div class="phase-row">
+      <div class="ph-dot done">✓</div>
+      <div class="ph-info"><div class="ph-name">Phase 1 – Foundation</div><div class="ph-sub">10% disbursed on booking · Month 1</div></div>
+      <div class="ph-amount"><div class="amt" id="ph1">₹6.0 L</div><div class="per">10%</div></div>
+    </div>
+    <div class="phase-row">
+      <div class="ph-dot">🏗️</div>
+      <div class="ph-info"><div class="ph-name">Phase 2 – Plinth / Slab</div><div class="ph-sub">20% disbursed · Month 8–10</div></div>
+      <div class="ph-amount"><div class="amt" id="ph2">₹12.0 L</div><div class="per">20%</div></div>
+    </div>
+    <div class="phase-row">
+      <div class="ph-dot">🧱</div>
+      <div class="ph-info"><div class="ph-name">Phase 3 – Structure</div><div class="ph-sub">20% disbursed · Month 14–18</div></div>
+      <div class="ph-amount"><div class="amt" id="ph3">₹12.0 L</div><div class="per">20%</div></div>
+    </div>
+    <div class="phase-row">
+      <div class="ph-dot">🏠</div>
+      <div class="ph-info"><div class="ph-name">Phase 4 – Roofing / Brick</div><div class="ph-sub">25% disbursed · Month 20–24</div></div>
+      <div class="ph-amount"><div class="amt" id="ph4">₹15.0 L</div><div class="per">25%</div></div>
+    </div>
+    <div class="phase-row">
+      <div class="ph-dot wait">🔑</div>
+      <div class="ph-info"><div class="ph-name">Phase 5 – Possession</div><div class="ph-sub">25% final disbursement · Month 28–30</div></div>
+      <div class="ph-amount"><div class="amt" id="ph5">₹15.0 L</div><div class="per">25%</div></div>
+    </div>
+  </div>
+
+  <!-- Info Tip -->
+  <div class="tip-card fu4">
+    <div class="tip-icon">💡</div>
+    <div class="tip-text"><strong>RBI Rule:</strong> Banks disburse in stages linked to construction milestones. Pre-EMI is interest-only on disbursed amount. Full EMI starts after possession. GST @ 5% applies to under-construction properties; nil for ready-to-move. RERA registration is mandatory per Real Estate Act 2016.</div>
+  </div>
+
+  <button class="save-btn fu5" onclick="saveCalc()">💾 Save This Calculation</button>
+
+</div>
+
+<div class="saved-toast" id="toast">✅ Calculation Saved!</div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni active"><div class="ni-ic">🇮🇳</div><div class="ni-lb">India</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni"><div class="ni-ic">🌍</div><div class="ni-lb">Global</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+let disburseMode = 'uniform';
+function setDisburse(el,mode){
+  document.querySelectorAll('#disburseType .tog-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); disburseMode=mode; calc();
+}
+function syncSlider(inputId,sliderId,min,max){
+  let v=parseFloat(document.getElementById(inputId).value);
+  v=Math.min(Math.max(v,min),max);
+  document.getElementById(sliderId).value=v;
+  updateSliderBg(sliderId,min,max);
+}
+function syncInput(sliderId,inputId){
+  let v=document.getElementById(sliderId).value;
+  document.getElementById(inputId).value=v;
+  let min=parseFloat(document.getElementById(sliderId).min);
+  let max=parseFloat(document.getElementById(sliderId).max);
+  updateSliderBg(sliderId,min,max);
+}
+function updateSliderBg(id,min,max){
+  let el=document.getElementById(id);
+  let pct=((el.value-min)/(max-min))*100;
+  el.style.setProperty('--pct',pct+'%');
+}
+function fmt(n){
+  if(n>=10000000) return '₹'+(n/10000000).toFixed(2)+' Cr';
+  if(n>=100000) return '₹'+(n/100000).toFixed(2)+' L';
+  return '₹'+Math.round(n).toLocaleString('en-IN');
+}
+function fmtShort(n){
+  if(n>=10000000) return '₹'+(n/10000000).toFixed(2)+'Cr';
+  if(n>=100000) return '₹'+(n/100000).toFixed(1)+'L';
+  return '₹'+Math.round(n).toLocaleString('en-IN');
+}
+function calc(){
+  let pv=parseFloat(document.getElementById('propVal').value)||7500000;
+  let dp=parseFloat(document.getElementById('downPct').value)||20;
+  let rate=parseFloat(document.getElementById('rate').value)||8.50;
+  let tenure=parseInt(document.getElementById('tenure').value)||20;
+  let cons=parseInt(document.getElementById('consPeriod').value)||30;
+
+  let loan=pv*(1-dp/100);
+  let r=rate/12/100;
+  let n=tenure*12;
+  let emi=loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+
+  // Pre-EMI: average disbursed 50% of loan during construction (uniform)
+  let avgDisb = disburseMode==='uniform' ? loan*0.5 : (disburseMode==='milestone' ? loan*0.45 : loan*0.55);
+  let avgPreEmi = avgDisb * r;
+  let preEmiTotal = avgPreEmi * cons;
+  let totalInterest = emi*n - loan;
+  let totalPay = preEmiTotal + emi*n;
+
+  document.getElementById('rLoan').textContent=fmt(loan);
+  document.getElementById('rEmi').textContent='₹'+Math.round(emi).toLocaleString('en-IN');
+  document.getElementById('rPreEmi').textContent='₹'+Math.round(avgPreEmi).toLocaleString('en-IN');
+  document.getElementById('rPreTotal').textContent=fmt(preEmiTotal);
+  document.getElementById('rTotalInt').textContent=fmt(totalInterest);
+  document.getElementById('rTotalPay').textContent=fmt(totalPay);
+
+  // Phase disbursements
+  let ph=[0.10,0.20,0.20,0.25,0.25];
+  for(let i=0;i<5;i++) document.getElementById('ph'+(i+1)).textContent=fmtShort(loan*ph[i]);
+
+  // Bar chart
+  let gst=pv*0.05;
+  let total=loan+preEmiTotal+totalInterest+gst;
+  document.getElementById('bPrincipal').style.width=(loan/total*100)+'%';
+  document.getElementById('bvPrincipal').textContent=fmtShort(loan);
+  document.getElementById('bPreInt').style.width=(preEmiTotal/total*100)+'%';
+  document.getElementById('bvPreInt').textContent=fmtShort(preEmiTotal);
+  document.getElementById('bPostInt').style.width=(totalInterest/total*100)+'%';
+  document.getElementById('bvPostInt').textContent=fmtShort(totalInterest);
+  document.getElementById('bGst').style.width=(gst/total*100)+'%';
+  document.getElementById('bvGst').textContent=fmtShort(gst);
+}
+function saveCalc(){
+  let toast=document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2500);
+}
+// Init sliders
+['sldProp','sldDown','sldRate','sldTen','sldCons'].forEach(id=>{
+  let el=document.getElementById(id);
+  let min=parseFloat(el.min),max=parseFloat(el.max);
+  updateSliderBg(id,min,max);
+});
+calc();
+</script>
+</body>
+</html>

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2025 Income Limits by County</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#0B1D3A;--blue:#1B3F72;--gold:#D97706;--gold-lt:#FCD34D;
+    --bg:#F0F4FF;--card:#FFFFFF;--muted:#4A5C7A;
+    --border:rgba(27,63,114,0.10);--sh:0 2px 12px rgba(11,29,58,0.08);--sh2:0 8px 32px rgba(11,29,58,0.16);
+    --grn:#15803D;--grn-dk:#166534;--red:#B91C1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--navy);max-width:420px;margin:0 auto;min-height:100vh;}
+  .header{background:linear-gradient(155deg,#0B1D3A 0%,#15803D 45%,#78350F 100%);padding:46px 18px 0;position:relative;overflow:hidden;}
+  .header::after{content:'📋';position:absolute;right:8px;top:46px;font-size:72px;opacity:0.06;}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative;z-index:2;}
+  .icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.20);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;text-decoration:none;}
+  .hdr-center{text-align:center;}
+  .hdr-flag{font-size:26px;}
+  .hdr-title{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px;font-family:'DM Serif Display',serif;}
+  .hdr-sub{font-size:10px;color:rgba(255,255,255,0.50);margin-top:1px;}
+  .rate-strip{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);border-radius:14px 14px 0 0;padding:10px 12px;display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2;margin-top:4px;}
+  .rs{text-align:center;position:relative;}
+  .rs:not(:last-child)::after{content:'';position:absolute;right:0;top:15%;height:70%;width:1px;background:rgba(255,255,255,0.14);}
+  .rs-l{font-size:8px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.4px;}
+  .rs-v{font-size:13px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.15;}
+  .rs-v.gold{color:var(--gold-lt);}
+  .rs-n{font-size:7.5px;color:rgba(255,255,255,0.35);margin-top:1px;}
+  .content{padding:14px 14px 110px;}
+  .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 9px;}
+
+  /* Search */
+  .search-wrap{background:var(--card);border-radius:13px;padding:12px 14px;border:1.5px solid var(--border);box-shadow:var(--sh);display:flex;gap:8px;align-items:center;margin-bottom:8px;transition:border-color .2s;}
+  .search-wrap:focus-within{border-color:var(--grn);}
+  .search-wrap input{flex:1;border:none;outline:none;font-size:14px;font-weight:600;color:var(--navy);background:transparent;}
+  .search-wrap input::placeholder{color:rgba(74,92,122,0.45);font-weight:400;}
+
+  .inp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+  .inp-box{background:var(--card);border-radius:13px;padding:12px 13px;border:1.5px solid var(--border);box-shadow:var(--sh);transition:border-color .2s;}
+  .inp-box:focus-within{border-color:var(--grn);}
+  .inp-box label{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;}
+  .inp-box input,.inp-box select{width:100%;border:none;outline:none;font-size:14px;font-weight:600;color:var(--navy);font-family:'DM Sans',sans-serif;background:transparent;}
+  .lookup-btn{width:100%;background:linear-gradient(135deg,#15803D,#166534);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'DM Serif Display',serif;box-shadow:0 4px 14px rgba(21,128,61,0.32);}
+
+  /* Result hero */
+  .result-hero{background:linear-gradient(140deg,#0B1D3A,#15803D);border-radius:18px;padding:17px;box-shadow:var(--sh2);margin-bottom:10px;position:relative;overflow:hidden;display:none;}
+  .result-hero.show{display:block;}
+  .result-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);}
+  .rh-label{font-size:9px;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.8px;}
+  .rh-main{font-size:30px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;line-height:1.1;margin:5px 0 2px;}
+  .rh-sub{font-size:9.5px;color:rgba(255,255,255,0.48);}
+  .save-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:9px;padding:6px 11px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;transition:background .2s;}
+  .save-btn:hover{background:rgba(255,255,255,0.25);}
+  .save-btn.saved{background:rgba(21,128,61,0.4);}
+  .status-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+  .status-chip{font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;}
+  .sc-green{background:rgba(134,239,172,0.2);color:#86EFAC;border:1px solid rgba(134,239,172,0.3);}
+  .sc-red{background:rgba(252,165,165,0.2);color:#FCA5A5;border:1px solid rgba(252,165,165,0.3);}
+  .sc-gold{background:rgba(252,211,77,0.2);color:var(--gold-lt);border:1px solid rgba(252,211,77,0.3);}
+
+  /* HH size grid */
+  .hh-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
+  .hh-card{background:var(--card);border-radius:11px;padding:10px 6px;border:1.5px solid var(--border);box-shadow:var(--sh);text-align:center;cursor:pointer;transition:all .2s;}
+  .hh-card.active,.hh-card:hover{border-color:var(--grn);background:#F0FDF4;}
+  .hh-icon{font-size:16px;margin-bottom:3px;}
+  .hh-size{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+  .hh-limit{font-size:11px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-top:2px;}
+  .hh-type{font-size:7.5px;color:var(--grn);font-weight:600;margin-top:1px;}
+
+  /* Income gauge */
+  .gauge-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);font-family:'DM Serif Display',serif;margin-bottom:12px;}
+  .gauge-wrap{position:relative;height:70px;overflow:hidden;}
+  .gauge-track{width:160px;height:80px;border-radius:80px 80px 0 0;background:conic-gradient(from 180deg at 50% 100%,#15803D 0deg,#D97706 80deg,#B91C1C 140deg,transparent 180deg);margin:0 auto;position:relative;}
+  .gauge-needle{position:absolute;bottom:0;left:50%;width:3px;height:55px;background:var(--navy);border-radius:2px;transform-origin:bottom center;transform:rotate(-50deg);transition:transform .6s cubic-bezier(0.34,1.56,0.64,1);}
+  .gauge-center{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);width:22px;height:22px;background:var(--navy);border-radius:50%;border:3px solid #fff;}
+  .gauge-labels{display:flex;justify-content:space-between;margin-top:6px;padding:0 10px;}
+  .gl{font-size:8px;color:var(--muted);}
+  .gauge-status{text-align:center;margin-top:4px;}
+  .gs-val{font-size:14px;font-weight:700;font-family:'DM Serif Display',serif;}
+  .gs-label{font-size:9px;color:var(--muted);margin-top:2px;}
+
+  /* Full income table */
+  .table-card{background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .table-hdr{background:linear-gradient(135deg,#0B1D3A,#15803D);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;}
+  .th-title{font-size:12px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;}
+  .th-sub{font-size:9px;color:rgba(255,255,255,0.55);}
+  .table-row{display:grid;grid-template-columns:80px repeat(4,1fr);padding:9px 12px;border-bottom:1px solid var(--border);align-items:center;}
+  .table-row:last-child{border-bottom:none;}
+  .table-row:nth-child(odd){background:#FAFBFF;}
+  .table-col-hdr{display:grid;grid-template-columns:80px repeat(4,1fr);padding:7px 12px;background:#F0F4FF;border-bottom:1px solid var(--border);}
+  .tc-h{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:center;}
+  .tc-h:first-child{text-align:left;}
+  .tc{font-size:9.5px;font-weight:600;color:var(--navy);text-align:center;}
+  .tc:first-child{text-align:left;font-weight:700;color:var(--navy);}
+  .tc.highlight{background:#DCFCE7;color:var(--grn-dk);border-radius:6px;font-weight:700;padding:2px 4px;}
+
+  /* Chart: limit progression */
+  .chart-card{background:var(--card);border-radius:16px;padding:15px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+  .bar-label{font-size:10px;color:var(--muted);width:60px;flex-shrink:0;font-weight:600;}
+  .bar-track{flex:1;height:10px;background:#EEF2F8;border-radius:5px;overflow:hidden;position:relative;}
+  .bar-fill-a{height:100%;border-radius:5px;background:linear-gradient(90deg,#15803D,#22C55E);transition:width .6s ease;}
+  .bar-fill-b{height:100%;border-radius:5px;background:linear-gradient(90deg,#1B3F72,#3B82F6);transition:width .6s ease;}
+  .bar-val{font-size:9.5px;font-weight:700;color:var(--navy);width:40px;text-align:right;flex-shrink:0;}
+
+  /* State featured table */
+  .state-card{background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;}
+  .state-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);}
+  .state-row:last-child{border-bottom:none;}
+  .state-name{font-size:11px;font-weight:700;color:var(--navy);}
+  .state-county{font-size:8.5px;color:var(--muted);margin-top:1px;}
+  .state-limits{text-align:right;}
+  .sl-val{font-size:12px;font-weight:700;color:var(--grn);font-family:'DM Serif Display',serif;}
+  .sl-label{font-size:8px;color:var(--muted);}
+  .sl-high{font-size:10px;font-weight:700;color:var(--gold);}
+
+  /* Income card green */
+  .income-card{background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid #86EFAC;border-radius:15px;padding:13px 14px;margin-bottom:10px;}
+  .ic-title{font-size:12px;font-weight:700;color:#14532D;font-family:'DM Serif Display',serif;margin-bottom:9px;}
+  .ic-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(134,239,172,0.4);}
+  .ic-row:last-child{border-bottom:none;}
+  .ic-k{font-size:10px;color:#166534;font-weight:600;}
+  .ic-v{font-size:10px;font-weight:700;color:#15803D;}
+  .ic-v.warn{color:var(--gold);}
+  .ic-v.bad{color:var(--red);}
+
+  /* Saved section */
+  .saved-section{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:10px;display:none;}
+  .saved-section.has-saves{display:block;}
+  .saved-item{background:#F8FAFF;border-radius:10px;padding:10px 12px;margin-bottom:7px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .saved-item:last-child{margin-bottom:0;}
+  .si-title{font-size:11px;font-weight:700;color:var(--navy);}
+  .si-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+  .si-del{font-size:14px;cursor:pointer;color:var(--red);padding:2px 5px;opacity:.6;}
+
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#0B1D3A;color:#fff;padding:9px 18px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:200;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;box-shadow:0 -4px 20px rgba(11,29,58,0.07);z-index:100;}
+  .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .ni-ic{font-size:18px;}
+  .ni-lb{font-size:10px;font-weight:600;color:var(--muted);}
+  .ni.active .ni-lb{color:var(--grn);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .animate{animation:fadeUp .32s ease both .04s;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hdr-top">
+    <a href="us_usda_loan_calc.html" class="icon-btn" style="text-decoration:none;">←</a>
+    <div class="hdr-center">
+      <div class="hdr-flag">📋</div>
+      <div class="hdr-title">2025 Income Limits</div>
+      <div class="hdr-sub">USDA 502 Guaranteed · By County / Area</div>
+    </div>
+    <div class="icon-btn">ℹ️</div>
+  </div>
+  <div class="rate-strip">
+    <div class="rs"><div class="rs-l">1-Person</div><div class="rs-v">$103.5K</div><div class="rs-n">Standard</div></div>
+    <div class="rs"><div class="rs-l">4-Person</div><div class="rs-v gold">$140.6K</div><div class="rs-n">Standard</div></div>
+    <div class="rs"><div class="rs-l">8-Person</div><div class="rs-v">$185.6K</div><div class="rs-n">Standard</div></div>
+    <div class="rs"><div class="rs-l">Updated</div><div class="rs-v">Oct 2024</div><div class="rs-n">FY 2025</div></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="sec">Lookup Your Limit</div>
+
+  <div class="inp-grid animate">
+    <div class="inp-box">
+      <label>State</label>
+      <select id="stateSelect" onchange="updateCounties()">
+        <option value="">Select State</option>
+        <option value="AL">Alabama</option>
+        <option value="AK">Alaska</option>
+        <option value="AZ">Arizona</option>
+        <option value="AR">Arkansas</option>
+        <option value="CA">California</option>
+        <option value="CO">Colorado</option>
+        <option value="FL">Florida</option>
+        <option value="GA">Georgia</option>
+        <option value="ID">Idaho</option>
+        <option value="IL">Illinois</option>
+        <option value="IN">Indiana</option>
+        <option value="IA">Iowa</option>
+        <option value="KS">Kansas</option>
+        <option value="KY">Kentucky</option>
+        <option value="LA">Louisiana</option>
+        <option value="ME">Maine</option>
+        <option value="MD">Maryland</option>
+        <option value="MI">Michigan</option>
+        <option value="MN">Minnesota</option>
+        <option value="MS">Mississippi</option>
+        <option value="MO">Missouri</option>
+        <option value="MT">Montana</option>
+        <option value="NE">Nebraska</option>
+        <option value="NV">Nevada</option>
+        <option value="NH">New Hampshire</option>
+        <option value="NJ">New Jersey</option>
+        <option value="NM">New Mexico</option>
+        <option value="NY">New York</option>
+        <option value="NC">North Carolina</option>
+        <option value="ND">North Dakota</option>
+        <option value="OH">Ohio</option>
+        <option value="OK">Oklahoma</option>
+        <option value="OR">Oregon</option>
+        <option value="PA">Pennsylvania</option>
+        <option value="SC">South Carolina</option>
+        <option value="SD">South Dakota</option>
+        <option value="TN">Tennessee</option>
+        <option value="TX">Texas</option>
+        <option value="UT">Utah</option>
+        <option value="VT">Vermont</option>
+        <option value="VA">Virginia</option>
+        <option value="WA">Washington</option>
+        <option value="WV">West Virginia</option>
+        <option value="WI">Wisconsin</option>
+        <option value="WY">Wyoming</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>County / Area Type</label>
+      <select id="countySelect">
+        <option value="standard">Standard County</option>
+        <option value="high_cost">High-Cost County</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>Household Size</label>
+      <select id="hhSize">
+        <option value="1">1 Person</option>
+        <option value="2">2 People</option>
+        <option value="3">3 People</option>
+        <option value="4" selected>4 People</option>
+        <option value="5">5 People</option>
+        <option value="6">6 People</option>
+        <option value="7">7 People</option>
+        <option value="8">8+ People</option>
+      </select>
+    </div>
+    <div class="inp-box">
+      <label>Your Annual Income ($)</label>
+      <input type="number" id="myIncome" value="85000" placeholder="85000">
+    </div>
+  </div>
+  <button class="lookup-btn animate" onclick="lookupLimit()">📋 Look Up My Income Limit</button>
+
+  <!-- Dynamic result -->
+  <div class="result-hero animate" id="resultHero" style="margin-top:10px;">
+    <button class="save-btn" id="saveBtn" onclick="saveResult()">🔖 Save</button>
+    <div class="rh-label" id="heroLabel">Income Limit for 4-Person Household</div>
+    <div class="rh-main" id="heroLimit">$140,550</div>
+    <div class="rh-sub" id="heroSub">Standard County · 502 Guaranteed · FY 2025</div>
+    <div class="status-row" id="statusRow">
+      <span class="status-chip sc-green" id="statusChip">✅ Eligible</span>
+      <span class="status-chip sc-gold" id="ratioChip">60.5% of limit</span>
+    </div>
+  </div>
+
+  <!-- HH size grid -->
+  <div class="sec">All Household Sizes — Current Lookup</div>
+  <div class="hh-grid animate" id="hhGrid">
+    <!-- generated by JS -->
+  </div>
+
+  <!-- Income gauge -->
+  <div class="gauge-card animate">
+    <div class="chart-title">🎯 Your Income vs. Limit</div>
+    <div class="gauge-wrap">
+      <div class="gauge-track">
+        <div class="gauge-needle" id="gaugeNeedle"></div>
+        <div class="gauge-center"></div>
+      </div>
+    </div>
+    <div class="gauge-labels"><div class="gl">$0</div><div class="gl">50%</div><div class="gl">100%+</div></div>
+    <div class="gauge-status">
+      <div class="gs-val" id="gaugeVal" style="color:var(--grn);">—</div>
+      <div class="gs-label" id="gaugeLabel">Enter your income above to see gauge</div>
+    </div>
+  </div>
+
+  <!-- Income breakdown card -->
+  <div class="income-card animate" id="incomeCard">
+    <div class="ic-title">🌾 USDA 2025 Income Eligibility (502 Guaranteed)</div>
+    <div class="ic-row"><div class="ic-k">Your Household Income</div><div class="ic-v" id="myIncomeLine">$85,000 / yr</div></div>
+    <div class="ic-row"><div class="ic-k">Income Limit for HH Size</div><div class="ic-v" id="limitLine">$140,550 (4-person)</div></div>
+    <div class="ic-row"><div class="ic-k">Eligibility Status</div><div class="ic-v" id="statusLine">—</div></div>
+    <div class="ic-row"><div class="ic-k">Income to Limit Ratio</div><div class="ic-v" id="ratioLine">—</div></div>
+    <div class="ic-row"><div class="ic-k">Room Under Limit</div><div class="ic-v" id="roomLine">—</div></div>
+  </div>
+
+  <!-- Full table: Guaranteed -->
+  <div class="sec">Full 2025 Income Limits Table — 502 Guaranteed</div>
+  <div class="table-card animate">
+    <div class="table-hdr">
+      <div>
+        <div class="th-title">502 Guaranteed — Standard Areas</div>
+        <div class="th-sub">≤115% Area Median Income · FY 2025 · USDA RD</div>
+      </div>
+    </div>
+    <div class="table-col-hdr">
+      <div class="tc-h">HH Size</div>
+      <div class="tc-h">1–4</div>
+      <div class="tc-h">5</div>
+      <div class="tc-h">6</div>
+      <div class="tc-h">8+</div>
+    </div>
+    <div class="table-row">
+      <div class="tc">Standard</div>
+      <div class="tc highlight">$103.5K</div>
+      <div class="tc">$151.8K</div>
+      <div class="tc">$163.1K</div>
+      <div class="tc">$185.6K</div>
+    </div>
+    <div class="table-row">
+      <div class="tc">High Cost</div>
+      <div class="tc highlight">$135.6K</div>
+      <div class="tc">$208.9K</div>
+      <div class="tc">$224.3K</div>
+      <div class="tc">$255.1K</div>
+    </div>
+  </div>
+
+  <!-- Full 8-column table -->
+  <div class="table-card animate">
+    <div class="table-hdr">
+      <div>
+        <div class="th-title">All 8 Household Sizes</div>
+        <div class="th-sub">Standard vs. High-Cost · 502 Guaranteed · FY2025</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:9.5px;">
+        <thead>
+          <tr style="background:#F0F4FF;">
+            <th style="padding:8px 10px;text-align:left;font-size:8px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);">HH</th>
+            <th style="padding:8px 6px;text-align:center;font-size:8px;color:var(--grn);text-transform:uppercase;border-bottom:1px solid var(--border);">Standard</th>
+            <th style="padding:8px 6px;text-align:center;font-size:8px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--border);">High Cost</th>
+          </tr>
+        </thead>
+        <tbody id="fullTable">
+          <!-- generated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bar chart: limit by HH size -->
+  <div class="chart-card animate">
+    <div class="chart-title">📊 Income Limits by Household Size (2025)</div>
+    <div class="bar-row">
+      <div class="bar-label">1 Person</div>
+      <div class="bar-track"><div class="bar-fill-a" style="width:56%;"></div></div>
+      <div class="bar-val">$103.5K</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">2 Person</div>
+      <div class="bar-track"><div class="bar-fill-a" style="width:61%;"></div></div>
+      <div class="bar-val">$112.5K</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">3 Person</div>
+      <div class="bar-track"><div class="bar-fill-a" style="width:68%;"></div></div>
+      <div class="bar-val">$126.5K</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">4 Person</div>
+      <div class="bar-track"><div class="bar-fill-a" style="width:76%;"></div></div>
+      <div class="bar-val">$140.6K</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">5 Person</div>
+      <div class="bar-track"><div class="bar-fill-b" style="width:82%;"></div></div>
+      <div class="bar-val">$151.8K</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">6 Person</div>
+      <div class="bar-track"><div class="bar-fill-b" style="width:88%;"></div></div>
+      <div class="bar-val">$163.1K</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">7 Person</div>
+      <div class="bar-track"><div class="bar-fill-b" style="width:94%;"></div></div>
+      <div class="bar-val">$174.3K</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">8+ Person</div>
+      <div class="bar-track"><div class="bar-fill-b" style="width:100%;"></div></div>
+      <div class="bar-val">$185.6K</div>
+    </div>
+    <div style="display:flex;gap:14px;margin-top:8px;">
+      <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:3px;background:linear-gradient(90deg,#15803D,#22C55E);"></div><div style="font-size:8.5px;color:var(--muted);">1–4 person</div></div>
+      <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:3px;background:linear-gradient(90deg,#1B3F72,#3B82F6);"></div><div style="font-size:8.5px;color:var(--muted);">5–8 person</div></div>
+    </div>
+  </div>
+
+  <!-- Notable high-cost counties -->
+  <div class="sec">Notable High-Cost Counties (2025)</div>
+  <div class="state-card animate">
+    <div class="table-hdr" style="border-radius:0;">
+      <div>
+        <div class="th-title">High-Cost Area Limits (4-Person HH)</div>
+        <div class="th-sub">502 Guaranteed · USDA RD FY 2025</div>
+      </div>
+    </div>
+    <div class="state-row">
+      <div><div class="state-name">San Diego Co., CA</div><div class="state-county">High Cost · California</div></div>
+      <div class="state-limits"><div class="sl-high">$193,550</div><div class="sl-label">4-person limit</div></div>
+    </div>
+    <div class="state-row">
+      <div><div class="state-name">King County, WA</div><div class="state-county">High Cost · Washington</div></div>
+      <div class="state-limits"><div class="sl-high">$193,550</div><div class="sl-label">4-person limit</div></div>
+    </div>
+    <div class="state-row">
+      <div><div class="state-name">Maui County, HI</div><div class="state-county">High Cost · Hawaii</div></div>
+      <div class="state-limits"><div class="sl-high">$193,550</div><div class="sl-label">4-person limit</div></div>
+    </div>
+    <div class="state-row">
+      <div><div class="state-name">Loudoun County, VA</div><div class="state-county">High Cost · Virginia</div></div>
+      <div class="state-limits"><div class="sl-high">$193,550</div><div class="sl-label">4-person limit</div></div>
+    </div>
+    <div class="state-row">
+      <div><div class="state-name">Douglas County, CO</div><div class="state-county">High Cost · Colorado</div></div>
+      <div class="state-limits"><div class="sl-high">$193,550</div><div class="sl-label">4-person limit</div></div>
+    </div>
+    <div class="state-row">
+      <div><div class="state-name">Travis County, TX</div><div class="state-county">Standard · Texas (rural)</div></div>
+      <div class="state-limits"><div class="sl-val">$140,550</div><div class="sl-label">4-person limit</div></div>
+    </div>
+    <div class="state-row">
+      <div><div class="state-name">Shelby County, TN</div><div class="state-county">Standard · Tennessee</div></div>
+      <div class="state-limits"><div class="sl-val">$140,550</div><div class="sl-label">4-person limit</div></div>
+    </div>
+    <div class="state-row">
+      <div><div class="state-name">Wake County, NC</div><div class="state-county">Standard · North Carolina</div></div>
+      <div class="state-limits"><div class="sl-val">$140,550</div><div class="sl-label">4-person limit</div></div>
+    </div>
+  </div>
+
+  <!-- Saved lookups -->
+  <div class="saved-section" id="savedSection">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📂 Saved Lookups</div>
+    <div id="savedList"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bnav">
+  <div class="ni"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
+  <div class="ni"><div class="ni-ic">🗺️</div><div class="ni-lb">Map</div></div>
+  <div class="ni"><div class="ni-ic">🔖</div><div class="ni-lb">Saved</div></div>
+  <div class="ni active"><div class="ni-ic">📋</div><div class="ni-lb">Limits</div></div>
+  <div class="ni"><div class="ni-ic">⚙️</div><div class="ni-lb">Settings</div></div>
+</div>
+
+<script>
+const limitsData = {
+  standard: [103500, 112450, 126500, 140550, 151800, 163050, 174300, 185550],
+  high_cost: [135600, 154900, 174250, 193550, 208900, 224300, 239650, 255050]
+};
+
+const icons = ['🧍','👫','👨‍👩‍👦','👨‍👩‍👧‍👦','👨‍👩‍👧‍👦','👨‍👩‍👧‍👦','👨‍👩‍👧‍👦','👨‍👩‍👧‍👦'];
+const sizeLabels = ['1 Person','2 People','3 People','4 People','5 People','6 People','7 People','8+ People'];
+
+let savedLookups = JSON.parse(localStorage.getItem('usda_limits_saves')||'[]');
+
+function buildFullTable(){
+  const tb = document.getElementById('fullTable');
+  tb.innerHTML = limitsData.standard.map((v,i)=>`
+    <tr style="${i%2===0?'background:#FAFBFF;':''}">
+      <td style="padding:8px 10px;font-size:10px;font-weight:700;color:var(--navy);">${sizeLabels[i]}</td>
+      <td style="padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:var(--grn);">$${v.toLocaleString()}</td>
+      <td style="padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:var(--gold);">$${limitsData.high_cost[i].toLocaleString()}</td>
+    </tr>`).join('');
+}
+
+function buildHHGrid(type, selectedSize){
+  const limits = limitsData[type] || limitsData.standard;
+  const grid = document.getElementById('hhGrid');
+  grid.innerHTML = limits.map((v,i)=>`
+    <div class="hh-card ${i===(selectedSize-1)?'active':''}" onclick="selectHHSize(${i+1})">
+      <div class="hh-icon">${icons[i]}</div>
+      <div class="hh-size">${i+1}${i===7?'+':''} Per</div>
+      <div class="hh-limit">$${Math.round(v/1000)}K</div>
+      <div class="hh-type">Guaranteed</div>
+    </div>`).join('');
+}
+
+function selectHHSize(size){
+  document.getElementById('hhSize').value = size;
+  lookupLimit();
+}
+
+function updateCounties(){
+  // In a full app, this would load county-specific data
+}
+
+function lookupLimit(){
+  const state = document.getElementById('stateSelect').value;
+  const county = document.getElementById('countySelect').value;
+  const size = parseInt(document.getElementById('hhSize').value)||4;
+  const income = parseFloat(document.getElementById('myIncome').value)||0;
+  const idx = Math.min(size-1,7);
+  const limit = limitsData[county][idx];
+  const eligible = income <= limit;
+  const ratio = income > 0 ? ((income/limit)*100).toFixed(1) : 0;
+  const room = limit - income;
+
+  // Show hero
+  const hero = document.getElementById('resultHero');
+  hero.className = 'result-hero show animate';
+
+  document.getElementById('heroLabel').textContent = `Income Limit for ${sizeLabels[idx]}`;
+  document.getElementById('heroLimit').textContent = '$'+limit.toLocaleString();
+  document.getElementById('heroSub').textContent = `${county==='high_cost'?'High-Cost':'Standard'} County · 502 Guaranteed · FY 2025${state?' · '+state:''}`;
+
+  const sc = document.getElementById('statusChip');
+  const rc = document.getElementById('ratioChip');
+  if(income > 0){
+    sc.textContent = eligible ? '✅ Eligible' : '❌ Over Limit';
+    sc.className = 'status-chip '+(eligible?'sc-green':'sc-red');
+    rc.textContent = ratio+'% of limit';
+    rc.className = 'status-chip '+(eligible?'sc-gold':'sc-red');
+  } else {
+    sc.textContent = '📋 FY 2025 Limit';
+    sc.className = 'status-chip sc-gold';
+    rc.style.display='none';
+  }
+
+  // HH grid
+  buildHHGrid(county, size);
+
+  // Gauge
+  if(income > 0){
+    const pct = Math.min(parseFloat(ratio),150);
+    const angle = -90+(pct/150)*150;
+    document.getElementById('gaugeNeedle').style.transform=`rotate(${angle}deg)`;
+    const gv=document.getElementById('gaugeVal');
+    gv.textContent=ratio+'% of limit';
+    gv.style.color=eligible?'var(--grn)':'#B91C1C';
+    document.getElementById('gaugeLabel').textContent=eligible?'Within USDA income limit':'Exceeds USDA income limit';
+  }
+
+  // Income card
+  document.getElementById('myIncomeLine').textContent = income>0?'$'+income.toLocaleString()+' / yr':'Not entered';
+  document.getElementById('limitLine').textContent = '$'+limit.toLocaleString()+` (${sizeLabels[idx]})`;
+  const sl = document.getElementById('statusLine');
+  if(income>0){
+    sl.textContent = eligible?'✅ Within limit':'❌ Exceeds limit';
+    sl.className = 'ic-v'+(eligible?'':' bad');
+  } else {
+    sl.textContent='Enter income above';
+    sl.className='ic-v';
+  }
+  document.getElementById('ratioLine').textContent = income>0?(ratio+'% – '+(eligible?'Eligible':'Over cap')):'—';
+  document.getElementById('roomLine').textContent = income>0?(eligible?'$'+room.toLocaleString()+' under limit':'$'+Math.abs(room).toLocaleString()+' OVER limit'):'—';
+
+  showToast('Income limits loaded ✅');
+}
+
+function saveResult(){
+  const size = document.getElementById('hhSize').value;
+  const county = document.getElementById('countySelect').value;
+  const income = document.getElementById('myIncome').value;
+  const idx = Math.min(parseInt(size)-1,7);
+  const limit = limitsData[county][idx];
+  const entry = {
+    id: Date.now(),
+    label: `${sizeLabels[idx]} · ${county==='high_cost'?'High-Cost':'Standard'}`,
+    detail: `Limit: $${limit.toLocaleString()} · Income: $${parseFloat(income).toLocaleString()}`,
+    date: new Date().toLocaleDateString()
+  };
+  savedLookups.unshift(entry);
+  if(savedLookups.length>5) savedLookups=savedLookups.slice(0,5);
+  localStorage.setItem('usda_limits_saves',JSON.stringify(savedLookups));
+  renderSaved();
+  const btn=document.getElementById('saveBtn');
+  btn.classList.add('saved');btn.textContent='✅ Saved';
+  setTimeout(()=>{btn.classList.remove('saved');btn.textContent='🔖 Save';},2000);
+  showToast('Lookup saved!');
+}
+
+function renderSaved(){
+  const sec=document.getElementById('savedSection');
+  const list=document.getElementById('savedList');
+  if(!savedLookups.length){sec.classList.remove('has-saves');return;}
+  sec.classList.add('has-saves');
+  list.innerHTML=savedLookups.map(s=>`
+    <div class="saved-item">
+      <div><div class="si-title">${s.label}</div><div class="si-sub">${s.detail} · ${s.date}</div></div>
+      <div class="si-del" onclick="deleteSave(${s.id})">✕</div>
+    </div>`).join('');
+}
+
+function deleteSave(id){
+  savedLookups=savedLookups.filter(s=>s.id!==id);
+  localStorage.setItem('usda_limits_saves',JSON.stringify(savedLookups));
+  renderSaved();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// Init
+buildFullTable();
+buildHHGrid('standard',4);
+lookupLimit();
+renderSaved();
+</script>
+</body>
+</html>
