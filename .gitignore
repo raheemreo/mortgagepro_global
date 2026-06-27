@@ -90,3 +90,4 @@ secrets.properties
 android/secrets.properties
 ios/Flutter
 lib/firebase_options.dart
+firebase.json
