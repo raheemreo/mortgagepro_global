@@ -56,7 +56,9 @@ class AppNotification {
       ),
       read: map['read'] ?? false,
       category: map['category'] ?? 'general',
-      data: map['data'] != null ? Map<String, dynamic>.from(map['data']) : const {},
+      data: map['data'] != null
+          ? Map<String, dynamic>.from(map['data'])
+          : const {},
     );
   }
 }

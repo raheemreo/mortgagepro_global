@@ -1830,12 +1830,6 @@ class _GlobalTabState extends State<_GlobalTab>
                 onTap: () => context.push('/global'),
               ),
               _InfoItem(
-                icon: '📉',
-                name: 'Central Bank Rate Tracker',
-                sub: 'Fed · BoC · BoE · RBA · RBNZ · ECB',
-                onTap: () => context.push('/global'),
-              ),
-              _InfoItem(
                 icon: '💱',
                 name: 'Currency Converter',
                 sub: 'USD · CAD · GBP · AUD · NZD · EUR · INR',
