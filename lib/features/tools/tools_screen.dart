@@ -801,6 +801,18 @@ const List<_ToolDef> _allTools = [
     route: '/tool/india/in_nri_home_loan',
     keywords: ['nri', 'home loan', 'india', 'non resident', 'eligibility'],
   ),
+  _ToolDef(
+    id: 'global_top_lenders',
+    icon: '🏛️',
+    name: 'Top Lenders',
+    description: 'Top lenders across 5 countries',
+    country: 'global',
+    countryName: 'Global',
+    category: 'Market Tools',
+    variant: ToolCardVariant.gold,
+    route: '/global/top-lenders',
+    keywords: ['lenders', 'top lenders', 'global', 'banks', 'rates'],
+  ),
 ];
 
 // ── Country Meta details (flag, rate, label) matching HTML ─────────────────

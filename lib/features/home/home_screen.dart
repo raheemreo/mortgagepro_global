@@ -307,7 +307,8 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                         const Spacer(),
                         Consumer(
                           builder: (context, ref, child) {
-                            final unreadCount = ref.watch(unreadNotificationsCountProvider);
+                            final unreadCount =
+                                ref.watch(unreadNotificationsCountProvider);
                             return GestureDetector(
                               onTap: () => context.push('/notifications'),
                               child: Stack(
@@ -317,13 +318,16 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                                     width: 34,
                                     height: 34,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.12),
+                                      color:
+                                          Colors.white.withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(9),
                                       border: Border.all(
-                                          color: Colors.white.withValues(alpha: 0.18)),
+                                          color: Colors.white
+                                              .withValues(alpha: 0.18)),
                                     ),
                                     alignment: Alignment.center,
-                                    child: const Text('🔔', style: TextStyle(fontSize: 15)),
+                                    child: const Text('🔔',
+                                        style: TextStyle(fontSize: 15)),
                                   ),
                                   if (unreadCount > 0)
                                     Positioned(
@@ -1820,8 +1824,8 @@ class _GlobalTabState extends State<_GlobalTab>
               _InfoItem(
                 icon: '🏛️',
                 name: 'Top Mortgage Lenders',
-                sub: 'USA · Canada · UK · Australia · NZ',
-                onTap: () => context.push('/usa'),
+                sub: 'USA · Canada · UK · Australia · NZ · Europe · India',
+                onTap: () => context.push('/global/top-lenders'),
               ),
               _InfoItem(
                 icon: '🏡',

@@ -78,6 +78,7 @@ import '../features/usa/screens/usa_pmi_bpmi_screen.dart';
 import '../features/usa/screens/usa_pmi_lpmi_screen.dart';
 import '../features/usa/screens/usa_pmi_spmi_screen.dart';
 import '../features/usa/screens/usa_pmi_split_screen.dart';
+import '../features/global/screens/global_top_lenders_screen.dart';
 
 import 'package:mortgagepro_global/services/analytics_service.dart';
 
@@ -178,6 +179,13 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _slideTransition(
         state,
         const GlobalScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/global/top-lenders',
+      pageBuilder: (context, state) => _slideTransition(
+        state,
+        const GlobalTopLendersScreen(),
       ),
     ),
     GoRoute(
