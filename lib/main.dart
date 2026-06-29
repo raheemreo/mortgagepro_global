@@ -93,10 +93,18 @@ class _AppInitializerState extends State<_AppInitializer> {
   Future<void> _runInitialization() async {
     // ── Step 2: Firebase.initializeApp() ─────────────────────────────────
     try {
-      if (Firebase.apps.isEmpty) {
+      try {
         await Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
         );
+      } catch (e) {
+        if (e is FirebaseException && e.code == 'duplicate-app') {
+          debugPrint('Firebase already initialized (duplicate-app)');
+        } else if (e.toString().contains('duplicate-app')) {
+          debugPrint('Firebase already initialized (duplicate-app string)');
+        } else {
+          rethrow;
+        }
       }
       await NotificationService.instance.init();
     } catch (e, s) {
