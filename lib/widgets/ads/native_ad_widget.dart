@@ -123,9 +123,9 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
     final double expectedHeight = switch (widget.adType) {
       'compactListTile' => 160.0,
       'contentAd' => 180.0,
-      'mediumCard' => 250.0,
+      'mediumCard' => 268.0,
       'largeBanner' => 360.0,
-      _ => 250.0,
+      _ => 268.0,
     };
 
     final bool showAdWidget = _isLoaded && _ad != null;
