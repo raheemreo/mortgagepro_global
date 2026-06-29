@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme/text_styles.dart';
 import '../../providers/settings_provider.dart';
@@ -267,6 +268,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 // ── Privacy & Legal ────────────────────────────────────
                 const _SecLabel('Privacy & Legal'),
                 _SetGroup(children: [
+                  _SetItem(
+                    icon: '🌐',
+                    iconBg: const Color(0xFFECFDF5),
+                    name: 'Visit Our Website',
+                    desc: 'mortgageproglobal.com',
+                    trailing: const _SetArrow(),
+                    onTap: () => _launchURL('https://mortgageproglobal.com'),
+                  ),
                   _SetItem(
                     icon: '🛡️',
                     iconBg: const Color(0xFFF0FDF4),
@@ -1249,6 +1258,113 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
   }
 
+  Future<void> _launchURL(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('Could not launch $urlString: $e');
+    }
+  }
+
+  Future<void> _launchEmail(String emailAddress) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: emailAddress,
+    );
+    try {
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+      }
+    } catch (e) {
+      debugPrint('Could not launch email $emailAddress: $e');
+    }
+  }
+
+  Widget _buildBodyText(String text, bool isDark) {
+    final regex = RegExp(
+      r'((?:https?://)?(?:www\.)?mortgageproglobal\.com(?:/[^\s]*)?)|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})',
+      caseSensitive: false,
+    );
+
+    final matches = regex.allMatches(text);
+    if (matches.isEmpty) {
+      return Text(
+        text,
+        style: AppTextStyles.dmSans(
+          size: 11,
+          height: 1.5,
+          color: isDark ? Colors.white60 : const Color(0xFF5B6E8F),
+        ),
+      );
+    }
+
+    final List<InlineSpan> spans = [];
+    int lastIndex = 0;
+
+    for (final match in matches) {
+      if (match.start > lastIndex) {
+        spans.add(TextSpan(text: text.substring(lastIndex, match.start)));
+      }
+
+      final matchText = match.group(0)!;
+      final isEmail = matchText.contains('@');
+
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: GestureDetector(
+            onTap: () {
+              if (isEmail) {
+                _launchEmail(matchText);
+              } else {
+                var url = matchText;
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                  url = 'https://$url';
+                }
+                _launchURL(url);
+              }
+            },
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: Text(
+                matchText,
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  height: 1.5,
+                  color: const Color(0xFF0D9488),
+                  weight: FontWeight.w700,
+                ).copyWith(
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      lastIndex = match.end;
+    }
+
+    if (lastIndex < text.length) {
+      spans.add(TextSpan(text: text.substring(lastIndex)));
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: AppTextStyles.dmSans(
+          size: 11,
+          height: 1.5,
+          color: isDark ? Colors.white60 : const Color(0xFF5B6E8F),
+        ),
+        children: spans,
+      ),
+    );
+  }
+
   Widget _legalSection(String title, String body) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
@@ -1265,14 +1381,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            body,
-            style: AppTextStyles.dmSans(
-              size: 11,
-              height: 1.5,
-              color: isDark ? Colors.white60 : const Color(0xFF5B6E8F),
-            ),
-          ),
+          _buildBodyText(body, isDark),
         ],
       ),
     );
