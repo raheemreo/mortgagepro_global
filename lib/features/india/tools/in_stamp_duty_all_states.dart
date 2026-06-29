@@ -584,6 +584,7 @@ class _INStampDutyAllStatesState extends ConsumerState<INStampDutyAllStates> {
         TextEditingController(text: 'Stamp Duty Snapshot - ${state['name']}');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_stamp_duty_all_states'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

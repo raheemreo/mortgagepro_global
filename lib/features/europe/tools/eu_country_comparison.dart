@@ -144,6 +144,7 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
     final labelCtrl = TextEditingController(text: 'Europe Comparison');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/eu_country_comparison'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

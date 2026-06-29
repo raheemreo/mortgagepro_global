@@ -125,6 +125,7 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
     final labelCtrl = TextEditingController(text: 'Canada Mortgage');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/ca_mortgage_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -740,7 +741,8 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
               GestureDetector(
                 onTap: () async {
                   final confirmed = await showDialog<bool>(
-                    context: context,
+      context: context,
+      routeSettings: const RouteSettings(name: '/dialog/ca_mortgage_calc/save'),
                     builder: (context) => AlertDialog(
                       backgroundColor: cardBg,
                       title: Text('Clear All Saved',

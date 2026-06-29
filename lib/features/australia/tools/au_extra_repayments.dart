@@ -104,6 +104,7 @@ class _AUExtraRepaymentsState extends ConsumerState<AUExtraRepayments> {
     final labelCtrl = TextEditingController(text: 'Extra Repay Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_extra_repayments/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

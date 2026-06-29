@@ -136,6 +136,7 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
     final labelCtrl = TextEditingController(text: 'Construction Loan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_construction_loan_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

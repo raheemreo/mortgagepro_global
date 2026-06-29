@@ -78,6 +78,7 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
     final labelCtrl = TextEditingController(text: 'My Borrowing Power');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_affordability'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

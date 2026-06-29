@@ -59,6 +59,7 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
     final labelCtrl = TextEditingController(text: 'NZ FHB Eligibility');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_first_home_buyer/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

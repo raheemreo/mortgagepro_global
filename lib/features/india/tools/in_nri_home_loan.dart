@@ -106,6 +106,7 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_nri_home_loan'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

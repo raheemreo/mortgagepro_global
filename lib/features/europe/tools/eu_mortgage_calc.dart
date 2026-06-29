@@ -209,6 +209,7 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
     final labelCtrl = TextEditingController(text: 'Europe Mortgage');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/eu_mortgage_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

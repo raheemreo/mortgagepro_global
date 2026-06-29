@@ -61,6 +61,7 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
     final labelCtrl = TextEditingController(text: 'NZ DTI Snapshot');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_dti_calculator/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

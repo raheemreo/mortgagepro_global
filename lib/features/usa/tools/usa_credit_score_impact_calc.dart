@@ -101,6 +101,7 @@ class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactC
     final labelCtrl = TextEditingController(text: 'Credit Score Impact');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_credit_score_impact_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

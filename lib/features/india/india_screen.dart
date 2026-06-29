@@ -97,6 +97,7 @@ class _IndiaScreenState extends State<IndiaScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/india/emi/result'),
       builder: (_) => _IndiaCalcSheet(
           loanAmount: _loanAmount, rate: _ratePercent, termYears: _termYears),
     );

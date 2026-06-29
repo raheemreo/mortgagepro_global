@@ -52,6 +52,7 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_moneyhub_mortgage'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -161,6 +162,7 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
     // Confirm first
     final confirm = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_moneyhub_mortgage'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         title: Text('Clear Calculations', style: AppTextStyles.playfair(size: 16, color: widget.theme.getTextColor(context))),

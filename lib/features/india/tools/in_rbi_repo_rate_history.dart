@@ -57,6 +57,7 @@ class _INRBIRepoRateHistoryState extends ConsumerState<INRBIRepoRateHistory> {
     final labelCtrl = TextEditingController(text: 'RBI Repo Rate Snapshot');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_rbi_repo_rate_history'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

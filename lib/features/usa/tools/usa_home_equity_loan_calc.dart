@@ -132,6 +132,7 @@ class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
     final labelCtrl = TextEditingController(text: 'Home Equity Loan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_home_equity_loan_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

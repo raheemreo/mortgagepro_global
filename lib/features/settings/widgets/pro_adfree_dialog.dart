@@ -32,7 +32,8 @@ void showProDialog(
   required VoidCallback onWatchAdvertisement,
 }) {
   showDialog(
-    context: context,
+      context: context,
+      routeSettings: const RouteSettings(name: '/dialog/pro_adfree_dialog'),
     barrierDismissible: true,
     builder: (context) => _ProAdFreeDialog(
       onWatchAdvertisement: onWatchAdvertisement,

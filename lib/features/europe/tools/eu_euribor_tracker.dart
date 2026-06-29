@@ -100,6 +100,7 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
     final labelCtrl = TextEditingController(text: 'Euribor mortgage analysis');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/eu_euribor_tracker'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

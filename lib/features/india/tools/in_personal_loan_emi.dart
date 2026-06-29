@@ -136,6 +136,7 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
     final labelCtrl = TextEditingController(text: 'Personal Loan EMI');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_personal_loan_emi/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

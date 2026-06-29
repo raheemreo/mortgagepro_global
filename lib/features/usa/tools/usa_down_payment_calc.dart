@@ -85,6 +85,7 @@ class _USADownPaymentCalcState extends ConsumerState<USADownPaymentCalc> {
     final labelCtrl = TextEditingController(text: 'Down Payment Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_down_payment_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

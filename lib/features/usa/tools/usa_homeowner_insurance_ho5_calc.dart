@@ -106,6 +106,7 @@ class _USAHomeownerInsuranceHo5CalcState extends ConsumerState<USAHomeownerInsur
     final labelCtrl = TextEditingController(text: 'HO-5 Premium Quote');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_homeowner_insurance_ho5_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

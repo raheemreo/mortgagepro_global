@@ -87,6 +87,7 @@ class _INUSDINRConverterState extends ConsumerState<INUSDINRConverter> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_usd_inr_converter'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

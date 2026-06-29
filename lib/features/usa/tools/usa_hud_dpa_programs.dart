@@ -307,6 +307,7 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
     final labelCtrl = TextEditingController(text: 'HUD DPA Eligibility');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_hud_dpa_programs'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

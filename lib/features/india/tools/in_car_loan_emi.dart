@@ -100,6 +100,7 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
     final labelCtrl = TextEditingController(text: 'Car Loan EMI');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_car_loan_emi'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

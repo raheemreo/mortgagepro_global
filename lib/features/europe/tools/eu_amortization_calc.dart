@@ -79,6 +79,7 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
     final labelCtrl = TextEditingController(text: 'Europe Amortization');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/eu_amortization_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

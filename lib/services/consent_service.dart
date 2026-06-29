@@ -48,6 +48,31 @@ class ConsentService {
   /// Triggered whenever consent settings change (e.g. form dismissal).
   VoidCallback? onConsentChanged;
 
+  final List<VoidCallback> _listeners = [];
+
+  void addListener(VoidCallback listener) {
+    _listeners.add(listener);
+  }
+
+  void removeListener(VoidCallback listener) {
+    _listeners.remove(listener);
+  }
+
+  void _notifyListeners() {
+    onConsentChanged?.call();
+    for (final listener in _listeners) {
+      try {
+        listener();
+      } catch (e, s) {
+        CrashlyticsService.recordError(
+          e,
+          s,
+          reason: 'ConsentService listener threw exception',
+        );
+      }
+    }
+  }
+
   // ── Public API ────────────────────────────────────────────────────────────
 
   /// True when the user has granted consent (or consent is not required
@@ -167,7 +192,7 @@ class ConsentService {
         'ConsentService: privacy form dismissed — status=${_currentStatus.name} isConsentGranted=$_isConsentGranted',
       );
 
-      onConsentChanged?.call();
+      _notifyListeners();
     } catch (e, s) {
       CrashlyticsService.recordError(
         e,

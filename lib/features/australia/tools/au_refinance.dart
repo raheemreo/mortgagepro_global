@@ -78,6 +78,7 @@ class _AURefinanceState extends ConsumerState<AURefinance> {
     final labelCtrl = TextEditingController(text: 'Refinance Scenario');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_refinance'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

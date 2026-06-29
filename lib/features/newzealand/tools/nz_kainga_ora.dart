@@ -69,6 +69,7 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
     final labelCtrl = TextEditingController(text: 'Kāinga Ora Eligibility');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_kainga_ora'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

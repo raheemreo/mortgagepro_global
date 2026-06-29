@@ -195,6 +195,7 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
     final labelCtrl = TextEditingController(text: 'Europe Non-Resident');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/eu_nonresident_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

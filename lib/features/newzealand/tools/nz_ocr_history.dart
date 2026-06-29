@@ -68,6 +68,7 @@ class _NZOCRHistoryState extends ConsumerState<NZOCRHistory> {
     final labelCtrl = TextEditingController(text: 'NZ OCR Snapshot');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_ocr_history'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

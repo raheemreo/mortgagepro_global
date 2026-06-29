@@ -100,6 +100,7 @@ class _USAFloodInsuranceCalcState extends ConsumerState<USAFloodInsuranceCalc> {
     final labelCtrl = TextEditingController(text: 'Flood Insurance');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_flood_insurance_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

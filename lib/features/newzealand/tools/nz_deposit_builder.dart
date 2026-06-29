@@ -66,6 +66,7 @@ class _NZDepositBuilderState extends ConsumerState<NZDepositBuilder> {
         TextEditingController(text: 'NZ Deposit Build: $_selectedGoalName');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_deposit_builder'),
       builder: (context) {
         return AlertDialog(
           backgroundColor: widget.theme.getCardColor(context),

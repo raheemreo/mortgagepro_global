@@ -49,6 +49,7 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
     final labelCtrl = TextEditingController(text: 'PMAY Housing for All (${d.name})');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_pmay_housing_for_all/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

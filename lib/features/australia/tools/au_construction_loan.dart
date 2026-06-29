@@ -101,6 +101,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
     final labelCtrl = TextEditingController(text: 'My Construction Loan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_construction_loan'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

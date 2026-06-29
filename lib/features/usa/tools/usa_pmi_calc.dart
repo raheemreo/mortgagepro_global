@@ -104,6 +104,7 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
     final labelCtrl = TextEditingController(text: 'PMI Calculator');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_pmi_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

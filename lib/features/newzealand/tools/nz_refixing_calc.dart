@@ -70,6 +70,7 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
     final labelCtrl = TextEditingController(text: 'NZ Refix Analysis');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_refixing_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

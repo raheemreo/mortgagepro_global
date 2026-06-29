@@ -58,6 +58,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
     final labelCtrl = TextEditingController(text: 'NZ Rental Investment');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_investment_property/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

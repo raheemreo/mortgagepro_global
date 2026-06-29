@@ -133,6 +133,7 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
     final labelCtrl = TextEditingController(text: 'EPF Calculator');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_epf_calculator'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -122,6 +122,7 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
     final labelCtrl = TextEditingController(text: 'Moving Cost Estimate');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_moving_cost_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

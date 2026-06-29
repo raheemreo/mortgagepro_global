@@ -82,6 +82,7 @@ class _UKScreenState extends ConsumerState<UKScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/uk/mortgage/result'),
       builder: (_) => UKMortgageCalcSheet(
         propertyValue: _propValue,
         depositPercent: _depositPct,
@@ -95,6 +96,7 @@ class _UKScreenState extends ConsumerState<UKScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/uk/stampduty/result'),
       builder: (_) => UKSDLTCalcSheet(
         propertyValue: _propValue,
       ),

@@ -57,6 +57,7 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
     final labelCtrl = TextEditingController(text: 'NZ Revolving Credit');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_revolving_credit/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

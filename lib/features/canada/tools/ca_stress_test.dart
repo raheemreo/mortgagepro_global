@@ -261,6 +261,7 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
     final labelCtrl = TextEditingController(text: 'Stress Test Result');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/ca_stress_test/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

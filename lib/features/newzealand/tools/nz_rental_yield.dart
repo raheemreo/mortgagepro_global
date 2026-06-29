@@ -52,6 +52,7 @@ class _NZRentalYieldCalcState extends ConsumerState<NZRentalYieldCalc> {
     final labelCtrl = TextEditingController(text: 'NZ Rental Yield');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_rental_yield/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

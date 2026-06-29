@@ -114,6 +114,7 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
     final labelCtrl = TextEditingController(text: 'Wildfire Rider Quote');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_homeowner_insurance_wildfire_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

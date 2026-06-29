@@ -36,6 +36,13 @@ class MainActivity : FlutterActivity() {
             MediumCardNativeAdFactory(context)
         )
 
+        // Register lenderNativeAd Custom Native Ad Factory
+        GoogleMobileAdsPlugin.registerNativeAdFactory(
+            flutterEngine,
+            "lenderNativeAd",
+            MediumCardNativeAdFactory(context)
+        )
+
         // Register largeBanner Custom Native Ad Factory
         GoogleMobileAdsPlugin.registerNativeAdFactory(
             flutterEngine,
@@ -52,6 +59,7 @@ class MainActivity : FlutterActivity() {
         GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "compactListTile")
         GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "contentAd")
         GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "mediumCard")
+        GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "lenderNativeAd")
         GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "largeBanner")
     }
 }

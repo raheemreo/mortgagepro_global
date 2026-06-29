@@ -67,6 +67,7 @@ class _NZAllRegionsState extends ConsumerState<NZAllRegions> {
     final labelCtrl = TextEditingController(text: 'NZ Regional Prices');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_all_regions'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

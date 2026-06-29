@@ -184,6 +184,7 @@ class _CALandTransferTaxState extends ConsumerState<CALandTransferTax> {
     final labelCtrl = TextEditingController(text: 'Land Transfer Tax');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/ca_land_transfer_tax'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

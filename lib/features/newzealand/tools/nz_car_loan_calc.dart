@@ -91,6 +91,7 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
         text: 'NZ $_selectedVehicleIcon $_selectedVehicleName Loan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_car_loan_calc/save'),
       builder: (context) {
         return AlertDialog(
           backgroundColor: widget.theme.getCardColor(context),

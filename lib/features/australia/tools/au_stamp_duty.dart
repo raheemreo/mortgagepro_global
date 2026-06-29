@@ -231,6 +231,7 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
         TextEditingController(text: 'Stamp Duty - $_selectedState');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_stamp_duty'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

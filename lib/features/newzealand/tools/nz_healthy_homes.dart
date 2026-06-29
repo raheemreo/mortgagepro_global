@@ -74,6 +74,7 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
     final labelCtrl = TextEditingController(text: 'Healthy Homes Report');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_healthy_homes'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

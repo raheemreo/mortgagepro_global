@@ -123,6 +123,7 @@ class _USAHoaLenderTreatmentScreenState extends ConsumerState<USAHoaLenderTreatm
     final labelCtrl = TextEditingController(text: 'HOA Lender DTI');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_hoa_lender_treatment_screen'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

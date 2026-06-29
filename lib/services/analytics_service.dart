@@ -1,145 +1,43 @@
 // lib/services/analytics_service.dart
 
+import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'analytics/analytics_calculator.dart';
-import 'analytics/analytics_country.dart';
-import 'analytics/analytics_feature.dart';
-import 'analytics/analytics_resource_category.dart';
-import 'analytics/analytics_screen.dart';
 import 'crashlytics_service.dart';
+import 'consent_service.dart';
+import 'package:mortgagepro_global/services/analytics/analytics_screen.dart';
 
 // ══════════════════════════════════════════════════════
-// ANALYTICS ARCHITECTURE RULES
+// ANALYTICS ARCHITECTURE RULES (PLAY STORE COMPLIANCE)
 //
 // 1. FirebaseAnalytics.instance must NEVER be called
 //    directly outside AnalyticsService — no exceptions.
 //
-// 2. AnalyticsService is the single source of truth
-//    for all analytics collection in this app.
+// 2. AnalyticsService is the single source of truth.
 //
-// 3. Reuse existing event methods before creating new
-//    ones. Check this file first.
+// 3. ZERO PII & FINANCIAL DATA:
+//    ✗ Never collect names, emails, phone numbers.
+//    ✗ Never collect exact mortgage amounts, income,
+//      property values, credit scores, or user-entered text.
+//    ✗ Never call setUserId().
+//    ✗ Never set user_property with identifying values.
 //
-// 4. Prefer event parameters over new event names.
-//    Avoid event proliferation.
+// 4. UMP Consent Gating:
+//    - Collection is disabled on app launch.
+//    - Enabled only if UMP consent is resolved as granted
+//      and the user has not opted out.
+//    - Opt-out is persisted in SharedPreferences.
 //
-// 5. Keep total distinct event names well below
-//    Firebase's 500-event limit.
-//    Current count: 12 / 500.
-//
-// 6. Every public method must be a safe no-op when
-//    analytics is disabled, uninitialized, or consent
-//    has not been granted. Never throw. Never crash.
-//
-// 7. Analytics data must NEVER influence:
-//      - Ad frequency or injection
-//      - Ad placement decisions
-//      - Reward eligibility
-//      - Navigation flow
-//      - Core calculator functionality
-//      - Any app behavior whatsoever
-//    Analytics is observational only. This rule
-//    applies permanently, including to all future
-//    monetization experiments.
-//
-// 8. NEVER manually collect or log:
-//      - IP addresses
-//      - Advertising IDs (GAID, IDFA)
-//      - Android ID, IMEI, device serial numbers
-//      - Firebase Installation IDs
-//      - Any device identifier of any kind
-//    Firebase handles its own identifier collection.
-//    Manual collection is an additional violation.
-//
-// 9. All string parameters must come from vocabulary
-//    constants — never freeform strings:
-//      screenName     → AnalyticsScreen constants
-//      country        → AnalyticsCountry constants
-//      calculatorType → AnalyticsCalculator constants
-//      category       → AnalyticsResourceCategory
-//      feature        → AnalyticsFeature constants
-//      newValue       → predefined label strings only
-//
-// 10. Crashlytics collection is governed by
-//     ConsentService and its own independent consent
-//     decision. AnalyticsService must not make any
-//     assumptions about Crashlytics consent state.
+// 5. Minimal Whitelisted Custom Events:
+//    - Only log: calculator_used, lender_viewed,
+//      external_link_opened, favorite_toggled,
+//      search_performed, consent_updated.
+//    - All other custom events are no-ops.
 // ══════════════════════════════════════════════════════
 
-// ══════════════════════════════════════════════════════
-// DATA COLLECTION NOTICE
-// Feeds Play Store Data Safety form and Privacy Policy.
-// Update this block when adding any event, parameter,
-// or user property.
-//
-// EVENTS COLLECTED (12 of Firebase's 500-event limit):
-//   country_tab_selected  → country_name,
-//                           previous_country
-//   calculator_opened     → calculator_type, country
-//   calculation_completed → calculator_type, country,
-//                           loan_amount_range
-//                           (bucketed, never raw)
-//   scroll_depth          → screen_name, depth_percent
-//   screen_time           → screen_name,
-//                           duration_seconds
-//   resource_clicked      → resource_name, country,
-//                           resource_category
-//   setting_changed       → setting_name,
-//                           new_value (predefined
-//                           label strings only)
-//   rewarded_ad_requested → (no parameters)
-//   rewarded_ad_shown     → (no parameters)
-//   rewarded_ad_completed → (no parameters)
-//   reward_granted        → (no parameters)
-//   feature_error         → feature, error_type
-//                           (runtimeType only)
-//
-// USER PROPERTIES (1 of Firebase's 25-property limit):
-//   preferred_country → AnalyticsCountry constant
-//
-// DATA NEVER COLLECTED (enforced in code):
-//   ✗ Names, emails, phone numbers, addresses
-//   ✗ Exact mortgage amounts, income, property values
-//   ✗ Interest rates or any user-entered numeric input
-//   ✗ User-entered free text of any kind
-//   ✗ Numeric strings resembling financial values
-//   ✗ Route paths, URLs, or query strings
-//   ✗ Advertising IDs, Android ID, IMEI,
-//     device serial numbers
-//   ✗ Firebase Installation IDs or device identifiers
-// ══════════════════════════════════════════════════════
-
-// ══════════════════════════════════════════════════════
-// OWNERSHIP BOUNDARY — AdFreeAnalyticsTracker
-//
-// AdFreeAnalyticsTracker owns:
-//   - Session grant events (adfree_session_started)
-//   - Ad-free session duration tracking
-//   - Session extension events
-//
-// AnalyticsService owns:
-//   - rewarded_ad_requested  (SDK load dispatched)
-//   - rewarded_ad_shown      (onAdShowedFullScreenContent)
-//   - rewarded_ad_completed  (onAdDismissedFullScreenContent)
-//   - reward_granted         (onUserEarnedReward only)
-//
-// These two must NEVER fire the same event name.
-// When in doubt, add to AdFreeAnalyticsTracker.
-// ══════════════════════════════════════════════════════
-
-/// AnalyticsService — centralised Firebase Analytics wrapper for
-/// Mortgage Pro Global.
-///
-/// Screen tracking strategy:
-///   • GoRouter push routes     → tracked automatically by [analyticsObserver].
-///   • StatefulShellRoute /
-///     ShellRoute branches      → observer does NOT fire; call [logScreenView()]
-///                                or use [ScreenTimerMixin] in the branch.
-///   • BottomNavigationBar tabs → call [logCountryTabSelected()] in the listener.
-///
-/// Never throws. Never crashes the app.
 class AnalyticsService {
   // ── Singleton ─────────────────────────────────────────────────────────────
   AnalyticsService._();
@@ -149,97 +47,94 @@ class AnalyticsService {
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
   // ── State ──────────────────────────────────────────────────────────────────
-
-  /// True once [init()] has completed successfully.
   bool _initialized = false;
+  bool _collectionEnabled = false;
 
-  /// True when the user has granted analytics consent.
-  /// Set from [ConsentService.instance.isConsentGranted] in [init()].
-  /// Can be updated at runtime via [updateConsentStatus()].
-  bool _consentGranted = false;
+  String? _lastScreenName;
+  DateTime? _lastLogTime;
+
+  DateTime? _lastTabLogTime;
 
   // ── Observer ─────────────────────────────────────────────────────────────
-
-  /// The sole [FirebaseAnalyticsObserver] for this app.
-  ///
-  /// Attach to GoRouter's observers list in app.dart:
-  ///   observers: [AnalyticsService.instance.analyticsObserver]
-  ///
-  /// Do NOT construct [FirebaseAnalyticsObserver] anywhere else.
-  late final FirebaseAnalyticsObserver analyticsObserver =
-      FirebaseAnalyticsObserver(analytics: _analytics);
+  
+  /// The custom [NavigatorObserver] that automatically tracks all route pushes
+  /// and replacements as screen_view events.
+  late final NavigatorObserver analyticsObserver = _AnalyticsRouteObserver();
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
-  /// Initialises analytics collection.
-  ///
-  /// Must run at Step 6 in main.dart — after ConsentService.init() (Step 5).
-  ///
-  /// WHY we do NOT gate this on ConsentService.isConsentGranted:
-  ///   Firebase Analytics SDK v11+ integrates with UMP automatically at the
-  ///   SDK level — it reads UMP signals from ConsentInformation internally.
-  ///   ConsentService.isConsentGranted reflects AD consent, not analytics
-  ///   consent. Gating setAnalyticsCollectionEnabled on ad consent:
-  ///     a) is architecturally incorrect (separate concerns),
-  ///     b) permanently disables analytics if UMP has any network error
-  ///        during first launch (isConsentGranted defaults to false),
-  ///     c) would disable analytics for users in non-regulated regions
-  ///        who never saw a consent form at all.
-  ///
-  /// Use updateConsentStatus(false) for explicit user opt-out of analytics
-  /// (a separate, user-initiated action from ad consent).
+  /// Initializes analytics collection and sets up consent gating.
   Future<void> init() async {
     try {
-      // Always enable collection — Firebase SDK reads UMP signals internally.
-      // In debug mode this also enables DebugView event streaming.
-      await _analytics.setAnalyticsCollectionEnabled(true);
+      final prefs = await SharedPreferences.getInstance();
+
+      // Step 1: Ensure disabled initially on launch (before consent is resolved)
+      await _analytics.setAnalyticsCollectionEnabled(false);
+
+      // Listen to consent changes at runtime (e.g. from the privacy options form)
+      ConsentService.instance.addListener(_handleConsentChanged);
+
+      // Step 3 & 4: Evaluate current consent and configure
+      await _evaluateConsentAndConfigure(prefs);
+
+      _initialized = true;
     } catch (e, s) {
-      // Log the failure but do NOT leave _initialized = false.
-      // Failing to call setAnalyticsCollectionEnabled is recoverable —
-      // Firebase SDK will use its default collection state (enabled).
       CrashlyticsService.recordError(
         e,
         s,
-        reason: 'AnalyticsService.init() — setAnalyticsCollectionEnabled failed',
+        reason: 'AnalyticsService.init() failed',
       );
     }
-    // Always mark as initialized and consent-granted so the guards pass.
-    // If the user later opts out of analytics explicitly, updateConsentStatus(false)
-    // is the correct mechanism — not a consent check during init().
-    _consentGranted = true;
-    _initialized = true;
   }
 
+  Future<void> _evaluateConsentAndConfigure(SharedPreferences prefs) async {
+    final bool hasConsent = ConsentService.instance.isConsentGranted;
+    final bool persistedOptOut = prefs.getBool('analytics_opt_out') ?? false;
 
-  // ── Runtime consent toggling ──────────────────────────────────────────────
-
-  /// Updates analytics consent at runtime.
-  ///
-  /// Safe to call before [init()] completes — revocation is immediate.
-  /// Idempotent — safe to call multiple times with the same value.
-  /// Does not re-run [init()] logic.
-  ///
-  /// When [granted] is false:
-  ///   - Collection is disabled immediately.
-  ///   - [_consentGranted] set to false.
-  ///   - [preferred_country] user property is cleared.
-  ///
-  /// When [granted] is true:
-  ///   - Collection is re-enabled.
-  ///   - [_consentGranted] set to true.
-  Future<void> updateConsentStatus(bool granted) async {
-    // No guards on this method — must work before init() and after withdrawal.
-    try {
-      await _analytics.setAnalyticsCollectionEnabled(granted);
-      _consentGranted = granted;
-
-      if (!granted) {
-        // Clear the preferred_country user property on withdrawal.
-        await _analytics.setUserProperty(
-          name: 'preferred_country',
-          value: null,
-        );
+    if (hasConsent && !persistedOptOut) {
+      await _analytics.setAnalyticsCollectionEnabled(true);
+      _collectionEnabled = true;
+      if (kDebugMode) {
+        print('[Analytics] Enabled collection');
       }
+    } else {
+      await _analytics.setAnalyticsCollectionEnabled(false);
+      _collectionEnabled = false;
+      
+      // If consent is denied or withdrawn, persist in SharedPreferences
+      if (!hasConsent || persistedOptOut) {
+        await prefs.setBool('analytics_opt_out', true);
+      }
+      
+      if (kDebugMode) {
+        print('[Analytics] Disabled collection');
+      }
+    }
+  }
+
+  void _handleConsentChanged() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await _evaluateConsentAndConfigure(prefs);
+      await logConsentUpdated();
+    } catch (e, s) {
+      CrashlyticsService.recordError(
+        e,
+        s,
+        reason: 'AnalyticsService._handleConsentChanged failed',
+      );
+    }
+  }
+
+  // ── Runtime Consent Settings ──────────────────────────────────────────────
+
+  /// Allows explicit user opt-in/opt-out from a settings screen.
+  Future<void> updateConsentStatus(bool granted) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('analytics_opt_out', !granted);
+      await _evaluateConsentAndConfigure(prefs);
+      await logConsentUpdated();
     } catch (e, s) {
       CrashlyticsService.recordError(
         e,
@@ -249,458 +144,275 @@ class AnalyticsService {
     }
   }
 
-  // ── Screen tracking ───────────────────────────────────────────────────────
+  // ── Whitelisted Custom Events ─────────────────────────────────────────────
 
-  /// Logs a screen_view event.
+  /// Logs when a calculator is used (calculation completes).
   ///
-  /// [screenName]  must be an [AnalyticsScreen] constant.
-  /// [screenClass] Dart class name, e.g. "UsaScreen".
-  Future<void> logScreenView(
+  /// [calculatorType] e.g. 'mortgage_usa'.
+  Future<void> logCalculatorUsed(String calculatorType) async {
+    if (!_initialized || !_collectionEnabled) return;
+    
+    if (kDebugMode) {
+      print('[Analytics] EVENT: calculator_used | calculator_type: $calculatorType | ${DateTime.now().toIso8601String()}');
+    }
+
+    await _log(() => _analytics.logEvent(
+          name: 'calculator_used',
+          parameters: {
+            'calculator_type': calculatorType,
+          },
+        ));
+  }
+
+  /// Logs when a lender is viewed.
+  ///
+  /// [lenderRank] integer position/rank only.
+  Future<void> logLenderViewed(int lenderRank) async {
+    if (!_initialized || !_collectionEnabled) return;
+
+    if (kDebugMode) {
+      print('[Analytics] EVENT: lender_viewed | lender_rank: $lenderRank | ${DateTime.now().toIso8601String()}');
+    }
+
+    await _log(() => _analytics.logEvent(
+          name: 'lender_viewed',
+          parameters: {
+            'lender_rank': lenderRank,
+          },
+        ));
+  }
+
+  /// Logs when an external website link is opened.
+  Future<void> logExternalLinkOpened() async {
+    if (!_initialized || !_collectionEnabled) return;
+
+    if (kDebugMode) {
+      print('[Analytics] EVENT: external_link_opened | ${DateTime.now().toIso8601String()}');
+    }
+
+    await _log(() => _analytics.logEvent(
+          name: 'external_link_opened',
+        ));
+  }
+
+  /// Logs when a calculator or lender is favorited/unfavorited.
+  ///
+  /// [itemType] must be either 'calculator' or 'lender'.
+  Future<void> logFavoriteToggled({required String itemType}) async {
+    if (!_initialized || !_collectionEnabled) return;
+
+    if (kDebugMode) {
+      print('[Analytics] EVENT: favorite_toggled | item_type: $itemType | ${DateTime.now().toIso8601String()}');
+    }
+
+    await _log(() => _analytics.logEvent(
+          name: 'favorite_toggled',
+          parameters: {
+            'item_type': itemType,
+          },
+        ));
+  }
+
+  /// Logs when a search is performed.
+  ///
+  /// [resultCount] integer count only.
+  Future<void> logSearchPerformed(int resultCount) async {
+    if (!_initialized || !_collectionEnabled) return;
+
+    if (kDebugMode) {
+      print('[Analytics] EVENT: search_performed | result_count: $resultCount | ${DateTime.now().toIso8601String()}');
+    }
+
+    await _log(() => _analytics.logEvent(
+          name: 'search_performed',
+          parameters: {
+            'result_count': resultCount,
+          },
+        ));
+  }
+
+  /// Logs when consent preferences are updated.
+  Future<void> logConsentUpdated() async {
+    if (!_initialized || !_collectionEnabled) return;
+
+    if (kDebugMode) {
+      print('[Analytics] EVENT: consent_updated | ${DateTime.now().toIso8601String()}');
+    }
+
+    await _log(() => _analytics.logEvent(
+          name: 'consent_updated',
+        ));
+  }
+
+  /// Logs when a search result is opened.
+  Future<void> logSearchResultOpened({
+    required int resultIndex,
+    required String searchTerm,
+    required String toolId,
+  }) async {
+    if (!_initialized || !_collectionEnabled) return;
+
+    if (kDebugMode) {
+      print('[Analytics] EVENT: search_result_opened | result_index: $resultIndex | search_term: $searchTerm | tool_id: $toolId | ${DateTime.now().toIso8601String()}');
+    }
+
+    await _log(() => _analytics.logEvent(
+          name: 'search_result_opened',
+          parameters: {
+            'result_index': resultIndex,
+            'search_term': searchTerm,
+            'tool_id': toolId,
+          },
+        ));
+  }
+
+  // ── Tab Navigation ────────────────────────────────────────────────────────
+
+  /// Logs a screen_view event when a country tab is tapped intentionally on the Home screen.
+  Future<void> logCountryTabTap(int index) async {
+    final now = DateTime.now();
+    
+    // Debounce: skip if same tab tapped within 500ms
+    if (_lastTabLogTime != null &&
+        now.difference(_lastTabLogTime!) < const Duration(milliseconds: 500)) {
+      return;
+    }
+
+    final String screenName = switch (index) {
+      0 => 'home_global',
+      1 => 'home_usa',
+      2 => 'home_canada',
+      3 => 'home_uk',
+      4 => 'home_australia',
+      5 => 'home_new_zealand',
+      6 => 'home_europe',
+      7 => 'home_india',
+      _ => 'home_global',
+    };
+
+    // Skip if same screen_name as last logged
+    if (_lastScreenName == screenName) return;
+
+    final String pageTitle = switch (index) {
+      0 => 'Global Home',
+      1 => 'USA Home',
+      2 => 'Canada Home',
+      3 => 'UK Home',
+      4 => 'Australia Home',
+      5 => 'New Zealand Home',
+      6 => 'Europe Home',
+      7 => 'India Home',
+      _ => 'Global Home',
+    };
+
+    _lastTabLogTime = now;
+
+    await _logScreenViewInternal(screenName, 'HomeScreen', pageTitle);
+  }
+
+  // ── Screen View logging ───────────────────────────────────────────────────
+
+  /// Resolves the screen view info from a route path and logs it.
+  Future<void> logScreenViewFromPath(String path) async {
+    final info = _getScreenInfo(path);
+    if (info != null) {
+      await _logScreenViewInternal(info.screenName, info.screenClass, info.pageTitle);
+    } else {
+      final sanitised = _sanitisePath(path);
+      await _logScreenViewInternal(
+        sanitised,
+        'DynamicScreen',
+        sanitised.replaceAll('_', ' ').toUpperCase(),
+      );
+    }
+  }
+
+  String _sanitisePath(String path) {
+    final cleanPath = path.split('?').first;
+    final joined = cleanPath
+        .split('/')
+        .where((s) => s.isNotEmpty && int.tryParse(s) == null && s != '#' && s != '#/')
+        .join('_')
+        .toLowerCase();
+    
+    if (joined.isEmpty) return 'unknown_route';
+    return joined.length > 40 ? joined.substring(0, 40) : joined;
+  }
+
+  Future<void> _logScreenViewInternal(
     String screenName,
     String screenClass,
+    String pageTitle,
   ) async {
-    if (!_initialized || !_consentGranted) return;
-    if (!_validateScreen(screenName)) return;
+    if (!_initialized || !_collectionEnabled) return;
+
+    final now = DateTime.now();
+    
+    // De-duplicate screen views within 300ms
+    if (_lastScreenName == screenName &&
+        _lastLogTime != null &&
+        now.difference(_lastLogTime!) < const Duration(milliseconds: 300)) {
+      return;
+    }
+
+    _lastScreenName = screenName;
+    _lastLogTime = now;
+
+    if (kDebugMode) {
+      print('[Analytics] SCREEN: $screenName | TITLE: $pageTitle | ${now.toIso8601String()}');
+    }
+
     await _log(() => _analytics.logScreenView(
           screenName: screenName,
           screenClass: screenClass,
-        ));
-  }
-
-  /// Logs a tab selection event for BottomNavigationBar and shell routes.
-  Future<void> trackTab(int index, String screenName) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.logEvent(
-          name: 'tab_selected',
           parameters: {
-            'tab_index': index,
-            'screen_name': _truncate(screenName),
+            'page_title': pageTitle,
           },
         ));
   }
 
-  // ── User journey ──────────────────────────────────────────────────────────
+  ScreenInfo? _getScreenInfo(String path) {
+    final cleanPath = path.split('?').first;
 
-  /// Logs when a country tab becomes active in the Home screen TabBar.
-  ///
-  /// [country]         must be an [AnalyticsCountry] constant.
-  /// [previousCountry] must be an [AnalyticsCountry] constant or 'Global'.
-  ///
-  /// Also updates the [preferred_country] Firebase user property (slot 1/25).
-  ///
-  /// Callers must use [AnalyticsCountry] constants.
-  /// The 'Global' tab uses the sentinel string 'Global' — not in
-  /// [AnalyticsCountry.all], so the user property is not set for it.
-  Future<void> logCountryTabSelected(
-    String country,
-    String previousCountry,
-  ) async {
-    if (!_initialized || !_consentGranted) return;
-
-    // 'Global' is a dashboard sentinel — validate only real countries.
-    final isRealCountry = AnalyticsCountry.all.contains(country);
-    assert(
-      isRealCountry || country == 'Global',
-      'country "$country" must be an AnalyticsCountry constant or "Global".',
-    );
-
-    await _log(() => _analytics.logEvent(
-          name: 'country_tab_selected',
-          parameters: {
-            'country_name': _truncate(country),
-            'previous_country': _truncate(previousCountry),
-          },
-        ));
-
-    // Only set the user property for real countries, not the Global tab.
-    if (isRealCountry) {
-      await setPreferredCountry(country);
+    // 1. Try registry lookup first
+    final regInfo = AnalyticsScreen.routeRegistry[cleanPath];
+    if (regInfo != null) {
+      return regInfo;
     }
-  }
 
-  /// Logs when a calculator screen is opened.
-  ///
-  /// [type]    must be an [AnalyticsCalculator] constant.
-  /// [country] must be an [AnalyticsCountry] constant.
-  Future<void> logCalculatorOpened(String type, String country) async {
-    if (!_initialized || !_consentGranted) return;
-    if (!_validateCalculator(type)) return;
-    if (!_validateCountry(country)) return;
-    await _log(() => _analytics.logEvent(
-          name: 'calculator_opened',
-          parameters: {
-            'calculator_type': type,
-            'country': country,
-          },
-        ));
-  }
+    // 2. Fallback for dynamic /tool/:country/:toolId
+    final toolMatch = RegExp(r'^/tool/([^/]+)/([^/]+)').firstMatch(cleanPath);
+    if (toolMatch != null) {
+      final country = toolMatch.group(1)?.toLowerCase() ?? '';
+      final toolId = toolMatch.group(2)?.toLowerCase() ?? '';
 
-  /// Logs when a calculation completes and a result is presented.
-  ///
-  /// [calculatorType] must be an [AnalyticsCalculator] constant.
-  /// [country]        must be an [AnalyticsCountry] constant.
-  /// [rawLoanAmount]  is bucketed internally — NEVER logged raw.
-  ///                  Never pass this value anywhere else.
-  Future<void> logCalculationCompleted({
-    required String calculatorType,
-    required String country,
-    required double rawLoanAmount,
-  }) async {
-    if (!_initialized || !_consentGranted) return;
-    if (!_validateCalculator(calculatorType)) return;
-    if (!_validateCountry(country)) return;
-    final range = _bucketLoanAmount(rawLoanAmount);
-    await _log(() => _analytics.logEvent(
-          name: 'calculation_completed',
-          parameters: {
-            'calculator_type': calculatorType,
-            'country': country,
-            'loan_amount_range': range,
-          },
-        ));
-  }
+      String screenName = 'calc_${toolId}_$country';
+      String pageTitle = '${toolId.replaceAll('_', ' ').toUpperCase()} Calculator';
+      String screenClass = 'ToolHostScreen';
 
-  /// Logs scroll depth milestones.
-  ///
-  /// [screenName]   must be an [AnalyticsScreen] constant.
-  /// [depthPercent] must be 25, 50, 75, or 100.
-  ///
-  /// Deduplication is the caller's responsibility — use [ScrollDepthTracker].
-  Future<void> logScrollDepth(String screenName, int depthPercent) async {
-    if (!_initialized || !_consentGranted) return;
-    if (!_validateScreen(screenName)) return;
-    await _log(() => _analytics.logEvent(
-          name: 'scroll_depth',
-          parameters: {
-            'screen_name': screenName,
-            'depth_percent': depthPercent,
-          },
-        ));
-  }
+      if (toolId == 'mortgage') {
+        screenName = 'calc_mortgage_$country';
+        pageTitle = 'Mortgage Calculator';
+      } else if (toolId == 'refinance') {
+        screenName = 'calc_refinance_$country';
+        pageTitle = 'Refinance Calculator';
+      } else if (toolId == 'affordability') {
+        screenName = 'calc_affordability_$country';
+        pageTitle = 'Affordability Calculator';
+      }
 
-  /// Logs how long a user spent on a screen.
-  ///
-  /// [screenName]      must be an [AnalyticsScreen] constant.
-  /// [durationSeconds] must be ≥ 3 — callers (ScreenTimerMixin) enforce this.
-  Future<void> logScreenDuration(
-    String screenName,
-    int durationSeconds,
-  ) async {
-    if (!_initialized || !_consentGranted) return;
-    if (!_validateScreen(screenName)) return;
-    if (durationSeconds < 3) return; // not meaningful for analytics
-    await _log(() => _analytics.logEvent(
-          name: 'screen_time',
-          parameters: {
-            'screen_name': screenName,
-            'duration_seconds': durationSeconds,
-          },
-        ));
-  }
-
-  /// Logs when a resource link is tapped.
-  ///
-  /// [name]     Resource title — must not contain user-entered text.
-  /// [country]  must be an [AnalyticsCountry] constant.
-  /// [category] must be an [AnalyticsResourceCategory] constant.
-  Future<void> logResourceClicked(
-    String name,
-    String country,
-    String category,
-  ) async {
-    if (!_initialized || !_consentGranted) return;
-    if (!_validateCountry(country)) return;
-    if (!_validateResourceCategory(category)) return;
-    await _log(() => _analytics.logEvent(
-          name: 'resource_clicked',
-          parameters: {
-            'resource_name': _truncate(name),
-            'country': country,
-            'resource_category': category,
-          },
-        ));
-  }
-
-  /// Logs when a settings value is changed.
-  ///
-  /// [settingName] e.g. "app_theme", "default_country", "currency".
-  /// [newValue]    must be a predefined label string — see [_isPredefinedSettingValue].
-  ///               NEVER a numeric string, user-entered text, or financial value.
-  Future<void> logSettingChanged({
-    required String settingName,
-    required String newValue,
-  }) async {
-    if (!_initialized || !_consentGranted) return;
-    assert(
-      _isPredefinedSettingValue(newValue),
-      'logSettingChanged: newValue must be a predefined label string — '
-      'never a numeric string or user-entered text. Received: $newValue',
-    );
-    if (!_isPredefinedSettingValue(newValue)) {
-      // Release: log to Crashlytics and return — never send to Firebase.
-      CrashlyticsService.recordError(
-        'logSettingChanged: invalid newValue "$newValue" for setting '
-        '"$settingName" — predefined label required',
-        null,
-        reason: AnalyticsFeature.navigation,
+      return ScreenInfo(
+        screenName: screenName,
+        screenClass: screenClass,
+        pageTitle: pageTitle,
       );
-      return;
     }
-    await _log(() => _analytics.logEvent(
-          name: 'setting_changed',
-          parameters: {
-            'setting_name': _truncate(settingName),
-            'new_value': newValue,
-          },
-        ));
-  }
 
-  // ── Rewarded ad events ────────────────────────────────────────────────────
-  //
-  // ⚠️  AdMob Policy — valid call sites:
-  //
-  //   RewardedAdStage.requested → AdManager.loadRewarded() after SDK dispatch
-  //   RewardedAdStage.shown     → onAdShowedFullScreenContent callback
-  //   RewardedAdStage.completed → onAdDismissedFullScreenContent callback
-  //   RewardedAdStage.rewardGranted → onUserEarnedReward callback
-  //
-  //   onAdLoaded has NO mapped stage — do not fire any event for it.
-  //
-  // ⚠️  FORBIDDEN call sites (any of these = AdMob Invalid Traffic violation):
-  //   onTap() / onPressed() / GestureDetector / InkWell callbacks
-  //   Visibility changes / Timer callbacks / Navigator events
-  //   initState() / build() / setState()
-  //
-  // ⚠️  OWNERSHIP BOUNDARY:
-  //   Do NOT call from AdFreeAnalyticsTracker — see boundary comment at top.
-
-  /// Logs a rewarded ad lifecycle event.
-  ///
-  /// Must be called only from AdMob SDK callbacks in [AdManager].
-  /// See call-site documentation in ad_manager.dart.
-  Future<void> logRewardedAdEvent(RewardedAdStage stage) async {
-    if (!_initialized || !_consentGranted) return;
-    final String eventName;
-    switch (stage) {
-      case RewardedAdStage.requested:
-        eventName = 'rewarded_ad_requested';
-        break;
-      case RewardedAdStage.shown:
-        eventName = 'rewarded_ad_shown';
-        break;
-      case RewardedAdStage.completed:
-        eventName = 'rewarded_ad_completed';
-        break;
-      case RewardedAdStage.rewardGranted:
-        eventName = 'reward_granted';
-        break;
-    }
-    await _log(() => _analytics.logEvent(name: eventName));
-  }
-
-  // ── Error tracking ────────────────────────────────────────────────────────
-
-  /// Records a feature-level error to Crashlytics and Analytics.
-  ///
-  /// Crashlytics receives the full stack trace unconditionally —
-  /// Crashlytics consent is governed by ConsentService independently.
-  /// AnalyticsService does not control or assume Crashlytics consent state.
-  ///
-  /// Analytics receives [feature] + [error_type] (class name only) —
-  /// gated on [_initialized] and [_consentGranted].
-  ///
-  /// [feature]   must be an [AnalyticsFeature] constant.
-  /// [exception] the caught exception object.
-  /// [stackTrace] associated StackTrace (strongly recommended).
-  ///
-  /// CRITICAL — [error_type] safety rule:
-  ///   Only [exception.runtimeType.toString()] is logged — NEVER
-  ///   [exception.toString()] which may contain user-entered financial data.
-  Future<void> logFeatureError({
-    required String feature,
-    required Object exception,
-    StackTrace? stackTrace,
-  }) async {
-    // Crashlytics: always called regardless of analytics consent.
-    // ConsentService governs Crashlytics consent independently.
-    CrashlyticsService.recordError(
-      exception,
-      stackTrace,
-      reason: feature,
-    );
-
-    // Analytics: respects its own consent gate only.
-    if (!_initialized || !_consentGranted) return;
-
-    // runtimeType only — never exception.toString() or exception.message
-    final errorType = exception.runtimeType.toString();
-
-    await _log(() => _analytics.logEvent(
-          name: 'feature_error',
-          parameters: {
-            'feature': _truncate(feature),
-            'error_type': _truncate(errorType),
-          },
-        ));
-  }
-
-  // ── User properties ───────────────────────────────────────────────────────
-  //
-  // ⚠️  Firebase allows a maximum of 25 user properties per app.
-  //     Each slot is PERMANENT. Update the DATA COLLECTION NOTICE
-  //     when adding properties.
-  //     Current count: 1 / 25.
-  //
-  // Slot 1 — preferred_country (set on country tab switch)
-
-  /// Sets the [preferred_country] user property (slot 1/25).
-  ///
-  /// Called automatically by [logCountryTabSelected] on real country switches.
-  /// [country] must be an [AnalyticsCountry] constant.
-  Future<void> setPreferredCountry(String country) async {
-    if (!_initialized || !_consentGranted) return;
-    if (!_validateCountry(country)) return;
-    await _log(() => _analytics.setUserProperty(
-          name: 'preferred_country',
-          value: country,
-        ));
-  }
-
-  /// Sets user properties in bulk (used by AdFreeAnalyticsTracker at launch).
-  Future<void> setUserProperties({
-    required String country,
-    required String preferredCurrency,
-    required String preferredTheme,
-    required String appVersion,
-    required String devicePlatform,
-  }) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() async {
-      await _analytics.setUserProperty(name: 'country', value: country);
-      await _analytics.setUserProperty(
-        name: 'preferred_currency',
-        value: preferredCurrency,
-      );
-      await _analytics.setUserProperty(
-        name: 'preferred_theme',
-        value: preferredTheme,
-      );
-      await _analytics.setUserProperty(
-        name: 'app_version',
-        value: appVersion,
-      );
-      await _analytics.setUserProperty(
-        name: 'device_platform',
-        value: devicePlatform,
-      );
-    });
-  }
-
-  /// Sets a single user property by name.
-  Future<void> setUserProperty(String name, String value) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.setUserProperty(name: name, value: value));
-  }
-
-  // ── Generic event (for AdAnalyticsService / AdFreeAnalyticsTracker) ───────
-
-  /// Logs a custom event.
-  ///
-  /// Prefer typed methods above for all standard events.
-  /// This method exists for ad-layer events that do not fit a standard schema.
-  ///
-  /// [name]       snake_case, max 40 chars.
-  /// [parameters] Optional map of string/num parameter values.
-  Future<void> logEvent({
-    required String name,
-    Map<String, Object>? parameters,
-  }) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.logEvent(
-          name: name,
-          parameters: parameters,
-        ));
-  }
-
-  // ── Legacy methods — retained for back-compat ─────────────────────────────
-
-  /// Logs an app_open event.
-  Future<void> logAppOpen() async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.logAppOpen());
-  }
-
-  /// Logs a country selection (from settings).
-  Future<void> logCountrySelection(String country) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.logEvent(
-          name: 'country_selected',
-          parameters: {'country': _truncate(country)},
-        ));
-  }
-
-  /// Logs a theme change.
-  Future<void> logThemeChange(String theme) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.logEvent(
-          name: 'theme_changed',
-          parameters: {'theme': _truncate(theme)},
-        ));
-  }
-
-  /// Logs a saved calculation opened from history.
-  Future<void> logSavedCalculationOpened(String calculatorType) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.logEvent(
-          name: 'saved_calc_opened',
-          parameters: {'calculator_type': _truncate(calculatorType)},
-        ));
-  }
-
-  /// Logs a calculation saved to Hive storage.
-  Future<void> logSaveCalculation(String calculatorType) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.logEvent(
-          name: 'calculation_saved',
-          parameters: {'calculator_type': _truncate(calculatorType)},
-        ));
-  }
-
-  /// Logs a PDF export.
-  Future<void> logPdfExport(String screenName) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.logEvent(
-          name: 'pdf_exported',
-          parameters: {'screen_name': _truncate(screenName)},
-        ));
-  }
-
-  /// Logs an ad revenue event (called by AdManager.handlePaidEvent).
-  ///
-  /// REVENUE RULE: [valueMicros] is logged AS-IS from OnPaidEventListener.
-  /// Never divide, derive, or display this value outside AdAnalyticsService.
-  Future<void> logAdRevenue(
-    double valueMicros,
-    String currencyCode,
-    String precisionType,
-    String adSource,
-  ) async {
-    if (!_initialized || !_consentGranted) return;
-    await _log(() => _analytics.logEvent(
-          name: 'ad_revenue',
-          parameters: {
-            'value_micros': valueMicros,
-            'currency_code': _truncate(currencyCode),
-            'precision_type': _truncate(precisionType),
-            'ad_source': _truncate(adSource),
-          },
-        ));
+    return null;
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  /// Executes [fn] and forwards errors to Crashlytics.
-  /// Never throws. Never crashes the app.
   Future<void> _log(Future<void> Function() fn) async {
     try {
       await fn();
@@ -713,159 +425,70 @@ class AnalyticsService {
     }
   }
 
-  /// Truncates a string to 100 characters.
-  /// Firebase Analytics parameter values are capped at 100 characters.
-  /// Event names are string literals and require no runtime truncation.
-  String _truncate(String value) =>
-      value.length > 100 ? value.substring(0, 100) : value;
+  // ── No-Ops for Backward Compatibility ──────────────────────────────────────
 
-  // ── Loan amount bucketing ─────────────────────────────────────────────────
-
-  /// Converts a raw loan amount to a bucketed range string.
-  ///
-  /// PRIVATE — rawAmount never leaves this method.
-  /// The raw numeric value is NEVER logged to Analytics, Crashlytics,
-  /// user properties, or any external service.
-  String _bucketLoanAmount(double rawAmount) {
-    if (rawAmount < 100000) return 'under_100k';
-    if (rawAmount < 250000) return '100k_250k';
-    if (rawAmount < 500000) return '250k_500k';
-    if (rawAmount < 1000000) return '500k_1m';
-    return 'over_1m';
+  Future<void> logCountryTabSelected(String country, String previousCountry) async {}
+  Future<void> logCalculatorOpened(String type, String country) async {}
+  Future<void> logCalculationCompleted({required String calculatorType, required String country, required double rawLoanAmount}) async {}
+  Future<void> logScrollDepth(String screenName, int depthPercent) async {}
+  Future<void> logScreenDuration(String screenName, int durationSeconds) async {}
+  Future<void> logResourceClicked(String name, String country, String category) async {}
+  Future<void> logSettingChanged({required String settingName, required String newValue}) async {}
+  Future<void> logRewardedAdEvent(dynamic stage) async {}
+  Future<void> logFeatureError({required String feature, required Object exception, StackTrace? stackTrace}) async {
+    try {
+      CrashlyticsService.recordError(exception, stackTrace, reason: feature);
+    } catch (_) {}
   }
-
-  // ── Runtime vocabulary validation ─────────────────────────────────────────
-
-  bool _validateScreen(String screenName) {
-    assert(
-      AnalyticsScreen.all.contains(screenName),
-      'screenName "$screenName" is not in AnalyticsScreen.all. '
-      'Add it there first.',
-    );
-    if (!AnalyticsScreen.all.contains(screenName)) {
-      if (!kDebugMode) {
-        CrashlyticsService.recordError(
-          'Invalid screenName: "$screenName"',
-          null,
-          reason: AnalyticsFeature.navigation,
-        );
-      }
-      return false;
-    }
-    return true;
-  }
-
-  bool _validateCountry(String country) {
-    assert(
-      AnalyticsCountry.all.contains(country),
-      'country "$country" is not in AnalyticsCountry.all. '
-      'Add it there first.',
-    );
-    if (!AnalyticsCountry.all.contains(country)) {
-      if (!kDebugMode) {
-        CrashlyticsService.recordError(
-          'Invalid country: "$country"',
-          null,
-          reason: AnalyticsFeature.navigation,
-        );
-      }
-      return false;
-    }
-    return true;
-  }
-
-  bool _validateCalculator(String calculatorType) {
-    assert(
-      AnalyticsCalculator.all.contains(calculatorType),
-      'calculatorType "$calculatorType" is not in AnalyticsCalculator.all. '
-      'Add it there first.',
-    );
-    if (!AnalyticsCalculator.all.contains(calculatorType)) {
-      if (!kDebugMode) {
-        CrashlyticsService.recordError(
-          'Invalid calculatorType: "$calculatorType"',
-          null,
-          reason: AnalyticsFeature.navigation,
-        );
-      }
-      return false;
-    }
-    return true;
-  }
-
-  bool _validateResourceCategory(String category) {
-    assert(
-      AnalyticsResourceCategory.all.contains(category),
-      'category "$category" is not in AnalyticsResourceCategory.all. '
-      'Add it there first.',
-    );
-    if (!AnalyticsResourceCategory.all.contains(category)) {
-      if (!kDebugMode) {
-        CrashlyticsService.recordError(
-          'Invalid resource category: "$category"',
-          null,
-          reason: AnalyticsFeature.navigation,
-        );
-      }
-      return false;
-    }
-    return true;
-  }
-
-  // ── Setting value whitelist ───────────────────────────────────────────────
-
-  /// Returns true when [value] is a predefined label string safe for Analytics.
-  ///
-  /// NEVER pass numeric strings, user-entered text, or financial amounts
-  /// to [logSettingChanged]. This whitelist is the enforcement mechanism.
-  ///
-  /// Update this method when adding new settings to the app.
-  bool _isPredefinedSettingValue(String value) {
-    const allowed = {
-      // Theme
-      'theme_light', 'theme_dark', 'theme_system',
-      // Feature toggles
-      'enabled', 'disabled',
-      // Loan term labels
-      'term_5y', 'term_10y', 'term_15y', 'term_20y', 'term_25y', 'term_30y',
-      // Currency labels
-      'currency_usd', 'currency_gbp', 'currency_eur', 'currency_inr',
-      'currency_aud', 'currency_cad', 'currency_nzd',
-      // Country labels (for default_country setting)
-      'country_usa', 'country_uk', 'country_canada', 'country_australia',
-      'country_new_zealand', 'country_europe', 'country_india',
-    };
-    return allowed.contains(value);
-  }
+  Future<void> setPreferredCountry(String country) async {}
+  Future<void> setUserProperties({required String country, required String preferredCurrency, required String preferredTheme, required String appVersion, required String devicePlatform}) async {}
+  Future<void> setUserProperty(String name, String value) async {}
+  Future<void> logAppOpen() async {}
+  Future<void> logCountrySelection(String country) async {}
+  Future<void> logThemeChange(String theme) async {}
+  Future<void> logSavedCalculationOpened(String calculatorType) async {}
+  Future<void> logSaveCalculation(String calculatorType) async {}
+  Future<void> logPdfExport(String screenName) async {}
+  Future<void> logAdRevenue(double valueMicros, String currencyCode, String precisionType, String adSource) async {}
+  Future<void> trackTab(int index, String screenName) async {}
+  Future<void> logEvent({required String name, Map<String, Object?>? parameters}) async {}
+  Future<void> logScreenView(String screenName, [String? screenClass]) async {}
 }
 
-// ── RewardedAdStage enum ──────────────────────────────────────────────────────
-
-/// Lifecycle stages for a rewarded ad.
-///
-/// Maps to Firebase event names in [AnalyticsService.logRewardedAdEvent]:
-///   requested     → rewarded_ad_requested
-///   shown         → rewarded_ad_shown
-///   completed     → rewarded_ad_completed
-///   rewardGranted → reward_granted
-///
-/// ⚠️  Only call [logRewardedAdEvent] from AdMob SDK callbacks in AdManager.
-/// ⚠️  NEVER call from UI widgets, onTap callbacks, or Timer callbacks.
-/// ⚠️  onAdLoaded has NO mapped stage — do not fire any event for it.
 enum RewardedAdStage {
-  /// Ad load dispatched to SDK.
-  /// Fire inside [AdManager.loadRewarded] at SDK load dispatch — NOT onAdLoaded.
+  // NOT IMPLEMENTED — stub only
   requested,
-
-  /// Ad is being shown to the user.
-  /// Fire inside [FullScreenContentCallback.onAdShowedFullScreenContent].
+  // NOT IMPLEMENTED — stub only
   shown,
-
-  /// User dismissed the ad.
-  /// Fire inside [FullScreenContentCallback.onAdDismissedFullScreenContent].
+  // NOT IMPLEMENTED — stub only
   completed,
-
-  /// Reward has been granted.
-  /// Fire inside [RewardedAd.show] onUserEarnedReward — never from UI.
+  // NOT IMPLEMENTED — stub only
   rewardGranted,
+}
+
+// Redundant _ScreenInfo class removed - ScreenInfo is imported from analytics_screen.dart
+
+class _AnalyticsRouteObserver extends NavigatorObserver {
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    _logRoute(route);
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    if (newRoute != null) {
+      _logRoute(newRoute);
+    }
+  }
+
+  void _logRoute(Route<dynamic> route) {
+    final String? path = route.settings.name;
+    if (path == null || path.isEmpty) return;
+
+    if (path.startsWith('/#') || path == 'splash' || path == '/splash') return;
+
+    AnalyticsService.instance.logScreenViewFromPath(path);
+  }
 }

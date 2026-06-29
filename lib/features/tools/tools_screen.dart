@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/text_styles.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/tool_card.dart';
+import '../../services/analytics_service.dart';
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 class _DT {
@@ -1077,6 +1078,11 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                                       _searchQuery = val;
                                     });
                                   },
+                                  onSubmitted: (val) {
+                                    if (val.trim().isNotEmpty) {
+                                      AnalyticsService.instance.logSearchPerformed(filteredToolsList.length);
+                                    }
+                                  },
                                   style: const TextStyle(
                                       color: Colors.white, fontSize: 13),
                                   decoration: InputDecoration(
@@ -1178,7 +1184,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final tool = filteredToolsList[index];
-                          return _buildToolCardWithFavorite(tool);
+                          return _buildToolCardWithFavorite(tool, searchIndex: index);
                         },
                         childCount: filteredToolsList.length,
                       ),
@@ -1384,7 +1390,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   }
 
   // Builder for ToolCard wrapped with a dynamic Favorite toggle button
-  Widget _buildToolCardWithFavorite(_ToolDef tool) {
+  Widget _buildToolCardWithFavorite(_ToolDef tool, {int? searchIndex}) {
     final flag = _countryGroups.firstWhere(
       (g) => g.key == tool.country,
       orElse: () => const _CountryGroupMeta(
@@ -1411,6 +1417,13 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
       badgeTextColor: tool.badgeTextColor,
       badgeBgColor: tool.badgeBgColor,
       onTap: () {
+        if (searchIndex != null) {
+          AnalyticsService.instance.logSearchResultOpened(
+            resultIndex: searchIndex,
+            searchTerm: _searchQuery,
+            toolId: tool.id,
+          );
+        }
         context.push(tool.route);
       },
     );

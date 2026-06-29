@@ -115,6 +115,7 @@ class _NZPropertyMarketReportState extends ConsumerState<NZPropertyMarketReport>
 
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_property_market_report'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -220,6 +221,7 @@ class _NZPropertyMarketReportState extends ConsumerState<NZPropertyMarketReport>
   void _clearAllSaved() async {
     final confirm = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_property_market_report'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         title: Text('Clear Reports', style: AppTextStyles.playfair(size: 16, color: widget.theme.getTextColor(context))),

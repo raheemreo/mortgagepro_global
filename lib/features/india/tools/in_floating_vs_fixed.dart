@@ -95,6 +95,7 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
     final labelCtrl = TextEditingController(text: 'Floating vs Fixed');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_floating_vs_fixed'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

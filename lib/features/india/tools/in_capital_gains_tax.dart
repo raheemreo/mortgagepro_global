@@ -205,6 +205,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
         text: isLtcg ? 'LTCG Property Tax' : 'STCG Property Tax');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_capital_gains_tax/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

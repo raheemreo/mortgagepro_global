@@ -82,6 +82,7 @@ class _IN80C24BGuideState extends ConsumerState<IN80C24BGuide> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_80c_24b_guide'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

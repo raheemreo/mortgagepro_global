@@ -195,6 +195,7 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
     final labelCtrl = TextEditingController(text: 'Prepayment Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/ca_prepayment/save'),
       builder: (ctx) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

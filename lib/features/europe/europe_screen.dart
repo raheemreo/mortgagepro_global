@@ -121,6 +121,7 @@ class _EuropeScreenState extends ConsumerState<EuropeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/europe/mortgage/result'),
       builder: (_) => _EUCalcSheet(
         propValue: _propValue,
         depositPct: _depositPct,

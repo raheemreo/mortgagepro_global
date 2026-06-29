@@ -182,6 +182,7 @@ class _CanadaScreenState extends ConsumerState<CanadaScreen> {
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
+                        routeSettings: const RouteSettings(name: '/tool/canada/mortgage/result'),
                         builder: (_) => CAMortgageCalcSheet(
                             homePrice: _homePrice,
                             downPercent: _downPct,
@@ -210,6 +211,7 @@ class _CanadaScreenState extends ConsumerState<CanadaScreen> {
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
+                        routeSettings: const RouteSettings(name: '/tool/canada/stresstest/result'),
                         builder: (_) => CAStressTestSheet(
                             homePrice: _homePrice,
                             downPercent: _downPct,

@@ -142,6 +142,7 @@ class _INJointLoanState extends ConsumerState<INJointLoan> {
     final labelCtrl = TextEditingController(text: 'Joint Loan Benefit');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_joint_loan'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

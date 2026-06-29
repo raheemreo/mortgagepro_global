@@ -100,6 +100,7 @@ class _AustraliaScreenState extends State<AustraliaScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/australia/mortgage/result'),
       builder: (_) => AUMortgageCalcSheet(
         propertyValue: _propValue,
         depositPercent: _depositPct,
@@ -192,6 +193,7 @@ class _AustraliaScreenState extends State<AustraliaScreen> {
                               context: context,
                               isScrollControlled: true,
                               backgroundColor: Colors.transparent,
+                              routeSettings: const RouteSettings(name: '/tool/australia/lmi/result'),
                               builder: (_) => AULMICalcSheet(
                                   propertyValue: _propValue,
                                   depositPercent: _depositPct),

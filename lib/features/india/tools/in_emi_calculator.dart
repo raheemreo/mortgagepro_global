@@ -58,6 +58,7 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
     final labelCtrl = TextEditingController(text: 'India Home Loan EMI');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_emi_calculator'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

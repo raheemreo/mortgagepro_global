@@ -123,6 +123,7 @@ class _USAEmergencyFundScreenState extends ConsumerState<USAEmergencyFundScreen>
     final labelCtrl = TextEditingController(text: '$_targetMonths-Month Emergency Fund Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_emergency_fund_screen/save'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -249,6 +250,7 @@ class _USAEmergencyFundScreenState extends ConsumerState<USAEmergencyFundScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/usa/emergencyfund/info'),
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final cardBg = isDark ? const Color(0xFF141C33) : Colors.white;

@@ -806,6 +806,7 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/saved/sort'),
       builder: (_) => Material(
         color: theme.cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -851,6 +852,7 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      routeSettings: const RouteSettings(name: '/saved/detail'),
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         maxChildSize: 0.92,

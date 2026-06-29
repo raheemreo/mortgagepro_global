@@ -56,6 +56,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
     final labelCtrl = TextEditingController(text: 'NZ Budget Planner');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_budget_planner'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

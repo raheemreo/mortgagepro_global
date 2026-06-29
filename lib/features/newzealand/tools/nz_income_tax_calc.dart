@@ -46,6 +46,7 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
     final labelCtrl = TextEditingController(text: 'NZ PAYE Tax Calculation');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_income_tax_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

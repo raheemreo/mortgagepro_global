@@ -117,6 +117,7 @@ class _INFirstHomeBuyerState extends ConsumerState<INFirstHomeBuyer> {
     final labelCtrl = TextEditingController(text: 'First-Home Benefits');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_first_home_buyer/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

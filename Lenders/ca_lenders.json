@@ -1,0 +1,1257 @@
+{
+  "country": "Canada",
+  "currency": "CAD",
+  "version": "1.0",
+  "lenders": [
+    {
+      "id": 1,
+      "company": "Royal Bank of Canada (RBC)",
+      "short_name": "RBC",
+      "logo": "https://img.logo.dev/rbcroyalbank.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.rbcroyalbank.com",
+      "type": "Big Five Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "4.39%+",
+      "variable_rate": "3.95%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Refinance",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 2,
+      "company": "Toronto-Dominion Bank",
+      "short_name": "TD",
+      "logo": "https://img.logo.dev/td.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.td.com",
+      "type": "Big Five Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.35%+",
+      "variable_rate": "3.89%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Refinance"
+      ]
+    },
+    {
+      "id": 3,
+      "company": "Scotiabank",
+      "short_name": "Scotiabank",
+      "logo": "https://img.logo.dev/scotiabank.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.scotiabank.com",
+      "type": "Big Five Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.32%+",
+      "variable_rate": "3.90%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "STEP",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 4,
+      "company": "Bank of Montreal",
+      "short_name": "BMO",
+      "logo": "https://img.logo.dev/bmo.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.bmo.com",
+      "type": "Big Five Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "4.34%+",
+      "variable_rate": "3.91%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Refinance"
+      ]
+    },
+    {
+      "id": 5,
+      "company": "Canadian Imperial Bank of Commerce",
+      "short_name": "CIBC",
+      "logo": "https://img.logo.dev/cibc.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.cibc.com",
+      "type": "Big Five Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "4.36%+",
+      "variable_rate": "3.92%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 6,
+      "company": "National Bank of Canada",
+      "short_name": "National Bank",
+      "logo": "https://img.logo.dev/nbc.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.nbc.ca",
+      "type": "Major Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "4.28%+",
+      "variable_rate": "3.86%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Construction"
+      ]
+    },
+    {
+      "id": 7,
+      "company": "First National Financial",
+      "short_name": "First National",
+      "logo": "https://img.logo.dev/firstnational.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.firstnational.ca",
+      "type": "Monoline Lender",
+      "category": "Mortgage Lender",
+      "rating": 4.8,
+      "fixed_rate": "4.10%+",
+      "variable_rate": "3.72%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Refinance",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 8,
+      "company": "MCAP",
+      "short_name": "MCAP",
+      "logo": "https://img.logo.dev/mcap.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.mcap.com",
+      "type": "Monoline Lender",
+      "category": "Mortgage Lender",
+      "rating": 4.7,
+      "fixed_rate": "4.08%+",
+      "variable_rate": "3.69%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Refinance",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 9,
+      "company": "RMG Mortgages",
+      "short_name": "RMG",
+      "logo": "https://img.logo.dev/rmgmortgages.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.rmgmortgages.ca",
+      "type": "Monoline Lender",
+      "category": "Mortgage Lender",
+      "rating": 4.7,
+      "fixed_rate": "4.05%+",
+      "variable_rate": "3.68%+",
+      "heloc": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 10,
+      "company": "Merix Financial",
+      "short_name": "Merix",
+      "logo": "https://img.logo.dev/merixfinancial.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.merixfinancial.com",
+      "type": "Monoline Lender",
+      "category": "Mortgage Lender",
+      "rating": 4.6,
+      "fixed_rate": "4.07%+",
+      "variable_rate": "3.70%+",
+      "heloc": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Refinance"
+      ]
+    },
+    {
+      "id": 11,
+      "company": "CMLS Financial",
+      "short_name": "CMLS",
+      "logo": "https://img.logo.dev/cmls.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.cmls.ca",
+      "type": "Monoline Lender",
+      "category": "Mortgage Lender",
+      "rating": 4.7,
+      "fixed_rate": "4.09%+",
+      "variable_rate": "3.71%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Refinance",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 12,
+      "company": "Marathon Mortgage",
+      "short_name": "Marathon",
+      "logo": "https://img.logo.dev/marathonmortgage.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.marathonmortgage.ca",
+      "type": "Monoline Lender",
+      "category": "Mortgage Lender",
+      "rating": 4.6,
+      "fixed_rate": "4.10%+",
+      "variable_rate": "3.73%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 13,
+      "company": "Radius Financial",
+      "short_name": "Radius",
+      "logo": "https://img.logo.dev/radiusfinancial.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.radiusfinancial.ca",
+      "type": "Monoline Lender",
+      "category": "Mortgage Lender",
+      "rating": 4.6,
+      "fixed_rate": "4.08%+",
+      "variable_rate": "3.72%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Refinance"
+      ]
+    },
+    {
+      "id": 14,
+      "company": "Home Trust",
+      "short_name": "Home Trust",
+      "logo": "https://img.logo.dev/hometrust.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.hometrust.ca",
+      "type": "Alternative Lender",
+      "category": "B Lender",
+      "rating": 4.5,
+      "fixed_rate": "4.79%+",
+      "variable_rate": "4.29%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Alternative Mortgage"
+      ]
+    },
+    {
+      "id": 15,
+      "company": "Equitable Bank",
+      "short_name": "EQ Bank",
+      "logo": "https://img.logo.dev/eqbank.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.equitablebank.ca",
+      "type": "Alternative Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "4.49%+",
+      "variable_rate": "4.05%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Refinance"
+      ]
+    },
+    {
+      "id": 16,
+      "company": "RFA Bank of Canada",
+      "short_name": "RFA",
+      "logo": "https://img.logo.dev/rfa.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.rfa.ca",
+      "type": "Schedule I Bank",
+      "category": "Bank",
+      "rating": 4.5,
+      "fixed_rate": "4.18%+",
+      "variable_rate": "3.84%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 17,
+      "company": "Alterna Bank",
+      "short_name": "Alterna",
+      "logo": "https://img.logo.dev/alterna.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.alternabank.ca",
+      "type": "Digital Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "4.24%+",
+      "variable_rate": "3.90%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "ON"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC"
+      ]
+    },
+    {
+      "id": 18,
+      "company": "B2B Bank",
+      "short_name": "B2B Bank",
+      "logo": "https://img.logo.dev/b2bbank.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.b2bbank.com",
+      "type": "Schedule I Bank",
+      "category": "Bank",
+      "rating": 4.5,
+      "fixed_rate": "4.20%+",
+      "variable_rate": "3.88%+",
+      "heloc": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 19,
+      "company": "Laurentian Bank",
+      "short_name": "Laurentian",
+      "logo": "https://img.logo.dev/laurentianbank.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.laurentianbank.ca",
+      "type": "Regional Bank",
+      "category": "Bank",
+      "rating": 4.4,
+      "fixed_rate": "4.30%+",
+      "variable_rate": "3.92%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "QC",
+        "ON",
+        "BC",
+        "AB"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Refinance"
+      ]
+    },
+    {
+      "id": 20,
+      "company": "Canadian Western Bank",
+      "short_name": "CWB",
+      "logo": "https://img.logo.dev/cwbank.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.cwbank.com",
+      "type": "Regional Bank",
+      "category": "Bank",
+      "rating": 4.5,
+      "fixed_rate": "4.26%+",
+      "variable_rate": "3.90%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "AB",
+        "BC",
+        "SK",
+        "MB",
+        "ON"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Construction",
+        "Refinance"
+      ]
+    },
+    {
+      "id": 21,
+      "company": "Simplii Financial",
+      "short_name": "Simplii",
+      "logo": "https://img.logo.dev/simplii.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.simplii.com",
+      "type": "Digital Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.28%+",
+      "variable_rate": "3.89%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Refinfancing"
+      ]
+    },
+    {
+      "id": 22,
+      "company": "Tangerine Bank",
+      "short_name": "Tangerine",
+      "logo": "https://img.logo.dev/tangerine.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.tangerine.ca",
+      "type": "Digital Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "4.25%+",
+      "variable_rate": "3.85%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Refining"
+      ]
+    },
+    {
+      "id": 23,
+      "company": "Desjardins",
+      "short_name": "Desjardins",
+      "logo": "https://img.logo.dev/desjardins.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.desjardins.com",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.8,
+      "fixed_rate": "4.20%+",
+      "variable_rate": "3.82%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "QC",
+        "ON"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Construction",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 24,
+      "company": "Meridian Credit Union",
+      "short_name": "Meridian",
+      "logo": "https://img.logo.dev/meridiancu.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.meridiancu.ca",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.7,
+      "fixed_rate": "4.18%+",
+      "variable_rate": "3.80%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "ON"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC"
+      ]
+    },
+    {
+      "id": 25,
+      "company": "Coast Capital",
+      "short_name": "Coast Capital",
+      "logo": "https://img.logo.dev/coastcapitalsavings.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.coastcapitalsavings.com",
+      "type": "Federal Credit Union",
+      "category": "Credit Union",
+      "rating": 4.7,
+      "fixed_rate": "4.22%+",
+      "variable_rate": "3.84%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC"
+      ]
+    },
+    {
+      "id": 26,
+      "company": "Vancity",
+      "short_name": "Vancity",
+      "logo": "https://img.logo.dev/vancity.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.vancity.com",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.8,
+      "fixed_rate": "4.15%+",
+      "variable_rate": "3.78%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "BC"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Green Mortgage"
+      ]
+    },
+    {
+      "id": 27,
+      "company": "First West Credit Union",
+      "short_name": "First West",
+      "logo": "https://img.logo.dev/firstwestcu.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.firstwestcu.ca",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.6,
+      "fixed_rate": "4.18%+",
+      "variable_rate": "3.80%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "BC"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC"
+      ]
+    },
+    {
+      "id": 28,
+      "company": "Servus Credit Union",
+      "short_name": "Servus",
+      "logo": "https://img.logo.dev/servus.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.servus.ca",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.7,
+      "fixed_rate": "4.20%+",
+      "variable_rate": "3.82%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "AB"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Construction"
+      ]
+    },
+    {
+      "id": 29,
+      "company": "Conexus Credit Union",
+      "short_name": "Conexus",
+      "logo": "https://img.logo.dev/conexus.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.conexus.ca",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.6,
+      "fixed_rate": "4.19%+",
+      "variable_rate": "3.81%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "SK"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC"
+      ]
+    },
+    {
+      "id": 30,
+      "company": "Innovation Federal Credit Union",
+      "short_name": "Innovation",
+      "logo": "https://img.logo.dev/innovationcu.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.innovationcu.ca",
+      "type": "Federal Credit Union",
+      "category": "Credit Union",
+      "rating": 4.6,
+      "fixed_rate": "4.18%+",
+      "variable_rate": "3.80%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 31,
+      "company": "Libro Credit Union",
+      "short_name": "Libro",
+      "logo": "https://img.logo.dev/libro.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.libro.ca",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.7,
+      "fixed_rate": "4.17%+",
+      "variable_rate": "3.79%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "ON"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 32,
+      "company": "DUCA Financial Services Credit Union",
+      "short_name": "DUCA",
+      "logo": "https://img.logo.dev/duca.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.duca.com",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.7,
+      "fixed_rate": "4.18%+",
+      "variable_rate": "3.80%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "ON"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC"
+      ]
+    },
+    {
+      "id": 33,
+      "company": "Steinbach Credit Union",
+      "short_name": "SCU",
+      "logo": "https://img.logo.dev/scu.mb.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.scu.mb.ca",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.6,
+      "fixed_rate": "4.16%+",
+      "variable_rate": "3.78%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "MB"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC"
+      ]
+    },
+    {
+      "id": 34,
+      "company": "FirstOntario Credit Union",
+      "short_name": "FirstOntario",
+      "logo": "https://img.logo.dev/firstontario.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.firstontario.com",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.6,
+      "fixed_rate": "4.18%+",
+      "variable_rate": "3.81%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "ON"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Construction"
+      ]
+    },
+    {
+      "id": 35,
+      "company": "Prospera Credit Union",
+      "short_name": "Prospera",
+      "logo": "https://img.logo.dev/prospera.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.prospera.ca",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.6,
+      "fixed_rate": "4.17%+",
+      "variable_rate": "3.79%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "BC"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC"
+      ]
+    },
+    {
+      "id": 36,
+      "company": "BlueShore Financial",
+      "short_name": "BlueShore",
+      "logo": "https://img.logo.dev/blueshorefinancial.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.blueshorefinancial.com",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.7,
+      "fixed_rate": "4.18%+",
+      "variable_rate": "3.80%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "BC"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 37,
+      "company": "Gulf & Fraser",
+      "short_name": "Gulf & Fraser",
+      "logo": "https://img.logo.dev/gulfandfraser.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.gulfandfraser.com",
+      "type": "Credit Union",
+      "category": "Credit Union",
+      "rating": 4.6,
+      "fixed_rate": "4.19%+",
+      "variable_rate": "3.81%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "BC"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC"
+      ]
+    },
+    {
+      "id": 38,
+      "company": "Manulife Bank",
+      "short_name": "Manulife",
+      "logo": "https://img.logo.dev/manulife.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.manulifebank.ca",
+      "type": "Schedule I Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "4.24%+",
+      "variable_rate": "3.89%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Manulife One"
+      ]
+    },
+    {
+      "id": 39,
+      "company": "Motusbank",
+      "short_name": "Motusbank",
+      "logo": "https://img.logo.dev/motusbank.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.motusbank.ca",
+      "type": "Digital Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "4.22%+",
+      "variable_rate": "3.86%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 40,
+      "company": "HomeEquity Bank (CHIP Reverse Mortgage)",
+      "short_name": "HomeEquity",
+      "logo": "https://img.logo.dev/homeequitybank.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.homeequitybank.ca",
+      "type": "Specialty Bank",
+      "category": "Reverse Mortgage",
+      "rating": 4.5,
+      "fixed_rate": "Contact Lender",
+      "variable_rate": "Not Available",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Reverse Mortgage",
+        "CHIP Mortgage"
+      ]
+    },
+    {
+      "id": 41,
+      "company": "Nesto",
+      "short_name": "Nesto",
+      "logo": "https://img.logo.dev/nesto.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.nesto.ca",
+      "type": "Digital Mortgage Lender",
+      "category": "FinTech",
+      "rating": 4.8,
+      "fixed_rate": "4.05%+",
+      "variable_rate": "3.69%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Refinancing",
+        "Renewal"
+      ]
+    },
+    {
+      "id": 42,
+      "company": "Pine",
+      "short_name": "Pine",
+      "logo": "https://img.logo.dev/pine.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.pine.ca",
+      "type": "Digital Mortgage Lender",
+      "category": "FinTech",
+      "rating": 4.8,
+      "fixed_rate": "4.03%+",
+      "variable_rate": "3.67%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Renewal",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 43,
+      "company": "True North Mortgage",
+      "short_name": "True North",
+      "logo": "https://img.logo.dev/truenorthmortgage.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.truenorthmortgage.ca",
+      "type": "Mortgage Brokerage",
+      "category": "Broker",
+      "rating": 4.8,
+      "fixed_rate": "4.00%+",
+      "variable_rate": "3.65%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Renewal",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 44,
+      "company": "Ratehub Mortgages",
+      "short_name": "Ratehub",
+      "logo": "https://img.logo.dev/ratehub.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.ratehub.ca",
+      "type": "Mortgage Brokerage",
+      "category": "Broker",
+      "rating": 4.8,
+      "fixed_rate": "3.99%+",
+      "variable_rate": "3.64%+",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Renewal",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 45,
+      "company": "CanWise Financial",
+      "short_name": "CanWise",
+      "logo": "https://img.logo.dev/canwise.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.canwise.com",
+      "type": "Mortgage Brokerage",
+      "category": "Broker",
+      "rating": 4.7,
+      "fixed_rate": "4.01%+",
+      "variable_rate": "3.66%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Renewal",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 46,
+      "company": "Butler Mortgage",
+      "short_name": "Butler",
+      "logo": "https://img.logo.dev/butlermortgage.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.butlermortgage.ca",
+      "type": "Mortgage Brokerage",
+      "category": "Broker",
+      "rating": 4.8,
+      "fixed_rate": "3.98%+",
+      "variable_rate": "3.63%+",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Renewal",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 47,
+      "company": "Dominion Lending Centres",
+      "short_name": "DLC",
+      "logo": "https://img.logo.dev/dominionlending.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.dlc.ca",
+      "type": "Mortgage Brokerage Network",
+      "category": "Broker",
+      "rating": 4.7,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Construction",
+        "Renewal",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 48,
+      "company": "Mortgage Alliance",
+      "short_name": "Mortgage Alliance",
+      "logo": "https://img.logo.dev/mortgagealliance.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.mortgagealliance.com",
+      "type": "Mortgage Brokerage Network",
+      "category": "Broker",
+      "rating": 4.7,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Construction",
+        "Renewal",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 49,
+      "company": "Mortgage Architects",
+      "short_name": "Mortgage Architects",
+      "logo": "https://img.logo.dev/mortgagearchitects.ca?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.mortgagearchitects.ca",
+      "type": "Mortgage Brokerage Network",
+      "category": "Broker",
+      "rating": 4.7,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "heloc": true,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "HELOC",
+        "Construction",
+        "Renewal",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 50,
+      "company": "Rocket Mortgage Canada",
+      "short_name": "Rocket Mortgage",
+      "logo": "https://img.logo.dev/rocketmortgage.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.rocketmortgage.ca",
+      "type": "Digital Mortgage Platform",
+      "category": "FinTech",
+      "rating": 4.6,
+      "fixed_rate": "Competitive Rates",
+      "variable_rate": "Competitive Rates",
+      "heloc": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "provinces": [
+        "All Canada"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Renewal",
+        "Refinancing"
+      ]
+    }
+  ]
+}

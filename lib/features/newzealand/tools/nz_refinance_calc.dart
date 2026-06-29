@@ -68,6 +68,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
     final labelCtrl = TextEditingController(text: 'NZ Refinance Calculator');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_refinance_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

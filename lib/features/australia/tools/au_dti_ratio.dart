@@ -65,6 +65,7 @@ class _AUDtiRatioState extends ConsumerState<AUDtiRatio> {
     final labelCtrl = TextEditingController(text: 'DTI Check');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_dti_ratio'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

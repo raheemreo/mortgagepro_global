@@ -45,6 +45,7 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
     final labelCtrl = TextEditingController(text: 'NZ Ring-Fencing');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_ring_fencing/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

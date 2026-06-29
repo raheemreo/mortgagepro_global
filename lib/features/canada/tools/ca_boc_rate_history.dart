@@ -47,6 +47,7 @@ class _CABocRateHistoryState extends ConsumerState<CABocRateHistory> {
     final labelCtrl = TextEditingController(text: 'Rate Impact Scenario');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/ca_boc_rate_history/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

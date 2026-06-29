@@ -122,6 +122,7 @@ class _AULmiCalcState extends ConsumerState<AULmiCalc> {
     final labelCtrl = TextEditingController(text: 'Bondi LMI Estimate');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_lmi_calculator'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

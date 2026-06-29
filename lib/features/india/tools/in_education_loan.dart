@@ -156,6 +156,7 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
     final labelCtrl = TextEditingController(text: 'Education Loan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_education_loan/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

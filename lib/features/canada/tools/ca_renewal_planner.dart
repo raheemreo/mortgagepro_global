@@ -77,6 +77,7 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
     final labelCtrl = TextEditingController(text: 'Renewal Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/ca_renewal_planner/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

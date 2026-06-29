@@ -96,6 +96,7 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
     final labelCtrl = TextEditingController(text: 'Amortization Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_amortization'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

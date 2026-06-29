@@ -103,6 +103,7 @@ class _USAPmiBpmiScreenState extends ConsumerState<USAPmiBpmiScreen> {
     final labelCtrl = TextEditingController(text: 'BPMI Borrower-Paid PMI');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_pmi_bpmi_screen/save'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

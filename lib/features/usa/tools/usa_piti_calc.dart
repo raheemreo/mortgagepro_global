@@ -1184,6 +1184,7 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
     final labelCtrl = TextEditingController(text: 'PITI Calculator');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_piti_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -124,6 +124,7 @@ class _USAHoaReserveFundHealthScreenState extends ConsumerState<USAHoaReserveFun
     final labelCtrl = TextEditingController(text: 'Reserve Fund Analysis');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_hoa_reserve_fund_health_screen'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

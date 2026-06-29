@@ -1,0 +1,1530 @@
+{
+  "country": "New Zealand",
+  "currency": "NZD",
+  "lenders": [
+    {
+      "id": 1,
+      "company": "ANZ Bank New Zealand",
+      "short_name": "ANZ",
+      "logo": "https://img.logo.dev/anz.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.anz.co.nz",
+      "type": "Major Bank",
+      "category": "Bank",
+      "rating": 4.9,
+      "fixed_rate": "4.89%+",
+      "variable_rate": "6.79%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Floating",
+        "Construction",
+        "Investment",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 2,
+      "company": "ASB Bank",
+      "short_name": "ASB",
+      "logo": "https://img.logo.dev/asb.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.asb.co.nz",
+      "type": "Major Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "4.85%+",
+      "variable_rate": "6.75%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Floating",
+        "Orbit (Offset)",
+        "Construction"
+      ]
+    },
+    {
+      "id": 3,
+      "company": "Bank of New Zealand",
+      "short_name": "BNZ",
+      "logo": "https://img.logo.dev/bnz.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.bnz.co.nz",
+      "type": "Major Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "4.87%+",
+      "variable_rate": "6.80%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Floating",
+        "Offset",
+        "Construction",
+        "Investment"
+      ]
+    },
+    {
+      "id": 4,
+      "company": "Westpac New Zealand",
+      "short_name": "Westpac",
+      "logo": "https://img.logo.dev/westpac.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.westpac.co.nz",
+      "type": "Major Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "4.90%+",
+      "variable_rate": "6.85%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Choices Floating",
+        "Offset",
+        "Investment"
+      ]
+    },
+    {
+      "id": 5,
+      "company": "Kiwibank",
+      "short_name": "Kiwibank",
+      "logo": "https://img.logo.dev/kiwibank.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.kiwibank.co.nz",
+      "type": "Government-Owned Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "4.84%+",
+      "variable_rate": "6.74%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Offset",
+        "Construction",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 6,
+      "company": "TSB Bank",
+      "short_name": "TSB",
+      "logo": "https://img.logo.dev/tsb.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.tsb.co.nz",
+      "type": "Regional Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.82%+",
+      "variable_rate": "6.69%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Construction",
+        "Investment"
+      ]
+    },
+    {
+      "id": 7,
+      "company": "SBS Bank",
+      "short_name": "SBS",
+      "logo": "https://img.logo.dev/sbsbank.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.sbsbank.co.nz",
+      "type": "Mutual Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.80%+",
+      "variable_rate": "6.68%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Construction",
+        "Investment"
+      ]
+    },
+    {
+      "id": 8,
+      "company": "The Co-operative Bank",
+      "short_name": "Co-operative Bank",
+      "logo": "https://img.logo.dev/co-operativebank.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.co-operativebank.co.nz",
+      "type": "Co-operative Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.83%+",
+      "variable_rate": "6.71%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Investment"
+      ]
+    },
+    {
+      "id": 9,
+      "company": "Heartland Bank",
+      "short_name": "Heartland",
+      "logo": "https://img.logo.dev/heartland.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.heartland.co.nz",
+      "type": "Specialist Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "4.95%+",
+      "variable_rate": "6.89%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Reverse Mortgage",
+        "Investment",
+        "Fixed"
+      ]
+    },
+    {
+      "id": 10,
+      "company": "Rabobank New Zealand",
+      "short_name": "Rabobank",
+      "logo": "https://img.logo.dev/rabobank.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.rabobank.co.nz",
+      "type": "International Bank",
+      "category": "Agricultural Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.92%+",
+      "variable_rate": "6.86%+",
+      "interest_only": true,
+      "owner_occupier": false,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Rural",
+        "Farm Loans",
+        "Commercial Property",
+        "Fixed"
+      ]
+    },
+    {
+      "id": 11,
+      "company": "HSBC New Zealand",
+      "short_name": "HSBC",
+      "logo": "https://img.logo.dev/hsbc.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.hsbc.co.nz",
+      "type": "International Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.94%+",
+      "variable_rate": "6.88%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Floating",
+        "Premier Mortgage",
+        "Investment"
+      ]
+    },
+    {
+      "id": 12,
+      "company": "China Construction Bank (New Zealand)",
+      "short_name": "CCB NZ",
+      "logo": "https://img.logo.dev/ccb.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.ccb.com",
+      "type": "International Bank",
+      "category": "Bank",
+      "rating": 4.5,
+      "fixed_rate": "5.02%+",
+      "variable_rate": "6.95%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Commercial",
+        "Investment"
+      ]
+    },
+    {
+      "id": 13,
+      "company": "Industrial and Commercial Bank of China New Zealand",
+      "short_name": "ICBC NZ",
+      "logo": "https://img.logo.dev/icbc.com.cn?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.icbc.com.cn",
+      "type": "International Bank",
+      "category": "Bank",
+      "rating": 4.5,
+      "fixed_rate": "5.01%+",
+      "variable_rate": "6.93%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Commercial",
+        "Investment"
+      ]
+    },
+    {
+      "id": 14,
+      "company": "Bank of China New Zealand",
+      "short_name": "BOC NZ",
+      "logo": "https://img.logo.dev/bankofchina.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.bankofchina.com",
+      "type": "International Bank",
+      "category": "Bank",
+      "rating": 4.5,
+      "fixed_rate": "5.00%+",
+      "variable_rate": "6.92%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Commercial",
+        "Investment"
+      ]
+    },
+    {
+      "id": 15,
+      "company": "Citibank New Zealand",
+      "short_name": "Citibank",
+      "logo": "https://img.logo.dev/citi.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.citibank.co.nz",
+      "type": "International Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "4.98%+",
+      "variable_rate": "6.91%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Premier Mortgage"
+      ]
+    },
+    {
+      "id": 16,
+      "company": "Bank of India New Zealand",
+      "short_name": "BOI NZ",
+      "logo": "https://img.logo.dev/bankofindia.co.in?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://bankofindia.co.in",
+      "type": "International Bank",
+      "category": "Bank",
+      "rating": 4.4,
+      "fixed_rate": "5.08%+",
+      "variable_rate": "6.99%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Commercial"
+      ]
+    },
+    {
+      "id": 17,
+      "company": "MUFG Bank New Zealand",
+      "short_name": "MUFG",
+      "logo": "https://img.logo.dev/mufg.jp?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.mufg.jp",
+      "type": "International Bank",
+      "category": "Corporate Bank",
+      "rating": 4.5,
+      "fixed_rate": "5.05%+",
+      "variable_rate": "6.96%+",
+      "interest_only": true,
+      "owner_occupier": false,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": false,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": false,
+      "pre_approval": false,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Commercial",
+        "Corporate",
+        "Investment"
+      ]
+    },
+    {
+      "id": 18,
+      "company": "Industrial Bank New Zealand",
+      "short_name": "Industrial Bank",
+      "logo": "https://img.logo.dev/cib.com.cn?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.cib.com.cn",
+      "type": "International Bank",
+      "category": "Bank",
+      "rating": 4.4,
+      "fixed_rate": "5.03%+",
+      "variable_rate": "6.94%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Commercial"
+      ]
+    },
+    {
+      "id": 19,
+      "company": "Bank of Baroda New Zealand",
+      "short_name": "Bank of Baroda",
+      "logo": "https://img.logo.dev/bankofbaroda.in?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.bankofbaroda.in",
+      "type": "International Bank",
+      "category": "Bank",
+      "rating": 4.4,
+      "fixed_rate": "5.04%+",
+      "variable_rate": "6.95%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": false,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Commercial",
+        "Investment"
+      ]
+    },
+    {
+      "id": 20,
+      "company": "JPMorgan Chase New Zealand",
+      "short_name": "JPMorgan",
+      "logo": "https://img.logo.dev/jpmorganchase.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.jpmorganchase.com",
+      "type": "International Bank",
+      "category": "Corporate Bank",
+      "rating": 4.6,
+      "fixed_rate": "5.06%+",
+      "variable_rate": "6.97%+",
+      "interest_only": true,
+      "owner_occupier": false,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": false,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": false,
+      "pre_approval": false,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Corporate Lending",
+        "Commercial Property",
+        "Investment Finance"
+      ]
+    },
+    {
+      "id": 21,
+      "company": "Avanti Finance",
+      "short_name": "Avanti",
+      "logo": "https://img.logo.dev/avantifinance.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.avantifinance.co.nz",
+      "type": "Non-Bank Lender",
+      "category": "Specialist Mortgage Lender",
+      "rating": 4.8,
+      "fixed_rate": "5.99%+",
+      "variable_rate": "6.95%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Near Prime",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 22,
+      "company": "Liberty New Zealand",
+      "short_name": "Liberty NZ",
+      "logo": "https://img.logo.dev/libertyfinancial.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.libertyfinancial.co.nz",
+      "type": "Non-Bank Lender",
+      "category": "Specialist Mortgage",
+      "rating": 4.7,
+      "fixed_rate": "6.05%+",
+      "variable_rate": "7.05%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Low Doc",
+        "SMSF"
+      ]
+    },
+    {
+      "id": 23,
+      "company": "Basecorp Finance",
+      "short_name": "Basecorp",
+      "logo": "https://img.logo.dev/basecorp.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.basecorp.co.nz",
+      "type": "Finance Company",
+      "category": "Specialist Lending",
+      "rating": 4.6,
+      "fixed_rate": "6.20%+",
+      "variable_rate": "7.15%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Commercial",
+        "Property Development"
+      ]
+    },
+    {
+      "id": 24,
+      "company": "ASAP Finance",
+      "short_name": "ASAP",
+      "logo": "https://img.logo.dev/asapfinance.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.asapfinance.co.nz",
+      "type": "Finance Company",
+      "category": "Mortgage Lender",
+      "rating": 4.6,
+      "fixed_rate": "6.15%+",
+      "variable_rate": "7.08%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Construction"
+      ]
+    },
+    {
+      "id": 25,
+      "company": "First Mortgage Trust",
+      "short_name": "FMT",
+      "logo": "https://img.logo.dev/fmt.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.fmt.co.nz",
+      "type": "Mortgage Trust",
+      "category": "Property Finance",
+      "rating": 4.7,
+      "fixed_rate": "6.40%+",
+      "variable_rate": "7.30%+",
+      "interest_only": true,
+      "owner_occupier": false,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Commercial",
+        "Development",
+        "Investment"
+      ]
+    },
+    {
+      "id": 26,
+      "company": "General Finance",
+      "short_name": "General Finance",
+      "logo": "https://img.logo.dev/generalfinance.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.generalfinance.co.nz",
+      "type": "Finance Company",
+      "category": "Specialist Finance",
+      "rating": 4.5,
+      "fixed_rate": "6.30%+",
+      "variable_rate": "7.25%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Business Lending"
+      ]
+    },
+    {
+      "id": 27,
+      "company": "Southern Cross Partners NZ",
+      "short_name": "Southern Cross",
+      "logo": "https://img.logo.dev/scpartners.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.scpartners.co.nz",
+      "type": "Specialist Lender",
+      "category": "Non-Bank",
+      "rating": 4.6,
+      "fixed_rate": "6.10%+",
+      "variable_rate": "7.05%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 28,
+      "company": "Resimac New Zealand",
+      "short_name": "Resimac NZ",
+      "logo": "https://img.logo.dev/resimac.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.resimac.co.nz",
+      "type": "Non-Bank Lender",
+      "category": "Mortgage Lender",
+      "rating": 4.7,
+      "fixed_rate": "5.90%+",
+      "variable_rate": "6.90%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Construction",
+        "Low Doc"
+      ]
+    },
+    {
+      "id": 29,
+      "company": "Pepper Money New Zealand",
+      "short_name": "Pepper NZ",
+      "logo": "https://img.logo.dev/pepper.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.pepper.co.nz",
+      "type": "Non-Bank Lender",
+      "category": "Specialist Mortgage",
+      "rating": 4.8,
+      "fixed_rate": "5.95%+",
+      "variable_rate": "6.92%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Near Prime",
+        "Investment",
+        "Construction"
+      ]
+    },
+    {
+      "id": 30,
+      "company": "Finance Now",
+      "short_name": "Finance Now",
+      "logo": "https://img.logo.dev/financenow.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.financenow.co.nz",
+      "type": "Finance Company",
+      "category": "Consumer & Property Finance",
+      "rating": 4.6,
+      "fixed_rate": "6.35%+",
+      "variable_rate": "7.20%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Personal Property Finance"
+      ]
+    },
+    {
+      "id": 31,
+      "company": "Squirrel Mortgages",
+      "short_name": "Squirrel",
+      "logo": "https://img.logo.dev/squirrel.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.squirrel.co.nz",
+      "type": "Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.9,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Construction",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 32,
+      "company": "Loan Market New Zealand",
+      "short_name": "Loan Market",
+      "logo": "https://img.logo.dev/loanmarket.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.loanmarket.co.nz",
+      "type": "Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.8,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Construction",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 33,
+      "company": "Mike Pero Mortgages",
+      "short_name": "Mike Pero",
+      "logo": "https://img.logo.dev/mikepero.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.mikepero.co.nz",
+      "type": "Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.8,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "First Home Buyer",
+        "Construction"
+      ]
+    },
+    {
+      "id": 34,
+      "company": "New Zealand Home Loans",
+      "short_name": "NZHL",
+      "logo": "https://img.logo.dev/nzhl.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.nzhl.co.nz",
+      "type": "Mortgage Provider",
+      "category": "Home Loan Specialist",
+      "rating": 4.9,
+      "fixed_rate": "4.89%+",
+      "variable_rate": "6.69%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Floating",
+        "Offset",
+        "Investment"
+      ]
+    },
+    {
+      "id": 35,
+      "company": "Mortgage Link",
+      "short_name": "Mortgage Link",
+      "logo": "https://img.logo.dev/mortgagelink.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.mortgagelink.co.nz",
+      "type": "Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.7,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 36,
+      "company": "iLender",
+      "short_name": "iLender",
+      "logo": "https://img.logo.dev/ilender.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.ilender.co.nz",
+      "type": "Digital Mortgage Broker",
+      "category": "FinTech",
+      "rating": 4.7,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Construction"
+      ]
+    },
+    {
+      "id": 37,
+      "company": "Lighthouse Financial",
+      "short_name": "Lighthouse",
+      "logo": "https://img.logo.dev/lighthousefinancial.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.lighthousefinancial.co.nz",
+      "type": "Mortgage Adviser",
+      "category": "Financial Advisory",
+      "rating": 4.8,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Refinancing",
+        "Insurance"
+      ]
+    },
+    {
+      "id": 38,
+      "company": "Mortgage Supply Co.",
+      "short_name": "Mortgage Supply",
+      "logo": "https://img.logo.dev/mortgagesupply.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.mortgagesupply.co.nz",
+      "type": "Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.7,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Construction",
+        "Investment"
+      ]
+    },
+    {
+      "id": 39,
+      "company": "Enable.me Mortgages",
+      "short_name": "Enable.me",
+      "logo": "https://img.logo.dev/enable.me?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.enable.me",
+      "type": "Financial Coaching",
+      "category": "Mortgage Advisory",
+      "rating": 4.8,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Financial Planning"
+      ]
+    },
+    {
+      "id": 40,
+      "company": "The Mortgage Girls",
+      "short_name": "Mortgage Girls",
+      "logo": "https://img.logo.dev/themortgagegirls.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.themortgagegirls.co.nz",
+      "type": "Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.9,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Refinancing",
+        "First Home Buyer"
+      ]
+    },
+    {
+      "id": 41,
+      "company": "Unity Credit Union",
+      "short_name": "Unity",
+      "logo": "https://img.logo.dev/unitycreditunion.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.unitycreditunion.co.nz",
+      "type": "Credit Union",
+      "category": "Customer-Owned",
+      "rating": 4.7,
+      "fixed_rate": "5.15%+",
+      "variable_rate": "6.92%+",
+      "interest_only": false,
+      "owner_occupier": true,
+      "investment_property": false,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "First Home Buyer"
+      ]
+    },
+    {
+      "id": 42,
+      "company": "NZCU Baywide",
+      "short_name": "NZCU Baywide",
+      "logo": "https://img.logo.dev/nzcubaywide.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.nzcubaywide.co.nz",
+      "type": "Credit Union",
+      "category": "Customer-Owned",
+      "rating": 4.8,
+      "fixed_rate": "5.08%+",
+      "variable_rate": "6.85%+",
+      "interest_only": false,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Construction",
+        "Investment"
+      ]
+    },
+    {
+      "id": 43,
+      "company": "NZCU South",
+      "short_name": "NZCU South",
+      "logo": "https://img.logo.dev/nzcusouth.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.nzcusouth.co.nz",
+      "type": "Credit Union",
+      "category": "Customer-Owned",
+      "rating": 4.7,
+      "fixed_rate": "5.12%+",
+      "variable_rate": "6.89%+",
+      "interest_only": false,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "South Island"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Residential"
+      ]
+    },
+    {
+      "id": 44,
+      "company": "First Credit Union",
+      "short_name": "First CU",
+      "logo": "https://img.logo.dev/firstcreditunion.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.firstcreditunion.co.nz",
+      "type": "Credit Union",
+      "category": "Customer-Owned",
+      "rating": 4.7,
+      "fixed_rate": "5.10%+",
+      "variable_rate": "6.87%+",
+      "interest_only": false,
+      "owner_occupier": true,
+      "investment_property": false,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Residential"
+      ]
+    },
+    {
+      "id": 45,
+      "company": "Wairarapa Building Society",
+      "short_name": "WBS",
+      "logo": "https://img.logo.dev/wbs.net.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.wbs.net.nz",
+      "type": "Building Society",
+      "category": "Mutual",
+      "rating": 4.6,
+      "fixed_rate": "5.18%+",
+      "variable_rate": "6.95%+",
+      "interest_only": false,
+      "owner_occupier": true,
+      "investment_property": false,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "Wairarapa"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "First Home Buyer"
+      ]
+    },
+    {
+      "id": 46,
+      "company": "Nelson Building Society",
+      "short_name": "NBS",
+      "logo": "https://img.logo.dev/nbs.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.nbs.co.nz",
+      "type": "Building Society",
+      "category": "Mutual",
+      "rating": 4.7,
+      "fixed_rate": "5.09%+",
+      "variable_rate": "6.86%+",
+      "interest_only": false,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "South Island"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Investment",
+        "Construction"
+      ]
+    },
+    {
+      "id": 47,
+      "company": "Credit Union Baywide",
+      "short_name": "Baywide",
+      "logo": "https://img.logo.dev/nzcubaywide.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.nzcubaywide.co.nz",
+      "type": "Credit Union",
+      "category": "Customer-Owned",
+      "rating": 4.8,
+      "fixed_rate": "5.07%+",
+      "variable_rate": "6.84%+",
+      "interest_only": false,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Investment"
+      ]
+    },
+    {
+      "id": 48,
+      "company": "Fisher Funds Home Loans",
+      "short_name": "Fisher Funds",
+      "logo": "https://img.logo.dev/fisherfunds.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.fisherfunds.co.nz",
+      "type": "Investment & Lending",
+      "category": "Financial Services",
+      "rating": 4.6,
+      "fixed_rate": "5.25%+",
+      "variable_rate": "6.98%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": false,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Refinancing"
+      ]
+    },
+    {
+      "id": 49,
+      "company": "Southern Cross Home Loans",
+      "short_name": "Southern Cross",
+      "logo": "https://img.logo.dev/southerncrosshomeloans.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.southerncrosshomeloans.co.nz",
+      "type": "Mortgage Lender",
+      "category": "Home Loans",
+      "rating": 4.7,
+      "fixed_rate": "5.14%+",
+      "variable_rate": "6.90%+",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": false,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": false,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Investment",
+        "Construction"
+      ]
+    },
+    {
+      "id": 50,
+      "company": "Select Home Loans",
+      "short_name": "Select",
+      "logo": "https://img.logo.dev/selecthomeloans.co.nz?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.selecthomeloans.co.nz",
+      "type": "Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.7,
+      "fixed_rate": "Bank Rates",
+      "variable_rate": "Bank Rates",
+      "interest_only": true,
+      "owner_occupier": true,
+      "investment_property": true,
+      "first_home_buyer": true,
+      "refinance": true,
+      "offset_account": true,
+      "redraw_facility": false,
+      "online_application": true,
+      "pre_approval": true,
+      "broker_only": true,
+      "regions": [
+        "New Zealand"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Investment",
+        "Construction",
+        "Refinancing"
+      ]
+    }
+  ]
+}

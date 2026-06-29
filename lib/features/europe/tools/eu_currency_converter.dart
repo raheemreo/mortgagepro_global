@@ -110,6 +110,7 @@ class _EUCurrencyConverterState extends ConsumerState<EUCurrencyConverter> {
     final labelCtrl = TextEditingController(text: '$_fromCurrency to $_toCurrency');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/eu_currency_converter'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

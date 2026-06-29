@@ -40,6 +40,7 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
     final labelCtrl = TextEditingController(text: 'NZ LEM Analysis');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_low_equity_margin'),
       builder: (context) {
         return AlertDialog(
           backgroundColor: widget.theme.getCardColor(context),

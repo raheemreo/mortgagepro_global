@@ -192,6 +192,7 @@ class _USAJumboTopLendersScreenState extends ConsumerState<USAJumboTopLendersScr
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      routeSettings: const RouteSettings(name: '/lender_details'),
       builder: (context) {
         return SafeArea(
           child: Padding(

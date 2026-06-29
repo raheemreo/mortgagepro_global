@@ -62,6 +62,7 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
     final labelCtrl = TextEditingController(text: 'GDS/TDS Ratios');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/ca_gds_tds_ratio/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

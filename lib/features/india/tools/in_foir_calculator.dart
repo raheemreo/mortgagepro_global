@@ -48,6 +48,7 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
     final labelCtrl = TextEditingController(text: 'FOIR Ratio');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_foir_calculator'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -1,0 +1,1510 @@
+{
+  "country": "United Kingdom",
+  "currency": "GBP",
+  "lenders": [
+    {
+      "id": 1,
+      "company": "HSBC UK",
+      "short_name": "HSBC",
+      "logo": "https://img.logo.dev/hsbc.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.hsbc.co.uk",
+      "type": "High Street Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "3.95%+",
+      "variable_rate": "4.25%+",
+      "tracker_rate": "4.10%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "England",
+        "Scotland",
+        "Wales",
+        "Northern Ireland"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Tracker",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 2,
+      "company": "Barclays",
+      "short_name": "Barclays",
+      "logo": "https://img.logo.dev/barclays.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.barclays.co.uk",
+      "type": "High Street Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "3.94%+",
+      "variable_rate": "4.20%+",
+      "tracker_rate": "4.06%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Tracker",
+        "Offset",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 3,
+      "company": "Lloyds Bank",
+      "short_name": "Lloyds",
+      "logo": "https://img.logo.dev/lloydsbank.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.lloydsbank.com",
+      "type": "High Street Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "3.92%+",
+      "variable_rate": "4.18%+",
+      "tracker_rate": "4.05%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Offset",
+        "Tracker",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 4,
+      "company": "NatWest",
+      "short_name": "NatWest",
+      "logo": "https://img.logo.dev/natwest.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.natwest.com",
+      "type": "High Street Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "3.90%+",
+      "variable_rate": "4.16%+",
+      "tracker_rate": "4.02%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Offset",
+        "Tracker",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 5,
+      "company": "Santander UK",
+      "short_name": "Santander",
+      "logo": "https://img.logo.dev/santander.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.santander.co.uk",
+      "type": "High Street Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "3.91%+",
+      "variable_rate": "4.17%+",
+      "tracker_rate": "4.03%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Tracker",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 6,
+      "company": "Halifax",
+      "short_name": "Halifax",
+      "logo": "https://img.logo.dev/halifax.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.halifax.co.uk",
+      "type": "High Street Bank",
+      "category": "Bank",
+      "rating": 4.8,
+      "fixed_rate": "3.89%+",
+      "variable_rate": "4.15%+",
+      "tracker_rate": "4.01%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Offset",
+        "Tracker",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 7,
+      "company": "Bank of Scotland",
+      "short_name": "Bank of Scotland",
+      "logo": "https://img.logo.dev/bankofscotland.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.bankofscotland.co.uk",
+      "type": "High Street Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "3.93%+",
+      "variable_rate": "4.18%+",
+      "tracker_rate": "4.04%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "Scotland",
+        "England",
+        "Wales"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Offset",
+        "Tracker"
+      ]
+    },
+    {
+      "id": 8,
+      "company": "Royal Bank of Scotland",
+      "short_name": "RBS",
+      "logo": "https://img.logo.dev/rbs.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.rbs.co.uk",
+      "type": "High Street Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "3.94%+",
+      "variable_rate": "4.19%+",
+      "tracker_rate": "4.05%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "Scotland",
+        "England",
+        "Wales"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Offset",
+        "Tracker"
+      ]
+    },
+    {
+      "id": 9,
+      "company": "Virgin Money UK",
+      "short_name": "Virgin Money",
+      "logo": "https://img.logo.dev/uk.virginmoney.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://uk.virginmoney.com",
+      "type": "Retail Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "3.88%+",
+      "variable_rate": "4.14%+",
+      "tracker_rate": "4.00%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Tracker",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 10,
+      "company": "TSB Bank",
+      "short_name": "TSB",
+      "logo": "https://img.logo.dev/tsb.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.tsb.co.uk",
+      "type": "Retail Bank",
+      "category": "Bank",
+      "rating": 4.6,
+      "fixed_rate": "3.96%+",
+      "variable_rate": "4.21%+",
+      "tracker_rate": "4.07%+",
+      "buy_to_let": false,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Tracker",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 11,
+      "company": "Nationwide Building Society",
+      "short_name": "Nationwide",
+      "logo": "https://img.logo.dev/nationwide.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.nationwide.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.9,
+      "fixed_rate": "3.87%+",
+      "variable_rate": "4.12%+",
+      "tracker_rate": "3.98%+",
+      "buy_to_let": false,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Tracker",
+        "Offset",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 12,
+      "company": "Coventry Building Society",
+      "short_name": "Coventry",
+      "logo": "https://img.logo.dev/coventrybuildingsociety.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.coventrybuildingsociety.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.8,
+      "fixed_rate": "3.86%+",
+      "variable_rate": "4.10%+",
+      "tracker_rate": "3.97%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Tracker",
+        "Offset",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 13,
+      "company": "Yorkshire Building Society",
+      "short_name": "Yorkshire BS",
+      "logo": "https://img.logo.dev/ybs.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.ybs.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.8,
+      "fixed_rate": "3.88%+",
+      "variable_rate": "4.13%+",
+      "tracker_rate": "3.99%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 14,
+      "company": "Skipton Building Society",
+      "short_name": "Skipton",
+      "logo": "https://img.logo.dev/skipton.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.skipton.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.8,
+      "fixed_rate": "3.85%+",
+      "variable_rate": "4.09%+",
+      "tracker_rate": "3.96%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Tracker",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 15,
+      "company": "Leeds Building Society",
+      "short_name": "Leeds BS",
+      "logo": "https://img.logo.dev/leedsbuildingsociety.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.leedsbuildingsociety.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.7,
+      "fixed_rate": "3.89%+",
+      "variable_rate": "4.14%+",
+      "tracker_rate": "4.00%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Buy-to-Let",
+        "Shared Ownership"
+      ]
+    },
+    {
+      "id": 16,
+      "company": "Principality Building Society",
+      "short_name": "Principality",
+      "logo": "https://img.logo.dev/principality.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.principality.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.7,
+      "fixed_rate": "3.91%+",
+      "variable_rate": "4.15%+",
+      "tracker_rate": "4.01%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": false,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "Wales",
+        "England"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 17,
+      "company": "Newcastle Building Society",
+      "short_name": "Newcastle BS",
+      "logo": "https://img.logo.dev/newcastle.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.newcastle.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.7,
+      "fixed_rate": "3.92%+",
+      "variable_rate": "4.16%+",
+      "tracker_rate": "4.02%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Offset",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 18,
+      "company": "Nottingham Building Society",
+      "short_name": "Nottingham BS",
+      "logo": "https://img.logo.dev/thenottingham.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.thenottingham.com",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.6,
+      "fixed_rate": "3.93%+",
+      "variable_rate": "4.18%+",
+      "tracker_rate": "4.03%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Buy-to-Let",
+        "Self-Build"
+      ]
+    },
+    {
+      "id": 19,
+      "company": "Furness Building Society",
+      "short_name": "Furness",
+      "logo": "https://img.logo.dev/furnessbs.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.furnessbs.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.6,
+      "fixed_rate": "3.94%+",
+      "variable_rate": "4.19%+",
+      "tracker_rate": "4.04%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": false,
+      "online_application": false,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "England",
+        "Scotland"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Holiday Home",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 20,
+      "company": "Mansfield Building Society",
+      "short_name": "Mansfield",
+      "logo": "https://img.logo.dev/mansfieldbs.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.mansfieldbs.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.6,
+      "fixed_rate": "3.95%+",
+      "variable_rate": "4.20%+",
+      "tracker_rate": "4.05%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": false,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "England",
+        "Wales"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Self-Employed",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 21,
+      "company": "Accord Mortgages",
+      "short_name": "Accord",
+      "logo": "https://img.logo.dev/accordmortgages.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.accordmortgages.com",
+      "type": "Specialist Lender",
+      "category": "Intermediary Lender",
+      "rating": 4.8,
+      "fixed_rate": "3.84%+",
+      "variable_rate": "4.08%+",
+      "tracker_rate": "3.94%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Tracker",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 22,
+      "company": "Platform",
+      "short_name": "Platform",
+      "logo": "https://img.logo.dev/platform.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.platform.co.uk",
+      "type": "Specialist Lender",
+      "category": "Intermediary Lender",
+      "rating": 4.7,
+      "fixed_rate": "3.86%+",
+      "variable_rate": "4.10%+",
+      "tracker_rate": "3.96%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Variable",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 23,
+      "company": "Kensington Mortgages",
+      "short_name": "Kensington",
+      "logo": "https://img.logo.dev/kensingtonmortgages.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.kensingtonmortgages.co.uk",
+      "type": "Specialist Lender",
+      "category": "Specialist Mortgage",
+      "rating": 4.7,
+      "fixed_rate": "4.10%+",
+      "variable_rate": "4.38%+",
+      "tracker_rate": "4.22%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Specialist",
+        "Buy-to-Let",
+        "Self-Employed"
+      ]
+    },
+    {
+      "id": 24,
+      "company": "Precise Mortgages",
+      "short_name": "Precise",
+      "logo": "https://img.logo.dev/precisemortgages.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.precisemortgages.co.uk",
+      "type": "Specialist Lender",
+      "category": "Specialist Mortgage",
+      "rating": 4.6,
+      "fixed_rate": "4.12%+",
+      "variable_rate": "4.40%+",
+      "tracker_rate": "4.24%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Fixed",
+        "Buy-to-Let",
+        "Limited Company",
+        "Bridging"
+      ]
+    },
+    {
+      "id": 25,
+      "company": "Aldermore Bank",
+      "short_name": "Aldermore",
+      "logo": "https://img.logo.dev/aldermore.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.aldermore.co.uk",
+      "type": "Specialist Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.08%+",
+      "variable_rate": "4.34%+",
+      "tracker_rate": "4.18%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Self-Employed"
+      ]
+    },
+    {
+      "id": 26,
+      "company": "Paragon Bank",
+      "short_name": "Paragon",
+      "logo": "https://img.logo.dev/paragonbank.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.paragonbank.co.uk",
+      "type": "Specialist Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.15%+",
+      "variable_rate": "4.42%+",
+      "tracker_rate": "4.25%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Buy-to-Let",
+        "Portfolio Landlord",
+        "Limited Company"
+      ]
+    },
+    {
+      "id": 27,
+      "company": "The Mortgage Works",
+      "short_name": "TMW",
+      "logo": "https://img.logo.dev/themortgageworks.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.themortgageworks.co.uk",
+      "type": "Specialist Lender",
+      "category": "Buy-to-Let",
+      "rating": 4.8,
+      "fixed_rate": "4.06%+",
+      "variable_rate": "4.30%+",
+      "tracker_rate": "4.16%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Buy-to-Let",
+        "Portfolio",
+        "Limited Company"
+      ]
+    },
+    {
+      "id": 28,
+      "company": "Together Money",
+      "short_name": "Together",
+      "logo": "https://img.logo.dev/togethermoney.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.togethermoney.com",
+      "type": "Specialist Lender",
+      "category": "Finance",
+      "rating": 4.6,
+      "fixed_rate": "4.45%+",
+      "variable_rate": "4.70%+",
+      "tracker_rate": "4.55%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": false,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Commercial",
+        "Bridging",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 29,
+      "company": "Shawbrook Bank",
+      "short_name": "Shawbrook",
+      "logo": "https://img.logo.dev/shawbrook.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.shawbrook.co.uk",
+      "type": "Specialist Bank",
+      "category": "Bank",
+      "rating": 4.7,
+      "fixed_rate": "4.18%+",
+      "variable_rate": "4.45%+",
+      "tracker_rate": "4.28%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Buy-to-Let",
+        "Commercial",
+        "Bridging"
+      ]
+    },
+    {
+      "id": 30,
+      "company": "Foundation Home Loans",
+      "short_name": "Foundation",
+      "logo": "https://img.logo.dev/foundationforintermediaries.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.foundationforintermediaries.co.uk",
+      "type": "Specialist Lender",
+      "category": "Specialist Mortgage",
+      "rating": 4.6,
+      "fixed_rate": "4.22%+",
+      "variable_rate": "4.48%+",
+      "tracker_rate": "4.30%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Limited Company"
+      ]
+    },
+    {
+      "id": 31,
+      "company": "Fleet Mortgages",
+      "short_name": "Fleet",
+      "logo": "https://img.logo.dev/fleetmortgages.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.fleetmortgages.co.uk",
+      "type": "Specialist Lender",
+      "category": "Buy-to-Let",
+      "rating": 4.7,
+      "fixed_rate": "4.18%+",
+      "variable_rate": "4.42%+",
+      "tracker_rate": "4.26%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Buy-to-Let",
+        "Limited Company",
+        "HMO",
+        "Multi-Unit"
+      ]
+    },
+    {
+      "id": 32,
+      "company": "Landbay",
+      "short_name": "Landbay",
+      "logo": "https://img.logo.dev/landbay.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.landbay.co.uk",
+      "type": "Digital Lender",
+      "category": "Buy-to-Let",
+      "rating": 4.7,
+      "fixed_rate": "4.15%+",
+      "variable_rate": "4.38%+",
+      "tracker_rate": "4.20%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Buy-to-Let",
+        "Portfolio",
+        "Limited Company"
+      ]
+    },
+    {
+      "id": 33,
+      "company": "Keystone Property Finance",
+      "short_name": "Keystone",
+      "logo": "https://img.logo.dev/kpf.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.kpf.co.uk",
+      "type": "Specialist Lender",
+      "category": "Buy-to-Let",
+      "rating": 4.8,
+      "fixed_rate": "4.14%+",
+      "variable_rate": "4.36%+",
+      "tracker_rate": "4.19%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Buy-to-Let",
+        "Expat",
+        "Limited Company"
+      ]
+    },
+    {
+      "id": 34,
+      "company": "Bluestone Mortgages",
+      "short_name": "Bluestone",
+      "logo": "https://img.logo.dev/bluestonemortgages.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.bluestonemortgages.co.uk",
+      "type": "Specialist Lender",
+      "category": "Credit Specialist",
+      "rating": 4.6,
+      "fixed_rate": "4.55%+",
+      "variable_rate": "4.82%+",
+      "tracker_rate": "4.64%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": false,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Credit Repair",
+        "Buy-to-Let"
+      ]
+    },
+    {
+      "id": 35,
+      "company": "CHL Mortgages",
+      "short_name": "CHL",
+      "logo": "https://img.logo.dev/chlmortgages.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.chlmortgages.co.uk",
+      "type": "Specialist Lender",
+      "category": "Buy-to-Let",
+      "rating": 4.6,
+      "fixed_rate": "4.30%+",
+      "variable_rate": "4.55%+",
+      "tracker_rate": "4.40%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Buy-to-Let",
+        "Portfolio",
+        "Limited Company"
+      ]
+    },
+    {
+      "id": 36,
+      "company": "Gatehouse Bank",
+      "short_name": "Gatehouse",
+      "logo": "https://img.logo.dev/gatehousebank.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.gatehousebank.com",
+      "type": "Islamic Bank",
+      "category": "Sharia-Compliant",
+      "rating": 4.8,
+      "fixed_rate": "Rental Rate",
+      "variable_rate": "Rental Rate",
+      "tracker_rate": "Not Available",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": false,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Home Purchase Plan",
+        "Buy-to-Let",
+        "Sharia Mortgage"
+      ]
+    },
+    {
+      "id": 37,
+      "company": "Molo Finance",
+      "short_name": "Molo",
+      "logo": "https://img.logo.dev/molo.finance?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.molo.finance",
+      "type": "Digital Lender",
+      "category": "FinTech",
+      "rating": 4.8,
+      "fixed_rate": "4.09%+",
+      "variable_rate": "4.32%+",
+      "tracker_rate": "4.16%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Digital Mortgage",
+        "Buy-to-Let",
+        "Limited Company"
+      ]
+    },
+    {
+      "id": 38,
+      "company": "Zephyr Homeloans",
+      "short_name": "Zephyr",
+      "logo": "https://img.logo.dev/zephyrhomeloans.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.zephyrhomeloans.co.uk",
+      "type": "Specialist Lender",
+      "category": "Buy-to-Let",
+      "rating": 4.6,
+      "fixed_rate": "4.20%+",
+      "variable_rate": "4.45%+",
+      "tracker_rate": "4.28%+",
+      "buy_to_let": true,
+      "first_time_buyer": false,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Buy-to-Let",
+        "Portfolio",
+        "Professional Landlord"
+      ]
+    },
+    {
+      "id": 39,
+      "company": "Suffolk Building Society",
+      "short_name": "Suffolk BS",
+      "logo": "https://img.logo.dev/suffolkbuildingsociety.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.suffolkbuildingsociety.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.7,
+      "fixed_rate": "4.02%+",
+      "variable_rate": "4.24%+",
+      "tracker_rate": "4.08%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": false,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "England",
+        "Wales"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Holiday Let",
+        "Expat"
+      ]
+    },
+    {
+      "id": 40,
+      "company": "Dudley Building Society",
+      "short_name": "Dudley BS",
+      "logo": "https://img.logo.dev/dudleybuildingsociety.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.dudleybuildingsociety.co.uk",
+      "type": "Building Society",
+      "category": "Building Society",
+      "rating": 4.6,
+      "fixed_rate": "4.10%+",
+      "variable_rate": "4.34%+",
+      "tracker_rate": "4.16%+",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": false,
+      "online_application": false,
+      "agreement_in_principle": true,
+      "broker_only": false,
+      "regions": [
+        "England",
+        "Wales"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Self-Build",
+        "Buy-to-Let",
+        "Later Life Mortgage"
+      ]
+    },
+    {
+      "id": 41,
+      "company": "Habito",
+      "short_name": "Habito",
+      "logo": "https://img.logo.dev/habito.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.habito.com",
+      "type": "Digital Mortgage Broker",
+      "category": "FinTech",
+      "rating": 4.8,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Remortgage",
+        "First-Time Buyer"
+      ]
+    },
+    {
+      "id": 42,
+      "company": "Mojo Mortgages",
+      "short_name": "Mojo",
+      "logo": "https://img.logo.dev/mojomortgages.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://mojomortgages.com",
+      "type": "Digital Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.8,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 43,
+      "company": "Tembo",
+      "short_name": "Tembo",
+      "logo": "https://img.logo.dev/tembomoney.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.tembomoney.com",
+      "type": "FinTech Mortgage Broker",
+      "category": "FinTech",
+      "rating": 4.8,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": false,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": false,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "First-Time Buyer",
+        "Family Boost",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 44,
+      "company": "L&C Mortgages",
+      "short_name": "L&C",
+      "logo": "https://img.logo.dev/landc.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.landc.co.uk",
+      "type": "Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.9,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Remortgage",
+        "Offset"
+      ]
+    },
+    {
+      "id": 45,
+      "company": "Better.co.uk",
+      "short_name": "Better",
+      "logo": "https://img.logo.dev/better.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.better.co.uk",
+      "type": "Digital Mortgage Broker",
+      "category": "FinTech",
+      "rating": 4.7,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 46,
+      "company": "Mortgage Advice Bureau",
+      "short_name": "MAB",
+      "logo": "https://img.logo.dev/mortgageadvicebureau.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.mortgageadvicebureau.com",
+      "type": "Mortgage Broker Network",
+      "category": "Broker",
+      "rating": 4.8,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": true,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Protection",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 47,
+      "company": "Fluent Money",
+      "short_name": "Fluent",
+      "logo": "https://img.logo.dev/fluentmoney.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.fluentmoney.co.uk",
+      "type": "Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.7,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Remortgage",
+        "Secured Loan"
+      ]
+    },
+    {
+      "id": 48,
+      "company": "Boon Brokers",
+      "short_name": "Boon",
+      "logo": "https://img.logo.dev/boonbrokers.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.boonbrokers.co.uk",
+      "type": "Independent Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.8,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Commercial",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 49,
+      "company": "Trussle",
+      "short_name": "Trussle",
+      "logo": "https://img.logo.dev/trussle.com?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://trussle.com",
+      "type": "Digital Mortgage Broker",
+      "category": "FinTech",
+      "rating": 4.8,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Remortgage"
+      ]
+    },
+    {
+      "id": 50,
+      "company": "Charles Cameron & Associates",
+      "short_name": "CCA",
+      "logo": "https://img.logo.dev/charlescameron.co.uk?token=pk_VxNZoxtgRU2cBcDD1x0IqA&size=200&format=png",
+      "website": "https://www.charlescameron.co.uk",
+      "type": "Independent Mortgage Broker",
+      "category": "Broker",
+      "rating": 4.7,
+      "fixed_rate": "Broker Rates",
+      "variable_rate": "Broker Rates",
+      "tracker_rate": "Broker Rates",
+      "buy_to_let": true,
+      "first_time_buyer": true,
+      "remortgage": true,
+      "offset_mortgage": false,
+      "interest_only": true,
+      "online_application": true,
+      "agreement_in_principle": true,
+      "broker_only": true,
+      "regions": [
+        "United Kingdom"
+      ],
+      "mortgage_products": [
+        "Residential",
+        "Buy-to-Let",
+        "Commercial",
+        "Remortgage"
+      ]
+    }
+  ]
+}

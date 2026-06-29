@@ -156,6 +156,7 @@ class _USAFicoBetterRateScreenState extends ConsumerState<USAFicoBetterRateScree
     final labelCtrl = TextEditingController(text: 'FICO Better Rate Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_fico_better_rate_screen'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -268,6 +269,7 @@ class _USAFicoBetterRateScreenState extends ConsumerState<USAFicoBetterRateScree
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/usa/ficorate/info'),
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final cardBg = isDark ? const Color(0xFF141C33) : Colors.white;

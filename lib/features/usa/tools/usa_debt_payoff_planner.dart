@@ -190,6 +190,7 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
     final labelCtrl = TextEditingController(text: 'Debt Payoff');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_debt_payoff_planner/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

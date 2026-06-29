@@ -72,6 +72,7 @@ class _AUOffsetAccountState extends ConsumerState<AUOffsetAccount> {
     final labelCtrl = TextEditingController(text: 'Offset Savings Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_offset_account'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

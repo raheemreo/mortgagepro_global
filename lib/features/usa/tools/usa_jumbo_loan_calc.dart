@@ -146,6 +146,7 @@ class _USAJumboLoanCalcState extends ConsumerState<USAJumboLoanCalc> {
     final labelCtrl = TextEditingController(text: 'Jumbo Loan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_jumbo_loan_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -80,6 +80,7 @@ class _NZDebtConsolidationState extends ConsumerState<NZDebtConsolidation> {
     final labelCtrl = TextEditingController(text: 'NZ Debt Consolidation');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_debt_consolidation'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

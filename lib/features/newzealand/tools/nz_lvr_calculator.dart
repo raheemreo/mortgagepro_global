@@ -42,6 +42,7 @@ class _NZLvrCalculatorState extends ConsumerState<NZLvrCalculator> {
     final labelCtrl = TextEditingController(text: 'NZ LVR Calculation');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_lvr_calculator/save'),
       builder: (context) {
         return AlertDialog(
           backgroundColor: widget.theme.getCardColor(context),

@@ -170,6 +170,7 @@ class _USAFedFundsRateScreenState extends ConsumerState<USAFedFundsRateScreen>
 
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_fed_funds_rate_screen'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -81,6 +81,7 @@ class _USAPmiSplitScreenState extends ConsumerState<USAPmiSplitScreen> {
     final labelCtrl = TextEditingController(text: 'Split Premium PMI');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_pmi_split_screen/save'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

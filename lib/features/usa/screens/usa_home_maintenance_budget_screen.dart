@@ -142,6 +142,7 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
     final labelCtrl = TextEditingController(text: 'Home Maintenance Budget');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_home_maintenance_budget_screen'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -255,6 +256,7 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/usa/maintenance/info'),
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final cardBg = isDark ? const Color(0xFF141C33) : Colors.white;

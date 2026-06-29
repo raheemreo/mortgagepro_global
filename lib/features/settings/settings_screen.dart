@@ -19,7 +19,6 @@ import '../../services/analytics/analytics_screen.dart';
 import '../../core/analytics/screen_timer_mixin.dart';
 import 'widgets/pro_adfree_dialog.dart';
 
-
 // ── Design tokens ────────────────────────────────────────────────────────────
 class _C {
   static Color navy = const Color(0xFF0B1D3A);
@@ -304,6 +303,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     onTap: () => _showTermsOfService(context),
                   ),
                   _SetItem(
+                    icon: '⚠️',
+                    iconBg: const Color(0xFFFFFBEB),
+                    name: 'Disclaimer',
+                    desc: 'Calculator estimates & limitations',
+                    trailing: const _SetArrow(),
+                    onTap: () => _showDisclaimer(context),
+                  ),
+                  _SetItem(
+                    icon: '🏢',
+                    iconBg: const Color(0xFFEFF6FF),
+                    name: 'About Us',
+                    desc: 'Our mission, values & contact',
+                    trailing: const _SetArrow(),
+                    onTap: () => _showAboutUs(context),
+                  ),
+                  _SetItem(
                     icon: '🗑️',
                     iconBg: const Color(0xFFFEF2F2),
                     name: 'Delete Account',
@@ -443,12 +458,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     showModalBottomSheet(
       context: ctx,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/settings/theme'),
       builder: (_) {
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        final sheetBg =
-            isDark ? const Color(0xFF141C33) : Colors.white;
-        final handleColor =
-            isDark ? Colors.white24 : const Color(0xFFE2E8F0);
+        final sheetBg = isDark ? const Color(0xFF141C33) : Colors.white;
+        final handleColor = isDark ? Colors.white24 : const Color(0xFFE2E8F0);
         // per-option accent colors are carried in each option record
 
         return Material(
@@ -479,9 +493,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 Text(
                   'Choose how Mortgage Pro Global looks',
                   style: AppTextStyles.dmSans(
-                      size: 13,
-                      color: _C.muted,
-                      weight: FontWeight.w400),
+                      size: 13, color: _C.muted, weight: FontWeight.w400),
                 ),
                 const SizedBox(height: 20),
                 // Option tiles
@@ -511,7 +523,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                             horizontal: 14, vertical: 13),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? optAccent.withValues(alpha: isDark ? 0.15 : 0.08)
+                              ? optAccent.withValues(
+                                  alpha: isDark ? 0.15 : 0.08)
                               : (isDark
                                   ? Colors.white.withValues(alpha: 0.04)
                                   : const Color(0xFFF8FAFF)),
@@ -546,8 +559,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                       ? [gradStart, gradEnd]
                                       : isDark
                                           ? [
-                                              Colors.white.withValues(alpha: 0.10),
-                                              Colors.white.withValues(alpha: 0.06),
+                                              Colors.white
+                                                  .withValues(alpha: 0.10),
+                                              Colors.white
+                                                  .withValues(alpha: 0.06),
                                             ]
                                           : [
                                               const Color(0xFFEEF2FF),
@@ -560,7 +575,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                                 boxShadow: isSelected
                                     ? [
                                         BoxShadow(
-                                          color: gradEnd.withValues(alpha: 0.35),
+                                          color:
+                                              gradEnd.withValues(alpha: 0.35),
                                           blurRadius: 8,
                                           offset: const Offset(0, 3),
                                         )
@@ -667,6 +683,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       context: ctx,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      routeSettings: const RouteSettings(name: '/settings/country'),
       builder: (_) => Material(
         color: Theme.of(ctx).cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -735,6 +752,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     showModalBottomSheet(
       context: ctx,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/settings/currency'),
       builder: (_) => Material(
         color: Theme.of(ctx).cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -782,6 +800,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   void _showDeleteConfirm(BuildContext ctx) {
     showDialog(
       context: ctx,
+      routeSettings: const RouteSettings(name: '/dialog/settings_screen'),
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text('Delete Account',
@@ -829,6 +848,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       context: ctx,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/settings/privacy'),
       builder: (_) => Container(
         height: MediaQuery.of(ctx).size.height * 0.85,
         decoration: BoxDecoration(
@@ -871,16 +891,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             Expanded(
               child: ListView(
                 children: [
-                  _legalSection('1. Data We Collect',
-                      'We prioritize your privacy. MortgagePro Global does not collect, sell, or share personal user data or mortgage calculation histories. All data remains stored locally on your device.'),
-                  _legalSection('2. How We Use Information',
-                      'Any input provided to our calculators, including interest rates, property values, and financial indicators, is processed in-memory locally. If you use the Gemini AI Mortgage Advisor, query inputs are sent securely to Google AI APIs and are not stored by REO Technologies.'),
-                  _legalSection('3. Analytics & Cookies',
-                      'We do not deploy third-party advertising cookies or trackers. We may collect anonymous crash reports and application usage metrics to improve stability and performance.'),
-                  _legalSection('4. Security',
-                      'Industry-standard protocols are used to secure your local preferences (like favorite countries, currency choices, and saved mortgage scenarios). However, users are encouraged to maintain basic device security.'),
-                  _legalSection('5. Policy Updates',
-                      'This policy may change occasionally. Check the settings panel inside the app for the latest updates. Contact us at support@mortgageproglobal.com for concerns.'),
+                  _legalSection('1. About Mortgage Pro Global',
+                      'Mortgage Pro Global provides mortgage calculators, home loan tools, EMI calculators, refinancing calculators, affordability calculators, mortgage-related educational resources, lender information, and housing market reference information for multiple countries. We are not a bank, lender, mortgage broker, financial advisor, legal advisor, tax advisor, or investment advisor.'),
+                  _legalSection('2. Information We Collect',
+                      'Our app does not require you to create an account to use core features. We do not require your name, address, phone number, email address, government identification, bank information, or credit card information unless you voluntarily contact us.\n\nMortgage calculations are performed on your device. Calculator inputs such as loan amount, interest rate, property value, down payment, income, and mortgage term are used only to generate calculation results and are not transmitted to our servers.\n\nIf you choose to save calculators or tools, this information is stored locally on your device.'),
+                  _legalSection('3. Analytics Information',
+                      'With your consent where required by law, we use Google Firebase Analytics to understand how the app is used. Analytics may include app version, device model, operating system, screen views, app interactions, crash diagnostics, performance information, and general geographic region. We do not use Firebase Analytics to collect personally identifiable financial information.\n\nAnalytics collection remains disabled until consent is obtained where required. You may withdraw consent at any time through the app\'s privacy settings.'),
+                  _legalSection('4. Advertising',
+                      'Mortgage Pro Global uses Google AdMob to display advertisements. AdMob may collect information including advertising identifiers, device information, approximate location, and interaction with advertisements. Advertising is subject to Google\'s Privacy Policy. Where required by law, personalized advertising is shown only after obtaining valid user consent.'),
+                  _legalSection('5. Consent Management',
+                      'Mortgage Pro Global uses Google User Messaging Platform (UMP) to manage consent where required. This includes users in the European Economic Area (EEA), United Kingdom, Switzerland, and applicable United States jurisdictions. Before analytics or personalized advertising is enabled in these regions, consent is requested when required by law. Users may change their consent preferences at any time.'),
+                  _legalSection('6. Information We Do NOT Collect',
+                      'Mortgage Pro Global does not intentionally collect bank account numbers, credit card numbers, mortgage account numbers, government identification numbers, passport information, Social Security Numbers, National Insurance Numbers, Aadhaar numbers, user-entered mortgage calculations, or financial application forms.'),
+                  _legalSection('7. Third-Party Services',
+                      'Mortgage Pro Global uses third-party services including Google Firebase, Firebase Analytics, Firebase Remote Config, Google AdMob, Google User Messaging Platform (UMP), and Google Play Services. These services operate under their own privacy policies.'),
+                  _legalSection('8. Data Sharing',
+                      'We do not sell your personal information. We may share limited information with trusted service providers solely to operate and improve our app and website. These providers include Google services used for analytics, advertising, crash reporting, and application functionality.'),
+                  _legalSection('9. Data Retention',
+                      'Analytics information is retained according to Google Firebase retention settings. Locally stored calculator preferences remain on your device until you remove them or uninstall the app.'),
+                  _legalSection('10. Security',
+                      'We use reasonable administrative, technical, and organizational measures to protect information. However, no internet transmission or electronic storage system is completely secure.'),
+                  _legalSection('11. Children\'s Privacy',
+                      'Mortgage Pro Global is not directed to children under the age of 13 or the minimum legal age required in their jurisdiction. We do not knowingly collect personal information from children.'),
+                  _legalSection('12. Your Privacy Rights',
+                      'Depending on your location, you may have rights to access, correct, delete, or restrict processing of personal information, withdraw consent, object to processing, or request data portability. California residents may have additional rights under CCPA/CPRA. Users in the EEA, UK, and Switzerland may have rights under GDPR or similar laws. To exercise these rights, please contact us at privacy@mortgageproglobal.com.'),
+                  _legalSection('13. Changes to This Policy',
+                      'We may update this Privacy Policy periodically. Any changes will be published at mortgageproglobal.com with an updated "Last Updated" date. Continued use of Mortgage Pro Global after changes become effective constitutes acceptance of the revised Privacy Policy.'),
+                  _legalSection('14. Contact Us',
+                      'Website: mortgageproglobal.com\nEmail: support@mortgageproglobal.com\nPrivacy: privacy@mortgageproglobal.com'),
+                  _legalSection('15. Google Play Compliance',
+                      'Mortgage Pro Global is committed to complying with applicable privacy laws and platform requirements, including Google Play policies. The app requests user consent where required before enabling analytics or personalized advertising and provides users with options to manage applicable privacy preferences.'),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -914,6 +954,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       context: ctx,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/settings/terms'),
       builder: (_) => Container(
         height: MediaQuery.of(ctx).size.height * 0.85,
         decoration: BoxDecoration(
@@ -956,16 +997,230 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             Expanded(
               child: ListView(
                 children: [
-                  _legalSection('1. Agreement to Terms',
-                      'By using MortgagePro Global, you agree to comply with and be bound by these Terms of Service. If you disagree with any part, please discontinue use.'),
-                  _legalSection('2. Financial Disclaimer',
-                      'This application is designed for educational and informational purposes only. The estimates, values, interest rates, and loan structures provided are calculations based on mathematical models and do not constitute professional financial, tax, or legal advice. Always consult a certified mortgage advisor before committing to financial decisions.'),
-                  _legalSection('3. AI Advisor Usage',
-                      'The Gemini AI Mortgage Advisor generates text using third-party large language models. The accuracy, completeness, or suitability of AI-generated answers cannot be guaranteed. REO Technologies is not liable for errors or discrepancies.'),
-                  _legalSection('4. Account & Subscription',
-                      'MortgagePro PRO subscriptions are managed via Google Play Store / Apple App Store. Subscriptions auto-renew unless cancelled at least 24 hours before the end of the current period. Charges are non-refundable.'),
-                  _legalSection('5. Limitation of Liability',
-                      'In no event shall REO Technologies, its directors, or affiliates be liable for direct, indirect, special, incidental, or consequential damages resulting from the use or inability to use this application.'),
+                  _legalSection('1. About Mortgage Pro Global',
+                      'Mortgage Pro Global provides mortgage calculators, home loan calculators, EMI calculators, refinancing tools, affordability calculators, mortgage-related educational content, lender information, housing market resources, and reference financial information for supported countries. Mortgage Pro Global is designed for informational and educational purposes only.'),
+                  _legalSection('2. Eligibility',
+                      'You must comply with all applicable laws when using Mortgage Pro Global. The App and Website are intended for users who are legally permitted to use such services within their jurisdiction. If you are under the age of majority in your jurisdiction, you should use Mortgage Pro Global only under the supervision of a parent or legal guardian.'),
+                  _legalSection(
+                      '3. No Financial, Legal, Tax, or Investment Advice',
+                      'Mortgage Pro Global is not a bank, mortgage lender, mortgage broker, financial institution, financial advisor, investment advisor, legal advisor, or tax advisor. Nothing provided within the App or Website constitutes professional financial, legal, investment, mortgage, accounting, or tax advice. Always consult qualified professionals before making financial decisions.'),
+                  _legalSection('4. Calculator Results',
+                      'All calculators generate estimates only. Results may vary due to lender-specific policies, changing interest rates, taxes, insurance costs, government regulations, local lending requirements, fees, and rounding methods. Calculator results should never be considered guarantees, loan offers, or financial approvals.'),
+                  _legalSection('5. Mortgage Rates & Market Information',
+                      'Mortgage Pro Global may display reference mortgage rates, central bank reference rates, lender information, market trends, housing data, and educational content for general reference only. Mortgage rates, lending criteria, fees, and market conditions change frequently. Always verify information directly with the relevant lender, bank, government authority, or qualified professional.'),
+                  _legalSection('6. Lender Information',
+                      'Lender information is provided for informational purposes only. Mortgage Pro Global does not recommend specific lenders, rank lenders as financial advice, broker loans, negotiate loans, process mortgage applications, approve loans, or guarantee loan availability. Any decision to contact or engage with a lender is solely your responsibility.'),
+                  _legalSection('7. External Websites',
+                      'Mortgage Pro Global may contain links to third-party websites. These websites operate independently. We do not control or endorse their content, privacy practices, availability, security, products, services, or terms of use. Accessing third-party websites is entirely at your own risk.'),
+                  _legalSection('8. User Responsibilities',
+                      'You agree to use Mortgage Pro Global lawfully, provide accurate information when using calculators, and independently verify important financial information. You agree not to misuse the App, attempt unauthorized access, interfere with services, distribute malware, reverse engineer protected software, or use automated systems to abuse the service.'),
+                  _legalSection('9. Intellectual Property',
+                      'All content within Mortgage Pro Global, including application design, user interface, graphics, icons, branding, logos, software, source code, text, documentation, calculators, and original content is owned by or licensed to Mortgage Pro Global and is protected by applicable intellectual property laws. You may not reproduce, modify, distribute, or commercially exploit any part without prior written permission.'),
+                  _legalSection('10. Advertisements',
+                      'Mortgage Pro Global may display advertisements through third-party advertising providers, including Google AdMob. Advertisements are provided by third parties. We do not guarantee or endorse products or services advertised within the App.'),
+                  _legalSection('11. Disclaimer of Warranties',
+                      'Mortgage Pro Global is provided on an "as is" and "as available" basis. To the fullest extent permitted by law, we make no warranties regarding uninterrupted availability, accuracy, reliability, completeness, fitness for a particular purpose, merchantability, or error-free operation.'),
+                  _legalSection('12. Limitation of Liability',
+                      'To the maximum extent permitted by applicable law, Mortgage Pro Global and its owners, developers, affiliates, employees, and partners shall not be liable for any direct, indirect, incidental, consequential, special, or financial damages arising from use of the App, Website, calculators, or related information.'),
+                  _legalSection('13. Governing Law',
+                      'These Terms shall be governed by and interpreted in accordance with the applicable laws of the jurisdiction in which Mortgage Pro Global operates, unless otherwise required by mandatory consumer protection laws in your country. Nothing in these Terms limits any consumer rights that cannot legally be waived under applicable law.'),
+                  _legalSection('14. Changes to These Terms',
+                      'We may update these Terms from time to time. Updated versions will be published on the Website and may also be made available within the App. Your continued use of Mortgage Pro Global after changes become effective constitutes acceptance of the revised Terms.'),
+                  _legalSection('15. Contact Us',
+                      'Website: mortgageproglobal.com\nEmail: support@mortgageproglobal.com\nContact: mortgageproglobal.com/contact'),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D9488),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'Close',
+                  style: AppTextStyles.dmSans(
+                      size: 14, color: Colors.white, weight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDisclaimer(BuildContext ctx) {
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/settings/disclaimer'),
+      builder: (_) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.85,
+        decoration: BoxDecoration(
+          color: Theme.of(ctx).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                height: 4,
+                width: 40,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(ctx).brightness == Brightness.dark
+                      ? Colors.white24
+                      : const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                const Text('⚠️', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 10),
+                Text(
+                  'Disclaimer',
+                  style: AppTextStyles.playfair(
+                    size: 20,
+                    color: Theme.of(ctx).brightness == Brightness.dark
+                        ? Colors.white
+                        : const Color(0xFF0B1D3A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView(
+                children: [
+                  _legalSection('1. Informational Purposes Only',
+                      'Mortgage Pro Global provides mortgage calculators, home loan calculators, EMI calculators, refinancing tools, affordability calculators, property tax estimators, stamp duty calculators, lender information, housing market resources, and educational content. All information, calculators, estimates, tools, and resources are provided solely for general informational and educational purposes. Nothing contained within the App or Website should be interpreted as professional advice.'),
+                  _legalSection(
+                      '2. Not Financial, Legal, Tax, or Investment Advice',
+                      'Mortgage Pro Global is not a bank, mortgage lender, mortgage broker, financial institution, financial advisor, legal advisor, tax advisor, investment advisor, or insurance provider. The App and Website do not provide personalized financial, legal, tax, investment, mortgage, insurance, or accounting advice. Always consult qualified professionals before making financial, legal, tax, or property-related decisions.'),
+                  _legalSection('3. Calculator Results Are Estimates',
+                      'All calculator results are estimates generated from the information you enter. Results may differ from actual figures due to interest rate changes, loan terms, lending policies, property taxes, insurance premiums, government regulations, bank fees, closing costs, currency fluctuations, local lending requirements, and rounding differences. Calculator outputs should not be considered guarantees, loan approvals, offers, or binding financial information.'),
+                  _legalSection('4. Mortgage Rates & Financial Information',
+                      'Mortgage Pro Global may display reference mortgage rates, central bank reference rates, housing market information, economic indicators, educational resources, and lender information for general reference only. Rates, fees, lending criteria, government programs, and market conditions frequently change. We do not guarantee that any information displayed is current, complete, or accurate at all times. Always verify information directly with the relevant bank, lender, government authority, or qualified financial professional.'),
+                  _legalSection('5. Lender Information',
+                      'Lender information is provided for research and comparison purposes only. Mortgage Pro Global does not recommend specific lenders, endorse any lender, negotiate loans, arrange financing, process mortgage applications, approve loans, or guarantee loan availability or eligibility. Your interactions with any lender are solely between you and that lender.'),
+                  _legalSection('6. No Professional Relationship',
+                      'Your use of Mortgage Pro Global does not create any professional relationship between you and Mortgage Pro Global. No client, advisor, consultant, broker, fiduciary, attorney-client, accountant-client, or lender-borrower relationship is created through your use of the App or Website.'),
+                  _legalSection('7. Investment & Property Decisions',
+                      'Buying, selling, refinancing, or investing in property involves financial risk. You are solely responsible for evaluating any financial decisions made using information obtained from Mortgage Pro Global. We recommend seeking independent professional advice before making significant financial commitments.'),
+                  _legalSection('8. Government Programs',
+                      'The App may reference government housing programs, grants, tax benefits, or assistance schemes. Eligibility requirements, funding availability, regulations, and program details may change at any time. Always verify eligibility and current information through the relevant government authority.'),
+                  _legalSection('9. No Warranty',
+                      'Mortgage Pro Global is provided on an "as is" and "as available" basis. To the fullest extent permitted by applicable law, we make no warranties regarding availability, accuracy, reliability, completeness, fitness for a particular purpose, merchantability, or non-infringement.'),
+                  _legalSection('10. Limitation of Liability',
+                      'To the maximum extent permitted by applicable law, Mortgage Pro Global, its owners, developers, affiliates, employees, and partners shall not be liable for any loss or damage arising from use of the App or Website, calculator estimates, financial decisions, property purchases, refinancing decisions, loan approvals or rejections, mortgage applications, investment decisions, tax decisions, inaccurate or outdated information, third-party websites, service interruptions, or data loss. You use Mortgage Pro Global entirely at your own risk.'),
+                  _legalSection('11. Advertising',
+                      'Mortgage Pro Global may display advertisements provided by third-party advertising partners, including Google AdMob. We do not endorse or guarantee products or services advertised within the App or Website. Users should independently evaluate any advertised products or services before making purchasing decisions.'),
+                  _legalSection('12. International Users',
+                      'Mortgage laws, taxes, lending regulations, and property rules vary by jurisdiction. Information provided may not apply equally in every country, state, province, or region. Users are responsible for ensuring compliance with local laws and regulations.'),
+                  _legalSection('13. Contact Us',
+                      'Website: mortgageproglobal.com\nEmail: support@mortgageproglobal.com\nContact: mortgageproglobal.com/contact'),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D9488),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'Close',
+                  style: AppTextStyles.dmSans(
+                      size: 14, color: Colors.white, weight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAboutUs(BuildContext ctx) {
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/settings/about'),
+      builder: (_) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.85,
+        decoration: BoxDecoration(
+          color: Theme.of(ctx).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                height: 4,
+                width: 40,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(ctx).brightness == Brightness.dark
+                      ? Colors.white24
+                      : const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                const Text('🏢', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 10),
+                Text(
+                  'About Us',
+                  style: AppTextStyles.playfair(
+                    size: 20,
+                    color: Theme.of(ctx).brightness == Brightness.dark
+                        ? Colors.white
+                        : const Color(0xFF0B1D3A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView(
+                children: [
+                  _legalSection('Welcome to Mortgage Pro Global',
+                      'Mortgage Pro Global is a modern mortgage and home finance platform designed to help people make more informed property financing decisions through reliable calculators, educational resources, and country-specific mortgage tools.\n\nWhether you\'re buying your first home, refinancing an existing mortgage, comparing loan options, or exploring property investment opportunities, our goal is to make mortgage calculations and home finance planning simpler, faster, and more accessible.'),
+                  _legalSection('Our Mission',
+                      'Our mission is to provide easy-to-use mortgage calculators and educational financial tools that help users better understand home financing across major international mortgage markets. We believe that financial planning should be accessible to everyone, regardless of experience or location.'),
+                  _legalSection('What We Offer',
+                      'Mortgage Pro Global combines a wide range of home finance tools including Mortgage Payment Calculators, Home Loan EMI Calculators, Mortgage Affordability Calculators, Amortization Schedules, Refinance Calculators, Extra Payment & Early Payoff Calculators, Property Tax Calculators, Stamp Duty Calculators, Debt-to-Income (DTI) Calculators, GDS/TDS Calculators, Country-specific mortgage tools, Housing market resources, Reference interest rate information, Currency conversion tools, and Mortgage lender information. Many core calculators work offline.'),
+                  _legalSection('Countries We Support',
+                      '🇺🇸 United States  🇨🇦 Canada  🇬🇧 United Kingdom  🇦🇺 Australia  🇳🇿 New Zealand  🇪🇺 Europe  🇮🇳 India\n\nWe continue to improve and expand our coverage with new tools, calculators, and regional features.'),
+                  _legalSection('Our Values',
+                      'Accuracy — We strive to provide reliable calculators and educational resources based on widely accepted mortgage calculation methods and publicly available reference information.\n\nSimplicity — Financial planning can be complex. We focus on creating clear, intuitive tools that are easy to understand and use.\n\nPrivacy — We value user privacy. Core calculators do not require an account, and we are committed to handling information responsibly.\n\nTransparency — We clearly distinguish between educational content, calculator estimates, and professional financial advice.\n\nContinuous Improvement — We regularly update our App and Website with new calculators, performance improvements, security enhancements, and additional regional features.'),
+                  _legalSection('Important Information',
+                      'Mortgage Pro Global is an informational and educational platform. We are not a bank, mortgage lender, mortgage broker, financial institution, financial advisor, legal advisor, tax advisor, or investment advisor. We do not approve loans, process mortgage applications, offer financial products, recommend specific lenders, guarantee mortgage rates, or provide personalized financial advice.\n\nCalculator results are estimates only and should be used as a planning aid. Always verify important financial information directly with the relevant lender, financial institution, government authority, or a qualified professional before making financial decisions.'),
+                  _legalSection('Contact Us',
+                      'Website: mortgageproglobal.com\nSupport: support@mortgageproglobal.com\nPrivacy: privacy@mortgageproglobal.com\nBusiness: business@mortgageproglobal.com\nSecurity: security@mortgageproglobal.com'),
                   const SizedBox(height: 20),
                 ],
               ),

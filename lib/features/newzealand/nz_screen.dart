@@ -100,6 +100,7 @@ class _NZScreenState extends ConsumerState<NZScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/newzealand/mortgage/result'),
       builder: (_) => _NZCalcSheet(
           propValue: _propValue,
           depositPct: _depositPct,

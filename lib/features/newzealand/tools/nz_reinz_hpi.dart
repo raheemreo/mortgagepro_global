@@ -109,6 +109,7 @@ class _NZReinzHpiState extends ConsumerState<NZReinzHpi> {
     final labelCtrl = TextEditingController(text: 'REINZ HPI Snapshot');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_reinz_hpi'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

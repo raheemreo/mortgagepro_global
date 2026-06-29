@@ -111,6 +111,7 @@ class _INGoldLoanCalculatorState extends ConsumerState<INGoldLoanCalculator> {
     final labelCtrl = TextEditingController(text: 'Gold Loan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_gold_loan_calculator/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

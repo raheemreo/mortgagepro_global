@@ -35,6 +35,7 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
     final labelCtrl = TextEditingController(text: 'NZ Solicitor Costs');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_solicitor_costs/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

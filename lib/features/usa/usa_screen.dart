@@ -102,6 +102,7 @@ class _USAScreenState extends ConsumerState<USAScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/usa/mortgage/result'),
       builder: (_) => USAMortgageCalcSheet(
         homePrice: _homePrice,
         downPercent: _downPct,

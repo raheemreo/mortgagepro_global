@@ -37,6 +37,7 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
     final labelCtrl = TextEditingController(text: 'NZ LVR Band Analysis');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_lvr_band_tool/save'),
       builder: (context) {
         return AlertDialog(
           backgroundColor: widget.theme.getCardColor(context),

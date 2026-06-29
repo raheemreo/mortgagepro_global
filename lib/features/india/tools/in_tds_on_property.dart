@@ -85,6 +85,7 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
     final labelCtrl = TextEditingController(text: 'TDS on Property');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_tds_on_property/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -188,6 +188,7 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
     final labelCtrl = TextEditingController(text: 'Closing costs');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/eu_notary_fee_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

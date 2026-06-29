@@ -131,6 +131,7 @@ class _USAHoaFeeImpactCalcState extends ConsumerState<USAHoaFeeImpactCalc> {
     final labelCtrl = TextEditingController(text: 'HOA Fee Impact');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_hoa_fee_impact_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -108,6 +108,7 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
     final labelCtrl = TextEditingController(text: 'Home Affordability');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_affordability_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

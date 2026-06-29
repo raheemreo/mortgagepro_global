@@ -181,6 +181,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
     final labelCtrl = TextEditingController(text: 'Income Tax');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_income_tax_calculator'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

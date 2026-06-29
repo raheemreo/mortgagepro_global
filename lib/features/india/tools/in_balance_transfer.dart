@@ -68,6 +68,7 @@ class _INBalanceTransferState extends ConsumerState<INBalanceTransfer> {
     final labelCtrl = TextEditingController(text: 'Balance Transfer');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_balance_transfer'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

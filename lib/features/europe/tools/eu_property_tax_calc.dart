@@ -210,6 +210,7 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
     final labelCtrl = TextEditingController(text: 'Property Taxes');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/eu_property_tax_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

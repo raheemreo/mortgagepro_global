@@ -51,6 +51,7 @@ class _AUAmortizationState extends ConsumerState<AUAmortization> {
     final labelCtrl = TextEditingController(text: 'My Amortization Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_amortization'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

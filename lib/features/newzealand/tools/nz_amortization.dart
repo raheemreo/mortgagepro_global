@@ -76,6 +76,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
     final labelCtrl = TextEditingController(text: 'NZ Amortization Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_amortization'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

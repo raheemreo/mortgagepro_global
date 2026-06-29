@@ -48,6 +48,7 @@ class _CACmhcInsuranceState extends ConsumerState<CACmhcInsurance> {
     final labelCtrl = TextEditingController(text: 'CMHC Premium');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/ca_cmhc_insurance/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

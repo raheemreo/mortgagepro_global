@@ -92,6 +92,7 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
     final labelCtrl = TextEditingController(text: 'SPMI Single Premium PMI');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_pmi_spmi_screen/save'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

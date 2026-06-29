@@ -219,6 +219,7 @@ class _USAPiggybackLoanCalcState extends ConsumerState<USAPiggybackLoanCalc> {
     final labelCtrl = TextEditingController(text: 'Piggyback Loan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_piggyback_loan_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

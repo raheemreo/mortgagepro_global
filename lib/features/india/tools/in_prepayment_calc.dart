@@ -120,6 +120,7 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
     final labelCtrl = TextEditingController(text: 'Prepayment Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_prepayment_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

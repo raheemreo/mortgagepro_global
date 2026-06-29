@@ -93,6 +93,7 @@ class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranc
     final labelCtrl = TextEditingController(text: 'Homeowner Insurance');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_homeowner_insurance_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

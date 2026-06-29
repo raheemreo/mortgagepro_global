@@ -147,6 +147,7 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
     final labelCtrl = TextEditingController(text: 'FHA Loan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_fha_loan_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

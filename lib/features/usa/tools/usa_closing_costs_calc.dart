@@ -163,6 +163,7 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
     final labelCtrl = TextEditingController(text: 'Closing Costs');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_closing_costs_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

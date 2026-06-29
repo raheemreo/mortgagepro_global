@@ -168,6 +168,7 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/usa/usda/info'),
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final cardBg = isDark ? const Color(0xFF141C33) : Colors.white;

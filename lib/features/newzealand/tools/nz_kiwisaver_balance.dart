@@ -44,6 +44,7 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
     final labelCtrl = TextEditingController(text: 'NZ KiwiSaver Balance');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_kiwisaver_balance/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

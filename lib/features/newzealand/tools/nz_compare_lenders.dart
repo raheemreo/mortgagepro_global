@@ -125,6 +125,7 @@ class _NZCompareLendersState extends ConsumerState<NZCompareLenders> {
     final labelCtrl = TextEditingController(text: 'NZ Lender Compare');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_compare_lenders'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

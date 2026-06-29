@@ -113,6 +113,7 @@ class _INRBIMonetaryPolicyState extends ConsumerState<INRBIMonetaryPolicy> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_rbi_monetary_policy'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

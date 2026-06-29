@@ -344,6 +344,7 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
     final labelCtrl = TextEditingController(text: 'Valuation Snapshot - $_selectedCity');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_city_property_prices'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

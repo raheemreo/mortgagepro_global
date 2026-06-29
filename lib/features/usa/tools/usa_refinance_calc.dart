@@ -142,6 +142,7 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
     final labelCtrl = TextEditingController(text: 'Refinance Analysis');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_refinance_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

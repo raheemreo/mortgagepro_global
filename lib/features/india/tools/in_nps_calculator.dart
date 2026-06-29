@@ -103,6 +103,7 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
     final labelCtrl = TextEditingController(text: 'NPS Calculator');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_nps_calculator'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -2,6 +2,7 @@
 // Redesigned: Full 8-tab country dashboard
 // ignore_for_file: unused_element_parameter
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +21,6 @@ import '../notifications/providers/notifications_provider.dart';
 
 import '../../services/analytics_service.dart';
 import '../../services/analytics/analytics_screen.dart';
-import '../../services/analytics/analytics_country.dart';
 import '../../core/analytics/screen_timer_mixin.dart';
 import '../../core/analytics/scroll_depth_tracker.dart';
 
@@ -91,7 +91,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
-  int _previousIndex = 0;
+  Timer? _tabDebounce;
 
   @override
   void initState() {
@@ -102,47 +102,24 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _handleTabChange() {
     if (!_tabCtrl.indexIsChanging) {
-      final currentIndex = _tabCtrl.index;
-      if (currentIndex != _previousIndex) {
-        final previousCountry = _getCountryName(_previousIndex);
-        final currentCountry = _getCountryName(currentIndex);
-        AnalyticsService.instance.logCountryTabSelected(
-          currentCountry,
-          previousCountry,
-        );
-        _previousIndex = currentIndex;
-      }
       setState(() {});
     }
   }
 
-  String _getCountryName(int index) {
-    switch (index) {
-      case 0:
-        return 'Global';
-      case 1:
-        return AnalyticsCountry.usa;
-      case 2:
-        return AnalyticsCountry.canada;
-      case 3:
-        return AnalyticsCountry.uk;
-      case 4:
-        return AnalyticsCountry.australia;
-      case 5:
-        return AnalyticsCountry.newZealand;
-      case 6:
-        return AnalyticsCountry.europe;
-      case 7:
-        return AnalyticsCountry.india;
-      default:
-        return 'Global';
-    }
+  void _onTabTapped(int index) {
+    _tabDebounce?.cancel();
+    _tabDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        AnalyticsService.instance.logCountryTabTap(index);
+      }
+    });
   }
 
   @override
   void dispose() {
     _tabCtrl.removeListener(_handleTabChange);
     _tabCtrl.dispose();
+    _tabDebounce?.cancel();
     super.dispose();
   }
 
@@ -166,6 +143,7 @@ class _HomeScreenState extends State<HomeScreen>
                   tabCtrl: _tabCtrl,
                   expandedHeight: expandedHeight,
                   collapsedHeight: collapsedHeight,
+                  onTabTapped: _onTabTapped,
                 ),
               ),
             ],
@@ -210,11 +188,13 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   final TabController tabCtrl;
   final double expandedHeight;
   final double collapsedHeight;
+  final ValueChanged<int> onTabTapped;
 
   const _HomeHeaderDelegate({
     required this.tabCtrl,
     required this.expandedHeight,
     required this.collapsedHeight,
+    required this.onTabTapped,
   });
 
   @override
@@ -226,7 +206,8 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(_HomeHeaderDelegate old) =>
       old.tabCtrl != tabCtrl ||
       old.expandedHeight != expandedHeight ||
-      old.collapsedHeight != collapsedHeight;
+      old.collapsedHeight != collapsedHeight ||
+      old.onTabTapped != onTabTapped;
 
   @override
   Widget build(BuildContext ctx, double shrinkOffset, bool overlaps) {
@@ -374,6 +355,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
             right: 0,
             child: TabBar(
               controller: tabCtrl,
+              onTap: onTabTapped,
               isScrollable: true,
               tabAlignment: TabAlignment.start,
               padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),

@@ -48,6 +48,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
     final labelCtrl = TextEditingController(text: 'NZ Extra Pay Plan');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_extra_repayments'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

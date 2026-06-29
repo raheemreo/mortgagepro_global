@@ -170,6 +170,7 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_student_loan_dti_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

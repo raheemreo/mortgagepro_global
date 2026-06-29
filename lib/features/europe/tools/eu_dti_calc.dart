@@ -184,6 +184,7 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
     final labelCtrl = TextEditingController(text: 'Europe DTI');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/eu_dti_calc'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

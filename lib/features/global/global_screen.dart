@@ -897,6 +897,7 @@ void _showForexSheet(BuildContext context, WidgetRef ref) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
+    routeSettings: const RouteSettings(name: '/global/info'),
     builder: (_) => const _ForexSheet(),
   );
 }

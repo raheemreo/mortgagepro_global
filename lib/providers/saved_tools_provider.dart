@@ -2,6 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/analytics_service.dart';
 
 class SavedToolsNotifier extends StateNotifier<List<String>> {
   SavedToolsNotifier() : super([]) {
@@ -13,7 +14,7 @@ class SavedToolsNotifier extends StateNotifier<List<String>> {
     state = prefs.getStringList('saved_tool_ids') ?? [];
   }
 
-  Future<void> toggleFavorite(String toolId) async {
+  Future<void> toggleFavorite(String toolId, {String itemType = 'calculator'}) async {
     final prefs = await SharedPreferences.getInstance();
     final current = List<String>.from(state);
     if (current.contains(toolId)) {
@@ -23,6 +24,7 @@ class SavedToolsNotifier extends StateNotifier<List<String>> {
     }
     await prefs.setStringList('saved_tool_ids', current);
     state = current;
+    AnalyticsService.instance.logFavoriteToggled(itemType: itemType);
   }
 
   Future<void> removeFavorite(String toolId) async {

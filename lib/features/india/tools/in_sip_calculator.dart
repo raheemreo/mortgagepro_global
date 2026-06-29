@@ -165,6 +165,7 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
     final labelCtrl = TextEditingController(text: 'SIP Calculator');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_sip_calculator/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

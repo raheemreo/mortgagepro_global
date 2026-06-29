@@ -63,6 +63,7 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
     final labelCtrl = TextEditingController(text: 'Stamp Duty - ${state['name']}');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_stamp_duty_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -121,6 +121,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
         TextEditingController(text: 'FHB Grant - $_selectedState');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/au_first_home_grant'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

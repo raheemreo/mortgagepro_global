@@ -66,6 +66,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
     final labelCtrl = TextEditingController(text: 'NZ Deposit Savings');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_deposit_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -332,6 +332,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/notification/test'),
       builder: (_) {
         return Material(
           color: Theme.of(context).cardColor,

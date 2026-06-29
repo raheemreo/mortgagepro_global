@@ -48,6 +48,7 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
     final labelCtrl = TextEditingController(text: 'KiwiSaver Withdrawal');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/nz_kiwisaver_withdrawal/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

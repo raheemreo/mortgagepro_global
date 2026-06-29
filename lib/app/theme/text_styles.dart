@@ -12,7 +12,7 @@ class AppTextStyles {
     double? height,
     double? letterSpacing,
   }) =>
-      GoogleFonts.dmSans(
+      GoogleFonts.playfairDisplay(
         fontSize: size,
         fontWeight: weight,
         color: color,

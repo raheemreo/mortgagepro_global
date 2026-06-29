@@ -84,6 +84,7 @@ class _USAPmiLpmiScreenState extends ConsumerState<USAPmiLpmiScreen> {
     final labelCtrl = TextEditingController(text: 'LPMI Lender-Paid PMI');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_pmi_lpmi_screen'),
       builder: (context) => AlertDialog(
         backgroundColor: _theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

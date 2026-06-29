@@ -1177,6 +1177,7 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
     final labelCtrl = TextEditingController(text: 'Amortization Schedule');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/usa_amortization_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

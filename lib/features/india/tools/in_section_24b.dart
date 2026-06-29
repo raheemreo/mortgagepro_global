@@ -57,6 +57,7 @@ class _INSection24BState extends ConsumerState<INSection24B> {
     final labelCtrl = TextEditingController(text: 'Section 24(b) Deduction');
     final confirmed = await showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: '/dialog/in_section_24b'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
