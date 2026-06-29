@@ -804,59 +804,86 @@ String _getFallbackBenchmark(String code) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider
 // ─────────────────────────────────────────────────────────────────────────────
-final globalLendersProvider =
-    FutureProvider<Map<String, _CountryData>>((ref) async {
-  final results = await Future.wait(
-    _countryOrder.map((code) async {
-      final remote = await _fetchCountryFile(code);
-      if (remote != null) return MapEntry(code, remote);
+class GlobalLendersNotifier extends StateNotifier<AsyncValue<Map<String, _CountryData>>> {
+  GlobalLendersNotifier() : super(const AsyncValue.loading()) {
+    loadData();
+  }
 
-      // Fallback directly to local asset if remote fails
-      try {
-        final jsonString =
-            await rootBundle.loadString('Lenders/${code}_lenders.json');
-        final v = json.decode(jsonString) as Map<String, dynamic>;
-        final rawLenders = v['lenders'] ?? v['loan_companies'];
-        final lenders = <_Lender>[];
-        if (rawLenders is List) {
-          for (int i = 0; i < rawLenders.length; i++) {
-            lenders.add(
-                _Lender.fromJson(rawLenders[i] as Map<String, dynamic>, i));
-          }
+  Future<void> loadData() async {
+    final localData = <String, _CountryData>{};
+    for (final code in _countryOrder) {
+      localData[code] = await _loadLocalCountryData(code);
+    }
+    state = AsyncValue.data(localData);
+
+    // Fetch remote data in the background
+    _fetchRemoteData(localData);
+  }
+
+  Future<_CountryData> _loadLocalCountryData(String code) async {
+    try {
+      final jsonString =
+          await rootBundle.loadString('Lenders/${code}_lenders.json');
+      final v = json.decode(jsonString) as Map<String, dynamic>;
+      
+      final rawLenders = v['lenders'] ?? v['loan_companies'];
+      final lenders = <_Lender>[];
+      if (rawLenders is List) {
+        for (int i = 0; i < rawLenders.length; i++) {
+          lenders.add(
+              _Lender.fromJson(rawLenders[i] as Map<String, dynamic>, i));
         }
-        final totalReviews =
-            lenders.fold<double>(0, (sum, l) => sum + l.reviewCount);
-        for (int i = 0; i < lenders.length; i++) {
-          if (lenders[i].share == 0.0) {
-            double calculatedShare = totalReviews > 0
-                ? (lenders[i].reviewCount / totalReviews) * 75.0
-                : max(3.0, 30.0 - (i * 3.5));
-            lenders[i] = lenders[i].copyWith(
-                share: double.parse(calculatedShare.toStringAsFixed(1)));
-          }
-        }
-        return MapEntry(
-            code,
-            _CountryData(
-              flag: v['flag'] as String? ?? '',
-              name: v['name'] as String? ?? v['country'] as String? ?? '',
-              rateLabel:
-                  v['rateLabel'] as String? ?? _getFallbackRateLabel(code),
-              currency: v['currency'] as String? ?? 'USD',
-              centralBank:
-                  v['centralBank'] as String? ?? _getFallbackCentralBank(code),
-              benchmarkRate:
-                  v['benchmarkRate'] as String? ?? _getFallbackBenchmark(code),
-              lenders: lenders,
-            ));
-      } catch (e) {
-        debugPrint(
-            '⚠️ Failed to load local fallback asset for $code: $e. Using static fallback.');
-        return MapEntry(code, _staticData[code]!);
       }
-    }),
-  );
-  return Map.fromEntries(results);
+      final totalReviews =
+          lenders.fold<double>(0, (sum, l) => sum + l.reviewCount);
+      for (int i = 0; i < lenders.length; i++) {
+        if (lenders[i].share == 0.0) {
+          double calculatedShare = totalReviews > 0
+              ? (lenders[i].reviewCount / totalReviews) * 75.0
+              : max(3.0, 30.0 - (i * 3.5));
+          lenders[i] = lenders[i].copyWith(
+              share: double.parse(calculatedShare.toStringAsFixed(1)));
+        }
+      }
+      return _CountryData(
+        flag: v['flag'] as String? ?? '',
+        name: v['name'] as String? ?? v['country'] as String? ?? '',
+        rateLabel: v['rateLabel'] as String? ?? _getFallbackRateLabel(code),
+        currency: v['currency'] as String? ?? 'USD',
+        centralBank:
+            v['centralBank'] as String? ?? _getFallbackCentralBank(code),
+        benchmarkRate:
+            v['benchmarkRate'] as String? ?? _getFallbackBenchmark(code),
+        lenders: lenders,
+      );
+    } catch (e) {
+      debugPrint(
+          '⚠️ Failed to load local fallback asset for $code: $e. Using static fallback.');
+      return _staticData[code]!;
+    }
+  }
+
+  Future<void> _fetchRemoteData(Map<String, _CountryData> currentData) async {
+    final updatedData = Map<String, _CountryData>.from(currentData);
+    bool hasUpdates = false;
+
+    await Future.wait(_countryOrder.map((code) async {
+      final remote = await _fetchCountryFile(code);
+      if (remote != null) {
+        updatedData[code] = remote;
+        hasUpdates = true;
+      }
+    }));
+
+    if (hasUpdates) {
+      state = AsyncValue.data(updatedData);
+    }
+  }
+}
+
+final globalLendersProvider =
+    StateNotifierProvider<GlobalLendersNotifier, AsyncValue<Map<String, _CountryData>>>((ref) {
+  return GlobalLendersNotifier();
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
