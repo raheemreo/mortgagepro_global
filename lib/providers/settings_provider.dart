@@ -10,7 +10,6 @@ class AppSettings {
   final String themeMode; // 'light' | 'dark' | 'system'
   final int defaultTermYears;
   final double defaultDepositPercent;
-  final String geminiApiKey;
   final String preferredCountry;
   final String preferredCurrency;
   final bool privacyChoicesOptOut;
@@ -19,7 +18,6 @@ class AppSettings {
     this.themeMode = 'system',
     this.defaultTermYears = 30,
     this.defaultDepositPercent = 20.0,
-    this.geminiApiKey = '',
     this.preferredCountry = 'USA',
     this.preferredCurrency = 'USD',
     this.privacyChoicesOptOut = false,
@@ -44,7 +42,6 @@ class AppSettings {
     String? themeMode,
     int? defaultTermYears,
     double? defaultDepositPercent,
-    String? geminiApiKey,
     String? preferredCountry,
     String? preferredCurrency,
     bool? privacyChoicesOptOut,
@@ -54,7 +51,6 @@ class AppSettings {
       defaultTermYears: defaultTermYears ?? this.defaultTermYears,
       defaultDepositPercent:
           defaultDepositPercent ?? this.defaultDepositPercent,
-      geminiApiKey: geminiApiKey ?? this.geminiApiKey,
       preferredCountry: preferredCountry ?? this.preferredCountry,
       preferredCurrency: preferredCurrency ?? this.preferredCurrency,
       privacyChoicesOptOut: privacyChoicesOptOut ?? this.privacyChoicesOptOut,
@@ -69,6 +65,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Secure Cleanup: Remove any previously stored plaintext gemini_key
+    if (prefs.containsKey('gemini_key')) {
+      await prefs.remove('gemini_key');
+    }
+
     final cur = prefs.getString('preferred_currency') ?? 'USD';
     CurrencyFormatter.preferredCurrencyCode = cur;
 
@@ -83,7 +85,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       themeMode: storedTheme,
       defaultTermYears: prefs.getInt('default_term') ?? 30,
       defaultDepositPercent: prefs.getDouble('default_deposit') ?? 20.0,
-      geminiApiKey: prefs.getString('gemini_key') ?? '',
       preferredCountry: prefs.getString('preferred_country') ?? 'USA',
       preferredCurrency: cur,
       privacyChoicesOptOut: prefs.getBool('privacy_choices_opt_out') ?? false,
@@ -119,12 +120,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('default_deposit', percent);
     state = state.copyWith(defaultDepositPercent: percent);
-  }
-
-  Future<void> setGeminiKey(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('gemini_key', key);
-    state = state.copyWith(geminiApiKey: key);
   }
 
   Future<void> setPreferredCountry(String country) async {

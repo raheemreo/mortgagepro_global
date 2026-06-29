@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/country_themes.dart';
 import '../../../app/theme/text_styles.dart';
-import '../../../providers/settings_provider.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../providers/nz_rates_provider.dart';
 import '../../../services/remote_config_service.dart';
@@ -111,15 +110,6 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
       isUser: false,
       isWelcome: true,
     ));
-
-    // Persist API key if not set
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final settings = ref.read(settingsProvider);
-      if (settings.geminiApiKey.isEmpty) {
-        ref.read(settingsProvider.notifier).setGeminiKey(_hardcodedKey);
-      }
-    });
   }
 
   @override
@@ -143,8 +133,7 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
     await Future.delayed(const Duration(milliseconds: 100));
     _scrollToBottom();
 
-    final storedKey = ref.read(settingsProvider).geminiApiKey;
-    final apiKey = storedKey.isNotEmpty ? storedKey : _hardcodedKey;
+    const apiKey = _hardcodedKey;
     const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
 
     String reply = '';

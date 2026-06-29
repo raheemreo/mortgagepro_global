@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme/country_themes.dart';
 import '../../app/theme/text_styles.dart';
-import '../../providers/settings_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AIAdvisorScreen extends ConsumerStatefulWidget {
@@ -121,14 +120,6 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
           '👋 Hi! I\'m your ${_theme.name} AI Advisor.\n\nI can help you understand ${_theme.currencyCode} mortgage rates, local regulations, and calculate scenarios.\n\nWhat would you like to know?',
       isUser: false,
     ));
-    // Persist the key so SettingsNotifier picks it up on next launch too
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final settings = ref.read(settingsProvider);
-      if (settings.geminiApiKey.isEmpty) {
-        ref.read(settingsProvider.notifier).setGeminiKey(_hardcodedKey);
-      }
-    });
   }
 
   void _sendMessage(String text) async {
@@ -141,9 +132,7 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
     await Future.delayed(const Duration(milliseconds: 150));
     _scrollToBottom();
 
-    // Prefer stored key, fall back to hardcoded
-    final storedKey = ref.read(settingsProvider).geminiApiKey;
-    final apiKey = storedKey.isNotEmpty ? storedKey : _hardcodedKey;
+    final apiKey = _hardcodedKey;
     const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
 
     String reply = '';

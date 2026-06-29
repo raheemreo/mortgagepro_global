@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/country_themes.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../../providers/uk_rates_provider.dart';
-import '../../../providers/settings_provider.dart';
 
 class UKChatMessage {
   final String text;
@@ -100,15 +99,6 @@ class _UKAiMortgageAdvisorState extends ConsumerState<UKAiMortgageAdvisor> {
       isUser: false,
       time: DateTime.now(),
     ));
-
-    // Persist API key if not set
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final settings = ref.read(settingsProvider);
-      if (settings.geminiApiKey.isEmpty) {
-        ref.read(settingsProvider.notifier).setGeminiKey(_hardcodedKey);
-      }
-    });
   }
 
   @override
@@ -129,8 +119,7 @@ class _UKAiMortgageAdvisorState extends ConsumerState<UKAiMortgageAdvisor> {
 
     _scrollToBottom();
 
-    final storedKey = ref.read(settingsProvider).geminiApiKey;
-    final apiKey = storedKey.isNotEmpty ? storedKey : _hardcodedKey;
+    const apiKey = _hardcodedKey;
     const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
 
     String responseText = '';
