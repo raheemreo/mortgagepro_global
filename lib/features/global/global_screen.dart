@@ -59,8 +59,6 @@ class GlobalScreen extends ConsumerWidget {
                     text: 'Rate Comparison Table', more: 'Export →'),
                 const _ComparisonTable(),
 
-
-
                 // ── Select a Country ──────────────────────────────────
                 const _SecLabel(text: 'Select a Country', more: '6 Available'),
                 _CountryCard(
@@ -197,12 +195,6 @@ class GlobalScreen extends ConsumerWidget {
                   name: 'USD → CAD, GBP, AUD, NZD, EUR, INR',
                   sub: 'Live forex rates · XE powered',
                   onTap: () => _showForexSheet(context, ref),
-                ),
-                _InfoItem(
-                  icon: '🌐',
-                  name: 'Global House Price Index',
-                  sub: 'IMF · BIS international data',
-                  onTap: () {},
                 ),
               ],
             ),

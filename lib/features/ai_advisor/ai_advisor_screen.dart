@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../app/theme/country_themes.dart';
 import '../../app/theme/text_styles.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -122,6 +124,122 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
     ));
   }
 
+  void _showApiKeyDialog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentKey = prefs.getString('custom_gemini_api_key') ?? '';
+    final textController = TextEditingController(text: currentKey);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final dark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: dark ? const Color(0xFF111827) : Colors.white,
+          title: Row(
+            children: [
+              const Text('🔑 ', style: TextStyle(fontSize: 20)),
+              Text(
+                'Gemini API Key',
+                style: AppTextStyles.playfair(
+                  size: 18,
+                  color: dark ? Colors.white : const Color(0xFF0B1D3A),
+                  weight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Enter your Gemini API key to enable live AI responses. You can get a free key from Google AI Studio.',
+                style: AppTextStyles.dmSans(
+                  size: 12,
+                  color: dark ? Colors.white70 : const Color(0xFF5B6E8F),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: textController,
+                obscureText: true,
+                style: AppTextStyles.dmSans(
+                  size: 14,
+                  color: dark ? Colors.white : const Color(0xFF0B1D3A),
+                ),
+                decoration: InputDecoration(
+                  hintText: 'AIzaSy...',
+                  hintStyle: AppTextStyles.dmSans(size: 14, color: Colors.grey),
+                  filled: true,
+                  fillColor: dark ? Colors.white10 : Colors.black54.withValues(alpha: 0.05),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: AppTextStyles.dmSans(
+                  size: 13,
+                  color: dark ? Colors.white70 : const Color(0xFF5B6E8F),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _theme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () async {
+                final newKey = textController.text.trim();
+                final prefs = await SharedPreferences.getInstance();
+                if (newKey.isEmpty) {
+                  await prefs.remove('custom_gemini_api_key');
+                } else {
+                  await prefs.setString('custom_gemini_api_key', newKey);
+                }
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        newKey.isEmpty
+                            ? 'Gemini API Key removed. Using fallbacks.'
+                            : 'Gemini API Key saved successfully!',
+                        style: AppTextStyles.dmSans(size: 13, color: Colors.white),
+                      ),
+                      backgroundColor: _theme.primaryColor,
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                'Save',
+                style: AppTextStyles.dmSans(
+                  size: 13,
+                  weight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
     setState(() {
@@ -132,18 +250,39 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
     await Future.delayed(const Duration(milliseconds: 150));
     _scrollToBottom();
 
-    final apiKey = _hardcodedKey;
+    final prefs = await SharedPreferences.getInstance();
+    final customKey = prefs.getString('custom_gemini_api_key') ?? '';
+    final apiKey = customKey.isNotEmpty ? customKey : _hardcodedKey;
     const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
 
     String reply = '';
+    String apiError = '';
+
     if (apiKey.isNotEmpty) {
-      reply = await _callGemini(text, apiKey);
+      try {
+        reply = await _callGemini(text, apiKey);
+      } catch (e) {
+        apiError = e.toString();
+      }
     }
-    if (reply.isEmpty && groqApiKey.isNotEmpty) {
-      reply = await _callGroq(text, groqApiKey);
-    }
-    if (reply.isEmpty) {
-      reply = _fallbackResponse(text);
+    
+    // Only fall back to Groq or static if no custom user key was provided.
+    // If the user provided a key and it failed, we want to show them the error.
+    if (customKey.isNotEmpty && reply.isEmpty) {
+      reply = '❌ **API Error**: Could not connect to Gemini.\n\n'
+          '${apiError.isNotEmpty ? 'Details: $apiError\n\n' : ''}'
+          'Please verify your API key and internet connection.';
+    } else {
+      if (reply.isEmpty && groqApiKey.isNotEmpty) {
+        try {
+          reply = await _callGroq(text, groqApiKey);
+        } catch (e) {
+          debugPrint('Groq error: $e');
+        }
+      }
+      if (reply.isEmpty) {
+        reply = _fallbackResponse(text);
+      }
     }
 
     setState(() {
@@ -174,7 +313,7 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
       return '**EMI (Equated Monthly Installment)**\n\nEMI = P × r × (1+r)^n / ((1+r)^n - 1)\n\nWhere:\n• P = Principal loan amount\n• r = Monthly interest rate\n• n = Loan tenure in months\n\n**Tax Benefits:**\n• Section 24B: Up to ₹2L deduction on interest\n• Section 80C: Up to ₹1.5L on principal\n\nUse the EMI Calculator for your exact monthly installment.';
     }
 
-    return 'Great question about ${_theme.name} mortgages! 🏠\n\nFor ${_theme.currencyCode} mortgage calculations, I recommend:\n\n1. **Use the calculators** in the ${_theme.flag} ${_theme.name} section for precise numbers\n2. **Check live rates** — currently ${country == "usa" ? "6.82%" : country == "au" ? "6.09%" : country == "uk" ? "4.75%" : "varies"} for standard mortgages\n3. **Consult a local broker** for personalized advice\n\nTo get AI-powered answers, add your Gemini API key in Settings → AI Advisor.';
+    return 'Great question about ${_theme.name} mortgages! 🏠\n\nFor ${_theme.currencyCode} mortgage calculations, I recommend:\n\n1. **Use the calculators** in the ${_theme.flag} ${_theme.name} section for precise numbers\n2. **Check live rates** — currently ${country == "usa" ? "6.82%" : country == "au" ? "6.09%" : country == "uk" ? "4.75%" : "varies"} for standard mortgages\n3. **Consult a local broker** for personalized advice\n\nTo get live AI-powered answers, tap the 🔑 icon at the top right to configure your Gemini API Key.';
   }
 
   // ── Gemini 2.0 Flash REST API ────────────────────────────────────
@@ -249,9 +388,13 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
           }
         }
       }
-      return '';
+      throw 'Invalid API response format';
     } catch (e) {
-      return '';
+      if (e is DioException) {
+        final errorMsg = e.response?.data?['error']?['message'] ?? e.message;
+        throw 'Gemini API returned an error: $errorMsg';
+      }
+      rethrow;
     }
   }
 
@@ -401,6 +544,22 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
                       ],
                     ),
                     const Spacer(),
+                    // API Key Config Button
+                    GestureDetector(
+                      onTap: _showApiKeyDialog,
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.20))),
+                        alignment: Alignment.center,
+                        child: const Text('🔑', style: TextStyle(fontSize: 16)),
+                      ),
+                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
@@ -607,12 +766,23 @@ class _MessageBubble extends StatelessWidget {
                       offset: const Offset(0, 2))
                 ],
               ),
-              child: Text(
-                message.text,
-                style: AppTextStyles.dmSans(
-                    size: 13,
-                    color: message.isUser ? Colors.white : theme.textColor,
-                    height: 1.45),
+              child: MarkdownBody(
+                data: message.text,
+                styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                  p: AppTextStyles.dmSans(
+                      size: 13,
+                      color: message.isUser ? Colors.white : theme.textColor,
+                      height: 1.45),
+                  strong: AppTextStyles.dmSans(
+                      size: 13,
+                      weight: FontWeight.bold,
+                      color: message.isUser ? Colors.white : theme.textColor,
+                      height: 1.45),
+                  listBullet: AppTextStyles.dmSans(
+                      size: 13,
+                      color: message.isUser ? Colors.white : theme.textColor,
+                      height: 1.45),
+                ),
               ),
             ),
           ),
