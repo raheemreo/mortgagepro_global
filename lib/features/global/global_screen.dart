@@ -199,12 +199,6 @@ class GlobalScreen extends ConsumerWidget {
                   onTap: () => _showForexSheet(context, ref),
                 ),
                 _InfoItem(
-                  icon: '📊',
-                  name: 'Central Bank Calendar',
-                  sub: 'Fed · BoC · BoE · RBA · RBNZ · ECB dates',
-                  onTap: () {},
-                ),
-                _InfoItem(
                   icon: '🌐',
                   name: 'Global House Price Index',
                   sub: 'IMF · BIS international data',
