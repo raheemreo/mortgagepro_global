@@ -93,9 +93,11 @@ class _AppInitializerState extends State<_AppInitializer> {
   Future<void> _runInitialization() async {
     // ── Step 2: Firebase.initializeApp() ─────────────────────────────────
     try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      }
       await NotificationService.instance.init();
     } catch (e, s) {
       // Firebase/Notifications are foundational — log via debugPrint since Crashlytics
