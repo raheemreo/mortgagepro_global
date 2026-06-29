@@ -3038,6 +3038,9 @@ class _LenderListAdSlotState extends State<_LenderListAdSlot>
       nativeAdOptions: NativeAdOptions(
         adChoicesPlacement: AdChoicesPlacement.topRightCorner,
       ),
+      customOptions: {
+        'isDark': widget.dark,
+      },
       listener: NativeAdListener(
         onAdLoaded: (ad) {
           final elapsed = DateTime.now().millisecondsSinceEpoch - startTime;

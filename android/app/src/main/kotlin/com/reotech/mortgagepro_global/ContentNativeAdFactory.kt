@@ -1,6 +1,7 @@
 package com.reotech.mortgagepro_global
 
 import android.content.Context
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
@@ -20,6 +21,22 @@ class ContentNativeAdFactory(private val context: Context) : NativeAdFactory {
         adView.callToActionView = adView.findViewById(R.id.ad_call_to_action)
         adView.iconView = adView.findViewById(R.id.ad_icon)
         adView.advertiserView = adView.findViewById(R.id.ad_advertiser)
+
+        // Set text colors based on dark mode
+        val isDark = customOptions?.get("isDark") as? Boolean ?: false
+        val headlineTextView = adView.headlineView as? TextView
+        val bodyTextView = adView.bodyView as? TextView
+        val advertiserTextView = adView.advertiserView as? TextView
+
+        if (isDark) {
+            headlineTextView?.setTextColor(Color.parseColor("#FFFFFF"))
+            bodyTextView?.setTextColor(Color.parseColor("#E2E8F0"))
+            advertiserTextView?.setTextColor(Color.parseColor("#94A3B8"))
+        } else {
+            headlineTextView?.setTextColor(Color.parseColor("#0B1D3A"))
+            bodyTextView?.setTextColor(Color.parseColor("#374151"))
+            advertiserTextView?.setTextColor(Color.parseColor("#5B6E8F"))
+        }
 
         // Populate headline
         (adView.headlineView as TextView).text = nativeAd.headline

@@ -83,6 +83,7 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
       _adUnitId,
       screen: widget.screenName,
       factoryId: widget.adType,
+      isDark: Theme.of(context).brightness == Brightness.dark,
     );
 
     if (!mounted) return;

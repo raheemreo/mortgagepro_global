@@ -348,7 +348,7 @@ class AdManager extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   // ── Native ────────────────────────────────────────────────────
-  Future<NativeAd?> loadNative(String adUnitId, {String screen = 'unknown', String factoryId = 'mediumCard'}) async {
+  Future<NativeAd?> loadNative(String adUnitId, {String screen = 'unknown', String factoryId = 'mediumCard', bool isDark = false}) async {
     if (AdFreeManager.instance.isActive || !canShowAds || !RemoteConfigService.instance.nativeEnabled) return null;
     if (!(await isConnected())) return null;
 
@@ -376,6 +376,9 @@ class AdManager extends ChangeNotifier with WidgetsBindingObserver {
       adUnitId: adUnitId,
       factoryId: factoryId,
       request: _buildAdRequest(),
+      customOptions: {
+        'isDark': isDark,
+      },
       listener: NativeAdListener(
         onAdLoaded: (ad) {
           final elapsed = DateTime.now().millisecondsSinceEpoch - startTime;
