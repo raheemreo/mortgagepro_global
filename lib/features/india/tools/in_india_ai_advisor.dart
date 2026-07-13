@@ -1,13 +1,12 @@
 // lib/features/india/tools/in_india_ai_advisor.dart
 
-import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app/theme/country_themes.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../../shared/widgets/bottom_nav.dart';
+import '../../../services/ai_service.dart';
 
 class INIndiaAIAdvisor extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -38,7 +37,7 @@ class _INIndiaAIAdvisorState extends ConsumerState<INIndiaAIAdvisor> with Single
   late AnimationController _pulseController;
   int _selectedTopicIndex = 0;
 
-  static const _hardcodedKey = String.fromEnvironment('GEMINI_API_KEY_IN', defaultValue: String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
+
 
   final List<String> _topics = [
     'All',
@@ -145,19 +144,21 @@ class _INIndiaAIAdvisorState extends ConsumerState<INIndiaAIAdvisor> with Single
     await Future.delayed(const Duration(milliseconds: 100));
     _scrollToBottom();
 
-    const apiKey = _hardcodedKey;
-    const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
-
-    String reply = '';
-    if (apiKey.isNotEmpty) {
-      reply = await _callGemini(text, apiKey);
-    }
-    if (reply.isEmpty && groqApiKey.isNotEmpty) {
-      reply = await _callGroq(text, groqApiKey);
-    }
-    if (reply.isEmpty) {
+    String reply;
+    try {
+      reply = await AIService.instance.sendMessage(
+        question: text,
+        systemInstruction: _buildSystemInstruction(),
+        history: _messages
+            .where((m) => !m.isWelcome)
+            .map((m) => AIChatMessage(text: m.text, isUser: m.isUser))
+            .toList(),
+        countryCode: 'in',
+      );
+    } catch (_) {
       reply = _fallbackResponse(text);
     }
+    if (reply.isEmpty) reply = _fallbackResponse(text);
 
     setState(() {
       _messages.add(_ChatMessage(text: reply, isUser: false));
@@ -288,142 +289,12 @@ class _INIndiaAIAdvisorState extends ConsumerState<INIndiaAIAdvisor> with Single
         "- PMAY (Pradhan Mantri Awas Yojana) Urban 2.0 launched 2024 — EWS (income up to ₹3L), LIG (₹3L-₹6L), MIG (₹6L-₹18L) categories, subsidy up to ₹2.67 Lakh\n"
         "- GST on property: Under-construction = 5% (affordable: 1%); Ready-possession = Nil GST\n"
         "- Stamp duty: Maharashtra 5-6%, Delhi 4% women/6% men, Karnataka 5%, Tamil Nadu 7%, Telangana 4%\n"
-        "- Section 80C (principal deduction up to ₹1.5L), Section 24(b) (interest deduction up to ₹2L for self-occupied), Section 80EE (first-time buyers ₹50K extra)\n"
-        "- RERA compliance, CIBIL score requirements (750+ ideal), TDS on property >₹50L (1%), Capital Gains Tax\n"
-        "- LAP (Loan Against Property) rates: 9.25-10.5%, max LTV 60-70%\n"
-        "- City property prices (2025): Mumbai ₹22,400/sqft, Delhi NCR ₹12,800/sqft, Bengaluru ₹11,500/sqft, Hyderabad ₹9,100/sqft, Pune ₹8,600/sqft, Chennai ₹8,200/sqft\n"
-        "- NHB Residex city-level property price index\n\n"
-        "Always give practical, actionable advice with specific Indian rupee amounts, percentages, and real institution names. Format responses clearly with line breaks and bullet points. Use ₹ symbol. Keep answers concise and focused. When quoting rates, note they are indicative and may vary. Respond in English with occasional Hindi terms where natural (like 'Namaste', 'crore', 'lakh'). Always recommend consulting RBI, official PMAY portal, or a SEBI-registered advisor for final decisions. Highlight key terms with double asterisks (**).";
-  }
-
-  Future<String> _callGemini(String question, String apiKey) async {
-    const model = 'gemini-2.0-flash';
-    final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
-
-    final List<Map<String, dynamic>> contents = [];
-    // Skip welcome message when building history
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      contents.add({
-        'role': msg.isUser ? 'user' : 'model',
-        'parts': [
-          {'text': msg.text},
-        ],
-      });
-    }
-
-    // Add current question if not in message list yet
-    if (contents.isEmpty || contents.last['role'] == 'model') {
-      contents.add({
-        'role': 'user',
-        'parts': [
-          {'text': question},
-        ],
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Content-Type': 'application/json'},
-      ));
-
-      final systemInstruction = _buildSystemInstruction();
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'system_instruction': {
-            'parts': [
-              {'text': systemInstruction},
-            ],
-          },
-          'contents': contents,
-          'generationConfig': {
-            'temperature': 0.7,
-            'topK': 40,
-            'topP': 0.95,
-            'maxOutputTokens': 1024,
-          },
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final candidates = data['candidates'] as List<dynamic>?;
-        if (candidates != null && candidates.isNotEmpty) {
-          final content = candidates[0]['content'] as Map<String, dynamic>?;
-          final parts = content?['parts'] as List<dynamic>?;
-          if (parts != null && parts.isNotEmpty) {
-            return (parts[0]['text'] as String? ?? '').trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  Future<String> _callGroq(String question, String apiKey) async {
-    const model = 'llama-3.3-70b-versatile';
-    const url = 'https://api.groq.com/openai/v1/chat/completions';
-
-    final List<Map<String, dynamic>> messages = [];
-    messages.add({
-      'role': 'system',
-      'content': _buildSystemInstruction(),
-    });
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      messages.add({
-        'role': msg.isUser ? 'user' : 'assistant',
-        'content': msg.text,
-      });
-    }
-    if (messages.isEmpty || messages.last['role'] == 'assistant') {
-      messages.add({
-        'role': 'user',
-        'content': question,
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-      ));
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'model': model,
-          'messages': messages,
-          'temperature': 0.7,
-          'max_tokens': 1024,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final choices = data['choices'] as List<dynamic>?;
-        if (choices != null && choices.isNotEmpty) {
-          final message = choices[0]['message'] as Map<String, dynamic>?;
-          final content = message?['content'] as String?;
-          if (content != null && content.isNotEmpty) {
-            return content.trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
+      'Section 80C (principal deduction up to ₹1.5L), Section 24(b) (interest deduction up to ₹2L for self-occupied), Section 80EE (first-time buyers ₹50K extra)\n'
+        '- RERA compliance, CIBIL score requirements (750+ ideal), TDS on property >₹50L (1%), Capital Gains Tax\n'
+        '- LAP (Loan Against Property) rates: 9.25-10.5%, max LTV 60-70%\n'
+        '- City property prices (2025): Mumbai ₹22,400/sqft, Delhi NCR ₹12,800/sqft, Bengaluru ₹11,500/sqft, Hyderabad ₹9,100/sqft, Pune ₹8,600/sqft, Chennai ₹8,200/sqft\n'
+        '- NHB Residex city-level property price index\n\n'
+        'Always give practical, actionable advice with specific Indian rupee amounts, percentages, and real institution names. Format responses clearly with line breaks and bullet points. Use ₹ symbol. Keep answers concise and focused. When quoting rates, note they are indicative and may vary. Respond in English with occasional Hindi terms where natural (like \'Namaste\', \'crore\', \'lakh\'). Always recommend consulting RBI, official PMAY portal, or a SEBI-registered advisor for final decisions. Highlight key terms with double asterisks (**).';
   }
 
   @override
@@ -437,436 +308,408 @@ class _INIndiaAIAdvisorState extends ConsumerState<INIndiaAIAdvisor> with Single
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              // ── Namaste Header with radial watermark wheel emoji ☸ ──
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF0B1F48),
-                      Color(0xFF1A3A8F),
-                      Color(0xFFFF6B00),
-                      Color(0xFFE05A00),
-                    ],
-                    stops: [0.0, 0.40, 0.82, 1.0],
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                    child: Stack(
-                      children: [
-                        // Subtle wheel emoji watermark ☸
-                        Positioned(
-                          right: -30,
-                          top: -10,
-                          child: Text(
-                            '☸',
-                            style: TextStyle(
-                              fontSize: 120,
-                              color: Colors.white.withValues(alpha: 0.05),
-                              height: 1,
-                            ),
-                          ),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0B1F48),
+                  Color(0xFF1A3A8F),
+                  Color(0xFFFF6B00),
+                  Color(0xFFE05A00),
+                ],
+                stops: [0.0, 0.40, 0.82, 1.0],
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -30,
+                      top: -10,
+                      child: Text(
+                        '☸',
+                        style: TextStyle(
+                          fontSize: 120,
+                          color: Colors.white.withValues(alpha: 0.05),
+                          height: 1,
                         ),
-                        Column(
+                      ),
+                    ),
+                    Column(
+                      children: [
+                        Row(
                           children: [
-                            Row(
+                            GestureDetector(
+                              onTap: () => context.pop(),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.20),
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '←',
+                                  style: AppTextStyles.dmSans(
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            Column(
                               children: [
-                                GestureDetector(
-                                  onTap: () => context.pop(),
-                                  child: Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: Colors.white.withValues(alpha: 0.20),
+                                RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: 'India ',
+                                        style: AppTextStyles.playfair(
+                                          size: 18,
+                                          weight: FontWeight.w800,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      '←',
-                                      style: AppTextStyles.dmSans(
-                                        size: 18,
-                                        color: Colors.white,
+                                      TextSpan(
+                                        text: 'AI Advisor',
+                                        style: AppTextStyles.playfair(
+                                          size: 18,
+                                          weight: FontWeight.w800,
+                                          color: const Color(0xFFFFDEA0),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ),
-                                const Spacer(),
-                                Column(
-                                  children: [
-                                    RichText(
-                                      text: TextSpan(
-                                        children: [
-                                          TextSpan(
-                                            text: 'India ',
-                                            style: AppTextStyles.playfair(
-                                              size: 18,
-                                              weight: FontWeight.w800,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text: 'AI Advisor',
-                                            style: AppTextStyles.playfair(
-                                              size: 18,
-                                              weight: FontWeight.w800,
-                                              color: const Color(0xFFFFDEA0),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'RBI · PMAY · Stamp Duty · GST · 80C · RERA',
-                                      style: AppTextStyles.dmSans(
-                                        size: 10,
-                                        color: Colors.white.withValues(alpha: 0.55),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Spacer(),
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.20),
-                                    ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: const Text(
-                                    '🔔',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'RBI · PMAY · Stamp Duty · GST · 80C · RERA',
+                                  style: AppTextStyles.dmSans(
+                                    size: 10,
+                                    color: Colors.white.withValues(alpha: 0.55),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            // Status Box
+                            const Spacer(),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
+                              width: 36,
+                              height: 36,
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.12),
+                                  color: Colors.white.withValues(alpha: 0.20),
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Pulsing Green Indicator
-                                  AnimatedBuilder(
-                                    animation: _pulseController,
-                                    builder: (context, child) {
-                                      return Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: const Color(0xFF4ADE80),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFF4ADE80).withValues(
-                                                alpha: 0.4 * (1.0 - _pulseController.value),
-                                              ),
-                                              blurRadius: 6.0 * _pulseController.value,
-                                              spreadRadius: 4.0 * _pulseController.value,
-                                            )
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      'AI Powered · India Finance Expert · RBI 6.25% · 2025 data',
-                                      style: AppTextStyles.dmSans(
-                                        size: 9,
-                                        weight: FontWeight.w600,
-                                        color: Colors.white.withValues(alpha: 0.85),
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                              alignment: Alignment.center,
+                              child: const Text(
+                                '🔔',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AnimatedBuilder(
+                                animation: _pulseController,
+                                builder: (context, child) {
+                                  return Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: const Color(0xFF4ADE80),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF4ADE80).withValues(
+                                            alpha: 0.4 * (1.0 - _pulseController.value),
+                                          ),
+                                          blurRadius: 6.0 * _pulseController.value,
+                                          spreadRadius: 4.0 * _pulseController.value,
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'AI Powered · India Finance Expert · RBI 6.25% · 2025 data',
+                                  style: AppTextStyles.dmSans(
+                                    size: 9,
+                                    weight: FontWeight.w600,
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
-
-              // ── Quick Topics Chips Horizontal Row ──
-              Container(
-                height: 38,
-                margin: const EdgeInsets.only(top: 8),
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _topics.length,
-                  itemBuilder: (context, index) {
-                    final isSelected = index == _selectedTopicIndex;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedTopicIndex = index;
-                        });
-                      },
+            ),
+          ),
+          Container(
+            height: 38,
+            margin: const EdgeInsets.only(top: 8),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _topics.length,
+              itemBuilder: (context, index) {
+                final isSelected = index == _selectedTopicIndex;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedTopicIndex = index;
+                    });
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFF0B1F48)
+                          : (isDark ? const Color(0xFF141C33) : const Color(0x14FF6B00)),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF0B1F48)
+                            : const Color(0x3BFF6B00),
+                        width: 1.5,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      _topics[index],
+                      style: AppTextStyles.dmSans(
+                        size: 10,
+                        weight: FontWeight.w700,
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? Colors.white70 : const Color(0xFF0B1F48)),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(
+            height: 38,
+            margin: const EdgeInsets.only(top: 6, bottom: 4),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _currentPrompts.length,
+              itemBuilder: (context, index) {
+                final prompt = _currentPrompts[index];
+                return GestureDetector(
+                  onTap: () => _sendMessage(prompt),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: cardBgColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0x3BFF6B00),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      prompt.length > 25 ? '${prompt.substring(0, 24)}…' : prompt,
+                      style: AppTextStyles.dmSans(
+                        size: 10,
+                        weight: FontWeight.w700,
+                        color: const Color(0xFFFF6B00),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Expanded(
+            child: Container(
+              color: isDark ? const Color(0xFF0A0F1E) : const Color(0xFFFFF8F0),
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                itemCount: _messages.length + (_isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (_isLoading && index == _messages.length) {
+                    return _buildTypingBubble(borderCol);
+                  }
+                  final message = _messages[index];
+                  if (message.isWelcome) {
+                    return _buildWelcomeCard(message, cardBgColor, borderCol);
+                  }
+                  return _buildMessageBubble(message, cardBgColor, textPrimaryColor, borderCol, textMutedColor);
+                },
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: cardBgColor,
+              border: Border(
+                top: BorderSide(
+                  color: const Color(0xFFFF6B00).withValues(alpha: 0.1),
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                )
+              ],
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
                       child: Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFF0B1F48)
-                              : (isDark ? const Color(0xFF141C33) : const Color(0x14FF6B00)),
-                          borderRadius: BorderRadius.circular(20),
+                          color: isDark ? const Color(0xFF0A0F1E) : const Color(0xFFFFF3E8),
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isSelected
-                                ? const Color(0xFF0B1F48)
-                                : const Color(0x3BFF6B00),
+                            color: const Color(0xFFFF6B00).withValues(alpha: 0.15),
                             width: 1.5,
                           ),
                         ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          _topics[index],
+                        child: TextField(
+                          controller: _controller,
                           style: AppTextStyles.dmSans(
-                            size: 10,
-                            weight: FontWeight.w700,
-                            color: isSelected
-                                ? Colors.white
-                                : (isDark ? Colors.white70 : const Color(0xFF0B1F48)),
+                            size: 13,
+                            color: textPrimaryColor,
                           ),
+                          maxLines: null,
+                          keyboardType: TextInputType.multiline,
+                          decoration: InputDecoration(
+                            hintText: 'Ask about home loans, PMAY, GST, stamp duty…',
+                            hintStyle: AppTextStyles.dmSans(
+                              size: 12,
+                              color: isDark ? Colors.white60 : const Color(0xFF7A5C3A).withValues(alpha: 0.5),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            border: InputBorder.none,
+                          ),
+                          onSubmitted: _sendMessage,
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-
-              // Quick prompts list view based on selected topic
-              Container(
-                height: 38,
-                margin: const EdgeInsets.only(top: 6, bottom: 4),
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _currentPrompts.length,
-                  itemBuilder: (context, index) {
-                    final prompt = _currentPrompts[index];
-                    return GestureDetector(
-                      onTap: () => _sendMessage(prompt),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _sendMessage(_controller.text),
                       child: Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: cardBgColor,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0x3BFF6B00),
-                            width: 1.5,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF6B00), Color(0xFFE05A00)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                          borderRadius: BorderRadius.circular(13),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                              color: const Color(0xFFFF6B00).withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             )
                           ],
                         ),
                         alignment: Alignment.center,
-                        child: Text(
-                          prompt.length > 25 ? '${prompt.substring(0, 24)}…' : prompt,
-                          style: AppTextStyles.dmSans(
-                            size: 10,
-                            weight: FontWeight.w700,
-                            color: const Color(0xFFFF6B00),
+                        child: const Text(
+                          '➤',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-
-              // ── Chat Messages Stream ──
-              Expanded(
-                child: Container(
-                  color: isDark ? const Color(0xFF0A0F1E) : const Color(0xFFFFF8F0),
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 140),
-                    itemCount: _messages.length + (_isLoading ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (_isLoading && index == _messages.length) {
-                        return _buildTypingBubble(borderCol);
-                      }
-                      final message = _messages[index];
-                      if (message.isWelcome) {
-                        return _buildWelcomeCard(message, cardBgColor, borderCol);
-                      }
-                      return _buildMessageBubble(message, cardBgColor, textPrimaryColor, borderCol, textMutedColor);
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // ── Input bar & Disclaimer docked at bottom above bottom nav ──
-          Positioned(
-            bottom: 60,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: cardBgColor,
-                border: Border(
-                  top: BorderSide(
-                    color: const Color(0xFFFF6B00).withValues(alpha: 0.1),
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 16,
-                    offset: const Offset(0, -4),
-                  )
-                ],
-              ),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF0A0F1E) : const Color(0xFFFFF3E8),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: const Color(0xFFFF6B00).withValues(alpha: 0.15),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: TextField(
-                            controller: _controller,
-                            style: AppTextStyles.dmSans(
-                              size: 13,
-                              color: textPrimaryColor,
-                            ),
-                            maxLines: null,
-                            keyboardType: TextInputType.multiline,
-                            decoration: InputDecoration(
-                              hintText: 'Ask about home loans, PMAY, GST, stamp duty…',
-                              hintStyle: AppTextStyles.dmSans(
-                                size: 12,
-                                color: isDark ? Colors.white60 : const Color(0xFF7A5C3A).withValues(alpha: 0.5),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              border: InputBorder.none,
-                            ),
-                            onSubmitted: _sendMessage,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () => _sendMessage(_controller.text),
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF6B00), Color(0xFFE05A00)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(13),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFF6B00).withValues(alpha: 0.35),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              )
-                            ],
-                          ),
-                          alignment: Alignment.center,
-                          child: const Text(
-                            '➤',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'AI responses are informational only. Always verify with official sources (RBI.org.in, PMAY, state SRO).',
-                    style: AppTextStyles.dmSans(
-                      size: 8.5,
-                      color: isDark ? Colors.white54 : const Color(0xFF7A5C3A),
-                      weight: FontWeight.w500,
                     ),
-                    textAlign: TextAlign.center,
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'AI responses are informational only. Always verify with official sources (RBI.org.in, PMAY, state SRO).',
+                  style: AppTextStyles.dmSans(
+                    size: 8.5,
+                    color: isDark ? Colors.white54 : const Color(0xFF7A5C3A),
+                    weight: FontWeight.w500,
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          // Bottom Navigation
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BottomNav(
-              activeIndex: 1,
-              activeColor: widget.theme.primaryColor,
-              countryIcon: widget.theme.flag,
-              countryLabel: 'India',
-              countryRoute: '/india',
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNav(
+        activeIndex: 1,
+        activeColor: widget.theme.primaryColor,
+        countryIcon: widget.theme.flag,
+        countryLabel: 'India',
+        countryRoute: '/india',
       ),
     );
   }

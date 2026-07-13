@@ -1,7 +1,5 @@
 // lib/features/newzealand/tools/nz_ai_advisor.dart
 
-import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +8,7 @@ import '../../../app/theme/text_styles.dart';
 import '../../../shared/widgets/bottom_nav.dart';
 import '../../../providers/nz_rates_provider.dart';
 import '../../../services/remote_config_service.dart';
+import '../../../services/ai_service.dart';
 
 class NZAIAdvisorScreen extends ConsumerStatefulWidget {
   const NZAIAdvisorScreen({super.key});
@@ -18,27 +17,19 @@ class NZAIAdvisorScreen extends ConsumerStatefulWidget {
   ConsumerState<NZAIAdvisorScreen> createState() => _NZAIAdvisorScreenState();
 }
 
-class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with SingleTickerProviderStateMixin {
+class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
-
-  final _incomeCtrl = TextEditingController();
-  final _budgetCtrl = TextEditingController();
-  final _depositCtrl = TextEditingController();
-
-  String _buyerType = 'First Home Buyer';
-  String _region = 'Auckland';
 
   final List<_ChatMessage> _messages = [];
   bool _isLoading = false;
 
-  late AnimationController _pulseController;
   int _selectedTopicIndex = 0;
 
   static const _theme = CountryThemes.newZealand;
 
   // Hardcoded key fallback
-  static const _hardcodedKey = String.fromEnvironment('GEMINI_API_KEY_NZ', defaultValue: String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
+
 
   final List<String> _topics = [
     'All',
@@ -99,10 +90,6 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
 
     // Initial welcome message
     _messages.add(const _ChatMessage(
@@ -114,12 +101,8 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
 
   @override
   void dispose() {
-    _pulseController.dispose();
     _controller.dispose();
     _scrollController.dispose();
-    _incomeCtrl.dispose();
-    _budgetCtrl.dispose();
-    _depositCtrl.dispose();
     super.dispose();
   }
 
@@ -133,19 +116,21 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
     await Future.delayed(const Duration(milliseconds: 100));
     _scrollToBottom();
 
-    const apiKey = _hardcodedKey;
-    const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
-
-    String reply = '';
-    if (apiKey.isNotEmpty) {
-      reply = await _callGemini(text, apiKey);
-    }
-    if (reply.isEmpty && groqApiKey.isNotEmpty) {
-      reply = await _callGroq(text, groqApiKey);
-    }
-    if (reply.isEmpty) {
+    String reply;
+    try {
+      reply = await AIService.instance.sendMessage(
+        question: text,
+        systemInstruction: _buildSystemInstruction(),
+        history: _messages
+            .where((m) => !m.isWelcome)
+            .map((m) => AIChatMessage(text: m.text, isUser: m.isUser))
+            .toList(),
+        countryCode: 'nz',
+      );
+    } catch (_) {
       reply = _fallbackResponse(text);
     }
+    if (reply.isEmpty) reply = _fallbackResponse(text);
 
     setState(() {
       _messages.add(_ChatMessage(text: reply, isUser: false));
@@ -249,158 +234,7 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
         "- Ring-fencing: Rental losses cannot offset personal income (must carry forward to offset rental profits)\n\n"
         "Format responses clearly with key numbers highlighted. Use NZ terminology (LVR, KiwiSaver, FHB, OCR, RBNZ, IRD, CCC, fortnight, etc.). Be helpful, specific, and accurate. Mention that rates change and to verify details. Keep replies concise and under 300 words unless detail is required. Show calculations where applicable.";
 
-    if (_incomeCtrl.text.isNotEmpty || _budgetCtrl.text.isNotEmpty || _depositCtrl.text.isNotEmpty) {
-      systemInstruction += "\n\nUSER PROFILE:\n"
-          "- Buyer Type: $_buyerType\n"
-          "- Region: $_region\n"
-          "${_incomeCtrl.text.isNotEmpty ? "- Income: ${_incomeCtrl.text}\n" : ""}"
-          "${_budgetCtrl.text.isNotEmpty ? "- Budget: ${_budgetCtrl.text}\n" : ""}"
-          "${_depositCtrl.text.isNotEmpty ? "- Deposit: ${_depositCtrl.text}\n" : ""}"
-          "Tailor advice specifically based on these profile attributes.";
-    }
     return systemInstruction;
-  }
-
-  Future<String> _callGemini(String question, String apiKey) async {
-    const model = 'gemini-2.0-flash';
-    final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
-
-    final List<Map<String, dynamic>> contents = [];
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      contents.add({
-        'role': msg.isUser ? 'user' : 'model',
-        'parts': [
-          {'text': msg.text},
-        ],
-      });
-    }
-
-    if (contents.isEmpty || contents.last['role'] == 'model') {
-      contents.add({
-        'role': 'user',
-        'parts': [
-          {'text': question},
-        ],
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Content-Type': 'application/json'},
-      ));
-
-      final systemInstruction = _buildSystemInstruction();
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'system_instruction': {
-            'parts': [
-              {'text': systemInstruction},
-            ],
-          },
-          'contents': contents,
-          'generationConfig': {
-            'temperature': 0.7,
-            'topK': 40,
-            'topP': 0.95,
-            'maxOutputTokens': 1024,
-          },
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final candidates = data['candidates'] as List<dynamic>?;
-        if (candidates != null && candidates.isNotEmpty) {
-          final content = candidates[0]['content'] as Map<String, dynamic>?;
-          final parts = content?['parts'] as List<dynamic>?;
-          if (parts != null && parts.isNotEmpty) {
-            return (parts[0]['text'] as String? ?? '').trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  Future<String> _callGroq(String question, String apiKey) async {
-    const model = 'llama-3.3-70b-versatile';
-    const url = 'https://api.groq.com/openai/v1/chat/completions';
-
-    final List<Map<String, dynamic>> messages = [];
-    messages.add({
-      'role': 'system',
-      'content': _buildSystemInstruction(),
-    });
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      messages.add({
-        'role': msg.isUser ? 'user' : 'assistant',
-        'content': msg.text,
-      });
-    }
-    if (messages.isEmpty || messages.last['role'] == 'assistant') {
-      messages.add({
-        'role': 'user',
-        'content': question,
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-      ));
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'model': model,
-          'messages': messages,
-          'temperature': 0.7,
-          'max_tokens': 1024,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final choices = data['choices'] as List<dynamic>?;
-        if (choices != null && choices.isNotEmpty) {
-          final message = choices[0]['message'] as Map<String, dynamic>?;
-          final content = message?['content'] as String?;
-          if (content != null && content.isNotEmpty) {
-            return content.trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  void _applyProfile() {
-    setState(() {
-      final text = "Profile Applied! 👤\n"
-          "• Buyer Type: $_buyerType\n"
-          "• Region: $_region\n"
-          "${_incomeCtrl.text.isNotEmpty ? "• Income: ${_incomeCtrl.text}\n" : ""}"
-          "${_budgetCtrl.text.isNotEmpty ? "• Budget: ${_budgetCtrl.text}\n" : ""}"
-          "${_depositCtrl.text.isNotEmpty ? "• Deposit: ${_depositCtrl.text}" : ""}";
-
-      _messages.add(_ChatMessage(text: text, isUser: false, isProfileApplied: true));
-    });
-    _scrollToBottom();
   }
 
   @override
@@ -414,113 +248,63 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              // Header
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF0A0F0D),
-                      Color(0xFF0D3B2E),
-                      Color(0xFF1A6B4A),
-                      Color(0xFF0EA5E9),
-                    ],
+          // Header
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0A0F0D),
+                  Color(0xFF0D3B2E),
+                  Color(0xFF1A6B4A),
+                  Color(0xFF0EA5E9),
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text('←', style: TextStyle(color: Colors.white, fontSize: 16)),
                   ),
                 ),
-                padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
-                child: Row(
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GestureDetector(
-                      onTap: () => context.pop(),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text('←', style: TextStyle(color: Colors.white, fontSize: 16)),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('🤖  NZ AI Advisor',
-                            style: AppTextStyles.dmSans(
-                                size: 16, weight: FontWeight.w800, color: Colors.white)),
-                        Text('RBNZ · LVR · KiwiSaver · Mortgages · Tax',
-                            style: AppTextStyles.dmSans(
-                                size: 9, color: Colors.white.withValues(alpha: 0.5))),
-                      ],
-                    ),
+                    Text('🤖  NZ AI Advisor',
+                        style: AppTextStyles.dmSans(
+                            size: 16, weight: FontWeight.w800, color: Colors.white)),
+                    Text('RBNZ · LVR · KiwiSaver · Mortgages · Tax',
+                        style: AppTextStyles.dmSans(
+                            size: 9, color: Colors.white.withValues(alpha: 0.5))),
                   ],
                 ),
-              ),
+              ],
+            ),
+          ),
 
-              // Chat, Profile, disclaimer scrollable
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // AI Status Bar
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFF0D3B2E), Color(0xFF1A6B4A)]),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            AnimatedBuilder(
-                              animation: _pulseController,
-                              builder: (context, child) {
-                                return Opacity(
-                                  opacity: _pulseController.value,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(color: Color(0xFF6EE7B7), shape: BoxShape.circle),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'NZ Financial AI Advisor',
-                                    style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: Colors.white),
-                                  ),
-                                  Text(
-                                    'Trained on RBNZ rules · LVR · KiwiSaver · Tax',
-                                    style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(8)),
-                              child: Text('Gemini 2.0', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white, weight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
+          // Chat, Profile, disclaimer scrollable
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                       // Disclaimer Alert Banner
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -557,185 +341,7 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
                       ),
                       const SizedBox(height: 16),
 
-                      // Profile Card
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: cardBgColor,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: borderCol),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '👤 Tell the AI About You',
-                              style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: textPrimaryColor),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('BUYER TYPE', style: AppTextStyles.dmSans(size: 8, color: textMutedColor, weight: FontWeight.bold)),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        height: 38,
-                                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                                        decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10)),
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton<String>(
-                                            value: _buyerType,
-                                            isExpanded: true,
-                                            dropdownColor: cardBgColor,
-                                            style: AppTextStyles.dmSans(size: 12, color: textPrimaryColor, weight: FontWeight.bold),
-                                            items: const [
-                                              DropdownMenuItem(value: 'First Home Buyer', child: Text('First Home Buyer')),
-                                              DropdownMenuItem(value: 'Owner-Occupier', child: Text('Owner-Occupier')),
-                                              DropdownMenuItem(value: 'Investor', child: Text('Investor')),
-                                              DropdownMenuItem(value: 'Refinancing', child: Text('Refinancing')),
-                                            ],
-                                            onChanged: (val) => setState(() => _buyerType = val ?? 'First Home Buyer'),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('APPROX. INCOME (NZD)', style: AppTextStyles.dmSans(size: 8, color: textMutedColor, weight: FontWeight.bold)),
-                                      const SizedBox(height: 4),
-                                      SizedBox(
-                                        height: 38,
-                                        child: TextField(
-                                          controller: _incomeCtrl,
-                                          style: AppTextStyles.dmSans(size: 12, color: textPrimaryColor, weight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                            hintText: r'e.g. $120,000',
-                                            hintStyle: const TextStyle(color: Colors.grey, fontSize: 11),
-                                            filled: true,
-                                            fillColor: bgColor,
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
 
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('PROPERTY BUDGET', style: AppTextStyles.dmSans(size: 8, color: textMutedColor, weight: FontWeight.bold)),
-                                      const SizedBox(height: 4),
-                                      SizedBox(
-                                        height: 38,
-                                        child: TextField(
-                                          controller: _budgetCtrl,
-                                          style: AppTextStyles.dmSans(size: 12, color: textPrimaryColor, weight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                            hintText: r'e.g. $850,000',
-                                            hintStyle: const TextStyle(color: Colors.grey, fontSize: 11),
-                                            filled: true,
-                                            fillColor: bgColor,
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('DEPOSIT AVAILABLE', style: AppTextStyles.dmSans(size: 8, color: textMutedColor, weight: FontWeight.bold)),
-                                      const SizedBox(height: 4),
-                                      SizedBox(
-                                        height: 38,
-                                        child: TextField(
-                                          controller: _depositCtrl,
-                                          style: AppTextStyles.dmSans(size: 12, color: textPrimaryColor, weight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                            hintText: r'e.g. $170,000',
-                                            hintStyle: const TextStyle(color: Colors.grey, fontSize: 11),
-                                            filled: true,
-                                            fillColor: bgColor,
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('CITY / REGION', style: AppTextStyles.dmSans(size: 8, color: textMutedColor, weight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                Container(
-                                  height: 38,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(10)),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: _region,
-                                      isExpanded: true,
-                                      dropdownColor: cardBgColor,
-                                      style: AppTextStyles.dmSans(size: 12, color: textPrimaryColor, weight: FontWeight.bold),
-                                      items: const [
-                                        DropdownMenuItem(value: 'Auckland', child: Text('Auckland')),
-                                        DropdownMenuItem(value: 'Wellington', child: Text('Wellington')),
-                                        DropdownMenuItem(value: 'Christchurch', child: Text('Christchurch')),
-                                        DropdownMenuItem(value: 'Hamilton', child: Text('Hamilton')),
-                                        DropdownMenuItem(value: 'Tauranga', child: Text('Tauranga')),
-                                        DropdownMenuItem(value: 'Dunedin', child: Text('Dunedin')),
-                                        DropdownMenuItem(value: 'Other NZ', child: Text('Other NZ')),
-                                      ],
-                                      onChanged: (val) => setState(() => _region = val ?? 'Auckland'),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-
-                            ElevatedButton(
-                              onPressed: _applyProfile,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _theme.primaryColor,
-                                minimumSize: const Size(double.infinity, 42),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-                              ),
-                              child: Text(
-                                'Apply Profile to AI Context',
-                                style: AppTextStyles.playfair(size: 12, weight: FontWeight.bold, color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
 
                       // Quick topic filters
                       SingleChildScrollView(
@@ -906,23 +512,14 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
                   ),
                 ),
               ),
-            ],
-          ),
-
-          // Bottom nav bar
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BottomNav(
-              activeIndex: 1,
-              activeColor: _theme.primaryColor,
-              countryIcon: _theme.flag,
-              countryLabel: 'NZ',
-              countryRoute: '/newzealand',
-            ),
-          ),
         ],
+      ),
+      bottomNavigationBar: BottomNav(
+        activeIndex: 1,
+        activeColor: _theme.primaryColor,
+        countryIcon: _theme.flag,
+        countryLabel: 'NZ',
+        countryRoute: '/newzealand',
       ),
     );
   }
@@ -931,21 +528,7 @@ class _NZAIAdvisorScreenState extends ConsumerState<NZAIAdvisorScreen> with Sing
     const theme = _theme;
     final isUser = msg.isUser;
 
-    if (msg.isProfileApplied) {
-      return Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: const Color(0xFFECFDF5).withValues(alpha: 0.8),
-          border: Border.all(color: const Color(0xFF6EE7B7)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          msg.text,
-          style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF065F46), height: 1.45),
-        ),
-      );
-    }
+
 
     String displayText = msg.text;
     if (msg.isWelcome) {
@@ -1011,12 +594,10 @@ class _ChatMessage {
   final String text;
   final bool isUser;
   final bool isWelcome;
-  final bool isProfileApplied;
 
   const _ChatMessage({
     required this.text,
     required this.isUser,
     this.isWelcome = false,
-    this.isProfileApplied = false,
   });
 }

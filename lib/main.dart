@@ -9,6 +9,7 @@ import 'app/app.dart';
 import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'services/ad_manager.dart';
+import 'services/ai_service.dart';
 import 'services/analytics_service.dart';
 import 'services/app_check_service.dart';
 import 'services/consent_service.dart';
@@ -92,6 +93,9 @@ class _AppInitializerState extends State<_AppInitializer> {
   }
 
   Future<void> _runInitialization() async {
+    // ── Step 0: Load AI keys from secrets.json ────────────────────────────
+    await AIService.instance.loadKeysFromAssets();
+
     // ── Step 2: Firebase.initializeApp() ─────────────────────────────────
     try {
       try {

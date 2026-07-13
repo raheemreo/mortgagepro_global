@@ -1,12 +1,11 @@
 // lib/features/canada/tools/ca_ai_advisor.dart
 
-import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/country_themes.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../../providers/canada_rates_provider.dart';
+import '../../../services/ai_service.dart';
 
 class CAAiAdvisor extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -36,7 +35,7 @@ class _CAAiAdvisorState extends ConsumerState<CAAiAdvisor> with SingleTickerProv
 
   int _selectedTopicIndex = 0;
 
-  static const _hardcodedKey = String.fromEnvironment('GEMINI_API_KEY_CA', defaultValue: String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
+
 
   final List<String> _topics = [
     'All',
@@ -125,19 +124,21 @@ class _CAAiAdvisorState extends ConsumerState<CAAiAdvisor> with SingleTickerProv
     await Future.delayed(const Duration(milliseconds: 100));
     _scrollToBottom();
 
-    const apiKey = _hardcodedKey;
-    const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
-
-    String reply = '';
-    if (apiKey.isNotEmpty) {
-      reply = await _callGemini(text, apiKey);
-    }
-    if (reply.isEmpty && groqApiKey.isNotEmpty) {
-      reply = await _callGroq(text, groqApiKey);
-    }
-    if (reply.isEmpty) {
+    String reply;
+    try {
+      reply = await AIService.instance.sendMessage(
+        question: text,
+        systemInstruction: _buildSystemInstruction(),
+        history: _messages
+            .where((m) => !m.isWelcome)
+            .map((m) => AIChatMessage(text: m.text, isUser: m.isUser))
+            .toList(),
+        countryCode: 'ca',
+      );
+    } catch (_) {
       reply = _fallbackResponse(text);
     }
+    if (reply.isEmpty) reply = _fallbackResponse(text);
 
     setState(() {
       _messages.add(_ChatMessage(text: reply, isUser: false));
@@ -274,133 +275,6 @@ class _CAAiAdvisorState extends ConsumerState<CAAiAdvisor> with SingleTickerProv
         "Format responses clearly using bullet points, paragraphs, and highlight key terms with double asterisks. Use Canadian dollar symbol (\$). Keep answers helpful, specific, and concise. Advise users to cross-verify rates with banking portals and consult professional CA mortgage brokers.";
   }
 
-  Future<String> _callGemini(String question, String apiKey) async {
-    const model = 'gemini-2.0-flash';
-    final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
-
-    final List<Map<String, dynamic>> contents = [];
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      contents.add({
-        'role': msg.isUser ? 'user' : 'model',
-        'parts': [
-          {'text': msg.text},
-        ],
-      });
-    }
-
-    if (contents.isEmpty || contents.last['role'] == 'model') {
-      contents.add({
-        'role': 'user',
-        'parts': [
-          {'text': question},
-        ],
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Content-Type': 'application/json'},
-      ));
-
-      final systemInstruction = _buildSystemInstruction();
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'system_instruction': {
-            'parts': [
-              {'text': systemInstruction},
-            ],
-          },
-          'contents': contents,
-          'generationConfig': {
-            'temperature': 0.7,
-            'topK': 40,
-            'topP': 0.95,
-            'maxOutputTokens': 1024,
-          },
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final candidates = data['candidates'] as List<dynamic>?;
-        if (candidates != null && candidates.isNotEmpty) {
-          final content = candidates[0]['content'] as Map<String, dynamic>?;
-          final parts = content?['parts'] as List<dynamic>?;
-          if (parts != null && parts.isNotEmpty) {
-            return (parts[0]['text'] as String? ?? '').trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  Future<String> _callGroq(String question, String apiKey) async {
-    const model = 'llama-3.3-70b-versatile';
-    const url = 'https://api.groq.com/openai/v1/chat/completions';
-
-    final List<Map<String, dynamic>> messages = [];
-    messages.add({
-      'role': 'system',
-      'content': _buildSystemInstruction(),
-    });
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      messages.add({
-        'role': msg.isUser ? 'user' : 'assistant',
-        'content': msg.text,
-      });
-    }
-    if (messages.isEmpty || messages.last['role'] == 'assistant') {
-      messages.add({
-        'role': 'user',
-        'content': question,
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-      ));
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'model': model,
-          'messages': messages,
-          'temperature': 0.7,
-          'max_tokens': 1024,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final choices = data['choices'] as List<dynamic>?;
-        if (choices != null && choices.isNotEmpty) {
-          final message = choices[0]['message'] as Map<String, dynamic>?;
-          final content = message?['content'] as String?;
-          if (content != null && content.isNotEmpty) {
-            return content.trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

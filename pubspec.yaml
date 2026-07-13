@@ -84,6 +84,7 @@ flutter:
     - assets/lottie/
     - assets/images/
     - Lenders/
+    - secrets.json
 
 flutter_launcher_icons:
   android: true

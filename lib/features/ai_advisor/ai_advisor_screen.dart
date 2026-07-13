@@ -1,14 +1,12 @@
 // lib/features/ai_advisor/ai_advisor_screen.dart
 
-import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../app/theme/country_themes.dart';
 import '../../app/theme/text_styles.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/ai_service.dart';
 
 class AIAdvisorScreen extends ConsumerStatefulWidget {
   final String country;
@@ -77,42 +75,7 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
     return _suggestions[key] ?? _suggestions['usa']!;
   }
 
-  // ── API key (user-provided, also persisted to SharedPreferences) ──
-  // ── API key (user-provided, also persisted to SharedPreferences) ──
-  String get _hardcodedKey {
-    switch (widget.country.toLowerCase()) {
-      case 'usa':
-        return const String.fromEnvironment('GEMINI_API_KEY_USA',
-            defaultValue:
-                String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
-      case 'uk':
-        return const String.fromEnvironment('GEMINI_API_KEY_UK',
-            defaultValue:
-                String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
-      case 'au':
-        return const String.fromEnvironment('GEMINI_API_KEY_AU',
-            defaultValue:
-                String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
-      case 'ca':
-        return const String.fromEnvironment('GEMINI_API_KEY_CA',
-            defaultValue:
-                String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
-      case 'in':
-        return const String.fromEnvironment('GEMINI_API_KEY_IN',
-            defaultValue:
-                String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
-      case 'nz':
-        return const String.fromEnvironment('GEMINI_API_KEY_NZ',
-            defaultValue:
-                String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
-      case 'eu':
-        return const String.fromEnvironment('GEMINI_API_KEY_EU',
-            defaultValue:
-                String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
-      default:
-        return const String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-    }
-  }
+
 
   @override
   void initState() {
@@ -122,124 +85,6 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
           '👋 Hi! I\'m your ${_theme.name} AI Advisor.\n\nI can help you understand ${_theme.currencyCode} mortgage rates, local regulations, and calculate scenarios.\n\nWhat would you like to know?',
       isUser: false,
     ));
-  }
-
-  void _showApiKeyDialog() async {
-    final prefs = await SharedPreferences.getInstance();
-    final currentKey = prefs.getString('custom_gemini_api_key') ?? '';
-    final textController = TextEditingController(text: currentKey);
-
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) {
-        final dark = Theme.of(dialogCtx).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: dark ? const Color(0xFF111827) : Colors.white,
-          title: Row(
-            children: [
-              const Text('🔑 ', style: TextStyle(fontSize: 20)),
-              Text(
-                'Gemini API Key',
-                style: AppTextStyles.playfair(
-                  size: 18,
-                  color: dark ? Colors.white : const Color(0xFF0B1D3A),
-                  weight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Enter your Gemini API key to enable live AI responses. You can get a free key from Google AI Studio.',
-                style: AppTextStyles.dmSans(
-                  size: 12,
-                  color: dark ? Colors.white70 : const Color(0xFF5B6E8F),
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: textController,
-                obscureText: true,
-                style: AppTextStyles.dmSans(
-                  size: 14,
-                  color: dark ? Colors.white : const Color(0xFF0B1D3A),
-                ),
-                decoration: InputDecoration(
-                  hintText: 'AIzaSy...',
-                  hintStyle: AppTextStyles.dmSans(size: 14, color: Colors.grey),
-                  filled: true,
-                  fillColor: dark ? Colors.white10 : Colors.black54.withValues(alpha: 0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: Text(
-                'Cancel',
-                style: AppTextStyles.dmSans(
-                  size: 13,
-                  color: dark ? Colors.white70 : const Color(0xFF5B6E8F),
-                ),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _theme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () async {
-                final newKey = textController.text.trim();
-                final prefs = await SharedPreferences.getInstance();
-                if (newKey.isEmpty) {
-                  await prefs.remove('custom_gemini_api_key');
-                } else {
-                  await prefs.setString('custom_gemini_api_key', newKey);
-                }
-                if (dialogCtx.mounted) {
-                  Navigator.pop(dialogCtx);
-                }
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        newKey.isEmpty
-                            ? 'Gemini API Key removed. Using fallbacks.'
-                            : 'Gemini API Key saved successfully!',
-                        style: AppTextStyles.dmSans(size: 13, color: Colors.white),
-                      ),
-                      backgroundColor: _theme.primaryColor,
-                    ),
-                  );
-                }
-              },
-              child: Text(
-                'Save',
-                style: AppTextStyles.dmSans(
-                  size: 13,
-                  weight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _sendMessage(String text) async {
@@ -252,40 +97,21 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
     await Future.delayed(const Duration(milliseconds: 150));
     _scrollToBottom();
 
-    final prefs = await SharedPreferences.getInstance();
-    final customKey = prefs.getString('custom_gemini_api_key') ?? '';
-    final apiKey = customKey.isNotEmpty ? customKey : _hardcodedKey;
-    const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
-
-    String reply = '';
-    String apiError = '';
-
-    if (apiKey.isNotEmpty) {
-      try {
-        reply = await _callGemini(text, apiKey);
-      } catch (e) {
-        apiError = e.toString();
-      }
+    String reply;
+    try {
+      reply = await AIService.instance.sendMessage(
+        question: text,
+        systemInstruction: _buildSystemPrompt(),
+        history: _messages
+            .skip(1)
+            .map((m) => AIChatMessage(text: m.text, isUser: m.isUser))
+            .toList(),
+        countryCode: widget.country.toLowerCase(),
+      );
+    } catch (_) {
+      reply = _fallbackResponse(text);
     }
-    
-    // Only fall back to Groq or static if no custom user key was provided.
-    // If the user provided a key and it failed, we want to show them the error.
-    if (customKey.isNotEmpty && reply.isEmpty) {
-      reply = '❌ **API Error**: Could not connect to Gemini.\n\n'
-          '${apiError.isNotEmpty ? 'Details: $apiError\n\n' : ''}'
-          'Please verify your API key and internet connection.';
-    } else {
-      if (reply.isEmpty && groqApiKey.isNotEmpty) {
-        try {
-          reply = await _callGroq(text, groqApiKey);
-        } catch (e) {
-          debugPrint('Groq error: $e');
-        }
-      }
-      if (reply.isEmpty) {
-        reply = _fallbackResponse(text);
-      }
-    }
+    if (reply.isEmpty) reply = _fallbackResponse(text);
 
     setState(() {
       _messages.add(_ChatMessage(text: reply, isUser: false));
@@ -315,150 +141,10 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
       return '**EMI (Equated Monthly Installment)**\n\nEMI = P × r × (1+r)^n / ((1+r)^n - 1)\n\nWhere:\n• P = Principal loan amount\n• r = Monthly interest rate\n• n = Loan tenure in months\n\n**Tax Benefits:**\n• Section 24B: Up to ₹2L deduction on interest\n• Section 80C: Up to ₹1.5L on principal\n\nUse the EMI Calculator for your exact monthly installment.';
     }
 
-    return 'Great question about ${_theme.name} mortgages! 🏠\n\nFor ${_theme.currencyCode} mortgage calculations, I recommend:\n\n1. **Use the calculators** in the ${_theme.flag} ${_theme.name} section for precise numbers\n2. **Check live rates** — currently ${country == "usa" ? "6.82%" : country == "au" ? "6.09%" : country == "uk" ? "4.75%" : "varies"} for standard mortgages\n3. **Consult a local broker** for personalized advice\n\nTo get live AI-powered answers, tap the 🔑 icon at the top right to configure your Gemini API Key.';
+    return 'Great question about ${_theme.name} mortgages! 🏠\n\nFor ${_theme.currencyCode} mortgage calculations, I recommend:\n\n1. **Use the calculators** in the ${_theme.flag} ${_theme.name} section for precise numbers\n2. **Check live rates** — currently ${country == "usa" ? "6.82%" : country == "au" ? "6.09%" : country == "uk" ? "4.75%" : "varies"} for standard mortgages\n3. **Consult a local broker** for personalized advice\n\nTry asking me a specific question about rates, loan types, or eligibility.';
   }
 
-  // ── Gemini 2.0 Flash REST API ────────────────────────────────────
-  Future<String> _callGemini(String question, String apiKey) async {
-    const model = 'gemini-2.0-flash';
-    final url =
-        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
 
-    // Build conversation history (skip welcome message at index 0)
-    final List<Map<String, dynamic>> contents = [];
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      contents.add({
-        'role': msg.isUser ? 'user' : 'model',
-        'parts': [
-          {'text': msg.text},
-        ],
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Content-Type': 'application/json'},
-      ));
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'system_instruction': {
-            'parts': [
-              {'text': _buildSystemPrompt()},
-            ],
-          },
-          'contents': contents,
-          'generationConfig': {
-            'temperature': 0.7,
-            'topK': 40,
-            'topP': 0.95,
-            'maxOutputTokens': 1024,
-          },
-          'safetySettings': [
-            {
-              'category': 'HARM_CATEGORY_HARASSMENT',
-              'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              'category': 'HARM_CATEGORY_HATE_SPEECH',
-              'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-          ],
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final candidates = data['candidates'] as List<dynamic>?;
-        if (candidates != null && candidates.isNotEmpty) {
-          final content = candidates[0]['content'] as Map<String, dynamic>?;
-          final parts = content?['parts'] as List<dynamic>?;
-          if (parts != null && parts.isNotEmpty) {
-            return (parts[0]['text'] as String? ?? '').trim();
-          }
-        }
-      }
-      throw 'Invalid API response format';
-    } catch (e) {
-      if (e is DioException) {
-        final errorMsg = e.response?.data?['error']?['message'] ?? e.message;
-        throw 'Gemini API returned an error: $errorMsg';
-      }
-      rethrow;
-    }
-  }
-
-  Future<String> _callGroq(String question, String apiKey) async {
-    const model = 'llama-3.3-70b-versatile';
-    const url = 'https://api.groq.com/openai/v1/chat/completions';
-
-    final List<Map<String, dynamic>> messages = [];
-    messages.add({
-      'role': 'system',
-      'content': _buildSystemPrompt(),
-    });
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      messages.add({
-        'role': msg.isUser ? 'user' : 'assistant',
-        'content': msg.text,
-      });
-    }
-    if (messages.isEmpty || messages.last['role'] == 'assistant') {
-      messages.add({
-        'role': 'user',
-        'content': question,
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-      ));
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'model': model,
-          'messages': messages,
-          'temperature': 0.7,
-          'max_tokens': 1024,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final choices = data['choices'] as List<dynamic>?;
-        if (choices != null && choices.isNotEmpty) {
-          final message = choices[0]['message'] as Map<String, dynamic>?;
-          final content = message?['content'] as String?;
-          if (content != null && content.isNotEmpty) {
-            return content.trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
 
   // ── Country-aware system prompt ──────────────────────────────────
   String _buildSystemPrompt() {
@@ -546,22 +232,7 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
                       ],
                     ),
                     const Spacer(),
-                    // API Key Config Button
-                    GestureDetector(
-                      onTap: _showApiKeyDialog,
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.20))),
-                        alignment: Alignment.center,
-                        child: const Text('🔑', style: TextStyle(fontSize: 16)),
-                      ),
-                    ),
+
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),

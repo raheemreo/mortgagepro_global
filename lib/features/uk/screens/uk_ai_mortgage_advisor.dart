@@ -1,12 +1,11 @@
 // lib/features/uk/screens/uk_ai_mortgage_advisor.dart
 
-import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/country_themes.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../../providers/uk_rates_provider.dart';
+import '../../../services/ai_service.dart';
 
 class UKChatMessage {
   final String text;
@@ -82,7 +81,6 @@ class _UKAiMortgageAdvisorState extends ConsumerState<UKAiMortgageAdvisor> {
         'Ask me about any of these for more detail.',
   };
 
-  static const _hardcodedKey = String.fromEnvironment('GEMINI_API_KEY_UK', defaultValue: String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
 
   @override
   void initState() {
@@ -119,19 +117,21 @@ class _UKAiMortgageAdvisorState extends ConsumerState<UKAiMortgageAdvisor> {
 
     _scrollToBottom();
 
-    const apiKey = _hardcodedKey;
-    const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
-
-    String responseText = '';
-    if (apiKey.isNotEmpty) {
-      responseText = await _callGemini(query, apiKey);
-    }
-    if (responseText.isEmpty && groqApiKey.isNotEmpty) {
-      responseText = await _callGroq(query, groqApiKey);
-    }
-    if (responseText.isEmpty) {
+    String responseText;
+    try {
+      responseText = await AIService.instance.sendMessage(
+        question: query,
+        systemInstruction: _buildSystemInstruction(),
+        history: _messages
+            .skip(1)
+            .map((m) => AIChatMessage(text: m.text, isUser: m.isUser))
+            .toList(),
+        countryCode: 'uk',
+      );
+    } catch (_) {
       responseText = _fallbackResponse(query);
     }
+    if (responseText.isEmpty) responseText = _fallbackResponse(query);
 
     if (!mounted) return;
     setState(() {
@@ -196,134 +196,6 @@ class _UKAiMortgageAdvisorState extends ConsumerState<UKAiMortgageAdvisor> {
         "Format responses clearly with key numbers in bold. Use UK terminology (SDLT, LTV, ERC, BoE base rate, remortgage, buy-to-let, ISA, etc.). Be helpful, specific, and accurate. Mention that rates change and to verify details. Keep replies concise and under 300 words unless detail is required. Show calculations where applicable.";
   }
 
-  Future<String> _callGemini(String question, String apiKey) async {
-    const model = 'gemini-2.0-flash';
-    final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
-
-    final List<Map<String, dynamic>> contents = [];
-    // Skip welcome message when building history
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      contents.add({
-        'role': msg.isUser ? 'user' : 'model',
-        'parts': [
-          {'text': msg.text},
-        ],
-      });
-    }
-
-    if (contents.isEmpty || contents.last['role'] == 'model') {
-      contents.add({
-        'role': 'user',
-        'parts': [
-          {'text': question},
-        ],
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Content-Type': 'application/json'},
-      ));
-
-      final systemInstruction = _buildSystemInstruction();
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'system_instruction': {
-            'parts': [
-              {'text': systemInstruction},
-            ],
-          },
-          'contents': contents,
-          'generationConfig': {
-            'temperature': 0.7,
-            'topK': 40,
-            'topP': 0.95,
-            'maxOutputTokens': 1024,
-          },
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final candidates = data['candidates'] as List<dynamic>?;
-        if (candidates != null && candidates.isNotEmpty) {
-          final content = candidates[0]['content'] as Map<String, dynamic>?;
-          final parts = content?['parts'] as List<dynamic>?;
-          if (parts != null && parts.isNotEmpty) {
-            return (parts[0]['text'] as String? ?? '').trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  Future<String> _callGroq(String question, String apiKey) async {
-    const model = 'llama-3.3-70b-versatile';
-    const url = 'https://api.groq.com/openai/v1/chat/completions';
-
-    final List<Map<String, dynamic>> messages = [];
-    messages.add({
-      'role': 'system',
-      'content': _buildSystemInstruction(),
-    });
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      messages.add({
-        'role': msg.isUser ? 'user' : 'assistant',
-        'content': msg.text,
-      });
-    }
-    if (messages.isEmpty || messages.last['role'] == 'assistant') {
-      messages.add({
-        'role': 'user',
-        'content': question,
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-      ));
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'model': model,
-          'messages': messages,
-          'temperature': 0.7,
-          'max_tokens': 1024,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final choices = data['choices'] as List<dynamic>?;
-        if (choices != null && choices.isNotEmpty) {
-          final message = choices[0]['message'] as Map<String, dynamic>?;
-          final content = message?['content'] as String?;
-          if (content != null && content.isNotEmpty) {
-            return content.trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
 
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -342,16 +214,7 @@ class _UKAiMortgageAdvisorState extends ConsumerState<UKAiMortgageAdvisor> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? const Color(0xFF141C33) : Colors.white;
     final textThemeColor = isDark ? Colors.white : const Color(0xFF0D0D2B);
-    final borderCol =
-        isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0x161A1A5E);
 
-    // Live BoE rates
-    final ukRates = ref.watch(ukRatesProvider).valueOrNull;
-    final boeBase  = ukRates?.boeBase.value  ?? 4.25;
-    final fixed2yr = ukRates?.fixed2yr.value ?? 4.75;
-    final fixed5yr = ukRates?.fixed5yr.value ?? 4.35;
-    final svr      = ukRates?.svr.value      ?? 7.99;
-    final isLive   = ukRates?.isLive == true;
 
     return Scaffold(
       backgroundColor: widget.theme.getBgColor(context),
@@ -388,341 +251,164 @@ class _UKAiMortgageAdvisorState extends ConsumerState<UKAiMortgageAdvisor> {
         backgroundColor: widget.theme.primaryColor,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Rate Strip Header
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: widget.theme.primaryColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: borderCol),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: _rateCell('BoE Base', '${boeBase.toStringAsFixed(2)}%', isLive ? '🟢 Live' : 'Est.',
-                            isDark ? const Color(0xFFFFD700) : const Color(0xFFD97706))),
-                    _divider(isDark, borderCol),
-                    Expanded(
-                        child: _rateCell('2-Yr Fixed', '${fixed2yr.toStringAsFixed(2)}%', isLive ? '🟢 Live' : 'Avg market',
-                            isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E))),
-                    _divider(isDark, borderCol),
-                    Expanded(
-                        child: _rateCell(
-                            '5-Yr Fixed', '${fixed5yr.toStringAsFixed(2)}%', 'Best buy', textThemeColor)),
-                    _divider(isDark, borderCol),
-                    Expanded(
-                        child: _rateCell('SVR Avg', '${svr.toStringAsFixed(2)}%', 'High',
-                            isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E))),
-                  ],
-                ),
+      body: Column(
+        children: [
+          // Disclaimer
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                    colors: isDark
+                        ? [const Color(0xFF451A03), const Color(0xFF1C0D02)]
+                        : [const Color(0xFFFEF3C7), const Color(0xFFFDE68A)]),
+                border: Border.all(
+                    color: isDark ? const Color(0xFFB45309).withValues(alpha: 0.5) : const Color(0xFFF59E0B)),
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(height: 16),
-
-              // Disclaimer
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      colors: isDark
-                          ? [const Color(0xFF451A03), const Color(0xFF1C0D02)]
-                          : [const Color(0xFFFEF3C7), const Color(0xFFFDE68A)]),
-                  border: Border.all(
-                      color: isDark ? const Color(0xFFB45309).withValues(alpha: 0.5) : const Color(0xFFF59E0B)),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('⚖️', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Not regulated advice · For guidance only',
-                              style: AppTextStyles.dmSans(
-                                  size: 11,
-                                  weight: FontWeight.w800,
-                                  color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E))),
-                          const SizedBox(height: 2),
-                          Text(
-                            'This AI provides info only, not regulated mortgage advice. Consult an authorised broker before completing. Your home may be repossessed if you do not keep up repayments.',
-                            style: AppTextStyles.dmSans(
-                                size: 9.5,
-                                color: isDark ? const Color(0xFFFCD34D) : const Color(0xFF78350F),
-                                height: 1.4),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Chat Container Card
-              Container(
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: borderCol),
-                ),
-                child: Column(
-                  children: [
-                    // Chat header
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                            colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)]),
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(20)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [
-                                Color(0xFFC8102E),
-                                Color(0xFF8B0A1E)
-                              ]),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Text('🤖',
-                                style: TextStyle(fontSize: 18)),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Nova · UK Mortgage AI',
-                                  style: AppTextStyles.dmSans(
-                                      size: 13,
-                                      weight: FontWeight.w800,
-                                      color: Colors.white)),
-                              Text('FCA-aware · Powered by real UK data',
-                                  style: AppTextStyles.dmSans(
-                                      size: 9.5, color: Colors.white60)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Chat messages list
-                    SizedBox(
-                      height: 300,
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _messages.length + (_isTyping ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == _messages.length && _isTyping) {
-                            return _buildTypingIndicator();
-                          }
-                          final msg = _messages[index];
-                          return _buildChatBubble(msg);
-                        },
-                      ),
-                    ),
-
-                    // Quick topic chips
-                    if (_topicCount < 3)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 8),
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.02)
-                            : const Color(0xFFF8FAFC),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _chipButton('2 vs 5-yr fix?',
-                                  'Should I fix for 2 or 5 years?'),
-                              const SizedBox(width: 6),
-                              _chipButton('SDLT help',
-                                  'Explain Stamp Duty for first-time buyers'),
-                              const SizedBox(width: 6),
-                              _chipButton('Borrowing power',
-                                  'How much can I borrow on a £60,000 salary?'),
-                              const SizedBox(width: 6),
-                              _chipButton('Remortgage timing',
-                                  'When should I remortgage?'),
-                              const SizedBox(width: 6),
-                              _chipButton('Help to Buy',
-                                  'What is a Help to Buy equity loan?'),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                    // Chat Input
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                          border: Border(
-                              top: BorderSide(
-                                  color: Colors.grey.withValues(alpha: 0.1)))),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _inputController,
-                              style: AppTextStyles.dmSans(
-                                  size: 13, color: textThemeColor),
-                              decoration: InputDecoration(
-                                hintText: 'Ask anything about UK mortgages…',
-                                hintStyle: AppTextStyles.dmSans(
-                                    size: 12.5, color: widget.theme.mutedColor),
-                                filled: true,
-                                fillColor: isDark
-                                    ? Colors.white.withValues(alpha: 0.05)
-                                    : const Color(0xFFF5F5F8),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none),
-                              ),
-                              onSubmitted: (v) {
-                                _sendMessage(v);
-                                _inputController.clear();
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () {
-                              _sendMessage(_inputController.text);
-                              _inputController.clear();
-                            },
-                            child: Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(colors: [
-                                  Color(0xFFC8102E),
-                                  Color(0xFF8B0A1E)
-                                ]),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              alignment: Alignment.center,
-                              child: const Icon(Icons.arrow_upward,
-                                  color: Colors.white, size: 18),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Session Summary
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)]),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('📋 Your Session Summary',
-                        style: AppTextStyles.dmSans(
-                                size: 14,
-                                weight: FontWeight.w800,
-                                color: Colors.white)
-                            .copyWith(fontFamily: 'Georgia')),
-                    const SizedBox(height: 12),
-                    _summaryRow('BoE Base Rate', '${boeBase.toStringAsFixed(2)}%${isLive ? ' 🟢' : ''}', isGold: true),
-                    _summaryRow('Best 2-yr fixed (HSBC)', '4.29%',
-                        isGreen: true),
-                    _summaryRow('Best 5-yr fixed (HSBC)', '4.09%',
-                        isGreen: true),
-                    _summaryRow('FTB SDLT-free threshold', '£425,000'),
-                    _summaryRow('Standard SDLT nil-rate', '£250,000'),
-                    _summaryRow('Max income multiple', '4.5× salary'),
-                    _summaryRow('Topics discussed', '$_topicCount'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // Save Action Buttons
-              Row(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 46,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isDark ? const Color(0xFF3730A3) : const Color(0xFF1A1A5E),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(13)),
-                        ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    '✓ Conversation saved to your profile'),
-                                backgroundColor: Color(0xFF0D9488)),
-                          );
-                        },
-                        child: Text('💾 Save Conversation',
-                            style: AppTextStyles.dmSans(
-                                size: 12.5,
-                                color: Colors.white,
-                                weight: FontWeight.w800)),
-                      ),
-                    ),
-                  ),
+                  const Text('⚖️', style: TextStyle(fontSize: 18)),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: SizedBox(
-                      height: 46,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: isDark ? const Color(0xFFC7D2FE) : const Color(0xFF1A1A5E),
-                          side: BorderSide(
-                              color: isDark ? const Color(0xFF4338CA) : const Color(0xFF1A1A5E), width: 1.5),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(13)),
-                        ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('📤 Summary copied to clipboard'),
-                                backgroundColor: Color(0xFF0D9488)),
-                          );
-                        },
-                        child: Text('Share Summary',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Not regulated advice · For guidance only',
                             style: AppTextStyles.dmSans(
-                                size: 12.5,
+                                size: 11,
                                 weight: FontWeight.w800,
-                                color: textThemeColor)),
-                      ),
+                                color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E))),
+                        const SizedBox(height: 2),
+                        Text(
+                          'This AI provides info only, not regulated mortgage advice. Consult an authorised broker before completing. Your home may be repossessed if you do not keep up repayments.',
+                          style: AppTextStyles.dmSans(
+                              size: 9.5,
+                              color: isDark ? const Color(0xFFFCD34D) : const Color(0xFF78350F),
+                              height: 1.4),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
-        ),
+
+          // Chat messages list (takes all remaining space)
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              itemCount: _messages.length + (_isTyping ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _messages.length && _isTyping) {
+                  return _buildTypingIndicator();
+                }
+                final msg = _messages[index];
+                return _buildChatBubble(msg);
+              },
+            ),
+          ),
+
+          // Quick topic chips
+          if (_topicCount < 3)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.02)
+                  : const Color(0xFFF8FAFC),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _chipButton('2 vs 5-yr fix?',
+                        'Should I fix for 2 or 5 years?'),
+                    const SizedBox(width: 6),
+                    _chipButton('SDLT help',
+                        'Explain Stamp Duty for first-time buyers'),
+                    const SizedBox(width: 6),
+                    _chipButton('Borrowing power',
+                        'How much can I borrow on a £60,000 salary?'),
+                    const SizedBox(width: 6),
+                    _chipButton('Remortgage timing',
+                        'When should I remortgage?'),
+                    const SizedBox(width: 6),
+                    _chipButton('Help to Buy',
+                        'What is a Help to Buy equity loan?'),
+                  ],
+                ),
+              ),
+            ),
+
+          // Chat Input bar docked at bottom
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              decoration: BoxDecoration(
+                color: cardBg,
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _inputController,
+                      style: AppTextStyles.dmSans(
+                          size: 13, color: textThemeColor),
+                      decoration: InputDecoration(
+                        hintText: 'Ask anything about UK mortgages…',
+                        hintStyle: AppTextStyles.dmSans(
+                            size: 12.5, color: widget.theme.mutedColor),
+                        filled: true,
+                        fillColor: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : const Color(0xFFF5F5F8),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none),
+                      ),
+                      onSubmitted: (v) {
+                        _sendMessage(v);
+                        _inputController.clear();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      _sendMessage(_inputController.text);
+                      _inputController.clear();
+                    },
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [
+                          Color(0xFFC8102E),
+                          Color(0xFF8B0A1E)
+                        ]),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.arrow_upward,
+                          color: Colors.white, size: 18),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -872,59 +558,5 @@ class _UKAiMortgageAdvisorState extends ConsumerState<UKAiMortgageAdvisor> {
     );
   }
 
-  Widget _summaryRow(String label, String val,
-      {bool isGold = false, bool isGreen = false}) {
-    Color col = Colors.white;
-    if (isGold) {
-      col = const Color(0xFFFFD700);
-    } else if (isGreen) {
-      col = const Color(0xFF90EE90);
-    }
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: AppTextStyles.dmSans(size: 11, color: Colors.white70)),
-          Text(val,
-              style: AppTextStyles.dmSans(
-                  size: 11.5, weight: FontWeight.w800, color: col)),
-        ],
-      ),
-    );
-  }
 
-  Widget _rateCell(String label, String value, String note, Color valueColor) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final labelColor = isDark ? Colors.white70 : widget.theme.mutedColor;
-    final noteColor = isDark ? Colors.white60 : widget.theme.mutedColor.withValues(alpha: 0.8);
-    return Column(
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: AppTextStyles.dmSans(
-              size: 8, color: labelColor, weight: FontWeight.w700),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: AppTextStyles.dmSans(
-              size: 13, weight: FontWeight.w800, color: valueColor),
-        ),
-        Text(
-          note,
-          style: AppTextStyles.dmSans(size: 8, color: noteColor),
-        ),
-      ],
-    );
-  }
-
-  Widget _divider(bool isDark, Color borderCol) {
-    return Container(
-      width: 1,
-      height: 30,
-      color: isDark ? Colors.white24 : borderCol,
-    );
-  }
 }

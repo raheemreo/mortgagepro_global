@@ -1,7 +1,6 @@
 // lib/features/usa/screens/usa_ai_mortgage_advisor_screen.dart
 
-import 'dart:convert';
-import 'package:dio/dio.dart';
+import '../../../services/ai_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,13 +21,11 @@ class _ChatMessage {
   final String text;
   final bool isUser;
   final bool isWelcome;
-  final bool isProfileApplied;
 
   const _ChatMessage({
     required this.text,
     required this.isUser,
     this.isWelcome = false,
-    this.isProfileApplied = false,
   });
 }
 
@@ -41,12 +38,12 @@ class _USAAIMortgageAdvisorScreenState extends ConsumerState<USAAIMortgageAdviso
   final _incomeCtrl = TextEditingController(text: '95000');
   final _creditCtrl = TextEditingController(text: '740');
 
-  String _loanType = 'Conventional';
-  String _state = 'GA';
+  final String _loanType = 'Conventional';
+  final String _state = 'GA';
 
-  bool _isFtb = true;
-  bool _isVa = false;
-  bool _isRural = false;
+  final bool _isFtb = true;
+  final bool _isVa = false;
+  final bool _isRural = false;
 
   final List<_ChatMessage> _messages = [];
   bool _isLoading = false;
@@ -55,7 +52,6 @@ class _USAAIMortgageAdvisorScreenState extends ConsumerState<USAAIMortgageAdviso
   int _selectedTopicIndex = 0;
 
   static const _theme = CountryThemes.usa;
-  static const _hardcodedKey = String.fromEnvironment('GEMINI_API_KEY_USA', defaultValue: String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''));
 
   final List<String> _topics = [
     'All',
@@ -151,19 +147,21 @@ class _USAAIMortgageAdvisorScreenState extends ConsumerState<USAAIMortgageAdviso
     await Future.delayed(const Duration(milliseconds: 100));
     _scrollToBottom();
 
-    const apiKey = _hardcodedKey;
-    const groqApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
-
-    String reply = '';
-    if (apiKey.isNotEmpty) {
-      reply = await _callGemini(text, apiKey);
-    }
-    if (reply.isEmpty && groqApiKey.isNotEmpty) {
-      reply = await _callGroq(text, groqApiKey);
-    }
-    if (reply.isEmpty) {
+    String reply;
+    try {
+      reply = await AIService.instance.sendMessage(
+        question: text,
+        systemInstruction: _buildSystemInstruction(),
+        history: _messages
+            .where((m) => !m.isWelcome)
+            .map((m) => AIChatMessage(text: m.text, isUser: m.isUser))
+            .toList(),
+        countryCode: 'us',
+      );
+    } catch (_) {
       reply = _fallbackResponse(text);
     }
+    if (reply.isEmpty) reply = _fallbackResponse(text);
 
     setState(() {
       _messages.add(_ChatMessage(text: reply, isUser: false));
@@ -320,151 +318,7 @@ class _USAAIMortgageAdvisorScreenState extends ConsumerState<USAAIMortgageAdviso
     return systemInstruction;
   }
  
-  Future<String> _callGemini(String question, String apiKey) async {
-    const model = 'gemini-2.0-flash';
-    final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
- 
-    final List<Map<String, dynamic>> contents = [];
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      contents.add({
-        'role': msg.isUser ? 'user' : 'model',
-        'parts': [
-          {'text': msg.text},
-        ],
-      });
-    }
- 
-    if (contents.isEmpty || contents.last['role'] == 'model') {
-      contents.add({
-        'role': 'user',
-        'parts': [
-          {'text': question},
-        ],
-      });
-    }
- 
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Content-Type': 'application/json'},
-      ));
- 
-      final systemInstruction = _buildSystemInstruction();
- 
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'system_instruction': {
-            'parts': [
-              {'text': systemInstruction},
-            ],
-          },
-          'contents': contents,
-          'generationConfig': {
-            'temperature': 0.7,
-            'topK': 40,
-            'topP': 0.95,
-            'maxOutputTokens': 1024,
-          },
-        }),
-      );
- 
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final candidates = data['candidates'] as List<dynamic>?;
-        if (candidates != null && candidates.isNotEmpty) {
-          final content = candidates[0]['content'] as Map<String, dynamic>?;
-          final parts = content?['parts'] as List<dynamic>?;
-          if (parts != null && parts.isNotEmpty) {
-            return (parts[0]['text'] as String? ?? '').trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
 
-  Future<String> _callGroq(String question, String apiKey) async {
-    const model = 'llama-3.3-70b-versatile';
-    const url = 'https://api.groq.com/openai/v1/chat/completions';
-
-    final List<Map<String, dynamic>> messages = [];
-    messages.add({
-      'role': 'system',
-      'content': _buildSystemInstruction(),
-    });
-    for (int i = 1; i < _messages.length; i++) {
-      final msg = _messages[i];
-      messages.add({
-        'role': msg.isUser ? 'user' : 'assistant',
-        'content': msg.text,
-      });
-    }
-    if (messages.isEmpty || messages.last['role'] == 'assistant') {
-      messages.add({
-        'role': 'user',
-        'content': question,
-      });
-    }
-
-    try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-      ));
-
-      final response = await dio.post(
-        url,
-        data: jsonEncode({
-          'model': model,
-          'messages': messages,
-          'temperature': 0.7,
-          'max_tokens': 1024,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final choices = data['choices'] as List<dynamic>?;
-        if (choices != null && choices.isNotEmpty) {
-          final message = choices[0]['message'] as Map<String, dynamic>?;
-          final content = message?['content'] as String?;
-          if (content != null && content.isNotEmpty) {
-            return content.trim();
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  void _applyProfile() {
-    setState(() {
-      final text = "Profile Context Applied! 👤\n"
-          "• Home Price: \$${_homePriceCtrl.text}\n"
-          "• Down Payment: ${_downPmtCtrl.text}%\n"
-          "• Income: \$${_incomeCtrl.text}\n"
-          "• Credit Score: ${_creditCtrl.text}\n"
-          "• Loan Type: $_loanType\n"
-          "• State: $_state\n"
-          "• First-Time Buyer: ${_isFtb ? "Yes" : "No"}\n"
-          "• VA Eligible: ${_isVa ? "Yes" : "No"}\n"
-          "• Rural Area: ${_isRural ? "Yes" : "No"}";
-
-      _messages.add(_ChatMessage(text: text, isUser: false, isProfileApplied: true));
-    });
-    _scrollToBottom();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -477,500 +331,352 @@ class _USAAIMortgageAdvisorScreenState extends ConsumerState<USAAIMortgageAdviso
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              // Header
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF0B1D3A),
-                      Color(0xFF1B3F72),
-                      Color(0xFF4C1D95),
-                      Color(0xFFB91C1C),
-                    ],
-                  ),
-                ),
-                padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
-                child: Column(
+          // Header
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0B1D3A),
+                  Color(0xFF1B3F72),
+                  Color(0xFF4C1D95),
+                  Color(0xFFB91C1C),
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
+            child: Column(
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.pop(),
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Text('←', style: TextStyle(color: Colors.white, fontSize: 16)),
-                          ),
+                    GestureDetector(
+                      onTap: () => context.pop(),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
                         ),
-                        const SizedBox(width: 14),
+                        alignment: Alignment.center,
+                        child: const Text('←', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('🤖  USA AI Mortgage Advisor',
+                              style: AppTextStyles.dmSans(
+                                  size: 15, weight: FontWeight.w800, color: Colors.white)),
+                          Text('FRED · FHA/VA/USDA · Live Rates · Guidelines',
+                              style: AppTextStyles.dmSans(
+                                  size: 8.5, color: Colors.white.withValues(alpha: 0.5))),
+                        ],
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _messages.clear();
+                          _messages.add(const _ChatMessage(
+                            text: "Chat cleared! I'm ready to help with your mortgage questions. What would you like to know? 🏠",
+                            isUser: false,
+                            isWelcome: true,
+                          ));
+                        });
+                      },
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text('🔄', style: TextStyle(color: Colors.white, fontSize: 14)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Builder(
+                  builder: (context) {
+                    final rate30 = ref.watch(fredMortgage30Provider).valueOrNull?.formatted ?? '6.82%';
+                    final rateFed = ref.watch(fredFedFundsProvider).valueOrNull?.formatted ?? '5.33%';
+                    final rawRate30 = ref.watch(fredMortgage30Provider).valueOrNull?.value ?? 6.82;
+                    final fhaRate = '${(rawRate30 - 0.30).toStringAsFixed(2)}%';
+                    final vaRate = '${(rawRate30 - 0.57).toStringAsFixed(2)}%';
+
+                    final isLive30 = ref.watch(fredMortgage30Provider).valueOrNull?.isLive == true;
+                    final isLiveFed = ref.watch(fredFedFundsProvider).valueOrNull?.isLive == true;
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildRateStripItem('30-Yr Fixed', rate30, isLive30 ? 'FRED Live' : 'Freddie Mac'),
+                          _buildRateStripItem('Fed Funds', rateFed, isLiveFed ? 'FRED Live' : 'FOMC', isGold: true),
+                          _buildRateStripItem('FHA Avg', fhaRate, isLive30 ? 'Live spread' : '2025 avg', isGrn: true),
+                          _buildRateStripItem('VA Avg', vaRate, isLive30 ? 'Live spread' : '2025 avg', isGrn: true),
+                        ],
+                      ),
+                    );
+                  }
+                ),
+              ],
+            ),
+          ),
+
+          // Scrollable area
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Active advisor status banner
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, child) {
+                            return Opacity(
+                              opacity: _pulseController.value,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(color: Color(0xFF6EE7B7), shape: BoxShape.circle),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('🤖  USA AI Mortgage Advisor',
-                                  style: AppTextStyles.dmSans(
-                                      size: 15, weight: FontWeight.w800, color: Colors.white)),
-                              Text('FRED · FHA/VA/USDA · Live Rates · Guidelines',
-                                  style: AppTextStyles.dmSans(
-                                      size: 8.5, color: Colors.white.withValues(alpha: 0.5))),
+                              Text(
+                                'USA Financial AI Advisor',
+                                style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: Colors.white),
+                              ),
+                              Text(
+                                'Trained on FHA · VA · USDA · Conforming & Jumbo Rules',
+                                style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54),
+                              ),
                             ],
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _messages.clear();
-                              _messages.add(const _ChatMessage(
-                                text: "Chat cleared! I'm ready to help with your mortgage questions. What would you like to know? 🏠",
-                                isUser: false,
-                                isWelcome: true,
-                              ));
-                            });
-                          },
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Text('🔄', style: TextStyle(color: Colors.white, fontSize: 14)),
-                          ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(8)),
+                          child: Text('Gemini 2.0', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white, weight: FontWeight.bold)),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Builder(
-                      builder: (context) {
-                        final rate30 = ref.watch(fredMortgage30Provider).valueOrNull?.formatted ?? '6.82%';
-                        final rateFed = ref.watch(fredFedFundsProvider).valueOrNull?.formatted ?? '5.33%';
-                        final rawRate30 = ref.watch(fredMortgage30Provider).valueOrNull?.value ?? 6.82;
-                        final fhaRate = '${(rawRate30 - 0.30).toStringAsFixed(2)}%';
-                        final vaRate = '${(rawRate30 - 0.57).toStringAsFixed(2)}%';
+                  ),
+                  const SizedBox(height: 12),
 
-                        final isLive30 = ref.watch(fredMortgage30Provider).valueOrNull?.isLive == true;
-                        final isLiveFed = ref.watch(fredFedFundsProvider).valueOrNull?.isLive == true;
-
-                        return Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildRateStripItem('30-Yr Fixed', rate30, isLive30 ? 'FRED Live' : 'Freddie Mac'),
-                              _buildRateStripItem('Fed Funds', rateFed, isLiveFed ? 'FRED Live' : 'FOMC', isGold: true),
-                              _buildRateStripItem('FHA Avg', fhaRate, isLive30 ? 'Live spread' : '2025 avg', isGrn: true),
-                              _buildRateStripItem('VA Avg', vaRate, isLive30 ? 'Live spread' : '2025 avg', isGrn: true),
-                            ],
+                  // Quick topic filters
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: List.generate(_topics.length, (idx) {
+                        final active = _selectedTopicIndex == idx;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            label: Text(_topics[idx]),
+                            selected: active,
+                            selectedColor: _theme.primaryColor,
+                            labelStyle: AppTextStyles.dmSans(
+                              size: 10.5,
+                              weight: FontWeight.bold,
+                              color: active ? Colors.white : textPrimaryColor,
+                            ),
+                            onSelected: (sel) {
+                              if (sel) setState(() => _selectedTopicIndex = idx);
+                            },
                           ),
                         );
-                      }
+                      }),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                  const SizedBox(height: 10),
 
-              // Scrollable area
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 190),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Active advisor status banner
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)],
+                  // Prompt chips list
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _currentPrompts.map((p) {
+                      return ActionChip(
+                        label: Text(p),
+                        backgroundColor: cardBgColor,
+                        labelStyle: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: textPrimaryColor),
+                        onPressed: () => _sendMessage(p),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Chat Messages Log
+                  Container(
+                    decoration: BoxDecoration(
+                      color: cardBgColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: borderCol),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _theme.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            AnimatedBuilder(
-                              animation: _pulseController,
-                              builder: (context, child) {
-                                return Opacity(
-                                  opacity: _pulseController.value,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(color: Color(0xFF6EE7B7), shape: BoxShape.circle),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
+                          child: Row(
+                            children: [
+                              const Text('🤖', style: TextStyle(fontSize: 16)),
+                              const SizedBox(width: 8),
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'USA Financial AI Advisor',
-                                    style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: Colors.white),
-                                  ),
-                                  Text(
-                                    'Trained on FHA · VA · USDA · Conforming & Jumbo Rules',
-                                    style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54),
-                                  ),
+                                  Text('USA AI Mortgage Advisor Thread',
+                                      style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: textPrimaryColor)),
+                                  Text('Ask about FHA/VA/USDA guidelines, rates, DTI...',
+                                      style: AppTextStyles.dmSans(size: 8.5, color: textMutedColor)),
                                 ],
                               ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(8)),
-                              child: Text('Gemini 2.0', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white, weight: FontWeight.bold)),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(12),
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            final msg = _messages[index];
+                            return _buildChatMessageItem(msg, textPrimaryColor, textMutedColor, isDark);
+                          },
+                        ),
 
-                      // Profile Card context builder
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: cardBgColor,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: borderCol),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '👤 Customize Borrower Context',
-                              style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: textPrimaryColor),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(child: _buildProfileInput('HOME PRICE (\$)', _homePriceCtrl)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildProfileInput('DOWN PMT (%)', _downPmtCtrl)),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(child: _buildProfileInput('INCOME (\$)', _incomeCtrl)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildProfileInput('CREDIT (FICO)', _creditCtrl)),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('LOAN TYPE', style: AppTextStyles.dmSans(size: 8, color: textMutedColor, weight: FontWeight.bold)),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        height: 38,
-                                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                                        decoration: BoxDecoration(
-                                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEDF5F2),
-                                            borderRadius: BorderRadius.circular(10)),
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton<String>(
-                                            value: _loanType,
-                                            isExpanded: true,
-                                            dropdownColor: cardBgColor,
-                                            style: AppTextStyles.dmSans(size: 12, color: textPrimaryColor, weight: FontWeight.bold),
-                                            items: const [
-                                              DropdownMenuItem(value: 'Conventional', child: Text('Conventional')),
-                                              DropdownMenuItem(value: 'FHA', child: Text('FHA')),
-                                              DropdownMenuItem(value: 'VA', child: Text('VA')),
-                                              DropdownMenuItem(value: 'USDA', child: Text('USDA')),
-                                              DropdownMenuItem(value: 'Jumbo', child: Text('Jumbo')),
-                                            ],
-                                            onChanged: (val) => setState(() => _loanType = val ?? 'Conventional'),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                        // Typing loader
+                        if (_isLoading)
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEDF5F2),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('LOCATION (STATE)', style: AppTextStyles.dmSans(size: 8, color: textMutedColor, weight: FontWeight.bold)),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        height: 38,
-                                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                                        decoration: BoxDecoration(
-                                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEDF5F2),
-                                            borderRadius: BorderRadius.circular(10)),
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton<String>(
-                                            value: _state,
-                                            isExpanded: true,
-                                            dropdownColor: cardBgColor,
-                                            style: AppTextStyles.dmSans(size: 12, color: textPrimaryColor, weight: FontWeight.bold),
-                                            items: const [
-                                              DropdownMenuItem(value: 'CA', child: Text('California (CA)')),
-                                              DropdownMenuItem(value: 'TX', child: Text('Texas (TX)')),
-                                              DropdownMenuItem(value: 'FL', child: Text('Florida (FL)')),
-                                              DropdownMenuItem(value: 'NY', child: Text('New York (NY)')),
-                                              DropdownMenuItem(value: 'GA', child: Text('Georgia (GA)')),
-                                              DropdownMenuItem(value: 'IL', child: Text('Illinois (IL)')),
-                                              DropdownMenuItem(value: 'CO', child: Text('Colorado (CO)')),
-                                              DropdownMenuItem(value: 'WA', child: Text('Washington (WA)')),
-                                            ],
-                                            onChanged: (val) => setState(() => _state = val ?? 'GA'),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: [
-                                _buildToggleChip('🏠 First-Time Buyer', _isFtb, (val) => setState(() => _isFtb = val)),
-                                _buildToggleChip('🪖 VA Eligible', _isVa, (val) => setState(() => _isVa = val)),
-                                _buildToggleChip('🌾 Rural Area', _isRural, (val) => setState(() => _isRural = val)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: _applyProfile,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _theme.primaryColor,
-                                minimumSize: const Size(double.infinity, 42),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-                              ),
-                              child: Text(
-                                'Apply Profile to Advisor Context',
-                                style: AppTextStyles.playfair(size: 12, weight: FontWeight.bold, color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Quick topic filters
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: List.generate(_topics.length, (idx) {
-                            final active = _selectedTopicIndex == idx;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: ChoiceChip(
-                                label: Text(_topics[idx]),
-                                selected: active,
-                                selectedColor: _theme.primaryColor,
-                                labelStyle: AppTextStyles.dmSans(
-                                  size: 10.5,
-                                  weight: FontWeight.bold,
-                                  color: active ? Colors.white : textPrimaryColor,
-                                ),
-                                onSelected: (sel) {
-                                  if (sel) setState(() => _selectedTopicIndex = idx);
-                                },
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Prompt chips list
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: _currentPrompts.map((p) {
-                          return ActionChip(
-                            label: Text(p),
-                            backgroundColor: cardBgColor,
-                            labelStyle: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: textPrimaryColor),
-                            onPressed: () => _sendMessage(p),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Chat Messages Log
-                      Container(
-                        decoration: BoxDecoration(
-                          color: cardBgColor,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: borderCol),
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: _theme.primaryColor.withValues(alpha: 0.1),
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Text('🤖', style: TextStyle(fontSize: 16)),
-                                  const SizedBox(width: 8),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('USA AI Mortgage Advisor Thread',
-                                          style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: textPrimaryColor)),
-                                      Text('Ask about FHA/VA/USDA guidelines, rates, DTI...',
-                                          style: AppTextStyles.dmSans(size: 8.5, color: textMutedColor)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding: const EdgeInsets.all(12),
-                              itemCount: _messages.length,
-                              itemBuilder: (context, index) {
-                                final msg = _messages[index];
-                                return _buildChatMessageItem(msg, textPrimaryColor, textMutedColor, isDark);
-                              },
-                            ),
-
-                            // Typing loader
-                            if (_isLoading)
-                              Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEDF5F2),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        _buildTypingDot(0),
-                                        _buildTypingDot(1),
-                                        _buildTypingDot(2),
-                                      ],
-                                    ),
-                                  ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildTypingDot(0),
+                                    _buildTypingDot(1),
+                                    _buildTypingDot(2),
+                                  ],
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                    ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
 
           // Message input area fixed bottom
-          Positioned(
-            bottom: 60,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: cardBgColor,
-                border: Border(top: BorderSide(color: borderCol)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -3),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      maxLines: 4,
-                      minLines: 1,
-                      style: AppTextStyles.dmSans(size: 13, color: textPrimaryColor),
-                      decoration: InputDecoration(
-                        hintText: 'Ask anything about US mortgage guidelines…',
-                        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        filled: true,
-                        fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFEDF5F2),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => _sendMessage(_controller.text),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF4C1D95), Color(0xFF1B3F72)]),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          )
-                        ],
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text('➤', style: TextStyle(color: Colors.white, fontSize: 16)),
-                    ),
-                  ),
-                ],
-              ),
+          Container(
+            decoration: BoxDecoration(
+              color: cardBgColor,
+              border: Border(top: BorderSide(color: borderCol)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -3),
+                ),
+              ],
             ),
-          ),
-
-          // Bottom nav bar
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BottomNav(
-              activeIndex: 1,
-              activeColor: _theme.primaryColor,
-              countryIcon: _theme.flag,
-              countryLabel: 'USA',
-              countryRoute: '/usa',
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    maxLines: 4,
+                    minLines: 1,
+                    style: AppTextStyles.dmSans(size: 13, color: textPrimaryColor),
+                    decoration: InputDecoration(
+                      hintText: 'Ask anything about US mortgage guidelines…',
+                      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFEDF5F2),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _sendMessage(_controller.text),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF4C1D95), Color(0xFF1B3F72)]),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.purple.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text('➤', style: TextStyle(color: Colors.white, fontSize: 16)),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNav(
+        activeIndex: 1,
+        activeColor: _theme.primaryColor,
+        countryIcon: _theme.flag,
+        countryLabel: 'USA',
+        countryRoute: '/usa',
       ),
     );
   }
@@ -990,46 +696,6 @@ class _USAAIMortgageAdvisorScreenState extends ConsumerState<USAAIMortgageAdviso
         ),
         Text(note, style: const TextStyle(fontSize: 7.5, color: Colors.white38)),
       ],
-    );
-  }
-
-  Widget _buildProfileInput(String label, TextEditingController ctrl) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.dmSans(size: 8, color: isDark ? Colors.white70 : const Color(0xFF4A5C7A), weight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        SizedBox(
-          height: 38,
-          child: TextField(
-            controller: ctrl,
-            keyboardType: TextInputType.number,
-            style: AppTextStyles.dmSans(size: 12, color: isDark ? Colors.white : const Color(0xFF0B1D3A), weight: FontWeight.bold),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFEDF5F2),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildToggleChip(String label, bool isSelected, ValueChanged<bool> onChanged) {
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: onChanged,
-      selectedColor: const Color(0xFFF5F3FF),
-      checkmarkColor: const Color(0xFF6D28D9),
-      labelStyle: AppTextStyles.dmSans(
-        size: 9.5,
-        weight: FontWeight.bold,
-        color: isSelected ? const Color(0xFF6D28D9) : Colors.grey.shade600,
-      ),
     );
   }
 

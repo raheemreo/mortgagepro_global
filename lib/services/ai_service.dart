@@ -1,8 +1,14 @@
 // lib/services/ai_service.dart
+//
+// Keys are loaded at runtime from secrets.json (bundled as a Flutter asset,
+// gitignored). Do NOT use String.fromEnvironment for keys — those require
+// --dart-define at build time and default to empty strings.
+// Do NOT use user-provided custom keys — only app-supplied keys are used.
 
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class AIChatMessage {
   final String text;
@@ -15,123 +21,120 @@ class AIService {
   static final AIService instance = AIService._internal();
   AIService._internal();
 
-  // All Gemini API Keys in order of fallback execution.
-  // Inject at build time: --dart-define=GEMINI_API_KEY=your_key
-  // Never hardcode keys here — GitHub secret scanning will block the push.
-  final List<String> _geminiKeys = [
-    const String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''),
-    const String.fromEnvironment('GEMINI_API_KEY_1', defaultValue: ''),
-    const String.fromEnvironment('GEMINI_API_KEY_2', defaultValue: ''),
-    const String.fromEnvironment('GEMINI_API_KEY_3', defaultValue: ''),
-    const String.fromEnvironment('GEMINI_API_KEY_4', defaultValue: ''),
-    const String.fromEnvironment('GEMINI_API_KEY_5', defaultValue: ''),
-    const String.fromEnvironment('GEMINI_API_KEY_6', defaultValue: ''),
-    const String.fromEnvironment('GEMINI_API_KEY_7', defaultValue: ''),
-  ];
+  // ── Runtime-loaded key pool ────────────────────────────────────────────────
+  // Populated by loadKeys() at app startup from secrets.json.
+  // Never hardcode values here — GitHub secret scanning blocks the push.
+  final List<String> _geminiKeys = [];
+  String _groqKey = '';
+  bool _keysLoaded = false;
 
-  // Groq API Key — inject via --dart-define=GROQ_API_KEY=your_key
-  final String _groqKey = const String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
-
-  // Shared Dio client to optimize networking performance (reusing connections)
+  // ── Dio client (shared, reuses connections) ────────────────────────────────
   final Dio _dio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 15),
     receiveTimeout: const Duration(seconds: 30),
     headers: {'Content-Type': 'application/json'},
   ));
 
-  // Country-specific Gemini keys as defined by environment
-  String _getCountrySpecificKey(String countryCode) {
-    switch (countryCode.toLowerCase()) {
-      case 'usa':
-        return const String.fromEnvironment('GEMINI_API_KEY_USA', defaultValue: '');
-      case 'uk':
-        return const String.fromEnvironment('GEMINI_API_KEY_UK', defaultValue: '');
-      case 'au':
-        return const String.fromEnvironment('GEMINI_API_KEY_AU', defaultValue: '');
-      case 'ca':
-        return const String.fromEnvironment('GEMINI_API_KEY_CA', defaultValue: '');
-      case 'in':
-        return const String.fromEnvironment('GEMINI_API_KEY_IN', defaultValue: '');
-      case 'nz':
-        return const String.fromEnvironment('GEMINI_API_KEY_NZ', defaultValue: '');
-      case 'eu':
-        return const String.fromEnvironment('GEMINI_API_KEY_EU', defaultValue: '');
-      default:
-        return '';
+  // ── Key loading ────────────────────────────────────────────────────────────
+
+  /// Loads API keys from the bundled secrets.json asset.
+  /// Call this once at app startup (main.dart) before any AI requests.
+  /// Safe to call multiple times — subsequent calls are no-ops.
+  Future<void> loadKeysFromAssets() async {
+    if (_keysLoaded) return;
+    try {
+      final raw = await rootBundle.loadString('secrets.json');
+      final Map<String, dynamic> secrets = json.decode(raw) as Map<String, dynamic>;
+      loadKeys(secrets);
+    } catch (e) {
+      debugPrint('AIService: Failed to load secrets.json — $e');
     }
   }
 
-  /// Sends a request to the AI models with fallback keys.
-  /// If [customUserKey] is provided and is not empty, it will only use that key and throw errors on failure (so the user gets feedback on their key).
-  /// If [customUserKey] is empty, it tries [countryCode]-specific key, then falls back to [_geminiKeys] one-by-one, and finally to [_groqKey].
+  /// Populates the key pool from a map (e.g. decoded secrets.json).
+  /// Keys are tried in insertion order; empty strings are skipped.
+  void loadKeys(Map<String, dynamic> secrets) {
+    if (_keysLoaded) return;
+
+    _geminiKeys.clear();
+    for (var i = 0; i < 8; i++) {
+      final key = i == 0
+          ? secrets['GEMINI_API_KEY']
+          : secrets['GEMINI_API_KEY_$i'];
+      final v = (key as String? ?? '').trim();
+      if (v.isNotEmpty) _geminiKeys.add(v);
+    }
+
+    _groqKey = (secrets['GROQ_API_KEY'] as String? ?? '').trim();
+    _keysLoaded = true;
+
+    debugPrint('AIService: Loaded ${_geminiKeys.length} Gemini key(s)'
+        '${_groqKey.isNotEmpty ? " + Groq" : ""}');
+  }
+
+  // ── Public sendMessage ─────────────────────────────────────────────────────
+
+  /// Sends a message through the AI fallback chain:
+  ///   Gemini keys (pool, in order) → Groq Llama → throws if all fail.
+  ///
+  /// [question]          The user's current message.
+  /// [systemInstruction] The screen-specific system prompt (with live data).
+  /// [history]           Prior turns (alternating user/model, oldest first).
+  /// [countryCode]       e.g. 'usa', 'uk', 'au' — for logging only.
   Future<String> sendMessage({
     required String question,
     required String systemInstruction,
     required List<AIChatMessage> history,
     required String countryCode,
   }) async {
-    // 1. Clean history to ensure it starts with a user turn, alternates strictly, and ends with a model turn
+    // Ensure keys are loaded (defensive — normally done at startup)
+    if (!_keysLoaded) await loadKeysFromAssets();
+
+    // Clean history: must alternate user/model and end with a model turn
     final List<AIChatMessage> cleanedHistory = [];
     bool expectingUser = true;
-    for (var msg in history) {
+    for (final msg in history) {
       if (msg.isUser == expectingUser) {
         cleanedHistory.add(msg);
         expectingUser = !expectingUser;
       }
     }
-    // Remove last message if it's a user message, so history ends with a model response
     if (cleanedHistory.isNotEmpty && cleanedHistory.last.isUser) {
       cleanedHistory.removeLast();
     }
 
-    // 2. Build candidate list of Gemini Keys to try
-    final List<String> candidateKeys = [];
-    
-    // Add country-specific key first if defined
-    final countryKey = _getCountrySpecificKey(countryCode);
-    if (countryKey.isNotEmpty) {
-      candidateKeys.add(countryKey);
-    }
-    
-    // Add other fallback keys, ensuring no duplicates
-    for (final key in _geminiKeys) {
-      if (key.isNotEmpty && !candidateKeys.contains(key)) {
-        candidateKeys.add(key);
-      }
-    }
-
-    // 3. Try each Gemini API key sequentially
-    dynamic geminiError;
-    for (int i = 0; i < candidateKeys.length; i++) {
-      final apiKey = candidateKeys[i];
+    // Try each Gemini key in order
+    dynamic lastError;
+    for (int i = 0; i < _geminiKeys.length; i++) {
       try {
-        debugPrint('AIService: Trying Gemini key index $i');
-        final response = await _callGemini(question, systemInstruction, cleanedHistory, apiKey);
-        if (response.isNotEmpty) {
-          return response;
-        }
+        debugPrint('AIService[$countryCode]: Trying Gemini key $i');
+        final response = await _callGemini(
+          question, systemInstruction, cleanedHistory, _geminiKeys[i],
+        );
+        if (response.isNotEmpty) return response;
       } catch (e) {
-        geminiError = e;
-        debugPrint('AIService: Gemini key index $i failed: $e');
+        lastError = e;
+        debugPrint('AIService[$countryCode]: Gemini key $i failed — $e');
       }
     }
 
-    // 4. Fallback to Groq API using Llama model
+    // Fallback: Groq Llama
     if (_groqKey.isNotEmpty) {
       try {
-        debugPrint('AIService: Falling back to Groq Llama model');
-        final response = await _callGroq(question, systemInstruction, cleanedHistory, _groqKey);
-        if (response.isNotEmpty) {
-          return response;
-        }
+        debugPrint('AIService[$countryCode]: Falling back to Groq');
+        final response = await _callGroq(
+          question, systemInstruction, cleanedHistory, _groqKey,
+        );
+        if (response.isNotEmpty) return response;
       } catch (e) {
-        debugPrint('AIService: Groq failed: $e');
+        debugPrint('AIService[$countryCode]: Groq failed — $e');
       }
     }
 
-    // If everything failed, throw or return empty
-    throw geminiError ?? 'All AI API keys and fallbacks failed to respond.';
+    throw lastError ?? Exception('All AI keys exhausted for $countryCode');
   }
+
+  // ── Gemini ────────────────────────────────────────────────────────────────
 
   Future<String> _callGemini(
     String question,
@@ -140,24 +143,23 @@ class AIService {
     String apiKey,
   ) async {
     const model = 'gemini-2.0-flash';
-    final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
+    final url =
+        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
 
-    final List<Map<String, dynamic>> contents = [];
-    for (var msg in history) {
+    final contents = <Map<String, dynamic>>[];
+    for (final msg in history) {
       contents.add({
         'role': msg.isUser ? 'user' : 'model',
         'parts': [
           {'text': msg.text}
-        ]
+        ],
       });
     }
-
-    // Ensure the new question is included in contents
     contents.add({
       'role': 'user',
       'parts': [
         {'text': question}
-      ]
+      ],
     });
 
     final response = await _dio.post(
@@ -195,8 +197,10 @@ class AIService {
         }
       }
     }
-    throw 'Invalid Gemini response structure';
+    throw Exception('Invalid Gemini response — status ${response.statusCode}');
   }
+
+  // ── Groq ──────────────────────────────────────────────────────────────────
 
   Future<String> _callGroq(
     String question,
@@ -207,30 +211,23 @@ class AIService {
     const model = 'llama-3.3-70b-versatile';
     const url = 'https://api.groq.com/openai/v1/chat/completions';
 
-    final List<Map<String, dynamic>> messages = [];
-    messages.add({
-      'role': 'system',
-      'content': systemInstruction,
-    });
-    for (var msg in history) {
+    final messages = <Map<String, dynamic>>[
+      {'role': 'system', 'content': systemInstruction},
+    ];
+    for (final msg in history) {
       messages.add({
         'role': msg.isUser ? 'user' : 'assistant',
         'content': msg.text,
       });
     }
-    messages.add({
-      'role': 'user',
-      'content': question,
-    });
+    messages.add({'role': 'user', 'content': question});
 
     final response = await _dio.post(
       url,
-      options: Options(
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-      ),
+      options: Options(headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      }),
       data: jsonEncode({
         'model': model,
         'messages': messages,
@@ -245,11 +242,9 @@ class AIService {
       if (choices != null && choices.isNotEmpty) {
         final message = choices[0]['message'] as Map<String, dynamic>?;
         final content = message?['content'] as String?;
-        if (content != null && content.isNotEmpty) {
-          return content.trim();
-        }
+        if (content != null && content.isNotEmpty) return content.trim();
       }
     }
-    throw 'Invalid Groq response structure';
+    throw Exception('Invalid Groq response — status ${response.statusCode}');
   }
 }
