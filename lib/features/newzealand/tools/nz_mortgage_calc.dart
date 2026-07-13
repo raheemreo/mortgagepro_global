@@ -7,6 +7,7 @@ import '../../../app/theme/country_themes.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../providers/saved_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 import '../../../providers/nz_rates_provider.dart';
 import '../../../services/remote_config_service.dart';
@@ -37,6 +38,31 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
     {'name': 'SBS Bank', 'icon': '🏦', 'rate': 5.70},
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    final saved = ref.read(settingsProvider.notifier).getCalculatorInputs('NewZealand', 'mortgage');
+    if (saved != null) {
+      _propVal = (saved['propVal'] as num?)?.toDouble() ?? 850000.0;
+      _deposit = (saved['deposit'] as num?)?.toDouble() ?? 170000.0;
+      _rate = (saved['rate'] as num?)?.toDouble() ?? 5.59;
+      _termYears = (saved['term'] as num?)?.toInt() ?? 30;
+      _repayType = saved['repayType'] as String? ?? 'PI';
+      _showResults = saved['showResults'] as bool? ?? true;
+    }
+  }
+
+  void _persistInputs() {
+    ref.read(settingsProvider.notifier).saveCalculatorInput('NewZealand', 'mortgage', {
+      'propVal': _propVal,
+      'deposit': _deposit,
+      'rate': _rate,
+      'term': _termYears,
+      'repayType': _repayType,
+      'showResults': _showResults,
+    });
+  }
+
   void _reset() {
     setState(() {
       _propVal = 850000;
@@ -46,6 +72,7 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
       _repayType = 'PI';
       _showResults = false;
     });
+    _persistInputs();
   }
 
   void _saveCalculation() async {
@@ -289,7 +316,10 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                       label: 'Property Value',
                       prefix: 'NZD \$',
                       value: _propVal,
-                      onChanged: (val) => setState(() => _propVal = val),
+                      onChanged: (val) => setState(() {
+                        _propVal = val;
+                        _persistInputs();
+                      }),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -298,7 +328,10 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                       label: 'Deposit',
                       prefix: 'NZD \$',
                       value: _deposit,
-                      onChanged: (val) => setState(() => _deposit = val),
+                      onChanged: (val) => setState(() {
+                        _deposit = val;
+                        _persistInputs();
+                      }),
                     ),
                   ),
                 ],
@@ -313,7 +346,10 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                       prefix: '',
                       value: _rate,
                       isPercent: true,
-                      onChanged: (val) => setState(() => _rate = val),
+                      onChanged: (val) => setState(() {
+                        _rate = val;
+                        _persistInputs();
+                      }),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -323,8 +359,10 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                       prefix: '',
                       value: _termYears.toDouble(),
                       isInteger: true,
-                      onChanged: (val) =>
-                          setState(() => _termYears = val.toInt()),
+                      onChanged: (val) => setState(() {
+                        _termYears = val.toInt();
+                        _persistInputs();
+                      }),
                     ),
                   ),
                 ],
@@ -379,7 +417,10 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                     ],
                     onChanged: (val) {
                       if (val != null) {
-                        setState(() => _repayType = val);
+                        setState(() {
+                          _repayType = val;
+                          _persistInputs();
+                        });
                       }
                     },
                   ),
@@ -399,7 +440,10 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                     );
                     return;
                   }
-                  setState(() => _showResults = true);
+                  setState(() {
+                    _showResults = true;
+                    _persistInputs();
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),

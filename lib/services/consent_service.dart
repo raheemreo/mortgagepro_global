@@ -223,7 +223,7 @@ class ConsentService {
 
     // Correct v5 method name: loadAndShowConsentFormIfRequired
     // (not loadAndShowIfRequired).
-    await ConsentForm.loadAndShowConsentFormIfRequired((FormError? formError) {
+    ConsentForm.loadAndShowConsentFormIfRequired((FormError? formError) {
       if (formError != null) {
         CrashlyticsService.recordError(
           formError,
@@ -232,6 +232,13 @@ class ConsentService {
               '${formError.message}',
         );
       }
+      if (!completer.isCompleted) completer.complete();
+    }).catchError((e, s) {
+      CrashlyticsService.recordError(
+        e,
+        s,
+        reason: 'ConsentService._showConsentForm call failed',
+      );
       if (!completer.isCompleted) completer.complete();
     });
 

@@ -7,6 +7,7 @@ import '../../../app/theme/country_themes.dart';
 import '../../../app/theme/text_styles.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../providers/saved_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 
 class AUMortgageCalc extends ConsumerStatefulWidget {
@@ -27,6 +28,33 @@ class _AUMortgageCalcState extends ConsumerState<AUMortgageCalc> {
 
   bool _showResults = false;
 
+  @override
+  void initState() {
+    super.initState();
+    final saved = ref.read(settingsProvider.notifier).getCalculatorInputs('Australia', 'mortgage');
+    if (saved != null) {
+      _propVal = (saved['propVal'] as num?)?.toDouble() ?? 750000.0;
+      _deposit = (saved['deposit'] as num?)?.toDouble() ?? 75000.0;
+      _rate = (saved['rate'] as num?)?.toDouble() ?? 6.09;
+      _termYears = (saved['term'] as num?)?.toInt() ?? 30;
+      _offsetBal = (saved['offset'] as num?)?.toDouble() ?? 0.0;
+      _loanType = saved['loanType'] as String? ?? 'PI';
+      _showResults = saved['showResults'] as bool? ?? true;
+    }
+  }
+
+  void _persistInputs() {
+    ref.read(settingsProvider.notifier).saveCalculatorInput('Australia', 'mortgage', {
+      'propVal': _propVal,
+      'deposit': _deposit,
+      'rate': _rate,
+      'term': _termYears,
+      'offset': _offsetBal,
+      'loanType': _loanType,
+      'showResults': _showResults,
+    });
+  }
+
   void _reset() {
     setState(() {
       _propVal = 750000;
@@ -37,6 +65,7 @@ class _AUMortgageCalcState extends ConsumerState<AUMortgageCalc> {
       _loanType = 'PI';
       _showResults = false;
     });
+    _persistInputs();
   }
 
   // LMI estimate (Genworth/QBE sliding scale approximation)
@@ -303,7 +332,10 @@ class _AUMortgageCalcState extends ConsumerState<AUMortgageCalc> {
                       label: 'Property Value',
                       prefix: 'AUD \$',
                       value: _propVal,
-                      onChanged: (val) => setState(() => _propVal = val),
+                      onChanged: (val) => setState(() {
+                        _propVal = val;
+                        _persistInputs();
+                      }),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -312,7 +344,10 @@ class _AUMortgageCalcState extends ConsumerState<AUMortgageCalc> {
                       label: 'Deposit',
                       prefix: 'AUD \$',
                       value: _deposit,
-                      onChanged: (val) => setState(() => _deposit = val),
+                      onChanged: (val) => setState(() {
+                        _deposit = val;
+                        _persistInputs();
+                      }),
                     ),
                   ),
                 ],
@@ -327,7 +362,10 @@ class _AUMortgageCalcState extends ConsumerState<AUMortgageCalc> {
                       prefix: '',
                       value: _rate,
                       isPercent: true,
-                      onChanged: (val) => setState(() => _rate = val),
+                      onChanged: (val) => setState(() {
+                        _rate = val;
+                        _persistInputs();
+                      }),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -337,8 +375,10 @@ class _AUMortgageCalcState extends ConsumerState<AUMortgageCalc> {
                       prefix: '',
                       value: _termYears.toDouble(),
                       isInteger: true,
-                      onChanged: (val) =>
-                          setState(() => _termYears = val.toInt()),
+                      onChanged: (val) => setState(() {
+                        _termYears = val.toInt();
+                        _persistInputs();
+                      }),
                     ),
                   ),
                 ],
@@ -349,7 +389,10 @@ class _AUMortgageCalcState extends ConsumerState<AUMortgageCalc> {
                 label: 'Offset Account Balance (optional)',
                 prefix: 'AUD \$',
                 value: _offsetBal,
-                onChanged: (val) => setState(() => _offsetBal = val),
+                onChanged: (val) => setState(() {
+                  _offsetBal = val;
+                  _persistInputs();
+                }),
               ),
               const SizedBox(height: 14),
 
@@ -365,13 +408,19 @@ class _AUMortgageCalcState extends ConsumerState<AUMortgageCalc> {
                     Expanded(
                       child: _buildToggleButton(
                           'Principal & Interest', _loanType == 'PI', () {
-                        setState(() => _loanType = 'PI');
+                        setState(() {
+                          _loanType = 'PI';
+                          _persistInputs();
+                        });
                       }),
                     ),
                     Expanded(
                       child: _buildToggleButton(
                           'Interest Only', _loanType == 'IO', () {
-                        setState(() => _loanType = 'IO');
+                        setState(() {
+                          _loanType = 'IO';
+                          _persistInputs();
+                        });
                       }),
                     ),
                   ],
@@ -391,7 +440,10 @@ class _AUMortgageCalcState extends ConsumerState<AUMortgageCalc> {
                     );
                     return;
                   }
-                  setState(() => _showResults = true);
+                  setState(() {
+                    _showResults = true;
+                    _persistInputs();
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF002868),

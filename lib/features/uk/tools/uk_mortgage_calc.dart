@@ -7,6 +7,7 @@ import '../../../app/theme/text_styles.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/result_panel.dart';
 import '../../../providers/saved_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../providers/uk_rates_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 import 'dart:math' as math;
@@ -39,7 +40,16 @@ class _UKMortgageCalcState extends ConsumerState<UKMortgageCalc> {
   @override
   void initState() {
     super.initState();
-    if (widget.savedCalc != null) {
+    final saved = ref.read(settingsProvider.notifier).getCalculatorInputs('UK', 'mortgage');
+    if (saved != null) {
+      _propValController.text = (saved['propVal'] as num?)?.toStringAsFixed(0) ?? '380000';
+      _depositController.text = (saved['deposit'] as num?)?.toStringAsFixed(0) ?? '57000';
+      _rateController.text = (saved['rate'] as num?)?.toString() ?? '4.75';
+      _termController.text = (saved['term'] as num?)?.toStringAsFixed(0) ?? '25';
+      _repaymentType = saved['repaymentType'] as String? ?? 'repayment';
+      _mortgageType = saved['mortgageType'] as String? ?? 'residential';
+      _hasCalculated = true;
+    } else if (widget.savedCalc != null) {
       final inputs = widget.savedCalc!.inputs;
       _propValController.text =
           (inputs['propVal'] ?? 380000.0).toStringAsFixed(0);
@@ -69,6 +79,18 @@ class _UKMortgageCalcState extends ConsumerState<UKMortgageCalc> {
       _deposit = double.tryParse(_depositController.text) ?? 0;
       _rate = double.tryParse(_rateController.text) ?? 4.75;
       _term = int.tryParse(_termController.text) ?? 25;
+    });
+    _persistInputs();
+  }
+
+  void _persistInputs() {
+    ref.read(settingsProvider.notifier).saveCalculatorInput('UK', 'mortgage', {
+      'propVal': _propVal,
+      'deposit': _deposit,
+      'rate': _rate,
+      'term': _term,
+      'repaymentType': _repaymentType,
+      'mortgageType': _mortgageType,
     });
   }
 

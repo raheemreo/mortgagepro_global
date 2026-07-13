@@ -18,6 +18,7 @@ class AppSettings {
   final String? selectedEuropeCountry;
   final Map<String, String> preferredCalculatorTab;
   final String? pinnedCountry;
+  final Map<String, String> calculatorInputs;
 
   const AppSettings({
     this.themeMode = 'system',
@@ -30,6 +31,7 @@ class AppSettings {
     this.selectedEuropeCountry,
     this.preferredCalculatorTab = const {},
     this.pinnedCountry,
+    this.calculatorInputs = const {},
   });
 
   /// Backward-compat getter for code that still checks `settings.darkMode`
@@ -58,6 +60,7 @@ class AppSettings {
     String? selectedEuropeCountry,
     Map<String, String>? preferredCalculatorTab,
     String? pinnedCountry,
+    Map<String, String>? calculatorInputs,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -73,6 +76,7 @@ class AppSettings {
       preferredCalculatorTab:
           preferredCalculatorTab ?? this.preferredCalculatorTab,
       pinnedCountry: pinnedCountry ?? this.pinnedCountry,
+      calculatorInputs: calculatorInputs ?? this.calculatorInputs,
     );
   }
 }
@@ -116,6 +120,17 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       } catch (_) {}
     }
 
+    Map<String, String> calculatorInputs = {};
+    final inputsStr = prefs.getString('calculator_inputs') ?? '';
+    if (inputsStr.isNotEmpty) {
+      try {
+        final decoded = json.decode(inputsStr);
+        if (decoded is Map) {
+          calculatorInputs = decoded.map((k, v) => MapEntry(k.toString(), v.toString()));
+        }
+      } catch (_) {}
+    }
+
     state = AppSettings(
       themeMode: storedTheme,
       defaultTermYears: prefs.getInt('default_term') ?? 30,
@@ -127,6 +142,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       selectedEuropeCountry: selectedEuropeCountry,
       preferredCalculatorTab: preferredCalculatorTab,
       pinnedCountry: pinnedCountry,
+      calculatorInputs: calculatorInputs,
     );
   }
 
@@ -198,6 +214,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       selectedEuropeCountry: state.selectedEuropeCountry,
       preferredCalculatorTab: state.preferredCalculatorTab,
       pinnedCountry: state.pinnedCountry,
+      calculatorInputs: state.calculatorInputs,
     );
     final prefs = await SharedPreferences.getInstance();
     if (value == null) {
@@ -219,6 +236,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       selectedEuropeCountry: value,
       preferredCalculatorTab: state.preferredCalculatorTab,
       pinnedCountry: state.pinnedCountry,
+      calculatorInputs: state.calculatorInputs,
     );
     final prefs = await SharedPreferences.getInstance();
     if (value == null) {
@@ -243,6 +261,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       selectedEuropeCountry: state.selectedEuropeCountry,
       preferredCalculatorTab: newTabs,
       pinnedCountry: state.pinnedCountry,
+      calculatorInputs: state.calculatorInputs,
     );
 
     final prefs = await SharedPreferences.getInstance();
@@ -262,12 +281,47 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       selectedEuropeCountry: state.selectedEuropeCountry,
       preferredCalculatorTab: state.preferredCalculatorTab,
       pinnedCountry: value,
+      calculatorInputs: state.calculatorInputs,
     );
     final prefs = await SharedPreferences.getInstance();
     if (value == null) {
       await prefs.remove('pinned_country');
     } else {
       await prefs.setString('pinned_country', value);
+    }
+  }
+
+  Future<void> saveCalculatorInput(String country, String toolId, Map<String, dynamic> inputs) async {
+    final key = '${country.toLowerCase()}_${toolId.toLowerCase()}';
+    final newInputs = Map<String, String>.from(state.calculatorInputs);
+    newInputs[key] = json.encode(inputs);
+
+    state = AppSettings(
+      themeMode: state.themeMode,
+      defaultTermYears: state.defaultTermYears,
+      defaultDepositPercent: state.defaultDepositPercent,
+      preferredCountry: state.preferredCountry,
+      preferredCurrency: state.preferredCurrency,
+      privacyChoicesOptOut: state.privacyChoicesOptOut,
+      region: state.region,
+      selectedEuropeCountry: state.selectedEuropeCountry,
+      preferredCalculatorTab: state.preferredCalculatorTab,
+      pinnedCountry: state.pinnedCountry,
+      calculatorInputs: newInputs,
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('calculator_inputs', json.encode(newInputs));
+  }
+
+  Map<String, dynamic>? getCalculatorInputs(String country, String toolId) {
+    final key = '${country.toLowerCase()}_${toolId.toLowerCase()}';
+    final val = state.calculatorInputs[key];
+    if (val == null || val.isEmpty) return null;
+    try {
+      return json.decode(val) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
     }
   }
 

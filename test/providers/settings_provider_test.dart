@@ -252,4 +252,36 @@ void main() {
       expect(container.read(settingsProvider).pinnedCountry, isNull);
     });
   });
+
+  group('SettingsNotifier — calculatorInputs persistence', () {
+    test('saveCalculatorInput persists and restores values', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(settingsProvider);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final inputs = {'homePrice': 350000.0, 'downPct': 10.0, 'rate': 5.5, 'term': 15};
+      await container.read(settingsProvider.notifier).saveCalculatorInput('USA', 'mortgage', inputs);
+
+      final retrieved = container.read(settingsProvider.notifier).getCalculatorInputs('USA', 'mortgage');
+      expect(retrieved, isNotNull);
+      expect(retrieved!['homePrice'], 350000.0);
+      expect(retrieved['downPct'], 10.0);
+      expect(retrieved['rate'], 5.5);
+      expect(retrieved['term'], 15);
+
+      // Verify it survives a reload/restart
+      final container2 = ProviderContainer();
+      addTearDown(container2.dispose);
+
+      container2.read(settingsProvider);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final retrieved2 = container2.read(settingsProvider.notifier).getCalculatorInputs('USA', 'mortgage');
+      expect(retrieved2, isNotNull);
+      expect(retrieved2!['homePrice'], 350000.0);
+      expect(retrieved2['downPct'], 10.0);
+    });
+  });
 }

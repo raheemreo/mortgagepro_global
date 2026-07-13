@@ -100,12 +100,148 @@ Created and updated multiple unit and widget test files, passing all checks:
 - **Settings Provider Tests**: Validated persistence and fallback logic for all newly introduced settings fields.
 - **Draft State Tests**: Tested immutable copying and prefill consistency calculations.
 
-### Validation Commands Run
-```bash
-# 1. Verification of code style and lint warnings:
-flutter analyze
+---
 
-# 2. Execution of complete unit and widget test harness:
+## 7. Startup & Initialization Fix (Stuck Splash Screen)
+
+### Problem Summary
+During startup, the application initializes Firebase, Firebase Messaging, Remote Config, App Check, and the Google User Messaging Platform (UMP) Consent SDK. On certain devices or emulators, calls to platform services (such as asking for notification permissions, getting FCM tokens, or loading consent forms) can hang indefinitely due to missing or blocked Google Play Services IPC. Because these steps were fully awaited without timeouts, any single hang would freeze the startup sequence, leaving the app permanently stuck on the splash screen.
+
+### Implementation Details
+1. **Asynchronous Call Safeguards**:
+   - Refactored `ConsentService._showConsentForm()` to trigger UMP initialization asynchronously (`ConsentForm.loadAndShowConsentFormIfRequired`) and handle callbacks inside a robust, timeout-guarded Future.
+2. **Defensive Startup Timeouts**:
+   - Refactored `_runInitialization()` in [main.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/main.dart) to wrap all platform-bound asynchronous initializations (Firebase Messaging, Consent SDK, Remote Config, Performance, and App Check) in explicit timeouts (ranging from 3 to 5 seconds).
+   - If any setup step hangs or fails, the timeout catches the hang, prints a debug warning, degrades gracefully, and safely continues the initialization sequence to guarantee transition to the home screen.
+
+---
+
+## 8. Phase 8: In-Progress Calculator Input Persistence
+
+### Problem Summary
+In the original implementation, the state of input fields (such as home price, down payment, interest rate, term) was stored purely inside transient widget state. If the user navigated away from the calculator or closed/switched screens, their inputs were immediately lost, requiring them to re-enter all values upon return.
+
+### Implementation Details
+1. **Generic Settings Schema Extension**:
+   - Added a generic `Map<String, String> calculatorInputs` mapping tool IDs (e.g. `usa_mortgage`, `usa_mortgage_sheet`) to JSON-serialized key-value input records inside `AppSettings` in [settings_provider.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/providers/settings_provider.dart).
+   - Wired inputs to persist automatically to local disk storage using `shared_preferences`.
+2. **Auto-Save & Restoring State**:
+   - Integrated input persistence inside `initState` and `_persistInputs` callbacks for:
+     - **USA**: `USAMortgageCalc` (screen) & `USAMortgageCalcSheet` (sheet) in [usa_mortgage_calc.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/features/usa/tools/usa_mortgage_calc.dart).
+     - **UK**: `UKMortgageCalc` in [uk_mortgage_calc.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/features/uk/tools/uk_mortgage_calc.dart).
+     - **Canada**: `CAMortgageCalc` in [ca_mortgage_calc.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/features/canada/tools/ca_mortgage_calc.dart).
+     - **Australia**: `AUMortgageCalc` in [au_mortgage_calc.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/features/australia/tools/au_mortgage_calc.dart).
+     - **New Zealand**: `NZMortgageCalc` in [nz_mortgage_calc.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/features/newzealand/tools/nz_mortgage_calc.dart).
+   - Every input adjustment (slider movement, text field edits, dropdown selections, or term choices) automatically persists its state. Navigating away or closing the page restores all values immediately upon return.
+3. **Workflow Integration**:
+   - Integrated `WorkflowContinuationCard` in the USA full-screen calculator results screen so that calculated inputs can seamlessly propagate to subsequent tools like DTI, Property Tax, PMI, and Closing Costs.
+
+---
+
+## 9. Down Payment Guide UI Overflow Fix
+
+### Problem Summary
+In the "Zero Down Programs" section of the USA Down Payment Guide ([usa_down_payment_calc.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/features/usa/tools/usa_down_payment_calc.dart)), the program cards were placed inside a standard unscrollable horizontal `Row`. When rendered on standard mobile screens, the combined width of the four cards exceeded the screen constraints, causing a 174px right-side layout overflow error.
+
+### Implementation Details
+1. **Scrollable Layout Wrapper**:
+   - Wrapped the program card horizontal layout inside a `SingleChildScrollView` with `scrollDirection: Axis.horizontal` and `physics: BouncingScrollPhysics()`. This allows users to swipe through the cards smoothly without layout breaks.
+2. **Unified Sizing**:
+   - Set a fixed `width: 155` and `height: 135` for all program cards in `_buildProgramCard()`. This ensures that they align perfectly vertically and maintain visual consistency across standard and high-density screens.
+
+---
+
+## 10. Interstitial Ad Cooldown Update
+
+### Problem Summary
+The default cooldown period between interstitial ad impressions was previously configured to 60 seconds (both as the local fallback default value and the hardcoded minimum floor). To improve user experience and reduce ad fatigue, this time gap needed to be increased to 90 seconds.
+
+### Implementation Details
+1. **Default Config Update**:
+   - Changed the default value of `interstitialCooldownSeconds` in [remote_config_service.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/services/remote_config_service.dart) from `60` to `90`.
+2. **Floor Constraint Update**:
+   - Updated the minimum cooldown constraint floor inside `showInterstitial` in [ad_manager.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/services/ad_manager.dart) from `max(60, ...)` to `max(90, ...)`.
+
+---
+
+## 11. India Screen Market Snapshot & Rates Cleanup
+
+### Problem Summary
+In [india_screen.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/features/india/india_screen.dart), the static const `_rates` list and the "Indian Market Snapshot" widget (`_IndiaMarketTicker`) were deprecated or no longer required. These needed to be removed cleanly from both state properties, layout structures, and helper class definitions to keep the screen uncluttered and avoid static analysis warnings.
+
+### Implementation Details
+1. **Rates Removal**:
+   - Removed the static const list definition `_rates`.
+   - Updated the rates parameter in `CountryHeader` on `IndiaScreen` to pass `const []`.
+2. **Snapshot Section Removal**:
+   - Removed the "Indian Market Snapshot" `SectionLabel` and the `_IndiaMarketTicker()` widget call from the main `CustomScrollView` widget list.
+3. **Dead Code Cleanup**:
+   - Deleted the unused private widget class `_IndiaMarketTicker` to resolve unused element warning/lints.
+
+---
+
+## 12. New Zealand Screen Cleanups
+
+### Problem Summary
+In [nz_screen.dart](file:///e:/Android%20App%20Projects/Mortgage Pro Global/mortgagepro_global/lib/features/newzealand/nz_screen.dart), several sections were no longer needed and needed to be removed cleanly:
+1. Reserve Bank NZ Official Cash Rate banner
+2. NZ Market Snapshot section
+3. Live Home Loan Rates section
+
+### Implementation Details
+1. **Layout Removal**:
+   - Removed the `SectionLabel` and the `_RBNZBanner()` widget call for the "Reserve Bank NZ" section.
+   - Removed the `SectionLabel` and the `_NZMarketTicker()` widget call for the "NZ Market Snapshot" section.
+   - Removed the `SectionLabel` and the `_MortgageRatesScroll()` widget call for the "Live Home Loan Rates" section.
+2. **Dead Code Cleanup**:
+   - Deleted the unused private widget class definitions `_RBNZBanner`, `_NZMarketTicker`, and `_MortgageRatesScroll` to prevent dead-code and unused element static analysis warnings.
+
+---
+
+## 13. Australia Screen Rates Cleanup
+
+### Problem Summary
+In [australia_screen.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/features/australia/australia_screen.dart), the static const `_rates` list was no longer required. It needed to be removed cleanly to match the design updates of other country screens.
+
+### Implementation Details
+1. **Rates Removal**:
+   - Removed the static const list definition `_rates`.
+   - Updated the rates parameter in `CountryHeader` on `AustraliaScreen` to pass `const []`.
+
+---
+
+## 14. Global Screen Rates Grid Cleanup
+
+### Problem Summary
+In [global_screen.dart](file:///e:/Android%20App%20Projects/Mortgage%20Pro%20Global/mortgagepro_global/lib/features/global/global_screen.dart), the "2x3 Central Bank Rate Grid" displaying policy rates (Fed Funds, BoC, BoE, RBA, RBNZ, ECB) was no longer required. It needed to be removed cleanly along with its unused helper widgets, enums, style definitions, and unused Riverpod watch bindings.
+
+### Implementation Details
+1. **Layout Removal**:
+   - Removed the `GridView.count` element defining the 2x3 policy rates grid from the `_GlobalHeader` widget.
+2. **State & Providers Cleanup**:
+   - Removed the unused watch bindings for `fredFedFundsProvider` (`fedFundsAsync` and `fedFundsVal`) inside `_GlobalHeader.build()`.
+3. **Dead Code Cleanup**:
+   - Deleted the unused grid item helper class `_GrItem` and its associated `_RateValStyle` enum.
+   - Deleted the unused `goldLt` design token definition inside the `_C` style configuration class to resolve unused field warnings/lints.
+
+---
+
+## Verification & Build Results
+
+### 1. Automated Tests
+All 79 unit, widget, and regression tests passed successfully (including a new test suite verifying calculator inputs auto-saving and restoring across simulated app restarts):
+```bash
 flutter test
+...
+00:01 +79: All tests passed!
 ```
-Result: **All checks passed with no warnings or errors!**
+
+### 2. Static Analysis
+The Dart analyzer verified the codebase with zero warnings, errors, or lints:
+```bash
+flutter analyze
+...
+No issues found! (ran in 13.0s)
+```
+
+

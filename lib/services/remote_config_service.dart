@@ -139,7 +139,7 @@ class RemoteConfigService extends ChangeNotifier {
   bool get rewardedEnabled => _getBool('rewarded_enabled', defaultValue: true);
 
   /// Minimum seconds that must elapse between interstitial impressions.
-  int get interstitialCooldownSeconds => _getInt('interstitial_cooldown_seconds', defaultValue: 60);
+  int get interstitialCooldownSeconds => _getInt('interstitial_cooldown_seconds', defaultValue: 90);
 
   /// Duration of ad-free time unlocked by watching a rewarded ad (in minutes).
   int get rewardAdFreeDuration => _getInt('reward_ad_free_duration', defaultValue: 10);

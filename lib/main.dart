@@ -94,13 +94,26 @@ class _AppInitializerState extends State<_AppInitializer> {
 
   Future<void> _runInitialization() async {
     // ── Step 0: Load AI keys from secrets.json ────────────────────────────
-    await AIService.instance.loadKeysFromAssets();
+    try {
+      await AIService.instance.loadKeysFromAssets().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () => debugPrint('AIService.loadKeysFromAssets timed out'),
+      );
+    } catch (e, s) {
+      debugPrint('AIService.loadKeysFromAssets failed: $e\n$s');
+    }
 
     // ── Step 2: Firebase.initializeApp() ─────────────────────────────────
     try {
       try {
         await Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
+        ).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            debugPrint('Firebase.initializeApp timed out');
+            throw TimeoutException('Firebase.initializeApp timed out');
+          },
         );
       } catch (e) {
         if (e is FirebaseException && e.code == 'duplicate-app') {
@@ -111,7 +124,10 @@ class _AppInitializerState extends State<_AppInitializer> {
           rethrow;
         }
       }
-      await NotificationService.instance.init();
+      await NotificationService.instance.init().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => debugPrint('NotificationService.init timed out'),
+      );
     } catch (e, s) {
       // Firebase/Notifications are foundational — log via debugPrint since Crashlytics
       // is not yet available at this point. Continue; later steps may
@@ -124,14 +140,23 @@ class _AppInitializerState extends State<_AppInitializer> {
     // INSIDE CrashlyticsService.init(). Do NOT set those handlers here
     // or anywhere else in the project.
     try {
-      await CrashlyticsService.init();
+      await CrashlyticsService.init().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => debugPrint('CrashlyticsService.init timed out'),
+      );
     } catch (e, s) {
       debugPrint('CrashlyticsService.init() failed: $e\n$s');
     }
 
     // ── Step 4: RemoteConfigService.instance.init() ───────────────────────
     try {
-      await RemoteConfigService.instance.init();
+      await RemoteConfigService.instance.init().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('RemoteConfigService.init timed out');
+          throw TimeoutException('RemoteConfigService.init timed out');
+        },
+      );
     } catch (e, s) {
       CrashlyticsService.recordError(
         e,
@@ -151,7 +176,13 @@ class _AppInitializerState extends State<_AppInitializer> {
     // Must be fully awaited. UMP consent form and iOS ATT dialog are
     // handled entirely inside ConsentService — do not show them here.
     try {
-      await ConsentService.instance.init();
+      await ConsentService.instance.init().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('ConsentService.init timed out');
+          throw TimeoutException('ConsentService.init timed out');
+        },
+      );
     } catch (e, s) {
       CrashlyticsService.recordError(
         e,
@@ -162,8 +193,14 @@ class _AppInitializerState extends State<_AppInitializer> {
 
     // ── Step 6: AnalyticsService.instance.init() ──────────────────────────
     try {
-      await AnalyticsService.instance.init();
-      await AdFreeAnalyticsTracker.init();
+      await AnalyticsService.instance.init().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => debugPrint('AnalyticsService.init timed out'),
+      );
+      await AdFreeAnalyticsTracker.init().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => debugPrint('AdFreeAnalyticsTracker.init timed out'),
+      );
     } catch (e, s) {
       CrashlyticsService.recordError(
         e,
@@ -175,7 +212,10 @@ class _AppInitializerState extends State<_AppInitializer> {
     // ── Step 7: PerformanceService.init() ────────────────────────────────
     // init() is a static method — do NOT call via instance.
     try {
-      await PerformanceService.init();
+      await PerformanceService.init().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => debugPrint('PerformanceService.init timed out'),
+      );
     } catch (e, s) {
       CrashlyticsService.recordError(
         e,
@@ -186,7 +226,10 @@ class _AppInitializerState extends State<_AppInitializer> {
 
     // ── Step 8: AppCheckService.init() ────────────────────────────────────
     try {
-      await AppCheckService.init();
+      await AppCheckService.init().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => debugPrint('AppCheckService.init timed out'),
+      );
     } catch (e, s) {
       CrashlyticsService.recordError(
         e,

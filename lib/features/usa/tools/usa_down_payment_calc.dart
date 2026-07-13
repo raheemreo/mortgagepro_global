@@ -1024,49 +1024,56 @@ class _USADownPaymentCalcState extends ConsumerState<USADownPaymentCalc> {
                 const SizedBox(height: 8),
 
                 // Programs row
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => context.push('/tool/usa/hud'),
-                      child: _buildProgramCard(
-                        emoji: '🏛️',
-                        title: 'HUD DPA Programs',
-                        desc: 'State & local grants up to \$25K',
-                        tag: 'Free Money',
-                        bg1: const Color(0xFF0B1D3A),
-                        bg2: const Color(0xFF1B3F72),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.push('/tool/usa/hud'),
+                        child: _buildProgramCard(
+                          emoji: '🏛️',
+                          title: 'HUD DPA Programs',
+                          desc: 'State & local grants up to \$25K',
+                          tag: 'Free Money',
+                          bg1: const Color(0xFF0B1D3A),
+                          bg2: const Color(0xFF1B3F72),
+                        ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => context.push('/tool/usa/usda'),
-                      child: _buildProgramCard(
-                        emoji: '🌾',
-                        title: 'USDA 0% Down',
-                        desc: 'Rural areas · no down needed',
-                        bg1: const Color(0xFF14532D),
-                        bg2: const Color(0xFF15803D),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () => context.push('/tool/usa/usda'),
+                        child: _buildProgramCard(
+                          emoji: '🌾',
+                          title: 'USDA 0% Down',
+                          desc: 'Rural areas · no down needed',
+                          bg1: const Color(0xFF14532D),
+                          bg2: const Color(0xFF15803D),
+                        ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => context.push('/tool/usa/va'),
-                      child: _buildProgramCard(
-                        emoji: '🎖️',
-                        title: 'VA 0% Down',
-                        desc: 'Veterans · no PMI ever',
-                        tag: 'No PMI',
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () => context.push('/tool/usa/va'),
+                        child: _buildProgramCard(
+                          emoji: '🎖️',
+                          title: 'VA 0% Down',
+                          desc: 'Veterans · no PMI ever',
+                          tag: 'No PMI',
+                        ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => context.push('/tool/usa/fha'),
-                      child: _buildProgramCard(
-                        emoji: '🏦',
-                        title: 'FHA 3.5% Down',
-                        desc: '580+ FICO · MIP required',
-                        bg1: const Color(0xFF92400E),
-                        bg2: const Color(0xFFD97706),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () => context.push('/tool/usa/fha'),
+                        child: _buildProgramCard(
+                          emoji: '🏦',
+                          title: 'FHA 3.5% Down',
+                          desc: '580+ FICO · MIP required',
+                          bg1: const Color(0xFF92400E),
+                          bg2: const Color(0xFFD97706),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 20),
@@ -1716,6 +1723,8 @@ class _USADownPaymentCalcState extends ConsumerState<USADownPaymentCalc> {
     }
 
     return Container(
+      width: 155,
+      height: 135,
       padding: const EdgeInsets.all(12),
       decoration: dec,
       child: Stack(

@@ -13,6 +13,7 @@ import '../../../shared/models/saved_calc.dart';
 import '../../../shared/widgets/live_rate_banner.dart';
 import '../../../providers/usa_rates_provider.dart';
 import '../../../providers/calculator_draft_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../models/calculator_draft.dart';
 import '../../../shared/widgets/workflow_continuation_card.dart';
 
@@ -46,10 +47,18 @@ class _USAMortgageCalcSheetState extends ConsumerState<USAMortgageCalcSheet> {
   @override
   void initState() {
     super.initState();
-    _homePrice = widget.homePrice;
-    _downPct = widget.downPercent;
-    _termYears = widget.termYears;
-    _rate = widget.rate;
+    final saved = ref.read(settingsProvider.notifier).getCalculatorInputs('USA', 'mortgage_sheet');
+    if (saved != null) {
+      _homePrice = (saved['homePrice'] as num?)?.toDouble() ?? widget.homePrice;
+      _downPct = (saved['downPct'] as num?)?.toDouble() ?? widget.downPercent;
+      _termYears = (saved['term'] as num?)?.toInt() ?? widget.termYears;
+      _rate = (saved['rate'] as num?)?.toDouble() ?? widget.rate;
+    } else {
+      _homePrice = widget.homePrice;
+      _downPct = widget.downPercent;
+      _termYears = widget.termYears;
+      _rate = widget.rate;
+    }
     _propertyTaxRate = 1.1; // 1.1% national average
     _insuranceRate = 0.5; // 0.5% annual
     
@@ -70,6 +79,12 @@ class _USAMortgageCalcSheetState extends ConsumerState<USAMortgageCalcSheet> {
         downPayment: _homePrice * _downPct / 100,
       ),
     );
+    ref.read(settingsProvider.notifier).saveCalculatorInput('USA', 'mortgage_sheet', {
+      'homePrice': _homePrice,
+      'downPct': _downPct,
+      'rate': _rate,
+      'term': _termYears,
+    });
   }
 
   double get _loanAmount => _homePrice * (1 - _downPct / 100);
@@ -463,6 +478,33 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
   bool _showResults = false;
   final Map<dynamic, dynamic> _calcSnapshot = {};
 
+  @override
+  void initState() {
+    super.initState();
+    // Load persisted inputs if they exist:
+    final saved = ref.read(settingsProvider.notifier).getCalculatorInputs('USA', 'mortgage');
+    if (saved != null) {
+      _homePrice = (saved['homePrice'] as num?)?.toDouble() ?? 420000.0;
+      _downPct = (saved['downPct'] as num?)?.toDouble() ?? 20.0;
+      _rate = (saved['rate'] as num?)?.toDouble() ?? 6.82;
+      _selectedTerm = (saved['term'] as num?)?.toInt() ?? 30;
+      _showResults = true;
+      _calcSnapshot['_homePrice'] = _homePrice;
+      _calcSnapshot['_downPct'] = _downPct;
+      _calcSnapshot['_rate'] = _rate;
+      _calcSnapshot['_selectedTerm'] = _selectedTerm;
+    }
+  }
+
+  void _persistInputs() {
+    ref.read(settingsProvider.notifier).saveCalculatorInput('USA', 'mortgage', {
+      'homePrice': _homePrice,
+      'downPct': _downPct,
+      'rate': _rate,
+      'term': _selectedTerm,
+    });
+  }
+
   void _calculate() {
     setState(() {
       _calcSnapshot['_homePrice'] = _homePrice;
@@ -471,6 +513,23 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
       _calcSnapshot['_selectedTerm'] = _selectedTerm;
       _showResults = true;
     });
+
+    final downAmt = _homePrice * _downPct / 100;
+    final loanAmt = _homePrice - downAmt;
+    ref.read(calculatorDraftProvider.notifier).setDraft(
+      CalculatorDraft(
+        loanAmount: loanAmt,
+        propertyPrice: _homePrice,
+        interestRate: _rate,
+        loanTermYears: _selectedTerm,
+        country: 'USA',
+        currency: 'USD',
+        downPayment: downAmt,
+      ),
+    );
+
+    // Also persist inputs in Settings
+    _persistInputs();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_resultsKey.currentContext != null) {
@@ -615,7 +674,10 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
                 max: 2000000,
                 divisions: 380, // 5k steps
                 displayValue: CurrencyFormatter.format(_homePrice, symbol: '\$').split('.').first,
-                onChanged: (v) => setState(() => _homePrice = v),
+                onChanged: (v) => setState(() {
+                  _homePrice = v;
+                  _persistInputs();
+                }),
               ),
 
               // Down Payment Slider
@@ -626,7 +688,10 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
                 max: 50,
                 divisions: 47,
                 displayValue: '${_downPct.toInt()}% · ${CurrencyFormatter.format(downAmt, symbol: '\$').split('.').first}',
-                onChanged: (v) => setState(() => _downPct = v),
+                onChanged: (v) => setState(() {
+                  _downPct = v;
+                  _persistInputs();
+                }),
               ),
 
               // Interest Rate Slider
@@ -637,7 +702,10 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
                 max: 12,
                 divisions: 1000,
                 displayValue: '${_rate.toStringAsFixed(2)}%',
-                onChanged: (v) => setState(() => _rate = v),
+                onChanged: (v) => setState(() {
+                  _rate = v;
+                  _persistInputs();
+                }),
               ),
               const SizedBox(height: 12),
 
@@ -649,7 +717,10 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
                       label: '30-Year Fixed',
                       value: pmt30,
                       isActive: _selectedTerm == 30,
-                      onTap: () => setState(() => _selectedTerm = 30),
+                      onTap: () => setState(() {
+                        _selectedTerm = 30;
+                        _persistInputs();
+                      }),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -658,7 +729,10 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
                       label: '15-Year Fixed',
                       value: pmt15,
                       isActive: _selectedTerm == 15,
-                      onTap: () => setState(() => _selectedTerm = 15),
+                      onTap: () => setState(() {
+                        _selectedTerm = 15;
+                        _persistInputs();
+                      }),
                     ),
                   ),
                 ],
@@ -1040,6 +1114,20 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
             ],
           ),
         ),
+        const SizedBox(height: 20),
+        WorkflowContinuationCard(
+          country: 'USA',
+          countryPath: 'usa',
+          draft: CalculatorDraft(
+            loanAmount: loanAmt,
+            propertyPrice: calcHomePrice,
+            interestRate: calcRate,
+            loanTermYears: calcSelectedTerm,
+            country: 'USA',
+            currency: 'USD',
+            downPayment: downAmt,
+          ),
+        ),
             ],
           ),
         ),
@@ -1325,6 +1413,7 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
       _calcSnapshot.clear();
       _showResults = false;
     });
+    _persistInputs();
   }
 
   Widget _buildSliderSection({

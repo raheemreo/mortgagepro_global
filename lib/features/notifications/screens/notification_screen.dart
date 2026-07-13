@@ -1,5 +1,6 @@
 // lib/features/notifications/screens/notification_screen.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,11 +57,12 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         ),
         actions: [
           // Developer/Test Actions
-          IconButton(
-            icon: Icon(Icons.science_outlined, color: _C.royal),
-            tooltip: 'Trigger Test Notification',
-            onPressed: _showTestNotificationDialog,
-          ),
+          if (kDebugMode)
+            IconButton(
+              icon: Icon(Icons.science_outlined, color: _C.royal),
+              tooltip: 'Trigger Test Notification',
+              onPressed: _showTestNotificationDialog,
+            ),
           if (notifications.isNotEmpty)
             TextButton(
               onPressed: () {

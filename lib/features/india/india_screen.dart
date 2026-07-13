@@ -77,21 +77,6 @@ class _IndiaScreenState extends State<IndiaScreen> {
   final double _ratePercent = 8.50;
   final int _termYears = 20;
 
-  static const _rates = [
-    RateItem(
-        label: 'Repo Rate',
-        value: '6.50%',
-        note: 'RBI 2024',
-        color: RateColor.gold),
-    RateItem(label: 'Home Loan', value: '8.50%', note: 'SBI Avg'),
-    RateItem(
-        label: 'CPI Inflation',
-        value: '5.10%',
-        note: 'Apr 2024',
-        color: RateColor.green),
-    RateItem(label: 'Sensex', value: '74,683', note: 'BSE'),
-  ];
-
   void _calculate() {
     showModalBottomSheet(
       context: context,
@@ -114,7 +99,7 @@ class _IndiaScreenState extends State<IndiaScreen> {
               SliverToBoxAdapter(
                 child: CountryHeader(
                   theme: _theme,
-                  rates: _rates,
+                  rates: const [],
                   onBack: () => context.go('/'),
                 ),
               ),
@@ -193,13 +178,7 @@ class _IndiaScreenState extends State<IndiaScreen> {
                     ),
                     _RBIBanner(),
 
-                    // Indian Market Snapshot
-                    SectionLabel(
-                      text: 'Market Snapshot',
-                      labelColor: _theme.mutedColor,
-                      moreColor: _theme.primaryColor,
-                    ),
-                    _IndiaMarketTicker(),
+
 
                     // Live Bank Home Loan Rates Scrollable
                     SectionLabel(
@@ -1147,83 +1126,7 @@ class _RBIBanner extends StatelessWidget {
   }
 }
 
-// ─── Indian Market Snapshot ──────────────────────────────────────
-class _IndiaMarketTicker extends StatelessWidget {
-  static const _items = [
-    ('Sensex', '74,683', '+0.55%', true),
-    ('Nifty 50', '22,643', '+0.48%', true),
-    ('USD/INR', '83.52', '+0.12%', false),
-    ('Nifty Realty', '897.4', '+1.20%', true),
-    ('10-Yr G-Sec', '7.05%', '-0.02', false),
-    ('Gold (10g)', '₹72,400', '+0.30%', true),
-  ];
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: const Color(0x1AFF6B00)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.09),
-              blurRadius: 16,
-              offset: const Offset(0, 3)),
-        ],
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Indian Financial Markets',
-                  style: AppTextStyles.infoTitle(const Color(0xFF0B1F48))),
-              Text('● Live',
-                  style: AppTextStyles.dmSans(
-                      size: 10, color: const Color(0xFFFF6B00))),
-            ],
-          ),
-          const SizedBox(height: 10),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 2.2,
-            children: _items
-                .map((item) => Column(
-                      children: [
-                        Text(item.$1,
-                            style: AppTextStyles.rateLabel(
-                                const Color(0xFF7A5C3A)),
-                            textAlign: TextAlign.center),
-                        Text(item.$2,
-                            style: AppTextStyles.dmSans(
-                                size: 13,
-                                weight: FontWeight.w700,
-                                color: const Color(0xFF0B1F48)),
-                            textAlign: TextAlign.center),
-                        Text(item.$3,
-                            style: AppTextStyles.dmSans(
-                                size: 9,
-                                weight: FontWeight.w700,
-                                color: item.$4
-                                    ? const Color(0xFF046A38)
-                                    : const Color(0xFFE05A00)),
-                            textAlign: TextAlign.center),
-                      ],
-                    ))
-                .toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─── Live Bank Home Loan Rates Scroll ──────────────────────────────
 class _BankRatesScroll extends StatelessWidget {

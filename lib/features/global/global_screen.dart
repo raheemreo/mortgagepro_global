@@ -12,7 +12,6 @@ import '../../core/navigation/tool_navigation.dart';
 class _C {
   static Color navy = const Color(0xFF0B1D3A);
   static Color royal = const Color(0xFF1A3A8F);
-  static Color goldLt = const Color(0xFFFCD34D);
   static Color bg = const Color(0xFFF0F4FF);
   static Color card = const Color(0xFFFFFFFF);
   static Color muted = const Color(0xFF5B6E8F);
@@ -22,7 +21,6 @@ class _C {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     navy = isDark ? Colors.white : const Color(0xFF0B1D3A);
     royal = isDark ? const Color(0xFF38BDF8) : const Color(0xFF1A3A8F);
-    goldLt = const Color(0xFFFCD34D);
     bg = isDark ? const Color(0xFF0A0F1E) : const Color(0xFFF0F4FF);
     card = isDark ? const Color(0xFF141C33) : const Color(0xFFFFFFFF);
     muted = isDark ? Colors.white70 : const Color(0xFF5B6E8F);
@@ -55,8 +53,7 @@ class GlobalScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(15, 14, 15, 110),
               children: [
                 // ── Rate Comparison Table ─────────────────────────────
-                const _SecLabel(
-                    text: 'Rate Comparison Table', more: 'Export →'),
+                const _SecLabel(text: 'Rate Comparison Table', more: ''),
                 const _ComparisonTable(),
 
                 // ── Select a Country ──────────────────────────────────
@@ -224,9 +221,6 @@ class _GlobalHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fedFundsAsync = ref.watch(fredFedFundsProvider);
-    final fedFundsVal = fedFundsAsync.valueOrNull?.value ?? 5.33;
-
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -316,148 +310,8 @@ class _GlobalHeader extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
-
-                  // 2x3 Central Bank Rate Grid
-                  GridView.count(
-                    crossAxisCount: 3,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 1.35,
-                    children: [
-                      _GrItem(
-                          flag: '🇺🇸',
-                          label: 'Fed Funds',
-                          value: '${fedFundsVal.toStringAsFixed(2)}%',
-                          note: fedFundsAsync.valueOrNull?.isLive == true
-                              ? 'FRED Live'
-                              : 'FOMC',
-                          colorStyle: _RateValStyle.gold),
-                      const _GrItem(
-                          flag: '🇨🇦',
-                          label: 'BoC Rate',
-                          value: '4.75%',
-                          note: 'Bank of Canada',
-                          colorStyle: _RateValStyle.down),
-                      const _GrItem(
-                          flag: '🇬🇧',
-                          label: 'BoE Base',
-                          value: '5.00%',
-                          note: 'Bank of England',
-                          colorStyle: _RateValStyle.normal),
-                      const _GrItem(
-                          flag: '🇦🇺',
-                          label: 'RBA Cash',
-                          value: '4.35%',
-                          note: 'Reserve Bank AU',
-                          colorStyle: _RateValStyle.down),
-                      const _GrItem(
-                          flag: '🇳🇿',
-                          label: 'RBNZ OCR',
-                          value: '5.50%',
-                          note: 'Reserve Bank NZ',
-                          colorStyle: _RateValStyle.up),
-                      const _GrItem(
-                          flag: '🇪🇺',
-                          label: 'ECB Rate',
-                          value: '4.00%',
-                          note: 'Eurozone',
-                          colorStyle: _RateValStyle.down),
-                    ],
-                  ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  CENTRAL BANK RATE GRID ITEM
-// ════════════════════════════════════════════════════════════════════════════
-enum _RateValStyle { gold, up, down, normal }
-
-class _GrItem extends StatelessWidget {
-  final String flag, label, value, note;
-  final _RateValStyle colorStyle;
-
-  const _GrItem({
-    required this.flag,
-    required this.label,
-    required this.value,
-    required this.note,
-    required this.colorStyle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    _C.update(context);
-    Color valColor;
-    switch (colorStyle) {
-      case _RateValStyle.gold:
-        valColor = _C.goldLt;
-      case _RateValStyle.up:
-        valColor = const Color(0xFF6EE7B7);
-      case _RateValStyle.down:
-        valColor = const Color(0xFFFCA5A5);
-      case _RateValStyle.normal:
-        valColor = Colors.white;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(9),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(flag,
-                style: const TextStyle(fontSize: 18),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 8,
-                color: Colors.white.withValues(alpha: 0.45),
-                fontWeight: FontWeight.w700,
-                fontFamily: 'DMSans',
-                letterSpacing: 0.4,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              value,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: valColor,
-                fontFamily: 'DMSans',
-              ),
-            ),
-            Text(
-              note,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 8,
-                color: Colors.white.withValues(alpha: 0.36),
-                fontFamily: 'DMSans',
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

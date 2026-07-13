@@ -9,6 +9,7 @@ import '../../../app/theme/text_styles.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../shared/widgets/result_panel.dart';
 import '../../../providers/saved_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../providers/canada_rates_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 
@@ -59,7 +60,19 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
   @override
   void initState() {
     super.initState();
-    if (widget.savedCalc != null) {
+    final saved = ref.read(settingsProvider.notifier).getCalculatorInputs('Canada', 'mortgage');
+    if (saved != null) {
+      _homePrice = (saved['price'] as num?)?.toDouble() ?? 650000.0;
+      _downAmt = (saved['down'] as num?)?.toDouble() ?? 65000.0;
+      _rate = (saved['rate'] as num?)?.toDouble() ?? 4.99;
+      _amort = (saved['amort'] as num?)?.toInt() ?? 25;
+      _freq = saved['freq'] as String? ?? 'biweekly';
+      _priceController.text = _homePrice.toStringAsFixed(0);
+      _downController.text = _downAmt.toStringAsFixed(0);
+      _rateController.text = _rate.toString();
+      _downPct = _homePrice > 0 ? (_downAmt / _homePrice * 100) : 10.0;
+      _hasCalculated = saved['hasCalculated'] as bool? ?? true;
+    } else if (widget.savedCalc != null) {
       final inputs = widget.savedCalc!.inputs;
       _homePrice = inputs['price'] ?? 650000.0;
       _downAmt = inputs['down'] ?? 65000.0;
@@ -90,6 +103,17 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
     super.dispose();
   }
 
+  void _persistInputs() {
+    ref.read(settingsProvider.notifier).saveCalculatorInput('Canada', 'mortgage', {
+      'price': _homePrice,
+      'down': _downAmt,
+      'rate': _rate,
+      'amort': _amort,
+      'freq': _freq,
+      'hasCalculated': _hasCalculated,
+    });
+  }
+
   void _syncDown(String from) {
     setState(() {
       _homePrice = double.tryParse(_priceController.text) ?? 0;
@@ -102,6 +126,7 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
       }
       _rate = double.tryParse(_rateController.text) ?? 4.99;
     });
+    _persistInputs();
   }
 
   void _saveCalculation() async {
@@ -446,6 +471,7 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
                         onTap: () => setState(() {
                           _amort = yr;
                           _hasCalculated = false;
+                          _persistInputs();
                         }),
                       ),
                     ),
@@ -1064,6 +1090,7 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
           onTap: () => setState(() {
             _freq = value;
             _hasCalculated = false;
+            _persistInputs();
           }),
         ),
       ),

@@ -613,8 +613,8 @@ class AdManager extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
 
-    // Dynamic frequency cap via Remote Config (minimum 60s floor enforced)
-    final cooldown = max(60, RemoteConfigService.instance.interstitialCooldownSeconds);
+    // Dynamic frequency cap via Remote Config (minimum 90s floor enforced)
+    final cooldown = max(90, RemoteConfigService.instance.interstitialCooldownSeconds);
     if (_lastInterstitialShownTime != null) {
       final elapsed = DateTime.now().difference(_lastInterstitialShownTime!).inSeconds;
       if (elapsed < cooldown) {

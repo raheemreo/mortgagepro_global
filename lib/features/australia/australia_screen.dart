@@ -76,25 +76,6 @@ class _AustraliaScreenState extends State<AustraliaScreen> {
     }
   }
 
-  static const _rates = [
-    RateItem(
-        label: 'Variable',
-        value: '6.09%',
-        note: '↓ -0.25',
-        color: RateColor.red),
-    RateItem(label: '2-Yr Fixed', value: '6.29%', note: 'Avg'),
-    RateItem(
-        label: '3-Yr Fixed',
-        value: '6.15%',
-        note: 'Big 4',
-        color: RateColor.green),
-    RateItem(
-        label: 'RBA Cash',
-        value: '4.35%',
-        note: 'Current',
-        color: RateColor.gold),
-  ];
-
   void _calculate() {
     showModalBottomSheet(
       context: context,
@@ -121,7 +102,7 @@ class _AustraliaScreenState extends State<AustraliaScreen> {
               SliverToBoxAdapter(
                 child: CountryHeader(
                   theme: _theme,
-                  rates: _rates,
+                  rates: const [],
                   onBack: () => context.go('/'),
                 ),
               ),
