@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_debt_payoff_planner.dart
 
 import 'package:flutter/material.dart';
@@ -50,6 +51,9 @@ class USADebtPayoffPlanner extends ConsumerStatefulWidget {
 }
 
 class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   String _strategy = 'avalanche';
   final List<Debt> _debts = [
     Debt(id: 1, name: 'Chase Credit Card', balance: 4200, rate: 22.99, minPmt: 84),
@@ -60,16 +64,11 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
   final _extraPmtController = TextEditingController(text: '200');
 
   bool _showResults = false;
-  bool _isCalcDirty = true;
   bool _calculating = false;
 
   @override
   void initState() {
     super.initState();
-    _extraPmtController.addListener(_markDirty);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _calculate();
-    });
   }
 
   @override
@@ -78,27 +77,26 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
     super.dispose();
   }
 
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
-    }
-  }
+  void _markDirty() {}
 
-  double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    double defaultVal = 0.0;
+    if (c == _extraPmtController) defaultVal = 200.0;
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
 
   void _addDebt() {
     setState(() {
       _debts.add(Debt(id: _nextId++, name: 'New Debt', balance: 1000, rate: 15.0, minPmt: 25.0));
-      _isCalcDirty = true;
     });
   }
 
   void _removeDebt(int id) {
     setState(() {
       _debts.removeWhere((d) => d.id == id);
-      _isCalcDirty = true;
     });
   }
 
@@ -163,25 +161,57 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
     return {'months': months, 'totalInt': totalInt, 'firstWin': firstWin};
   }
 
-  void _calculate() async {
+  void _calculate() {
+    final errors = <String, String>{};
+    final val_extraPmt = double.tryParse(_extraPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_extraPmt < 0) {
+      errors['extraPmt'] = 'Enter valid amount';
+    }
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (errors.isNotEmpty) {
+      _showResults = false;
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_extraPmtController] = val_extraPmt;
+      _calcSnapshot['_strategy'] = _strategy;
+      _calcSnapshot['_debts'] = _debts.map((d) => Debt(
+        id: d.id,
+        name: d.name,
+        balance: d.balance,
+        rate: d.rate,
+        minPmt: d.minPmt,
+      )).toList();
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
+
   void _saveCalculation() async {
     final extra = _val(_extraPmtController);
-    final totalDebt = _debts.fold(0.0, (sum, d) => sum + d.balance);
+    final strategy = _showResults ? (_calcSnapshot['_strategy'] ?? _strategy) : _strategy;
+    final debts = _showResults ? (List<Debt>.from(_calcSnapshot['_debts'] ?? _debts)) : _debts;
 
-    final avOrder = List<Debt>.from(_debts)..sort((a, b) => b.rate.compareTo(a.rate));
-    final snOrder = List<Debt>.from(_debts)..sort((a, b) => a.balance.compareTo(b.balance));
-    final currentOrder = _strategy == 'avalanche' ? avOrder : snOrder;
+    final totalDebt = debts.fold(0.0, (sum, d) => sum + d.balance);
+
+    final avOrder = List<Debt>.from(debts)..sort((a, b) => b.rate.compareTo(a.rate));
+    final snOrder = List<Debt>.from(debts)..sort((a, b) => a.balance.compareTo(b.balance));
+    final currentOrder = strategy == 'avalanche' ? avOrder : snOrder;
 
     final curSim = _simulate(currentOrder, extra);
     final months = curSim['months'] as int;
@@ -254,7 +284,7 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
         inputs: {
           'ExtraPmt': extra,
           'TotalDebt': totalDebt,
-          'StrategyIndex': _strategy == 'avalanche' ? 0.0 : 1.0,
+          'StrategyIndex': strategy == 'avalanche' ? 0.0 : 1.0,
         },
         results: {
           'PayoffTime': months.toDouble(),
@@ -287,18 +317,52 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
     return '${months[date.month]} ${date.year}';
   }
 
+    void _resetInputs() {
+    setState(() {
+      _extraPmtController.text = '200';
+      this._strategy = 'avalanche';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
+  bool _isDebtsListChanged(List<Debt> current, List<Debt>? snap) {
+    if (snap == null) return false;
+    if (current.length != snap.length) return true;
+    for (int i = 0; i < current.length; i++) {
+      if (current[i].id != snap[i].id ||
+          current[i].name != snap[i].name ||
+          current[i].balance != snap[i].balance ||
+          current[i].rate != snap[i].rate ||
+          current[i].minPmt != snap[i].minPmt) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final _strategy = _showResults ? (_calcSnapshot['_strategy'] ?? this._strategy) : this._strategy;
+    final debts = _showResults ? (List<Debt>.from(_calcSnapshot['_debts'] ?? _debts)) : _debts;
+
+    final isDirty = _showResults && (
+      this._strategy != _calcSnapshot['_strategy'] ||
+      double.tryParse(_extraPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_extraPmtController] ?? 0.0) ||
+      _isDebtsListChanged(_debts, _calcSnapshot['_debts'] as List<Debt>?)
+    );
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final extra = _val(_extraPmtController);
 
-    final totalDebt = _debts.fold(0.0, (sum, d) => sum + d.balance);
-    final minSum = _debts.fold(0.0, (sum, d) => sum + d.minPmt);
+    final totalDebt = debts.fold(0.0, (sum, d) => sum + d.balance);
+    final minSum = debts.fold(0.0, (sum, d) => sum + d.minPmt);
 
     // Sort order for calculations
-    final avOrder = List<Debt>.from(_debts)..sort((a, b) => b.rate.compareTo(a.rate));
-    final snOrder = List<Debt>.from(_debts)..sort((a, b) => a.balance.compareTo(b.balance));
+    final avOrder = List<Debt>.from(debts)..sort((a, b) => b.rate.compareTo(a.rate));
+    final snOrder = List<Debt>.from(debts)..sort((a, b) => a.balance.compareTo(b.balance));
     final currentOrder = _strategy == 'avalanche' ? avOrder : snOrder;
 
     final avSim = _simulate(avOrder, extra);
@@ -314,8 +378,8 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
     final snFirstWin = snSim['firstWin'] as Map<int, int>;
     final avFirstId = avFirstWin.isEmpty ? 0 : (avFirstWin.keys.toList()..sort((a, b) => avFirstWin[a]!.compareTo(avFirstWin[b]!))).first;
     final snFirstId = snFirstWin.isEmpty ? 0 : (snFirstWin.keys.toList()..sort((a, b) => snFirstWin[a]!.compareTo(snFirstWin[b]!))).first;
-    final avFirstName = _debts.firstWhere((d) => d.id == avFirstId, orElse: () => Debt(id: 0, name: '—', balance: 0, rate: 0, minPmt: 0)).name;
-    final snFirstName = _debts.firstWhere((d) => d.id == snFirstId, orElse: () => Debt(id: 0, name: '—', balance: 0, rate: 0, minPmt: 0)).name;
+    final avFirstName = debts.firstWhere((d) => d.id == avFirstId, orElse: () => Debt(id: 0, name: '—', balance: 0, rate: 0, minPmt: 0)).name;
+    final snFirstName = debts.firstWhere((d) => d.id == snFirstId, orElse: () => Debt(id: 0, name: '—', balance: 0, rate: 0, minPmt: 0)).name;
 
     final aprColors = [const Color(0xFFB91C1C), const Color(0xFFD97706), const Color(0xFFEAB308), const Color(0xFF84CC16), const Color(0xFF0F766E), const Color(0xFF1B3F72), const Color(0xFF6D28D9)];
 
@@ -342,7 +406,7 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
         ),
         const SizedBox(height: 16),
 
-        Text('CHOOSE STRATEGY', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.bold)),
+        _buildSectionHeader('CHOOSE STRATEGY', onReset: _resetInputs),
         const SizedBox(height: 8),
 
         // Avalanche/Snowball Toggle Button
@@ -357,7 +421,7 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => _strategy = 'avalanche'),
+                  onTap: () => setState(() => this._strategy = 'avalanche'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
@@ -378,7 +442,7 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
               ),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => _strategy = 'snowball'),
+                  onTap: () => setState(() => this._strategy = 'snowball'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
@@ -504,15 +568,15 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
                   decoration: BoxDecoration(
                     color: theme.getBgColor(context),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: theme.getBorderColor(context)),
+                    border: Border.all(color: _errors['extraPmt'] != null ? Colors.red : theme.getBorderColor(context), width: _errors['extraPmt'] != null ? 2 : 1),
                   ),
                   child: TextField(
                     controller: _extraPmtController,
                     keyboardType: TextInputType.number,
                     style: AppTextStyles.playfair(size: 14, color: theme.getTextColor(context), weight: FontWeight.bold),
                     decoration: InputDecoration(
-                      labelText: 'EXTRA MONTHLY CONTRIBUTION',
-                      labelStyle: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context), weight: FontWeight.bold),
+                      labelText: _errors['extraPmt'] != null ? 'EXTRA MONTHLY CONTRIBUTION - ${_errors['extraPmt']}' : 'EXTRA MONTHLY CONTRIBUTION',
+                      labelStyle: AppTextStyles.dmSans(size: 8.5, color: _errors['extraPmt'] != null ? Colors.red : theme.getMutedColor(context), weight: FontWeight.bold),
                       border: InputBorder.none,
                       prefixText: r'$ ',
                       prefixStyle: AppTextStyles.dmSans(size: 14, color: theme.getMutedColor(context), weight: FontWeight.bold),
@@ -543,23 +607,38 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    InkWell(
-                      onTap: _showResults ? _saveCalculation : null,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        height: 48,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: _showResults ? const Color(0xFFD97706) : theme.getBgColor(context),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: theme.getBorderColor(context)),
+                    Opacity(
+                      opacity: _showResults ? 1.0 : 0.5,
+                      child: InkWell(
+                        onTap: () {
+                          if (!_showResults) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Please calculate before saving.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          } else {
+                            _saveCalculation();
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: _showResults ? const Color(0xFFD97706) : theme.getBgColor(context),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: theme.getBorderColor(context)),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text('💾 Save',
+                              style: AppTextStyles.dmSans(
+                                  size: 13,
+                                  color: _showResults ? Colors.white : theme.getTextColor(context),
+                                  weight: FontWeight.bold)),
                         ),
-                        alignment: Alignment.center,
-                        child: Text('💾 Save',
-                            style: AppTextStyles.dmSans(
-                                size: 13,
-                                color: _showResults ? Colors.white : theme.getMutedColor(context),
-                                weight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -570,7 +649,63 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
           const SizedBox(height: 16),
         ],
 
-        if (_showResults && _debts.isNotEmpty) ...[
+        if (!_showResults)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              border: Border.all(color: theme.getBorderColor(context)),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                const Text('📉', style: TextStyle(fontSize: 42)),
+                const SizedBox(height: 10),
+                Text(
+                  'Enter Debt Details Below',
+                  style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'We\'ll simulate your payoff timeline, target milestones, and compare snowball vs. avalanche strategies.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context)),
+                ),
+              ],
+            ),
+          )
+        else if (_debts.isNotEmpty) ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate Payoff Plan" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
           // Result Hero Card
           Container(
             padding: const EdgeInsets.all(20),
@@ -882,6 +1017,35 @@ class _USADebtPayoffPlannerState extends ConsumerState<USADebtPayoffPlanner> {
           Expanded(child: Text(snVal, style: AppTextStyles.playfair(size: 11, color: const Color(0xFF0F766E), weight: FontWeight.bold), textAlign: TextAlign.right)),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onReset, String resetLabel = 'Reset'}) {
+    final theme = widget.theme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: AppTextStyles.dmSans(
+            size: 11,
+            color: theme.getMutedColor(context),
+            weight: FontWeight.bold,
+          ),
+        ),
+        if (onReset != null)
+          TextButton(
+            onPressed: onReset,
+            child: Text(
+              resetLabel,
+              style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.accentColor,
+                weight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

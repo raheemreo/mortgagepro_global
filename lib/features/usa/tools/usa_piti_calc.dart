@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_piti_calc.dart
 
 import 'package:flutter/material.dart';
@@ -25,6 +26,10 @@ class USAPitiCalc extends ConsumerStatefulWidget {
 }
 
 class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  bool _showResults = false;
   // Input Controllers
   final _homePriceController = TextEditingController(text: '420000');
   final _rateController = TextEditingController(text: '6.82');
@@ -54,22 +59,75 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
   double get _insurance => double.tryParse(_insuranceController.text) ?? 1800.0;
   double get _hoa => double.tryParse(_hoaController.text) ?? 0.0;
   double get _income => double.tryParse(_incomeController.text) ?? 8500.0;
+  double _val(TextEditingController controller, double defaultVal) {
+    if (_showResults && _calcSnapshot.containsKey(controller)) {
+      return _calcSnapshot[controller]!;
+    }
+    return double.tryParse(controller.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final val_homePrice = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_homePrice <= 0) errors['homePrice'] = 'Please enter a valid amount';
+    final val_rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_rate <= 0) errors['rate'] = 'Please enter a valid amount';
+    final val_taxRate = double.tryParse(_taxRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_insurance = double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_hoa = double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
+    setState(() {
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_taxRateController] = val_taxRate;
+      _calcSnapshot[_insuranceController] = val_insurance;
+      _calcSnapshot[_hoaController] = val_hoa;
+      _calcSnapshot[_incomeController] = val_income;
+      _calcSnapshot['_downPct'] = _downPct;
+      _calcSnapshot['_termYears'] = _termYears;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final _downPct = _showResults ? (_calcSnapshot['_downPct'] ?? this._downPct) : this._downPct;
+    final _termYears = _showResults ? (_calcSnapshot['_termYears'] ?? this._termYears) : this._termYears;
+
+    final isDirty = _showResults && (this._downPct != _calcSnapshot['_downPct'] || this._termYears != _calcSnapshot['_termYears'] || double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homePriceController] ?? 0.0) || double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rateController] ?? 0.0) || double.tryParse(_taxRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_taxRateController] ?? 0.0) || double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_insuranceController] ?? 0.0) || double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_hoaController] ?? 0.0) || double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_incomeController] ?? 0.0));
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = widget.theme;
 
     // Calculations
-    final price = _homePrice;
+    final price = _val(_homePriceController, 420000.0);
     final down = price * _downPct / 100;
     final loan = price - down;
-    final rate = _rate;
+    final rate = _val(_rateController, 6.82);
     final term = _termYears;
-    final taxRate = _taxRate;
-    final insYr = _insurance;
-    final hoa = _hoa;
-    final income = _income;
+    final taxRate = _val(_taxRateController, 1.07);
+    final insYr = _val(_insuranceController, 1800.0);
+    final hoa = _val(_hoaController, 0.0);
+    final income = _val(_incomeController, 8500.0);
 
     final double pi = MortgageMath.monthlyPayment(
       principal: loan,
@@ -208,7 +266,7 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
               // Home Price
               _buildInputLabel('Home Purchase Price', 'Median US: \$420,800'),
               const SizedBox(height: 4),
-              _buildWhiteInput(_homePriceController, prefix: '\$'),
+              _buildWhiteInput(_homePriceController, prefix: '\$', errorText: _errors['homePrice']),
               const SizedBox(height: 11),
 
               // Down Payment & Term Row
@@ -231,7 +289,7 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
                             DropdownMenuItem(value: 25.0, child: Text('25%')),
                           ],
                           onChanged: (val) {
-                            if (val != null) setState(() => _downPct = val);
+                            if (val != null) setState(() => this._downPct = val);
                           },
                         ),
                       ],
@@ -253,7 +311,7 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
                             DropdownMenuItem(value: 10, child: Text('10 Years')),
                           ],
                           onChanged: (val) {
-                            if (val != null) setState(() => _termYears = val);
+                            if (val != null) setState(() => this._termYears = val);
                           },
                         ),
                       ],
@@ -272,7 +330,7 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
                       children: [
                         _buildInputLabel('Interest Rate %', null),
                         const SizedBox(height: 4),
-                        _buildWhiteInput(_rateController, suffix: '%'),
+                        _buildWhiteInput(_rateController, suffix: '%', errorText: _errors['rate']),
                       ],
                     ),
                   ),
@@ -321,7 +379,7 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
 
               // Calculate Button
               GestureDetector(
-                onTap: () => setState(() {}),
+                onTap: _calculate,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 15),
@@ -363,8 +421,37 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
         ),
         const SizedBox(height: 20),
 
-        // Quick Stats Row
-        _buildSectionHeader('Quick Stats', onReset: null),
+        if (_showResults) ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                // Quick Stats Row
+                _buildSectionHeader('Quick Stats', onReset: null),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -1125,7 +1212,11 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
           ),
         ),
       ],
-    );
+    ),
+  ),
+],
+],
+);
   }
 
   Widget _buildSectionHeader(String title, {VoidCallback? onReset}) {
@@ -1286,6 +1377,15 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
 
   void _resetInputs() {
     setState(() {
+      _homePriceController.clear();
+      _rateController.clear();
+      _taxRateController.clear();
+      _insuranceController.clear();
+      _hoaController.clear();
+      _incomeController.clear();
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
       _homePriceController.text = '420000';
       _rateController.text = '6.82';
       _taxRateController.text = '1.07';
@@ -1323,31 +1423,51 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
     );
   }
 
-  Widget _buildWhiteInput(TextEditingController controller, {String? prefix, String? suffix}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style: AppTextStyles.dmSans(
-          size: 14,
-          weight: FontWeight.w800,
-          color: Colors.white,
-        ).copyWith(fontFamily: 'Georgia'),
-        decoration: InputDecoration(
-          prefixText: prefix != null ? '$prefix ' : null,
-          prefixStyle: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: Colors.white70).copyWith(fontFamily: 'Georgia'),
-          suffixText: suffix != null ? ' $suffix' : null,
-          suffixStyle: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: Colors.white70).copyWith(fontFamily: 'Georgia'),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+  Widget _buildWhiteInput(TextEditingController controller, {String? prefix, String? suffix, String? errorText}) {
+    final hasError = errorText != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(
+              color: hasError ? Colors.red : Colors.white.withValues(alpha: 0.18),
+              width: hasError ? 1.5 : 1.0,
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: AppTextStyles.dmSans(
+              size: 14,
+              weight: FontWeight.w800,
+              color: Colors.white,
+            ).copyWith(fontFamily: 'Georgia'),
+            decoration: InputDecoration(
+              prefixText: prefix != null ? '$prefix ' : null,
+              prefixStyle: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: Colors.white70).copyWith(fontFamily: 'Georgia'),
+              suffixText: suffix != null ? ' $suffix' : null,
+              suffixStyle: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: Colors.white70).copyWith(fontFamily: 'Georgia'),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
         ),
-        onChanged: (_) => setState(() {}),
-      ),
+        if (hasError) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 10,
+              color: Colors.red,
+              weight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
     );
   }
 

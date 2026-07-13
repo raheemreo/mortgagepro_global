@@ -40,6 +40,22 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
   double _netAtStay = 0.0;
   String _atYourStay = 'ARM Wins';
 
+  final _resultsKey = GlobalKey();
+
+  double _calcLoanAmt = 0.0;
+  double _calcArmRate = 0.0;
+  int _calcArmYrs = 5;
+  double _calcFixedRate = 0.0;
+  double _calcAdjRate = 0.0;
+  double _calcYearsInHome = 7.0;
+
+  // Validation errors
+  String? _loanAmtError;
+  String? _armRateError;
+  String? _fixedRateError;
+  String? _adjRateError;
+  String? _yearsInHomeError;
+
   @override
   void initState() {
     super.initState();
@@ -51,8 +67,13 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
       _fixedRateController.text = (inputs['fixedRate'] ?? 6.47).toStringAsFixed(2);
       _adjRateController.text = (inputs['adjRate'] ?? 7.00).toStringAsFixed(2);
       _yearsInHomeController.text = (inputs['yearsInHome'] ?? 7.0).toStringAsFixed(0);
-      _calculate();
-    } else {
+
+      _calcLoanAmt = double.tryParse(_loanAmtController.text) ?? 360000.0;
+      _calcArmRate = double.tryParse(_armRateController.text) ?? 5.81;
+      _calcArmYrs = _armYrs;
+      _calcFixedRate = double.tryParse(_fixedRateController.text) ?? 6.47;
+      _calcAdjRate = double.tryParse(_adjRateController.text) ?? 7.00;
+      _calcYearsInHome = double.tryParse(_yearsInHomeController.text) ?? 7.0;
       _calculate();
     }
   }
@@ -90,28 +111,107 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
     return fixedPI * months;
   }
 
+  void _resetInputs() {
+    setState(() {
+      _loanAmtController.clear();
+      _armRateController.clear();
+      _fixedRateController.clear();
+      _adjRateController.clear();
+      _yearsInHomeController.clear();
+      _armYrs = 5;
+      _calculated = false;
+      _loanAmtError = null;
+      _armRateError = null;
+      _fixedRateError = null;
+      _adjRateError = null;
+      _yearsInHomeError = null;
+    });
+  }
+
+  bool _validateInputs() {
+    bool isValid = true;
+    setState(() {
+      final loanVal = double.tryParse(_loanAmtController.text);
+      if (_loanAmtController.text.trim().isEmpty) {
+        _loanAmtError = 'Loan amount is required';
+        isValid = false;
+      } else if (loanVal == null || loanVal <= 0) {
+        _loanAmtError = 'Enter a valid loan amount';
+        isValid = false;
+      } else {
+        _loanAmtError = null;
+      }
+
+      final armRateVal = double.tryParse(_armRateController.text);
+      if (_armRateController.text.trim().isEmpty) {
+        _armRateError = 'ARM rate is required';
+        isValid = false;
+      } else if (armRateVal == null || armRateVal <= 0) {
+        _armRateError = 'Enter a valid ARM rate';
+        isValid = false;
+      } else {
+        _armRateError = null;
+      }
+
+      final fixedRateVal = double.tryParse(_fixedRateController.text);
+      if (_fixedRateController.text.trim().isEmpty) {
+        _fixedRateError = 'Fixed rate is required';
+        isValid = false;
+      } else if (fixedRateVal == null || fixedRateVal <= 0) {
+        _fixedRateError = 'Enter a valid fixed rate';
+        isValid = false;
+      } else {
+        _fixedRateError = null;
+      }
+
+      final adjRateVal = double.tryParse(_adjRateController.text);
+      if (_adjRateController.text.trim().isEmpty) {
+        _adjRateError = 'Adj rate is required';
+        isValid = false;
+      } else if (adjRateVal == null || adjRateVal <= 0) {
+        _adjRateError = 'Enter a valid adj rate';
+        isValid = false;
+      } else {
+        _adjRateError = null;
+      }
+
+      final yearsVal = double.tryParse(_yearsInHomeController.text);
+      if (_yearsInHomeController.text.trim().isEmpty) {
+        _yearsInHomeError = 'Planned years is required';
+        isValid = false;
+      } else if (yearsVal == null || yearsVal <= 0) {
+        _yearsInHomeError = 'Enter valid years';
+        isValid = false;
+      } else {
+        _yearsInHomeError = null;
+      }
+    });
+    return isValid;
+  }
+
   void _calculate() {
-    final loanAmt = double.tryParse(_loanAmtController.text) ?? 0.0;
-    final armRate = double.tryParse(_armRateController.text) ?? 0.0;
-    final fixedRate = double.tryParse(_fixedRateController.text) ?? 0.0;
-    final adjRate = double.tryParse(_adjRateController.text) ?? 0.0;
-    final yearsInHome = double.tryParse(_yearsInHomeController.text) ?? 1.0;
+    _calcLoanAmt = double.tryParse(_loanAmtController.text) ?? 0.0;
+    _calcArmRate = double.tryParse(_armRateController.text) ?? 0.0;
+    _calcFixedRate = double.tryParse(_fixedRateController.text) ?? 0.0;
+    _calcAdjRate = double.tryParse(_adjRateController.text) ?? 0.0;
+    _calcYearsInHome = double.tryParse(_yearsInHomeController.text) ?? 1.0;
+    _calcArmYrs = _armYrs;
 
     const totalMonths = 360;
-    final fixedMonths = _armYrs * 12;
+    final fixedMonths = _calcArmYrs * 12;
 
-    final armPI = _pmtCalc(loanAmt, armRate, totalMonths);
-    final fixedPI = _pmtCalc(loanAmt, fixedRate, totalMonths);
+    final armPI = _pmtCalc(_calcLoanAmt, _calcArmRate, totalMonths);
+    final fixedPI = _pmtCalc(_calcLoanAmt, _calcFixedRate, totalMonths);
 
     // Remaining balance after fixed period
-    double bal = loanAmt;
-    final mr0 = (armRate / 100) / 12;
+    double bal = _calcLoanAmt;
+    final mr0 = (_calcArmRate / 100) / 12;
     for (int i = 0; i < fixedMonths; i++) {
       final interest = bal * mr0;
       bal -= (armPI - interest);
     }
     final remMonths = totalMonths - fixedMonths;
-    final armAdjPI = _pmtCalc(bal, adjRate, remMonths);
+    final armAdjPI = _pmtCalc(bal, _calcAdjRate, remMonths);
 
     // Scan for breakeven year
     double breakevenYears = 30.0;
@@ -124,8 +224,8 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
       }
     }
 
-    final netAtStay = _fixedCumulativeCost(yearsInHome, fixedPI) -
-        _cumulativeCost(yearsInHome, armPI, armAdjPI, fixedMonths);
+    final netAtStay = _fixedCumulativeCost(_calcYearsInHome, fixedPI) -
+        _cumulativeCost(_calcYearsInHome, armPI, armAdjPI, fixedMonths);
 
     setState(() {
       _armPI = armPI;
@@ -145,21 +245,21 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
   void _saveCalc() {
     if (!_calculated) return;
 
-    final loanAmt = double.tryParse(_loanAmtController.text) ?? 0.0;
-    final armRate = double.tryParse(_armRateController.text) ?? 0.0;
-    final fixedRate = double.tryParse(_fixedRateController.text) ?? 0.0;
-    final adjRate = double.tryParse(_adjRateController.text) ?? 0.0;
-    final yearsInHome = double.tryParse(_yearsInHomeController.text) ?? 1.0;
+    final loanAmt = _calcLoanAmt;
+    final armRate = _calcArmRate;
+    final fixedRate = _calcFixedRate;
+    final adjRate = _calcAdjRate;
+    final yearsInHome = _calcYearsInHome;
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'ARM vs Fixed Breakeven',
-      label: '$_armYrs/1 ARM vs Fixed: \$${CurrencyFormatter.compact(loanAmt, symbol: "")} · BE: ${_breakevenYears.toStringAsFixed(1)}y',
+      label: '$_calcArmYrs/1 ARM vs Fixed: \$${CurrencyFormatter.compact(loanAmt, symbol: "")} · BE: ${_breakevenYears.toStringAsFixed(1)}y',
       currencyCode: 'USD',
       inputs: {
         'loanAmt': loanAmt,
         'armRate': armRate,
-        'armYrs': _armYrs.toDouble(),
+        'armYrs': _calcArmYrs.toDouble(),
         'fixedRate': fixedRate,
         'adjRate': adjRate,
         'yearsInHome': yearsInHome,
@@ -190,8 +290,8 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
     final bgCol = _theme.getBgColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final yearsInHome = double.tryParse(_yearsInHomeController.text) ?? 7.0;
-    final fixedMonths = _armYrs * 12;
+    final yearsInHome = _calcYearsInHome;
+    final fixedMonths = _calcArmYrs * 12;
 
     // bar chart horizons
     final horizons = [3.0, 5.0, yearsInHome, 10.0, 15.0];
@@ -199,8 +299,17 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
     final diffs = horizons.map((h) =>
         _fixedCumulativeCost(h, _fixedPI) -
         _cumulativeCost(h, _armPI, _armAdjPI, fixedMonths)).toList();
-    final maxAbs = diffs.map((d) => d.abs()).reduce(max);
+    final maxAbs = diffs.isEmpty ? 1.0 : diffs.map((d) => d.abs()).reduce(max);
     final maxScale = max(maxAbs, 1000.0);
+
+    final showOutdatedWarning = _calculated && (
+      (double.tryParse(_loanAmtController.text) ?? 0.0) != _calcLoanAmt ||
+      (double.tryParse(_armRateController.text) ?? 0.0) != _calcArmRate ||
+      _armYrs != _calcArmYrs ||
+      (double.tryParse(_fixedRateController.text) ?? 0.0) != _calcFixedRate ||
+      (double.tryParse(_adjRateController.text) ?? 0.0) != _calcAdjRate ||
+      (double.tryParse(_yearsInHomeController.text) ?? 0.0) != _calcYearsInHome
+    );
 
     return Scaffold(
       backgroundColor: bgCol,
@@ -224,6 +333,22 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
                 child: const Text('←', style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
+            actions: [
+              GestureDetector(
+                onTap: _resetInputs,
+                child: Container(
+                  margin: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('Reset', style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -252,33 +377,34 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
           ),
 
           // Summary Strip
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF141C33) : Colors.white.withValues(alpha: 0.10),
-                border: Border.all(color: borderCol),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  Expanded(child: _buildStripItem('$_armYrs/1 ARM', '${double.tryParse(_armRateController.text) ?? 5.81}%', 'Avg Today', isDark, isGold: true)),
-                  Container(width: 1, height: 26, color: Colors.white24),
-                  Expanded(child: _buildStripItem('30-Yr Fixed', '${double.tryParse(_fixedRateController.text) ?? 6.47}%', 'Freddie Mac', isDark)),
-                  Container(width: 1, height: 26, color: Colors.white24),
-                  Expanded(
-                    child: _buildStripItem(
-                      'Rate Gap',
-                      '${((double.tryParse(_fixedRateController.text) ?? 6.47) - (double.tryParse(_armRateController.text) ?? 5.81)).toStringAsFixed(2)}%',
-                      'ARM Discount',
-                      isDark,
+          if (_calculated)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF141C33) : Colors.white.withValues(alpha: 0.10),
+                  border: Border.all(color: borderCol),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(child: _buildStripItem('$_calcArmYrs/1 ARM', '${_calcArmRate.toStringAsFixed(2)}%', 'Avg Today', isDark, isGold: true)),
+                    Container(width: 1, height: 26, color: Colors.white24),
+                    Expanded(child: _buildStripItem('30-Yr Fixed', '${_calcFixedRate.toStringAsFixed(2)}%', 'Freddie Mac', isDark)),
+                    Container(width: 1, height: 26, color: Colors.white24),
+                    Expanded(
+                      child: _buildStripItem(
+                        'Rate Gap',
+                        '${(_calcFixedRate - _calcArmRate).toStringAsFixed(2)}%',
+                        'ARM Discount',
+                        isDark,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
           // Content
           SliverPadding(
@@ -321,12 +447,13 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInputField('Loan Amount (\$)', _loanAmtController),
+                      _buildInputField('Loan Amount (\$)', _loanAmtController, errorText: _loanAmtError),
                       const SizedBox(height: 12),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: _buildInputField('ARM Initial Rate (%)', _armRateController),
+                            child: _buildInputField('ARM Initial Rate (%)', _armRateController, errorText: _armRateError),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -341,7 +468,6 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
                               onChanged: (val) {
                                 if (val != null) {
                                   setState(() => _armYrs = val);
-                                  _calculate();
                                 }
                               },
                             ),
@@ -350,27 +476,100 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
                       ),
                       const SizedBox(height: 12),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: _buildInputField('Fixed Loan Rate (%)', _fixedRateController),
+                            child: _buildInputField('Fixed Loan Rate (%)', _fixedRateController, errorText: _fixedRateError),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildInputField('Expected ARM Adj. Rate (%)', _adjRateController),
+                            child: _buildInputField('Expected ARM Adj. Rate (%)', _adjRateController, errorText: _adjRateError),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      _buildInputField('Planned Years in Home', _yearsInHomeController, hint: 'Check the cumulative result over different stays'),
+                      _buildInputField('Planned Years in Home', _yearsInHomeController, errorText: _yearsInHomeError, hint: 'Check the cumulative result over different stays'),
+                      const SizedBox(height: 16),
+
+                      // Calculate Button
+                      GestureDetector(
+                        onTap: () {
+                          if (_validateInputs()) {
+                            _calculate();
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (_resultsKey.currentContext != null) {
+                                Scrollable.ensureVisible(
+                                  _resultsKey.currentContext!,
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeInOut,
+                                );
+                              }
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0B1D3A), Color(0xFF0F766E)],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F766E).withValues(alpha: 0.28),
+                                blurRadius: 18,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '⚖️ Calculate Breakeven',
+                            style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: Colors.white,
+                            ).copyWith(fontFamily: 'Georgia'),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
                 const SizedBox(height: 12),
 
-                // Result Hero Card
                 if (_calculated) ...[
+                  if (showOutdatedWarning)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.15),
+                        border: Border.all(color: Colors.amber.shade700, width: 1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                          Expanded(
+                            child: Text(
+                              'Inputs have changed. Tap Calculate to update results.',
+                              style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: Colors.amber.shade800,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Result Hero Card
                   Container(
+                    key: _resultsKey,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
@@ -428,144 +627,142 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
                       ],
                     ),
                   ),
-                ],
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('Key Scenario Stats'),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Key Scenario Stats'),
 
-                // Breakdown Grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.4,
-                  children: [
-                    _buildBreakdownCard('💵', 'ARM Initial P&I', '\$${_armPI.round()}', 'During fixed period', textCol, mutedCol),
-                    _buildBreakdownCard('🏛️', 'Fixed-Rate P&I', '\$${_fixedPI.round()}', 'Same every month', textCol, mutedCol),
-                    _buildBreakdownCard('💰', 'Monthly Savings (ARM)', '\$${_monthlySave.round()}', 'During fixed years', textCol, mutedCol),
-                    _buildBreakdownCard('📈', 'ARM P&I After Adj.', '\$${_armAdjPI.round()}', 'Estimated reset payment', textCol, mutedCol),
-                    _buildBreakdownCard('🏁', 'At Your Planned Stay', _atYourStay, 'After $yearsInHome years in home', _netAtStay >= 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C), mutedCol),
-                    _buildBreakdownCard('💸', 'Net \$ at Your Stay', '${_netAtStay >= 0 ? '+\$' : '-\$'}${_netAtStay.abs().round()}', 'Cumulative ARM advantage', _netAtStay >= 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C), mutedCol),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-                _buildSectionHeader('Cumulative Cost Comparison (15-Yr View)'),
-
-                // Line Chart Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // Breakdown Grid
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 1.4,
                     children: [
-                      Text('📈 Cumulative Cost over 15 Years',
-                          style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 130,
-                        width: double.infinity,
-                        child: CustomPaint(
-                          painter: BreakevenLineChartPainter(
-                            armPI: _armPI,
-                            fixedPI: _fixedPI,
-                            armAdjPI: _armAdjPI,
-                            fixedMonths: fixedMonths,
-                            breakeven: _breakevenYears,
-                            isDark: isDark,
+                      _buildBreakdownCard('💵', 'ARM Initial P&I', '\$${_armPI.round()}', 'During fixed period', textCol, mutedCol),
+                      _buildBreakdownCard('🏛️', 'Fixed-Rate P&I', '\$${_fixedPI.round()}', 'Same every month', textCol, mutedCol),
+                      _buildBreakdownCard('💰', 'Monthly Savings (ARM)', '\$${_monthlySave.round()}', 'During fixed years', textCol, mutedCol),
+                      _buildBreakdownCard('📈', 'ARM P&I After Adj.', '\$${_armAdjPI.round()}', 'Estimated reset payment', textCol, mutedCol),
+                      _buildBreakdownCard('🏁', 'At Your Planned Stay', _atYourStay, 'After $yearsInHome years in home', _netAtStay >= 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C), mutedCol),
+                      _buildBreakdownCard('💸', 'Net \$ at Your Stay', '${_netAtStay >= 0 ? '+\$' : '-\$'}${_netAtStay.abs().round()}', 'Cumulative ARM advantage', _netAtStay >= 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C), mutedCol),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Cumulative Cost Comparison (15-Yr View)'),
+
+                  // Line Chart Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('📈 Cumulative Cost over 15 Years',
+                            style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 130,
+                          width: double.infinity,
+                          child: CustomPaint(
+                            painter: BreakevenLineChartPainter(
+                              armPI: _armPI,
+                              fixedPI: _fixedPI,
+                              armAdjPI: _armAdjPI,
+                              fixedMonths: fixedMonths,
+                              breakeven: _breakevenYears,
+                              isDark: isDark,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Year 0', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                          Text('Year 5', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                          Text('Year 10', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                          Text('Year 15', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          _buildLegendDot(const Color(0xFF0F766E), 'ARM Cumulative Cost', mutedCol),
-                          const SizedBox(width: 14),
-                          _buildLegendDot(const Color(0xFF1B3F72), 'Fixed Cumulative Cost', mutedCol),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatColumn('Breakeven', '${_breakevenYears.toStringAsFixed(1)} yrs', textCol, mutedCol),
-                          _buildStatColumn('Savings @ 5 Yrs', '\$${(_fixedCumulativeCost(5, _fixedPI) - _cumulativeCost(5, _armPI, _armAdjPI, fixedMonths)).round()}', textCol, mutedCol),
-                          _buildStatColumn('Savings @ 10 Yrs', '\$${(_fixedCumulativeCost(10, _fixedPI) - _cumulativeCost(10, _armPI, _armAdjPI, fixedMonths)).round()}', textCol, mutedCol),
-                        ],
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Year 0', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                            Text('Year 5', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                            Text('Year 10', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                            Text('Year 15', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            _buildLegendDot(const Color(0xFF0F766E), 'ARM Cumulative Cost', mutedCol),
+                            const SizedBox(width: 14),
+                            _buildLegendDot(const Color(0xFF1B3F72), 'Fixed Cumulative Cost', mutedCol),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildStatColumn('Breakeven', '${_breakevenYears.toStringAsFixed(1)} yrs', textCol, mutedCol),
+                            _buildStatColumn('Savings @ 5 Yrs', '\$${(_fixedCumulativeCost(5, _fixedPI) - _cumulativeCost(5, _armPI, _armAdjPI, fixedMonths)).round()}', textCol, mutedCol),
+                            _buildStatColumn('Savings @ 10 Yrs', '\$${(_fixedCumulativeCost(10, _fixedPI) - _cumulativeCost(10, _armPI, _armAdjPI, fixedMonths)).round()}', textCol, mutedCol),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('Interest Savings by Holding Period'),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Interest Savings by Holding Period'),
 
-                // Bar Chart Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(16),
+                  // Bar Chart Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('📊 Cumulative Cost Advantage by Year Held',
+                            style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
+                        const SizedBox(height: 14),
+                        for (int i = 0; i < horizons.length; i++)
+                          _buildHorizonBarRow(labels[i], diffs[i], maxScale, textCol),
+                        const SizedBox(height: 6),
+                        Text('Green = ARM wins (savings)  |  Red = Fixed wins',
+                            style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('📊 Cumulative Cost Advantage by Year Held',
-                          style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
-                      const SizedBox(height: 14),
-                      for (int i = 0; i < horizons.length; i++)
-                        _buildHorizonBarRow(labels[i], diffs[i], maxScale, textCol),
-                      const SizedBox(height: 6),
-                      Text('Green = ARM wins (savings)  |  Red = Fixed wins',
-                          style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                    ],
-                  ),
-                ),
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('Advantage Snapshot'),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Advantage Snapshot'),
 
-                // Table snapshot Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(16),
+                  // Table snapshot Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('📊 Holding Period Cost Matrix',
+                            style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
+                        const SizedBox(height: 12),
+                        _buildMatrixRow('3 Years', 3, textCol),
+                        _buildMatrixRow('5 Years', 5, textCol),
+                        _buildMatrixRow('10 Years', 10, textCol),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('📊 Holding Period Cost Matrix',
-                          style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
-                      const SizedBox(height: 12),
-                      _buildMatrixRow('3 Years', 3, textCol),
-                      _buildMatrixRow('5 Years', 5, textCol),
-                      _buildMatrixRow('10 Years', 10, textCol),
-                    ],
-                  ),
-                ),
-
+                ],
                 const SizedBox(height: 10),
                 // Footer helper note strip
                 Container(
@@ -629,7 +826,7 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? hint}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? hint, String? errorText}) {
     const theme = _theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -647,13 +844,16 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (val) => _calculate(),
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.dmSans(
               size: 13,
               weight: FontWeight.w800,
@@ -667,6 +867,17 @@ class _USAArmVsFixedBreakevenScreenState extends ConsumerState<USAArmVsFixedBrea
             ),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 10,
+              color: Colors.red,
+              weight: FontWeight.w500,
+            ),
+          ),
+        ],
       ],
     );
   }

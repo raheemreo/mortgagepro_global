@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_hoa_fee_impact_calc.dart
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,9 @@ class USAHoaFeeImpactCalc extends ConsumerStatefulWidget {
 }
 
 class _USAHoaFeeImpactCalcState extends ConsumerState<USAHoaFeeImpactCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   final _homePriceController = TextEditingController(text: '450000');
   final _downPctController = TextEditingController(text: '10');
   final _rateController = TextEditingController(text: '6.82');
@@ -35,6 +39,15 @@ class _USAHoaFeeImpactCalcState extends ConsumerState<USAHoaFeeImpactCalc> {
   @override
   void initState() {
     super.initState();
+    _homePriceController.addListener(() => setState(() {}));
+    _downPctController.addListener(() => setState(() {}));
+    _rateController.addListener(() => setState(() {}));
+    _hoaController.addListener(() => setState(() {}));
+    _incomeController.addListener(() => setState(() {}));
+    _otherDebtsController.addListener(() => setState(() {}));
+    _taxRateController.addListener(() => setState(() {}));
+    _insuranceController.addListener(() => setState(() {}));
+
     final list = [
       _homePriceController,
       _downPctController,
@@ -77,10 +90,26 @@ class _USAHoaFeeImpactCalcState extends ConsumerState<USAHoaFeeImpactCalc> {
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   void _resetInputs() {
     setState(() {
+      _homePriceController.clear();
+      _downPctController.clear();
+      _rateController.clear();
+      _hoaController.clear();
+      _incomeController.clear();
+      _otherDebtsController.clear();
+      _taxRateController.clear();
+      _insuranceController.clear();
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
       _homePriceController.text = '450000';
       _downPctController.text = '10';
       _rateController.text = '6.82';
@@ -96,17 +125,50 @@ class _USAHoaFeeImpactCalcState extends ConsumerState<USAHoaFeeImpactCalc> {
 
   // Unused: _loadSavedCalculation removed to resolve analyzer warnings.
 
-  void _calculate() async {
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_homePrice = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_homePrice <= 0) errors['homePrice'] = 'Please enter a valid amount';
+    final val_downPct = double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_rate <= 0) errors['rate'] = 'Please enter a valid amount';
+    final val_hoa = double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_otherDebts = double.tryParse(_otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_taxRate = double.tryParse(_taxRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_insurance = double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 400));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_downPctController] = val_downPct;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_hoaController] = val_hoa;
+      _calcSnapshot[_incomeController] = val_income;
+      _calcSnapshot[_otherDebtsController] = val_otherDebts;
+      _calcSnapshot[_taxRateController] = val_taxRate;
+      _calcSnapshot[_insuranceController] = val_insurance;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final price = _val(_homePriceController);
@@ -231,6 +293,9 @@ class _USAHoaFeeImpactCalcState extends ConsumerState<USAHoaFeeImpactCalc> {
 
   @override
   Widget build(BuildContext context) {
+
+    final isDirty = _showResults && (double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homePriceController] ?? 0.0) || double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_downPctController] ?? 0.0) || double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rateController] ?? 0.0) || double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_hoaController] ?? 0.0) || double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_incomeController] ?? 0.0) || double.tryParse(_otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_otherDebtsController] ?? 0.0) || double.tryParse(_taxRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_taxRateController] ?? 0.0) || double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_insuranceController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
@@ -493,7 +558,7 @@ class _USAHoaFeeImpactCalcState extends ConsumerState<USAHoaFeeImpactCalc> {
                             ),
                     ),
                   ),
-                  if (_showResults && !_isCalcDirty) ...[
+                  if (_showResults) ...[
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: _saveCalculation,
@@ -521,7 +586,40 @@ class _USAHoaFeeImpactCalcState extends ConsumerState<USAHoaFeeImpactCalc> {
         ),
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Result Hero Card
           Container(
             width: double.infinity,

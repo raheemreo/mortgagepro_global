@@ -133,8 +133,8 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
 
     showDialog(
       context: context,
-      builder: (context) {
-        final dark = Theme.of(context).brightness == Brightness.dark;
+      builder: (dialogCtx) {
+        final dark = Theme.of(dialogCtx).brightness == Brightness.dark;
         return AlertDialog(
           backgroundColor: dark ? const Color(0xFF111827) : Colors.white,
           title: Row(
@@ -185,7 +185,7 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogCtx),
               child: Text(
                 'Cancel',
                 style: AppTextStyles.dmSans(
@@ -210,8 +210,10 @@ class _AIAdvisorScreenState extends ConsumerState<AIAdvisorScreen> {
                 } else {
                   await prefs.setString('custom_gemini_api_key', newKey);
                 }
+                if (dialogCtx.mounted) {
+                  Navigator.pop(dialogCtx);
+                }
                 if (mounted) {
-                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(

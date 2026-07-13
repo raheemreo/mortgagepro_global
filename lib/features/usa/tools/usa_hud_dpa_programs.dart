@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_hud_dpa_programs.dart
 
 import 'package:flutter/material.dart';
@@ -62,6 +63,10 @@ class USAHudDpaPrograms extends ConsumerStatefulWidget {
 }
 
 class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
+
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  bool _showResults = false;
   // Input Controllers
   final _incomeController = TextEditingController(text: '72000');
   final _priceController = TextEditingController(text: '350000');
@@ -240,6 +245,9 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
   @override
   void initState() {
     super.initState();
+    _incomeController.addListener(() => setState(() {}));
+    _priceController.addListener(() => setState(() {}));
+
     if (widget.savedCalc != null) {
       _loadSaved(widget.savedCalc!);
     }
@@ -252,7 +260,12 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
     super.dispose();
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   void _loadSaved(SavedCalc calc) {
     setState(() {
@@ -449,8 +462,29 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
     return CurrencyFormatter.compact(value, symbol: '\$');
   }
 
+    void _resetInputs() {
+    setState(() {
+      _incomeController.text = '72000';
+      _priceController.text = '350000';
+      this._ftbStatus = 'yes';
+      this._selectedFico = 660;
+      this._currentFilter = 'all';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
+    final _ftbStatus = _showResults ? (_calcSnapshot['_ftbStatus'] ?? this._ftbStatus) : this._ftbStatus;
+    final _selectedFico = _showResults ? (_calcSnapshot['_selectedFico'] ?? this._selectedFico) : this._selectedFico;
+    final _currentFilter = _showResults ? (_calcSnapshot['_currentFilter'] ?? this._currentFilter) : this._currentFilter;
+
+    final isDirty = _showResults && (this._ftbStatus != _calcSnapshot['_ftbStatus'] || this._selectedFico != _calcSnapshot['_selectedFico'] || this._currentFilter != _calcSnapshot['_currentFilter'] || double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_incomeController] ?? 0.0) || double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_priceController] ?? 0.0));
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = widget.theme;
 
@@ -573,15 +607,7 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'ESTIMATED DPA ASSISTANCE AVAILABLE',
-                        style: AppTextStyles.dmSans(
-                          size: 9.5,
-                          weight: FontWeight.w700,
-                          color: Colors.white.withValues(alpha: 0.55),
-                          letterSpacing: 0.8,
-                        ),
-                      ),
+                      _buildSectionHeader('ESTIMATED DPA ASSISTANCE AVAILABLE', onReset: _resetInputs),
                       const SizedBox(height: 4),
                       Text(
                         'Up to ${_formatCompact(maxAmt)}',
@@ -725,6 +751,7 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
               _buildInputField(
                 label: 'Annual Household Income',
                 controller: _incomeController,
+                      errorText: _errors['income'],
                 prefix: '\$',
               ),
               const SizedBox(height: 13),
@@ -1133,8 +1160,10 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
   }
 
   // Helper widgets
-  Widget _buildSectionHeader(String title, {String? countBadge, VoidCallback? onClearAll}) {
+  Widget _buildSectionHeader(String title, {String? countBadge, VoidCallback? onReset, VoidCallback? onClearAll}) {
     final theme = widget.theme;
+    final action = onReset ?? onClearAll;
+    final actionLabel = onClearAll != null ? 'Clear All' : 'Reset';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1171,11 +1200,11 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
             ],
           ],
         ),
-        if (onClearAll != null)
+        if (action != null)
           GestureDetector(
-            onTap: onClearAll,
+            onTap: action,
             child: Text(
-              'Clear All',
+              actionLabel,
               style: AppTextStyles.dmSans(
                 size: 10,
                 weight: FontWeight.w600,
@@ -1351,6 +1380,7 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
     required String label,
     required TextEditingController controller,
     String? prefix,
+    String? errorText,
   }) {
     final theme = widget.theme;
     return Column(
@@ -1369,7 +1399,10 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: Row(
@@ -1406,6 +1439,17 @@ class _USAHudDpaProgramsState extends ConsumerState<USAHudDpaPrograms> {
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 10,
+              color: Colors.red,
+              weight: FontWeight.w500,
+            ),
+          ),
+        ],
       ],
     );
   }

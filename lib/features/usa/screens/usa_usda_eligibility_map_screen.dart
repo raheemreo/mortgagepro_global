@@ -21,6 +21,10 @@ class USAUsdaEligibilityMapScreen extends ConsumerStatefulWidget {
 class _USAUsdaEligibilityMapScreenState extends ConsumerState<USAUsdaEligibilityMapScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   // Controllers
   final _streetController = TextEditingController();
   final _cityController = TextEditingController();
@@ -83,14 +87,20 @@ class _USAUsdaEligibilityMapScreenState extends ConsumerState<USAUsdaEligibility
   }
 
   void _checkEligibility() {
+    final errors = <String, String>{};
     final zip = _zipController.text.trim();
-    if (zip.length < 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('⚠️ Please enter a valid 5-digit ZIP code'),
-          backgroundColor: Colors.amber,
-        ),
-      );
+    if (zip.length != 5 || int.tryParse(zip) == null) {
+      errors['zip'] = 'Enter valid 5-digit ZIP';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _showResults = false;
+      });
       return;
     }
 
@@ -126,6 +136,15 @@ class _USAUsdaEligibilityMapScreenState extends ConsumerState<USAUsdaEligibility
     }
 
     setState(() {
+      _calcSnapshot['street'] = _streetController.text;
+      _calcSnapshot['city'] = _cityController.text;
+      _calcSnapshot['state'] = _selectedState;
+      _calcSnapshot['zip'] = zip;
+      _calcSnapshot['status'] = newStatus;
+      _calcSnapshot['pop'] = newPop;
+      _calcSnapshot['areaClass'] = newClass;
+      _calcSnapshot['classSub'] = newSub;
+
       _status = newStatus;
       _population = newPop;
       _areaClassification = newClass;
@@ -139,27 +158,39 @@ class _USAUsdaEligibilityMapScreenState extends ConsumerState<USAUsdaEligibility
         backgroundColor: Colors.green,
       ),
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_showResults) return;
 
-    final zip = _zipController.text.trim();
-    final statusVal = _status == 'eligible' ? 0.0 : (_status == 'partial' ? 1.0 : 2.0);
+    final zip = _calcSnapshot['zip'] ?? '';
+    final status = _calcSnapshot['status'] ?? 'eligible';
+    final pop = _calcSnapshot['pop'] ?? 8240;
+    final statusVal = status == 'eligible' ? 0.0 : (status == 'partial' ? 1.0 : 2.0);
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'USDA Eligibility Map',
-      label: 'USDA Eligibility: ZIP $zip (${_status.toUpperCase()})',
+      label: 'USDA Eligibility: ZIP $zip (${status.toUpperCase()})',
       currencyCode: 'USD',
       inputs: {
         'zipCode': double.tryParse(zip) ?? 0.0,
-        'pop': _population.toDouble(),
+        'pop': pop.toDouble(),
         'statusIndex': statusVal,
       },
       results: {
-        'EligibleFlag': _status == 'eligible' ? 1.0 : (_status == 'partial' ? 0.5 : 0.0),
-        'EstPopulation': _population.toDouble(),
+        'EligibleFlag': status == 'eligible' ? 1.0 : (status == 'partial' ? 0.5 : 0.0),
+        'EstPopulation': pop.toDouble(),
       },
     );
 
@@ -175,6 +206,13 @@ class _USAUsdaEligibilityMapScreenState extends ConsumerState<USAUsdaEligibility
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _showResults && (
+      _streetController.text != (_calcSnapshot['street'] ?? '') ||
+      _cityController.text != (_calcSnapshot['city'] ?? '') ||
+      _selectedState != (_calcSnapshot['state'] ?? '') ||
+      _zipController.text.trim() != (_calcSnapshot['zip'] ?? '')
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -295,7 +333,7 @@ class _USAUsdaEligibilityMapScreenState extends ConsumerState<USAUsdaEligibility
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('ZIP Code', _zipController, hint: '5 digits', maxLen: 5)),
+                          Expanded(child: _buildInputField('ZIP Code', _zipController, hint: '5 digits', maxLen: 5, errorText: _errors['zip'])),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -321,10 +359,66 @@ class _USAUsdaEligibilityMapScreenState extends ConsumerState<USAUsdaEligibility
                     ],
                   ),
                 ),
-
-                // Result Hero
-                if (_showResults) ...[
+                    // Result Hero
+                if (!_showResults) ...[
                   const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('🗺️', style: TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'View Eligibility Map Results',
+                          style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Enter your property details above, then tap "Check USDA Eligibility" to determine USDA Rural Housing Eligibility.',
+                          style: AppTextStyles.dmSans(size: 10.5, color: mutedCol),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Check USDA Eligibility" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -691,17 +785,18 @@ class _USAUsdaEligibilityMapScreenState extends ConsumerState<USAUsdaEligibility
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? hint, int? maxLen}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? hint, int? maxLen, String? errorText}) {
     const theme = _theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
+            color: hasError ? Colors.red : theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -709,12 +804,16 @@ class _USAUsdaEligibilityMapScreenState extends ConsumerState<USAUsdaEligibility
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
             controller: controller,
             maxLength: maxLen,
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.dmSans(
               size: 13,
               weight: FontWeight.w800,

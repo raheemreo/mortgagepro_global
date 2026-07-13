@@ -12,6 +12,7 @@ import 'consent_service.dart';
 import 'ad_analytics_service.dart';
 import 'analytics_service.dart';
 import 'remote_config_service.dart';
+import 'ad_config.dart';
 
 class AdManager extends ChangeNotifier with WidgetsBindingObserver {
   AdManager._() {
@@ -74,15 +75,20 @@ class AdManager extends ChangeNotifier with WidgetsBindingObserver {
       final initStatus = await MobileAds.instance.initialize();
       _sdkInitialized = true;
       await MobileAds.instance.updateRequestConfiguration(
-        RequestConfiguration(testDeviceIds: <String>[]),
+        RequestConfiguration(testDeviceIds: AdConfig.testDeviceIds),
       );
-      initStatus.adapterStatuses.forEach((adapter, status) {
-        AdAnalyticsService.instance.recordNonFatalError(
-          null,
-          null,
-          "Mediation adapter initialized: $adapter status=${status.state.name}",
-        );
-      });
+      // Log adapter statuses as debug info only — NOT as Crashlytics errors.
+      // Mediation adapter initialization is a healthy, expected event.
+      // Routing it through recordNonFatalError creates false alarms in the
+      // Firebase Crashlytics dashboard and pollutes crash reports.
+      if (kDebugMode) {
+        initStatus.adapterStatuses.forEach((adapter, status) {
+          debugPrint(
+            '[AdManager] Mediation adapter: $adapter '
+            'status=${status.state.name}',
+          );
+        });
+      }
       notifyListeners();
     } catch (e, s) {
       AdAnalyticsService.instance.recordFatalError(e, s, "MobileAds SDK init failure");

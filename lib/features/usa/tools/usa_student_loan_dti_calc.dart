@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_student_loan_dti_calc.dart
 
 import 'package:flutter/material.dart';
@@ -18,6 +19,9 @@ class USAStudentLoanDtiCalc extends ConsumerStatefulWidget {
 }
 
 class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   final _incomeController = TextEditingController(text: '7500');
   final _slBalanceController = TextEditingController(text: '42000');
   final _slPmtController = TextEditingController(text: '420');
@@ -34,6 +38,15 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
   @override
   void initState() {
     super.initState();
+    _incomeController.addListener(() => setState(() {}));
+    _slBalanceController.addListener(() => setState(() {}));
+    _slPmtController.addListener(() => setState(() {}));
+    _otherDebtsController.addListener(() => setState(() {}));
+    _homePriceController.addListener(() => setState(() {}));
+    _downPctController.addListener(() => setState(() {}));
+    _mortRateController.addListener(() => setState(() {}));
+    _taxRateController.addListener(() => setState(() {}));
+
     final controllers = [
       _incomeController,
       _slBalanceController,
@@ -74,7 +87,12 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   double _calcPI(double loan, double rate, int months) {
     final double mo = rate / 1200;
@@ -145,17 +163,50 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
     };
   }
 
-  void _calculate() async {
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_income <= 0) errors['income'] = 'Please enter a valid amount';
+    final val_slBalance = double.tryParse(_slBalanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_slPmt = double.tryParse(_slPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_otherDebts = double.tryParse(_otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_homePrice = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_homePrice <= 0) errors['homePrice'] = 'Please enter a valid amount';
+    final val_downPct = double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_mortRate = double.tryParse(_mortRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_taxRate = double.tryParse(_taxRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_incomeController] = val_income;
+      _calcSnapshot[_slBalanceController] = val_slBalance;
+      _calcSnapshot[_slPmtController] = val_slPmt;
+      _calcSnapshot[_otherDebtsController] = val_otherDebts;
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_downPctController] = val_downPct;
+      _calcSnapshot[_mortRateController] = val_mortRate;
+      _calcSnapshot[_taxRateController] = val_taxRate;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final income = _val(_incomeController);
@@ -263,8 +314,27 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
     }
   }
 
+    void _resetInputs() {
+    setState(() {
+      _incomeController.text = '7500';
+      _slBalanceController.text = '42000';
+      _slPmtController.text = '420';
+      _otherDebtsController.text = '250';
+      _homePriceController.text = '400000';
+      _downPctController.text = '10';
+      _mortRateController.text = '6.82';
+      _taxRateController.text = '1.10';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    final isDirty = _showResults && (double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_incomeController] ?? 0.0) || double.tryParse(_slBalanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_slBalanceController] ?? 0.0) || double.tryParse(_slPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_slPmtController] ?? 0.0) || double.tryParse(_otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_otherDebtsController] ?? 0.0) || double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homePriceController] ?? 0.0) || double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_downPctController] ?? 0.0) || double.tryParse(_mortRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_mortRateController] ?? 0.0) || double.tryParse(_taxRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_taxRateController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -311,7 +381,7 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
         ),
         const SizedBox(height: 16),
 
-        Text('YOUR INFORMATION', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.bold)),
+        _buildSectionHeader('YOUR INFORMATION', onReset: _resetInputs),
         const SizedBox(height: 8),
 
         // Inputs Card
@@ -409,6 +479,39 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
         const SizedBox(height: 16),
 
         if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Result Hero
           Container(
             padding: const EdgeInsets.all(20),
@@ -664,7 +767,7 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(String label, TextEditingController controller, {String? errorText}) {
     final theme = widget.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -675,7 +778,7 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(color: errorText != null ? Colors.redAccent : theme.getBorderColor(context), width: 1.5),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
@@ -688,6 +791,17 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
             ),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 3),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 9,
+              color: Colors.redAccent,
+              weight: FontWeight.bold,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -837,6 +951,35 @@ class _USAStudentLoanDtiCalcState extends ConsumerState<USAStudentLoanDtiCalc> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onReset, String resetLabel = 'Reset'}) {
+    final theme = widget.theme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: AppTextStyles.dmSans(
+            size: 11,
+            color: theme.getMutedColor(context),
+            weight: FontWeight.bold,
+          ),
+        ),
+        if (onReset != null)
+          TextButton(
+            onPressed: onReset,
+            child: Text(
+              resetLabel,
+              style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.accentColor,
+                weight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

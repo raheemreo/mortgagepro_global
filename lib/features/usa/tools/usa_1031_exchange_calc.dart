@@ -28,8 +28,11 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
   String _filingStatus = 'married'; // 'single', 'married', 'corp'
   double _stateTaxRate = 0.0725; // default CA
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   bool _showResults = false;
-  bool _isCalcDirty = true;
   bool _calculating = false;
 
   final Map<double, String> _stateOptions = {
@@ -44,19 +47,6 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
   @override
   void initState() {
     super.initState();
-    final controllers = [
-      _salePriceController,
-      _costBasisController,
-      _depreciationController,
-      _replacePriceController
-    ];
-    for (final c in controllers) {
-      c.addListener(_markDirty);
-    }
-    // Auto calculate
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _calculate();
-    });
   }
 
   @override
@@ -68,22 +58,16 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
     super.dispose();
   }
 
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
-    }
-  }
+  void _markDirty() {}
 
   double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
 
   Map<String, dynamic> _computeExchange() {
-    final sale = _val(_salePriceController);
-    final basis = _val(_costBasisController);
-    final depr = _val(_depreciationController);
-    final replace = _val(_replacePriceController);
-    final stateRate = _stateTaxRate;
+    final sale = _showResults ? (_calcSnapshot['sale'] ?? 850000.0) : _val(_salePriceController);
+    final basis = _showResults ? (_calcSnapshot['basis'] ?? 400000.0) : _val(_costBasisController);
+    final depr = _showResults ? (_calcSnapshot['depr'] ?? 80000.0) : _val(_depreciationController);
+    final replace = _showResults ? (_calcSnapshot['replace'] ?? 950000.0) : _val(_replacePriceController);
+    final stateRate = _showResults ? (_calcSnapshot['_stateTaxRate'] ?? _stateTaxRate) : _stateTaxRate;
 
     final double adjBasis = basis - depr;
     final double totalGain = sale - adjBasis;
@@ -129,24 +113,65 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
   }
 
   void _calculate() async {
+    final errors = <String, String>{};
+    final sale = double.tryParse(_salePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final basis = double.tryParse(_costBasisController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final replace = double.tryParse(_replacePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (sale <= 0) {
+      errors['sale'] = 'Enter positive sale price';
+    }
+    if (basis <= 0) {
+      errors['basis'] = 'Enter positive cost basis';
+    }
+    if (replace <= 0) {
+      errors['replace'] = 'Enter positive replacement price';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _showResults = false;
+      });
+      return;
+    }
+
     setState(() {
       _calculating = true;
     });
     await Future.delayed(const Duration(milliseconds: 300));
     setState(() {
+      _calcSnapshot['sale'] = sale;
+      _calcSnapshot['basis'] = basis;
+      _calcSnapshot['depr'] = double.tryParse(_depreciationController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      _calcSnapshot['replace'] = replace;
+      _calcSnapshot['_filingStatus'] = _filingStatus;
+      _calcSnapshot['_stateTaxRate'] = _stateTaxRate;
       _calculating = false;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    final sale = _val(_salePriceController);
+    final sale = _showResults ? (_calcSnapshot['sale'] ?? 850000.0) : _val(_salePriceController);
     if (sale <= 0) return;
 
     final data = _computeExchange();
     final savings = data['savings'] as double;
     final replace = data['replace'] as double;
+    final stateTaxRate = _showResults ? (_calcSnapshot['_stateTaxRate'] ?? _stateTaxRate) : _stateTaxRate;
 
     final label = '1031 Exchange (${CurrencyFormatter.compact(sale, symbol: r'$')} Sale)';
     final labelCtrl = TextEditingController(text: label);
@@ -218,7 +243,7 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
           'Sale': sale,
           'Basis': data['basis'] as double,
           'Replace': replace,
-          'StateRate': _stateTaxRate,
+          'StateRate': stateTaxRate,
         },
         results: {
           'Total Gain': data['totalGain'] as double,
@@ -249,6 +274,15 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _showResults && (
+      (double.tryParse(_salePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['sale'] ?? 0.0) ||
+      (double.tryParse(_costBasisController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['basis'] ?? 0.0) ||
+      (double.tryParse(_depreciationController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['depr'] ?? 0.0) ||
+      (double.tryParse(_replacePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['replace'] ?? 0.0) ||
+      _filingStatus != (_calcSnapshot['_filingStatus'] ?? 'single') ||
+      _stateTaxRate != (_calcSnapshot['_stateTaxRate'] ?? 0.0)
+    );
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -302,9 +336,9 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
 
               Row(
                 children: [
-                  Expanded(child: _buildHeroTextField('Relinquished Sale \$', _salePriceController)),
+                  Expanded(child: _buildHeroTextField('Relinquished Sale \$', _salePriceController, errorText: _errors['sale'])),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildHeroTextField('Original Cost Basis \$', _costBasisController)),
+                  Expanded(child: _buildHeroTextField('Original Cost Basis \$', _costBasisController, errorText: _errors['basis'])),
                 ],
               ),
               const SizedBox(height: 8),
@@ -312,7 +346,7 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
                 children: [
                   Expanded(child: _buildHeroTextField('Depreciation Claimed \$', _depreciationController)),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildHeroTextField('Replacement Property \$', _replacePriceController)),
+                  Expanded(child: _buildHeroTextField('Replacement Property \$', _replacePriceController, errorText: _errors['replace'])),
                 ],
               ),
               const SizedBox(height: 8),
@@ -449,7 +483,63 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
         ),
         const SizedBox(height: 16),
 
-        if (_showResults) ...[
+        if (!_showResults)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              border: Border.all(color: theme.getBorderColor(context)),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                const Text('📊', style: TextStyle(fontSize: 42)),
+                const SizedBox(height: 10),
+                Text(
+                  'Enter IRC §1031 Details Above',
+                  style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'We\'ll calculate capital gains taxes deferred, boot (taxable portion), replacement property minimum budget, and compare tax savings with vs. without 1031.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context)),
+                ),
+              ],
+            ),
+          )
+        else ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate 1031 Tax Deferral" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
           // Save Bar
           Container(
             padding: const EdgeInsets.all(12),
@@ -750,17 +840,18 @@ class _USA1031ExchangeCalcState extends ConsumerState<USA1031ExchangeCalc> {
     );
   }
 
-  Widget _buildHeroTextField(String label, TextEditingController controller) {
+  Widget _buildHeroTextField(String label, TextEditingController controller, {String? errorText}) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.dmSans(size: 8.5, color: Colors.white70, weight: FontWeight.bold)),
+        Text(hasError ? '$label - $errorText' : label, style: AppTextStyles.dmSans(size: 8.5, color: hasError ? Colors.redAccent : Colors.white70, weight: FontWeight.bold)),
         const SizedBox(height: 3),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
           decoration: BoxDecoration(
             color: Colors.white12,
-            border: Border.all(color: Colors.white24),
+            border: Border.all(color: hasError ? Colors.red : Colors.white24, width: hasError ? 2 : 1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: TextField(

@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_auto_loan_calc.dart
 
 import 'package:flutter/material.dart';
@@ -18,6 +19,9 @@ class USAAutoLoanCalc extends ConsumerStatefulWidget {
 }
 
 class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   // Vehicle types presets
   static const _vtypeData = {
     'new': _VehiclePreset(
@@ -78,32 +82,9 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
   int _selectedTerm = 48;
   bool _rollTaxFees = false;
   bool _showResults = false;
-  bool _isCalcDirty = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _priceController.addListener(_markDirty);
-    _downPmtController.addListener(_markDirty);
-    _tradeInController.addListener(_markDirty);
-    _aprController.addListener(_markDirty);
-    _salesTaxController.addListener(_markDirty);
-    _dealerFeesController.addListener(_markDirty);
-    _regFeeController.addListener(_markDirty);
-    _rebateController.addListener(_markDirty);
-  }
 
   @override
   void dispose() {
-    _priceController.removeListener(_markDirty);
-    _downPmtController.removeListener(_markDirty);
-    _tradeInController.removeListener(_markDirty);
-    _aprController.removeListener(_markDirty);
-    _salesTaxController.removeListener(_markDirty);
-    _dealerFeesController.removeListener(_markDirty);
-    _regFeeController.removeListener(_markDirty);
-    _rebateController.removeListener(_markDirty);
-
     _priceController.dispose();
     _downPmtController.dispose();
     _tradeInController.dispose();
@@ -115,15 +96,28 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
     super.dispose();
   }
 
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
     }
+    double defaultVal = 0.0;
+    if (c == _priceController) {
+      defaultVal = _vtypeData[_selectedVtype]?.price ?? 48401.0;
+    } else if (c == _downPmtController) {
+      defaultVal = 5000.0;
+    } else if (c == _aprController) {
+      defaultVal = _vtypeData[_selectedVtype]?.apr ?? 7.18;
+    } else if (c == _salesTaxController) {
+      defaultVal = 5.75;
+    } else if (c == _dealerFeesController) {
+      defaultVal = 500.0;
+    } else if (c == _regFeeController) {
+      defaultVal = 250.0;
+    } else if (c == _rebateController) {
+      defaultVal = _selectedVtype == 'ev' ? 7500.0 : 0.0;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
   }
-
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
 
   void _selectVtype(String type) {
     setState(() {
@@ -136,7 +130,6 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
       } else {
         _rebateController.text = '0';
       }
-      _isCalcDirty = true;
     });
   }
 
@@ -148,6 +141,17 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
 
   void _resetInputs() {
     setState(() {
+      _priceController.clear();
+      _downPmtController.clear();
+      _tradeInController.clear();
+      _aprController.clear();
+      _salesTaxController.clear();
+      _dealerFeesController.clear();
+      _regFeeController.clear();
+      _rebateController.clear();
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
       _selectedVtype = 'new';
       _priceController.text = '48401';
       _downPmtController.text = '5000';
@@ -160,7 +164,6 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
       _selectedTerm = 48;
       _rollTaxFees = false;
       _showResults = false;
-      _isCalcDirty = true;
     });
   }
 
@@ -184,7 +187,6 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
       }
 
       _showResults = true;
-      _isCalcDirty = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -329,12 +331,77 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
     }
   }
 
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_price = double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_price <= 0) errors['price'] = 'Please enter a valid amount';
+    final val_downPmt = double.tryParse(_downPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_tradeIn = double.tryParse(_tradeInController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_apr = double.tryParse(_aprController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_apr <= 0) errors['apr'] = 'Please enter a valid amount';
+    final val_salesTax = double.tryParse(_salesTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_dealerFees = double.tryParse(_dealerFeesController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_regFee = double.tryParse(_regFeeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_rebate = double.tryParse(_rebateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
+    setState(() {
+      _calcSnapshot[_priceController] = val_price;
+      _calcSnapshot[_downPmtController] = val_downPmt;
+      _calcSnapshot[_tradeInController] = val_tradeIn;
+      _calcSnapshot[_aprController] = val_apr;
+      _calcSnapshot[_salesTaxController] = val_salesTax;
+      _calcSnapshot[_dealerFeesController] = val_dealerFees;
+      _calcSnapshot[_regFeeController] = val_regFee;
+      _calcSnapshot[_rebateController] = val_rebate;
+      _calcSnapshot['_selectedVtype'] = _selectedVtype;
+      _calcSnapshot['_selectedTerm'] = _selectedTerm;
+      _calcSnapshot['_rollTaxFees'] = _rollTaxFees;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final calcSelectedVtype = _showResults ? (_calcSnapshot['_selectedVtype'] ?? _selectedVtype) : _selectedVtype;
+    final calcSelectedTerm = _showResults ? (_calcSnapshot['_selectedTerm'] ?? _selectedTerm) : _selectedTerm;
+    final calcRollTaxFees = _showResults ? (_calcSnapshot['_rollTaxFees'] ?? _rollTaxFees) : _rollTaxFees;
+
+    final isDirty = _showResults && (
+      _selectedVtype != _calcSnapshot['_selectedVtype'] ||
+      _selectedTerm != _calcSnapshot['_selectedTerm'] ||
+      _rollTaxFees != _calcSnapshot['_rollTaxFees'] ||
+      double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_priceController] ?? 0.0) ||
+      double.tryParse(_downPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_downPmtController] ?? 0.0) ||
+      double.tryParse(_tradeInController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_tradeInController] ?? 0.0) ||
+      double.tryParse(_aprController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_aprController] ?? 0.0) ||
+      double.tryParse(_salesTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_salesTaxController] ?? 0.0) ||
+      double.tryParse(_dealerFeesController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_dealerFeesController] ?? 0.0) ||
+      double.tryParse(_regFeeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_regFeeController] ?? 0.0) ||
+      double.tryParse(_rebateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rebateController] ?? 0.0)
+    );
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final preset = _vtypeData[_selectedVtype]!;
+    final preset = _vtypeData[calcSelectedVtype]!;
 
     // Inputs
     final price = _val(_priceController);
@@ -352,12 +419,12 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
     final totalExtra = salesTaxAmt + feesTotal;
 
     final netPrice = price - down - tradeIn - rebate;
-    final financed = max(0.0, _rollTaxFees ? netPrice + totalExtra : netPrice);
+    final financed = max(0.0, calcRollTaxFees ? netPrice + totalExtra : netPrice);
 
-    final pmt = _monthlyPayment(financed, apr, _selectedTerm);
-    final totalPaid = pmt * _selectedTerm;
+    final pmt = _monthlyPayment(financed, apr, calcSelectedTerm);
+    final totalPaid = pmt * calcSelectedTerm;
     final totalInt = totalPaid - financed;
-    final allIn = totalPaid + (_rollTaxFees ? 0.0 : totalExtra) + down + tradeIn;
+    final allIn = totalPaid + (calcRollTaxFees ? 0.0 : totalExtra) + down + tradeIn;
 
     // Proportions for donut
     final totalDonut = financed + totalInt + totalExtra;
@@ -369,10 +436,10 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
     final r = apr / 100 / 12;
     double bal = financed;
     final amortRows = <_AutoAmortRow>[];
-    final years = (_selectedTerm / 12.0).ceil();
+    final years = (calcSelectedTerm / 12.0).ceil();
     for (int y = 1; y <= years; y++) {
       final moStart = (y - 1) * 12 + 1;
-      final moEnd = min(y * 12, _selectedTerm);
+      final moEnd = min<num>(y * 12, calcSelectedTerm).toInt();
       double yInt = 0.0;
       double yPrin = 0.0;
       double yPmt = 0.0;
@@ -494,23 +561,23 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
               ),
               const SizedBox(height: 14),
 
-              _buildInputField('Vehicle Price', _priceController, preset.priceHint),
+              _buildInputField('Vehicle Price', _priceController, preset.priceHint, errorText: _errors['price']),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Down Payment', _downPmtController, ''),
+                    child: _buildInputField('Down Payment', _downPmtController, '', errorText: _errors['downPmt']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Trade-In Value', _tradeInController, ''),
+                    child: _buildInputField('Trade-In Value', _tradeInController, '', errorText: _errors['tradeIn']),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
 
               // APR Input & Slider
-              _buildInputField('Loan APR (%)', _aprController, preset.aprHint, suffix: '%'),
+              _buildInputField('Loan APR (%)', _aprController, preset.aprHint, suffix: '%', errorText: _errors['apr']),
               const SizedBox(height: 4),
               SliderTheme(
                 data: SliderThemeData(
@@ -527,7 +594,6 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
                   onChanged: (v) {
                     setState(() {
                       _aprController.text = v.toStringAsFixed(2);
-                      _isCalcDirty = true;
                     });
                   },
                 ),
@@ -549,8 +615,7 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
                 items: [24, 36, 48, 60, 72, 84],
                 labelBuilder: (v) => '$v mo',
                 onChanged: (v) => setState(() {
-                  _selectedTerm = v;
-                  _isCalcDirty = true;
+                  this._selectedTerm = v;
                 }),
               ),
             ],
@@ -588,11 +653,11 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Sales Tax', _salesTaxController, '', suffix: '%'),
+                    child: _buildInputField('Sales Tax', _salesTaxController, '', suffix: '%', errorText: _errors['salesTax']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Doc / Dealer Fees', _dealerFeesController, ''),
+                    child: _buildInputField('Doc / Dealer Fees', _dealerFeesController, '', errorText: _errors['dealerFees']),
                   ),
                 ],
               ),
@@ -600,11 +665,11 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Registration Fee', _regFeeController, ''),
+                    child: _buildInputField('Registration Fee', _regFeeController, '', errorText: _errors['regFee']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Rebate / Incentive', _rebateController, ''),
+                    child: _buildInputField('Rebate / Incentive', _rebateController, '', errorText: _errors['rebate']),
                   ),
                 ],
               ),
@@ -626,14 +691,12 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
                   Expanded(
                     child: _buildSegButton('Pay Upfront', !_rollTaxFees, () => setState(() {
                       _rollTaxFees = false;
-                      _isCalcDirty = true;
                     })),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildSegButton('Roll Into Loan', _rollTaxFees, () => setState(() {
                       _rollTaxFees = true;
-                      _isCalcDirty = true;
                     })),
                   ),
                 ],
@@ -641,12 +704,7 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
               const SizedBox(height: 16),
 
               GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showResults = true;
-                    _isCalcDirty = false;
-                  });
-                },
+          onTap: _calculate,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -655,8 +713,8 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
                     borderRadius: BorderRadius.circular(13),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0F766E).withValues(alpha: _isCalcDirty ? 0.45 : 0.25),
-                        blurRadius: _isCalcDirty ? 18 : 8,
+                        color: const Color(0xFF0F766E).withValues(alpha: isDirty ? 0.45 : 0.25),
+                        blurRadius: isDirty ? 18 : 8,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -840,262 +898,293 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
             ),
           )
         else ...[
-          _buildSectionHeader('Your Results', onReset: null),
-          const SizedBox(height: 8),
-
-          // Monthly Payment Hero
           Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF0F766E), Color(0xFF0D9488)]),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 8)),
-              ],
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'MONTHLY AUTO PAYMENT',
-                  style: AppTextStyles.dmSans(size: 9, color: Colors.white70, letterSpacing: 0.8),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  CurrencyFormatter.format(pmt, symbol: '\$').split('.').first,
-                  style: AppTextStyles.dmSans(size: 38, weight: FontWeight.w800, color: Colors.white),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'per month · $_selectedTerm-month loan @ ${apr.toStringAsFixed(2)}% APR',
-                  style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
-                ),
-                const SizedBox(height: 14),
-
-                // Hero stats
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildHeroStatBox('Total Interest', CurrencyFormatter.format(totalInt, symbol: '\$').split('.').first),
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildHeroStatBox('Total Cost', CurrencyFormatter.format(allIn, symbol: '\$').split('.').first),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildHeroStatBox('Loan Amount', CurrencyFormatter.format(financed, symbol: '\$').split('.').first),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Cost Breakdown Card with Donut Chart
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '💰 Total Cost Breakdown',
-                  style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
-                ),
-                const SizedBox(height: 14),
-
-                // Donut SVG representation in CustomPaint
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 90,
-                      height: 90,
-                      child: CustomPaint(
-                        painter: _DonutChartPainter(
-                          principalPct: prinPct,
-                          interestPct: intPct,
-                          feesPct: feesPct,
-                          isDark: isDark,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate Auto Loan" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          _buildLegendRow('Principal (Vehicle)', financed, const Color(0xFF0F766E)),
-                          _buildLegendRow('Total Interest', totalInt, const Color(0xFFB91C1C)),
-                          _buildLegendRow('Tax & Fees', totalExtra, const Color(0xFFD97706)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+                _buildSectionHeader('Your Results', onReset: null),
+                const SizedBox(height: 8),
 
-                const SizedBox(height: 14),
-
-                _buildBreakdownRow('Vehicle Price', price, isDot: true, dotColor: const Color(0xFF0F766E)),
-                _buildBreakdownRow('Down + Trade-In', -(down + tradeIn + rebate), isMuted: true),
-                _buildBreakdownRow('Amount Financed', financed, isDot: true, dotColor: const Color(0xFF0F766E)),
-                _buildBreakdownRow('Sales Tax', salesTaxAmt, isDot: true, dotColor: const Color(0xFFFCA5A5)),
-                _buildBreakdownRow('Dealer + Reg Fees', feesTotal, isDot: true, dotColor: const Color(0xFFD97706)),
-                _buildBreakdownRow('Total Interest Paid', totalInt, isDot: true, dotColor: const Color(0xFFB91C1C), valColor: const Color(0xFFB91C1C)),
-                const SizedBox(height: 4),
+                // Monthly Payment Hero
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  decoration: BoxDecoration(color: theme.getBgColor(context), borderRadius: BorderRadius.circular(10)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF0F766E), Color(0xFF0D9488)]),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 8)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Total Out-of-Pocket',
-                        style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                        'MONTHLY AUTO PAYMENT',
+                        style: AppTextStyles.dmSans(size: 9, color: Colors.white70, letterSpacing: 0.8),
                       ),
+                      const SizedBox(height: 6),
                       Text(
-                        CurrencyFormatter.format(allIn, symbol: '\$').split('.').first,
-                        style: AppTextStyles.dmSans(size: 15, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                        CurrencyFormatter.format(pmt, symbol: '\$').split('.').first,
+                        style: AppTextStyles.dmSans(size: 38, weight: FontWeight.w800, color: Colors.white),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'per month · $calcSelectedTerm-month loan @ ${apr.toStringAsFixed(2)}% APR',
+                        style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Hero stats
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildHeroStatBox('Total Interest', CurrencyFormatter.format(totalInt, symbol: '\$').split('.').first),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildHeroStatBox('Total Cost', CurrencyFormatter.format(allIn, symbol: '\$').split('.').first),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildHeroStatBox('Loan Amount', CurrencyFormatter.format(financed, symbol: '\$').split('.').first),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
 
-          const SizedBox(height: 12),
-
-          // Amortization Table
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '📅 Yearly Amortization',
-                      style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
-                    ),
-                    Text(
-                      'P&I breakdown',
-                      style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w600, color: theme.getMutedColor(context)),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 12),
-                Table(
-                  columnWidths: const {
-                    0: FlexColumnWidth(1.2),
-                    1: FlexColumnWidth(1.1),
-                    2: FlexColumnWidth(1.1),
-                    3: FlexColumnWidth(1.1),
-                    4: FlexColumnWidth(1.2),
-                  },
-                  children: [
-                    TableRow(
-                      children: [
-                        _th('Year', align: TextAlign.left),
-                        _th('Payment'),
-                        _th('Interest'),
-                        _th('Principal'),
-                        _th('Balance'),
-                      ],
-                    ),
-                    ...amortRows.map((row) {
-                      return TableRow(
+
+                // Cost Breakdown Card with Donut Chart
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '💰 Total Cost Breakdown',
+                        style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Donut SVG representation in CustomPaint
+                      Row(
                         children: [
-                          _td('Year ${row.year}', align: TextAlign.left),
-                          _td(CurrencyFormatter.format(row.payment, symbol: '').split('.').first),
-                          _td(CurrencyFormatter.format(row.interest, symbol: '').split('.').first, color: isDark ? const Color(0xFFF87171) : const Color(0xFFB91C1C)),
-                          _td(CurrencyFormatter.format(row.principal, symbol: '').split('.').first, color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D)),
-                          _td(CurrencyFormatter.format(row.balance, symbol: '').split('.').first),
+                          SizedBox(
+                            width: 90,
+                            height: 90,
+                            child: CustomPaint(
+                              painter: _DonutChartPainter(
+                                principalPct: prinPct,
+                                interestPct: intPct,
+                                feesPct: feesPct,
+                                isDark: isDark,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildLegendRow('Principal (Vehicle)', financed, const Color(0xFF0F766E)),
+                                _buildLegendRow('Total Interest', totalInt, const Color(0xFFB91C1C)),
+                                _buildLegendRow('Tax & Fees', totalExtra, const Color(0xFFD97706)),
+                              ],
+                            ),
+                          ),
                         ],
-                      );
-                    }),
-                    // Totals Row
-                    TableRow(
-                      decoration: BoxDecoration(color: theme.getBgColor(context), borderRadius: BorderRadius.circular(6)),
-                      children: [
-                        _td('Total', align: TextAlign.left, weight: FontWeight.w800),
-                        _td(CurrencyFormatter.format(pmt * _selectedTerm, symbol: '').split('.').first, weight: FontWeight.w800),
-                        _td(CurrencyFormatter.format(totalInt, symbol: '').split('.').first, color: isDark ? const Color(0xFFF87171) : const Color(0xFFB91C1C), weight: FontWeight.w800),
-                        _td(CurrencyFormatter.format(financed, symbol: '').split('.').first, color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D), weight: FontWeight.w800),
-                        _td('\$0', weight: FontWeight.w800),
-                      ],
-                    ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      _buildBreakdownRow('Vehicle Price', price, isDot: true, dotColor: const Color(0xFF0F766E)),
+                      _buildBreakdownRow('Down + Trade-In', -(down + tradeIn + rebate), isMuted: true),
+                      _buildBreakdownRow('Amount Financed', financed, isDot: true, dotColor: const Color(0xFF0F766E)),
+                      _buildBreakdownRow('Sales Tax', salesTaxAmt, isDot: true, dotColor: const Color(0xFFFCA5A5)),
+                      _buildBreakdownRow('Dealer + Reg Fees', feesTotal, isDot: true, dotColor: const Color(0xFFD97706)),
+                      _buildBreakdownRow('Total Interest Paid', totalInt, isDot: true, dotColor: const Color(0xFFB91C1C), valColor: const Color(0xFFB91C1C)),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        decoration: BoxDecoration(color: theme.getBgColor(context), borderRadius: BorderRadius.circular(10)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Total Out-of-Pocket',
+                              style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                            ),
+                            Text(
+                              CurrencyFormatter.format(allIn, symbol: '\$').split('.').first,
+                              style: AppTextStyles.dmSans(size: 15, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Amortization Table
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '📅 Yearly Amortization',
+                            style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                          ),
+                          Text(
+                            'P&I breakdown',
+                            style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w600, color: theme.getMutedColor(context)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Table(
+                        columnWidths: const {
+                          0: FlexColumnWidth(1.2),
+                          1: FlexColumnWidth(1.1),
+                          2: FlexColumnWidth(1.1),
+                          3: FlexColumnWidth(1.1),
+                          4: FlexColumnWidth(1.2),
+                        },
+                        children: [
+                          TableRow(
+                            children: [
+                              _th('Year', align: TextAlign.left),
+                              _th('Payment'),
+                              _th('Interest'),
+                              _th('Principal'),
+                              _th('Balance'),
+                            ],
+                          ),
+                          ...amortRows.map((row) {
+                            return TableRow(
+                              children: [
+                                _td('Year ${row.year}', align: TextAlign.left),
+                                _td(CurrencyFormatter.format(row.payment, symbol: '').split('.').first),
+                                _td(CurrencyFormatter.format(row.interest, symbol: '').split('.').first, color: isDark ? const Color(0xFFF87171) : const Color(0xFFB91C1C)),
+                                _td(CurrencyFormatter.format(row.principal, symbol: '').split('.').first, color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D)),
+                                _td(CurrencyFormatter.format(row.balance, symbol: '').split('.').first),
+                              ],
+                            );
+                          }),
+                          // Totals Row
+                          TableRow(
+                            decoration: BoxDecoration(color: theme.getBgColor(context), borderRadius: BorderRadius.circular(6)),
+                            children: [
+                              _td('Total', align: TextAlign.left, weight: FontWeight.w800),
+                              _td(CurrencyFormatter.format(pmt * _selectedTerm, symbol: '').split('.').first, weight: FontWeight.w800),
+                              _td(CurrencyFormatter.format(totalInt, symbol: '').split('.').first, color: isDark ? const Color(0xFFF87171) : const Color(0xFFB91C1C), weight: FontWeight.w800),
+                              _td(CurrencyFormatter.format(financed, symbol: '').split('.').first, color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D), weight: FontWeight.w800),
+                              _td('\$0', weight: FontWeight.w800),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Related tools
+                _buildSectionHeader('Related Tools', onReset: null),
+                const SizedBox(height: 8),
+
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.15,
+                  children: [
+                    _buildRelatedCard('📊', 'Lease vs Buy', 'True cost comparison', null, const Color(0xFF0F766E), const Color(0xFF0D9488)),
+                    _buildRelatedCard('💳', 'Credit Score', 'APR impact by FICO', '620–850', const Color(0xFF0B1D3A), const Color(0xFF1B3F72)),
+                    _buildRelatedCard('⚡', 'EV Tax Credit', 'IRS §30D · up to \$7,500', '2026 Rules', null, null),
+                    _buildRelatedCard('🔄', 'Refinance Auto', 'Lower your current rate', null, const Color(0xFFB91C1C), const Color(0xFF991B1B)),
                   ],
                 ),
+
+                const SizedBox(height: 20),
+                _buildSectionHeader('💡 Auto Loan Insights', onReset: null),
+                const SizedBox(height: 8),
+
+                Column(
+                  children: [
+                    _buildInsightCard('🏦', 'Get Pre-Approved Before the Dealership', 'Credit unions like PenFed and Navy Federal routinely offer 1–2% lower APR than dealer financing. Getting pre-approved gives you leverage to negotiate.'),
+                    const SizedBox(height: 9),
+                    _buildInsightCard('⚡', 'EV Tax Credit: Up to \$7,500', 'The IRS §30D Clean Vehicle Credit offers up to \$7,500 for qualifying new EVs in 2026. Income limits apply: \$150K single / \$300K married. MSRP cap: \$80K SUV/truck, \$55K sedan.'),
+                    const SizedBox(height: 9),
+                    _buildInsightCard('📉', 'Shorter Terms Save Thousands', 'A 48-month loan at 7.18% on \$43,000 saves ~\$2,800 in interest vs. a 72-month loan, though monthly payments are higher. Only take 72–84 months if cash flow is tight.'),
+                    const SizedBox(height: 9),
+                    _buildInsightCard('🎯', '20/4/10 Rule of Thumb', 'Put 20% down, finance for no more than 4 years, and keep total vehicle expenses (payment + insurance) under 10% of gross monthly income for a financially sound purchase.'),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    'Auto loan rates from NCUA, Experian State of the Automotive Finance Market Q1 2026, and individual lender websites. Average new car price from Kelley Blue Book June 2026. Results are estimates for educational purposes only.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.dmSans(
+                      size: 9.0,
+                      color: theme.getMutedColor(context),
+                      height: 1.5,
+                    ),
+                  ),
+                ),
               ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Related tools
-          _buildSectionHeader('Related Tools', onReset: null),
-          const SizedBox(height: 8),
-
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 1.15,
-            children: [
-              _buildRelatedCard('📊', 'Lease vs Buy', 'True cost comparison', null, const Color(0xFF0F766E), const Color(0xFF0D9488)),
-              _buildRelatedCard('💳', 'Credit Score', 'APR impact by FICO', '620–850', const Color(0xFF0B1D3A), const Color(0xFF1B3F72)),
-              _buildRelatedCard('⚡', 'EV Tax Credit', 'IRS §30D · up to \$7,500', '2026 Rules', null, null),
-              _buildRelatedCard('🔄', 'Refinance Auto', 'Lower your current rate', null, const Color(0xFFB91C1C), const Color(0xFF991B1B)),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-          _buildSectionHeader('💡 Auto Loan Insights', onReset: null),
-          const SizedBox(height: 8),
-
-          Column(
-            children: [
-              _buildInsightCard('🏦', 'Get Pre-Approved Before the Dealership', 'Credit unions like PenFed and Navy Federal routinely offer 1–2% lower APR than dealer financing. Getting pre-approved gives you leverage to negotiate.'),
-              const SizedBox(height: 9),
-              _buildInsightCard('⚡', 'EV Tax Credit: Up to \$7,500', 'The IRS §30D Clean Vehicle Credit offers up to \$7,500 for qualifying new EVs in 2026. Income limits apply: \$150K single / \$300K married. MSRP cap: \$80K SUV/truck, \$55K sedan.'),
-              const SizedBox(height: 9),
-              _buildInsightCard('📉', 'Shorter Terms Save Thousands', 'A 48-month loan at 7.18% on \$43,000 saves ~\$2,800 in interest vs. a 72-month loan, though monthly payments are higher. Only take 72–84 months if cash flow is tight.'),
-              const SizedBox(height: 9),
-              _buildInsightCard('🎯', '20/4/10 Rule of Thumb', 'Put 20% down, finance for no more than 4 years, and keep total vehicle expenses (payment + insurance) under 10% of gross monthly income for a financially sound purchase.'),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              'Auto loan rates from NCUA, Experian State of the Automotive Finance Market Q1 2026, and individual lender websites. Average new car price from Kelley Blue Book June 2026. Results are estimates for educational purposes only.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.dmSans(
-                size: 9.0,
-                color: theme.getMutedColor(context),
-                height: 1.5,
-              ),
             ),
           ),
         ],
@@ -1238,9 +1327,10 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, String hint, {String? suffix}) {
+  Widget _buildInputField(String label, TextEditingController controller, String hint, {String? suffix, String? errorText}) {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1252,11 +1342,20 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
               style: AppTextStyles.dmSans(
                 size: 9.5,
                 weight: FontWeight.w700,
-                color: theme.getMutedColor(context),
+                color: hasError ? Colors.red : theme.getMutedColor(context),
                 letterSpacing: 0.5,
               ),
             ),
-            if (hint.isNotEmpty)
+            if (hasError)
+              Text(
+                errorText,
+                style: AppTextStyles.dmSans(
+                  size: 9,
+                  weight: FontWeight.w700,
+                  color: Colors.red,
+                ),
+              )
+            else if (hint.isNotEmpty)
               Text(
                 hint,
                 style: AppTextStyles.dmSans(
@@ -1271,7 +1370,10 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(

@@ -38,6 +38,7 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
   NativeAd? _ad;
   bool _isLoaded = false;
   bool _loadFailed = false;
+  double _opacity = 0.0; // animates to 1.0 when ad is ready
 
   String get _adUnitId => Platform.isIOS ? AdConfig.nativeAdUnitIos : AdConfig.nativeAdUnitAndroid;
 
@@ -93,6 +94,7 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
         _ad = loadedAd;
         _isLoaded = true;
         _loadFailed = false;
+        _opacity = 1.0; // trigger fade-in
       });
     } else {
       setState(() {
@@ -113,6 +115,7 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
             _ad = null;
             _isLoaded = false;
             _loadFailed = false;
+            _opacity = 0.0;
           });
         }
       }
@@ -123,16 +126,16 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
 
     final double expectedHeight = switch (widget.adType) {
       'compactListTile' => 160.0,
-      'contentAd' => 180.0,
-      'mediumCard' => 268.0,
-      'largeBanner' => 360.0,
-      _ => 268.0,
+      'contentAd'       => 180.0,
+      'mediumCard'      => 268.0,
+      'largeBanner'     => 360.0,
+      _                 => 268.0,
     };
 
     final bool showAdWidget = _isLoaded && _ad != null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 1.0), // 24dp vertical clear zone
+      padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 1.0),
       child: Container(
         height: expectedHeight,
         width: double.infinity,
@@ -146,12 +149,13 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
         clipBehavior: Clip.antiAlias,
         child: showAdWidget
             ? AnimatedOpacity(
-                opacity: 1.0,
-                duration: const Duration(milliseconds: 250),
+                opacity: _opacity,
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeIn,
                 child: Stack(
                   children: [
                     AdWidget(ad: _ad!),
-                    // WCAG AA compliant contrast ratio "Ad" badge
+                    // WCAG AA compliant 'Ad' badge
                     Positioned(
                       left: 4,
                       top: 4,
@@ -174,7 +178,7 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
                   ],
                 ),
               )
-            : const SizedBox.shrink(), // Render empty container outline while loading
+            : const SizedBox.shrink(),
       ),
     );
   }

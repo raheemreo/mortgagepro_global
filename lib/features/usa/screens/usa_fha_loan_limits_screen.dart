@@ -20,6 +20,10 @@ class USAFhaLoanLimitsScreen extends ConsumerStatefulWidget {
 class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   final _medianPriceController = TextEditingController(text: '450000');
   int _selectedUnits = 1;
   String _selectedAreaType = 'standard';
@@ -55,7 +59,24 @@ class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen>
   }
 
   void _calculate() {
-    final median = double.tryParse(_medianPriceController.text) ?? 0.0;
+    final errors = <String, String>{};
+    final median = double.tryParse(_medianPriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (median <= 0) {
+      errors['median'] = 'Enter positive median price';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
     final floor = floors[_selectedUnits] ?? 541287.0;
     final ceiling = ceilings[_selectedUnits] ?? 1249125.0;
     final pct115 = median * 1.15;
@@ -81,6 +102,10 @@ class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen>
     }
 
     setState(() {
+      _calcSnapshot['medianPrice'] = median;
+      _calcSnapshot['units'] = _selectedUnits;
+      _calcSnapshot['areaType'] = _selectedAreaType;
+
       _pct115 = pct115;
       _floor = floor;
       _ceiling = ceiling;
@@ -88,21 +113,33 @@ class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen>
       _resultBasis = basis;
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
-    final median = double.tryParse(_medianPriceController.text) ?? 0.0;
-    final areaIdx = _selectedAreaType == 'standard' ? 0 : _selectedAreaType == 'highcost' ? 1 : 2;
+    final median = _calcSnapshot['medianPrice'] ?? 0.0;
+    final units = _calcSnapshot['units'] ?? 1;
+    final areaType = _calcSnapshot['areaType'] ?? 'standard';
+    final areaIdx = areaType == 'standard' ? 0 : areaType == 'highcost' ? 1 : 2;
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'FHA Loan Limits',
-      label: 'FHA Limit: ${CurrencyFormatter.format(_estimatedLimit, symbol: '\$').split('.').first} ($_selectedUnits-Unit)',
+      label: 'FHA Limit: ${CurrencyFormatter.format(_estimatedLimit, symbol: '\$').split('.').first} ($units-Unit)',
       currencyCode: 'USD',
       inputs: {
         'medianPrice': median,
-        'units': _selectedUnits.toDouble(),
+        'units': units.toDouble(),
         'areaTypeIndex': areaIdx.toDouble(),
       },
       results: {
@@ -121,6 +158,12 @@ class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_medianPriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['medianPrice'] ?? 0.0) ||
+      _selectedUnits != (_calcSnapshot['units'] ?? 1) ||
+      _selectedAreaType != (_calcSnapshot['areaType'] ?? 'standard')
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -284,7 +327,7 @@ class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen>
                       Row(
                         children: [
                           Expanded(
-                            child: _buildInputField('Median Home Price', _medianPriceController, prefix: '\$'),
+                            child: _buildInputField('Median Home Price', _medianPriceController, prefix: '\$', errorText: _errors['median']),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -346,6 +389,36 @@ class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen>
                 if (_calculated) ...[
                   const SizedBox(height: 12),
                   Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Estimate FHA Limit" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
@@ -369,7 +442,7 @@ class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen>
                             style: AppTextStyles.dmSans(
                                 size: 30, color: Colors.white, weight: FontWeight.w800)),
                         const SizedBox(height: 4),
-                        Text('For a $_selectedUnits-unit property based on ${CurrencyFormatter.format(double.tryParse(_medianPriceController.text) ?? 0, symbol: '\$').split('.').first} median price',
+                        Text('For a ${_calcSnapshot['units'] ?? 1}-unit property based on ${CurrencyFormatter.format(_calcSnapshot['medianPrice'] ?? 0.0, symbol: '\$').split('.').first} median price',
                             style: AppTextStyles.dmSans(size: 10, color: Colors.white60)),
                         const SizedBox(height: 14),
                         GridView.count(
@@ -600,16 +673,17 @@ class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen>
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {required String prefix}) {
+  Widget _buildInputField(String label, TextEditingController controller, {required String prefix, String? errorText}) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: _theme.getMutedColor(context),
+            color: hasError ? Colors.red : _theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -617,7 +691,10 @@ class _USAFhaLoanLimitsScreenState extends ConsumerState<USAFhaLoanLimitsScreen>
         Container(
           decoration: BoxDecoration(
             color: _theme.getBgColor(context),
-            border: Border.all(color: _theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : _theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(

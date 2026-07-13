@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_credit_score_impact_calc.dart
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,9 @@ class USACreditScoreImpactCalc extends ConsumerStatefulWidget {
 }
 
 class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   final _loanAmtController = TextEditingController(text: '360000');
   double _ficoScore = 720;
   bool _showResults = false;
@@ -29,6 +33,8 @@ class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactC
   @override
   void initState() {
     super.initState();
+    _loanAmtController.addListener(() => setState(() {}));
+
     _loanAmtController.addListener(_markDirty);
     // Auto-calculate on load
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,7 +56,12 @@ class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactC
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   final List<Map<String, dynamic>> _bands = [
     {'min': 760, 'max': 850, 'rate': 6.48, 'label': 'Exceptional', 'color': const Color(0xFF15803D)},
@@ -77,17 +88,36 @@ class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactC
     return mo == 0 ? loan / n : loan * mo * pow(1 + mo, n) / (pow(1 + mo, n) - 1);
   }
 
-  void _calculate() async {
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_loanAmt = double.tryParse(_loanAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_loanAmt <= 0) errors['loanAmt'] = 'Please enter a valid amount';
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_loanAmtController] = val_loanAmt;
+      _calcSnapshot['_ficoScore'] = _ficoScore;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final loan = _val(_loanAmtController);
@@ -191,8 +221,22 @@ class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactC
     }
   }
 
+    void _resetInputs() {
+    setState(() {
+      _loanAmtController.text = '360000';
+      this._ficoScore = 720;
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final _ficoScore = _showResults ? (_calcSnapshot['_ficoScore'] ?? this._ficoScore) : this._ficoScore;
+
+    final isDirty = _showResults && (this._ficoScore != _calcSnapshot['_ficoScore'] || double.tryParse(_loanAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_loanAmtController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loan = _val(_loanAmtController);
@@ -224,7 +268,7 @@ class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactC
         ]),
         const SizedBox(height: 16),
 
-        Text('YOUR FICO SCORE', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.bold)),
+        _buildSectionHeader('YOUR FICO SCORE', onReset: _resetInputs),
         const SizedBox(height: 8),
 
         // Score Card with gauge and slider
@@ -303,7 +347,7 @@ class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactC
                   max: 850,
                   onChanged: (val) {
                     setState(() {
-                      _ficoScore = val;
+                      this._ficoScore = val;
                       _markDirty();
                     });
                   },
@@ -386,6 +430,39 @@ class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactC
         const SizedBox(height: 16),
 
         if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Result Hero Card
           Container(
             padding: const EdgeInsets.all(20),
@@ -658,6 +735,35 @@ class _USACreditScoreImpactCalcState extends ConsumerState<USACreditScoreImpactC
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onReset, String resetLabel = 'Reset'}) {
+    final theme = widget.theme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: AppTextStyles.dmSans(
+            size: 11,
+            color: theme.getMutedColor(context),
+            weight: FontWeight.bold,
+          ),
+        ),
+        if (onReset != null)
+          TextButton(
+            onPressed: onReset,
+            child: Text(
+              resetLabel,
+              style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.accentColor,
+                weight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

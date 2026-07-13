@@ -19,6 +19,10 @@ class USAFhaMipCancellationRulesScreen extends ConsumerStatefulWidget {
 class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCancellationRulesScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   final _homePriceController = TextEditingController(text: '350000');
   final _downPctController = TextEditingController(text: '3.5');
   final _currentValueController = TextEditingController(text: '380000');
@@ -57,9 +61,31 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
   }
 
   void _calculate() {
-    final price = double.tryParse(_homePriceController.text) ?? 0.0;
-    final downPct = double.tryParse(_downPctController.text) ?? 0.0;
-    final currentVal = double.tryParse(_currentValueController.text) ?? price;
+    final errors = <String, String>{};
+    final price = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final downPct = double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final currentVal = double.tryParse(_currentValueController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (price <= 0) {
+      errors['price'] = 'Enter positive home price';
+    }
+    if (downPct < 0 || downPct > 100) {
+      errors['downPct'] = 'Enter down payment % (0-100)';
+    }
+    if (currentVal <= 0) {
+      errors['currentValue'] = 'Enter positive current value';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
 
     final downAmt = price * (downPct / 100);
     final loanAmt = price - downAmt;
@@ -69,6 +95,11 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
     final formattedRemovalDate = '${_getMonthName(removalDate.month)} ${removalDate.day}, ${removalDate.year}';
 
     setState(() {
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['downPct'] = downPct;
+      _calcSnapshot['currentValue'] = currentVal;
+      _calcSnapshot['selectedDateMs'] = _selectedDate.millisecondsSinceEpoch.toDouble();
+
       _downPct = downPct;
       _currentLtv = ltv;
       if (downPct < 10) {
@@ -85,6 +116,16 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
         _bestPath = 'Wait for 11-Yr Mark or Refi';
       }
       _calculated = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
@@ -119,19 +160,21 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
 
   void _saveCalc() {
     if (!_calculated) return;
-    final price = double.tryParse(_homePriceController.text) ?? 0.0;
-    final currentVal = double.tryParse(_currentValueController.text) ?? price;
+    final price = _calcSnapshot['price'] ?? 350000.0;
+    final downPct = _calcSnapshot['downPct'] ?? 3.5;
+    final currentVal = _calcSnapshot['currentValue'] ?? price;
+    final dateMs = _calcSnapshot['selectedDateMs'] ?? _selectedDate.millisecondsSinceEpoch.toDouble();
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'FHA MIP Cancellation Rules',
-      label: 'FHA MIP Check: ${_downPct.toStringAsFixed(1)}% Down',
+      label: 'FHA MIP Check: ${downPct.toStringAsFixed(1)}% Down',
       currencyCode: 'USD',
       inputs: {
         'homePrice': price,
-        'downPct': _downPct,
+        'downPct': downPct,
         'currentValue': currentVal,
-        'loanDateMs': _selectedDate.millisecondsSinceEpoch.toDouble(),
+        'loanDateMs': dateMs,
       },
       results: {
         'LtvPercent': _currentLtv,
@@ -150,6 +193,13 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['price'] ?? 0.0) ||
+      (double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['downPct'] ?? 0.0) ||
+      (double.tryParse(_currentValueController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['currentValue'] ?? 0.0) ||
+      _selectedDate.millisecondsSinceEpoch != (_calcSnapshot['selectedDateMs'] ?? 0.0)
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -350,11 +400,11 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
                       Row(
                         children: [
                           Expanded(
-                            child: _buildInputField('Home Price (\$)', _homePriceController),
+                            child: _buildInputField('Home Price (\$)', _homePriceController, errorText: _errors['price']),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildInputField('Down Payment (%)', _downPctController),
+                            child: _buildInputField('Down Payment (%)', _downPctController, errorText: _errors['downPct']),
                           ),
                         ],
                       ),
@@ -366,7 +416,7 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildInputField('Current Home Value (\$)', _currentValueController),
+                            child: _buildInputField('Current Home Value (\$)', _currentValueController, errorText: _errors['currentValue']),
                           ),
                         ],
                       ),
@@ -394,6 +444,36 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
                 // Calculation Results Card
                 if (_calculated) ...[
                   const SizedBox(height: 12),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Check Cancellation Rules" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -660,16 +740,17 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? errorText}) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: _theme.getMutedColor(context),
+            color: hasError ? Colors.red : _theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -677,7 +758,10 @@ class _USAFhaMipCancellationRulesScreenState extends ConsumerState<USAFhaMipCanc
         Container(
           decoration: BoxDecoration(
             color: _theme.getBgColor(context),
-            border: Border.all(color: _theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : _theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(

@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_rental_yield_calc.dart
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,9 @@ class USARentalYieldCalc extends ConsumerStatefulWidget {
 }
 
 class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   final _priceController = TextEditingController(text: '380000');
   final _rentController = TextEditingController(text: '2600');
   final _downController = TextEditingController(text: '25');
@@ -38,6 +42,17 @@ class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
   @override
   void initState() {
     super.initState();
+    _priceController.addListener(() => setState(() {}));
+    _rentController.addListener(() => setState(() {}));
+    _downController.addListener(() => setState(() {}));
+    _mRateController.addListener(() => setState(() {}));
+    _taxController.addListener(() => setState(() {}));
+    _insController.addListener(() => setState(() {}));
+    _mgmtController.addListener(() => setState(() {}));
+    _vacancyController.addListener(() => setState(() {}));
+    _maintController.addListener(() => setState(() {}));
+    _otherController.addListener(() => setState(() {}));
+
     final controllers = [
       _priceController,
       _rentController,
@@ -154,17 +169,54 @@ class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
     };
   }
 
-  void _calculate() async {
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_price = double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_price <= 0) errors['price'] = 'Please enter a valid amount';
+    final val_rent = double.tryParse(_rentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_rent <= 0) errors['rent'] = 'Please enter a valid amount';
+    final val_down = double.tryParse(_downController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_mRate = double.tryParse(_mRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_tax = double.tryParse(_taxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_ins = double.tryParse(_insController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_mgmt = double.tryParse(_mgmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_vacancy = double.tryParse(_vacancyController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_maint = double.tryParse(_maintController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_other = double.tryParse(_otherController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_priceController] = val_price;
+      _calcSnapshot[_rentController] = val_rent;
+      _calcSnapshot[_downController] = val_down;
+      _calcSnapshot[_mRateController] = val_mRate;
+      _calcSnapshot[_taxController] = val_tax;
+      _calcSnapshot[_insController] = val_ins;
+      _calcSnapshot[_mgmtController] = val_mgmt;
+      _calcSnapshot[_vacancyController] = val_vacancy;
+      _calcSnapshot[_maintController] = val_maint;
+      _calcSnapshot[_otherController] = val_other;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final price = _val(_priceController);
@@ -280,8 +332,29 @@ class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
     }
   }
 
+    void _resetInputs() {
+    setState(() {
+      _priceController.text = '380000';
+      _rentController.text = '2600';
+      _downController.text = '25';
+      _mRateController.text = '7.25';
+      _taxController.text = '4500';
+      _insController.text = '1800';
+      _mgmtController.text = '8';
+      _vacancyController.text = '7';
+      _maintController.text = '3000';
+      _otherController.text = '500';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    final isDirty = _showResults && (double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_priceController] ?? 0.0) || double.tryParse(_rentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rentController] ?? 0.0) || double.tryParse(_downController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_downController] ?? 0.0) || double.tryParse(_mRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_mRateController] ?? 0.0) || double.tryParse(_taxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_taxController] ?? 0.0) || double.tryParse(_insController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_insController] ?? 0.0) || double.tryParse(_mgmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_mgmtController] ?? 0.0) || double.tryParse(_vacancyController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_vacancyController] ?? 0.0) || double.tryParse(_maintController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_maintController] ?? 0.0) || double.tryParse(_otherController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_otherController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -355,11 +428,7 @@ class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
         ]),
         const SizedBox(height: 16),
 
-        Text('PROPERTY DETAILS',
-            style: AppTextStyles.dmSans(
-                size: 11,
-                color: theme.getMutedColor(context),
-                weight: FontWeight.bold)),
+        _buildSectionHeader('PROPERTY DETAILS', onReset: _resetInputs),
         const SizedBox(height: 8),
 
         // Inputs Card
@@ -479,6 +548,39 @@ class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
         const SizedBox(height: 16),
 
         if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Result Hero Card
           Container(
             padding: const EdgeInsets.all(20),
@@ -877,7 +979,7 @@ class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(String label, TextEditingController controller, {String? errorText}) {
     final theme = widget.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -888,7 +990,7 @@ class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(color: errorText != null ? Colors.redAccent : theme.getBorderColor(context), width: 1.5),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
@@ -899,6 +1001,17 @@ class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
             decoration: const InputDecoration(border: InputBorder.none, isDense: true),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 3),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 9,
+              color: Colors.redAccent,
+              weight: FontWeight.bold,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -1130,6 +1243,35 @@ class _USARentalYieldCalcState extends ConsumerState<USARentalYieldCalc> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onReset, String resetLabel = 'Reset'}) {
+    final theme = widget.theme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: AppTextStyles.dmSans(
+            size: 11,
+            color: theme.getMutedColor(context),
+            weight: FontWeight.bold,
+          ),
+        ),
+        if (onReset != null)
+          TextButton(
+            onPressed: onReset,
+            child: Text(
+              resetLabel,
+              style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.accentColor,
+                weight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

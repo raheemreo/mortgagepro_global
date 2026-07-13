@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_piggyback_loan_calc.dart
 
 import 'package:flutter/material.dart';
@@ -22,6 +23,9 @@ class USAPiggybackLoanCalc extends ConsumerStatefulWidget {
 }
 
 class _USAPiggybackLoanCalcState extends ConsumerState<USAPiggybackLoanCalc> {
+
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  bool _showResults = false;
   // Inputs & State
   double _price = 450000;
   double _downPct = 10;
@@ -80,6 +84,8 @@ class _USAPiggybackLoanCalcState extends ConsumerState<USAPiggybackLoanCalc> {
 
   void _resetInputs() {
     setState(() {
+      _calcSnapshot.clear();
+      _showResults = false;
       _price = 450000;
       _downPct = 10;
       _rate1 = 6.82;
@@ -326,8 +332,19 @@ class _USAPiggybackLoanCalcState extends ConsumerState<USAPiggybackLoanCalc> {
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
+    final _price = _showResults ? (_calcSnapshot['_price'] ?? this._price) : this._price;
+    final _downPct = _showResults ? (_calcSnapshot['_downPct'] ?? this._downPct) : this._downPct;
+    final _rate1 = _showResults ? (_calcSnapshot['_rate1'] ?? this._rate1) : this._rate1;
+    final _rate2 = _showResults ? (_calcSnapshot['_rate2'] ?? this._rate2) : this._rate2;
+    final _fico = _showResults ? (_calcSnapshot['_fico'] ?? this._fico) : this._fico;
+    final _structure = _showResults ? (_calcSnapshot['_structure'] ?? this._structure) : this._structure;
+
+    final isDirty = _showResults && (this._price != _calcSnapshot['_price'] || this._downPct != _calcSnapshot['_downPct'] || this._rate1 != _calcSnapshot['_rate1'] || this._rate2 != _calcSnapshot['_rate2'] || this._fico != _calcSnapshot['_fico'] || this._structure != _calcSnapshot['_structure']);
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
@@ -609,7 +626,7 @@ class _USAPiggybackLoanCalcState extends ConsumerState<USAPiggybackLoanCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _price = val;
+                    this._price = val;
                     _markDirty();
                   });
                 },
@@ -646,7 +663,7 @@ class _USAPiggybackLoanCalcState extends ConsumerState<USAPiggybackLoanCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _downPct = val;
+                    this._downPct = val;
                     _markDirty();
                   });
                 },
@@ -683,7 +700,7 @@ class _USAPiggybackLoanCalcState extends ConsumerState<USAPiggybackLoanCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _rate1 = val;
+                    this._rate1 = val;
                     _markDirty();
                   });
                 },
@@ -720,7 +737,7 @@ class _USAPiggybackLoanCalcState extends ConsumerState<USAPiggybackLoanCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _rate2 = val;
+                    this._rate2 = val;
                     _markDirty();
                   });
                 },
@@ -773,7 +790,7 @@ class _USAPiggybackLoanCalcState extends ConsumerState<USAPiggybackLoanCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _fico = val;
+                    this._fico = val;
                     _markDirty();
                   });
                 },

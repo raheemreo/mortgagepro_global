@@ -21,6 +21,10 @@ class USAUsdaRuralDevelopmentScreen extends ConsumerStatefulWidget {
 class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDevelopmentScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   final _homePriceController = TextEditingController(text: '280000');
   final _incomeController = TextEditingController(text: '72000');
   final _debtsController = TextEditingController(text: '500');
@@ -67,9 +71,31 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
   }
 
   void _calculate() {
-    final price = double.tryParse(_homePriceController.text) ?? 280000;
-    final income = double.tryParse(_incomeController.text) ?? 72000;
-    final debts = double.tryParse(_debtsController.text) ?? 500;
+    final errors = <String, String>{};
+    final price = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final debts = double.tryParse(_debtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (price <= 0) {
+      errors['price'] = 'Enter positive home price';
+    }
+    if (income <= 0) {
+      errors['income'] = 'Enter positive income';
+    }
+    if (debts < 0) {
+      errors['debts'] = 'Enter valid debts';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
 
     final rate = _progRates[_currentProg] ?? 0.0635;
     final fees = _progFees[_currentProg] ?? {'upfront': 0.01, 'annual': 0.0035};
@@ -134,6 +160,14 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
     final convMonthly = convBase + convPMI;
 
     setState(() {
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['debts'] = debts;
+      _calcSnapshot['_currentProg'] = _currentProg;
+      _calcSnapshot['_householdSize'] = _householdSize;
+      _calcSnapshot['_state'] = _state;
+      _calcSnapshot['_creditScore'] = _creditScore;
+
       _loanAmt = loanAmt;
       _totalMonthly = totalMonthly;
       _upfrontFee = upfrontFee;
@@ -147,21 +181,34 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
       _convMonthly = convMonthly;
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
-    final price = double.tryParse(_homePriceController.text) ?? 280000;
+    final price = _calcSnapshot['price'] ?? 280000.0;
+    final income = _calcSnapshot['income'] ?? 72000.0;
+    final currentProg = _calcSnapshot['_currentProg'] ?? 'guar';
+    final hhsize = (_calcSnapshot['_householdSize'] ?? 4).toDouble();
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'USDA Rural Development',
-      label: 'USDA ${_currentProg == 'direct' ? 'Direct' : 'Guaranteed'} · ${CurrencyFormatter.compact(price)}',
+      label: 'USDA ${currentProg == 'direct' ? 'Direct' : 'Guaranteed'} · ${CurrencyFormatter.compact(price)}',
       currencyCode: 'USD',
       inputs: {
         'price': price,
-        'income': double.tryParse(_incomeController.text) ?? 72000,
-        'hhsize': _householdSize.toDouble(),
+        'income': income,
+        'hhsize': hhsize,
       },
       results: {
         'Loan Amount': _loanAmt,
@@ -182,6 +229,16 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['price'] ?? 0.0) ||
+      (double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['income'] ?? 0.0) ||
+      (double.tryParse(_debtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['debts'] ?? 0.0) ||
+      _currentProg != (_calcSnapshot['_currentProg'] ?? 'guar') ||
+      _householdSize != (_calcSnapshot['_householdSize'] ?? 4) ||
+      _state != (_calcSnapshot['_state'] ?? 'GA') ||
+      _creditScore != (_calcSnapshot['_creditScore'] ?? '680')
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -324,9 +381,9 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              Expanded(child: _buildInputField('Home Price (\$)', _homePriceController)),
+                              Expanded(child: _buildInputField('Home Price (\$)', _homePriceController, errorText: _errors['price'])),
                               const SizedBox(width: 10),
-                              Expanded(child: _buildInputField('Annual Income (\$)', _incomeController)),
+                              Expanded(child: _buildInputField('Annual Income (\$)', _incomeController, errorText: _errors['income'])),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -372,7 +429,7 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
                           const SizedBox(height: 10),
                           Row(
                             children: [
-                              Expanded(child: _buildInputField('Monthly Debts (\$)', _debtsController)),
+                              Expanded(child: _buildInputField('Monthly Debts (\$)', _debtsController, errorText: _errors['debts'])),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: _buildDropdownField('Credit Score', _creditScore, [
@@ -403,6 +460,36 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
                           if (_calculated) ...[
                             const SizedBox(height: 16),
                             Container(
+                              key: _resultsKey,
+                              child: Column(
+                                children: [
+                                  if (isDirty) ...[
+                                    Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withValues(alpha: 0.15),
+                                        border: Border.all(color: Colors.amber),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Inputs have changed. Tap "Calculate USDA Loan" to update results.',
+                                              style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(colors: [Color(0xFF0B1D3A), Color(0xFF166534)]),
@@ -412,7 +499,7 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _currentProg == 'direct' ? '🏛️ USDA 502 Direct · 2025' : '🌾 USDA 502 Guaranteed · 2025',
+                                    (isDirty ? _calcSnapshot['_currentProg'] ?? _currentProg : _currentProg) == 'direct' ? '🏛️ USDA 502 Direct · 2025' : '🌾 USDA 502 Guaranteed · 2025',
                                     style: const TextStyle(fontSize: 10, color: Colors.white54, fontWeight: FontWeight.bold, letterSpacing: 0.6),
                                   ),
                                   const SizedBox(height: 10),
@@ -698,11 +785,12 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? errorText}) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.4)),
+        Text(hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: hasError ? Colors.red : Colors.grey, letterSpacing: 0.4)),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
@@ -712,7 +800,18 @@ class _USAUsdaRuralDevelopmentScreenState extends ConsumerState<USAUsdaRuralDeve
             fillColor: _theme.backgroundColor.withValues(alpha: 0.3),
             filled: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+            ),
           ),
         ),
       ],

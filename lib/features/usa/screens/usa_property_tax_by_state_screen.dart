@@ -104,6 +104,9 @@ class _USAPropertyTaxByStateScreenState
     extends State<USAPropertyTaxByStateScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   // Calculator state
   double _homeValue = 450000;
   String _selectedStateAbbr = 'US'; // 'US' = US Average
@@ -119,6 +122,28 @@ class _USAPropertyTaxByStateScreenState
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _calculate() {
+    setState(() {
+      _calcSnapshot['homeValue'] = _homeValue;
+      _calcSnapshot['selectedStateAbbr'] = _selectedStateAbbr;
+      _calcSnapshot['rate'] = _selectedRate;
+      _calcSnapshot['annualTax'] = _annualTax;
+      _calcSnapshot['monthlyTax'] = _monthlyTax;
+      _calcSnapshot['dailyTax'] = _dailyTax;
+      _calcDone = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   // Lookup rate for selected state or US avg
@@ -159,12 +184,12 @@ class _USAPropertyTaxByStateScreenState
     return const Color(0xFF0D9488);
   }
 
-  String _tierNote() {
-    if (_selectedRate >= 1.80) {
+  String _tierNote(double rate) {
+    if (rate >= 1.80) {
       return '🔴 High tax state. Consider neighboring states or homestead exemptions.';
-    } else if (_selectedRate >= 1.20) {
+    } else if (rate >= 1.20) {
       return '🟡 Above-average rate. Verify homestead and senior exemptions available.';
-    } else if (_selectedRate >= 0.80) {
+    } else if (rate >= 0.80) {
       return '🟢 Average tax state. Check local exemptions for additional savings.';
     } else {
       return '✅ Low tax state. Note: check total tax burden including income & sales tax.';
@@ -531,7 +556,7 @@ class _USAPropertyTaxByStateScreenState
 
               // Calculate button
               GestureDetector(
-                onTap: () => setState(() => _calcDone = true),
+                onTap: _calculate,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 13),
@@ -561,10 +586,70 @@ class _USAPropertyTaxByStateScreenState
                 ),
               ),
 
-              // Result box
-              if (_calcDone) ...[
-                const SizedBox(height: 10),
-                _buildCalcResultBox(),
+              // Results Hero Panel
+              if (!_calcDone) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text('🗺️', style: TextStyle(fontSize: 28)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'View Property Tax Estimate',
+                        style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Select your state and home value, then tap "Calculate Property Tax" to view the tax details.',
+                        style: AppTextStyles.dmSans(size: 10.5, color: Colors.white54),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 12),
+                Container(
+                  key: _resultsKey,
+                  child: Column(
+                    children: [
+                      if (_calcDone && (
+                        _homeValue != (_calcSnapshot['homeValue'] ?? 0.0) ||
+                        _selectedStateAbbr != (_calcSnapshot['selectedStateAbbr'] ?? '')
+                      )) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.15),
+                            border: Border.all(color: Colors.amber),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Inputs have changed. Tap "Calculate Property Tax" to update results.',
+                                  style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      _buildCalcResultBox(),
+                    ],
+                  ),
+                ),
               ],
             ],
           ),
@@ -661,6 +746,11 @@ class _USAPropertyTaxByStateScreenState
   }
 
   Widget _buildCalcResultBox() {
+    final snapRate = _calcSnapshot['rate'] ?? 1.08;
+    final snapAnnualTax = _calcSnapshot['annualTax'] ?? 0.0;
+    final snapMonthlyTax = _calcSnapshot['monthlyTax'] ?? 0.0;
+    final snapDailyTax = _calcSnapshot['dailyTax'] ?? 0.0;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -683,10 +773,10 @@ class _USAPropertyTaxByStateScreenState
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _resultItem('Annual Tax', '\$${_annualTax.round().toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',')}', const Color(0xFFFCD34D))),
-              Expanded(child: _resultItem('Monthly', '\$${_monthlyTax.round().toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',')}', Colors.white)),
-              Expanded(child: _resultItem('Daily Cost', '\$${_dailyTax.toStringAsFixed(2)}', Colors.white)),
-              Expanded(child: _resultItem('Eff. Rate', '${_selectedRate.toStringAsFixed(2)}%', const Color(0xFF6EE7B7))),
+              Expanded(child: _resultItem('Annual Tax', '\$${snapAnnualTax.round().toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',')}', const Color(0xFFFCD34D))),
+              Expanded(child: _resultItem('Monthly', '\$${snapMonthlyTax.round().toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',')}', Colors.white)),
+              Expanded(child: _resultItem('Daily Cost', '\$${snapDailyTax.toStringAsFixed(2)}', Colors.white)),
+              Expanded(child: _resultItem('Eff. Rate', '${snapRate.toStringAsFixed(2)}%', const Color(0xFF6EE7B7))),
             ],
           ),
           Container(
@@ -695,7 +785,7 @@ class _USAPropertyTaxByStateScreenState
             color: Colors.white.withValues(alpha: 0.12),
           ),
           Text(
-            _tierNote(),
+            _tierNote(snapRate),
             style: AppTextStyles.dmSans(
               size: 9,
               color: Colors.white.withValues(alpha: 0.45),

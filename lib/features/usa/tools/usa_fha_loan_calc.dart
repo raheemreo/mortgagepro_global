@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_fha_loan_calc.dart
 
 import 'package:flutter/material.dart';
@@ -23,6 +24,9 @@ class USAFhaLoanCalc extends ConsumerStatefulWidget {
 }
 
 class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   // Input Controllers
   final _homePriceController = TextEditingController(text: '350000');
   final _rateController = TextEditingController(text: '6.54');
@@ -33,17 +37,9 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
   int _selectedScore = 620;
   int _selectedTerm = 30;
   bool _showResults = false;
-  bool _isCalcDirty = true;
-
   @override
   void initState() {
     super.initState();
-    _homePriceController.addListener(_markDirty);
-    _rateController.addListener(_markDirty);
-    _propTaxController.addListener(_markDirty);
-    _insuranceController.addListener(_markDirty);
-    _grossIncomeController.addListener(_markDirty);
-
     if (widget.savedCalc != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadSavedCalculation(widget.savedCalc!);
@@ -53,12 +49,6 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
 
   @override
   void dispose() {
-    _homePriceController.removeListener(_markDirty);
-    _rateController.removeListener(_markDirty);
-    _propTaxController.removeListener(_markDirty);
-    _insuranceController.removeListener(_markDirty);
-    _grossIncomeController.removeListener(_markDirty);
-
     _homePriceController.dispose();
     _rateController.dispose();
     _propTaxController.dispose();
@@ -67,15 +57,24 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
     super.dispose();
   }
 
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
     }
+    double defaultVal = 0.0;
+    if (c == _homePriceController) {
+      defaultVal = 350000.0;
+    } else if (c == _rateController) {
+      defaultVal = 6.54;
+    } else if (c == _propTaxController) {
+      defaultVal = 4200.0;
+    } else if (c == _insuranceController) {
+      defaultVal = 1800.0;
+    } else if (c == _grossIncomeController) {
+      defaultVal = 72000.0;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
   }
-
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
 
   void _resetInputs() {
     setState(() {
@@ -86,22 +85,38 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
       _grossIncomeController.text = '72000';
       _selectedScore = 620;
       _selectedTerm = 30;
+      _calcSnapshot.clear();
+      _errors.clear();
       _showResults = false;
-      _isCalcDirty = true;
     });
   }
 
   void _loadSavedCalculation(SavedCalc calc) {
+    final val_homePrice = calc.inputs['HomePrice'] ?? 350000.0;
+    final val_rate = calc.inputs['InterestRate'] ?? 6.54;
+    final val_propTax = calc.inputs['PropertyTax'] ?? 4200.0;
+    final val_insurance = calc.inputs['HomeInsurance'] ?? 1800.0;
+    final val_grossIncome = calc.inputs['GrossIncome'] ?? 72000.0;
+    final score = (calc.inputs['CreditScore'] ?? 620.0).toInt();
+    final term = (calc.inputs['LoanTerm'] ?? 30.0).toInt();
+
     setState(() {
-      _homePriceController.text = (calc.inputs['HomePrice'] ?? 350000.0).toStringAsFixed(0);
-      _rateController.text = (calc.inputs['InterestRate'] ?? 6.54).toStringAsFixed(2);
-      _propTaxController.text = (calc.inputs['PropertyTax'] ?? 4200.0).toStringAsFixed(0);
-      _insuranceController.text = (calc.inputs['HomeInsurance'] ?? 1800.0).toStringAsFixed(0);
-      _grossIncomeController.text = (calc.inputs['GrossIncome'] ?? 72000.0).toStringAsFixed(0);
-      _selectedScore = (calc.inputs['CreditScore'] ?? 620.0).toInt();
-      _selectedTerm = (calc.inputs['LoanTerm'] ?? 30.0).toInt();
+      _homePriceController.text = val_homePrice.toStringAsFixed(0);
+      _rateController.text = val_rate.toStringAsFixed(2);
+      _propTaxController.text = val_propTax.toStringAsFixed(0);
+      _insuranceController.text = val_insurance.toStringAsFixed(0);
+      _grossIncomeController.text = val_grossIncome.toStringAsFixed(0);
+      _selectedScore = score;
+      _selectedTerm = term;
+
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_propTaxController] = val_propTax;
+      _calcSnapshot[_insuranceController] = val_insurance;
+      _calcSnapshot[_grossIncomeController] = val_grossIncome;
+      _calcSnapshot['_selectedScore'] = score;
+      _calcSnapshot['_selectedTerm'] = term;
       _showResults = true;
-      _isCalcDirty = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -247,8 +262,68 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
     }
   }
 
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_homePrice = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_homePrice < 0) {
+      errors['homePrice'] = 'Enter valid price';
+    } else if (val_homePrice == 0) {
+      errors['homePrice'] = 'Price required';
+    }
+    
+    final val_rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_rate < 0) {
+      errors['rate'] = 'Enter valid rate';
+    } else if (val_rate == 0) {
+      errors['rate'] = 'Rate required';
+    }
+
+    final val_propTax = double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_propTax < 0) errors['propTax'] = 'Enter valid tax';
+
+    final val_insurance = double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_insurance < 0) errors['insurance'] = 'Enter valid ins';
+
+    final val_grossIncome = double.tryParse(_grossIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_grossIncome < 0) errors['grossIncome'] = 'Enter valid income';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
+    setState(() {
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_propTaxController] = val_propTax;
+      _calcSnapshot[_insuranceController] = val_insurance;
+      _calcSnapshot[_grossIncomeController] = val_grossIncome;
+      _calcSnapshot['_selectedScore'] = _selectedScore;
+      _calcSnapshot['_selectedTerm'] = _selectedTerm;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final _selectedScore = _showResults ? (_calcSnapshot['_selectedScore'] ?? this._selectedScore) : this._selectedScore;
+    final _selectedTerm = _showResults ? (_calcSnapshot['_selectedTerm'] ?? this._selectedTerm) : this._selectedTerm;
+
+    final isDirty = _showResults && (this._selectedScore != _calcSnapshot['_selectedScore'] || this._selectedTerm != _calcSnapshot['_selectedTerm'] || double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homePriceController] ?? 0.0) || double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rateController] ?? 0.0) || double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_propTaxController] ?? 0.0) || double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_insuranceController] ?? 0.0) || double.tryParse(_grossIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_grossIncomeController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -355,7 +430,7 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Home Price', _homePriceController, prefix: '\$', hint: 'Limit: \$498,257 standard'),
+                    child: _buildInputField('Home Price', _homePriceController, prefix: '\$', hint: 'Limit: \$498,257 standard', errorText: _errors['homePrice']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -371,8 +446,7 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
                       onChanged: (val) {
                         if (val != null) {
                           setState(() {
-                            _selectedScore = val;
-                            _isCalcDirty = true;
+                            this._selectedScore = val;
                           });
                         }
                       },
@@ -385,7 +459,7 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Interest Rate', _rateController, suffix: '%'),
+                    child: _buildInputField('Interest Rate', _rateController, suffix: '%', errorText: _errors['rate']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -400,8 +474,7 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
                       onChanged: (val) {
                         if (val != null) {
                           setState(() {
-                            _selectedTerm = val;
-                            _isCalcDirty = true;
+                            this._selectedTerm = val;
                           });
                         }
                       },
@@ -414,17 +487,17 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Property Tax', _propTaxController, prefix: '\$', suffix: '/yr'),
+                    child: _buildInputField('Property Tax', _propTaxController, prefix: '\$', suffix: '/yr', errorText: _errors['propTax']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildInputField('Home Insurance', _insuranceController, prefix: '\$', suffix: '/yr'),
+                    child: _buildInputField('Home Insurance', _insuranceController, prefix: '\$', suffix: '/yr', errorText: _errors['insurance']),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
 
-              _buildInputField('Annual Gross Income', _grossIncomeController, prefix: '\$', hint: 'Used for Debt-to-Income gauge'),
+              _buildInputField('Annual Gross Income', _grossIncomeController, prefix: '\$', hint: 'Used for Debt-to-Income gauge', errorText: _errors['grossIncome']),
               const SizedBox(height: 16),
 
               // Calculate & Save buttons
@@ -433,12 +506,7 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
                   Expanded(
                     flex: 7,
                     child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _showResults = true;
-                          _isCalcDirty = false;
-                        });
-                      },
+                      onTap: _calculate,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
@@ -446,8 +514,8 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
                           borderRadius: BorderRadius.circular(13),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF15803D).withValues(alpha: _isCalcDirty ? 0.45 : 0.25),
-                              blurRadius: _isCalcDirty ? 16 : 8,
+                              color: const Color(0xFF15803D).withValues(alpha: isDirty ? 0.45 : 0.25),
+                              blurRadius: isDirty ? 16 : 8,
                               offset: const Offset(0, 4),
                             ),
                           ],
@@ -467,25 +535,40 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
                   const SizedBox(width: 10),
                   Expanded(
                     flex: 3,
-                    child: GestureDetector(
-                      onTap: _saveCalculation,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: theme.getCardColor(context),
-                          border: Border.all(color: theme.getBorderColor(context), width: 1.5),
-                          borderRadius: BorderRadius.circular(13),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2)),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '🔖 Save',
-                          style: AppTextStyles.dmSans(
-                            size: 13,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context),
+                    child: Opacity(
+                      opacity: _showResults ? 1.0 : 0.5,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!_showResults) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Please calculate before saving.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          } else {
+                            _saveCalculation();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: theme.getCardColor(context),
+                            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+                            borderRadius: BorderRadius.circular(13),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2)),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '💾 Save',
+                            style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context),
+                            ),
                           ),
                         ),
                       ),
@@ -621,6 +704,36 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
             ),
           )
         else ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate FHA Payment" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
           _buildSectionHeader('Monthly Payment Breakdown', onReset: null),
           const SizedBox(height: 8),
 
@@ -1143,25 +1256,57 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? prefix, String? suffix, String? hint}) {
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, {
+    String? prefix,
+    String? suffix,
+    String? hint,
+    String? errorText,
+  }) {
     final theme = widget.theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: AppTextStyles.dmSans(
-            size: 9.5,
-            weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.5,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label.toUpperCase(),
+                style: AppTextStyles.dmSans(
+                  size: 9.5,
+                  weight: FontWeight.w700,
+                  color: hasError ? Colors.red : theme.getMutedColor(context),
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (hasError)
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(
+                  errorText,
+                  style: AppTextStyles.dmSans(
+                    size: 9,
+                    weight: FontWeight.w700,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 5),
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
@@ -1180,7 +1325,7 @@ class _USAFhaLoanCalcState extends ConsumerState<USAFhaLoanCalc> {
             ),
           ),
         ),
-        if (hint != null) ...[
+        if (hint != null && !hasError) ...[
           const SizedBox(height: 3),
           Text(hint, style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
         ],

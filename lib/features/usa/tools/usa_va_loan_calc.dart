@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +21,9 @@ class USAVaLoanCalc extends ConsumerStatefulWidget {
 }
 
 class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   final _homePriceController = TextEditingController(text: '450000');
   final _downPmtController = TextEditingController(text: '0');
   final _rateController = TextEditingController(text: '6.25');
@@ -29,22 +33,11 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
   int _termYears = 30;
   String _serviceType = 'first_active';
   bool _showResults = false;
-  bool _isCalcDirty = true;
-  bool _calculating = false;
+
 
   @override
   void initState() {
     super.initState();
-    final controllers = [
-      _homePriceController,
-      _downPmtController,
-      _rateController,
-      _propTaxController,
-      _insuranceController,
-    ];
-    for (final controller in controllers) {
-      controller.addListener(_markDirty);
-    }
     if (widget.savedCalc != null) {
       _loadSavedCalculation(widget.savedCalc!);
     }
@@ -52,29 +45,32 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
 
   @override
   void dispose() {
-    final controllers = [
-      _homePriceController,
-      _downPmtController,
-      _rateController,
-      _propTaxController,
-      _insuranceController,
-    ];
-    for (final controller in controllers) {
-      controller.removeListener(_markDirty);
-      controller.dispose();
-    }
+    _homePriceController.dispose();
+    _downPmtController.dispose();
+    _rateController.dispose();
+    _propTaxController.dispose();
+    _insuranceController.dispose();
     super.dispose();
   }
 
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
     }
+    double defaultVal = 0.0;
+    if (c == _homePriceController) {
+      defaultVal = 450000.0;
+    } else if (c == _downPmtController) {
+      defaultVal = 0.0;
+    } else if (c == _rateController) {
+      defaultVal = 6.25;
+    } else if (c == _propTaxController) {
+      defaultVal = 5400.0;
+    } else if (c == _insuranceController) {
+      defaultVal = 1800.0;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
   }
-
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
 
   void _resetInputs() {
     setState(() {
@@ -85,25 +81,41 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
       _serviceType = 'first_active';
       _propTaxController.text = '5400';
       _insuranceController.text = '1800';
+      _calcSnapshot.clear();
+      _errors.clear();
       _showResults = false;
-      _isCalcDirty = true;
     });
   }
 
   void _loadSavedCalculation(SavedCalc calc) {
-    setState(() {
-      _homePriceController.text = (calc.inputs['HomePrice'] ?? 450000.0).toStringAsFixed(0);
-      _downPmtController.text = (calc.inputs['DownPmt'] ?? 0.0).toStringAsFixed(0);
-      _rateController.text = (calc.inputs['InterestRate'] ?? 6.25).toStringAsFixed(2);
-      _termYears = (calc.inputs['TermYears'] ?? 30.0).toInt();
-      _serviceType = calc.inputs['ServiceTypeIndex'] == 0.0 ? 'first_active' :
+    final val_homePrice = calc.inputs['HomePrice'] ?? 450000.0;
+    final val_downPmt = calc.inputs['DownPmt'] ?? 0.0;
+    final val_rate = calc.inputs['InterestRate'] ?? 6.25;
+    final term = (calc.inputs['TermYears'] ?? 30.0).toInt();
+    final serviceType = calc.inputs['ServiceTypeIndex'] == 0.0 ? 'first_active' :
                      calc.inputs['ServiceTypeIndex'] == 1.0 ? 'subsequent_active' :
                      calc.inputs['ServiceTypeIndex'] == 2.0 ? 'first_reserve' :
                      calc.inputs['ServiceTypeIndex'] == 3.0 ? 'subsequent_reserve' : 'exempt';
-      _propTaxController.text = (calc.inputs['PropTax'] ?? 5400.0).toStringAsFixed(0);
-      _insuranceController.text = (calc.inputs['HomeInsurance'] ?? 1800.0).toStringAsFixed(0);
+    final val_propTax = calc.inputs['PropTax'] ?? 5400.0;
+    final val_insurance = calc.inputs['HomeInsurance'] ?? 1800.0;
+
+    setState(() {
+      _homePriceController.text = val_homePrice.toStringAsFixed(0);
+      _downPmtController.text = val_downPmt.toStringAsFixed(0);
+      _rateController.text = val_rate.toStringAsFixed(2);
+      _termYears = term;
+      _serviceType = serviceType;
+      _propTaxController.text = val_propTax.toStringAsFixed(0);
+      _insuranceController.text = val_insurance.toStringAsFixed(0);
+
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_downPmtController] = val_downPmt;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_propTaxController] = val_propTax;
+      _calcSnapshot[_insuranceController] = val_insurance;
+      _calcSnapshot['_termYears'] = term;
+      _calcSnapshot['_serviceType'] = serviceType;
       _showResults = true;
-      _isCalcDirty = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -269,23 +281,76 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
     }
   }
 
-  void _runCalculate() {
+  void _calculate() {
+    final errors = <String, String>{};
+    
+    final val_homePrice = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_homePrice < 0) {
+      errors['homePrice'] = 'Enter valid price';
+    } else if (val_homePrice == 0) {
+      errors['homePrice'] = 'Price required';
+    }
+    
+    final val_downPmt = double.tryParse(_downPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_downPmt < 0) {
+      errors['downPmt'] = 'Enter valid down payment';
+    } else if (val_homePrice > 0 && val_downPmt > val_homePrice) {
+      errors['downPmt'] = 'Cannot exceed price';
+    }
+    
+    final val_rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_rate < 0) {
+      errors['rate'] = 'Enter valid rate';
+    } else if (val_rate == 0) {
+      errors['rate'] = 'Rate required';
+    }
+
+    final val_propTax = double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_propTax < 0) errors['propTax'] = 'Enter valid tax';
+
+    final val_insurance = double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_insurance < 0) errors['insurance'] = 'Enter valid ins';
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) {
-        setState(() {
-          _showResults = true;
-          _isCalcDirty = false;
-          _calculating = false;
-        });
+
+    if (errors.isNotEmpty) {
+      _showResults = false;
+      return;
+    }
+
+    setState(() {
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_downPmtController] = val_downPmt;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_propTaxController] = val_propTax;
+      _calcSnapshot[_insuranceController] = val_insurance;
+      _calcSnapshot['_termYears'] = _termYears;
+      _calcSnapshot['_serviceType'] = _serviceType;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
       }
     });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
+    final _termYears = _showResults ? (_calcSnapshot['_termYears'] ?? this._termYears) : this._termYears;
+    final _serviceType = _showResults ? (_calcSnapshot['_serviceType'] ?? this._serviceType) : this._serviceType;
+
+    final isDirty = _showResults && (this._termYears != _calcSnapshot['_termYears'] || this._serviceType != _calcSnapshot['_serviceType'] || double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homePriceController] ?? 0.0) || double.tryParse(_downPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_downPmtController] ?? 0.0) || double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rateController] ?? 0.0) || double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_propTaxController] ?? 0.0) || double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_insuranceController] ?? 0.0));
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = widget.theme;
 
@@ -401,15 +466,15 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
             children: [
               Row(
                 children: [
-                  Expanded(child: _buildInputField('Home Price (\$)', _homePriceController, hint: 'No VA limit (2020+)')),
+                  Expanded(child: _buildInputField('Home Price (\$)', _homePriceController, hint: 'No VA limit (2020+)', errorText: _errors['homePrice'])),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildInputField('Down Payment (\$)', _downPmtController, hint: '0% down available')),
+                  Expanded(child: _buildInputField('Down Payment (\$)', _downPmtController, hint: '0% down available', errorText: _errors['downPmt'])),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Expanded(child: _buildInputField('Interest Rate (%)', _rateController, hint: 'Jun 2025 VA avg')),
+                  Expanded(child: _buildInputField('Interest Rate (%)', _rateController, hint: 'Jun 2025 VA avg', errorText: _errors['rate'])),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildDropdownField<int>(
@@ -421,7 +486,7 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
                         DropdownMenuItem(value: 15, child: Text('15 Years')),
                       ],
                       onChanged: (val) {
-                        if (val != null) setState(() => _termYears = val);
+                        if (val != null) setState(() => this._termYears = val);
                       },
                     ),
                   ),
@@ -439,15 +504,15 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
                   DropdownMenuItem(value: 'exempt', child: Text('Exempt (10%+ Disability)')),
                 ],
                 onChanged: (val) {
-                  if (val != null) setState(() => _serviceType = val);
+                  if (val != null) setState(() => this._serviceType = val);
                 },
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Expanded(child: _buildInputField('Property Tax (\$/yr)', _propTaxController, hint: '~1.1% avg U.S.')),
+                  Expanded(child: _buildInputField('Property Tax (\$/yr)', _propTaxController, hint: '~1.1% avg U.S.', errorText: _errors['propTax'])),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildInputField('Home Insurance (\$/yr)', _insuranceController, hint: 'National avg ~\$1.8K')),
+                  Expanded(child: _buildInputField('Home Insurance (\$/yr)', _insuranceController, hint: 'National avg ~\$1.8K', errorText: _errors['insurance'])),
                 ],
               ),
             ],
@@ -461,7 +526,7 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
             Expanded(
               flex: 7,
               child: GestureDetector(
-                onTap: _runCalculate,
+                onTap: _calculate,
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
@@ -469,15 +534,15 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
                     borderRadius: BorderRadius.circular(13),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1B3F72).withValues(alpha: _isCalcDirty ? 0.40 : 0.20),
-                        blurRadius: _isCalcDirty ? 16 : 8,
+                        color: const Color(0xFF1B3F72).withValues(alpha: isDirty ? 0.40 : 0.20),
+                        blurRadius: isDirty ? 16 : 8,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    _calculating ? '⏳ Calculating…' : '🎖️ Calculate VA Monthly Payment',
+                    '🎖️ Calculate VA Monthly Payment',
                     style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
                   ),
                 ),
@@ -486,19 +551,34 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
             const SizedBox(width: 10),
             Expanded(
               flex: 3,
-              child: GestureDetector(
-                onTap: _saveCalculation,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: theme.getCardColor(context),
-                    border: Border.all(color: theme.getBorderColor(context), width: 1.5),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '💾 Save',
-                    style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+              child: Opacity(
+                opacity: _showResults ? 1.0 : 0.5,
+                child: GestureDetector(
+                  onTap: () {
+                    if (!_showResults) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Please calculate before saving.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    } else {
+                      _saveCalculation();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '💾 Save',
+                      style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                    ),
                   ),
                 ),
               ),
@@ -507,7 +587,61 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
         ),
         const SizedBox(height: 20),
 
-        if (_showResults) ...[
+        if (!_showResults)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                const Text('🎖️', style: TextStyle(fontSize: 42)),
+                const SizedBox(height: 10),
+                Text(
+                  'Enter Your Loan Details Above',
+                  style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'We\'ll calculate your monthly payment,\nfunding fee, and compare VA vs. Conventional options.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context)),
+                ),
+              ],
+            ),
+          )
+        else ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Monthly Payment Breakdown (Hero)
           _buildSectionHeader('Monthly Payment Breakdown', onReset: null),
           const SizedBox(height: 8),
@@ -878,28 +1012,54 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
     TextEditingController controller, {
     String? prefix,
     String? hint,
+    String? errorText,
   }) {
     final theme = widget.theme;
+    final hasError = errorText != null;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.dmSans(
-              size: 9,
-              weight: FontWeight.w700,
-              color: theme.getMutedColor(context),
-              letterSpacing: 0.5,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppTextStyles.dmSans(
+                    size: 9,
+                    weight: FontWeight.w700,
+                    color: hasError ? Colors.red : theme.getMutedColor(context),
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (hasError)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    errorText,
+                    style: AppTextStyles.dmSans(
+                      size: 9,
+                      weight: FontWeight.w700,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 5),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               color: theme.getBgColor(context),
-              border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+              border: Border.all(
+                color: hasError ? Colors.red : theme.getBorderColor(context),
+                width: 1.5,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -934,7 +1094,7 @@ class _USAVaLoanCalcState extends ConsumerState<USAVaLoanCalc> {
               ],
             ),
           ),
-          if (hint != null)
+          if (hint != null && !hasError)
             Padding(
               padding: const EdgeInsets.only(top: 3),
               child: Text(

@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_property_tax_calc.dart
 
 import 'package:flutter/material.dart';
@@ -21,6 +22,8 @@ class USAPropertyTaxCalc extends ConsumerStatefulWidget {
 }
 
 class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
+  final _resultsKey = GlobalKey();
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   static const List<String> _statesList = [
     'NJ', 'IL', 'CT', 'VT', 'NY', 'WI', 'TX', 'NE', 'OH', 'PA', 'IA', 'MI', 'WA', 'GA',
     'FL', 'CA', 'OR', 'NC', 'SC', 'NV', 'WY', 'DC', 'AZ', 'CO', 'TN', 'AL', 'HI'
@@ -69,6 +72,8 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
 
   void _resetInputs() {
     setState(() {
+      _calcSnapshot.clear();
+      _showResults = false;
       _assessedValue = 300000;
       _state = 'TX';
       _exemptAmt = 25000;
@@ -79,17 +84,25 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
 
   // Unused: _loadSavedCalculation removed to resolve analyzer warnings.
 
-  void _calculate() async {
+    void _calculate() {
     setState(() {
-      _calculating = true;
-    });
-    await Future.delayed(const Duration(milliseconds: 400));
-    setState(() {
-      _calculating = false;
+      _calcSnapshot['_assessedValue'] = _assessedValue;
+      _calcSnapshot['_state'] = _state;
+      _calcSnapshot['_exemptAmt'] = _exemptAmt;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final rate = _stateRates[_state] ?? 1.07;
@@ -195,6 +208,12 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
 
   @override
   Widget build(BuildContext context) {
+    final _assessedValue = _showResults ? (_calcSnapshot['_assessedValue'] ?? this._assessedValue) : this._assessedValue;
+    final _state = _showResults ? (_calcSnapshot['_state'] ?? this._state) : this._state;
+    final _exemptAmt = _showResults ? (_calcSnapshot['_exemptAmt'] ?? this._exemptAmt) : this._exemptAmt;
+
+    final isDirty = _showResults && (this._assessedValue != _calcSnapshot['_assessedValue'] || this._state != _calcSnapshot['_state'] || this._exemptAmt != _calcSnapshot['_exemptAmt']);
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
@@ -206,7 +225,7 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
     // Compute active calculation
     final rate = _stateRates[_state] ?? 1.07;
     final stateName = _stateNames[_state] ?? _state;
-    final taxableVal = max(0.0, _assessedValue - _exemptAmt);
+    final taxableVal = max<num>(0.0, _assessedValue - _exemptAmt).toDouble();
     final annualTax = (taxableVal * rate / 100).roundToDouble();
     final fullTax = (_assessedValue * rate / 100).roundToDouble();
     final monthlyTax = (annualTax / 12).roundToDouble();
@@ -229,7 +248,7 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
     double projectionTotal = 0.0;
     for (int y = 1; y <= 5; y++) {
       final projVal = (_assessedValue * pow(1.03, y)).roundToDouble();
-      final projTax = (max(0.0, projVal - _exemptAmt) * rate / 100).roundToDouble();
+      final projTax = (max<num>(0.0, projVal - _exemptAmt) * rate / 100).roundToDouble();
       projections.add(('Year $y', projTax));
       projectionTotal += projTax;
     }
@@ -296,13 +315,13 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
               ),
               const SizedBox(height: 4),
               Text(
-                _showResults && !_isCalcDirty ? CurrencyFormatter.format(annualTax, symbol: r'$') : '\$0',
+                _showResults ? CurrencyFormatter.format(annualTax, symbol: r'$') : '\$0',
                 style: AppTextStyles.playfair(
                     size: 32, weight: FontWeight.w800, color: Colors.white),
               ),
               const SizedBox(height: 2),
               Text(
-                _showResults && !_isCalcDirty
+                _showResults
                     ? '$stateName · ${rate.toStringAsFixed(2)}% effective rate · ${CurrencyFormatter.format(_assessedValue, symbol: r'$')} assessed value'
                     : 'Enter details below and tap Calculate',
                 style: AppTextStyles.dmSans(
@@ -311,11 +330,11 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
               const SizedBox(height: 14),
               Row(
                 children: [
-                  _buildHeroBottomBox('Monthly (PITI)', _showResults && !_isCalcDirty ? CurrencyFormatter.format(monthlyTax, symbol: r'$') : '—'),
+                  _buildHeroBottomBox('Monthly (PITI)', _showResults ? CurrencyFormatter.format(monthlyTax, symbol: r'$') : '—'),
                   const SizedBox(width: 8),
-                  _buildHeroBottomBox('Effective Rate', _showResults && !_isCalcDirty ? '${rate.toStringAsFixed(2)}%' : '—', gold: true),
+                  _buildHeroBottomBox('Effective Rate', _showResults ? '${rate.toStringAsFixed(2)}%' : '—', gold: true),
                   const SizedBox(width: 8),
-                  _buildHeroBottomBox('After Exemption', _showResults && !_isCalcDirty ? CurrencyFormatter.format(annualTax, symbol: r'$') : '—'),
+                  _buildHeroBottomBox('After Exemption', _showResults ? CurrencyFormatter.format(annualTax, symbol: r'$') : '—'),
                 ],
               )
             ],
@@ -323,7 +342,39 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
         ),
 
         // Save banner
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults) ...[
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),
@@ -436,7 +487,7 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _assessedValue = val;
+                    this._assessedValue = val;
                     _markDirty();
                   });
                 },
@@ -482,7 +533,7 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
                     onChanged: (val) {
                       if (val != null) {
                         setState(() {
-                          _state = val;
+                          this._state = val;
                           _markDirty();
                         });
                       }
@@ -540,7 +591,40 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
         ),
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Breakdown analysis donut
           Text(
             'Tax Breakdown Analysis',

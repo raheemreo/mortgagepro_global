@@ -26,8 +26,11 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
   String _storageOpt = 'no'; // 'no', '1mo', '3mo', '6mo'
   String _packingOpt = 'self'; // 'self', 'partial', 'full'
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   bool _showResults = false;
-  bool _isCalcDirty = true;
   bool _calculating = false;
 
   final List<String> _states = ['CA', 'TX', 'NY', 'FL', 'IL', 'WA', 'CO', 'GA', 'AZ', 'NV'];
@@ -35,25 +38,14 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
   @override
   void initState() {
     super.initState();
-    _distanceController.addListener(_markDirty);
-    // Auto calculate
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _calculate();
-    });
   }
+
+  void _markDirty() {}
 
   @override
   void dispose() {
     _distanceController.dispose();
     super.dispose();
-  }
-
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
-    }
   }
 
   double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
@@ -65,22 +57,23 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
   };
 
   Map<String, dynamic> _calcCosts(String seasonOverride) {
-    final size = _homeSize;
+    final moveType = _showResults ? (_calcSnapshot['_moveType'] ?? _moveType) : _moveType;
+    final size = _showResults ? (_calcSnapshot['_homeSize'] ?? _homeSize) : _homeSize;
     final season = seasonOverride;
-    final storage = _storageOpt;
-    final packing = _packingOpt;
+    final storage = _showResults ? (_calcSnapshot['_storageOpt'] ?? _storageOpt) : _storageOpt;
+    final packing = _showResults ? (_calcSnapshot['_packingOpt'] ?? _packingOpt) : _packingOpt;
 
-    double base = _costMatrix[_moveType]?[size] ?? 0.0;
+    double base = _costMatrix[moveType]?[size] ?? 0.0;
     if (season == 'peak') {
       base *= 1.20;
     }
 
-    final double fuel = _moveType == 'local' ? 80 : _moveType == 'long' ? 320 : 580;
+    final double fuel = moveType == 'local' ? 80 : moveType == 'long' ? 320 : 580;
     final double insurance = (base * 0.03).roundToDouble();
     final double packMat = packing == 'self' ? 180 : packing == 'partial' ? 450 : 900;
     final double packService = packing == 'partial' ? 350 : packing == 'full' ? 900 : 0;
     final double storageAmt = storage == 'no' ? 0 : storage == '1mo' ? 180 : storage == '3mo' ? 540 : 1080;
-    final double travel = _moveType == 'local' ? 80 : _moveType == 'long' ? 350 : 650;
+    final double travel = moveType == 'local' ? 80 : moveType == 'long' ? 350 : 650;
     const double tips = 100;
 
     final double subtotal = base + fuel + insurance + packMat + packService + storageAmt + travel + tips;
@@ -103,19 +96,59 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
   }
 
   void _calculate() async {
+    final errors = <String, String>{};
+    final dist = double.tryParse(_distanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (dist <= 0) {
+      errors['distance'] = 'Enter positive distance';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _showResults = false;
+      });
+      return;
+    }
+
     setState(() {
       _calculating = true;
     });
     await Future.delayed(const Duration(milliseconds: 300));
     setState(() {
+      _calcSnapshot['_moveType'] = _moveType;
+      _calcSnapshot['_fromState'] = _fromState;
+      _calcSnapshot['_toState'] = _toState;
+      _calcSnapshot['_homeSize'] = _homeSize;
+      _calcSnapshot['distance'] = dist;
+      _calcSnapshot['_moveSeason'] = _moveSeason;
+      _calcSnapshot['_storageOpt'] = _storageOpt;
+      _calcSnapshot['_packingOpt'] = _packingOpt;
       _calculating = false;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    final c = _calcCosts(_moveSeason);
+    final moveType = _showResults ? (_calcSnapshot['_moveType'] ?? _moveType) : _moveType;
+    final homeSize = _showResults ? (_calcSnapshot['_homeSize'] ?? _homeSize) : _homeSize;
+    final distance = _showResults ? (_calcSnapshot['distance'] ?? 1500.0) : _val(_distanceController);
+    final season = _showResults ? (_calcSnapshot['_moveSeason'] ?? _moveSeason) : _moveSeason;
+    final fromState = _showResults ? (_calcSnapshot['_fromState'] ?? _fromState) : _fromState;
+    final toState = _showResults ? (_calcSnapshot['_toState'] ?? _toState) : _toState;
+
+    final c = _calcCosts(season);
     final total = c['total'] as double;
     if (total <= 0) return;
 
@@ -134,7 +167,7 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving estimate: From $_fromState to $_toState · Total: ${CurrencyFormatter.compact(total, symbol: r'$')}',
+              'Saving estimate: From $fromState to $toState · Total: ${CurrencyFormatter.compact(total, symbol: r'$')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -181,9 +214,9 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
     if (confirmed == true && mounted) {
       final label = labelCtrl.text.trim().isNotEmpty ? labelCtrl.text.trim() : 'Moving Cost Estimate';
       
-      final moveTypeIdx = _moveType == 'local' ? 0.0 : _moveType == 'long' ? 1.0 : 2.0;
-      final homeSizeIdx = _homeSize == 'studio' ? 0.0 : _homeSize == '2br' ? 1.0 : _homeSize == '4br' ? 2.0 : 3.0;
-      final seasonIdx = _moveSeason == 'peak' ? 0.0 : 1.0;
+      final moveTypeIdx = moveType == 'local' ? 0.0 : moveType == 'long' ? 1.0 : 2.0;
+      final homeSizeIdx = homeSize == 'studio' ? 0.0 : homeSize == '2br' ? 1.0 : homeSize == '4br' ? 2.0 : 3.0;
+      final seasonIdx = season == 'peak' ? 0.0 : 1.0;
       
       final calc = SavedCalc.create(
         country: 'USA',
@@ -191,7 +224,7 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
         inputs: {
           'MoveType': moveTypeIdx,
           'HomeSize': homeSizeIdx,
-          'Distance': _val(_distanceController),
+          'Distance': distance,
           'Season': seasonIdx,
         },
         results: {
@@ -224,8 +257,23 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
     
-    final current = _calcCosts(_moveSeason);
-    final otherSeason = _moveSeason == 'peak' ? 'offpeak' : 'peak';
+    final moveType = _showResults ? (_calcSnapshot['_moveType'] ?? _moveType) : _moveType;
+    final homeSize = _showResults ? (_calcSnapshot['_homeSize'] ?? _homeSize) : _homeSize;
+    final moveSeason = _showResults ? (_calcSnapshot['_moveSeason'] ?? _moveSeason) : _moveSeason;
+
+    final isDirty = _showResults && (
+      _moveType != (_calcSnapshot['_moveType'] ?? 'long') ||
+      _homeSize != (_calcSnapshot['_homeSize'] ?? '2br') ||
+      _fromState != (_calcSnapshot['_fromState'] ?? 'NY') ||
+      _toState != (_calcSnapshot['_toState'] ?? 'TX') ||
+      (double.tryParse(_distanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['distance'] ?? 0.0) ||
+      _moveSeason != (_calcSnapshot['_moveSeason'] ?? 'offpeak') ||
+      _storageOpt != (_calcSnapshot['_storageOpt'] ?? 'no') ||
+      _packingOpt != (_calcSnapshot['_packingOpt'] ?? 'self')
+    );
+
+    final current = _calcCosts(moveSeason);
+    final otherSeason = moveSeason == 'peak' ? 'offpeak' : 'peak';
     final comparison = _calcCosts(otherSeason);
 
     final totalVal = current['total'] as double;
@@ -234,12 +282,12 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
     final travelVal = (current['travel'] as double) + (current['tips'] as double);
     final contingencyVal = current['contingency'] as double;
 
-    final offPeakTotal = _moveSeason == 'offpeak' ? totalVal : comparison['total'] as double;
-    final peakTotal = _moveSeason == 'peak' ? totalVal : comparison['total'] as double;
+    final offPeakTotal = moveSeason == 'offpeak' ? totalVal : comparison['total'] as double;
+    final peakTotal = moveSeason == 'peak' ? totalVal : comparison['total'] as double;
     final savings = peakTotal - offPeakTotal;
 
-    final typeLabel = _moveType == 'local' ? 'Local' : _moveType == 'long' ? 'Long Distance' : 'Cross-Country';
-    final sizeLabel = _homeSize == 'studio' ? 'Studio/1BR' : _homeSize == '2br' ? '2-3BR' : _homeSize == '4br' ? '4+BR' : 'Office';
+    final typeLabel = moveType == 'local' ? 'Local' : moveType == 'long' ? 'Long Distance' : 'Cross-Country';
+    final sizeLabel = homeSize == 'studio' ? 'Studio/1BR' : homeSize == '2br' ? '2-3BR' : homeSize == '4br' ? '4+BR' : 'Office';
 
     // Horizontal bars
     final List<Map<String, dynamic>> barItems = [
@@ -351,7 +399,7 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextField('Move Distance (mi)', _distanceController),
+                    child: _buildTextField('Move Distance (mi)', _distanceController, errorText: _errors['distance']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -444,23 +492,38 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  InkWell(
-                    onTap: _showResults ? _saveCalculation : null,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: _showResults ? const Color(0xFFD97706) : theme.getBgColor(context),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.getBorderColor(context)),
+                  Opacity(
+                    opacity: _showResults ? 1.0 : 0.5,
+                    child: InkWell(
+                      onTap: () {
+                        if (!_showResults) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Please calculate before saving.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                              backgroundColor: Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        } else {
+                          _saveCalculation();
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: _showResults ? const Color(0xFFD97706) : theme.getBgColor(context),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.getBorderColor(context)),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text('💾 Save',
+                            style: AppTextStyles.dmSans(
+                                size: 13,
+                                color: _showResults ? Colors.white : theme.getTextColor(context),
+                                weight: FontWeight.bold)),
                       ),
-                      alignment: Alignment.center,
-                      child: Text('💾 Save',
-                          style: AppTextStyles.dmSans(
-                              size: 13,
-                              color: _showResults ? Colors.white : theme.getMutedColor(context),
-                              weight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -470,7 +533,63 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
         ),
         const SizedBox(height: 16),
 
-        if (_showResults) ...[
+        if (!_showResults)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              border: Border.all(color: theme.getBorderColor(context)),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                const Text('📦', style: TextStyle(fontSize: 42)),
+                const SizedBox(height: 10),
+                Text(
+                  'Enter Moving Details Below',
+                  style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'We\'ll estimate your total local or cross-country moving budget, packing material costs, and seasonal pricing options.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context)),
+                ),
+              ],
+            ),
+          )
+        else ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate Moving Budget" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
           // Results Card
           Container(
             padding: const EdgeInsets.all(20),
@@ -787,18 +906,19 @@ class _USAMovingCostCalcState extends ConsumerState<USAMovingCostCalc> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(String label, TextEditingController controller, {String? errorText}) {
     final theme = widget.theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context), weight: FontWeight.bold)),
+        Text(hasError ? '$label - $errorText' : label, style: AppTextStyles.dmSans(size: 9.5, color: hasError ? Colors.red : theme.getMutedColor(context), weight: FontWeight.bold)),
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(color: hasError ? Colors.red : theme.getBorderColor(context), width: hasError ? 2 : 1.5),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(

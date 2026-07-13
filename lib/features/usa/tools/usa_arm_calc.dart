@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_arm_calc.dart
 
 import 'package:flutter/material.dart';
@@ -22,6 +23,9 @@ class USAArmCalc extends ConsumerStatefulWidget {
 }
 
 class _USAArmCalcState extends ConsumerState<USAArmCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   // Input controllers
   final _homePriceController = TextEditingController(text: '450000');
   final _downPctController = TextEditingController(text: '20');
@@ -41,6 +45,15 @@ class _USAArmCalcState extends ConsumerState<USAArmCalc> {
   @override
   void initState() {
     super.initState();
+    _homePriceController.addListener(() => setState(() {}));
+    _downPctController.addListener(() => setState(() {}));
+    _initRateController.addListener(() => setState(() {}));
+    _adjRateController.addListener(() => setState(() {}));
+    _initCapController.addListener(() => setState(() {}));
+    _perCapController.addListener(() => setState(() {}));
+    _lifeCapController.addListener(() => setState(() {}));
+    _sofrController.addListener(() => setState(() {}));
+
     if (widget.savedCalc != null) {
       final inputs = widget.savedCalc!.inputs;
       _homePriceController.text = (inputs['HomePrice'] ?? 450000.0).toStringAsFixed(0);
@@ -104,7 +117,12 @@ class _USAArmCalcState extends ConsumerState<USAArmCalc> {
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   void _selectArm(String label, double rate, int yrs) {
     setState(() {
@@ -123,17 +141,52 @@ class _USAArmCalcState extends ConsumerState<USAArmCalc> {
     return loan * (mr * pow(1 + mr, months)) / (pow(1 + mr, months) - 1);
   }
 
-  void _calculate() async {
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_homePrice = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_homePrice <= 0) errors['homePrice'] = 'Please enter a valid amount';
+    final val_downPct = double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_initRate = double.tryParse(_initRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_initRate <= 0) errors['initRate'] = 'Please enter a valid amount';
+    final val_adjRate = double.tryParse(_adjRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_initCap = double.tryParse(_initCapController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_perCap = double.tryParse(_perCapController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_lifeCap = double.tryParse(_lifeCapController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_sofr = double.tryParse(_sofrController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 400));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_downPctController] = val_downPct;
+      _calcSnapshot[_initRateController] = val_initRate;
+      _calcSnapshot[_adjRateController] = val_adjRate;
+      _calcSnapshot[_initCapController] = val_initCap;
+      _calcSnapshot[_perCapController] = val_perCap;
+      _calcSnapshot[_lifeCapController] = val_lifeCap;
+      _calcSnapshot[_sofrController] = val_sofr;
+      _calcSnapshot['_fixedYrs'] = _fixedYrs;
+      _calcSnapshot['_armLabel'] = _armLabel;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final price = _val(_homePriceController);
@@ -265,8 +318,31 @@ class _USAArmCalcState extends ConsumerState<USAArmCalc> {
     }
   }
 
+    void _resetInputs() {
+    setState(() {
+      _homePriceController.text = '450000';
+      _downPctController.text = '20';
+      _initRateController.text = '6.05';
+      _adjRateController.text = '7.50';
+      _initCapController.text = '2.0';
+      _perCapController.text = '2.0';
+      _lifeCapController.text = '5.0';
+      _sofrController.text = '5.33';
+      this._fixedYrs = 5;
+      this._armLabel = '5/1';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final _fixedYrs = _showResults ? (_calcSnapshot['_fixedYrs'] ?? this._fixedYrs) : this._fixedYrs;
+    final _armLabel = _showResults ? (_calcSnapshot['_armLabel'] ?? this._armLabel) : this._armLabel;
+
+    final isDirty = _showResults && (this._fixedYrs != _calcSnapshot['_fixedYrs'] || this._armLabel != _calcSnapshot['_armLabel'] || double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homePriceController] ?? 0.0) || double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_downPctController] ?? 0.0) || double.tryParse(_initRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_initRateController] ?? 0.0) || double.tryParse(_adjRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_adjRateController] ?? 0.0) || double.tryParse(_initCapController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_initCapController] ?? 0.0) || double.tryParse(_perCapController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_perCapController] ?? 0.0) || double.tryParse(_lifeCapController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_lifeCapController] ?? 0.0) || double.tryParse(_sofrController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_sofrController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
@@ -296,7 +372,7 @@ class _USAArmCalcState extends ConsumerState<USAArmCalc> {
       final interest = bal * mr0;
       bal -= (initPI - interest);
     }
-    final remMonths = totalMonths - fixedMonths;
+    final remMonths = (totalMonths - fixedMonths).toInt();
     final adjPI = _pmtCalc(bal, adjRate, remMonths);
     final maxRateVal = initRate + lifeCap / 100;
     final worstPI = _pmtCalc(bal, maxRateVal, remMonths);
@@ -322,11 +398,7 @@ class _USAArmCalcState extends ConsumerState<USAArmCalc> {
         ),
 
         // Select ARM Type Grid
-        Text(
-          'Select ARM Type',
-          style: AppTextStyles.playfair(
-              size: 13, weight: FontWeight.w700, color: textColor),
-        ),
+        _buildSectionHeader('Select ARM Type', onReset: _resetInputs),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -422,7 +494,7 @@ class _USAArmCalcState extends ConsumerState<USAArmCalc> {
                       ),
               ),
             ),
-            if (_showResults && !_isCalcDirty) ...[
+            if (_showResults) ...[
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: _saveCalculation,
@@ -447,7 +519,40 @@ class _USAArmCalcState extends ConsumerState<USAArmCalc> {
         ),
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Results Panel
           Text(
             'Payment Summary',
@@ -1019,6 +1124,35 @@ class _USAArmCalcState extends ConsumerState<USAArmCalc> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onReset, String resetLabel = 'Reset'}) {
+    final theme = widget.theme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: AppTextStyles.dmSans(
+            size: 11,
+            color: theme.getMutedColor(context),
+            weight: FontWeight.bold,
+          ),
+        ),
+        if (onReset != null)
+          TextButton(
+            onPressed: onReset,
+            child: Text(
+              resetLabel,
+              style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.accentColor,
+                weight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

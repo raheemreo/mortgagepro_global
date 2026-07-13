@@ -120,7 +120,16 @@ class ConsentService {
           updateCompleter.complete();
         },
       );
-      await updateCompleter.future;
+      await updateCompleter.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          // GMS IPC may be blocked (e.g. MIUI security policy).
+          // Degrade gracefully: continue with consent unknown → ads blocked.
+          CrashlyticsService.log(
+            'ConsentService: requestConsentInfoUpdate timed out (5s) — continuing without consent',
+          );
+        },
+      );
 
       // ── Step 2: Show consent form if available ─────────────────────────
       final formAvailable = await ConsentInformation.instance.isConsentFormAvailable();
@@ -226,7 +235,16 @@ class ConsentService {
       if (!completer.isCompleted) completer.complete();
     });
 
-    await completer.future;
+    await completer.future.timeout(
+      const Duration(seconds: 12),
+      onTimeout: () {
+        // Consent form callback never fired (GMS IPC blocked or SDK bug).
+        // Degrade gracefully: treat as dismissed without consent.
+        CrashlyticsService.log(
+          'ConsentService: _showConsentForm timed out (12s) — treating as dismissed',
+        );
+      },
+    );
   }
 
   /// Requests App Tracking Transparency permission on iOS (steps 4–7).

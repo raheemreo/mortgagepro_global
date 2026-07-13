@@ -491,7 +491,7 @@ class _SplashScreenState extends State<SplashScreen>
         top: false,
         child: Center(
           child: Text(
-            'REO TECHNOLOGIES · Version 1.0.0',
+            'REO TECHNOLOGIES · Version 1.0.9',
             style: TextStyle(
               fontSize: 8.5,
               letterSpacing: 1.0,

@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_tax_deduction_calc.dart
 
 import 'package:flutter/material.dart';
@@ -18,6 +19,9 @@ class USATaxDeductionCalc extends ConsumerStatefulWidget {
 }
 
 class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   String _filingStatus = 'mfj'; // 'single', 'mfj', 'mfs', 'hoh'
   final _incomeController = TextEditingController(text: '120000');
   final _mortgageBalController = TextEditingController(text: '380000');
@@ -72,6 +76,15 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
   @override
   void initState() {
     super.initState();
+    _incomeController.addListener(() => setState(() {}));
+    _mortgageBalController.addListener(() => setState(() {}));
+    _mRateController.addListener(() => setState(() {}));
+    _propTaxController.addListener(() => setState(() {}));
+    _charityController.addListener(() => setState(() {}));
+    _stateTaxController.addListener(() => setState(() {}));
+    _medicalController.addListener(() => setState(() {}));
+    _otherController.addListener(() => setState(() {}));
+
     final controllers = [
       _incomeController,
       _mortgageBalController,
@@ -112,7 +125,12 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   double _calcTax(double taxable, String filing) {
     final List<List<double>> brackets = filing == 'mfj'
@@ -186,17 +204,50 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
     };
   }
 
-  void _calculate() async {
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_income <= 0) errors['income'] = 'Please enter a valid amount';
+    final val_mortgageBal = double.tryParse(_mortgageBalController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_mRate = double.tryParse(_mRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_propTax = double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_charity = double.tryParse(_charityController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_stateTax = double.tryParse(_stateTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_medical = double.tryParse(_medicalController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_other = double.tryParse(_otherController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_incomeController] = val_income;
+      _calcSnapshot[_mortgageBalController] = val_mortgageBal;
+      _calcSnapshot[_mRateController] = val_mRate;
+      _calcSnapshot[_propTaxController] = val_propTax;
+      _calcSnapshot[_charityController] = val_charity;
+      _calcSnapshot[_stateTaxController] = val_stateTax;
+      _calcSnapshot[_medicalController] = val_medical;
+      _calcSnapshot[_otherController] = val_other;
+      _calcSnapshot['_filingStatus'] = _filingStatus;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final income = _val(_incomeController);
@@ -303,8 +354,29 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
     }
   }
 
+    void _resetInputs() {
+    setState(() {
+      _incomeController.text = '120000';
+      _mortgageBalController.text = '380000';
+      _mRateController.text = '6.82';
+      _propTaxController.text = '8500';
+      _charityController.text = '3200';
+      _stateTaxController.text = '6800';
+      _medicalController.text = '0';
+      _otherController.text = '0';
+      this._filingStatus = 'mfj';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final _filingStatus = _showResults ? (_calcSnapshot['_filingStatus'] ?? this._filingStatus) : this._filingStatus;
+
+    final isDirty = _showResults && (this._filingStatus != _calcSnapshot['_filingStatus'] || double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_incomeController] ?? 0.0) || double.tryParse(_mortgageBalController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_mortgageBalController] ?? 0.0) || double.tryParse(_mRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_mRateController] ?? 0.0) || double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_propTaxController] ?? 0.0) || double.tryParse(_charityController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_charityController] ?? 0.0) || double.tryParse(_stateTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_stateTaxController] ?? 0.0) || double.tryParse(_medicalController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_medicalController] ?? 0.0) || double.tryParse(_otherController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_otherController] ?? 0.0));
+
     final theme = widget.theme;
 
     final data = _computeTaxProfile();
@@ -373,7 +445,7 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
         ),
         const SizedBox(height: 16),
 
-        Text('YOUR TAX PROFILE', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.bold)),
+        _buildSectionHeader('YOUR TAX PROFILE', onReset: _resetInputs),
         const SizedBox(height: 8),
 
         // Inputs Card
@@ -404,7 +476,7 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
                     style: AppTextStyles.dmSans(size: 13, color: theme.getTextColor(context), weight: FontWeight.bold),
                     onChanged: (v) {
                       setState(() {
-                        _filingStatus = v!;
+                        this._filingStatus = v!;
                         _markDirty();
                       });
                     },
@@ -504,6 +576,39 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
         const SizedBox(height: 16),
 
         if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Recommended Deduction Hero Card
           Container(
             padding: const EdgeInsets.all(20),
@@ -843,7 +948,7 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(String label, TextEditingController controller, {String? errorText}) {
     final theme = widget.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -854,7 +959,7 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(color: errorText != null ? Colors.redAccent : theme.getBorderColor(context), width: 1.5),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
@@ -867,6 +972,17 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
             ),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 3),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 9,
+              color: Colors.redAccent,
+              weight: FontWeight.bold,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -913,6 +1029,35 @@ class _USATaxDeductionCalcState extends ConsumerState<USATaxDeductionCalc> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onReset, String resetLabel = 'Reset'}) {
+    final theme = widget.theme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: AppTextStyles.dmSans(
+            size: 11,
+            color: theme.getMutedColor(context),
+            weight: FontWeight.bold,
+          ),
+        ),
+        if (onReset != null)
+          TextButton(
+            onPressed: onReset,
+            child: Text(
+              resetLabel,
+              style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.accentColor,
+                weight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

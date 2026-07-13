@@ -1,7 +1,7 @@
 name: mortgagepro_global
 description: MortgageProGlobal — Global Mortgage Calculator Suite for 8 Countries
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.9+11
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -67,6 +67,7 @@ dependencies:
   share_plus: ^10.0.0
   package_info_plus: ^8.0.0
   flutter_markdown: ^0.7.7+1
+  in_app_review: ^2.0.9
 
 dev_dependencies:
   flutter_test:

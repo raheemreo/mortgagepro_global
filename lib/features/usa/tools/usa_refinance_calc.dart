@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_refinance_calc.dart
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,9 @@ class USARefinanceCalc extends ConsumerStatefulWidget {
 }
 
 class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   // Input Controllers
   final _curBalanceController = TextEditingController(text: '320000');
   final _curRateController = TextEditingController(text: '7.50');
@@ -37,6 +41,13 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
   @override
   void initState() {
     super.initState();
+    _curBalanceController.addListener(() => setState(() {}));
+    _curRateController.addListener(() => setState(() {}));
+    _curTermController.addListener(() => setState(() {}));
+    _curPaymentController.addListener(() => setState(() {}));
+    _newRateController.addListener(() => setState(() {}));
+    _closingCostsController.addListener(() => setState(() {}));
+
     _curBalanceController.addListener(_markDirty);
     _curRateController.addListener(_markDirty);
     _curTermController.addListener(_markDirty);
@@ -71,7 +82,12 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   double _monthlyPayment(double principal, double annualRate, int months) {
     final r = annualRate / 100 / 12;
@@ -85,6 +101,15 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
 
   void _resetInputs() {
     setState(() {
+      _curBalanceController.clear();
+      _curRateController.clear();
+      _curTermController.clear();
+      _curPaymentController.clear();
+      _newRateController.clear();
+      _closingCostsController.clear();
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
       _curBalanceController.text = '320000';
       _curRateController.text = '7.50';
       _curTermController.text = '25';
@@ -127,9 +152,11 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
     final curPmt = double.tryParse(_curPaymentController.text) ?? _monthlyPayment(curBal, curRate, curTerm * 12);
     final newRate = _val(_newRateController);
     final closing = _val(_closingCostsController);
-    final newTermMo = _selectedTerm * 12;
+    final calcSelectedTerm = _showResults ? (_calcSnapshot['_selectedTerm'] ?? _selectedTerm) : _selectedTerm;
+    final calcRollClosing = _showResults ? (_calcSnapshot['_rollClosing'] ?? _rollClosing) : _rollClosing;
+    final newTermMo = calcSelectedTerm * 12;
 
-    final newPrincipal = _rollClosing ? curBal + closing : curBal;
+    final newPrincipal = calcRollClosing ? curBal + closing : curBal;
     final newPmt = _monthlyPayment(newPrincipal, newRate, newTermMo);
     final monthlySave = curPmt - newPmt;
 
@@ -137,7 +164,7 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
 
     final curTotalInt = _totalInterest(curBal, curRate, curTerm * 12);
     final newTotalInt = _totalInterest(newPrincipal, newRate, newTermMo);
-    final totalSaved = (curTotalInt - newTotalInt) + (_rollClosing ? 0.0 : -closing);
+    final totalSaved = (curTotalInt - newTotalInt) + (calcRollClosing ? 0.0 : -closing);
 
     final labelCtrl = TextEditingController(text: 'Refinance Analysis');
     final confirmed = await showDialog<bool>(
@@ -212,8 +239,8 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
           'CurPayment': curPmt,
           'NewRate': newRate,
           'ClosingCosts': closing,
-          'NewTerm': _selectedTerm.toDouble(),
-          'RollClosing': _rollClosing ? 1.0 : 0.0,
+          'NewTerm': calcSelectedTerm.toDouble(),
+          'RollClosing': calcRollClosing ? 1.0 : 0.0,
         },
         results: {
           'NewPayment': newPmt,
@@ -241,8 +268,65 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
     }
   }
 
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_curBalance = double.tryParse(_curBalanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_curBalance <= 0) errors['curBalance'] = 'Please enter a valid amount';
+    final val_curRate = double.tryParse(_curRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_curRate <= 0) errors['curRate'] = 'Please enter a valid amount';
+    final val_curTerm = double.tryParse(_curTermController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_curPayment = double.tryParse(_curPaymentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_newRate = double.tryParse(_newRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_newRate <= 0) errors['newRate'] = 'Please enter a valid amount';
+    final val_closingCosts = double.tryParse(_closingCostsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
+    setState(() {
+      _calcSnapshot[_curBalanceController] = val_curBalance;
+      _calcSnapshot[_curRateController] = val_curRate;
+      _calcSnapshot[_curTermController] = val_curTerm;
+      _calcSnapshot[_curPaymentController] = val_curPayment;
+      _calcSnapshot[_newRateController] = val_newRate;
+      _calcSnapshot[_closingCostsController] = val_closingCosts;
+      _calcSnapshot['_selectedTerm'] = _selectedTerm;
+      _calcSnapshot['_rollClosing'] = _rollClosing;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final calcSelectedTerm = _showResults ? (_calcSnapshot['_selectedTerm'] ?? _selectedTerm) : _selectedTerm;
+    final calcRollClosing = _showResults ? (_calcSnapshot['_rollClosing'] ?? _rollClosing) : _rollClosing;
+
+    final isDirty = _showResults && (
+      _selectedTerm != _calcSnapshot['_selectedTerm'] ||
+      _rollClosing != _calcSnapshot['_rollClosing'] ||
+      double.tryParse(_curBalanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_curBalanceController] ?? 0.0) ||
+      double.tryParse(_curRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_curRateController] ?? 0.0) ||
+      double.tryParse(_curTermController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_curTermController] ?? 0.0) ||
+      double.tryParse(_curPaymentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_curPaymentController] ?? 0.0) ||
+      double.tryParse(_newRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_newRateController] ?? 0.0) ||
+      double.tryParse(_closingCostsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_closingCostsController] ?? 0.0)
+    );
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -253,17 +337,17 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
     final curPmt = double.tryParse(_curPaymentController.text) ?? _monthlyPayment(curBal, curRate, curTerm * 12);
     final newRate = _val(_newRateController);
     final closing = _val(_closingCostsController);
-    final newTermMo = _selectedTerm * 12;
+    final int newTermMo = (calcSelectedTerm * 12).toInt();
 
     // Calculations
-    final newPrincipal = _rollClosing ? curBal + closing : curBal;
+    final newPrincipal = calcRollClosing ? curBal + closing : curBal;
     final newPmt = _monthlyPayment(newPrincipal, newRate, newTermMo);
     final monthlySave = curPmt - newPmt;
     final breakEvenMonths = monthlySave > 0 ? (closing / monthlySave).ceil() : -1;
 
     final curTotalInt = _totalInterest(curBal, curRate, curTerm * 12);
     final newTotalInt = _totalInterest(newPrincipal, newRate, newTermMo);
-    final totalSaved = (curTotalInt - newTotalInt) + (_rollClosing ? 0.0 : -closing);
+    final totalSaved = (curTotalInt - newTotalInt) + (calcRollClosing ? 0.0 : -closing);
     final rateDiff = curRate - newRate;
 
     // Amortization snapshot
@@ -271,7 +355,7 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
     double bal = newPrincipal;
     final yearInterest = <double>[];
     final yearPrincipal = <double>[];
-    for (int y = 1; y <= _selectedTerm; y++) {
+    for (int y = 1; y <= calcSelectedTerm; y++) {
       double yInt = 0.0;
       double yPrin = 0.0;
       for (int m = 0; m < 12; m++) {
@@ -335,21 +419,21 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
                 ],
               ),
               const SizedBox(height: 12),
-              _buildInputField('Current Loan Balance', _curBalanceController, 'Remaining principal'),
+              _buildInputField('Current Loan Balance', _curBalanceController, 'Remaining principal', errorText: _errors['curBalance']),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Current Rate', _curRateController, '', suffix: '%'),
+                    child: _buildInputField('Current Rate', _curRateController, '', suffix: '%', errorText: _errors['curRate']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Remaining Term', _curTermController, '', suffix: 'yrs'),
+                    child: _buildInputField('Remaining Term', _curTermController, '', suffix: 'yrs', errorText: _errors['curTerm']),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              _buildInputField('Monthly Payment (P&I)', _curPaymentController, 'P&I payment'),
+              _buildInputField('Monthly Payment (P&I)', _curPaymentController, 'P&I payment', errorText: _errors['curPayment']),
             ],
           ),
         ),
@@ -382,7 +466,7 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
                 ],
               ),
               const SizedBox(height: 12),
-              _buildInputField('New Interest Rate', _newRateController, 'Today\'s avg: 6.82%', suffix: '%'),
+              _buildInputField('New Interest Rate', _newRateController, 'Today\'s avg: 6.82%', suffix: '%', errorText: _errors['newRate']),
               const SizedBox(height: 12),
 
               // Term selectors
@@ -392,13 +476,13 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
                 items: [10, 15, 20, 25, 30],
                 labelBuilder: (v) => '$v yr',
                 onChanged: (v) => setState(() {
-                  _selectedTerm = v;
+                  this._selectedTerm = v;
                   _isCalcDirty = true;
                 }),
               ),
               const SizedBox(height: 12),
 
-              _buildInputField('Closing Costs', _closingCostsController, 'Typical: 2–3% of balance'),
+              _buildInputField('Closing Costs', _closingCostsController, 'Typical: 2–3% of balance', errorText: _errors['closingCosts']),
               const SizedBox(height: 12),
 
               // Roll costs segment
@@ -432,12 +516,7 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
               const SizedBox(height: 16),
 
               GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showResults = true;
-                    _isCalcDirty = false;
-                  });
-                },
+          onTap: _calculate,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -511,206 +590,237 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
             ),
           )
         else ...[
-          _buildSectionHeader('Refinance Analysis', onReset: null),
-          const SizedBox(height: 8),
-
-          // Quick Stats
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickStatBox(
-                  icon: '📉',
-                  label: 'Rate Drop',
-                  value: '${(rateDiff >= 0 ? '-' : '+')}${rateDiff.abs().toStringAsFixed(2)}%',
-                  valueColor: rateDiff >= 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildQuickStatBox(
-                  icon: '⏱️',
-                  label: 'Break-Even',
-                  value: breakEvenMonths < 0 ? 'N/A' : '$breakEvenMonths mo',
-                  valueColor: const Color(0xFFD97706),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildQuickStatBox(
-                  icon: '💵',
-                  label: 'Monthly Save',
-                  value: (monthlySave >= 0 ? '+' : '') + CurrencyFormatter.compact(monthlySave, symbol: '\$'),
-                  valueColor: monthlySave >= 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Savings Hero
           Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: totalSaved >= 0
-                    ? [const Color(0xFF14532D), const Color(0xFF15803D)]
-                    : [const Color(0xFF7F1D1D), const Color(0xFFB91C1C)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 8)),
-              ],
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'TOTAL LIFETIME SAVINGS',
-                  style: AppTextStyles.dmSans(size: 9, color: Colors.white70, letterSpacing: 0.8),
-                ),
-                const SizedBox(height: 6),
-                RichText(
-                  text: TextSpan(
-                    style: AppTextStyles.dmSans(size: 32, weight: FontWeight.w800, color: Colors.white),
-                    children: [
-                      TextSpan(text: CurrencyFormatter.compact(totalSaved.abs(), symbol: '\$')),
-                      const TextSpan(text: ' '),
-                      TextSpan(
-                        text: totalSaved >= 0 ? 'saved' : 'more cost',
-                        style: const TextStyle(fontSize: 16, color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'vs. keeping current loan',
-                  style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
-                ),
-                const SizedBox(height: 14),
-
-                // Hero grid
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildHeroStatBox('Monthly Save', (monthlySave >= 0 ? '+' : '') + CurrencyFormatter.compact(monthlySave, symbol: '\$')),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildHeroStatBox('New Payment', CurrencyFormatter.compact(newPmt, symbol: '\$')),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildHeroStatBox('Rate Drop', '${(rateDiff >= 0 ? '-' : '+')}${rateDiff.abs().toStringAsFixed(2)}%'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Save Analysis Button
-                GestureDetector(
-                  onTap: _saveCalculation,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.13),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.28), width: 1.5),
-                      borderRadius: BorderRadius.circular(11),
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    alignment: Alignment.center,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('🔖 ', style: TextStyle(color: Colors.white, fontSize: 13)),
-                        Text(
-                          'Save This Analysis',
-                          style: AppTextStyles.dmSans(
-                            size: 12,
-                            weight: FontWeight.w800,
-                            color: Colors.white,
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate Refinance Savings" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+                ],
+                _buildSectionHeader('Refinance Analysis', onReset: null),
+                const SizedBox(height: 8),
 
-          // Break even
-          _buildBreakEvenCard(breakEvenMonths, monthlySave, closing),
-          const SizedBox(height: 12),
-
-          // Donut Card - Interest comparison
-          _buildDonutCard(curTotalInt, newTotalInt, closing, totalSaved),
-          const SizedBox(height: 12),
-
-          // Cumulative Savings line chart
-          _buildTimelineChartCard(monthlySave, closing, _selectedTerm),
-          const SizedBox(height: 12),
-
-          // Comparison Table
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '📊 Loan Comparison',
-                  style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
-                ),
-                const SizedBox(height: 12),
-
-                // Header
-                _buildCompRowHeader(),
-                const Divider(),
-
-                // Rows
-                _buildCompRow('Monthly P&I', CurrencyFormatter.format(curPmt), CurrencyFormatter.format(newPmt), curValColor: const Color(0xFFB91C1C), newValColor: const Color(0xFF15803D)),
-                _buildCompRow('Interest Rate', '${curRate.toStringAsFixed(2)}%', '${newRate.toStringAsFixed(2)}%', curValColor: const Color(0xFFB91C1C), newValColor: const Color(0xFF15803D)),
-                _buildCompRow('Total Interest', CurrencyFormatter.format(curTotalInt), CurrencyFormatter.format(newTotalInt), curValColor: const Color(0xFFB91C1C), newValColor: const Color(0xFF15803D)),
-                _buildCompRow('Total Cost', CurrencyFormatter.format(curBal + curTotalInt), CurrencyFormatter.format(newPrincipal + newTotalInt)),
-                _buildCompRow('Payoff Date', '${_getMonthName(curPayoffDate.month)} ${curPayoffDate.year}', '${_getMonthName(newPayoffDate.month)} ${newPayoffDate.year}', newValColor: const Color(0xFF15803D)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Amortization Snap
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '📈 Interest vs. Principal (New Loan)',
-                  style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                // Quick Stats
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildQuickStatBox(
+                        icon: '📉',
+                        label: 'Rate Drop',
+                        value: '${(rateDiff >= 0 ? '-' : '+')}${rateDiff.abs().toStringAsFixed(2)}%',
+                        valueColor: rateDiff >= 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildQuickStatBox(
+                        icon: '⏱️',
+                        label: 'Break-Even',
+                        value: breakEvenMonths < 0 ? 'N/A' : '$breakEvenMonths mo',
+                        valueColor: const Color(0xFFD97706),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildQuickStatBox(
+                        icon: '💵',
+                        label: 'Monthly Save',
+                        value: (monthlySave >= 0 ? '+' : '') + CurrencyFormatter.compact(monthlySave, symbol: '\$'),
+                        valueColor: monthlySave >= 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
 
-                // Map snaps
-                ..._buildAmortBars([1, 5, 10, max(1, _selectedTerm ~/ 2), _selectedTerm], yearInterest, yearPrincipal, maxVal),
+                // Savings Hero
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: totalSaved >= 0
+                          ? [const Color(0xFF14532D), const Color(0xFF15803D)]
+                          : [const Color(0xFF7F1D1D), const Color(0xFFB91C1C)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 8)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'TOTAL LIFETIME SAVINGS',
+                        style: AppTextStyles.dmSans(size: 9, color: Colors.white70, letterSpacing: 0.8),
+                      ),
+                      const SizedBox(height: 6),
+                      RichText(
+                        text: TextSpan(
+                          style: AppTextStyles.dmSans(size: 32, weight: FontWeight.w800, color: Colors.white),
+                          children: [
+                            TextSpan(text: CurrencyFormatter.compact(totalSaved.abs(), symbol: '\$')),
+                            const TextSpan(text: ' '),
+                            TextSpan(
+                              text: totalSaved >= 0 ? 'saved' : 'more cost',
+                              style: const TextStyle(fontSize: 16, color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'vs. keeping current loan',
+                        style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Hero grid
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildHeroStatBox('Monthly Save', (monthlySave >= 0 ? '+' : '') + CurrencyFormatter.compact(monthlySave, symbol: '\$')),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildHeroStatBox('New Payment', CurrencyFormatter.compact(newPmt, symbol: '\$')),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildHeroStatBox('Rate Drop', '${(rateDiff >= 0 ? '-' : '+')}${rateDiff.abs().toStringAsFixed(2)}%'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Save Analysis Button
+                      GestureDetector(
+                        onTap: _saveCalculation,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.13),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.28), width: 1.5),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('🔖 ', style: TextStyle(color: Colors.white, fontSize: 13)),
+                              Text(
+                                'Save This Analysis',
+                                style: AppTextStyles.dmSans(
+                                  size: 12,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Break even
+                _buildBreakEvenCard(breakEvenMonths, monthlySave, closing),
+                const SizedBox(height: 12),
+
+                // Donut Card - Interest comparison
+                _buildDonutCard(curTotalInt, newTotalInt, closing, totalSaved),
+                const SizedBox(height: 12),
+
+                // Cumulative Savings line chart
+                _buildTimelineChartCard(monthlySave, closing, calcSelectedTerm),
+                const SizedBox(height: 12),
+
+                // Comparison Table
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📊 Loan Comparison',
+                        style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Header
+                      _buildCompRowHeader(),
+                      const Divider(),
+
+                      // Rows
+                      _buildCompRow('Monthly P&I', CurrencyFormatter.format(curPmt), CurrencyFormatter.format(newPmt), curValColor: const Color(0xFFB91C1C), newValColor: const Color(0xFF15803D)),
+                      _buildCompRow('Interest Rate', '${curRate.toStringAsFixed(2)}%', '${newRate.toStringAsFixed(2)}%', curValColor: const Color(0xFFB91C1C), newValColor: const Color(0xFF15803D)),
+                      _buildCompRow('Total Interest', CurrencyFormatter.format(curTotalInt), CurrencyFormatter.format(newTotalInt), curValColor: const Color(0xFFB91C1C), newValColor: const Color(0xFF15803D)),
+                      _buildCompRow('Total Cost', CurrencyFormatter.format(curBal + curTotalInt), CurrencyFormatter.format(newPrincipal + newTotalInt)),
+                      _buildCompRow('Payoff Date', '${_getMonthName(curPayoffDate.month)} ${curPayoffDate.year}', '${_getMonthName(newPayoffDate.month)} ${newPayoffDate.year}', newValColor: const Color(0xFF15803D)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Amortization Snap
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📈 Interest vs. Principal (New Loan)',
+                        style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Map snaps
+                      ..._buildAmortBars([1, 5, 10, max(1, calcSelectedTerm ~/ 2), calcSelectedTerm], yearInterest, yearPrincipal, maxVal),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -895,9 +1005,10 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, String hint, {String? suffix}) {
+  Widget _buildInputField(String label, TextEditingController controller, String hint, {String? suffix, String? errorText}) {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -909,11 +1020,20 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
               style: AppTextStyles.dmSans(
                 size: 9.5,
                 weight: FontWeight.w700,
-                color: theme.getMutedColor(context),
+                color: hasError ? Colors.red : theme.getMutedColor(context),
                 letterSpacing: 0.5,
               ),
             ),
-            if (hint.isNotEmpty)
+            if (hasError)
+              Text(
+                errorText,
+                style: AppTextStyles.dmSans(
+                  size: 9,
+                  weight: FontWeight.w700,
+                  color: Colors.red,
+                ),
+              )
+            else if (hint.isNotEmpty)
               Text(
                 hint,
                 style: AppTextStyles.dmSans(
@@ -928,7 +1048,10 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(

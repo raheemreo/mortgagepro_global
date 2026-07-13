@@ -38,65 +38,64 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
   final _personalLoanController = TextEditingController(text: '0');
   final _otherDebtsController = TextEditingController(text: '0');
 
-  bool _showResults = false;
-  bool _isCalcDirty = true;
+  final Map<TextEditingController, double> _calcSnapshot = {};
+  final Map<String, String> _errors = {};
+  final GlobalKey _resultsKey = GlobalKey();
 
-  @override
-  void initState() {
-    super.initState();
-    final listeners = [
-      _primaryIncomeController,
-      _coIncomeController,
-      _otherIncomeController,
-      _piPaymentController,
-      _propTaxController,
-      _hoInsController,
-      _pmiController,
-      _hoaController,
-      _autoLoanController,
-      _studentLoanController,
-      _creditCardsController,
-      _personalLoanController,
-      _otherDebtsController,
-    ];
-    for (final controller in listeners) {
-      controller.addListener(_markDirty);
-    }
-  }
+  bool _showResults = false;
 
   @override
   void dispose() {
-    final listeners = [
-      _primaryIncomeController,
-      _coIncomeController,
-      _otherIncomeController,
-      _piPaymentController,
-      _propTaxController,
-      _hoInsController,
-      _pmiController,
-      _hoaController,
-      _autoLoanController,
-      _studentLoanController,
-      _creditCardsController,
-      _personalLoanController,
-      _otherDebtsController,
-    ];
-    for (final controller in listeners) {
-      controller.removeListener(_markDirty);
-      controller.dispose();
-    }
+    _primaryIncomeController.dispose();
+    _coIncomeController.dispose();
+    _otherIncomeController.dispose();
+    _piPaymentController.dispose();
+    _propTaxController.dispose();
+    _hoInsController.dispose();
+    _pmiController.dispose();
+    _hoaController.dispose();
+    _autoLoanController.dispose();
+    _studentLoanController.dispose();
+    _creditCardsController.dispose();
+    _personalLoanController.dispose();
+    _otherDebtsController.dispose();
     super.dispose();
   }
 
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
     }
+    double defaultVal = 0.0;
+    if (c == _primaryIncomeController) {
+      defaultVal = 7500.0;
+    } else if (c == _coIncomeController) {
+      defaultVal = 0.0;
+    } else if (c == _otherIncomeController) {
+      defaultVal = 0.0;
+    } else if (c == _piPaymentController) {
+      defaultVal = 1650.0;
+    } else if (c == _propTaxController) {
+      defaultVal = 375.0;
+    } else if (c == _hoInsController) {
+      defaultVal = 150.0;
+    } else if (c == _pmiController) {
+      defaultVal = 0.0;
+    } else if (c == _hoaController) {
+      defaultVal = 0.0;
+    } else if (c == _autoLoanController) {
+      defaultVal = 450.0;
+    } else if (c == _studentLoanController) {
+      defaultVal = 200.0;
+    } else if (c == _creditCardsController) {
+      defaultVal = 75.0;
+    } else if (c == _personalLoanController) {
+      defaultVal = 0.0;
+    } else if (c == _otherDebtsController) {
+      defaultVal = 0.0;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
   }
-
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
 
   void _resetInputs() {
     setState(() {
@@ -113,8 +112,9 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
       _creditCardsController.text = '75';
       _personalLoanController.text = '0';
       _otherDebtsController.text = '0';
+      _calcSnapshot.clear();
+      _errors.clear();
       _showResults = false;
-      _isCalcDirty = true;
     });
   }
 
@@ -134,7 +134,6 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
       _personalLoanController.text = (calc.inputs['PersonalLoan'] ?? 0.0).toStringAsFixed(0);
       _otherDebtsController.text = (calc.inputs['OtherDebts'] ?? 0.0).toStringAsFixed(0);
       _showResults = true;
-      _isCalcDirty = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -143,6 +142,86 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _calculate() {
+    setState(() {
+      _errors.clear();
+
+      final primary = double.tryParse(_primaryIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+      final co = double.tryParse(_coIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final other = double.tryParse(_otherIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+      final pi = double.tryParse(_piPaymentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final tax = double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final ins = double.tryParse(_hoInsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final pmi = double.tryParse(_pmiController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final hoa = double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+      final auto = double.tryParse(_autoLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final student = double.tryParse(_studentLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final cc = double.tryParse(_creditCardsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final personal = double.tryParse(_personalLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final otherD = double.tryParse(_otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+      // Validation
+      if (primary < 0) {
+        _errors['primaryIncome'] = 'Enter valid amount';
+      } else if (primary == 0 && co == 0 && other == 0) {
+        _errors['primaryIncome'] = 'Income required';
+      }
+
+      if (co < 0) _errors['coIncome'] = 'Enter valid amount';
+      if (other < 0) _errors['otherIncome'] = 'Enter valid amount';
+      
+      if (pi < 0) _errors['piPayment'] = 'Enter valid amount';
+      if (tax < 0) _errors['propTax'] = 'Enter valid amount';
+      if (ins < 0) _errors['hoIns'] = 'Enter valid amount';
+      if (pmi < 0) _errors['pmi'] = 'Enter valid amount';
+      if (hoa < 0) _errors['hoa'] = 'Enter valid amount';
+
+      if (auto < 0) _errors['autoLoan'] = 'Enter valid amount';
+      if (student < 0) _errors['studentLoan'] = 'Enter valid amount';
+      if (cc < 0) _errors['creditCards'] = 'Enter valid amount';
+      if (personal < 0) _errors['personalLoan'] = 'Enter valid amount';
+      if (otherD < 0) _errors['otherDebts'] = 'Enter valid amount';
+
+      if (_errors.isNotEmpty) {
+        _showResults = false;
+        return;
+      }
+
+      // Snapshot inputs
+      _calcSnapshot[_primaryIncomeController] = primary;
+      _calcSnapshot[_coIncomeController] = co;
+      _calcSnapshot[_otherIncomeController] = other;
+
+      _calcSnapshot[_piPaymentController] = pi;
+      _calcSnapshot[_propTaxController] = tax;
+      _calcSnapshot[_hoInsController] = ins;
+      _calcSnapshot[_pmiController] = pmi;
+      _calcSnapshot[_hoaController] = hoa;
+
+      _calcSnapshot[_autoLoanController] = auto;
+      _calcSnapshot[_studentLoanController] = student;
+      _calcSnapshot[_creditCardsController] = cc;
+      _calcSnapshot[_personalLoanController] = personal;
+      _calcSnapshot[_otherDebtsController] = otherD;
+
+      _showResults = true;
+    });
+
+    if (_showResults) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_resultsKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _resultsKey.currentContext!,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
   }
 
   void _saveCalculation() async {
@@ -331,6 +410,22 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
       dtiStatusTextColor = const Color(0xFFB91C1C);
     }
 
+    final isDirty = _showResults && (
+      (double.tryParse(_primaryIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_primaryIncomeController] ?? 0.0) ||
+      (double.tryParse(_coIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_coIncomeController] ?? 0.0) ||
+      (double.tryParse(_otherIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_otherIncomeController] ?? 0.0) ||
+      (double.tryParse(_piPaymentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_piPaymentController] ?? 0.0) ||
+      (double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_propTaxController] ?? 0.0) ||
+      (double.tryParse(_hoInsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_hoInsController] ?? 0.0) ||
+      (double.tryParse(_pmiController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_pmiController] ?? 0.0) ||
+      (double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_hoaController] ?? 0.0) ||
+      (double.tryParse(_autoLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_autoLoanController] ?? 0.0) ||
+      (double.tryParse(_studentLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_studentLoanController] ?? 0.0) ||
+      (double.tryParse(_creditCardsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_creditCardsController] ?? 0.0) ||
+      (double.tryParse(_personalLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_personalLoanController] ?? 0.0) ||
+      (double.tryParse(_otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_otherDebtsController] ?? 0.0)
+    );
+
     final savedCalcs = ref.watch(savedProvider).where((c) => c.country == 'USA' && c.calcType == 'DTI Calculator').toList();
 
     return Column(
@@ -355,156 +450,6 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
         ),
         const SizedBox(height: 20),
 
-        // Live Result Hero (visible once calculated or loaded)
-        if (_showResults) ...[
-          _buildSectionHeader('Your DTI Result', onReset: null),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(19),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 36,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'DEBT-TO-INCOME RATIO · FRONT & BACK END',
-                  style: AppTextStyles.dmSans(
-                    size: 9.5,
-                    weight: FontWeight.w700,
-                    color: Colors.white.withValues(alpha: 0.48),
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      backDTI.toStringAsFixed(0),
-                      style: AppTextStyles.dmSans(
-                        size: 52,
-                        weight: FontWeight.w800,
-                        color: Colors.white,
-                      ).copyWith(fontFamily: 'Georgia', height: 1),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        '%',
-                        style: AppTextStyles.dmSans(
-                          size: 22,
-                          weight: FontWeight.w800,
-                          color: const Color(0xFFFCD34D),
-                        ).copyWith(fontFamily: 'Georgia'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: dtiStatusBg.withValues(alpha: 0.22),
-                        border: Border.all(color: dtiStatusTextColor.withValues(alpha: 0.35)),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        dtiStatusText,
-                        style: AppTextStyles.dmSans(
-                          size: 11,
-                          weight: FontWeight.w800,
-                          color: dtiStatusTextColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  'Front-end: ${frontDTI.toStringAsFixed(1)}% · Back-end: ${backDTI.toStringAsFixed(1)}% · Income: ${CurrencyFormatter.format(grossIncome)}/mo',
-                  style: AppTextStyles.dmSans(
-                    size: 9.5,
-                    color: Colors.white.withValues(alpha: 0.45),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Bar meters
-                _buildDtiBarRow('Front DTI', frontDTI, 45, frontDTI <= 28 ? Colors.green : frontDTI <= 36 ? Colors.orange : Colors.red),
-                const SizedBox(height: 5),
-                _buildDtiBarRow('Back DTI', backDTI, 45, backDTI <= 36 ? Colors.green : backDTI <= 43 ? Colors.orange : Colors.red),
-                const SizedBox(height: 5),
-                _buildDtiBarRow('Max Limit', 45, 45, const Color(0xFFD97706)),
-                const SizedBox(height: 16),
-
-                // Allocation stacked bar
-                Text(
-                  'Income Allocation Bar',
-                  style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w700, color: Colors.white60),
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: SizedBox(
-                    height: 18,
-                    child: Row(
-                      children: [
-                        if (frontDTI > 0)
-                          Expanded(
-                            flex: (frontDTI * 10).round(),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(colors: [Color(0xFF1B3F72), Color(0xFF0B1D3A)]),
-                              ),
-                            ),
-                          ),
-                        if (backDTI - frontDTI > 0)
-                          Expanded(
-                            flex: ((backDTI - frontDTI) * 10).round(),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(colors: [Color(0xFFD97706), Color(0xFFB45309)]),
-                              ),
-                            ),
-                          ),
-                        if (100 - backDTI > 0)
-                          Expanded(
-                            flex: ((100 - backDTI) * 10).round(),
-                            child: Container(color: Colors.white.withValues(alpha: 0.1)),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Legend
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 6,
-                  children: [
-                    _buildAllocLegendItem('Housing', const Color(0xFF1B3F72), '${frontDTI.toStringAsFixed(1)}%'),
-                    _buildAllocLegendItem('Other Debts', const Color(0xFFD97706), '${(backDTI - frontDTI).toStringAsFixed(1)}%'),
-                    _buildAllocLegendItem('Remaining', Colors.white30, '${max(0.0, 100 - backDTI).toStringAsFixed(1)}%'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-
         // Input Card 1: Income
         _buildSectionHeader('Gross Monthly Income', onReset: _resetInputs),
         const SizedBox(height: 8),
@@ -522,16 +467,16 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Primary Income', _primaryIncomeController, prefix: '\$', hint: 'Before taxes'),
+                    child: _buildInputField('Primary Income', _primaryIncomeController, prefix: '\$', hint: 'Before taxes', errorText: _errors['primaryIncome']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Co-Borrower', _coIncomeController, prefix: '\$', hint: 'Spouse / co-signer'),
+                    child: _buildInputField('Co-Borrower', _coIncomeController, prefix: '\$', hint: 'Spouse / co-signer', errorText: _errors['coIncome']),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              _buildInputField('Other Income (Rental / Side / Alimony)', _otherIncomeController, prefix: '\$', hint: '75% rental counted · Must document 2-yr'),
+              _buildInputField('Other Income (Rental / Side / Alimony)', _otherIncomeController, prefix: '\$', hint: '75% rental counted · Must document 2-yr', errorText: _errors['otherIncome']),
             ],
           ),
         ),
@@ -554,11 +499,11 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('P&I Payment', _piPaymentController, prefix: '\$'),
+                    child: _buildInputField('P&I Payment', _piPaymentController, prefix: '\$', errorText: _errors['piPayment']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Property Tax', _propTaxController, prefix: '\$', suffix: '/mo'),
+                    child: _buildInputField('Property Tax', _propTaxController, prefix: '\$', suffix: '/mo', errorText: _errors['propTax']),
                   ),
                 ],
               ),
@@ -566,16 +511,16 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Homeowners Ins.', _hoInsController, prefix: '\$', suffix: '/mo'),
+                    child: _buildInputField('Homeowners Ins.', _hoInsController, prefix: '\$', suffix: '/mo', errorText: _errors['hoIns']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('PMI / MIP', _pmiController, prefix: '\$', suffix: '/mo'),
+                    child: _buildInputField('PMI / MIP', _pmiController, prefix: '\$', suffix: '/mo', errorText: _errors['pmi']),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              _buildInputField('HOA Fee', _hoaController, prefix: '\$', suffix: '/mo'),
+              _buildInputField('HOA Fee', _hoaController, prefix: '\$', suffix: '/mo', errorText: _errors['hoa']),
             ],
           ),
         ),
@@ -598,11 +543,11 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Auto Loan(s)', _autoLoanController, prefix: '\$', suffix: '/mo'),
+                    child: _buildInputField('Auto Loan(s)', _autoLoanController, prefix: '\$', suffix: '/mo', errorText: _errors['autoLoan']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Student Loans', _studentLoanController, prefix: '\$', suffix: '/mo'),
+                    child: _buildInputField('Student Loans', _studentLoanController, prefix: '\$', suffix: '/mo', errorText: _errors['studentLoan']),
                   ),
                 ],
               ),
@@ -610,16 +555,16 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Credit Cards', _creditCardsController, prefix: '\$', suffix: '/mo'),
+                    child: _buildInputField('Credit Cards', _creditCardsController, prefix: '\$', suffix: '/mo', errorText: _errors['creditCards']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Personal Loan', _personalLoanController, prefix: '\$', suffix: '/mo'),
+                    child: _buildInputField('Personal Loan', _personalLoanController, prefix: '\$', suffix: '/mo', errorText: _errors['personalLoan']),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              _buildInputField('Other Obligations', _otherDebtsController, prefix: '\$', suffix: '/mo'),
+              _buildInputField('Other Obligations', _otherDebtsController, prefix: '\$', suffix: '/mo', errorText: _errors['otherDebts']),
             ],
           ),
         ),
@@ -631,12 +576,7 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
             Expanded(
               flex: 7,
               child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showResults = true;
-                    _isCalcDirty = false;
-                  });
-                },
+                onTap: _calculate,
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   decoration: BoxDecoration(
@@ -646,8 +586,8 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFB91C1C).withValues(alpha: _isCalcDirty ? 0.40 : 0.20),
-                        blurRadius: _isCalcDirty ? 16 : 8,
+                        color: const Color(0xFFB91C1C).withValues(alpha: isDirty ? 0.40 : 0.20),
+                        blurRadius: isDirty ? 16 : 8,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -663,84 +603,40 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
             const SizedBox(width: 10),
             Expanded(
               flex: 3,
-              child: GestureDetector(
-                onTap: _saveCalculation,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  decoration: BoxDecoration(
-                    color: theme.getCardColor(context),
-                    border: Border.all(color: theme.getBorderColor(context), width: 1.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '💾 Save',
-                    style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+              child: Opacity(
+                opacity: _showResults ? 1.0 : 0.5,
+                child: GestureDetector(
+                  onTap: () {
+                    if (!_showResults) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Please calculate before saving.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    } else {
+                      _saveCalculation();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '💾 Save',
+                      style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                    ),
                   ),
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 20),
-
-        // Results Details Breakdown Card
-        if (_showResults) ...[
-          _buildSectionHeader('Payment Breakdown', onReset: null),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              border: Border.all(color: theme.getBorderColor(context)),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
-              ],
-            ),
-            child: Column(
-              children: [
-                _buildBreakdownRow('Gross Monthly Income', grossIncome),
-                _buildBreakdownRow('Total Housing (PITI + HOA)', housing),
-                _buildBreakdownRow('Other Monthly Debts', otherDebts),
-                _buildBreakdownRow('Total Monthly Obligations', totalObligations, isHighlighted: true),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)]),
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Back-End DTI Ratio',
-                        style: AppTextStyles.dmSans(size: 11, color: Colors.white70, weight: FontWeight.w600),
-                      ),
-                      Text(
-                        '${backDTI.toStringAsFixed(1)}%',
-                        style: AppTextStyles.dmSans(size: 16, color: Colors.white, weight: FontWeight.w800).copyWith(fontFamily: 'Georgia'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-
-        // DTI Rules Guide (28/36 Rule)
-        _buildSectionHeader('The 28/36 Rule — Lender Guidelines', onReset: null),
-        const SizedBox(height: 8),
-        const GridViewRules(),
-        const SizedBox(height: 20),
-
-        // Lender DTI Limits
-        _buildSectionHeader('Lender DTI Limits (2025)', onReset: null),
-        const SizedBox(height: 8),
-        _buildLimitsList(),
         const SizedBox(height: 20),
 
         // Saved calculations section
@@ -838,6 +734,251 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
             },
           ),
         ],
+
+        const SizedBox(height: 20),
+
+        if (!_showResults)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                const Text('📊', style: TextStyle(fontSize: 42)),
+                const SizedBox(height: 10),
+                Text(
+                  'Calculate Your DTI Ratio',
+                  style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Enter your gross income, housing payments, and debts above.\nWe will calculate your front-end and back-end debt-to-income ratios.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context)),
+                ),
+              ],
+            ),
+          )
+        else ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate My DTI Ratio" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                _buildSectionHeader('Your DTI Result', onReset: null),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(19),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 36,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'DEBT-TO-INCOME RATIO · FRONT & BACK END',
+                        style: AppTextStyles.dmSans(
+                          size: 9.5,
+                          weight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.48),
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            backDTI.toStringAsFixed(0),
+                            style: AppTextStyles.dmSans(
+                              size: 52,
+                              weight: FontWeight.w800,
+                              color: Colors.white,
+                            ).copyWith(fontFamily: 'Georgia', height: 1),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Text(
+                              '%',
+                              style: AppTextStyles.dmSans(
+                                size: 22,
+                                weight: FontWeight.w800,
+                                color: const Color(0xFFFCD34D),
+                              ).copyWith(fontFamily: 'Georgia'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: dtiStatusBg.withValues(alpha: 0.22),
+                              border: Border.all(color: dtiStatusTextColor.withValues(alpha: 0.35)),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              dtiStatusText,
+                              style: AppTextStyles.dmSans(
+                                size: 10,
+                                weight: FontWeight.w800,
+                                color: dtiStatusTextColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'FRONT-END (HOUSING): ${frontDTI.toStringAsFixed(1)}%  ·  BACK-END (TOTAL): ${backDTI.toStringAsFixed(1)}%',
+                        style: AppTextStyles.dmSans(
+                          size: 9.5,
+                          weight: FontWeight.w800,
+                          color: Colors.white.withValues(alpha: 0.70),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          height: 10,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
+                          child: Row(
+                            children: [
+                              if (frontDTI > 0)
+                                Expanded(
+                                  flex: (frontDTI * 10).round(),
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(colors: [Color(0xFF1D4ED8), Color(0xFF1D4ED8)]),
+                                    ),
+                                  ),
+                                ),
+                              if (backDTI - frontDTI > 0)
+                                Expanded(
+                                  flex: ((backDTI - frontDTI) * 10).round(),
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(colors: [Color(0xFFD97706), Color(0xFFB45309)]),
+                                    ),
+                                  ),
+                                ),
+                              if (100 - backDTI > 0)
+                                Expanded(
+                                  flex: ((100 - backDTI) * 10).round(),
+                                  child: Container(color: Colors.white.withValues(alpha: 0.1)),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 6,
+                        children: [
+                          _buildAllocLegendItem('Housing', const Color(0xFF1B3F72), '${frontDTI.toStringAsFixed(1)}%'),
+                          _buildAllocLegendItem('Other Debts', const Color(0xFFD97706), '${(backDTI - frontDTI).toStringAsFixed(1)}%'),
+                          _buildAllocLegendItem('Remaining', Colors.white30, '${max(0.0, 100 - backDTI).toStringAsFixed(1)}%'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                _buildSectionHeader('Payment Breakdown', onReset: null),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildBreakdownRow('Gross Monthly Income', grossIncome),
+                      _buildBreakdownRow('Total Housing (PITI + HOA)', housing),
+                      _buildBreakdownRow('Other Monthly Debts', otherDebts),
+                      _buildBreakdownRow('Total Monthly Obligations', totalObligations, isHighlighted: true),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)]),
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Back-End DTI Ratio',
+                              style: AppTextStyles.dmSans(size: 11, color: Colors.white70, weight: FontWeight.w600),
+                            ),
+                            Text(
+                              '${backDTI.toStringAsFixed(1)}%',
+                              style: AppTextStyles.dmSans(size: 16, color: Colors.white, weight: FontWeight.w800).copyWith(fontFamily: 'Georgia'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                _buildSectionHeader('The 28/36 Rule — Lender Guidelines', onReset: null),
+                const SizedBox(height: 8),
+                const GridViewRules(),
+                const SizedBox(height: 20),
+
+                _buildSectionHeader('Lender DTI Limits (2025)', onReset: null),
+                const SizedBox(height: 8),
+                _buildLimitsList(),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -899,27 +1040,53 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
     String? prefix,
     String? suffix,
     String? hint,
+    String? errorText,
   }) {
     final theme = widget.theme;
+    final hasError = errorText != null;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.dmSans(
-              size: 9.5,
-              weight: FontWeight.w700,
-              color: theme.getMutedColor(context),
-              letterSpacing: 0.5,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppTextStyles.dmSans(
+                    size: 9.5,
+                    weight: FontWeight.w700,
+                    color: hasError ? Colors.red : theme.getMutedColor(context),
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (hasError)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    errorText,
+                    style: AppTextStyles.dmSans(
+                      size: 9,
+                      weight: FontWeight.w700,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 5),
           Container(
             decoration: BoxDecoration(
               color: theme.getBgColor(context),
-              border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+              border: Border.all(
+                color: hasError ? Colors.red : theme.getBorderColor(context),
+                width: 1.5,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -932,7 +1099,7 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                       style: AppTextStyles.dmSans(
                         size: 14,
                         weight: FontWeight.w800,
-                        color: theme.getMutedColor(context),
+                        color: hasError ? Colors.red : theme.getMutedColor(context),
                       ),
                     ),
                   ),
@@ -959,14 +1126,14 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                       style: AppTextStyles.dmSans(
                         size: 12,
                         weight: FontWeight.w700,
-                        color: theme.getMutedColor(context),
+                        color: hasError ? Colors.red : theme.getMutedColor(context),
                       ),
                     ),
                   ),
               ],
             ),
           ),
-          if (hint != null)
+          if (hint != null && !hasError)
             Padding(
               padding: const EdgeInsets.only(top: 3),
               child: Text(
@@ -982,43 +1149,7 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
     );
   }
 
-  Widget _buildDtiBarRow(String label, double val, double maxVal, Color fillCol) {
-    final pct = (val / maxVal * 100).clamp(0.0, 100.0);
-    return Row(
-      children: [
-        SizedBox(
-          width: 65,
-          child: Text(
-            label,
-            style: AppTextStyles.dmSans(size: 9, color: Colors.white54),
-          ),
-        ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              height: 6,
-              color: Colors.white12,
-              alignment: Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor: pct / 100.0,
-                child: Container(color: fillCol),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 32,
-          child: Text(
-            '${val.toStringAsFixed(0)}%',
-            textAlign: TextAlign.right,
-            style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: Colors.white70),
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildAllocLegendItem(String label, Color color, String val) {
     return Row(

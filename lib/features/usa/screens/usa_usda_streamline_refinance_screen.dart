@@ -22,6 +22,10 @@ class USAUsdaStreamlineRefinanceScreen extends ConsumerStatefulWidget {
 class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStreamlineRefinanceScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   // Controllers
   final _balanceController = TextEditingController(text: '260000');
   final _curRateController = TextEditingController(text: '7.25');
@@ -64,8 +68,6 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
       _taxController.text = (inputs['tax'] ?? 2800.0).toStringAsFixed(0);
       _insController.text = (inputs['insurance'] ?? 1400.0).toStringAsFixed(0);
       _calculate();
-    } else {
-      _calculate();
     }
   }
 
@@ -85,18 +87,42 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
   double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
 
   void _calculate() {
-    final balance = _val(_balanceController);
-    final curR = _val(_curRateController) / 100;
-    final newR = _val(_newRateController) / 100;
-    final moRemain = _val(_moRemainController).toInt();
-    final closingCosts = _val(_closingCostsController);
-    final guarFee = _val(_guarFeeController);
-    final taxAnnual = _val(_taxController);
-    final insAnnual = _val(_insController);
+    final errors = <String, String>{};
+    final balance = double.tryParse(_balanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final curRateVal = double.tryParse(_curRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final newRateVal = double.tryParse(_newRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final moRemain = double.tryParse(_moRemainController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final closingCosts = double.tryParse(_closingCostsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final guarFee = double.tryParse(_guarFeeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final tax = double.tryParse(_taxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final insurance = double.tryParse(_insController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (balance <= 0) errors['balance'] = 'Enter positive balance';
+    if (curRateVal <= 0) errors['curRate'] = 'Enter positive rate';
+    if (newRateVal <= 0) errors['newRate'] = 'Enter positive rate';
+    if (moRemain <= 0) errors['moRemain'] = 'Enter positive months';
+    if (closingCosts < 0) errors['closingCosts'] = 'Enter valid cost';
+    if (guarFee < 0) errors['guarFee'] = 'Enter valid fee';
+    if (tax < 0) errors['tax'] = 'Enter valid tax';
+    if (insurance < 0) errors['insurance'] = 'Enter valid insurance';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
+    final curR = curRateVal / 100;
+    final newR = newRateVal / 100;
 
     final newLoan = balance + closingCosts + guarFee;
-    final taxMo = taxAnnual / 12;
-    final insMo = insAnnual / 12;
+    final taxMo = tax / 12;
+    final insMo = insurance / 12;
 
     // Current P&I and Annual Fee
     final double curPIVal = MortgageMath.monthlyPayment(principal: balance, annualRatePercent: curR * 100, termYears: (moRemain / 12).ceil());
@@ -116,6 +142,15 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
     final netBenefit = monthlySave >= 50.0 || rateDrop >= 1.0;
 
     setState(() {
+      _calcSnapshot['balance'] = balance;
+      _calcSnapshot['curRate'] = curRateVal;
+      _calcSnapshot['newRate'] = newRateVal;
+      _calcSnapshot['moRemain'] = moRemain;
+      _calcSnapshot['closingCosts'] = closingCosts;
+      _calcSnapshot['guarFee'] = guarFee;
+      _calcSnapshot['tax'] = tax;
+      _calcSnapshot['insurance'] = insurance;
+
       _newLoanAmt = newLoan;
       _curTotalPayment = curTotal;
       _newTotalPayment = newTotal;
@@ -132,19 +167,29 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
       _netBenefitMet = netBenefit;
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
 
-    final balance = _val(_balanceController);
-    final curR = _val(_curRateController);
-    final newR = _val(_newRateController);
-    final moRemain = _val(_moRemainController);
-    final closingCosts = _val(_closingCostsController);
-    final guarFee = _val(_guarFeeController);
-    final tax = _val(_taxController);
-    final insurance = _val(_insController);
+    final balance = _calcSnapshot['balance'] ?? 260000.0;
+    final curR = _calcSnapshot['curRate'] ?? 7.25;
+    final newR = _calcSnapshot['newRate'] ?? 6.35;
+    final moRemain = _calcSnapshot['moRemain'] ?? 324.0;
+    final closingCosts = _calcSnapshot['closingCosts'] ?? 3500.0;
+    final guarFee = _calcSnapshot['guarFee'] ?? 2600.0;
+    final tax = _calcSnapshot['tax'] ?? 2800.0;
+    final insurance = _calcSnapshot['insurance'] ?? 1400.0;
 
     final calc = SavedCalc.create(
       country: 'USA',
@@ -173,7 +218,7 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('✅ Refinance scenario saved!'),
+        content: Text('✅ Refinance calculation saved!'),
         backgroundColor: Colors.green,
       ),
     );
@@ -181,6 +226,17 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_balanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['balance'] ?? 0.0) ||
+      (double.tryParse(_curRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['curRate'] ?? 0.0) ||
+      (double.tryParse(_newRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['newRate'] ?? 0.0) ||
+      (double.tryParse(_moRemainController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['moRemain'] ?? 0.0) ||
+      (double.tryParse(_closingCostsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['closingCosts'] ?? 0.0) ||
+      (double.tryParse(_guarFeeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['guarFee'] ?? 0.0) ||
+      (double.tryParse(_taxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['tax'] ?? 0.0) ||
+      (double.tryParse(_insController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['insurance'] ?? 0.0)
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -280,33 +336,33 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
                     children: [
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('Current Balance (\$)', _balanceController, hint: 'Remaining balance')),
+                          Expanded(child: _buildInputField('Current Balance (\$)', _balanceController, hint: 'Remaining balance', errorText: _errors['balance'])),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Current Rate (%)', _curRateController, hint: 'Existing USDA rate')),
+                          Expanded(child: _buildInputField('Current Rate (%)', _curRateController, hint: 'Existing USDA rate', errorText: _errors['curRate'])),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('New Rate (%)', _newRateController, hint: 'Target 30-yr rate')),
+                          Expanded(child: _buildInputField('New Rate (%)', _newRateController, hint: 'Target 30-yr rate', errorText: _errors['newRate'])),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Months Remaining', _moRemainController, hint: 'On current loan')),
+                          Expanded(child: _buildInputField('Months Remaining', _moRemainController, hint: 'On current loan', errorText: _errors['moRemain'])),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('Closing Costs (\$)', _closingCostsController, hint: 'Escrows, fees')),
+                          Expanded(child: _buildInputField('Closing Costs (\$)', _closingCostsController, hint: 'Escrows, fees', errorText: _errors['closingCosts'])),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Guarantee Fee (\$)', _guarFeeController, hint: '1% upfront financed')),
+                          Expanded(child: _buildInputField('Guarantee Fee (\$)', _guarFeeController, hint: '1% upfront financed', errorText: _errors['guarFee'])),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('Annual Property Tax (\$)', _taxController)),
+                          Expanded(child: _buildInputField('Annual Property Tax (\$)', _taxController, errorText: _errors['tax'])),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Annual Insurance (\$)', _insController)),
+                          Expanded(child: _buildInputField('Annual Insurance (\$)', _insController, errorText: _errors['insurance'])),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -331,8 +387,65 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
                 ),
 
                 // Results Hero Panel
-                if (_calculated) ...[
+                if (!_calculated) ...[
                   const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('🔄', style: TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'View Refinance Savings Results',
+                          style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Enter your current USDA loan details above, then tap "Calculate Refinance Savings" to run estimation.',
+                          style: AppTextStyles.dmSans(size: 10.5, color: mutedCol),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Calculate Refinance Savings" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   _buildSectionHeader('Results'),
 
                   // New Payment Hero
@@ -817,17 +930,18 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? hint}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? hint, String? errorText}) {
     const theme = _theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
+            color: hasError ? Colors.red : theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -835,12 +949,16 @@ class _USAUsdaStreamlineRefinanceScreenState extends ConsumerState<USAUsdaStream
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.dmSans(
               size: 13,
               weight: FontWeight.w800,

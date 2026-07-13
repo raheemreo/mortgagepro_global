@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_fix_flip_calc.dart
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,9 @@ class USAFixFlipCalc extends ConsumerStatefulWidget {
 }
 
 class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   final _arvController = TextEditingController(text: '425000');
   final _purchaseController = TextEditingController(text: '240000');
   final _rehabController = TextEditingController(text: '55000');
@@ -38,6 +42,17 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
   @override
   void initState() {
     super.initState();
+    _arvController.addListener(() => setState(() {}));
+    _purchaseController.addListener(() => setState(() {}));
+    _rehabController.addListener(() => setState(() {}));
+    _holdMonthsController.addListener(() => setState(() {}));
+    _hardRateController.addListener(() => setState(() {}));
+    _loanPctController.addListener(() => setState(() {}));
+    _buyCloseController.addListener(() => setState(() {}));
+    _sellCloseController.addListener(() => setState(() {}));
+    _holdCostsController.addListener(() => setState(() {}));
+    _miscController.addListener(() => setState(() {}));
+
     final controllers = [
       _arvController,
       _purchaseController,
@@ -82,7 +97,12 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   Map<String, dynamic> _computeFlip() {
     final arv = _val(_arvController);
@@ -133,17 +153,54 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
     };
   }
 
-  void _calculate() async {
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_arv = double.tryParse(_arvController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_arv <= 0) errors['arv'] = 'Please enter a valid amount';
+    final val_purchase = double.tryParse(_purchaseController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_purchase <= 0) errors['purchase'] = 'Please enter a valid amount';
+    final val_rehab = double.tryParse(_rehabController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_holdMonths = double.tryParse(_holdMonthsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_hardRate = double.tryParse(_hardRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_loanPct = double.tryParse(_loanPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_buyClose = double.tryParse(_buyCloseController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_sellClose = double.tryParse(_sellCloseController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_holdCosts = double.tryParse(_holdCostsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_misc = double.tryParse(_miscController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_arvController] = val_arv;
+      _calcSnapshot[_purchaseController] = val_purchase;
+      _calcSnapshot[_rehabController] = val_rehab;
+      _calcSnapshot[_holdMonthsController] = val_holdMonths;
+      _calcSnapshot[_hardRateController] = val_hardRate;
+      _calcSnapshot[_loanPctController] = val_loanPct;
+      _calcSnapshot[_buyCloseController] = val_buyClose;
+      _calcSnapshot[_sellCloseController] = val_sellClose;
+      _calcSnapshot[_holdCostsController] = val_holdCosts;
+      _calcSnapshot[_miscController] = val_misc;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final arv = _val(_arvController);
@@ -250,8 +307,29 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
     }
   }
 
+    void _resetInputs() {
+    setState(() {
+      _arvController.text = '425000';
+      _purchaseController.text = '240000';
+      _rehabController.text = '55000';
+      _holdMonthsController.text = '5';
+      _hardRateController.text = '12';
+      _loanPctController.text = '80';
+      _buyCloseController.text = '2';
+      _sellCloseController.text = '8';
+      _holdCostsController.text = '1200';
+      _miscController.text = '5000';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    final isDirty = _showResults && (double.tryParse(_arvController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_arvController] ?? 0.0) || double.tryParse(_purchaseController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_purchaseController] ?? 0.0) || double.tryParse(_rehabController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rehabController] ?? 0.0) || double.tryParse(_holdMonthsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_holdMonthsController] ?? 0.0) || double.tryParse(_hardRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_hardRateController] ?? 0.0) || double.tryParse(_loanPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_loanPctController] ?? 0.0) || double.tryParse(_buyCloseController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_buyCloseController] ?? 0.0) || double.tryParse(_sellCloseController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_sellCloseController] ?? 0.0) || double.tryParse(_holdCostsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_holdCostsController] ?? 0.0) || double.tryParse(_miscController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_miscController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -300,7 +378,7 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
         ]),
         const SizedBox(height: 16),
 
-        Text('DEAL DETAILS', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.bold)),
+        _buildSectionHeader('DEAL DETAILS', onReset: _resetInputs),
         const SizedBox(height: 8),
 
         // Inputs Card
@@ -406,6 +484,39 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
         const SizedBox(height: 16),
 
         if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Deal Verdict Card
           Container(
             padding: const EdgeInsets.all(20),
@@ -678,7 +789,7 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(String label, TextEditingController controller, {String? errorText}) {
     final theme = widget.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -689,7 +800,7 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(color: errorText != null ? Colors.redAccent : theme.getBorderColor(context), width: 1.5),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
@@ -700,6 +811,17 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
             decoration: const InputDecoration(border: InputBorder.none, isDense: true),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 3),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 9,
+              color: Colors.redAccent,
+              weight: FontWeight.bold,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -807,6 +929,35 @@ class _USAFixFlipCalcState extends ConsumerState<USAFixFlipCalc> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onReset, String resetLabel = 'Reset'}) {
+    final theme = widget.theme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: AppTextStyles.dmSans(
+            size: 11,
+            color: theme.getMutedColor(context),
+            weight: FontWeight.bold,
+          ),
+        ),
+        if (onReset != null)
+          TextButton(
+            onPressed: onReset,
+            child: Text(
+              resetLabel,
+              style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.accentColor,
+                weight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

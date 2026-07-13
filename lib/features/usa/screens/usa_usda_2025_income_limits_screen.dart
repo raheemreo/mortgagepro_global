@@ -21,6 +21,10 @@ class USAUsda2025IncomeLimitsScreen extends ConsumerStatefulWidget {
 class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025IncomeLimitsScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   // Controllers
   String _selectedState = '';
   String _selectedCountyType = 'standard'; // standard, high_cost
@@ -61,8 +65,6 @@ class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025Incom
       _selectedHhSize = (inputs['hhSize'] ?? 4.0).toInt();
       _selectedCountyType = (inputs['countyType'] ?? 0.0) == 0.0 ? 'standard' : 'high_cost';
       _calculate();
-    } else {
-      _calculate();
     }
   }
 
@@ -73,7 +75,24 @@ class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025Incom
   }
 
   void _calculate() {
-    final income = double.tryParse(_incomeController.text) ?? 0.0;
+    final errors = <String, String>{};
+    final income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (income <= 0) {
+      errors['income'] = 'Enter positive annual income';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _showResult = false;
+      });
+      return;
+    }
+
     final idx = (_selectedHhSize - 1).clamp(0, 7);
     final limit = _limitsData[_selectedCountyType]![idx];
 
@@ -82,28 +101,45 @@ class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025Incom
     final room = limit - income;
 
     setState(() {
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['hhSize'] = _selectedHhSize;
+      _calcSnapshot['countyType'] = _selectedCountyType;
+      _calcSnapshot['state'] = _selectedState;
+
       _limit = limit;
       _ratio = ratio;
       _room = room;
       _eligible = eligible;
       _showResult = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_showResult) return;
 
-    final income = double.tryParse(_incomeController.text) ?? 0.0;
+    final income = _calcSnapshot['income'] ?? 85000.0;
+    final hhSize = _calcSnapshot['hhSize'] ?? 4;
+    final countyType = _calcSnapshot['countyType'] ?? 'standard';
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'USDA 2025 Income Limits',
-      label: 'USDA Income Limit: $_selectedHhSize Person (${_eligible ? "Eligible" : "Over limit"})',
+      label: 'USDA Income Limit: $hhSize Person (${_eligible ? "Eligible" : "Over limit"})',
       currencyCode: 'USD',
       inputs: {
         'income': income,
-        'hhSize': _selectedHhSize.toDouble(),
-        'countyType': _selectedCountyType == 'standard' ? 0.0 : 1.0,
+        'hhSize': hhSize.toDouble(),
+        'countyType': countyType == 'standard' ? 0.0 : 1.0,
       },
       results: {
         'Limit': _limit,
@@ -126,11 +162,17 @@ class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025Incom
     setState(() {
       _selectedHhSize = size;
     });
-    _calculate();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _showResult && (
+      (double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['income'] ?? 0.0) ||
+      _selectedHhSize != (_calcSnapshot['hhSize'] ?? 4) ||
+      _selectedCountyType != (_calcSnapshot['countyType'] ?? 'standard') ||
+      _selectedState != (_calcSnapshot['state'] ?? '')
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -278,7 +320,7 @@ class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025Incom
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildInputField('Your Annual Income (\$)', _incomeController),
+                            child: _buildInputField('Your Annual Income (\$)', _incomeController, errorText: _errors['income']),
                           ),
                         ],
                       ),
@@ -304,8 +346,65 @@ class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025Incom
                 ),
 
                 // Hero Result Card
-                if (_showResult) ...[
+                if (!_showResult) ...[
                   const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('📋', style: TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'View Income Limit Results',
+                          style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Select your household size and county details, then tap "Look Up My Income Limit" to evaluate.',
+                          style: AppTextStyles.dmSans(size: 10.5, color: mutedCol),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Look Up My Income Limit" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -324,13 +423,13 @@ class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025Incom
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('INCOME LIMIT FOR $_selectedHhSize-PERSON HOUSEHOLD',
+                            Text('INCOME LIMIT FOR ${_calcSnapshot['hhSize'] ?? 4}-PERSON HOUSEHOLD',
                                 style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54, weight: FontWeight.w700, letterSpacing: 0.8)),
                             const SizedBox(height: 6),
                             Text(CurrencyFormatter.format(_limit, symbol: '\$').split('.').first,
                                 style: AppTextStyles.playfair(size: 30, color: Colors.white, weight: FontWeight.w800)),
                             const SizedBox(height: 2),
-                            Text('${_selectedCountyType == "high_cost" ? "High-Cost" : "Standard"} County · 502 Guaranteed · FY 2025',
+                            Text('${(_calcSnapshot['countyType'] ?? "standard") == "high_cost" ? "High-Cost" : "Standard"} County · 502 Guaranteed · FY 2025',
                                 style: AppTextStyles.dmSans(size: 9.5, color: Colors.white70)),
                             const SizedBox(height: 12),
                             Row(
@@ -659,17 +758,18 @@ class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025Incom
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? errorText}) {
     const theme = _theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
+            color: hasError ? Colors.red : theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -677,12 +777,16 @@ class _USAUsda2025IncomeLimitsScreenState extends ConsumerState<USAUsda2025Incom
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.dmSans(
               size: 13,
               weight: FontWeight.w800,

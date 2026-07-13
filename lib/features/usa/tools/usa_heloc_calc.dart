@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_heloc_calc.dart
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,9 @@ class USAHelocCalc extends ConsumerStatefulWidget {
 }
 
 class _USAHelocCalcState extends ConsumerState<USAHelocCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   final _homeValController = TextEditingController(text: '550000');
   final _mortBalController = TextEditingController(text: '320000');
   final _rateController = TextEditingController(text: '9.18');
@@ -34,6 +38,13 @@ class _USAHelocCalcState extends ConsumerState<USAHelocCalc> {
   @override
   void initState() {
     super.initState();
+    _homeValController.addListener(() => setState(() {}));
+    _mortBalController.addListener(() => setState(() {}));
+    _rateController.addListener(() => setState(() {}));
+    _drawAmtController.addListener(() => setState(() {}));
+    _drawYrsController.addListener(() => setState(() {}));
+    _repayYrsController.addListener(() => setState(() {}));
+
     final controllers = [
       _homeValController,
       _mortBalController,
@@ -69,7 +80,12 @@ class _USAHelocCalcState extends ConsumerState<USAHelocCalc> {
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   double _calcPI(double loan, double rate, double yrs) {
     final mo = rate / 1200;
@@ -79,6 +95,15 @@ class _USAHelocCalcState extends ConsumerState<USAHelocCalc> {
 
   void _resetInputs() {
     setState(() {
+      _homeValController.clear();
+      _mortBalController.clear();
+      _rateController.clear();
+      _drawAmtController.clear();
+      _drawYrsController.clear();
+      _repayYrsController.clear();
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
       _homeValController.text = '550000';
       _mortBalController.text = '320000';
       _rateController.text = '9.18';
@@ -90,40 +115,48 @@ class _USAHelocCalcState extends ConsumerState<USAHelocCalc> {
     });
   }
 
-  void _calculate() async {
-    final hv = _val(_homeValController);
-    final mb = _val(_mortBalController);
-    final draw = _val(_drawAmtController);
-
-    if (mb >= hv) {
-      _showError('⚠️ Mortgage balance exceeds home value');
-      return;
-    }
-    if (draw <= 0) {
-      _showError('⚠️ Draw amount must be greater than 0');
-      return;
-    }
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_homeVal = double.tryParse(_homeValController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_homeVal <= 0) errors['homeVal'] = 'Please enter a valid amount';
+    final val_mortBal = double.tryParse(_mortBalController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_rate <= 0) errors['rate'] = 'Please enter a valid amount';
+    final val_drawAmt = double.tryParse(_drawAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_drawYrs = double.tryParse(_drawYrsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_repayYrs = double.tryParse(_repayYrsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
 
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_homeValController] = val_homeVal;
+      _calcSnapshot[_mortBalController] = val_mortBal;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_drawAmtController] = val_drawAmt;
+      _calcSnapshot[_drawYrsController] = val_drawYrs;
+      _calcSnapshot[_repayYrsController] = val_repayYrs;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg, style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.bold)),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+
+
 
   void _saveCalculation() async {
     final hv = _val(_homeValController);
@@ -237,6 +270,9 @@ class _USAHelocCalcState extends ConsumerState<USAHelocCalc> {
 
   @override
   Widget build(BuildContext context) {
+
+    final isDirty = _showResults && (double.tryParse(_homeValController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homeValController] ?? 0.0) || double.tryParse(_mortBalController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_mortBalController] ?? 0.0) || double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rateController] ?? 0.0) || double.tryParse(_drawAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_drawAmtController] ?? 0.0) || double.tryParse(_drawYrsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_drawYrsController] ?? 0.0) || double.tryParse(_repayYrsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_repayYrsController] ?? 0.0));
+
     final theme = widget.theme;
 
     final hv = _val(_homeValController);
@@ -398,6 +434,39 @@ class _USAHelocCalcState extends ConsumerState<USAHelocCalc> {
         const SizedBox(height: 16),
 
         if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Results Hero Card
           Container(
             padding: const EdgeInsets.all(20),

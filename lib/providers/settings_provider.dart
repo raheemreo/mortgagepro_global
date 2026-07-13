@@ -1,5 +1,6 @@
 // lib/providers/settings_provider.dart
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,6 +14,10 @@ class AppSettings {
   final String preferredCountry;
   final String preferredCurrency;
   final bool privacyChoicesOptOut;
+  final String? region;
+  final String? selectedEuropeCountry;
+  final Map<String, String> preferredCalculatorTab;
+  final String? pinnedCountry;
 
   const AppSettings({
     this.themeMode = 'system',
@@ -21,6 +26,10 @@ class AppSettings {
     this.preferredCountry = 'USA',
     this.preferredCurrency = 'USD',
     this.privacyChoicesOptOut = false,
+    this.region,
+    this.selectedEuropeCountry,
+    this.preferredCalculatorTab = const {},
+    this.pinnedCountry,
   });
 
   /// Backward-compat getter for code that still checks `settings.darkMode`
@@ -45,6 +54,10 @@ class AppSettings {
     String? preferredCountry,
     String? preferredCurrency,
     bool? privacyChoicesOptOut,
+    String? region,
+    String? selectedEuropeCountry,
+    Map<String, String>? preferredCalculatorTab,
+    String? pinnedCountry,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -54,6 +67,12 @@ class AppSettings {
       preferredCountry: preferredCountry ?? this.preferredCountry,
       preferredCurrency: preferredCurrency ?? this.preferredCurrency,
       privacyChoicesOptOut: privacyChoicesOptOut ?? this.privacyChoicesOptOut,
+      region: region ?? this.region,
+      selectedEuropeCountry:
+          selectedEuropeCountry ?? this.selectedEuropeCountry,
+      preferredCalculatorTab:
+          preferredCalculatorTab ?? this.preferredCalculatorTab,
+      pinnedCountry: pinnedCountry ?? this.pinnedCountry,
     );
   }
 }
@@ -81,6 +100,22 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       storedTheme = legacyDark ? 'dark' : 'system';
     }
 
+    // Load new fields
+    final region = prefs.getString('region');
+    final selectedEuropeCountry = prefs.getString('selected_europe_country');
+    final pinnedCountry = prefs.getString('pinned_country');
+    
+    Map<String, String> preferredCalculatorTab = {};
+    final tabsStr = prefs.getString('preferred_calculator_tabs') ?? '';
+    if (tabsStr.isNotEmpty) {
+      try {
+        final decoded = json.decode(tabsStr);
+        if (decoded is Map) {
+          preferredCalculatorTab = decoded.map((k, v) => MapEntry(k.toString(), v.toString()));
+        }
+      } catch (_) {}
+    }
+
     state = AppSettings(
       themeMode: storedTheme,
       defaultTermYears: prefs.getInt('default_term') ?? 30,
@@ -88,6 +123,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       preferredCountry: prefs.getString('preferred_country') ?? 'USA',
       preferredCurrency: cur,
       privacyChoicesOptOut: prefs.getBool('privacy_choices_opt_out') ?? false,
+      region: region,
+      selectedEuropeCountry: selectedEuropeCountry,
+      preferredCalculatorTab: preferredCalculatorTab,
+      pinnedCountry: pinnedCountry,
     );
   }
 
@@ -145,6 +184,91 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('privacy_choices_opt_out', value);
     state = state.copyWith(privacyChoicesOptOut: value);
+  }
+
+  Future<void> setRegion(String? value) async {
+    state = AppSettings(
+      themeMode: state.themeMode,
+      defaultTermYears: state.defaultTermYears,
+      defaultDepositPercent: state.defaultDepositPercent,
+      preferredCountry: state.preferredCountry,
+      preferredCurrency: state.preferredCurrency,
+      privacyChoicesOptOut: state.privacyChoicesOptOut,
+      region: value,
+      selectedEuropeCountry: state.selectedEuropeCountry,
+      preferredCalculatorTab: state.preferredCalculatorTab,
+      pinnedCountry: state.pinnedCountry,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    if (value == null) {
+      await prefs.remove('region');
+    } else {
+      await prefs.setString('region', value);
+    }
+  }
+
+  Future<void> setEuropeCountry(String? value) async {
+    state = AppSettings(
+      themeMode: state.themeMode,
+      defaultTermYears: state.defaultTermYears,
+      defaultDepositPercent: state.defaultDepositPercent,
+      preferredCountry: state.preferredCountry,
+      preferredCurrency: state.preferredCurrency,
+      privacyChoicesOptOut: state.privacyChoicesOptOut,
+      region: state.region,
+      selectedEuropeCountry: value,
+      preferredCalculatorTab: state.preferredCalculatorTab,
+      pinnedCountry: state.pinnedCountry,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    if (value == null) {
+      await prefs.remove('selected_europe_country');
+    } else {
+      await prefs.setString('selected_europe_country', value);
+    }
+  }
+
+  Future<void> setCalculatorTab(String country, String tab) async {
+    final newTabs = Map<String, String>.from(state.preferredCalculatorTab);
+    newTabs[country] = tab;
+    
+    state = AppSettings(
+      themeMode: state.themeMode,
+      defaultTermYears: state.defaultTermYears,
+      defaultDepositPercent: state.defaultDepositPercent,
+      preferredCountry: state.preferredCountry,
+      preferredCurrency: state.preferredCurrency,
+      privacyChoicesOptOut: state.privacyChoicesOptOut,
+      region: state.region,
+      selectedEuropeCountry: state.selectedEuropeCountry,
+      preferredCalculatorTab: newTabs,
+      pinnedCountry: state.pinnedCountry,
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = json.encode(newTabs);
+    await prefs.setString('preferred_calculator_tabs', jsonStr);
+  }
+
+  Future<void> setPinnedCountry(String? value) async {
+    state = AppSettings(
+      themeMode: state.themeMode,
+      defaultTermYears: state.defaultTermYears,
+      defaultDepositPercent: state.defaultDepositPercent,
+      preferredCountry: state.preferredCountry,
+      preferredCurrency: state.preferredCurrency,
+      privacyChoicesOptOut: state.privacyChoicesOptOut,
+      region: state.region,
+      selectedEuropeCountry: state.selectedEuropeCountry,
+      preferredCalculatorTab: state.preferredCalculatorTab,
+      pinnedCountry: value,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    if (value == null) {
+      await prefs.remove('pinned_country');
+    } else {
+      await prefs.setString('pinned_country', value);
+    }
   }
 
   Future<void> clearAll() async {

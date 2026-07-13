@@ -233,6 +233,77 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ),
                 ]),
 
+                // ── Default Country Tools ────────────────────────────
+                const _SecLabel('Default Country Tools'),
+                // Subheader description
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    'Choose one default country for quick access, or leave unset for the standard order.',
+                    style: AppTextStyles.dmSans(
+                        size: 11,
+                        color: _C.muted,
+                        weight: FontWeight.w400),
+                  ),
+                ),
+                Builder(builder: (context) {
+                  // Read pinned via scoped selector — only rebuilds this sub-tree
+                  // when pinnedCountry changes, not on any other settings change.
+                  final pinned = ref.watch(
+                      settingsProvider.select((s) => s.pinnedCountry));
+                  final notifier =
+                      ref.read(settingsProvider.notifier);
+
+                  // 8 entries: No default + 7 countries
+                  // (code, flag, label, desc)
+                  const entries = [
+                    (null, '⭕', 'No default',
+                        'Standard order — Global, USA, Canada…'),
+                    ('USA', '🇺🇸', 'USA — 25 Tools',
+                        'PITI · DTI · FHA · VA · USDA · FRED'),
+                    ('CA', '🇨🇦', 'Canada — 18 Tools',
+                        'CMHC · GDS/TDS · Stress Test · BoC'),
+                    ('UK', '🇬🇧', 'UK — 20 Tools',
+                        'SDLT · LTV · Help to Buy · BoE'),
+                    ('AU', '🇦🇺', 'Australia — 20 Tools',
+                        'LMI · Offset · Stamp Duty · RBA'),
+                    ('NZ', '🇳🇿', 'New Zealand — 22 Tools',
+                        'LVR · KiwiSaver · Bright-Line · RBNZ'),
+                    ('EU', '🇪🇺', 'Europe — 18 Tools',
+                        'ECB · Euribor · DE/FR/ES/IT/NL'),
+                    ('IN', '🇮🇳', 'India — 25+ Tools',
+                        'EMI · FOIR · Income Tax · SIP'),
+                  ];
+
+                  final children = <Widget>[];
+                  for (int i = 0; i < entries.length; i++) {
+                    final (code, flag, name, desc) = entries[i];
+                    final isSelected = pinned == code;
+                    final isLast = i == entries.length - 1;
+                    children.add(_SetItem(
+                      icon: flag,
+                      iconBg: isSelected
+                          ? const Color(0xFFEFF6FF)
+                          : const Color(0xFFF8FAFC),
+                      name: name,
+                      desc: desc,
+                      isLast: isLast,
+                      trailing: Icon(
+                        isSelected
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_unchecked_rounded,
+                        size: 20,
+                        color: isSelected
+                            ? _C.teal
+                            : _C.muted.withValues(alpha: 0.5),
+                      ),
+                      onTap: () => notifier.setPinnedCountry(code),
+                    ));
+                  }
+
+                  return _SetGroup(children: children);
+                }),
+
                 // ── Ad-Free Session ────────────────────────────────────
                 const _SecLabel('Ad Experience'),
                 _SetGroup(children: [
@@ -1740,7 +1811,7 @@ class _AppInfo extends StatelessWidget {
             style: AppTextStyles.dmSans(
                 size: 13, color: _C.navy, weight: FontWeight.w800)),
         const SizedBox(height: 3),
-        Text('Version 1.0.0 · REO Technologies · © 2026',
+        Text('Version 1.0.9 · REO Technologies · © 2026',
             style: AppTextStyles.dmSans(size: 11, color: _C.muted)),
       ]),
     );

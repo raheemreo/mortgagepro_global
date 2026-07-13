@@ -21,6 +21,10 @@ class USAVaBenefitsScreen extends ConsumerStatefulWidget {
 class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   final _homePriceController = TextEditingController(text: '425000');
   final _downPmtController = TextEditingController(text: '0');
   final _incomeController = TextEditingController(text: '90000');
@@ -56,11 +60,35 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
   }
 
   void _calculate() {
-    final price = double.tryParse(_homePriceController.text) ?? 425000;
-    final term = _loanTerm;
-    final downPmt = double.tryParse(_downPmtController.text) ?? 0;
-    final income = double.tryParse(_incomeController.text) ?? 90000;
+    final errors = <String, String>{};
+    final price = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final downPmt = double.tryParse(_downPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
 
+    if (price <= 0) {
+      errors['price'] = 'Enter positive home price';
+    }
+    if (downPmt < 0) {
+      errors['downPmt'] = 'Enter valid down payment';
+    } else if (downPmt >= price && price > 0) {
+      errors['downPmt'] = 'Down payment must be less than price';
+    }
+    if (income <= 0) {
+      errors['income'] = 'Enter positive income';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
+    final term = _loanTerm;
     final downPct = downPmt / price;
     final loanAmt = price - downPmt;
     const vaRate = 0.0625;
@@ -101,6 +129,13 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
     final dti = monthlyIncome > 0 ? (payment / monthlyIncome * 100) : 0.0;
 
     setState(() {
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['downPmt'] = downPmt;
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['loanTerm'] = term;
+      _calcSnapshot['_serviceType'] = _serviceType;
+      _calcSnapshot['_disability'] = _disability;
+
       _loanAmt = loanAmt;
       _payment = payment;
       _fundingFeeAmt = fundingFeeAmt;
@@ -111,11 +146,23 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
       _totalSaved = totalSaved;
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
-    final price = double.tryParse(_homePriceController.text) ?? 425000;
+    final price = _calcSnapshot['price'] ?? 425000.0;
+    final term = (_calcSnapshot['loanTerm'] ?? 30).toDouble();
+    final down = _calcSnapshot['downPmt'] ?? 0.0;
 
     final calc = SavedCalc.create(
       country: 'USA',
@@ -124,8 +171,8 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
       currencyCode: 'USD',
       inputs: {
         'price': price,
-        'term': _loanTerm.toDouble(),
-        'down': double.tryParse(_downPmtController.text) ?? 0,
+        'term': term,
+        'down': down,
       },
       results: {
         'Monthly Payment': _payment,
@@ -147,6 +194,15 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['price'] ?? 0.0) ||
+      (double.tryParse(_downPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['downPmt'] ?? 0.0) ||
+      (double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['income'] ?? 0.0) ||
+      _loanTerm != (_calcSnapshot['loanTerm'] ?? 30) ||
+      _serviceType != (_calcSnapshot['_serviceType'] ?? 'active') ||
+      _disability != (_calcSnapshot['_disability'] ?? 'none')
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -289,7 +345,7 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              Expanded(child: _buildInputField('Home Price (\$)', _homePriceController)),
+                              Expanded(child: _buildInputField('Home Price (\$)', _homePriceController, errorText: _errors['price'])),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: _buildDropdownField('Loan Term', _loanTerm, [
@@ -310,7 +366,7 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
                                 ], (val) => setState(() => _serviceType = val!)),
                               ),
                               const SizedBox(width: 10),
-                              Expanded(child: _buildInputField('Down Payment (\$)', _downPmtController)),
+                              Expanded(child: _buildInputField('Down Payment (\$)', _downPmtController, errorText: _errors['downPmt'])),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -323,7 +379,7 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
                                 ], (val) => setState(() => _disability = val!)),
                               ),
                               const SizedBox(width: 10),
-                              Expanded(child: _buildInputField('Annual Income (\$)', _incomeController)),
+                              Expanded(child: _buildInputField('Annual Income (\$)', _incomeController, errorText: _errors['income'])),
                             ],
                           ),
                           const SizedBox(height: 14),
@@ -344,6 +400,36 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
                           // Calculation results
                           if (_calculated) ...[
                             const SizedBox(height: 16),
+                            Container(
+                              key: _resultsKey,
+                              child: Column(
+                                children: [
+                                  if (isDirty) ...[
+                                    Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withValues(alpha: 0.15),
+                                        border: Border.all(color: Colors.amber),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Inputs have changed. Tap "Calculate VA Loan & Savings" to update results.',
+                                              style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
@@ -641,11 +727,12 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? errorText}) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.4)),
+        Text(hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: hasError ? Colors.red : Colors.grey, letterSpacing: 0.4)),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
@@ -655,7 +742,18 @@ class _USAVaBenefitsScreenState extends ConsumerState<USAVaBenefitsScreen> {
             fillColor: _theme.backgroundColor.withValues(alpha: 0.3),
             filled: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+            ),
           ),
         ),
       ],

@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_flood_insurance_calc.dart
 
 import 'package:flutter/material.dart';
@@ -18,6 +19,8 @@ class USAFloodInsuranceCalc extends ConsumerStatefulWidget {
 }
 
 class _USAFloodInsuranceCalcState extends ConsumerState<USAFloodInsuranceCalc> {
+  final _resultsKey = GlobalKey();
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   double _bldgCoverage = 250000;
   double _contCoverage = 100000;
   String _floodZone = 'AE';
@@ -65,6 +68,8 @@ class _USAFloodInsuranceCalcState extends ConsumerState<USAFloodInsuranceCalc> {
 
   void _resetInputs() {
     setState(() {
+      _calcSnapshot.clear();
+      _showResults = false;
       _bldgCoverage = 250000;
       _contCoverage = 100000;
       _floodZone = 'AE';
@@ -76,17 +81,26 @@ class _USAFloodInsuranceCalcState extends ConsumerState<USAFloodInsuranceCalc> {
 
   // Unused: _loadSavedCalculation removed to resolve analyzer warnings.
 
-  void _calculate() async {
+    void _calculate() {
     setState(() {
-      _calculating = true;
-    });
-    await Future.delayed(const Duration(milliseconds: 400));
-    setState(() {
-      _calculating = false;
+      _calcSnapshot['_bldgCoverage'] = _bldgCoverage;
+      _calcSnapshot['_contCoverage'] = _contCoverage;
+      _calcSnapshot['_floodZone'] = _floodZone;
+      _calcSnapshot['_elevation'] = _elevation;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final baseRate = _zoneRates[_floodZone]?[_elevation] ?? _zoneRates[_floodZone]![1]!;
@@ -198,6 +212,13 @@ class _USAFloodInsuranceCalcState extends ConsumerState<USAFloodInsuranceCalc> {
 
   @override
   Widget build(BuildContext context) {
+    final _bldgCoverage = _showResults ? (_calcSnapshot['_bldgCoverage'] ?? this._bldgCoverage) : this._bldgCoverage;
+    final _contCoverage = _showResults ? (_calcSnapshot['_contCoverage'] ?? this._contCoverage) : this._contCoverage;
+    final _floodZone = _showResults ? (_calcSnapshot['_floodZone'] ?? this._floodZone) : this._floodZone;
+    final _elevation = _showResults ? (_calcSnapshot['_elevation'] ?? this._elevation) : this._elevation;
+
+    final isDirty = _showResults && (this._bldgCoverage != _calcSnapshot['_bldgCoverage'] || this._contCoverage != _calcSnapshot['_contCoverage'] || this._floodZone != _calcSnapshot['_floodZone'] || this._elevation != _calcSnapshot['_elevation']);
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
@@ -401,7 +422,39 @@ class _USAFloodInsuranceCalcState extends ConsumerState<USAFloodInsuranceCalc> {
         ),
 
         // Save banner
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults) ...[
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),
@@ -513,7 +566,7 @@ class _USAFloodInsuranceCalcState extends ConsumerState<USAFloodInsuranceCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _bldgCoverage = val;
+                    this._bldgCoverage = val;
                     _markDirty();
                   });
                 },
@@ -550,7 +603,7 @@ class _USAFloodInsuranceCalcState extends ConsumerState<USAFloodInsuranceCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _contCoverage = val;
+                    this._contCoverage = val;
                     _markDirty();
                   });
                 },
@@ -633,7 +686,40 @@ class _USAFloodInsuranceCalcState extends ConsumerState<USAFloodInsuranceCalc> {
 
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Analytics Panel
           Text(
             'Premium Analysis',

@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/ads/native_ad_widget.dart';
-import '../../widgets/ads/banner_ad_widget.dart';
 import '../../app/theme/text_styles.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../core/navigation/tool_navigation.dart';
@@ -18,6 +17,7 @@ import '../../providers/uk_rates_provider.dart';
 import '../../providers/nz_rates_provider.dart';
 import '../../services/remote_config_service.dart';
 import '../notifications/providers/notifications_provider.dart';
+import '../../providers/settings_provider.dart';
 
 import '../../services/analytics_service.dart';
 import '../../services/analytics/analytics_screen.dart';
@@ -67,38 +67,115 @@ class _TabMeta {
   const _TabMeta(this.flag, this.label);
 }
 
-const _tabs = [
-  _TabMeta('🌐', 'Global'),
-  _TabMeta('🇺🇸', 'United States'),
-  _TabMeta('🇨🇦', 'Canada'),
-  _TabMeta('🇬🇧', 'United Kingdom'),
-  _TabMeta('🇦🇺', 'Australia'),
-  _TabMeta('🇳🇿', 'New Zealand'),
-  _TabMeta('🇪🇺', 'Europe'),
-  _TabMeta('🇮🇳', 'India'),
-];
+/// Stable internal country codes — order here is the default (no-pin) order.
+const _kBaseOrder = ['GLOBAL', 'USA', 'CA', 'UK', 'AU', 'NZ', 'EU', 'IN'];
+
+/// Maps a stable country code to its display metadata.
+const _tabMetaMap = <String, _TabMeta>{
+  'GLOBAL': _TabMeta('🌐', 'Global'),
+  'USA':    _TabMeta('🇺🇸', 'United States'),
+  'CA':     _TabMeta('🇨🇦', 'Canada'),
+  'UK':     _TabMeta('🇬🇧', 'United Kingdom'),
+  'AU':     _TabMeta('🇦🇺', 'Australia'),
+  'NZ':     _TabMeta('🇳🇿', 'New Zealand'),
+  'EU':     _TabMeta('🇪🇺', 'Europe'),
+  'IN':     _TabMeta('🇮🇳', 'India'),
+};
+
+/// Returns the tab display order given the currently pinned country.
+/// The pinned country is moved to position 1 (right after Global).
+/// When [pinnedCountry] is null, not in [baseOrder], or equals 'GLOBAL',
+/// the original [baseOrder] is returned unchanged.
+List<String> computeTabOrder({
+  required List<String> baseOrder,
+  required String? pinnedCountry,
+}) {
+  if (pinnedCountry == null ||
+      !baseOrder.contains(pinnedCountry) ||
+      pinnedCountry == 'GLOBAL') {
+    return baseOrder;
+  }
+  final rest =
+      baseOrder.where((c) => c != 'GLOBAL' && c != pinnedCountry).toList();
+  return ['GLOBAL', pinnedCountry, ...rest];
+}
+
+/// Builds the tab panel widget for [code], wired to [ctrl].
+Widget _buildPanel(String code, TabController ctrl) {
+  return switch (code) {
+    'GLOBAL' => _GlobalTab(tabController: ctrl),
+    'USA'    => _UsaTab(tabController: ctrl),
+    'CA'     => _CanadaTab(tabController: ctrl),
+    'UK'     => _UkTab(tabController: ctrl),
+    'AU'     => _AustraliaTab(tabController: ctrl),
+    'NZ'     => _NewZealandTab(tabController: ctrl),
+    'EU'     => _EuropeTab(tabController: ctrl),
+    _        => _IndiaTab(tabController: ctrl),
+  };
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  HOME SCREEN
 // ═══════════════════════════════════════════════════════════════
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
+class _HomeScreenState extends ConsumerState<HomeScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
   Timer? _tabDebounce;
+
+  // The current computed tab order (codes). Updated only when pinnedCountry changes.
+  List<String> _currentOrder = _kBaseOrder;
+
+  // Cached panel widgets — rebuilt only when _currentOrder changes.
+  // Avoids recreating all 8 country widgets on every build() call.
+  late List<Widget> _panelWidgets;
 
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 8, vsync: this);
     _tabCtrl.addListener(_handleTabChange);
+    _panelWidgets = _buildPanels(_currentOrder);
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-compute tab order when pinnedCountry changes.
+    // didChangeDependencies is the correct place for ref.listen — not build().
+    final pinned = ref.read(settingsProvider).pinnedCountry;
+    _updateOrder(pinned);
+  }
+
+  void _updateOrder(String? pinned) {
+    final newOrder = computeTabOrder(
+      baseOrder: _kBaseOrder,
+      pinnedCountry: pinned,
+    );
+    if (!_listEquals(newOrder, _currentOrder)) {
+      _currentOrder = newOrder;
+      _panelWidgets = _buildPanels(_currentOrder);
+    }
+  }
+
+  /// Shallow list equality helper — avoids importing collection package.
+  bool _listEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  /// Builds the list of panel widgets from the given order.
+  List<Widget> _buildPanels(List<String> order) =>
+      order.map((code) => _buildPanel(code, _tabCtrl)).toList();
 
   void _handleTabChange() {
     if (!_tabCtrl.indexIsChanging) {
@@ -107,10 +184,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _onTabTapped(int index) {
+    final code = (index < _currentOrder.length) ? _currentOrder[index] : null;
     _tabDebounce?.cancel();
     _tabDebounce = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
-        AnalyticsService.instance.logCountryTabTap(index);
+        AnalyticsService.instance
+            .logCountryTabTap(index, countryCode: code);
       }
     });
   }
@@ -130,6 +209,23 @@ class _HomeScreenState extends State<HomeScreen>
     final expandedHeight = textScale.scale(160.0);
     final collapsedHeight = textScale.scale(110.0);
 
+    // Scoped selector — rebuilds only when pinnedCountry changes.
+    final pinned = ref.watch(settingsProvider.select((s) => s.pinnedCountry));
+
+    // Listen for pin changes: snap to Global + refresh panel cache.
+    // Using ref.listen here is safe because build() is idempotent for listeners
+    // in ConsumerState — Riverpod de-duplicates them.
+    ref.listen<String?>(settingsProvider.select((s) => s.pinnedCountry),
+        (_, next) {
+      if (mounted) {
+        _updateOrder(next);
+        _tabCtrl.animateTo(0);
+      }
+    });
+
+    // Keep _currentOrder in sync with the watched value (first build / hot-reload).
+    _updateOrder(pinned);
+
     return Scaffold(
       backgroundColor: _DT.bg,
       body: Stack(
@@ -141,6 +237,7 @@ class _HomeScreenState extends State<HomeScreen>
                 pinned: true,
                 delegate: _HomeHeaderDelegate(
                   tabCtrl: _tabCtrl,
+                  tabOrder: _currentOrder,
                   expandedHeight: expandedHeight,
                   collapsedHeight: collapsedHeight,
                   onTabTapped: _onTabTapped,
@@ -150,16 +247,8 @@ class _HomeScreenState extends State<HomeScreen>
             body: TabBarView(
               controller: _tabCtrl,
               physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _GlobalTab(tabController: _tabCtrl),
-                _UsaTab(tabController: _tabCtrl),
-                _CanadaTab(tabController: _tabCtrl),
-                _UkTab(tabController: _tabCtrl),
-                _AustraliaTab(tabController: _tabCtrl),
-                _NewZealandTab(tabController: _tabCtrl),
-                _EuropeTab(tabController: _tabCtrl),
-                _IndiaTab(tabController: _tabCtrl),
-              ],
+              // Use the cached panel list — only rebuilt when order changes.
+              children: _panelWidgets,
             ),
           ),
           // ── Bottom Nav ─────────────────────────────
@@ -186,12 +275,14 @@ class _HomeScreenState extends State<HomeScreen>
 // ═══════════════════════════════════════════════════════════════
 class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   final TabController tabCtrl;
+  final List<String> tabOrder;
   final double expandedHeight;
   final double collapsedHeight;
   final ValueChanged<int> onTabTapped;
 
   const _HomeHeaderDelegate({
     required this.tabCtrl,
+    required this.tabOrder,
     required this.expandedHeight,
     required this.collapsedHeight,
     required this.onTabTapped,
@@ -205,6 +296,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_HomeHeaderDelegate old) =>
       old.tabCtrl != tabCtrl ||
+      old.tabOrder != tabOrder ||
       old.expandedHeight != expandedHeight ||
       old.collapsedHeight != collapsedHeight ||
       old.onTabTapped != onTabTapped;
@@ -378,7 +470,8 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                 fontWeight: FontWeight.w500,
               ),
               dividerColor: Colors.transparent,
-              tabs: _tabs.map((t) {
+              tabs: tabOrder.map((code) {
+                final t = _tabMetaMap[code] ?? const _TabMeta('🌐', 'Global');
                 return Tab(
                   height: 36,
                   child: Row(
@@ -1821,12 +1914,7 @@ class _GlobalTabState extends State<_GlobalTab>
                 sub: 'USD · CAD · GBP · AUD · NZD · EUR · INR',
                 onTap: () => context.push('/global'),
               ),
-              // ── Banner Ad (Global tab footer) ───────────────────────────────────
-              // AdMob Policy: ≥32dp from last interactive element; collapses on failure.
-              // DO NOT reduce this spacing — prevents accidental taps on content above.
-              const SizedBox(height: 32),
-              const BannerAdWidget(screenName: 'global_home_bottom_banner'),
-              const SizedBox(height: 16),
+
             ]),
           ),
         ),

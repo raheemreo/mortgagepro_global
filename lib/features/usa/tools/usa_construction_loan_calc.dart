@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_construction_loan_calc.dart
 
 import 'package:flutter/material.dart';
@@ -13,13 +14,17 @@ import '../../../shared/models/saved_calc.dart';
 
 class USAConstructionLoanCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
-  const USAConstructionLoanCalc({super.key, this.theme = CountryThemes.usa});
+  final SavedCalc? savedCalc;
+  const USAConstructionLoanCalc({super.key, this.theme = CountryThemes.usa, this.savedCalc});
 
   @override
   ConsumerState<USAConstructionLoanCalc> createState() => _USAConstructionLoanCalcState();
 }
 
 class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   // Input Controllers
   final _landCostController = TextEditingController(text: '120000');
   final _buildCostController = TextEditingController(text: '380000');
@@ -30,30 +35,19 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
   final _contingencyController = TextEditingController(text: '10');
 
   bool _showResults = false;
-  bool _isCalcDirty = true;
 
   @override
   void initState() {
     super.initState();
-    _landCostController.addListener(_markDirty);
-    _buildCostController.addListener(_markDirty);
-    _constRateController.addListener(_markDirty);
-    _permRateController.addListener(_markDirty);
-    _buildMonthsController.addListener(_markDirty);
-    _downPctController.addListener(_markDirty);
-    _contingencyController.addListener(_markDirty);
+    if (widget.savedCalc != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadSavedCalculation(widget.savedCalc!);
+      });
+    }
   }
 
   @override
   void dispose() {
-    _landCostController.removeListener(_markDirty);
-    _buildCostController.removeListener(_markDirty);
-    _constRateController.removeListener(_markDirty);
-    _permRateController.removeListener(_markDirty);
-    _buildMonthsController.removeListener(_markDirty);
-    _downPctController.removeListener(_markDirty);
-    _contingencyController.removeListener(_markDirty);
-
     _landCostController.dispose();
     _buildCostController.dispose();
     _constRateController.dispose();
@@ -64,15 +58,28 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
     super.dispose();
   }
 
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
     }
+    double defaultVal = 0.0;
+    if (c == _landCostController) {
+      defaultVal = 120000.0;
+    } else if (c == _buildCostController) {
+      defaultVal = 380000.0;
+    } else if (c == _constRateController) {
+      defaultVal = 8.25;
+    } else if (c == _permRateController) {
+      defaultVal = 6.82;
+    } else if (c == _buildMonthsController) {
+      defaultVal = 12.0;
+    } else if (c == _downPctController) {
+      defaultVal = 20.0;
+    } else if (c == _contingencyController) {
+      defaultVal = 10.0;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
   }
-
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
 
   void _resetInputs() {
     setState(() {
@@ -83,22 +90,38 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
       _buildMonthsController.text = '12';
       _downPctController.text = '20';
       _contingencyController.text = '10';
+      _calcSnapshot.clear();
+      _errors.clear();
       _showResults = false;
-      _isCalcDirty = true;
     });
   }
 
   void _loadSavedCalculation(SavedCalc calc) {
+    final val_land = calc.inputs['LandCost'] ?? 120000.0;
+    final val_build = calc.inputs['BuildCost'] ?? 380000.0;
+    final val_constRate = calc.inputs['ConstRate'] ?? 8.25;
+    final val_permRate = calc.inputs['PermRate'] ?? 6.82;
+    final val_buildMonths = calc.inputs['BuildMonths'] ?? 12.0;
+    final val_downPct = calc.inputs['DownPaymentPct'] ?? 20.0;
+    final val_contingency = calc.inputs['ContingencyPct'] ?? 10.0;
+
     setState(() {
-      _landCostController.text = (calc.inputs['LandCost'] ?? 120000.0).toStringAsFixed(0);
-      _buildCostController.text = (calc.inputs['BuildCost'] ?? 380000.0).toStringAsFixed(0);
-      _constRateController.text = (calc.inputs['ConstRate'] ?? 8.25).toStringAsFixed(2);
-      _permRateController.text = (calc.inputs['PermRate'] ?? 6.82).toStringAsFixed(2);
-      _buildMonthsController.text = (calc.inputs['BuildMonths'] ?? 12.0).toStringAsFixed(0);
-      _downPctController.text = (calc.inputs['DownPaymentPct'] ?? 20.0).toStringAsFixed(0);
-      _contingencyController.text = (calc.inputs['ContingencyPct'] ?? 10.0).toStringAsFixed(0);
+      _landCostController.text = val_land.toStringAsFixed(0);
+      _buildCostController.text = val_build.toStringAsFixed(0);
+      _constRateController.text = val_constRate.toStringAsFixed(2);
+      _permRateController.text = val_permRate.toStringAsFixed(2);
+      _buildMonthsController.text = val_buildMonths.toStringAsFixed(0);
+      _downPctController.text = val_downPct.toStringAsFixed(0);
+      _contingencyController.text = val_contingency.toStringAsFixed(0);
+
+      _calcSnapshot[_landCostController] = val_land;
+      _calcSnapshot[_buildCostController] = val_build;
+      _calcSnapshot[_constRateController] = val_constRate;
+      _calcSnapshot[_permRateController] = val_permRate;
+      _calcSnapshot[_buildMonthsController] = val_buildMonths;
+      _calcSnapshot[_downPctController] = val_downPct;
+      _calcSnapshot[_contingencyController] = val_contingency;
       _showResults = true;
-      _isCalcDirty = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -236,8 +259,86 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
     }
   }
 
+    void _calculate() {
+    final errors = <String, String>{};
+    
+    final val_landCost = double.tryParse(_landCostController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_landCost < 0) {
+      errors['landCost'] = 'Enter valid cost';
+    } else if (val_landCost == 0) {
+      errors['landCost'] = 'Cost required';
+    }
+    
+    final val_buildCost = double.tryParse(_buildCostController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_buildCost < 0) {
+      errors['buildCost'] = 'Enter valid cost';
+    } else if (val_buildCost == 0) {
+      errors['buildCost'] = 'Cost required';
+    }
+    
+    final val_constRate = double.tryParse(_constRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_constRate < 0) {
+      errors['constRate'] = 'Enter valid rate';
+    } else if (val_constRate == 0) {
+      errors['constRate'] = 'Rate required';
+    }
+
+    final val_permRate = double.tryParse(_permRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_permRate < 0) {
+      errors['permRate'] = 'Enter valid rate';
+    } else if (val_permRate == 0) {
+      errors['permRate'] = 'Rate required';
+    }
+
+    final val_buildMonths = double.tryParse(_buildMonthsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_buildMonths < 0) {
+      errors['buildMonths'] = 'Enter valid months';
+    } else if (val_buildMonths == 0) {
+      errors['buildMonths'] = 'Months required';
+    }
+
+    final val_downPct = double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_downPct < 0) errors['downPct'] = 'Enter valid percent';
+
+    final val_contingency = double.tryParse(_contingencyController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_contingency < 0) errors['contingency'] = 'Enter valid percent';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      _showResults = false;
+      return;
+    }
+
+    setState(() {
+      _calcSnapshot[_landCostController] = val_landCost;
+      _calcSnapshot[_buildCostController] = val_buildCost;
+      _calcSnapshot[_constRateController] = val_constRate;
+      _calcSnapshot[_permRateController] = val_permRate;
+      _calcSnapshot[_buildMonthsController] = val_buildMonths;
+      _calcSnapshot[_downPctController] = val_downPct;
+      _calcSnapshot[_contingencyController] = val_contingency;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    final isDirty = _showResults && (double.tryParse(_landCostController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_landCostController] ?? 0.0) || double.tryParse(_buildCostController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_buildCostController] ?? 0.0) || double.tryParse(_constRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_constRateController] ?? 0.0) || double.tryParse(_permRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_permRateController] ?? 0.0) || double.tryParse(_buildMonthsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_buildMonthsController] ?? 0.0) || double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_downPctController] ?? 0.0) || double.tryParse(_contingencyController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_contingencyController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -370,11 +471,11 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Land Cost', _landCostController, prefix: '\$', hint: 'Owned land = \$0'),
+                    child: _buildInputField('Land Cost', _landCostController, prefix: '\$', hint: 'Owned land = \$0', errorText: _errors['landCost']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildInputField('Build Cost', _buildCostController, prefix: '\$', hint: 'Avg: ~\$300/sqft'),
+                    child: _buildInputField('Build Cost', _buildCostController, prefix: '\$', hint: 'Avg: ~\$300/sqft', errorText: _errors['buildCost']),
                   ),
                 ],
               ),
@@ -383,11 +484,11 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Const. Rate', _constRateController, suffix: '%', hint: 'Interest-only phase'),
+                    child: _buildInputField('Const. Rate', _constRateController, suffix: '%', hint: 'Interest-only phase', errorText: _errors['constRate']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildInputField('Permanent Rate', _permRateController, suffix: '%', hint: '30-Yr Fixed mortgage'),
+                    child: _buildInputField('Permanent Rate', _permRateController, suffix: '%', hint: '30-Yr Fixed mortgage', errorText: _errors['permRate']),
                   ),
                 ],
               ),
@@ -396,17 +497,17 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Build Duration', _buildMonthsController, suffix: 'mo', hint: 'Typically 6-18 mo'),
+                    child: _buildInputField('Build Duration', _buildMonthsController, suffix: 'mo', hint: 'Typically 6-18 mo', errorText: _errors['buildMonths']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildInputField('Down Payment', _downPctController, suffix: '%', hint: 'Of total project'),
+                    child: _buildInputField('Down Payment', _downPctController, suffix: '%', hint: 'Of total project', errorText: _errors['downPct']),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
 
-              _buildInputField('Contingency Reserve', _contingencyController, suffix: '%', hint: 'Typical: 10–15% of build cost'),
+              _buildInputField('Contingency Reserve', _contingencyController, suffix: '%', hint: 'Typical: 10–15% of build cost', errorText: _errors['contingency']),
               const SizedBox(height: 16),
 
               // Calculate & Save buttons
@@ -415,12 +516,7 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
                   Expanded(
                     flex: 7,
                     child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _showResults = true;
-                          _isCalcDirty = false;
-                        });
-                      },
+                      onTap: _calculate,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
@@ -428,8 +524,8 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
                           borderRadius: BorderRadius.circular(13),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFB91C1C).withValues(alpha: _isCalcDirty ? 0.45 : 0.25),
-                              blurRadius: _isCalcDirty ? 16 : 8,
+                              color: const Color(0xFFB91C1C).withValues(alpha: isDirty ? 0.45 : 0.25),
+                              blurRadius: isDirty ? 16 : 8,
                               offset: const Offset(0, 4),
                             ),
                           ],
@@ -449,25 +545,40 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
                   const SizedBox(width: 10),
                   Expanded(
                     flex: 3,
-                    child: GestureDetector(
-                      onTap: _saveCalculation,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: theme.getCardColor(context),
-                          border: Border.all(color: theme.getBorderColor(context), width: 1.5),
-                          borderRadius: BorderRadius.circular(13),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2)),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '🔖 Save',
-                          style: AppTextStyles.dmSans(
-                            size: 13,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context),
+                    child: Opacity(
+                      opacity: _showResults ? 1.0 : 0.5,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!_showResults) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Please calculate before saving.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          } else {
+                            _saveCalculation();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: theme.getCardColor(context),
+                            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+                            borderRadius: BorderRadius.circular(13),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2)),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '💾 Save',
+                            style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context),
+                            ),
                           ),
                         ),
                       ),
@@ -600,6 +711,36 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
             ),
           )
         else ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate Construction Loan" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
           _buildSectionHeader('Cost & Payment Summary', onReset: null),
           const SizedBox(height: 8),
 
@@ -1164,25 +1305,57 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? prefix, String? suffix, String? hint}) {
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, {
+    String? prefix,
+    String? suffix,
+    String? hint,
+    String? errorText,
+  }) {
     final theme = widget.theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: AppTextStyles.dmSans(
-            size: 9.5,
-            weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.5,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label.toUpperCase(),
+                style: AppTextStyles.dmSans(
+                  size: 9.5,
+                  weight: FontWeight.w700,
+                  color: hasError ? Colors.red : theme.getMutedColor(context),
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (hasError)
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(
+                  errorText,
+                  style: AppTextStyles.dmSans(
+                    size: 9,
+                    weight: FontWeight.w700,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 5),
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
@@ -1201,7 +1374,7 @@ class _USAConstructionLoanCalcState extends ConsumerState<USAConstructionLoanCal
             ),
           ),
         ),
-        if (hint != null) ...[
+        if (hint != null && !hasError) ...[
           const SizedBox(height: 3),
           Text(hint, style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
         ],

@@ -21,6 +21,10 @@ class USAVaIrrrlRefinanceScreen extends ConsumerStatefulWidget {
 class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   // Controllers
   final _curBalanceController = TextEditingController(text: '380000');
   final _curRateController = TextEditingController(text: '7.00');
@@ -55,8 +59,6 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
       _selectedExempt = (inputs['exempt'] ?? 0.0) == 0.0 ? 'no' : 'yes';
       _closingCostsController.text = (inputs['closingCosts'] ?? 2500.0).toStringAsFixed(0);
       _calculate();
-    } else {
-      _calculate();
     }
   }
 
@@ -76,11 +78,39 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
   }
 
   void _calculate() {
-    final balance = double.tryParse(_curBalanceController.text) ?? 0.0;
-    final curRate = (double.tryParse(_curRateController.text) ?? 0.0) / 100;
-    final newRate = (double.tryParse(_newRateController.text) ?? 0.0) / 100;
+    final errors = <String, String>{};
+    final balance = double.tryParse(_curBalanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final curRateVal = double.tryParse(_curRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final newRateVal = double.tryParse(_newRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final closingCosts = double.tryParse(_closingCostsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (balance <= 0) {
+      errors['balance'] = 'Enter positive balance';
+    }
+    if (curRateVal <= 0) {
+      errors['curRate'] = 'Enter positive rate';
+    }
+    if (newRateVal <= 0) {
+      errors['newRate'] = 'Enter positive rate';
+    }
+    if (closingCosts < 0) {
+      errors['closingCosts'] = 'Enter valid closing costs';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
+    final curRate = curRateVal / 100;
+    final newRate = newRateVal / 100;
     final exempt = _selectedExempt == 'yes';
-    final closingCosts = double.tryParse(_closingCostsController.text) ?? 0.0;
     final months = _termYears * 12;
 
     final ffRate = exempt ? 0.0 : 0.005;
@@ -100,6 +130,13 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
     final fiveYrSavings = (monthlySavings * 60) - totalRefiCost;
 
     setState(() {
+      _calcSnapshot['curBalance'] = balance;
+      _calcSnapshot['curRate'] = curRateVal;
+      _calcSnapshot['newRate'] = newRateVal;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['exempt'] = _selectedExempt;
+      _calcSnapshot['closingCosts'] = closingCosts;
+
       _monthlySavings = monthlySavings;
       _newPI = newPI;
       _oldPI = oldPI;
@@ -113,16 +150,28 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
       _ntbMet = newRate < curRate && monthlySavings > 0;
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
 
-    final balance = double.tryParse(_curBalanceController.text) ?? 0.0;
-    final curRate = double.tryParse(_curRateController.text) ?? 0.0;
-    final newRate = double.tryParse(_newRateController.text) ?? 0.0;
-    final exemptIdx = _selectedExempt == 'no' ? 0.0 : 1.0;
-    final closingCosts = double.tryParse(_closingCostsController.text) ?? 0.0;
+    final balance = _calcSnapshot['curBalance'] ?? 380000.0;
+    final curRate = _calcSnapshot['curRate'] ?? 7.00;
+    final newRate = _calcSnapshot['newRate'] ?? 5.96;
+    final term = _calcSnapshot['termYears'] ?? 30;
+    final exempt = _calcSnapshot['exempt'] ?? 'no';
+    final exemptIdx = exempt == 'no' ? 0.0 : 1.0;
+    final closingCosts = _calcSnapshot['closingCosts'] ?? 2500.0;
 
     final calc = SavedCalc.create(
       country: 'USA',
@@ -133,7 +182,7 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
         'curBalance': balance,
         'curRate': curRate,
         'newRate': newRate,
-        'termYears': _termYears.toDouble(),
+        'termYears': term.toDouble(),
         'exempt': exemptIdx,
         'closingCosts': closingCosts,
       },
@@ -158,6 +207,15 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_curBalanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['curBalance'] ?? 0.0) ||
+      (double.tryParse(_curRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['curRate'] ?? 0.0) ||
+      (double.tryParse(_newRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['newRate'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['termYears'] ?? 30) ||
+      _selectedExempt != (_calcSnapshot['exempt'] ?? 'no') ||
+      (double.tryParse(_closingCostsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['closingCosts'] ?? 0.0)
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -282,11 +340,11 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
                       Row(
                         children: [
                           Expanded(
-                            child: _buildInputField('Current Loan Balance (\$)', _curBalanceController),
+                            child: _buildInputField('Current Loan Balance (\$)', _curBalanceController, errorText: _errors['balance']),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildInputField('Current Rate (%)', _curRateController),
+                            child: _buildInputField('Current Rate (%)', _curRateController, errorText: _errors['curRate']),
                           ),
                         ],
                       ),
@@ -294,7 +352,7 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
                       Row(
                         children: [
                           Expanded(
-                            child: _buildInputField('New IRRRL Rate (%)', _newRateController, hint: '30-yr VA refi ~5.96%'),
+                            child: _buildInputField('New IRRRL Rate (%)', _newRateController, hint: '30-yr VA refi ~5.96%', errorText: _errors['newRate']),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -310,7 +368,6 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
                               onChanged: (val) {
                                 if (val != null) {
                                   setState(() => _termYears = val);
-                                  _calculate();
                                 }
                               },
                             ),
@@ -331,14 +388,13 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
                               onChanged: (val) {
                                 if (val != null) {
                                   setState(() => _selectedExempt = val);
-                                  _calculate();
                                 }
                               },
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildInputField('Est. Closing Costs (\$)', _closingCostsController, hint: 'Excl. funding fee'),
+                            child: _buildInputField('Est. Closing Costs (\$)', _closingCostsController, hint: 'Excl. funding fee', errorText: _errors['closingCosts']),
                           ),
                         ],
                       ),
@@ -349,7 +405,63 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
                 const SizedBox(height: 12),
 
                 // Result Hero Card
-                if (_calculated) ...[
+                if (!_calculated) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('💵', style: TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'View IRRRL Streamline Refinance Estimate',
+                          style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Enter your loan details above, then tap "Calculate Refi Savings" to see monthly savings, break-even timeline, and detailed breakdown.',
+                          style: AppTextStyles.dmSans(size: 10.5, color: mutedCol),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Calculate Refi Savings" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -440,79 +552,79 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
                       ],
                     ),
                   ),
-                ],
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('Break-Even Timeline (Total Cost vs. Savings)'),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Break-Even Timeline (Total Cost vs. Savings)'),
 
-                // Chart card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('📈 Break-Even Timeline',
-                          style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 100,
-                        width: double.infinity,
-                        child: CustomPaint(
-                          painter: IrrrlBreakEvenChartPainter(
-                            monthlySavings: _monthlySavings,
-                            totalCost: _totalRefiCost,
-                            isDark: isDark,
+                  // Chart card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('📈 Break-Even Timeline',
+                            style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 100,
+                          width: double.infinity,
+                          child: CustomPaint(
+                            painter: IrrrlBreakEvenChartPainter(
+                              monthlySavings: _monthlySavings,
+                              totalCost: _totalRefiCost,
+                              isDark: isDark,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Now', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                          Text('5 Yrs', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                          Text('10 Yrs', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildChartStatBox('Break-Even', _monthlySavings > 0 && !_breakEvenMonths.isInfinite ? '${_breakEvenMonths.ceil()} mo' : 'N/A', textCol, mutedCol),
-                          _buildChartStatBox('Total Refi Cost', CurrencyFormatter.format(_totalRefiCost, symbol: '\$').split('.').first, textCol, mutedCol),
-                          _buildChartStatBox('5-Yr Net Savings', CurrencyFormatter.format(_fiveYrSavings, symbol: '\$').split('.').first, textCol, mutedCol),
-                        ],
-                      ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Now', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                            Text('5 Yrs', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                            Text('10 Yrs', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildChartStatBox('Break-Even', _monthlySavings > 0 && !_breakEvenMonths.isInfinite ? '${_breakEvenMonths.ceil()} mo' : 'N/A', textCol, mutedCol),
+                            _buildChartStatBox('Total Refi Cost', CurrencyFormatter.format(_totalRefiCost, symbol: '\$').split('.').first, textCol, mutedCol),
+                            _buildChartStatBox('5-Yr Net Savings', CurrencyFormatter.format(_fiveYrSavings, symbol: '\$').split('.').first, textCol, mutedCol),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Breakdown Grid
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 1.4,
+                    children: [
+                      _buildBreakdownCard('💵', 'New Monthly P&I', '\$${_newPI.round()}', 'At new rate', textCol, mutedCol),
+                      _buildBreakdownCard('📉', 'Old Monthly P&I', '\$${_oldPI.round()}', 'At current rate', textCol, mutedCol),
+                      _buildBreakdownCard('⚡', 'IRRRL Funding Fee', _selectedExempt == 'yes' ? 'Exempt' : '\$${_fundingFee.round()}', '0.5% — often financed', textCol, mutedCol),
+                      _buildBreakdownCard('📦', 'New Loan Amount', '\$${_newLoanAmt.round()}', 'Balance + financed fee', textCol, mutedCol),
+                      _buildBreakdownCard('💰', 'Lifetime Interest Saved', (_lifetimeSavings >= 0 ? '\$' : '-\$') + _lifetimeSavings.abs().round().toString(), 'Over remaining term*', textCol, mutedCol),
+                      _buildBreakdownCard('📅', 'Rate Improvement', '${_rateDrop.toStringAsFixed(2)}%', 'Old vs. new rate', _rateDrop < 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C), mutedCol),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Breakdown Grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.4,
-                  children: [
-                    _buildBreakdownCard('💵', 'New Monthly P&I', '\$${_newPI.round()}', 'At new rate', textCol, mutedCol),
-                    _buildBreakdownCard('📉', 'Old Monthly P&I', '\$${_oldPI.round()}', 'At current rate', textCol, mutedCol),
-                    _buildBreakdownCard('⚡', 'IRRRL Funding Fee', _selectedExempt == 'yes' ? 'Exempt' : '\$${_fundingFee.round()}', '0.5% — often financed', textCol, mutedCol),
-                    _buildBreakdownCard('📦', 'New Loan Amount', '\$${_newLoanAmt.round()}', 'Balance + financed fee', textCol, mutedCol),
-                    _buildBreakdownCard('💰', 'Lifetime Interest Saved', (_lifetimeSavings >= 0 ? '\$' : '-\$') + _lifetimeSavings.abs().round().toString(), 'Over remaining term*', textCol, mutedCol),
-                    _buildBreakdownCard('📅', 'Rate Improvement', '${_rateDrop.toStringAsFixed(2)}%', 'Old vs. new rate', _rateDrop < 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C), mutedCol),
-                  ],
-                ),
+                ],
 
                 const SizedBox(height: 20),
                 _buildSectionHeader('IRRRL Funding Fee & Rules'),
@@ -626,17 +738,18 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? hint}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? hint, String? errorText}) {
     const theme = _theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
+            color: hasError ? Colors.red : theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -644,13 +757,16 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (val) => _calculate(),
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.dmSans(
               size: 13,
               weight: FontWeight.w800,

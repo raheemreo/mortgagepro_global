@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_home_equity_loan_calc.dart
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,9 @@ class USAHomeEquityLoanCalc extends ConsumerStatefulWidget {
 }
 
 class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   final _homeValController = TextEditingController(text: '550000');
   final _mortBalController = TextEditingController(text: '310000');
   final _loanAmtController = TextEditingController(text: '60000');
@@ -33,6 +37,11 @@ class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
   @override
   void initState() {
     super.initState();
+    _homeValController.addListener(() => setState(() {}));
+    _mortBalController.addListener(() => setState(() {}));
+    _loanAmtController.addListener(() => setState(() {}));
+    _rateController.addListener(() => setState(() {}));
+
     final controllers = [
       _homeValController,
       _mortBalController,
@@ -64,7 +73,12 @@ class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   double _calcPI(double loan, double rate, int yrs) {
     final mo = rate / 1200;
@@ -74,6 +88,13 @@ class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
 
   void _resetInputs() {
     setState(() {
+      _homeValController.clear();
+      _mortBalController.clear();
+      _loanAmtController.clear();
+      _rateController.clear();
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
       _homeValController.text = '550000';
       _mortBalController.text = '310000';
       _loanAmtController.text = '60000';
@@ -84,40 +105,46 @@ class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
     });
   }
 
-  void _calculate() async {
-    final hv = _val(_homeValController);
-    final mb = _val(_mortBalController);
-    final loan = _val(_loanAmtController);
-
-    if (mb >= hv) {
-      _showError('⚠️ Mortgage balance must be less than home value');
-      return;
-    }
-    if (loan <= 0) {
-      _showError('⚠️ Loan amount must be greater than 0');
-      return;
-    }
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_homeVal = double.tryParse(_homeValController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_homeVal <= 0) errors['homeVal'] = 'Please enter a valid amount';
+    final val_mortBal = double.tryParse(_mortBalController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_loanAmt = double.tryParse(_loanAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_loanAmt <= 0) errors['loanAmt'] = 'Please enter a valid amount';
+    final val_rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_rate <= 0) errors['rate'] = 'Please enter a valid amount';
 
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_homeValController] = val_homeVal;
+      _calcSnapshot[_mortBalController] = val_mortBal;
+      _calcSnapshot[_loanAmtController] = val_loanAmt;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot['_termYears'] = _termYears;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg, style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.bold)),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+
+
 
   void _saveCalculation() async {
     final hv = _val(_homeValController);
@@ -226,6 +253,10 @@ class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
 
   @override
   Widget build(BuildContext context) {
+    final _termYears = _showResults ? (_calcSnapshot['_termYears'] ?? this._termYears) : this._termYears;
+
+    final isDirty = _showResults && (this._termYears != _calcSnapshot['_termYears'] || double.tryParse(_homeValController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homeValController] ?? 0.0) || double.tryParse(_mortBalController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_mortBalController] ?? 0.0) || double.tryParse(_loanAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_loanAmtController] ?? 0.0) || double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rateController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -257,7 +288,7 @@ class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
       }
       amortizationList.add({'yr': yr, 'bal': bal, 'prin': prinYr, 'int': intYr});
     }
-    final step = max(1, (_termYears / 5).floor());
+    final step = max<num>(1, (_termYears / 5).floor()).toInt();
     final displayAmortization = amortizationList.where((e) {
       final y = e['yr'] as int;
       return y == 1 || y % step == 0 || y == _termYears;
@@ -313,7 +344,7 @@ class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
                   return Expanded(
                     child: GestureDetector(
                       onTap: () => setState(() {
-                        _termYears = t;
+                        this._termYears = t;
                         _markDirty();
                       }),
                       child: Container(
@@ -407,6 +438,39 @@ class _USAHomeEquityLoanCalcState extends ConsumerState<USAHomeEquityLoanCalc> {
         const SizedBox(height: 16),
 
         if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Results Hero Card
           Container(
             padding: const EdgeInsets.all(20),

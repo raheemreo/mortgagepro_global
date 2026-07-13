@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_usda_loan_calc.dart
 
 import 'package:flutter/material.dart';
@@ -24,6 +25,9 @@ class USAUsdaLoanCalc extends ConsumerStatefulWidget {
 }
 
 class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   // Input Controllers
   final _homePriceController = TextEditingController(text: '280000');
   final _incomeController = TextEditingController(text: '75000');
@@ -34,17 +38,9 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
   int _selectedHhSize = 4;
   String _selectedRegion = 'standard';
   bool _showResults = false;
-  bool _isCalcDirty = true;
-
   @override
   void initState() {
     super.initState();
-    _homePriceController.addListener(_markDirty);
-    _incomeController.addListener(_markDirty);
-    _rateController.addListener(_markDirty);
-    _propTaxController.addListener(_markDirty);
-    _insuranceController.addListener(_markDirty);
-
     if (widget.savedCalc != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadSavedCalculation(widget.savedCalc!);
@@ -54,12 +50,6 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
 
   @override
   void dispose() {
-    _homePriceController.removeListener(_markDirty);
-    _incomeController.removeListener(_markDirty);
-    _rateController.removeListener(_markDirty);
-    _propTaxController.removeListener(_markDirty);
-    _insuranceController.removeListener(_markDirty);
-
     _homePriceController.dispose();
     _incomeController.dispose();
     _rateController.dispose();
@@ -68,15 +58,24 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
     super.dispose();
   }
 
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
     }
+    double defaultVal = 0.0;
+    if (c == _homePriceController) {
+      defaultVal = 280000.0;
+    } else if (c == _incomeController) {
+      defaultVal = 75000.0;
+    } else if (c == _rateController) {
+      defaultVal = 6.35;
+    } else if (c == _propTaxController) {
+      defaultVal = 2800.0;
+    } else if (c == _insuranceController) {
+      defaultVal = 1400.0;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
   }
-
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
 
   // 2025 USDA Income Limits by household size (standard counties and high-cost counties)
   static const _incomeLimitsMap = {
@@ -93,22 +92,38 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
       _insuranceController.text = '1400';
       _selectedHhSize = 4;
       _selectedRegion = 'standard';
+      _calcSnapshot.clear();
+      _errors.clear();
       _showResults = false;
-      _isCalcDirty = true;
     });
   }
 
   void _loadSavedCalculation(SavedCalc calc) {
+    final val_homePrice = calc.inputs['HomePrice'] ?? 280000.0;
+    final val_income = calc.inputs['HouseholdIncome'] ?? 75000.0;
+    final val_rate = calc.inputs['InterestRate'] ?? 6.35;
+    final val_propTax = calc.inputs['PropertyTax'] ?? 2800.0;
+    final val_insurance = calc.inputs['HomeInsurance'] ?? 1400.0;
+    final hhSize = (calc.inputs['HouseholdSize'] ?? 4.0).toInt();
+    final region = (calc.inputs['RegionIndex'] ?? 0.0) == 0.0 ? 'standard' : 'high_cost';
+
     setState(() {
-      _homePriceController.text = (calc.inputs['HomePrice'] ?? 280000.0).toStringAsFixed(0);
-      _incomeController.text = (calc.inputs['HouseholdIncome'] ?? 75000.0).toStringAsFixed(0);
-      _rateController.text = (calc.inputs['InterestRate'] ?? 6.35).toStringAsFixed(2);
-      _propTaxController.text = (calc.inputs['PropertyTax'] ?? 2800.0).toStringAsFixed(0);
-      _insuranceController.text = (calc.inputs['HomeInsurance'] ?? 1400.0).toStringAsFixed(0);
-      _selectedHhSize = (calc.inputs['HouseholdSize'] ?? 4.0).toInt();
-      _selectedRegion = (calc.inputs['RegionIndex'] ?? 0.0) == 0.0 ? 'standard' : 'high_cost';
+      _homePriceController.text = val_homePrice.toStringAsFixed(0);
+      _incomeController.text = val_income.toStringAsFixed(0);
+      _rateController.text = val_rate.toStringAsFixed(2);
+      _propTaxController.text = val_propTax.toStringAsFixed(0);
+      _insuranceController.text = val_insurance.toStringAsFixed(0);
+      _selectedHhSize = hhSize;
+      _selectedRegion = region;
+
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_incomeController] = val_income;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_propTaxController] = val_propTax;
+      _calcSnapshot[_insuranceController] = val_insurance;
+      _calcSnapshot['_selectedHhSize'] = hhSize;
+      _calcSnapshot['_selectedRegion'] = region;
       _showResults = true;
-      _isCalcDirty = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -117,6 +132,67 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    
+    final val_homePrice = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_homePrice < 0) {
+      errors['homePrice'] = 'Enter valid price';
+    } else if (val_homePrice == 0) {
+      errors['homePrice'] = 'Price required';
+    }
+    
+    final val_income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_income < 0) {
+      errors['income'] = 'Enter valid income';
+    } else if (val_income == 0) {
+      errors['income'] = 'Income required';
+    }
+    
+    final val_rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    if (val_rate < 0) {
+      errors['rate'] = 'Enter valid rate';
+    } else if (val_rate == 0) {
+      errors['rate'] = 'Rate required';
+    }
+
+    final val_propTax = double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_propTax < 0) errors['propTax'] = 'Enter valid tax';
+
+    final val_insurance = double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_insurance < 0) errors['insurance'] = 'Enter valid ins';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      _showResults = false;
+      return;
+    }
+
+    setState(() {
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_incomeController] = val_income;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_propTaxController] = val_propTax;
+      _calcSnapshot[_insuranceController] = val_insurance;
+      _calcSnapshot['_selectedHhSize'] = _selectedHhSize;
+      _calcSnapshot['_selectedRegion'] = _selectedRegion;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalculation() async {
@@ -248,8 +324,14 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+    final _selectedHhSize = _showResults ? (_calcSnapshot['_selectedHhSize'] ?? this._selectedHhSize) : this._selectedHhSize;
+    final _selectedRegion = _showResults ? (_calcSnapshot['_selectedRegion'] ?? this._selectedRegion) : this._selectedRegion;
+
+    final isDirty = _showResults && (this._selectedHhSize != _calcSnapshot['_selectedHhSize'] || this._selectedRegion != _calcSnapshot['_selectedRegion'] || double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homePriceController] ?? 0.0) || double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_incomeController] ?? 0.0) || double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rateController] ?? 0.0) || double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_propTaxController] ?? 0.0) || double.tryParse(_insuranceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_insuranceController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -395,11 +477,11 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Home Price', _homePriceController, prefix: '\$', hint: 'Rural area property'),
+                    child: _buildInputField('Home Price', _homePriceController, prefix: '\$', hint: 'Rural area property', errorText: _errors['homePrice']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildInputField('Household Income', _incomeController, prefix: '\$', hint: 'All members combined'),
+                    child: _buildInputField('Household Income', _incomeController, prefix: '\$', hint: 'All members combined', errorText: _errors['income']),
                   ),
                 ],
               ),
@@ -408,7 +490,7 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Interest Rate', _rateController, suffix: '%'),
+                    child: _buildInputField('Interest Rate', _rateController, suffix: '%', errorText: _errors['rate']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -425,8 +507,7 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
                       onChanged: (val) {
                         if (val != null) {
                           setState(() {
-                            _selectedHhSize = val;
-                            _isCalcDirty = true;
+                            this._selectedHhSize = val;
                           });
                         }
                       },
@@ -446,8 +527,7 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
                 onChanged: (val) {
                   if (val != null) {
                     setState(() {
-                      _selectedRegion = val;
-                      _isCalcDirty = true;
+                      this._selectedRegion = val;
                     });
                   }
                 },
@@ -457,11 +537,11 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Property Tax', _propTaxController, prefix: '\$', suffix: '/yr'),
+                    child: _buildInputField('Property Tax', _propTaxController, prefix: '\$', suffix: '/yr', errorText: _errors['propTax']),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildInputField('Home Insurance', _insuranceController, prefix: '\$', suffix: '/yr'),
+                    child: _buildInputField('Home Insurance', _insuranceController, prefix: '\$', suffix: '/yr', errorText: _errors['insurance']),
                   ),
                 ],
               ),
@@ -473,12 +553,7 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
                   Expanded(
                     flex: 7,
                     child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _showResults = true;
-                          _isCalcDirty = false;
-                        });
-                      },
+                      onTap: _calculate,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
@@ -486,8 +561,8 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
                           borderRadius: BorderRadius.circular(13),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF15803D).withValues(alpha: _isCalcDirty ? 0.45 : 0.25),
-                              blurRadius: _isCalcDirty ? 16 : 8,
+                              color: const Color(0xFF15803D).withValues(alpha: isDirty ? 0.45 : 0.25),
+                              blurRadius: isDirty ? 16 : 8,
                               offset: const Offset(0, 4),
                             ),
                           ],
@@ -507,25 +582,40 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
                   const SizedBox(width: 10),
                   Expanded(
                     flex: 3,
-                    child: GestureDetector(
-                      onTap: _saveCalculation,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: theme.getCardColor(context),
-                          border: Border.all(color: theme.getBorderColor(context), width: 1.5),
-                          borderRadius: BorderRadius.circular(13),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2)),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '🔖 Save',
-                          style: AppTextStyles.dmSans(
-                            size: 13,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context),
+                    child: Opacity(
+                      opacity: _showResults ? 1.0 : 0.5,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!_showResults) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Please calculate before saving.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          } else {
+                            _saveCalculation();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: theme.getCardColor(context),
+                            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+                            borderRadius: BorderRadius.circular(13),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2)),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '💾 Save',
+                            style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context),
+                            ),
                           ),
                         ),
                       ),
@@ -661,6 +751,36 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
             ),
           )
         else ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate USDA Payment" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
           _buildSectionHeader('Monthly Payment Breakdown', onReset: null),
           const SizedBox(height: 8),
 
@@ -1235,25 +1355,57 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? prefix, String? suffix, String? hint}) {
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, {
+    String? prefix,
+    String? suffix,
+    String? hint,
+    String? errorText,
+  }) {
     final theme = widget.theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: AppTextStyles.dmSans(
-            size: 9.5,
-            weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.5,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label.toUpperCase(),
+                style: AppTextStyles.dmSans(
+                  size: 9.5,
+                  weight: FontWeight.w700,
+                  color: hasError ? Colors.red : theme.getMutedColor(context),
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (hasError)
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(
+                  errorText,
+                  style: AppTextStyles.dmSans(
+                    size: 9,
+                    weight: FontWeight.w700,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 5),
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
@@ -1272,7 +1424,7 @@ class _USAUsdaLoanCalcState extends ConsumerState<USAUsdaLoanCalc> {
             ),
           ),
         ),
-        if (hint != null) ...[
+        if (hint != null && !hasError) ...[
           const SizedBox(height: 3),
           Text(hint, style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
         ],

@@ -23,6 +23,10 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
   static const _theme = CountryThemes.usa;
   static const double _confLimit = 766550.0;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   // Controllers
   final _homePriceController = TextEditingController(text: '1200000');
   final _downPctController = TextEditingController(text: '20');
@@ -33,16 +37,7 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
   int _selectedTerm = 30;
   bool _calculated = false;
 
-  // Outputs
-  double _loanAmt = 0;
-  double _confLoan = 0;
-  double _jumboPmt = 0;
-  double _confPmt = 0;
-  double _jumboTotalInt = 0;
-  double _confTotalInt = 0;
-  double _paymentDiff = 0;
-  double _extraDownNeeded = 0;
-  bool _isJumbo = true;
+
 
   @override
   void initState() {
@@ -55,8 +50,6 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
       _confRateController.text = (inputs['confRate'] ?? 6.74).toStringAsFixed(2);
       _incomeController.text = (inputs['income'] ?? 350000.0).toStringAsFixed(0);
       _selectedTerm = (inputs['term'] ?? 30.0).toInt();
-      _calculate();
-    } else {
       _calculate();
     }
   }
@@ -72,10 +65,33 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
   }
 
   void _calculate() {
-    final price = double.tryParse(_homePriceController.text) ?? 0.0;
-    final down = (double.tryParse(_downPctController.text) ?? 0.0) / 100;
-    final jr = (double.tryParse(_jumboRateController.text) ?? 0.0) / 100;
-    final cr = (double.tryParse(_confRateController.text) ?? 0.0) / 100;
+    final errors = <String, String>{};
+    final price = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final downPctVal = double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final jrRate = double.tryParse(_jumboRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final crRate = double.tryParse(_confRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (price <= 0) errors['homePrice'] = 'Enter positive home price';
+    if (downPctVal < 0 || downPctVal >= 100) errors['downPct'] = 'Enter valid percentage (0-99)';
+    if (jrRate <= 0) errors['jumboRate'] = 'Enter positive rate';
+    if (crRate <= 0) errors['confRate'] = 'Enter positive rate';
+    if (income <= 0) errors['income'] = 'Enter positive income';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
+    final down = downPctVal / 100;
+    final jr = jrRate / 100;
+    final cr = crRate / 100;
     final months = _selectedTerm * 12;
 
     final loanAmtVal = price * (1.0 - down);
@@ -92,26 +108,50 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
     final extraDown = loanAmtVal - _confLimit;
 
     setState(() {
-      _loanAmt = loanAmtVal;
-      _confLoan = confLoanVal;
-      _isJumbo = isJumboVal;
-      _jumboPmt = jumboPmtVal;
-      _jumboTotalInt = jumboTotalIntVal;
-      _confPmt = confPmtVal;
-      _confTotalInt = confTotalIntVal;
-      _paymentDiff = diff;
-      _extraDownNeeded = extraDown;
+      _calcSnapshot['homePrice'] = price;
+      _calcSnapshot['downPct'] = downPctVal;
+      _calcSnapshot['jumboRate'] = jrRate;
+      _calcSnapshot['confRate'] = crRate;
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['term'] = _selectedTerm;
+
+      _calcSnapshot['loanAmt'] = loanAmtVal;
+      _calcSnapshot['confLoan'] = confLoanVal;
+      _calcSnapshot['isJumbo'] = isJumboVal;
+      _calcSnapshot['jumboPmt'] = jumboPmtVal;
+      _calcSnapshot['jumboTotalInt'] = jumboTotalIntVal;
+      _calcSnapshot['confPmt'] = confPmtVal;
+      _calcSnapshot['confTotalInt'] = confTotalIntVal;
+      _calcSnapshot['paymentDiff'] = diff;
+      _calcSnapshot['extraDownNeeded'] = extraDown;
+
       _calculated = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
-    final price = double.tryParse(_homePriceController.text) ?? 0.0;
-    final down = double.tryParse(_downPctController.text) ?? 0.0;
-    final jr = double.tryParse(_jumboRateController.text) ?? 0.0;
-    final cr = double.tryParse(_confRateController.text) ?? 0.0;
-    final income = double.tryParse(_incomeController.text) ?? 0.0;
+
+    final price = _calcSnapshot['homePrice'] ?? 1200000.0;
+    final down = _calcSnapshot['downPct'] ?? 20.0;
+    final jr = _calcSnapshot['jumboRate'] ?? 7.04;
+    final cr = _calcSnapshot['confRate'] ?? 6.74;
+    final term = _calcSnapshot['term'] ?? 30;
+    final income = _calcSnapshot['income'] ?? 350000.0;
+
+    final snapJumboPmt = _calcSnapshot['jumboPmt'] ?? 0.0;
+    final snapConfPmt = _calcSnapshot['confPmt'] ?? 0.0;
+    final snapDiff = _calcSnapshot['paymentDiff'] ?? 0.0;
 
     final calc = SavedCalc.create(
       country: 'USA',
@@ -123,20 +163,20 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
         'downPct': down,
         'jumboRate': jr,
         'confRate': cr,
-        'term': _selectedTerm.toDouble(),
+        'term': term.toDouble(),
         'income': income,
       },
       results: {
-        'jumboPmt': _jumboPmt,
-        'confPmt': _confPmt,
-        'paymentDiff': _paymentDiff,
+        'jumboPmt': snapJumboPmt,
+        'confPmt': snapConfPmt,
+        'paymentDiff': snapDiff,
       },
     );
 
     ref.read(savedProvider.notifier).save(calc);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('✅ Comparison saved!'),
+        content: Text('✅ Calculation saved!'),
         backgroundColor: Colors.green,
       ),
     );
@@ -144,6 +184,15 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['homePrice'] ?? 0.0) ||
+      (double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['downPct'] ?? 0.0) ||
+      (double.tryParse(_jumboRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['jumboRate'] ?? 0.0) ||
+      (double.tryParse(_confRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['confRate'] ?? 0.0) ||
+      (double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['income'] ?? 0.0) ||
+      _selectedTerm != (_calcSnapshot['term'] ?? 30)
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -151,16 +200,28 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
     final bgCol = _theme.getBgColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final jrStr = _jumboRateController.text;
-    final crStr = _confRateController.text;
+    final snapJumboPmt = _calcSnapshot['jumboPmt'] ?? 0.0;
+    final snapConfPmt = _calcSnapshot['confPmt'] ?? 0.0;
+    final snapJumboTotalInt = _calcSnapshot['jumboTotalInt'] ?? 0.0;
+    final snapConfTotalInt = _calcSnapshot['confTotalInt'] ?? 0.0;
+    final snapDiff = _calcSnapshot['paymentDiff'] ?? 0.0;
+    final snapExtraDown = _calcSnapshot['extraDownNeeded'] ?? 0.0;
+    final snapLoanAmt = _calcSnapshot['loanAmt'] ?? 0.0;
+    final snapConfLoan = _calcSnapshot['confLoan'] ?? 0.0;
+    final snapIsJumbo = _calcSnapshot['isJumbo'] ?? true;
+    final snapJumboRate = _calcSnapshot['jumboRate'] ?? 0.0;
+    final snapConfRate = _calcSnapshot['confRate'] ?? 0.0;
+
+    final jrStr = snapJumboRate.toStringAsFixed(2);
+    final crStr = snapConfRate.toStringAsFixed(2);
 
     // Dual bar percentages
-    final double maxIntVal = max(_jumboTotalInt, _confTotalInt);
-    final double jIntWidthFactor = maxIntVal == 0 ? 0.0 : (_jumboTotalInt / maxIntVal);
+    final double maxIntVal = max(snapJumboTotalInt, snapConfTotalInt);
+    final double jIntWidthFactor = maxIntVal == 0 ? 0.0 : (snapJumboTotalInt / maxIntVal);
     final double cIntWidthFactor = 1.0 - jIntWidthFactor;
 
-    final double maxPmtVal = max(_jumboPmt, _confPmt);
-    final double jPmtWidthFactor = maxPmtVal == 0 ? 0.0 : (_jumboPmt / maxPmtVal);
+    final double maxPmtVal = max(snapJumboPmt, snapConfPmt);
+    final double jPmtWidthFactor = maxPmtVal == 0 ? 0.0 : (snapJumboPmt / maxPmtVal);
     final double cPmtWidthFactor = 1.0 - jPmtWidthFactor;
 
     return Scaffold(
@@ -329,23 +390,23 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
                     children: [
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('Home Price (\$)', _homePriceController)),
+                          Expanded(child: _buildInputField('Home Price (\$)', _homePriceController, errorText: _errors['homePrice'])),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Down Payment (%)', _downPctController)),
+                          Expanded(child: _buildInputField('Down Payment (%)', _downPctController, errorText: _errors['downPct'])),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('Jumbo Rate (%)', _jumboRateController)),
+                          Expanded(child: _buildInputField('Jumbo Rate (%)', _jumboRateController, errorText: _errors['jumboRate'])),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Conf. Rate (%)', _confRateController)),
+                          Expanded(child: _buildInputField('Conf. Rate (%)', _confRateController, errorText: _errors['confRate'])),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('Annual Income (\$)', _incomeController)),
+                          Expanded(child: _buildInputField('Annual Income (\$)', _incomeController, errorText: _errors['income'])),
                           const SizedBox(width: 10),
                           Expanded(
                             child: _buildDropdownField<int>(
@@ -359,7 +420,6 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
                               onChanged: (val) {
                                 if (val != null) {
                                   setState(() => _selectedTerm = val);
-                                  _calculate();
                                 }
                               },
                             ),
@@ -386,204 +446,270 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 20),
-                _buildSectionHeader('Payment Comparison'),
-
-                // Results Card
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0B1D3A), Color(0xFF334155)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                      // Results Hero Panel
+                if (!_calculated) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    borderRadius: BorderRadius.circular(18),
+                    child: Column(
+                      children: [
+                        const Text('⚖️', style: TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'View Loan Type Comparison Results',
+                          style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Enter your mortgage details above, then tap "Compare Loan Types" to see the comparison.',
+                          style: AppTextStyles.dmSans(size: 10.5, color: mutedCol),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('MONTHLY PRINCIPAL & INTEREST',
-                          style: AppTextStyles.dmSans(
-                              size: 8.5,
-                              color: Colors.white54,
-                              weight: FontWeight.w700,
-                              letterSpacing: 0.8)),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text('🏢 Jumbo', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
-                                const SizedBox(height: 3),
-                                Text(CurrencyFormatter.format(_jumboPmt, symbol: '\$').split('.').first,
-                                    style: AppTextStyles.playfair(size: 22, color: const Color(0xFFFCD34D), weight: FontWeight.w800)),
-                                const SizedBox(height: 2),
-                                Text('${CurrencyFormatter.compact(_loanAmt, symbol: '\$')} loan', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white38)),
-                              ],
-                            ),
-                          ),
+                ] else ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
                           Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-                            child: Column(
-                              children: [
-                                Text('VS', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w800)),
-                                Text('${_paymentDiff >= 0 ? '+' : ''}${CurrencyFormatter.format(_paymentDiff, symbol: '\$').split('.').first}/mo',
-                                    style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54)),
-                              ],
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                            child: Row(
                               children: [
-                                Text('🏠 Conforming', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
-                                const SizedBox(height: 3),
-                                Text(CurrencyFormatter.format(_confPmt, symbol: '\$').split('.').first,
-                                    style: AppTextStyles.playfair(size: 22, color: const Color(0xFF86EFAC), weight: FontWeight.w800)),
-                                const SizedBox(height: 2),
-                                Text('${CurrencyFormatter.compact(_confLoan, symbol: '\$')} loan', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white38)),
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Compare Loan Types" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         ],
+                      ],
+                    ),
+                  ),
+                  _buildSectionHeader('Payment Comparison'),
+
+                  // Results Card
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0B1D3A), Color(0xFF334155)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      const SizedBox(height: 14),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
-                        child: RichText(
-                          text: TextSpan(
-                            style: AppTextStyles.dmSans(size: 10, color: Colors.white70, height: 1.4),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('MONTHLY PRINCIPAL & INTEREST',
+                            style: AppTextStyles.dmSans(
+                                size: 8.5,
+                                color: Colors.white54,
+                                weight: FontWeight.w700,
+                                letterSpacing: 0.8)),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text('🏢 Jumbo', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
+                                  const SizedBox(height: 3),
+                                  Text(CurrencyFormatter.format(snapJumboPmt, symbol: '\$').split('.').first,
+                                      style: AppTextStyles.playfair(size: 22, color: const Color(0xFFFCD34D), weight: FontWeight.w800)),
+                                  const SizedBox(height: 2),
+                                  Text('${CurrencyFormatter.compact(snapLoanAmt, symbol: '\$')} loan', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white38)),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+                              child: Text(
+                                'Δ ${CurrencyFormatter.format(snapDiff.abs(), symbol: '\$').split('.').first}/mo',
+                                style: AppTextStyles.dmSans(size: 11.5, color: Colors.white, weight: FontWeight.w800),
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text('🏠 Conforming', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
+                                  const SizedBox(height: 3),
+                                  Text(CurrencyFormatter.format(snapConfPmt, symbol: '\$').split('.').first,
+                                      style: AppTextStyles.playfair(size: 22, color: const Color(0xFF86EFAC), weight: FontWeight.w800)),
+                                  const SizedBox(height: 2),
+                                  Text('${CurrencyFormatter.compact(snapConfLoan, symbol: '\$')} loan', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white38)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const TextSpan(text: 'Your situation: ', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                              TextSpan(
-                                text: _isJumbo
-                                    ? 'Loan of ${CurrencyFormatter.compact(_loanAmt, symbol: '\$')} qualifies as jumbo. To use conforming, increase down payment by ${CurrencyFormatter.compact(max(0, _extraDownNeeded), symbol: '\$')} or consider an 80-10-10 piggyback structure.'
-                                    : 'Loan of ${CurrencyFormatter.compact(_loanAmt, symbol: '\$')} is within conforming limit. Conforming loan available — no jumbo pricing.',
+                              Text('CLASSIFICATION REPORT',
+                                  style: AppTextStyles.dmSans(size: 8, color: Colors.white38, weight: FontWeight.w700, letterSpacing: 0.4)),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Text(snapIsJumbo ? '⚠️ JUMBO REQUIRED' : '✅ CONFORMING LOAN',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11.5,
+                                          color: snapIsJumbo ? const Color(0xFFFCD34D) : const Color(0xFF86EFAC),
+                                          weight: FontWeight.w800)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '(Limit: \$${CurrencyFormatter.compact(_confLimit)})',
+                                    style: AppTextStyles.dmSans(size: 9, color: Colors.white30),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                snapIsJumbo
+                                    ? 'Your desired loan amount of \$${CurrencyFormatter.format(snapLoanAmt, symbol: '').split('.').first} exceeds the Fannie Mae limit. To make it conforming, you need \$${CurrencyFormatter.format(snapExtraDown, symbol: '').split('.').first} more down payment.'
+                                    : 'Your loan amount falls within conforming guidelines. You qualify for Fannie Mae / Freddie Mac standard pricing.',
+                                style: AppTextStyles.dmSans(size: 9.5, color: Colors.white70, height: 1.4),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      GestureDetector(
-                        onTap: _saveCalc,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.13),
-                            border: Border.all(color: Colors.white24),
-                            borderRadius: BorderRadius.circular(10),
+                        const SizedBox(height: 14),
+                        GestureDetector(
+                          onTap: _saveCalc,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.13),
+                              border: Border.all(color: Colors.white24),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '🔖 Save Loan Comparison',
+                              style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w700),
+                            ),
                           ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '🔖 Save Comparison',
-                            style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Lifetime Interest & Pmt Breakdown'),
+
+                  // Double Bar chart
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSideChart(
+                          'Total Interest Costs',
+                          '${CurrencyFormatter.format(snapJumboTotalInt, symbol: '\$').split('.').first} vs ${CurrencyFormatter.format(snapConfTotalInt, symbol: '\$').split('.').first}',
+                          jIntWidthFactor,
+                          cIntWidthFactor,
+                          'Jumbo Interest Paid',
+                          'Conforming Interest Paid',
+                          const Color(0xFFD97706),
+                          const Color(0xFFB45309),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildSideChart(
+                          'Monthly Payment',
+                          '${CurrencyFormatter.format(snapJumboPmt, symbol: '\$').split('.').first} vs ${CurrencyFormatter.format(snapConfPmt, symbol: '\$').split('.').first}',
+                          jPmtWidthFactor,
+                          cPmtWidthFactor,
+                          'Jumbo Monthly P&I',
+                          'Conforming Monthly P&I',
+                          const Color(0xFF0B1D3A),
+                          const Color(0xFF1B3F72),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Full Feature Comparison'),
+
+                  // Table
+                  Container(
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF0B1D3A),
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(flex: 14, child: Text('FEATURE', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54, weight: FontWeight.w700))),
+                              Expanded(flex: 10, child: Text('🏢 JUMBO', style: AppTextStyles.dmSans(size: 8.5, color: const Color(0xFFFCD34D), weight: FontWeight.w800), textAlign: TextAlign.center)),
+                              Expanded(flex: 10, child: Text('🏠 CONFORMING', style: AppTextStyles.dmSans(size: 8.5, color: const Color(0xFF86EFAC), weight: FontWeight.w800), textAlign: TextAlign.center)),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        _buildComparisonRow('Loan Limit', '>\$766,550', '≤\$766,550', isJumboAlert: true),
+                        _buildComparisonRow('High-Cost Limit', '>\$1,149,825', '≤\$1,149,825', isJumboAlert: true),
+                        _buildComparisonRow('GSE Backing', '❌ None', '✅ Yes', isConfAlert: true),
+                        _buildComparisonRow('Min. Credit Score', '700–720+', '620+', isJumboAlert: true),
+                        _buildComparisonRow('Min. Down Payment', '10–20%', '3–5%', isJumboAlert: true),
+                        _buildComparisonRow('PMI Required', 'Rarely', 'Yes (<20%)', isConfAlert: true),
+                        _buildComparisonRow('DTI Maximum', '43%', '45–50%', isJumboAlert: true),
+                        _buildComparisonRow('Cash Reserves', '12–18 Mo', '2–6 Mo', isJumboAlert: true),
+                        _buildComparisonRow('Appraisals', '1–2 (>\$2M)', '1 (standard)', isJumboAlert: true),
+                        _buildComparisonRow('Rate vs Conforming', '+0.30%', 'Benchmark', isJumboAlert: true),
+                        _buildComparisonRow('Self-Employed OK', '✅ Yes', 'Limited', isConfAlert: true),
+                        _buildComparisonRow('Closing Timeline', '38–45 days', '28–35 days', isJumboAlert: true),
+                        _buildComparisonRow('Lender Holds Loan', '✅ Portfolio', 'Sold to GSE', isConfAlert: true),
+                      ],
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 20),
-                _buildSectionHeader('Lifetime Cost Analysis'),
-
-                // Lifetime Cost Analysis Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('💸 Lifetime Cost Analysis',
-                          style: AppTextStyles.playfair(size: 12, color: textCol, weight: FontWeight.w800)),
-                      Text('Total paid over full loan term (P+I only)',
-                          style: AppTextStyles.dmSans(size: 9.5, color: mutedCol)),
-                      const SizedBox(height: 16),
-
-                      // Interest dual bar
-                      _buildDualBar(
-                        'Total Interest Paid',
-                        '${CurrencyFormatter.compact(_jumboTotalInt, symbol: '\$')} vs ${CurrencyFormatter.compact(_confTotalInt, symbol: '\$')}',
-                        jIntWidthFactor,
-                        cIntWidthFactor,
-                        'Jumbo Interest',
-                        'Conforming Interest',
-                        const Color(0xFFD97706),
-                        const Color(0xFF15803D),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Monthly payment dual bar
-                      _buildDualBar(
-                        'Monthly Payment',
-                        '${CurrencyFormatter.format(_jumboPmt, symbol: '\$').split('.').first} vs ${CurrencyFormatter.format(_confPmt, symbol: '\$').split('.').first}',
-                        jPmtWidthFactor,
-                        cPmtWidthFactor,
-                        'Jumbo Monthly P&I',
-                        'Conforming Monthly P&I',
-                        const Color(0xFF0B1D3A),
-                        const Color(0xFF1B3F72),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-                _buildSectionHeader('Full Feature Comparison'),
-
-                // Table
-                Container(
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF0B1D3A),
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(flex: 14, child: Text('FEATURE', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54, weight: FontWeight.w700))),
-                            Expanded(flex: 10, child: Text('🏢 JUMBO', style: AppTextStyles.dmSans(size: 8.5, color: const Color(0xFFFCD34D), weight: FontWeight.w800), textAlign: TextAlign.center)),
-                            Expanded(flex: 10, child: Text('🏠 CONFORMING', style: AppTextStyles.dmSans(size: 8.5, color: const Color(0xFF86EFAC), weight: FontWeight.w800), textAlign: TextAlign.center)),
-                          ],
-                        ),
-                      ),
-                      _buildComparisonRow('Loan Limit', '>\$766,550', '≤\$766,550', isJumboAlert: true),
-                      _buildComparisonRow('High-Cost Limit', '>\$1,149,825', '≤\$1,149,825', isJumboAlert: true),
-                      _buildComparisonRow('GSE Backing', '❌ None', '✅ Yes', isConfAlert: true),
-                      _buildComparisonRow('Min. Credit Score', '700–720+', '620+', isJumboAlert: true),
-                      _buildComparisonRow('Min. Down Payment', '10–20%', '3–5%', isJumboAlert: true),
-                      _buildComparisonRow('PMI Required', 'Rarely', 'Yes (<20%)', isConfAlert: true),
-                      _buildComparisonRow('DTI Maximum', '43%', '45–50%', isJumboAlert: true),
-                      _buildComparisonRow('Cash Reserves', '12–18 Mo', '2–6 Mo', isJumboAlert: true),
-                      _buildComparisonRow('Appraisals', '1–2 (>\$2M)', '1 (standard)', isJumboAlert: true),
-                      _buildComparisonRow('Rate vs Conforming', '+0.30%', 'Benchmark', isJumboAlert: true),
-                      _buildComparisonRow('Self-Employed OK', '✅ Yes', 'Limited', isConfAlert: true),
-                      _buildComparisonRow('Closing Timeline', '38–45 days', '28–35 days', isJumboAlert: true),
-                      _buildComparisonRow('Lender Holds Loan', '✅ Portfolio', 'Sold to GSE', isConfAlert: true),
-                    ],
-                  ),
-                ),
+                ],
 
                 const SizedBox(height: 20),
                 _buildSectionHeader('2025 FHFA Loan Limits', badgeText: 'Official'),
@@ -669,17 +795,18 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? errorText}) {
     const theme = _theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
+            color: hasError ? Colors.red : theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -687,12 +814,16 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.dmSans(
               size: 13,
               weight: FontWeight.w800,
@@ -755,7 +886,7 @@ class _USAJumboVsConformingScreenState extends ConsumerState<USAJumboVsConformin
     );
   }
 
-  Widget _buildDualBar(
+  Widget _buildSideChart(
     String label,
     String values,
     double fillJ,

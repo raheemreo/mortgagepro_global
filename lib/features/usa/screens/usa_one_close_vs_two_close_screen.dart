@@ -21,6 +21,10 @@ class USAOneCloseVsTwoCloseScreen extends ConsumerStatefulWidget {
 class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCloseScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   // Inputs
   final _constAmtController = TextEditingController(text: '400000');
   final _permAmtController = TextEditingController(text: '400000');
@@ -29,15 +33,7 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
 
   bool _calculated = false;
 
-  // Calculation outputs
-  double _constClose = 0;
-  double _permClose = 0;
-  double _modFee = 500;
-  double _oneCloseTotal = 0;
-  double _twoCloseTotal = 0;
-  double _savings = 0;
-  double _extraMonthly = 0;
-  double _extraTotal = 0;
+
 
   @override
   void initState() {
@@ -48,8 +44,8 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
       _permAmtController.text = (inputs['PermLoanAmt'] ?? 400000.0).toStringAsFixed(0);
       _costRateController.text = (inputs['CostRate'] ?? 3.0).toStringAsFixed(2);
       _riskBpsController.text = (inputs['RateRiseRisk'] ?? 0.5).toStringAsFixed(3);
+      _calculate();
     }
-    _calculate();
   }
 
   @override
@@ -62,10 +58,30 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
   }
 
   void _calculate() {
-    final constAmt = double.tryParse(_constAmtController.text) ?? 0.0;
-    final permAmt = double.tryParse(_permAmtController.text) ?? 0.0;
-    final costRate = (double.tryParse(_costRateController.text) ?? 0.0) / 100;
-    final riskPct = (double.tryParse(_riskBpsController.text) ?? 0.0) / 100;
+    final errors = <String, String>{};
+    final constAmt = double.tryParse(_constAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final permAmt = double.tryParse(_permAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final costRateVal = double.tryParse(_costRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final riskBpsVal = double.tryParse(_riskBpsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (constAmt <= 0) errors['constAmt'] = 'Enter positive construction amount';
+    if (permAmt <= 0) errors['permAmt'] = 'Enter permanent amount';
+    if (costRateVal <= 0) errors['costRate'] = 'Enter positive cost rate';
+    if (riskBpsVal < 0) errors['riskBps'] = 'Enter non-negative rate';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
+    final costRate = costRateVal / 100;
+    final riskPct = riskBpsVal / 100;
 
     final constClose = constAmt * costRate;
     final permClose = permAmt * costRate;
@@ -88,26 +104,49 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
     final extraTotal = extraMonthly * months;
 
     setState(() {
-      _constClose = constClose;
-      _permClose = permClose;
-      _modFee = modFee;
-      _oneCloseTotal = oneCloseTotal;
-      _twoCloseTotal = twoCloseTotal;
-      _savings = savings;
-      _extraMonthly = extraMonthly;
-      _extraTotal = extraTotal;
+      _calcSnapshot['ConstLoanAmt'] = constAmt;
+      _calcSnapshot['PermLoanAmt'] = permAmt;
+      _calcSnapshot['CostRate'] = costRateVal;
+      _calcSnapshot['RateRiseRisk'] = riskBpsVal;
+
+      _calcSnapshot['ConstClose'] = constClose;
+      _calcSnapshot['PermClose'] = permClose;
+      _calcSnapshot['ModFee'] = modFee;
+      _calcSnapshot['OneCloseTotal'] = oneCloseTotal;
+      _calcSnapshot['TwoCloseTotal'] = twoCloseTotal;
+      _calcSnapshot['Savings'] = savings;
+      _calcSnapshot['ExtraMonthlyPayment'] = extraMonthly;
+      _calcSnapshot['ExtraTotalInterest'] = extraTotal;
+
       _calculated = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
-    final constAmt = double.tryParse(_constAmtController.text) ?? 0.0;
-    final permAmt = double.tryParse(_permAmtController.text) ?? 0.0;
-    final costRate = double.tryParse(_costRateController.text) ?? 0.0;
-    final riskBps = double.tryParse(_riskBpsController.text) ?? 0.0;
 
-    final formattedSavings = CurrencyFormatter.format(_savings, symbol: '\$').split('.').first;
+    final constAmt = _calcSnapshot['ConstLoanAmt'] ?? 400000.0;
+    final permAmt = _calcSnapshot['PermLoanAmt'] ?? 400000.0;
+    final costRate = _calcSnapshot['CostRate'] ?? 3.0;
+    final riskBps = _calcSnapshot['RateRiseRisk'] ?? 0.5;
+
+    final snapOneCloseTotal = _calcSnapshot['OneCloseTotal'] ?? 0.0;
+    final snapTwoCloseTotal = _calcSnapshot['TwoCloseTotal'] ?? 0.0;
+    final snapSavings = _calcSnapshot['Savings'] ?? 0.0;
+    final snapExtraMonthly = _calcSnapshot['ExtraMonthlyPayment'] ?? 0.0;
+    final snapExtraTotal = _calcSnapshot['ExtraTotalInterest'] ?? 0.0;
+
+    final formattedSavings = CurrencyFormatter.format(snapSavings, symbol: '\$').split('.').first;
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'Construction One-Close vs. Two-Close',
@@ -120,18 +159,18 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
         'RateRiseRisk': riskBps,
       },
       results: {
-        'OneCloseTotal': _oneCloseTotal,
-        'TwoCloseTotal': _twoCloseTotal,
-        'Savings': _savings,
-        'ExtraMonthlyPayment': _extraMonthly,
-        'ExtraTotalInterest': _extraTotal,
+        'OneCloseTotal': snapOneCloseTotal,
+        'TwoCloseTotal': snapTwoCloseTotal,
+        'Savings': snapSavings,
+        'ExtraMonthlyPayment': snapExtraMonthly,
+        'ExtraTotalInterest': snapExtraTotal,
       },
     );
 
     ref.read(savedProvider.notifier).save(calc);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('✅ Closing structure comparison saved!'),
+        content: Text('✅ Calculation saved!'),
         backgroundColor: Colors.green,
       ),
     );
@@ -139,12 +178,29 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_constAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['ConstLoanAmt'] ?? 0.0) ||
+      (double.tryParse(_permAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['PermLoanAmt'] ?? 0.0) ||
+      (double.tryParse(_costRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['CostRate'] ?? 0.0) ||
+      (double.tryParse(_riskBpsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['RateRiseRisk'] ?? 0.0)
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
     final borderCol = _theme.getBorderColor(context);
     final bgCol = _theme.getBgColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final snapConstClose = _calcSnapshot['ConstClose'] ?? 0.0;
+    final snapPermClose = _calcSnapshot['PermClose'] ?? 0.0;
+    final snapModFee = _calcSnapshot['ModFee'] ?? 0.0;
+    final snapOneCloseTotal = _calcSnapshot['OneCloseTotal'] ?? 0.0;
+    final snapTwoCloseTotal = _calcSnapshot['TwoCloseTotal'] ?? 0.0;
+    final snapSavings = _calcSnapshot['Savings'] ?? 0.0;
+    final snapExtraMonthly = _calcSnapshot['ExtraMonthlyPayment'] ?? 0.0;
+    final snapExtraTotal = _calcSnapshot['ExtraTotalInterest'] ?? 0.0;
+    final snapRiskBps = _calcSnapshot['RateRiseRisk'] ?? 0.0;
 
     return Scaffold(
       backgroundColor: bgCol,
@@ -254,11 +310,11 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
                       Row(
                         children: [
                           Expanded(
-                            child: _buildInputField('Construction Loan (\$)', _constAmtController, hint: 'Build phase loan amount'),
+                            child: _buildInputField('Construction Loan (\$)', _constAmtController, hint: 'Build phase loan amount', errorText: _errors['constAmt']),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildInputField('Permanent Loan (\$)', _permAmtController, hint: 'Take-out mortgage amount'),
+                            child: _buildInputField('Permanent Loan (\$)', _permAmtController, hint: 'Take-out mortgage amount', errorText: _errors['permAmt']),
                           ),
                         ],
                       ),
@@ -266,11 +322,11 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
                       Row(
                         children: [
                           Expanded(
-                            child: _buildInputField('Avg. Closing Cost (%)', _costRateController, hint: 'Typical range: 2%–5%'),
+                            child: _buildInputField('Avg. Closing Cost (%)', _costRateController, hint: 'Typical range: 2%–5%', errorText: _errors['costRate']),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildInputField('Rate Rise Risk (%)', _riskBpsController, hint: 'Possible rate increase'),
+                            child: _buildInputField('Rate Rise Risk (%)', _riskBpsController, hint: 'Possible rate increase', errorText: _errors['riskBps']),
                           ),
                         ],
                       ),
@@ -294,11 +350,66 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 20),
-
-                // Result Hero Card
-                if (_calculated) ...[
+                      // Results Hero Panel
+                if (!_calculated) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('🏗️', style: TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'View Closing Cost Comparison Results',
+                          style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Enter your loan details above, then tap "Compare Closing Structures" to compare One-Close vs. Two-Close structures.',
+                          style: AppTextStyles.dmSans(size: 10.5, color: mutedCol),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Compare Closing Structures" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   _buildSectionHeader('Potential Savings'),
                   Container(
                     padding: const EdgeInsets.all(18),
@@ -324,7 +435,7 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
                           crossAxisAlignment: CrossAxisAlignment.baseline,
                           textBaseline: TextBaseline.alphabetic,
                           children: [
-                            Text(CurrencyFormatter.format(max(_savings, 0.0), symbol: '\$').split('.').first,
+                            Text(CurrencyFormatter.format(max(snapSavings, 0.0), symbol: '\$').split('.').first,
                                 style: AppTextStyles.dmSans(
                                     size: 32, color: Colors.white, weight: FontWeight.w800)),
                             const SizedBox(width: 4),
@@ -333,7 +444,7 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'One closing: ${CurrencyFormatter.format(_oneCloseTotal, symbol: '\$').split('.').first} · Two closings: ${CurrencyFormatter.format(_twoCloseTotal, symbol: '\$').split('.').first}',
+                          'One closing: ${CurrencyFormatter.format(snapOneCloseTotal, symbol: '\$').split('.').first} · Two closings: ${CurrencyFormatter.format(snapTwoCloseTotal, symbol: '\$').split('.').first}',
                           style: AppTextStyles.dmSans(size: 10, color: Colors.white70),
                         ),
                         const SizedBox(height: 12),
@@ -375,7 +486,7 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
                         Text('📊 Total Closing Costs Comparison',
                             style: AppTextStyles.dmSans(size: 12, color: textCol, weight: FontWeight.w800)),
                         const SizedBox(height: 20),
-                        _buildSideBarChart(_oneCloseTotal, _twoCloseTotal, textCol, mutedCol),
+                        _buildSideBarChart(snapOneCloseTotal, snapTwoCloseTotal, textCol, mutedCol),
                       ],
                     ),
                   ),
@@ -392,17 +503,17 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
                     crossAxisSpacing: 10,
                     childAspectRatio: 1.25,
                     children: [
-                      _buildMetricCard('🏗️', 'Construction Closing', CurrencyFormatter.format(_constClose), 'Paid once, either way', textCol, mutedCol, borderCol, cardBg),
-                      _buildMetricCard('🏠', 'Permanent Closing', CurrencyFormatter.format(_permClose), 'Two-close only', textCol, mutedCol, borderCol, cardBg),
-                      _buildMetricCard('📝', 'Modification Fee', CurrencyFormatter.format(_modFee), 'One-close conversion', textCol, mutedCol, borderCol, cardBg),
-                      _buildMetricCard('💰', 'Total Savings', CurrencyFormatter.format(max(_savings, 0.0)), 'Choosing one-close', textCol, mutedCol, borderCol, cardBg),
+                      _buildMetricCard('🏗️', 'Construction Closing', CurrencyFormatter.format(snapConstClose), 'Paid once, either way', textCol, mutedCol, borderCol, cardBg),
+                      _buildMetricCard('🏠', 'Permanent Closing', CurrencyFormatter.format(snapPermClose), 'Two-close only', textCol, mutedCol, borderCol, cardBg),
+                      _buildMetricCard('📝', 'Modification Fee', CurrencyFormatter.format(snapModFee), 'One-close conversion', textCol, mutedCol, borderCol, cardBg),
+                      _buildMetricCard('💰', 'Total Savings', CurrencyFormatter.format(max(snapSavings, 0.0)), 'Choosing one-close', textCol, mutedCol, borderCol, cardBg),
                     ],
                   ),
 
                   const SizedBox(height: 20),
 
                   // Rate Risk Alert Banner
-                  if (_extraMonthly > 0)
+                  if (snapExtraMonthly > 0)
                     Container(
                       padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
@@ -420,9 +531,9 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
                                   weight: FontWeight.w800)),
                           const SizedBox(height: 6),
                           Text(
-                            'If mortgage rates rise ${(double.tryParse(_riskBpsController.text) ?? 0.5).toStringAsFixed(2)}% between your construction closing and your permanent closing, that\'s roughly '
-                            '${CurrencyFormatter.format(_extraMonthly, symbol: '\$').split('.').first}/mo more — about '
-                            '${CurrencyFormatter.format(_extraTotal, symbol: '\$').split('.').first} in added interest over 30 years. '
+                            'If mortgage rates rise ${snapRiskBps.toStringAsFixed(2)}% between your construction closing and your permanent closing, that\'s roughly '
+                            '${CurrencyFormatter.format(snapExtraMonthly, symbol: '\$').split('.').first}/mo more — about '
+                            '${CurrencyFormatter.format(snapExtraTotal, symbol: '\$').split('.').first} in added interest over 30 years. '
                             'One-close locks your permanent rate upfront, removing this risk entirely.',
                             style: AppTextStyles.dmSans(
                                 size: 10,
@@ -433,10 +544,6 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
                       ),
                     ),
                 ],
-
-                const SizedBox(height: 20),
-
-                // Side by Side comparison cards
                 _buildSectionHeader('Side-by-Side Breakdown'),
                 Column(
                   children: [
@@ -537,16 +644,17 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? hint}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? hint, String? errorText}) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: _theme.getMutedColor(context),
+            color: hasError ? Colors.red : _theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -554,12 +662,16 @@ class _USAOneCloseVsTwoCloseScreenState extends ConsumerState<USAOneCloseVsTwoCl
         Container(
           decoration: BoxDecoration(
             color: _theme.getBgColor(context),
-            border: Border.all(color: _theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : _theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.dmSans(
               size: 13,
               weight: FontWeight.w700,

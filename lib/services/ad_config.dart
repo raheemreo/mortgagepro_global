@@ -20,6 +20,22 @@ class AdConfig {
   /// Set to false only for production builds.
   static const bool isTestMode = kDebugMode;
 
+  // ── Test Device Registration ──────────────────────────────────────────────
+
+  /// Hashed device IDs registered as AdMob test devices.
+  /// These devices receive test ad creatives even when using real ad unit IDs,
+  /// making it safe to verify ad rendering (e.g. AdChoicesView) without
+  /// violating AdMob invalid traffic policy.
+  ///
+  /// Add a device: run the app → check logcat for:
+  ///   "Use RequestConfiguration.Builder().setTestDeviceIds([\"HASH\"])"
+  /// then paste the hash into this list.
+  static const List<String> testDeviceIds = kDebugMode
+      ? [
+          '5F103D46549D68BD3B35FE06F4012DF5', // Xiaomi test device (MIUI)
+        ]
+      : []; // No test device overrides in production
+
   // ── Banner ────────────────────────────────────────────────────────────────
 
   /// Android banner ad unit.

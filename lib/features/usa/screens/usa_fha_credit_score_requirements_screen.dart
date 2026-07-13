@@ -20,6 +20,10 @@ class USAFhaCreditScoreRequirementsScreen extends ConsumerStatefulWidget {
 class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCreditScoreRequirementsScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   double _score = 620;
   final _homePriceController = TextEditingController(text: '350000');
   String _bankruptcy = 'no';
@@ -53,10 +57,30 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
   }
 
   void _calculate() {
-    final price = double.tryParse(_homePriceController.text) ?? 0.0;
+    final errors = <String, String>{};
+    final price = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (price <= 0) {
+      errors['price'] = 'Enter positive home price';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
 
     if (_score < 500) {
       setState(() {
+        _calcSnapshot['price'] = price;
+        _calcSnapshot['score'] = _score;
+        _calcSnapshot['bankruptcy'] = _bankruptcy;
+
         _isEligible = false;
         _downPct = 0;
         _downAmt = 0;
@@ -64,6 +88,15 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
         _overlayRisk = 'High';
         _resultText = 'FHA requires a minimum 500 FICO score to insure any loan';
         _calculated = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_resultsKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _resultsKey.currentContext!,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOut,
+          );
+        }
       });
       return;
     }
@@ -81,6 +114,10 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
     }
 
     setState(() {
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['score'] = _score;
+      _calcSnapshot['bankruptcy'] = _bankruptcy;
+
       _isEligible = true;
       _downPct = downPct;
       _downAmt = downAmt;
@@ -89,20 +126,32 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
       _resultText = '${_score.toInt()} FICO qualifies for ${(downPct * 100).toStringAsFixed(1)}% down.$bkNote';
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
-    final price = double.tryParse(_homePriceController.text) ?? 0.0;
-    final bkIdx = _bankruptcy == 'no' ? 0 : _bankruptcy == 'ch7' ? 1 : 2;
+    final price = _calcSnapshot['price'] ?? 350000.0;
+    final score = _calcSnapshot['score'] ?? 620.0;
+    final bk = _calcSnapshot['bankruptcy'] ?? 'no';
+    final bkIdx = bk == 'no' ? 0 : bk == 'ch7' ? 1 : 2;
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'FHA Credit Score Requirements',
-      label: 'FHA Credit Check: ${_score.toInt()} FICO',
+      label: 'FHA Credit Check: ${score.toInt()} FICO',
       currencyCode: 'USD',
       inputs: {
-        'score': _score,
+        'score': score,
         'homePrice': price,
         'bankruptcyIndex': bkIdx.toDouble(),
       },
@@ -124,6 +173,12 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['price'] ?? 0.0) ||
+      _score != (_calcSnapshot['score'] ?? 620.0) ||
+      _bankruptcy != (_calcSnapshot['bankruptcy'] ?? 'no')
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -131,19 +186,21 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
     final bgCol = _theme.getBgColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final scoreVal = _calculated ? (_calcSnapshot['score'] ?? 620.0) : _score;
+
     // Slide tag styling
     String tagLabel;
     Color tagBg;
     Color tagText;
-    if (_score < 500) {
+    if (scoreVal < 500) {
       tagLabel = 'Not Eligible';
       tagBg = isDark ? const Color(0xFF5A1D1D) : const Color(0xFFFCA5A5);
       tagText = isDark ? Colors.white : const Color(0xFF7F1D1D);
-    } else if (_score < 580) {
+    } else if (scoreVal < 580) {
       tagLabel = 'Fair';
       tagBg = isDark ? const Color(0xFF5D4017) : const Color(0xFFFEF3C7);
       tagText = isDark ? const Color(0xFFFCD34D) : const Color(0xFF92400E);
-    } else if (_score < 670) {
+    } else if (scoreVal < 670) {
       tagLabel = 'Fair/Good';
       tagBg = isDark ? const Color(0xFF134E5E) : const Color(0xFFBBF7D0);
       tagText = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF166534);
@@ -438,7 +495,7 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
                       Row(
                         children: [
                           Expanded(
-                            child: _buildInputField('Home Price (\$)', _homePriceController),
+                            child: _buildInputField('Home Price (\$)', _homePriceController, errorText: _errors['price']),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -483,6 +540,36 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
                 // Calculation Results Card
                 if (_calculated) ...[
                   const SizedBox(height: 12),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Check My Eligibility" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -718,16 +805,17 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? errorText}) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: _theme.getMutedColor(context),
+            color: hasError ? Colors.red : _theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -735,7 +823,10 @@ class _USAFhaCreditScoreRequirementsScreenState extends ConsumerState<USAFhaCred
         Container(
           decoration: BoxDecoration(
             color: _theme.getBgColor(context),
-            border: Border.all(color: _theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : _theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(

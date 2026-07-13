@@ -1,5 +1,6 @@
 // lib/main.dart
 
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -191,8 +192,13 @@ class _AppInitializerState extends State<_AppInitializer> {
     }
 
     // ── Step 9: AdManager.instance.initialize() ───────────────────────────
+    // Fire-and-forget — do NOT await here. MobileAds.initialize() can take
+    // 200–500 ms on the main thread, which is the direct cause of the
+    // "Skipped 68 frames!" Choreographer warning seen on startup.
+    // AdManager already guards against double-init and enforces consent
+    // checks internally, so deferring the await is safe.
     try {
-      await AdManager.instance.initialize();
+      unawaited(AdManager.instance.initialize());
     } catch (e, s) {
       CrashlyticsService.recordError(
         e,
@@ -202,9 +208,10 @@ class _AppInitializerState extends State<_AppInitializer> {
     }
 
     // ── Step 10: Transition to the real app ───────────────────────────────
-    if (mounted) {
-      setState(() => _initialized = true);
-    }
+    // Direct setState is correct here. _runInitialization() is async and
+    // always completes well after the widget is mounted and visible.
+    // Frame jank is already solved by step 9 (AdManager is fire-and-forget).
+    if (mounted) setState(() => _initialized = true);
   }
 
   @override

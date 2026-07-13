@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_amortization_calc.dart
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,10 @@ class USAAmortizationCalc extends ConsumerStatefulWidget {
 }
 
 class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  bool _showResults = false;
   // Input Controllers
   final _homePriceController = TextEditingController(text: '450000');
   final _downPmtController = TextEditingController(text: '90000');
@@ -29,6 +34,43 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
   int _selectedYear = 1;
   int _displayMonthsCount = 12;
 
+  void _calculate() {
+    final errors = <String, String>{};
+    final val_homePrice = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_homePrice <= 0) errors['homePrice'] = 'Please enter a valid amount';
+    final val_rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_rate <= 0) errors['rate'] = 'Please enter a valid amount';
+    final val_downPmt = double.tryParse(_downPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_extraPmt = double.tryParse(_extraPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
+    setState(() {
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_downPmtController] = val_downPmt;
+      _calcSnapshot[_rateController] = val_rate;
+      _calcSnapshot[_extraPmtController] = val_extraPmt;
+      _calcSnapshot['_termYears'] = _termYears;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   void dispose() {
     _homePriceController.dispose();
@@ -38,10 +80,37 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
     super.dispose();
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
+
+
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    double defaultVal = 0.0;
+    if (c == _homePriceController) {
+      defaultVal = 450000.0;
+    } else if (c == _downPmtController) {
+      defaultVal = 90000.0;
+    } else if (c == _rateController) {
+      defaultVal = 6.82;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
+    final calcTermYears = _showResults ? (_calcSnapshot['_termYears'] ?? _termYears) : _termYears;
+
+    final isDirty = _showResults && (
+      _termYears != _calcSnapshot['_termYears'] ||
+      double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homePriceController] ?? 0.0) ||
+      double.tryParse(_downPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_downPmtController] ?? 0.0) ||
+      double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rateController] ?? 0.0) ||
+      double.tryParse(_extraPmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_extraPmtController] ?? 0.0)
+    );
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -56,7 +125,7 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
     final basePayment = MortgageMath.monthlyPayment(
       principal: loanAmt,
       annualRatePercent: rate,
-      termYears: _termYears,
+      termYears: calcTermYears,
     );
 
     // Build schedule
@@ -64,7 +133,7 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
     double balance = loanAmt;
     final r = rate / 100 / 12;
     final totalPayment = basePayment + extra;
-    final n = _termYears * 12;
+    final n = calcTermYears * 12;
     final startDate = DateTime(2025, 6, 1);
 
     for (int month = 1; month <= n; month++) {
@@ -132,80 +201,7 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
         ),
         const SizedBox(height: 20),
 
-        _buildSectionHeader('Monthly Payment Summary', onReset: _resetInputs),
-        const SizedBox(height: 8),
-
-        // Summary Hero
-        Container(
-          padding: const EdgeInsets.all(19),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ESTIMATED MONTHLY P&I PAYMENT',
-                style: AppTextStyles.dmSans(
-                  size: 9.5,
-                  weight: FontWeight.w700,
-                  color: Colors.white.withValues(alpha: 0.48),
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                CurrencyFormatter.format(basePayment, symbol: '\$').split('.').first,
-                style: AppTextStyles.dmSans(
-                  size: 46,
-                  weight: FontWeight.w800,
-                  color: Colors.white,
-                ).copyWith(fontFamily: 'Georgia'),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${CurrencyFormatter.format(loanAmt, symbol: '\$').split('.').first} loan · ${rate.toStringAsFixed(2)}% · $_termYears years · Payoff: $payoffMonthYear',
-                style: AppTextStyles.dmSans(
-                  size: 11,
-                  color: Colors.white.withValues(alpha: 0.55),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Stats row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildHeroStat('Total Paid', CurrencyFormatter.format(totalPaid, symbol: '\$').split('.').first, null),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _buildHeroStat('Total Interest', CurrencyFormatter.format(totalInterest, symbol: '\$').split('.').first, const Color(0xFFFCA5A5)),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _buildHeroStat('Loan Amount', CurrencyFormatter.format(loanAmt, symbol: '\$').split('.').first, const Color(0xFFFCD34D)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-        _buildSectionHeader('Loan Details', onReset: null),
+        _buildSectionHeader('Loan Details', onReset: _resetInputs),
         const SizedBox(height: 8),
 
         // Parameters Card
@@ -248,6 +244,7 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
                     child: _buildInputField(
                       label: 'Home Price',
                       controller: _homePriceController,
+                      errorText: _errors['homePrice'],
                       hint: 'US median: \$412,000 (2025)',
                       prefix: '\$',
                     ),
@@ -272,6 +269,7 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
                     child: _buildInputField(
                       label: 'Interest Rate',
                       controller: _rateController,
+                      errorText: _errors['rate'],
                       hint: '30-yr avg: 6.82%',
                       suffix: '%',
                     ),
@@ -312,7 +310,7 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
                               onChanged: (v) {
                                 if (v != null) {
                                   setState(() {
-                                    _termYears = v;
+                                    this._termYears = v;
                                     _selectedYear = 1;
                                   });
                                 }
@@ -358,7 +356,7 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
 
         // Generate Amortization Schedule Button (Red Gradient)
         GestureDetector(
-          onTap: () => setState(() {}),
+          onTap: _calculate,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 15),
@@ -396,305 +394,412 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
         const SizedBox(height: 8),
 
         // Save Button (Green)
-        _buildSaveButton(_saveCalculation),
+        _buildSaveButton(_showResults ? _saveCalculation : () {}),
 
         const SizedBox(height: 20),
-        _buildSectionHeader('Principal vs Interest Breakdown', onReset: null),
-        const SizedBox(height: 8),
 
-        // Visual Breakdown Section
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07),
-                blurRadius: 14,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Where Your Money Goes Over Loan Life',
-                style: AppTextStyles.dmSans(
-                  size: 12.5,
-                  weight: FontWeight.w800,
-                  color: theme.getTextColor(context),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Stacked Bar
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  height: 18,
-                  width: double.infinity,
-                  child: Row(
-                    children: [
-                      if (pPct > 0)
+        if (_showResults) ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
                         Expanded(
-                          flex: pPct,
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(colors: [Color(0xFF1B3F72), Color(0xFF0B1D3A)]),
-                            ),
+                          child: Text(
+                            'Inputs have changed. Tap "Generate Amortization Schedule" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
                           ),
                         ),
-                      if (iPct > 0)
-                        Expanded(
-                          flex: iPct,
+                      ],
+                    ),
+                  ),
+                ],
+                _buildSectionHeader('Monthly Payment Summary', onReset: null),
+                const SizedBox(height: 8),
+
+                // Summary Hero
+                Container(
+                  padding: const EdgeInsets.all(19),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ESTIMATED MONTHLY P&I PAYMENT',
+                        style: AppTextStyles.dmSans(
+                          size: 9.5,
+                          weight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.48),
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        CurrencyFormatter.format(basePayment, symbol: '\$').split('.').first,
+                        style: AppTextStyles.dmSans(
+                          size: 46,
+                          weight: FontWeight.w800,
+                          color: Colors.white,
+                        ).copyWith(fontFamily: 'Georgia'),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${CurrencyFormatter.format(loanAmt, symbol: '\$').split('.').first} loan · ${rate.toStringAsFixed(2)}% · $calcTermYears years · Payoff: $payoffMonthYear',
+                        style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Stats row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildHeroStat('Total Paid', CurrencyFormatter.format(totalPaid, symbol: '\$').split('.').first, null),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _buildHeroStat('Total Interest', CurrencyFormatter.format(totalInterest, symbol: '\$').split('.').first, const Color(0xFFFCA5A5)),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _buildHeroStat('Loan Amount', CurrencyFormatter.format(loanAmt, symbol: '\$').split('.').first, const Color(0xFFFCD34D)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                _buildSectionHeader('Principal vs Interest Breakdown', onReset: null),
+                const SizedBox(height: 8),
+
+                // Visual Breakdown Section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07),
+                        blurRadius: 14,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Where Your Money Goes Over Loan Life',
+                        style: AppTextStyles.dmSans(
+                          size: 12.5,
+                          weight: FontWeight.w800,
+                          color: theme.getTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Stacked Bar
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          height: 18,
+                          width: double.infinity,
+                          child: Row(
+                            children: [
+                              if (pPct > 0)
+                                Expanded(
+                                  flex: pPct,
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(colors: [Color(0xFF1B3F72), Color(0xFF0B1D3A)]),
+                                    ),
+                                  ),
+                                ),
+                              if (iPct > 0)
+                                Expanded(
+                                  flex: iPct,
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(colors: [Color(0xFFB91C1C), Color(0xFF991B1B)]),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Stacked legend
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildStackedLegendItem('Principal', pPct, const Color(0xFF1B3F72)),
+                          const SizedBox(width: 14),
+                          _buildStackedLegendItem('Interest', iPct, const Color(0xFFB91C1C)),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Donut Payoff Ring Row
+                      Row(
+                        children: [
+                          CustomPaint(
+                            size: const Size(92, 92),
+                            painter: _AmortizationDonutPainter(
+                              principalPct: pPct / 100.0,
+                              interestPct: iPct / 100.0,
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildDonutLegendRow(
+                                  color: const Color(0xFF1B3F72),
+                                  label: 'Total Principal',
+                                  value: CurrencyFormatter.format(loanAmt, symbol: '\$').split('.').first,
+                                ),
+                                const SizedBox(height: 8),
+                                _buildDonutLegendRow(
+                                  color: const Color(0xFFB91C1C),
+                                  label: 'Total Interest',
+                                  value: CurrencyFormatter.format(totalInterest, symbol: '\$').split('.').first,
+                                ),
+                                const SizedBox(height: 8),
+                                _buildDonutLegendRow(
+                                  color: const Color(0xFFD97706),
+                                  label: 'Total Paid',
+                                  value: CurrencyFormatter.format(totalPaid, symbol: '\$').split('.').first,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // Progress bars list below
+                      _buildProgressRow('Loan Principal', loanAmt, pPct, const Color(0xFF1B3F72)),
+                      const SizedBox(height: 8),
+                      _buildProgressRow('Total Interest', totalInterest, iPct, const Color(0xFFB91C1C)),
+                      const SizedBox(height: 8),
+                      _buildProgressRow('Total Cost', totalPaid, 100, const Color(0xFFD97706)),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                _buildSectionHeader('Yearly Summary', onReset: null),
+                const SizedBox(height: 8),
+
+                // Year Tabs
+                if (totalYearsInSchedule > 0)
+                  SizedBox(
+                    height: 34,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: totalYearsInSchedule,
+                      itemBuilder: (context, idx) {
+                        final y = idx + 1;
+                        final isActive = y == activeSelectedYear;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedYear = y;
+                                _displayMonthsCount = 12;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isActive ? const Color(0xFF1B3F72) : theme.getCardColor(context),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isActive ? const Color(0xFF1B3F72) : theme.getBorderColor(context),
+                                  width: 1.5,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Yr $y',
+                                style: AppTextStyles.dmSans(
+                                  size: 10.5,
+                                  weight: FontWeight.w700,
+                                  color: isActive ? Colors.white : theme.getMutedColor(context),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                const SizedBox(height: 10),
+
+                // Table Card
+                Container(
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07),
+                        blurRadius: 14,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      // Header
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)]),
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
+                        child: Row(
+                          children: [
+                            _th('Month', alignment: Alignment.centerLeft, flex: 3),
+                            _th('Payment'),
+                            _th('Principal'),
+                            _th('Interest'),
+                            _th('Balance', flex: 4),
+                          ],
+                        ),
+                      ),
+
+                      // Rows list
+                      if (visibleRows.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Center(
+                            child: Text(
+                              'No entries for this year',
+                              style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context)),
+                            ),
+                          ),
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: visibleRows.length,
+                          itemBuilder: (context, idx) {
+                            final row = visibleRows[idx];
+                            final moName = '${_getMonthNameAbbr(row.date.month)} ${row.date.year.toString().substring(2)}';
+                            return Container(
+                              decoration: BoxDecoration(
+                                border: Border(bottom: BorderSide(color: theme.getBorderColor(context), width: 0.5)),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      moName,
+                                      style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: theme.getTextColor(context)),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _td(CurrencyFormatter.format(row.payment, symbol: '').split('.').first),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _td(CurrencyFormatter.format(row.principal, symbol: '').split('.').first, color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1B3F72)),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _td(CurrencyFormatter.format(row.interest, symbol: '').split('.').first, color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C)),
+                                  ),
+                                  Expanded(
+                                    flex: 4,
+                                    child: Text(
+                                      CurrencyFormatter.format(row.balance, symbol: '\$').split('.').first,
+                                      textAlign: TextAlign.right,
+                                      style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+
+                      // Show More Button
+                      if (yearRows.length > _displayMonthsCount)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _displayMonthsCount += 12;
+                            });
+                          },
                           child: Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(colors: [Color(0xFFB91C1C), Color(0xFF991B1B)]),
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(11),
+                            decoration: BoxDecoration(
+                              color: theme.getBgColor(context),
+                              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Show More Months ↓',
+                              style: AppTextStyles.dmSans(
+                                size: 12,
+                                weight: FontWeight.w700,
+                                color: const Color(0xFF1E4FBF),
+                              ),
                             ),
                           ),
                         ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-
-              // Stacked legend
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildStackedLegendItem('Principal', pPct, const Color(0xFF1B3F72)),
-                  const SizedBox(width: 14),
-                  _buildStackedLegendItem('Interest', iPct, const Color(0xFFB91C1C)),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Donut Payoff Ring Row
-              Row(
-                children: [
-                  CustomPaint(
-                    size: const Size(92, 92),
-                    painter: _AmortizationDonutPainter(
-                      principalPct: pPct / 100.0,
-                      interestPct: iPct / 100.0,
-                      isDark: isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _buildDonutLegendRow(
-                          color: const Color(0xFF1B3F72),
-                          label: 'Total Principal',
-                          value: CurrencyFormatter.format(loanAmt, symbol: '\$').split('.').first,
-                        ),
-                        const SizedBox(height: 8),
-                        _buildDonutLegendRow(
-                          color: const Color(0xFFB91C1C),
-                          label: 'Total Interest',
-                          value: CurrencyFormatter.format(totalInterest, symbol: '\$').split('.').first,
-                        ),
-                        const SizedBox(height: 8),
-                        _buildDonutLegendRow(
-                          color: const Color(0xFFD97706),
-                          label: 'Total Paid',
-                          value: CurrencyFormatter.format(totalPaid, symbol: '\$').split('.').first,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 14),
-
-              // Progress bars list below
-              _buildProgressRow('Loan Principal', loanAmt, pPct, const Color(0xFF1B3F72)),
-              const SizedBox(height: 8),
-              _buildProgressRow('Total Interest', totalInterest, iPct, const Color(0xFFB91C1C)),
-              const SizedBox(height: 8),
-              _buildProgressRow('Total Cost', totalPaid, 100, const Color(0xFFD97706)),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-        _buildSectionHeader('Yearly Summary', onReset: null),
-        const SizedBox(height: 8),
-
-        // Year Tabs
-        if (totalYearsInSchedule > 0)
-          SizedBox(
-            height: 34,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: totalYearsInSchedule,
-              itemBuilder: (context, idx) {
-                final y = idx + 1;
-                final isActive = y == activeSelectedYear;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedYear = y;
-                        _displayMonthsCount = 12;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: isActive ? const Color(0xFF1B3F72) : theme.getCardColor(context),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isActive ? const Color(0xFF1B3F72) : theme.getBorderColor(context),
-                          width: 1.5,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Yr $y',
-                        style: AppTextStyles.dmSans(
-                          size: 10.5,
-                          weight: FontWeight.w700,
-                          color: isActive ? Colors.white : theme.getMutedColor(context),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+              ],
             ),
           ),
-        const SizedBox(height: 10),
-
-        // Table Card
-        Container(
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07),
-                blurRadius: 14,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Header
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)]),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
-                child: Row(
-                  children: [
-                    _th('Month', alignment: Alignment.centerLeft, flex: 3),
-                    _th('Payment'),
-                    _th('Principal'),
-                    _th('Interest'),
-                    _th('Balance', flex: 4),
-                  ],
-                ),
-              ),
-
-              // Rows list
-              if (visibleRows.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Center(
-                    child: Text(
-                      'No entries for this year',
-                      style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context)),
-                    ),
-                  ),
-                )
-              else
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: visibleRows.length,
-                  itemBuilder: (context, idx) {
-                    final row = visibleRows[idx];
-                    final moName = '${_getMonthNameAbbr(row.date.month)} ${row.date.year.toString().substring(2)}';
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: theme.getBorderColor(context), width: 0.5)),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              moName,
-                              style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: theme.getTextColor(context)),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 3,
-                            child: _td(CurrencyFormatter.format(row.payment, symbol: '').split('.').first),
-                          ),
-                          Expanded(
-                            flex: 3,
-                            child: _td(CurrencyFormatter.format(row.principal, symbol: '').split('.').first, color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1B3F72)),
-                          ),
-                          Expanded(
-                            flex: 3,
-                            child: _td(CurrencyFormatter.format(row.interest, symbol: '').split('.').first, color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C)),
-                          ),
-                          Expanded(
-                            flex: 4,
-                            child: Text(
-                              CurrencyFormatter.format(row.balance, symbol: '\$').split('.').first,
-                              textAlign: TextAlign.right,
-                              style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: theme.getTextColor(context)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-
-              // Show More Button
-              if (yearRows.length > _displayMonthsCount)
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _displayMonthsCount += 12;
-                    });
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(11),
-                    decoration: BoxDecoration(
-                      color: theme.getBgColor(context),
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      'Show More Months ↓',
-                      style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w700,
-                        color: const Color(0xFF1E4FBF),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
+        ],
 
         // Saved Calculations panel at bottom
         const SizedBox(height: 20),
@@ -897,6 +1002,7 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
     required String hint,
     String? prefix,
     String? suffix,
+    String? errorText,
   }) {
     final theme = widget.theme;
     return Column(
@@ -915,7 +1021,10 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -964,7 +1073,18 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
             ],
           ),
         ),
-        if (hint.isNotEmpty) ...[
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 10,
+              color: Colors.red,
+              weight: FontWeight.w500,
+            ),
+          ),
+        ],
+        if (hint.isNotEmpty && errorText == null) ...[
           const SizedBox(height: 3),
           Text(
             hint,
@@ -1358,6 +1478,13 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
 
   void _resetInputs() {
     setState(() {
+      _homePriceController.clear();
+      _downPmtController.clear();
+      _rateController.clear();
+      _extraPmtController.clear();
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
       _homePriceController.text = '450000';
       _downPmtController.text = '90000';
       _rateController.text = '6.82';

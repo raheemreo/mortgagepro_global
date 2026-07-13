@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_rent_vs_buy_calc.dart
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,9 @@ class USARentVsBuyCalc extends ConsumerStatefulWidget {
 }
 
 class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   final _rentController = TextEditingController(text: '2200');
   final _rentIncreaseController = TextEditingController(text: '4');
   final _rentersInsController = TextEditingController(text: '18');
@@ -41,6 +45,18 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
   @override
   void initState() {
     super.initState();
+    _rentController.addListener(() => setState(() {}));
+    _rentIncreaseController.addListener(() => setState(() {}));
+    _rentersInsController.addListener(() => setState(() {}));
+    _investReturnController.addListener(() => setState(() {}));
+    _homePriceController.addListener(() => setState(() {}));
+    _downPctController.addListener(() => setState(() {}));
+    _mRateController.addListener(() => setState(() {}));
+    _hoaController.addListener(() => setState(() {}));
+    _propTaxPctController.addListener(() => setState(() {}));
+    _appreciationController.addListener(() => setState(() {}));
+    _yearsController.addListener(() => setState(() {}));
+
     final controllers = [
       _rentController,
       _rentIncreaseController,
@@ -87,19 +103,64 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
     }
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
-  void _calculate() async {
+    void _calculate() {
+    final errors = <String, String>{};
+    final val_rent = double.tryParse(_rentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_rent <= 0) errors['rent'] = 'Please enter a valid amount';
+    final val_rentIncrease = double.tryParse(_rentIncreaseController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_rentersIns = double.tryParse(_rentersInsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_investReturn = double.tryParse(_investReturnController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_homePrice = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (val_homePrice <= 0) errors['homePrice'] = 'Please enter a valid amount';
+    final val_downPct = double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_mRate = double.tryParse(_mRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_hoa = double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_propTaxPct = double.tryParse(_propTaxPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_appreciation = double.tryParse(_appreciationController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final val_years = double.tryParse(_yearsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot[_rentController] = val_rent;
+      _calcSnapshot[_rentIncreaseController] = val_rentIncrease;
+      _calcSnapshot[_rentersInsController] = val_rentersIns;
+      _calcSnapshot[_investReturnController] = val_investReturn;
+      _calcSnapshot[_homePriceController] = val_homePrice;
+      _calcSnapshot[_downPctController] = val_downPct;
+      _calcSnapshot[_mRateController] = val_mRate;
+      _calcSnapshot[_hoaController] = val_hoa;
+      _calcSnapshot[_propTaxPctController] = val_propTaxPct;
+      _calcSnapshot[_appreciationController] = val_appreciation;
+      _calcSnapshot[_yearsController] = val_years;
+      _calcSnapshot['_termYears'] = _termYears;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final homePrice = _val(_homePriceController);
@@ -321,8 +382,32 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
     };
   }
 
+    void _resetInputs() {
+    setState(() {
+      _rentController.text = '2200';
+      _rentIncreaseController.text = '4';
+      _rentersInsController.text = '18';
+      _investReturnController.text = '7';
+      _homePriceController.text = '420000';
+      _downPctController.text = '20';
+      _mRateController.text = '6.82';
+      _hoaController.text = '250';
+      _propTaxPctController.text = '1.1';
+      _appreciationController.text = '4';
+      _yearsController.text = '7';
+      this._termYears = 30;
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final _termYears = _showResults ? (_calcSnapshot['_termYears'] ?? this._termYears) : this._termYears;
+
+    final isDirty = _showResults && (this._termYears != _calcSnapshot['_termYears'] || double.tryParse(_rentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rentController] ?? 0.0) || double.tryParse(_rentIncreaseController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rentIncreaseController] ?? 0.0) || double.tryParse(_rentersInsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_rentersInsController] ?? 0.0) || double.tryParse(_investReturnController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_investReturnController] ?? 0.0) || double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_homePriceController] ?? 0.0) || double.tryParse(_downPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_downPctController] ?? 0.0) || double.tryParse(_mRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_mRateController] ?? 0.0) || double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_hoaController] ?? 0.0) || double.tryParse(_propTaxPctController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_propTaxPctController] ?? 0.0) || double.tryParse(_appreciationController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_appreciationController] ?? 0.0) || double.tryParse(_yearsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) != (_calcSnapshot[_yearsController] ?? 0.0));
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -356,7 +441,7 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
         ]),
         const SizedBox(height: 16),
 
-        Text('RENT SCENARIO', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.bold)),
+        _buildSectionHeader('RENT SCENARIO', onReset: _resetInputs),
         const SizedBox(height: 8),
 
         // Rent Input Card
@@ -435,7 +520,7 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
                               style: AppTextStyles.dmSans(size: 13, color: theme.getTextColor(context), weight: FontWeight.bold),
                               onChanged: (v) {
                                 setState(() {
-                                  _termYears = v!;
+                                  this._termYears = v!;
                                   _markDirty();
                                 });
                               },
@@ -521,6 +606,39 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
         const SizedBox(height: 16),
 
         if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Verdict Card
           Container(
             padding: const EdgeInsets.all(20),
@@ -767,7 +885,7 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(String label, TextEditingController controller, {String? errorText}) {
     final theme = widget.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -778,7 +896,7 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(color: errorText != null ? Colors.redAccent : theme.getBorderColor(context), width: 1.5),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
@@ -789,6 +907,17 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
             decoration: const InputDecoration(border: InputBorder.none, isDense: true),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 3),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 9,
+              color: Colors.redAccent,
+              weight: FontWeight.bold,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -934,6 +1063,35 @@ class _USARentVsBuyCalcState extends ConsumerState<USARentVsBuyCalc> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, {VoidCallback? onReset, String resetLabel = 'Reset'}) {
+    final theme = widget.theme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: AppTextStyles.dmSans(
+            size: 11,
+            color: theme.getMutedColor(context),
+            weight: FontWeight.bold,
+          ),
+        ),
+        if (onReset != null)
+          TextButton(
+            onPressed: onReset,
+            child: Text(
+              resetLabel,
+              style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.accentColor,
+                weight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

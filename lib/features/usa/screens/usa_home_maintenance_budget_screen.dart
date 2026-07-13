@@ -21,6 +21,11 @@ class USAHomeMaintenanceBudgetScreen extends ConsumerStatefulWidget {
 class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintenanceBudgetScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  bool _calculated = false;
+
   // Inputs
   final _homeValueController = TextEditingController(text: '450000');
   final _reserveController = TextEditingController(text: '0');
@@ -80,6 +85,7 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
       _reserveController.text = (inputs['currentReserve'] ?? 0.0).toStringAsFixed(0);
       _homeAge = inputs['homeAge'] ?? 5.0;
       _maintenanceRate = inputs['maintenanceRate'] ?? 1.5;
+      _calculate();
     }
   }
 
@@ -92,7 +98,55 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
     super.dispose();
   }
 
-  double _val(TextEditingController c) => double.tryParse(c.text) ?? 0.0;
+  void _calculate() {
+    final errors = <String, String>{};
+    final value = double.tryParse(_homeValueController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final reserve = double.tryParse(_reserveController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (value <= 0) {
+      errors['value'] = 'Enter positive home value';
+    }
+    if (reserve < 0) {
+      errors['reserve'] = 'Enter valid reserve';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _calcSnapshot['homeValue'] = value;
+      _calcSnapshot['currentReserve'] = reserve;
+      _calcSnapshot['homeAge'] = _homeAge;
+      _calcSnapshot['maintenanceRate'] = _maintenanceRate;
+      _calculated = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  double _val(TextEditingController c) {
+    final key = c == _homeValueController ? 'homeValue' : 'currentReserve';
+    if (_calculated && _calcSnapshot.containsKey(key)) {
+      return _calcSnapshot[key]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+  }
 
   double _getAgeMultiplier(double age) {
     if (age < 10) return 1.0;
@@ -121,6 +175,9 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
       _reserveController.text = '0';
       _homeAge = 5.0;
       _maintenanceRate = 1.5;
+      _calculated = false;
+      _calcSnapshot.clear();
+      _errors.clear();
     });
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -133,10 +190,21 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
   }
 
   void _saveCalculation() async {
-    final value = _val(_homeValueController);
-    final reserve = _val(_reserveController);
-    final mult = _getAgeMultiplier(_homeAge);
-    final annual = value * (_maintenanceRate / 100) * mult;
+    if (!_calculated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Please calculate before saving!'),
+          backgroundColor: Colors.amber,
+        ),
+      );
+      return;
+    }
+    final value = _calcSnapshot['homeValue'] ?? 450000.0;
+    final reserve = _calcSnapshot['currentReserve'] ?? 0.0;
+    final homeAge = _calcSnapshot['homeAge'] ?? 5.0;
+    final maintenanceRate = _calcSnapshot['maintenanceRate'] ?? 1.5;
+    final mult = _getAgeMultiplier(homeAge);
+    final annual = value * (maintenanceRate / 100) * mult;
     final monthly = annual / 12;
 
     final labelCtrl = TextEditingController(text: 'Home Maintenance Budget');
@@ -211,8 +279,8 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
         inputs: {
           'homeValue': value,
           'currentReserve': reserve,
-          'homeAge': _homeAge,
-          'maintenanceRate': _maintenanceRate,
+          'homeAge': homeAge,
+          'maintenanceRate': maintenanceRate,
         },
         results: {
           'annualBudget': annual,
@@ -320,6 +388,13 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_homeValueController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['homeValue'] ?? 0.0) ||
+      (double.tryParse(_reserveController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['currentReserve'] ?? 0.0) ||
+      _homeAge != (_calcSnapshot['homeAge'] ?? 5.0) ||
+      _maintenanceRate != (_calcSnapshot['maintenanceRate'] ?? 1.5)
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -499,91 +574,150 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
               ),
 
               // Result Hero Card
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
-                padding: const EdgeInsets.all(19),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF92400E), Color(0xFFD97706)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              if (!_calculated) ...[
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ESTIMATED ANNUAL MAINTENANCE COST',
-                      style: AppTextStyles.dmSans(
-                        size: 9.5,
-                        weight: FontWeight.w700,
-                        color: Colors.white.withValues(alpha: 0.55),
-                        letterSpacing: 0.8,
+                  child: Column(
+                    children: [
+                      const Text('🧮', style: TextStyle(fontSize: 32)),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Calculate Your Maintenance Budget',
+                        style: AppTextStyles.playfair(size: 14, color: textCol, weight: FontWeight.bold),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '\$',
-                          style: AppTextStyles.dmSans(
-                            size: 18,
-                            weight: FontWeight.w800,
-                            color: const Color(0xFFFCD34D),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Enter your home details below and tap "Calculate" to view seasonal planning, category breakdowns, and cost projections.',
+                        style: AppTextStyles.dmSans(size: 11, color: mutedCol),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  key: _resultsKey,
+                  child: Column(
+                    children: [
+                      if (isDirty) ...[
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.15),
+                            border: Border.all(color: Colors.amber),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Inputs have changed. Tap "Calculate Maintenance Budget" to update results.',
+                                  style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Text(
-                          CurrencyFormatter.format(annualBudget, symbol: '').split('.').first,
-                          style: AppTextStyles.dmSans(
-                            size: 38,
-                            weight: FontWeight.w800,
-                            color: Colors.white,
-                          ).copyWith(fontFamily: 'Georgia'),
-                        ),
                       ],
+                    ],
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+                  padding: const EdgeInsets.all(19),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF92400E), Color(0xFFD97706)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_maintenanceRate.toStringAsFixed(1)}% of ${CurrencyFormatter.format(value, symbol: '\$').split('.').first} · Budget ${CurrencyFormatter.format(monthlyBudget, symbol: '\$').split('.').first}/mo',
-                      style: AppTextStyles.dmSans(
-                        size: 10,
-                        color: Colors.white.withValues(alpha: 0.60),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                    const SizedBox(height: 14),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ESTIMATED ANNUAL MAINTENANCE COST',
+                        style: AppTextStyles.dmSans(
+                          size: 9.5,
+                          weight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.55),
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '\$',
+                            style: AppTextStyles.dmSans(
+                              size: 18,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFFFCD34D),
+                            ),
+                          ),
+                          Text(
+                            CurrencyFormatter.format(annualBudget, symbol: '').split('.').first,
+                            style: AppTextStyles.dmSans(
+                              size: 38,
+                              weight: FontWeight.w800,
+                              color: Colors.white,
+                            ).copyWith(fontFamily: 'Georgia'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_maintenanceRate.toStringAsFixed(1)}% of ${CurrencyFormatter.format(value, symbol: '\$').split('.').first} · Budget ${CurrencyFormatter.format(monthlyBudget, symbol: '\$').split('.').first}/mo',
+                        style: AppTextStyles.dmSans(
+                          size: 10,
+                          color: Colors.white.withValues(alpha: 0.60),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
 
-                    // Grid stats
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildHeroStat('Monthly Budget', '${CurrencyFormatter.format(monthlyBudget, symbol: '\$').split('.').first}/mo', 'Set aside/mo'),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildHeroStat('Reserve Target', CurrencyFormatter.format(reserveTarget, symbol: '\$').split('.').first, '3× annual est.'),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildHeroStat(
-                            'Home Age Risk',
-                            _getAgeRiskLabel(_homeAge),
-                            _getAgeRiskSub(_homeAge),
+                      // Grid stats
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildHeroStat('Monthly Budget', '${CurrencyFormatter.format(monthlyBudget, symbol: '\$').split('.').first}/mo', 'Set aside/mo'),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildHeroStat('Reserve Target', CurrencyFormatter.format(reserveTarget, symbol: '\$').split('.').first, '3× annual est.'),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildHeroStat(
+                              'Home Age Risk',
+                              _getAgeRiskLabel(_homeAge),
+                              _getAgeRiskSub(_homeAge),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
 
               // Inputs Section
               Padding(
@@ -768,6 +902,7 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
                 ),
               ),
 
+              if (_calculated) ...[
               // Category Breakdown Rows
               Padding(
                 padding: const EdgeInsets.fromLTRB(15, 20, 15, 8),
@@ -1155,6 +1290,7 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
                   ],
                 ),
               ),
+              ],
 
               // Saved calculations history panel
               const SizedBox(height: 20),
@@ -1319,33 +1455,34 @@ class _USAHomeMaintenanceBudgetScreenState extends ConsumerState<USAHomeMaintena
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, FocusNode focusNode) {
+  Widget _buildInputField(String label, TextEditingController controller, FocusNode focusNode, {String? errorText}) {
     final isFocused = focusNode.hasFocus;
+    final hasError = errorText != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
-          style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.w700, color: _theme.getMutedColor(context), letterSpacing: 0.5),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
+          style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.w700, color: hasError ? Colors.red : _theme.getMutedColor(context), letterSpacing: 0.5),
         ),
         const SizedBox(height: 5),
         Container(
           decoration: BoxDecoration(
             color: _theme.getBgColor(context),
             border: Border.all(
-              color: isFocused ? const Color(0xFFD97706) : _theme.getBorderColor(context),
+              color: hasError ? Colors.red : (isFocused ? const Color(0xFFD97706) : _theme.getBorderColor(context)),
               width: 1.5,
             ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: Row(
             children: [
-              const Padding(
-                padding: EdgeInsets.only(left: 13, right: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 13, right: 10),
                 child: Text(
                   '\$',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: hasError ? Colors.red : Colors.grey),
                 ),
               ),
               Expanded(

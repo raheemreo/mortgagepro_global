@@ -19,6 +19,9 @@ class USAFhaPropertyStandardsScreen extends ConsumerStatefulWidget {
 class _USAFhaPropertyStandardsScreenState extends ConsumerState<USAFhaPropertyStandardsScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   final List<bool> _checkedItems = List.filled(8, false);
   bool _calculated = false;
 
@@ -84,6 +87,10 @@ class _USAFhaPropertyStandardsScreenState extends ConsumerState<USAFhaPropertySt
     final pct = checked / 8.0;
 
     setState(() {
+      for (int i = 0; i < 8; i++) {
+        _calcSnapshot['item_$i'] = _checkedItems[i];
+      }
+
       _checkedCount = checked;
       _checkedPercent = pct;
       if (pct >= 0.875) {
@@ -101,25 +108,38 @@ class _USAFhaPropertyStandardsScreenState extends ConsumerState<USAFhaPropertySt
       }
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
     
     final Map<String, double> inputs = {};
+    int scoreCount = 0;
     for (int i = 0; i < 8; i++) {
-      inputs['item_$i'] = _checkedItems[i] ? 1.0 : 0.0;
+      final val = _calcSnapshot['item_$i'] ?? false;
+      inputs['item_$i'] = val ? 1.0 : 0.0;
+      if (val) scoreCount++;
     }
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'FHA Property Standards',
-      label: 'Property Standards: $_checkedCount/8 check',
+      label: 'Property Standards: $scoreCount/8 check',
       currencyCode: 'USD',
       inputs: inputs,
       results: {
-        'CheckedPercent': _checkedPercent * 100,
-        'CheckedCount': _checkedCount.toDouble(),
+        'CheckedPercent': (scoreCount / 8.0) * 100,
+        'CheckedCount': scoreCount.toDouble(),
       },
     );
 
@@ -134,6 +154,16 @@ class _USAFhaPropertyStandardsScreenState extends ConsumerState<USAFhaPropertySt
 
   @override
   Widget build(BuildContext context) {
+    bool isDirty = false;
+    if (_calculated) {
+      for (int i = 0; i < 8; i++) {
+        if (_checkedItems[i] != (_calcSnapshot['item_$i'] ?? false)) {
+          isDirty = true;
+          break;
+        }
+      }
+    }
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -393,8 +423,65 @@ class _USAFhaPropertyStandardsScreenState extends ConsumerState<USAFhaPropertySt
                 ),
 
                 // Calculation Results Card
-                if (_calculated) ...[
+                if (!_calculated) ...[
                   const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('📋', style: TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'View Appraisal Readiness Score',
+                          style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Mark FHA standard items as confirmed in the self-check list above, then tap "Calculate My Readiness Score" to evaluate.',
+                          style: AppTextStyles.dmSans(size: 10.5, color: mutedCol),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Checklist items have changed. Tap "Calculate My Readiness Score" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

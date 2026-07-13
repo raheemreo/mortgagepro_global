@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this, prefer_final_fields
 // lib/features/usa/tools/usa_pmi_calc.dart
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,8 @@ class USAPmiCalc extends ConsumerStatefulWidget {
 }
 
 class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
+  final _resultsKey = GlobalKey();
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   double _price = 450000;
   double _downPct = 10;
   double _creditScore = 720;
@@ -45,6 +48,8 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
 
   void _resetInputs() {
     setState(() {
+      _calcSnapshot.clear();
+      _showResults = false;
       _price = 450000;
       _downPct = 10;
       _creditScore = 720;
@@ -56,17 +61,26 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
 
   // Unused: _loadSavedCalculation removed to resolve analyzer warnings.
 
-  void _calculate() async {
+    void _calculate() {
     setState(() {
-      _calculating = true;
-    });
-    await Future.delayed(const Duration(milliseconds: 400));
-    setState(() {
-      _calculating = false;
+      _calcSnapshot['_price'] = _price;
+      _calcSnapshot['_downPct'] = _downPct;
+      _calcSnapshot['_creditScore'] = _creditScore;
+      _calcSnapshot['_loanTerm'] = _loanTerm;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
+
 
   void _saveCalculation() async {
     final downAmt = _price * _downPct / 100;
@@ -201,6 +215,13 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
 
   @override
   Widget build(BuildContext context) {
+    final _price = _showResults ? (_calcSnapshot['_price'] ?? this._price) : this._price;
+    final _downPct = _showResults ? (_calcSnapshot['_downPct'] ?? this._downPct) : this._downPct;
+    final _creditScore = _showResults ? (_calcSnapshot['_creditScore'] ?? this._creditScore) : this._creditScore;
+    final _loanTerm = _showResults ? (_calcSnapshot['_loanTerm'] ?? this._loanTerm) : this._loanTerm;
+
+    final isDirty = _showResults && (this._price != _calcSnapshot['_price'] || this._downPct != _calcSnapshot['_downPct'] || this._creditScore != _calcSnapshot['_creditScore'] || this._loanTerm != _calcSnapshot['_loanTerm']);
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
@@ -244,7 +265,7 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
 
     // Equity needed to reach 80% LTV
     final targetLoan = _price * 0.80;
-    final equityNeeded = max(0.0, loanAmt - targetLoan);
+    final equityNeeded = max<num>(0.0, loanAmt - targetLoan).toDouble();
 
     // Amortization loop to reach 80% LTV
     const monthlyRate = 0.0682 / 12;
@@ -470,7 +491,7 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _price = val;
+                    this._price = val;
                     _markDirty();
                   });
                 },
@@ -507,7 +528,7 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _downPct = val;
+                    this._downPct = val;
                     _markDirty();
                   });
                 },
@@ -545,7 +566,7 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _creditScore = val;
+                    this._creditScore = val;
                     _markDirty();
                   });
                 },
@@ -607,7 +628,7 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
                             ),
                     ),
                   ),
-                  if (_showResults && !_isCalcDirty) ...[
+                  if (_showResults) ...[
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: _saveCalculation,
@@ -631,7 +652,40 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
         ),
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults) ...[
+        Container(
+          key: _resultsKey,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.amber),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Tap "Calculate" to update results.',
+                          style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
           // Composition Donut Card
           Text(
             'Loan Composition',

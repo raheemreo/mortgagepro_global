@@ -21,6 +21,10 @@ class USAFirstTimeHomebuyerScreen extends ConsumerStatefulWidget {
 class _USAFirstTimeHomebuyerScreenState extends ConsumerState<USAFirstTimeHomebuyerScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   final _homePriceController = TextEditingController(text: '350000');
   final _incomeController = TextEditingController(text: '75000');
 
@@ -70,8 +74,27 @@ class _USAFirstTimeHomebuyerScreenState extends ConsumerState<USAFirstTimeHomebu
   }
 
   void _calculate() {
-    final price = double.tryParse(_homePriceController.text) ?? 350000;
-    final income = double.tryParse(_incomeController.text) ?? 75000;
+    final errors = <String, String>{};
+    final price = double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (price <= 0) {
+      errors['price'] = 'Enter positive home price';
+    }
+    if (income <= 0) {
+      errors['income'] = 'Enter positive income';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
 
     final downPct = _loanDownPct[_loanType] ?? 0.035;
     final rate = _loanRates[_loanType] ?? 0.0652;
@@ -126,6 +149,13 @@ class _USAFirstTimeHomebuyerScreenState extends ConsumerState<USAFirstTimeHomebu
     }
 
     setState(() {
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['_creditScore'] = _creditScore;
+      _calcSnapshot['_state'] = _state;
+      _calcSnapshot['_loanType'] = _loanType;
+      _calcSnapshot['_householdSize'] = _householdSize;
+
       _downReq = downReq;
       _totalDPA = totalDPA;
       _oop = oop;
@@ -135,22 +165,34 @@ class _USAFirstTimeHomebuyerScreenState extends ConsumerState<USAFirstTimeHomebu
       _amiStatus = amiStatus;
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
-    final price = double.tryParse(_homePriceController.text) ?? 350000;
-    final income = double.tryParse(_incomeController.text) ?? 75000;
+    final price = _calcSnapshot['price'] ?? 350000.0;
+    final income = _calcSnapshot['income'] ?? 75000.0;
+    final state = _calcSnapshot['_state'] ?? 'GA';
+    final hhsize = (_calcSnapshot['_householdSize'] ?? 2).toDouble();
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'First-Time Homebuyer',
-      label: '$_state FTB · ${CurrencyFormatter.compact(price)}',
+      label: '$state FTB · ${CurrencyFormatter.compact(price)}',
       currencyCode: 'USD',
       inputs: {
         'price': price,
         'income': income,
-        'hhsize': _householdSize.toDouble(),
+        'hhsize': hhsize,
       },
       results: {
         'DPA Grant': _totalDPA,
@@ -171,6 +213,15 @@ class _USAFirstTimeHomebuyerScreenState extends ConsumerState<USAFirstTimeHomebu
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_homePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['price'] ?? 0.0) ||
+      (double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['income'] ?? 0.0) ||
+      _creditScore != (_calcSnapshot['_creditScore'] ?? '680') ||
+      _state != (_calcSnapshot['_state'] ?? 'GA') ||
+      _loanType != (_calcSnapshot['_loanType'] ?? 'fha') ||
+      _householdSize != (_calcSnapshot['_householdSize'] ?? 2)
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -326,13 +377,13 @@ class _USAFirstTimeHomebuyerScreenState extends ConsumerState<USAFirstTimeHomebu
                              ],
                            ),
                            const SizedBox(height: 12),
-                           Row(
-                             children: [
-                               Expanded(child: _buildInputField('Home Price (\$)', _homePriceController)),
-                               const SizedBox(width: 10),
-                               Expanded(child: _buildInputField('Annual Income (\$)', _incomeController)),
-                             ],
-                           ),
+                            Row(
+                              children: [
+                                Expanded(child: _buildInputField('Home Price (\$)', _homePriceController, errorText: _errors['price'])),
+                                const SizedBox(width: 10),
+                                Expanded(child: _buildInputField('Annual Income (\$)', _incomeController, errorText: _errors['income'])),
+                              ],
+                            ),
                            const SizedBox(height: 10),
                            Row(
                              children: [
@@ -402,6 +453,36 @@ class _USAFirstTimeHomebuyerScreenState extends ConsumerState<USAFirstTimeHomebu
                            // Calculation results
                            if (_calculated) ...[
                              const SizedBox(height: 16),
+                             Container(
+                               key: _resultsKey,
+                               child: Column(
+                                 children: [
+                                   if (isDirty) ...[
+                                     Container(
+                                       margin: const EdgeInsets.only(bottom: 12),
+                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                       decoration: BoxDecoration(
+                                         color: Colors.amber.withValues(alpha: 0.15),
+                                         border: Border.all(color: Colors.amber),
+                                         borderRadius: BorderRadius.circular(8),
+                                       ),
+                                       child: Row(
+                                         children: [
+                                           const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                           const SizedBox(width: 8),
+                                           Expanded(
+                                             child: Text(
+                                               'Inputs have changed. Tap "Calculate My Assistance" to update results.',
+                                               style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                             ),
+                                           ),
+                                         ],
+                                       ),
+                                     ),
+                                   ],
+                                 ],
+                               ),
+                             ),
                              Container(
                                padding: const EdgeInsets.all(14),
                                decoration: BoxDecoration(
@@ -648,11 +729,12 @@ class _USAFirstTimeHomebuyerScreenState extends ConsumerState<USAFirstTimeHomebu
      );
    }
  
-   Widget _buildInputField(String label, TextEditingController controller) {
+   Widget _buildInputField(String label, TextEditingController controller, {String? errorText}) {
+     final hasError = errorText != null;
      return Column(
        crossAxisAlignment: CrossAxisAlignment.start,
        children: [
-         Text(label.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.4)),
+         Text(hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: hasError ? Colors.red : Colors.grey, letterSpacing: 0.4)),
          const SizedBox(height: 4),
          TextField(
            controller: controller,
@@ -662,7 +744,18 @@ class _USAFirstTimeHomebuyerScreenState extends ConsumerState<USAFirstTimeHomebu
              fillColor: _theme.backgroundColor.withValues(alpha: 0.3),
              filled: true,
              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+             border: OutlineInputBorder(
+               borderRadius: BorderRadius.circular(10),
+               borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+             ),
+             enabledBorder: OutlineInputBorder(
+               borderRadius: BorderRadius.circular(10),
+               borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+             ),
+             focusedBorder: OutlineInputBorder(
+               borderRadius: BorderRadius.circular(10),
+               borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+             ),
            ),
          ),
        ],

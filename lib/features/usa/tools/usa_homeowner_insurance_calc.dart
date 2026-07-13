@@ -18,13 +18,14 @@ class USAHomeownerInsuranceCalc extends ConsumerStatefulWidget {
 }
 
 class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranceCalc> {
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
   double _dwellingValue = 300000;
   double _homeAge = 15;
   double _deductible = 500;
   String _riskLevel = 'medium';
 
   bool _showResults = false;
-  bool _isCalcDirty = true;
   bool _calculating = false;
 
   final Map<String, double> _riskMultipliers = {
@@ -41,24 +42,18 @@ class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranc
     5000: -0.20
   };
 
-  void _markDirty() {
-    if (!_isCalcDirty) {
-      setState(() {
-        _isCalcDirty = true;
-      });
-    }
-  }
-
   void _resetInputs() {
     setState(() {
       _dwellingValue = 300000;
       _homeAge = 15;
       _deductible = 500;
       _riskLevel = 'medium';
+      _calcSnapshot.clear();
       _showResults = false;
-      _isCalcDirty = true;
     });
   }
+
+  void _markDirty() {}
 
   // Unused: _loadSavedCalculation removed to resolve analyzer warnings.
 
@@ -68,25 +63,42 @@ class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranc
     });
     await Future.delayed(const Duration(milliseconds: 400));
     setState(() {
+      _calcSnapshot['dwellingValue'] = _dwellingValue;
+      _calcSnapshot['homeAge'] = _homeAge;
+      _calcSnapshot['deductible'] = _deductible;
+      _calcSnapshot['riskLevel'] = _riskLevel;
       _calculating = false;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
+    final dwellingValue = _showResults ? (_calcSnapshot['dwellingValue'] ?? 300000.0) : _dwellingValue;
+    final homeAge = _showResults ? (_calcSnapshot['homeAge'] ?? 15.0) : _homeAge;
+    final deductible = _showResults ? (_calcSnapshot['deductible'] ?? 500.0) : _deductible;
+    final riskLevel = _showResults ? (_calcSnapshot['riskLevel'] ?? 'medium') : _riskLevel;
+
     double baseRate = 0.0057;
-    if (_homeAge > 50) {
+    if (homeAge > 50) {
       baseRate *= 1.35;
-    } else if (_homeAge > 30) {
+    } else if (homeAge > 30) {
       baseRate *= 1.18;
-    } else if (_homeAge > 15) {
+    } else if (homeAge > 15) {
       baseRate *= 1.08;
     }
 
-    final riskMult = _riskMultipliers[_riskLevel] ?? 1.0;
-    final dedDisc = _deductibleDiscounts[_deductible] ?? 0.0;
-    double annual = _dwellingValue * baseRate * riskMult * (1 + dedDisc);
+    final riskMult = _riskMultipliers[riskLevel] ?? 1.0;
+    final dedDisc = _deductibleDiscounts[deductible] ?? 0.0;
+    double annual = dwellingValue * baseRate * riskMult * (1 + dedDisc);
     annual = (annual / 10).round() * 10.0;
     final monthly = (annual / 12).roundToDouble();
 
@@ -105,7 +117,7 @@ class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranc
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Annual: ${CurrencyFormatter.compact(annual, symbol: r'$')}/yr · Dwelling: ${CurrencyFormatter.compact(_dwellingValue, symbol: r'$')}',
+              'Saving: Annual: ${CurrencyFormatter.compact(annual, symbol: r'$')}/yr · Dwelling: ${CurrencyFormatter.compact(dwellingValue, symbol: r'$')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -157,15 +169,15 @@ class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranc
         country: 'USA',
         calcType: 'Homeowner Insurance',
         inputs: {
-          'DwellingValue': _dwellingValue,
-          'HomeAge': _homeAge,
-          'Deductible': _deductible,
-          'RiskLevelCode': _riskLevel == 'low' ? 0.0 : _riskLevel == 'medium' ? 1.0 : _riskLevel == 'high' ? 2.0 : 3.0,
+          'DwellingValue': dwellingValue,
+          'HomeAge': homeAge,
+          'Deductible': deductible,
+          'RiskLevelCode': riskLevel == 'low' ? 0.0 : riskLevel == 'medium' ? 1.0 : riskLevel == 'high' ? 2.0 : 3.0,
         },
         results: {
           'Annual Premium': annual,
           'Monthly Premium': monthly,
-          'Dwelling Limit': _dwellingValue,
+          'Dwelling Limit': dwellingValue,
         },
         label: label,
         currencyCode: 'USD',
@@ -205,28 +217,40 @@ class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranc
       {'label': 'Lowest', 'value': 'Hawaii', 'note': '\$499/yr'},
     ];
 
+    final dwellingValue = _showResults ? (_calcSnapshot['dwellingValue'] ?? 300000.0) : _dwellingValue;
+    final homeAge = _showResults ? (_calcSnapshot['homeAge'] ?? 15.0) : _homeAge;
+    final deductible = _showResults ? (_calcSnapshot['deductible'] ?? 500.0) : _deductible;
+    final riskLevel = _showResults ? (_calcSnapshot['riskLevel'] ?? 'medium') : _riskLevel;
+
+    final isDirty = _showResults && (
+      _dwellingValue != (_calcSnapshot['dwellingValue'] ?? 300000.0) ||
+      _homeAge != (_calcSnapshot['homeAge'] ?? 15.0) ||
+      _deductible != (_calcSnapshot['deductible'] ?? 500.0) ||
+      _riskLevel != (_calcSnapshot['riskLevel'] ?? 'medium')
+    );
+
     // Compute active calculation
     double baseRate = 0.0057;
-    if (_homeAge > 50) {
+    if (homeAge > 50) {
       baseRate *= 1.35;
-    } else if (_homeAge > 30) {
+    } else if (homeAge > 30) {
       baseRate *= 1.18;
-    } else if (_homeAge > 15) {
+    } else if (homeAge > 15) {
       baseRate *= 1.08;
     }
 
-    final riskMult = _riskMultipliers[_riskLevel] ?? 1.0;
-    final dedDisc = _deductibleDiscounts[_deductible] ?? 0.0;
-    double annualPremium = _dwellingValue * baseRate * riskMult * (1 + dedDisc);
+    final riskMult = _riskMultipliers[riskLevel] ?? 1.0;
+    final dedDisc = _deductibleDiscounts[deductible] ?? 0.0;
+    double annualPremium = dwellingValue * baseRate * riskMult * (1 + dedDisc);
     annualPremium = (annualPremium / 10).round() * 10.0;
     final monthlyPremium = (annualPremium / 12).round();
-    final covRatio = annualPremium / _dwellingValue * 100;
+    final covRatio = annualPremium / dwellingValue * 100;
 
     // Coverages breakdown
-    final covA = _dwellingValue;
-    final covB = (_dwellingValue * 0.10).roundToDouble();
-    final covC = (_dwellingValue * 0.50).roundToDouble();
-    final covD = (_dwellingValue * 0.20).roundToDouble();
+    final covA = dwellingValue;
+    final covB = (dwellingValue * 0.10).roundToDouble();
+    final covC = (dwellingValue * 0.50).roundToDouble();
+    final covD = (dwellingValue * 0.20).roundToDouble();
 
     final riskLabels = {
       'low': 'Low-risk state · standard HO-3',
@@ -303,68 +327,96 @@ class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranc
           ),
         ),
 
-        // Main results hero panel
-        Text(
-          'Your Estimate',
-          style: AppTextStyles.playfair(
-              size: 13, weight: FontWeight.w700, color: textColor),
-        ),
-        const SizedBox(height: 8),
-
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF7C2D12), Color(0xFFD97706)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        if (!_showResults)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: borderColor),
             ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF7C2D12).withValues(alpha: 0.25),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
-              )
-            ],
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                const Text('🏡', style: TextStyle(fontSize: 42)),
+                const SizedBox(height: 10),
+                Text(
+                  'Enter Home Details Below',
+                  style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: textColor),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'We\'ll estimate your annual homeowner premium, monthly PITI tax portion, and Coverage A-F policy limits.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.dmSans(size: 10.5, color: mutedColor),
+                ),
+              ],
+            ),
+          )
+        else ...[
+          Text(
+            'Your Estimate',
+            style: AppTextStyles.playfair(
+                size: 13, weight: FontWeight.w700, color: textColor),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ANNUAL PREMIUM ESTIMATE',
-                style: AppTextStyles.dmSans(
-                    size: 8,
-                    weight: FontWeight.w700,
-                    color: Colors.white70,
-                    letterSpacing: 0.6),
+          const SizedBox(height: 8),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF7C2D12), Color(0xFFD97706)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 4),
-              Text(
-                CurrencyFormatter.format(annualPremium, symbol: r'$'),
-                style: AppTextStyles.playfair(
-                    size: 32, weight: FontWeight.w800, color: Colors.white),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'HO-3 · ${CurrencyFormatter.compact(_dwellingValue, symbol: r'$')} dwelling · ${riskLabels[_riskLevel] ?? ''}',
-                style: AppTextStyles.dmSans(
-                    size: 9.5, color: Colors.white.withValues(alpha: 0.8)),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _buildHeroBottomBox('Monthly', CurrencyFormatter.format(monthlyPremium.toDouble(), symbol: r'$')),
-                  const SizedBox(width: 8),
-                  _buildHeroBottomBox('Deductible', CurrencyFormatter.format(_deductible, symbol: r'$')),
-                  const SizedBox(width: 8),
-                  _buildHeroBottomBox('Coverage/Val', '${covRatio.toStringAsFixed(2)}%'),
-                ],
-              )
-            ],
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF7C2D12).withValues(alpha: 0.25),
+                  blurRadius: 15,
+                  offset: const Offset(0, 6),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ANNUAL PREMIUM ESTIMATE',
+                  style: AppTextStyles.dmSans(
+                      size: 8,
+                      weight: FontWeight.w700,
+                      color: Colors.white70,
+                      letterSpacing: 0.6),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  CurrencyFormatter.format(annualPremium, symbol: r'$'),
+                  style: AppTextStyles.playfair(
+                      size: 32, weight: FontWeight.w800, color: Colors.white),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'HO-3 · ${CurrencyFormatter.compact(dwellingValue, symbol: r'$')} dwelling · ${riskLabels[riskLevel] ?? ''}',
+                  style: AppTextStyles.dmSans(
+                      size: 9.5, color: Colors.white.withValues(alpha: 0.8)),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _buildHeroBottomBox('Monthly', CurrencyFormatter.format(monthlyPremium.toDouble(), symbol: r'$')),
+                    const SizedBox(width: 8),
+                    _buildHeroBottomBox('Deductible', CurrencyFormatter.format(deductible, symbol: r'$')),
+                    const SizedBox(width: 8),
+                    _buildHeroBottomBox('Coverage/Val', '${covRatio.toStringAsFixed(2)}%'),
+                  ],
+                )
+              ],
+            ),
           ),
-        ),
+        ],
 
         const SizedBox(height: 20),
 
@@ -545,7 +597,7 @@ class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranc
                             ),
                     ),
                   ),
-                  if (_showResults && !_isCalcDirty) ...[
+                  if (_showResults) ...[
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: _saveCalculation,
@@ -570,7 +622,38 @@ class _USAHomeownerInsuranceCalcState extends ConsumerState<USAHomeownerInsuranc
 
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults) ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate Premium" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
           // Coverage Breakdown Chart
           Text(
             'Coverage Breakdown Chart',

@@ -46,6 +46,25 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
   String _bandLabel = 'Calculating…';
   Color _bandColor = const Color(0xFF22C55E);
 
+  final _resultsKey = GlobalKey();
+
+  double _calcBalance = 0.0;
+  double _calcCurrent = 0.0;
+  double _calcIndex = 0.0;
+  double _calcMargin = 0.0;
+  double _calcPeriodic = 0.0;
+  double _calcLifetime = 0.0;
+  double _calcYears = 0.0;
+
+  // Validation errors
+  String? _balanceError;
+  String? _currentError;
+  String? _indexError;
+  String? _marginError;
+  String? _periodicError;
+  String? _lifetimeError;
+  String? _yearsError;
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +77,14 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
       _periodicController.text = (inputs['periodicCap'] ?? 2.00).toStringAsFixed(2);
       _lifetimeController.text = (inputs['lifetimeCap'] ?? 5.00).toStringAsFixed(2);
       _yearsController.text = (inputs['yearsRemaining'] ?? 25.0).toStringAsFixed(0);
-      _calculate();
-    } else {
+
+      _calcBalance = double.tryParse(_balanceController.text) ?? 320000.0;
+      _calcCurrent = double.tryParse(_currentController.text) ?? 3.25;
+      _calcIndex = double.tryParse(_indexController.text) ?? 3.63;
+      _calcMargin = double.tryParse(_marginController.text) ?? 2.50;
+      _calcPeriodic = double.tryParse(_periodicController.text) ?? 2.00;
+      _calcLifetime = double.tryParse(_lifetimeController.text) ?? 5.00;
+      _calcYears = double.tryParse(_yearsController.text) ?? 25.0;
       _calculate();
     }
   }
@@ -95,14 +120,125 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
     }
   }
 
+  void _resetInputs() {
+    setState(() {
+      _balanceController.clear();
+      _currentController.clear();
+      _indexController.clear();
+      _marginController.clear();
+      _periodicController.clear();
+      _lifetimeController.clear();
+      _yearsController.clear();
+      _calculated = false;
+      _balanceError = null;
+      _currentError = null;
+      _indexError = null;
+      _marginError = null;
+      _periodicError = null;
+      _lifetimeError = null;
+      _yearsError = null;
+    });
+  }
+
+  bool _validateInputs() {
+    bool isValid = true;
+    setState(() {
+      final balanceVal = double.tryParse(_balanceController.text);
+      if (_balanceController.text.trim().isEmpty) {
+        _balanceError = 'Balance is required';
+        isValid = false;
+      } else if (balanceVal == null || balanceVal <= 0) {
+        _balanceError = 'Enter a valid balance';
+        isValid = false;
+      } else {
+        _balanceError = null;
+      }
+
+      final currentVal = double.tryParse(_currentController.text);
+      if (_currentController.text.trim().isEmpty) {
+        _currentError = 'Current rate is required';
+        isValid = false;
+      } else if (currentVal == null || currentVal <= 0) {
+        _currentError = 'Enter a valid rate';
+        isValid = false;
+      } else {
+        _currentError = null;
+      }
+
+      final indexVal = double.tryParse(_indexController.text);
+      if (_indexController.text.trim().isEmpty) {
+        _indexError = 'Index rate is required';
+        isValid = false;
+      } else if (indexVal == null || indexVal <= 0) {
+        _indexError = 'Enter a valid index rate';
+        isValid = false;
+      } else {
+        _indexError = null;
+      }
+
+      final marginVal = double.tryParse(_marginController.text);
+      if (_marginController.text.trim().isEmpty) {
+        _marginError = 'Margin is required';
+        isValid = false;
+      } else if (marginVal == null || marginVal < 0) {
+        _marginError = 'Enter a valid margin';
+        isValid = false;
+      } else {
+        _marginError = null;
+      }
+
+      final periodicVal = double.tryParse(_periodicController.text);
+      if (_periodicController.text.trim().isEmpty) {
+        _periodicError = 'Periodic cap is required';
+        isValid = false;
+      } else if (periodicVal == null || periodicVal < 0) {
+        _periodicError = 'Enter valid cap';
+        isValid = false;
+      } else {
+        _periodicError = null;
+      }
+
+      final lifetimeVal = double.tryParse(_lifetimeController.text);
+      if (_lifetimeController.text.trim().isEmpty) {
+        _lifetimeError = 'Lifetime cap is required';
+        isValid = false;
+      } else if (lifetimeVal == null || lifetimeVal < 0) {
+        _lifetimeError = 'Enter valid cap';
+        isValid = false;
+      } else {
+        _lifetimeError = null;
+      }
+
+      final yearsVal = double.tryParse(_yearsController.text);
+      if (_yearsController.text.trim().isEmpty) {
+        _yearsError = 'Years remaining is required';
+        isValid = false;
+      } else if (yearsVal == null || yearsVal <= 0) {
+        _yearsError = 'Enter valid years';
+        isValid = false;
+      } else {
+        _yearsError = null;
+      }
+    });
+    return isValid;
+  }
+
   void _calculate() {
-    final balance = double.tryParse(_balanceController.text) ?? 0.0;
-    final current = (double.tryParse(_currentController.text) ?? 0.0) / 100;
-    final index = (double.tryParse(_indexController.text) ?? 0.0) / 100;
-    final margin = (double.tryParse(_marginController.text) ?? 0.0) / 100;
-    final periodic = (double.tryParse(_periodicController.text) ?? 0.0) / 100;
-    final lifetime = (double.tryParse(_lifetimeController.text) ?? 5.0) / 100;
-    final years = double.tryParse(_yearsController.text) ?? 25.0;
+    _calcBalance = double.tryParse(_balanceController.text) ?? 0.0;
+    _calcCurrent = double.tryParse(_currentController.text) ?? 0.0;
+    _calcIndex = double.tryParse(_indexController.text) ?? 0.0;
+    _calcMargin = double.tryParse(_marginController.text) ?? 0.0;
+    _calcPeriodic = double.tryParse(_periodicController.text) ?? 0.0;
+    _calcLifetime = double.tryParse(_lifetimeController.text) ?? 0.0;
+    _calcYears = double.tryParse(_yearsController.text) ?? 0.0;
+
+    final balance = _calcBalance;
+    final current = _calcCurrent / 100;
+    final index = _calcIndex / 100;
+    final margin = _calcMargin / 100;
+    final periodic = _calcPeriodic / 100;
+    final lifetime = _calcLifetime / 100;
+    final years = _calcYears;
     final months = (years * 12).round();
 
     final fullyIndexedRate = index + margin;
@@ -148,13 +284,13 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
   void _saveCalc() {
     if (!_calculated) return;
 
-    final balance = double.tryParse(_balanceController.text) ?? 0.0;
-    final current = double.tryParse(_currentController.text) ?? 0.0;
-    final index = double.tryParse(_indexController.text) ?? 0.0;
-    final margin = double.tryParse(_marginController.text) ?? 0.0;
-    final periodic = double.tryParse(_periodicController.text) ?? 0.0;
-    final lifetime = double.tryParse(_lifetimeController.text) ?? 0.0;
-    final years = double.tryParse(_yearsController.text) ?? 0.0;
+    final balance = _calcBalance;
+    final current = _calcCurrent;
+    final index = _calcIndex;
+    final margin = _calcMargin;
+    final periodic = _calcPeriodic;
+    final lifetime = _calcLifetime;
+    final years = _calcYears;
 
     final calc = SavedCalc.create(
       country: 'USA',
@@ -198,6 +334,16 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
     final bgCol = _theme.getBgColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final showOutdatedWarning = _calculated && (
+      (double.tryParse(_balanceController.text) ?? 0.0) != _calcBalance ||
+      (double.tryParse(_currentController.text) ?? 0.0) != _calcCurrent ||
+      (double.tryParse(_indexController.text) ?? 0.0) != _calcIndex ||
+      (double.tryParse(_marginController.text) ?? 0.0) != _calcMargin ||
+      (double.tryParse(_periodicController.text) ?? 0.0) != _calcPeriodic ||
+      (double.tryParse(_lifetimeController.text) ?? 0.0) != _calcLifetime ||
+      (double.tryParse(_yearsController.text) ?? 0.0) != _calcYears
+    );
+
     final savedRisks = ref.watch(savedProvider).where((c) => c.country.toLowerCase() == 'usa' && c.calcType == 'ARM Risk Factors').toList();
 
     return Scaffold(
@@ -222,6 +368,22 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
                 child: const Text('←', style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
+            actions: [
+              GestureDetector(
+                onTap: _resetInputs,
+                child: Container(
+                  margin: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('Reset', style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -325,40 +487,115 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInputField('Remaining Balance (\$)', _balanceController),
+                      _buildInputField('Remaining Balance (\$)', _balanceController, errorText: _balanceError),
                       const SizedBox(height: 12),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _buildInputField('Current Rate (%)', _currentController, hint: 'Your rate today')),
+                          Expanded(child: _buildInputField('Current Rate (%)', _currentController, errorText: _currentError, hint: 'Your rate today')),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Index Rate — SOFR (%)', _indexController, hint: 'Live NY Fed SOFR')),
+                          Expanded(child: _buildInputField('Index Rate — SOFR (%)', _indexController, errorText: _indexError, hint: 'Live NY Fed SOFR')),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _buildInputField('Margin (%)', _marginController, hint: 'Typical 2.25–2.75%')),
+                          Expanded(child: _buildInputField('Margin (%)', _marginController, errorText: _marginError, hint: 'Typical 2.25–2.75%')),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Periodic Cap (%)', _periodicController, hint: 'Max per adjustment')),
+                          Expanded(child: _buildInputField('Periodic Cap (%)', _periodicController, errorText: _periodicError, hint: 'Max per adjustment')),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _buildInputField('Lifetime Cap (%)', _lifetimeController, hint: 'Max above start rate')),
+                          Expanded(child: _buildInputField('Lifetime Cap (%)', _lifetimeController, errorText: _lifetimeError, hint: 'Max above start rate')),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Years Remaining', _yearsController, hint: 'Time left after fixed ends')),
+                          Expanded(child: _buildInputField('Years Remaining', _yearsController, errorText: _yearsError, hint: 'Time left after fixed ends')),
                         ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Calculate Button
+                      GestureDetector(
+                        onTap: () {
+                          if (_validateInputs()) {
+                            _calculate();
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (_resultsKey.currentContext != null) {
+                                Scrollable.ensureVisible(
+                                  _resultsKey.currentContext!,
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeInOut,
+                                );
+                              }
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0B1D3A), Color(0xFF0F766E)],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F766E).withValues(alpha: 0.28),
+                                blurRadius: 18,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '⚡ Calculate Payment Shock',
+                            style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: Colors.white,
+                            ).copyWith(fontFamily: 'Georgia'),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-                // Result Hero Card
                 if (_calculated) ...[
+                  if (showOutdatedWarning)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.15),
+                        border: Border.all(color: Colors.amber.shade700, width: 1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                          Expanded(
+                            child: Text(
+                              'Inputs have changed. Tap Calculate to update risk factors.',
+                              style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: Colors.amber.shade800,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Result Hero Card
                   Container(
+                    key: _resultsKey,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
@@ -527,72 +764,74 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
                   ),
                 ],
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('Risk Breakdown'),
+                if (_calculated) ...[
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Risk Breakdown'),
 
-                // Breakdown Grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.35,
-                  children: [
-                    _buildBreakdownCard('📌', 'Current Payment', '\$${_currentPmt.round()}', 'At today\'s rate', textCol, mutedCol),
-                    _buildBreakdownCard('🧮', 'Expected Reset', '\$${_expectedPmt.round()}', 'After periodic cap', textCol, mutedCol),
-                    _buildBreakdownCard('📡', 'Fully-Indexed', '\$${_indexedPmt.round()}', 'Index + margin, uncapped', textCol, mutedCol),
-                    _buildBreakdownCard('🚨', 'Worst Case', '\$${_worstPmt.round()}', 'At lifetime cap', textCol, mutedCol),
-                    _buildBreakdownCard('💵', '\$ Increase', '${_incDollar >= 0 ? '+' : '-'}\$${_incDollar.round().abs()}', 'Expected reset vs now', textCol, mutedCol),
-                    _buildBreakdownCard('📊', '% Increase', '${_incPct >= 0 ? '+' : ''}${_incPct.toStringAsFixed(1)}%', 'Expected reset vs now', textCol, mutedCol),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-                _buildSectionHeader('Reset Payment Scenarios'),
-
-                // Horizontal scenario bar charts
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
+                  // Breakdown Grid
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 1.35,
                     children: [
-                      _buildPaymentBarRow('Current', _currentPmt, Colors.teal, textCol),
-                      const SizedBox(height: 10),
-                      _buildPaymentBarRow('Expected', _expectedPmt, Colors.amber, textCol),
-                      const SizedBox(height: 10),
-                      _buildPaymentBarRow('Indexed', _indexedPmt, Colors.orange, textCol),
-                      const SizedBox(height: 10),
-                      _buildPaymentBarRow('Worst Case', _worstPmt, Colors.red, textCol),
+                      _buildBreakdownCard('📌', 'Current Payment', '\$${_currentPmt.round()}', 'At today\'s rate', textCol, mutedCol),
+                      _buildBreakdownCard('🧮', 'Expected Reset', '\$${_expectedPmt.round()}', 'After periodic cap', textCol, mutedCol),
+                      _buildBreakdownCard('📡', 'Fully-Indexed', '\$${_indexedPmt.round()}', 'Index + margin, uncapped', textCol, mutedCol),
+                      _buildBreakdownCard('🚨', 'Worst Case', '\$${_worstPmt.round()}', 'At lifetime cap', textCol, mutedCol),
+                      _buildBreakdownCard('💵', '\$ Increase', '${_incDollar >= 0 ? '+' : '-'}\$${_incDollar.round().abs()}', 'Expected reset vs now', textCol, mutedCol),
+                      _buildBreakdownCard('📊', '% Increase', '${_incPct >= 0 ? '+' : ''}${_incPct.toStringAsFixed(1)}%', 'Expected reset vs now', textCol, mutedCol),
                     ],
                   ),
-                ),
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('Risk Score Breakdown'),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Reset Payment Scenarios'),
 
-                // Scenario Score Table Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(16),
+                  // Horizontal scenario bar charts
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildPaymentBarRow('Current', _currentPmt, Colors.teal, textCol),
+                        const SizedBox(height: 10),
+                        _buildPaymentBarRow('Expected', _expectedPmt, Colors.amber, textCol),
+                        const SizedBox(height: 10),
+                        _buildPaymentBarRow('Indexed', _indexedPmt, Colors.orange, textCol),
+                        const SizedBox(height: 10),
+                        _buildPaymentBarRow('Worst Case', _worstPmt, Colors.red, textCol),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      _buildTableTitleRow('Factor', 'Value', 'Points', textCol),
-                      const Divider(),
-                      _buildTableRow('Rate Gap (Index+Margin − Current)', '${_rateGap.toStringAsFixed(2)} pts', '${_rgPts.round()} / 40', textCol),
-                      _buildTableRow('Payment Increase', '${_incPct.toStringAsFixed(1)}%', '${_piPts.round()} / 40', textCol),
-                      _buildTableRow('Remaining Exposure', '${double.tryParse(_yearsController.text)?.round() ?? 25} yrs', '${_tePts.round()} / 20', textCol),
-                    ],
+
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Risk Score Breakdown'),
+
+                  // Scenario Score Table Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildTableTitleRow('Factor', 'Value', 'Points', textCol),
+                        const Divider(),
+                        _buildTableRow('Rate Gap (Index+Margin − Current)', '${_rateGap.toStringAsFixed(2)} pts', '${_rgPts.round()} / 40', textCol),
+                        _buildTableRow('Payment Increase', '${_incPct.toStringAsFixed(1)}%', '${_piPts.round()} / 40', textCol),
+                        _buildTableRow('Remaining Exposure', '${double.tryParse(_yearsController.text)?.round() ?? 25} yrs', '${_tePts.round()} / 20', textCol),
+                      ],
+                    ),
                   ),
-                ),
+                ],
 
                 const SizedBox(height: 20),
                 _buildSectionHeader('Current Market Risk Indicators'),
@@ -899,7 +1138,7 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? hint}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? hint, String? errorText}) {
     const theme = _theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -917,13 +1156,16 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (val) => _calculate(),
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.inputValue(theme.getTextColor(context)),
             decoration: InputDecoration(
               border: InputBorder.none,
@@ -933,6 +1175,17 @@ class _USAArmRiskFactorsScreenState extends ConsumerState<USAArmRiskFactorsScree
             ),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 10,
+              color: Colors.red,
+              weight: FontWeight.w500,
+            ),
+          ),
+        ],
       ],
     );
   }

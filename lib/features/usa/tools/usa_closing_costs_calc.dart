@@ -1,3 +1,4 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unused_local_variable, unnecessary_this
 // lib/features/usa/tools/usa_closing_costs_calc.dart
 
 import 'package:flutter/material.dart';
@@ -17,12 +18,30 @@ class USAClosingCostsCalc extends ConsumerStatefulWidget {
   const USAClosingCostsCalc({super.key, this.theme = CountryThemes.usa});
 
   @override
-  ConsumerState<USAClosingCostsCalc> createState() => _USAClosingCostsCalcState();
+  ConsumerState<USAClosingCostsCalc> createState() =>
+      _USAClosingCostsCalcState();
 }
 
 class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
+  final Map<dynamic, dynamic> _calcSnapshot = {};
   static const List<String> _statesList = [
-    'DC', 'NY', 'CT', 'PA', 'FL', 'TX', 'CA', 'NJ', 'IL', 'WA', 'GA', 'AZ', 'CO', 'WY', 'MO'
+    'DC',
+    'NY',
+    'CT',
+    'PA',
+    'FL',
+    'TX',
+    'CA',
+    'NJ',
+    'IL',
+    'WA',
+    'GA',
+    'AZ',
+    'CO',
+    'WY',
+    'MO'
   ];
 
   double _price = 450000;
@@ -33,7 +52,7 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
 
   bool _showResults = false;
   bool _isCalcDirty = true;
-  bool _calculating = false;
+  final bool _calculating = false;
 
   final Map<String, double> _transferRates = {
     'DC': 0.029,
@@ -117,6 +136,9 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
 
   void _resetInputs() {
     setState(() {
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
       _price = 450000;
       _downPct = 10;
       _state = 'TX';
@@ -129,15 +151,32 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
 
   // Unused: _loadSavedCalculation was defined but not referenced.
 
-  void _calculate() async {
+  void _calculate() {
+    final errors = <String, String>{};
+
     setState(() {
-      _calculating = true;
+      _errors = errors;
     });
-    await Future.delayed(const Duration(milliseconds: 400));
+
+    if (errors.isNotEmpty) {
+      return;
+    }
+
     setState(() {
-      _calculating = false;
+      _calcSnapshot['_price'] = _price;
+      _calcSnapshot['_downPct'] = _downPct;
+      _calcSnapshot['_state'] = _state;
       _showResults = true;
-      _isCalcDirty = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
@@ -153,7 +192,18 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
     final prepaidInt = (loanAmt * 0.0682 / 365 * 15).roundToDouble();
     final escrowSetup = ((_price * 0.016 / 12) * 2).roundToDouble();
 
-    double total = origFee + pointsAmt + 600 + 30 + titleOwner + titleLender + 1000 + transferTax + 200 + prepaidInt + 1500 + escrowSetup;
+    double total = origFee +
+        pointsAmt +
+        600 +
+        30 +
+        titleOwner +
+        titleLender +
+        1000 +
+        transferTax +
+        200 +
+        prepaidInt +
+        1500 +
+        escrowSetup;
     if (_inclConcession) {
       total = max(0.0, total - (_price * 0.03).roundToDouble());
     }
@@ -163,7 +213,8 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
     final labelCtrl = TextEditingController(text: 'Closing Costs');
     final confirmed = await showDialog<bool>(
       context: context,
-      routeSettings: const RouteSettings(name: '/dialog/usa_closing_costs_calc/save'),
+      routeSettings:
+          const RouteSettings(name: '/dialog/usa_closing_costs_calc/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -261,6 +312,21 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
 
   @override
   Widget build(BuildContext context) {
+    final _price = _showResults
+        ? (_calcSnapshot['_price'] as double? ?? this._price)
+        : this._price;
+    final _downPct = _showResults
+        ? (_calcSnapshot['_downPct'] as double? ?? this._downPct)
+        : this._downPct;
+    final _state = _showResults
+        ? (_calcSnapshot['_state'] as String? ?? this._state)
+        : this._state;
+
+    final isDirty = _showResults &&
+        (this._price != _calcSnapshot['_price'] ||
+            this._downPct != _calcSnapshot['_downPct'] ||
+            this._state != _calcSnapshot['_state']);
+
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
@@ -281,7 +347,18 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
     final prepaidInt = (loanAmt * 0.0682 / 365 * 15).roundToDouble();
     final escrowSetup = ((_price * 0.016 / 12) * 2).roundToDouble();
 
-    double total = origFee + pointsAmt + 600 + 30 + titleOwner + titleLender + 1000 + transferTax + 200 + prepaidInt + 1500 + escrowSetup;
+    double total = origFee +
+        pointsAmt +
+        600 +
+        30 +
+        titleOwner +
+        titleLender +
+        1000 +
+        transferTax +
+        200 +
+        prepaidInt +
+        1500 +
+        escrowSetup;
     if (_inclConcession) {
       total = max(0.0, total - (_price * 0.03).roundToDouble());
     }
@@ -301,7 +378,12 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
       const Color(0xFFD97706),
       const Color(0xFF15803D)
     ];
-    final labels = ['Loan Costs', 'Title & Settlement', 'Taxes & Recording', 'Prepaids'];
+    final labels = [
+      'Loan Costs',
+      'Title & Settlement',
+      'Taxes & Recording',
+      'Prepaids'
+    ];
     final vals = [loanCosts, titleFees, taxes, prepaids];
     final maxVal = max(1.0, vals.reduce(max));
 
@@ -311,13 +393,16 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
     final pct = (total / _price * 100).toStringAsFixed(1);
     String insight = 'Your closing costs are $pct% of the purchase price. ';
     if (transferTax == 0) {
-      insight += 'Great news: ${_stateNames[_state]} has no transfer tax, saving you thousands. ';
+      insight +=
+          'Great news: ${_stateNames[_state]} has no transfer tax, saving you thousands. ';
     }
     if (_inclPoints) {
-      insight += 'Discount points add ${CurrencyFormatter.format(pointsAmt, symbol: r'$')} upfront but reduce your rate long-term. ';
+      insight +=
+          'Discount points add ${CurrencyFormatter.format(pointsAmt, symbol: r'$')} upfront but reduce your rate long-term. ';
     }
     if (_inclConcession) {
-      insight += 'Seller concessions offset up to ${CurrencyFormatter.format((_price * 0.03).roundToDouble(), symbol: r'$')} in buyer costs. ';
+      insight +=
+          'Seller concessions offset up to ${CurrencyFormatter.format((_price * 0.03).roundToDouble(), symbol: r'$')} in buyer costs. ';
     }
 
     return Column(
@@ -325,10 +410,27 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
       children: [
         // Rate Strip header — Live FRED + Census median price
         LightRateStripBanner(items: [
-          RateStripItem(label: "Nat'l Avg CC", provider: fredMortgage30Provider, fallback: 6905, isDollar: true, suffix: ''),
-          RateStripItem(label: 'Median Home', provider: censusMedianHomeValueProvider, fallback: 412000, isDollar: true, suffix: ''),
-          RateStripItem(label: '30-Yr Rate', provider: fredMortgage30Provider, fallback: 6.82),
-          RateStripItem(label: 'Fed Funds', provider: fredFedFundsProvider, fallback: 5.33, isGold: true),
+          RateStripItem(
+              label: "Nat'l Avg CC",
+              provider: fredMortgage30Provider,
+              fallback: 6905,
+              isDollar: true,
+              suffix: ''),
+          RateStripItem(
+              label: 'Median Home',
+              provider: censusMedianHomeValueProvider,
+              fallback: 412000,
+              isDollar: true,
+              suffix: ''),
+          RateStripItem(
+              label: '30-Yr Rate',
+              provider: fredMortgage30Provider,
+              fallback: 6.82),
+          RateStripItem(
+              label: 'Fed Funds',
+              provider: fredFedFundsProvider,
+              fallback: 5.33,
+              isGold: true),
         ]),
 
         // Settings Section
@@ -376,10 +478,15 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                 children: [
                   Text('Purchase Price'.toUpperCase(),
                       style: AppTextStyles.dmSans(
-                          size: 9, weight: FontWeight.w800, color: mutedColor, letterSpacing: 0.5)),
+                          size: 9,
+                          weight: FontWeight.w800,
+                          color: mutedColor,
+                          letterSpacing: 0.5)),
                   Text(CurrencyFormatter.format(_price, symbol: r'$'),
                       style: AppTextStyles.playfair(
-                          size: 13, weight: FontWeight.w800, color: primaryColor)),
+                          size: 13,
+                          weight: FontWeight.w800,
+                          color: primaryColor)),
                 ],
               ),
               Slider(
@@ -391,7 +498,7 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _price = val;
+                    this._price = val;
                     _markDirty();
                   });
                 },
@@ -399,10 +506,14 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('\$100K', style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
-                  Text('\$500K', style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
-                  Text('\$1M', style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
-                  Text('\$1.5M', style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
+                  Text('\$100K',
+                      style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
+                  Text('\$500K',
+                      style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
+                  Text('\$1M',
+                      style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
+                  Text('\$1.5M',
+                      style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -413,10 +524,15 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                 children: [
                   Text('Down Payment (%)'.toUpperCase(),
                       style: AppTextStyles.dmSans(
-                          size: 9, weight: FontWeight.w800, color: mutedColor, letterSpacing: 0.5)),
+                          size: 9,
+                          weight: FontWeight.w800,
+                          color: mutedColor,
+                          letterSpacing: 0.5)),
                   Text('${_downPct.toInt()}%',
                       style: AppTextStyles.playfair(
-                          size: 13, weight: FontWeight.w800, color: primaryColor)),
+                          size: 13,
+                          weight: FontWeight.w800,
+                          color: primaryColor)),
                 ],
               ),
               Slider(
@@ -428,7 +544,7 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                 inactiveColor: Colors.grey.withValues(alpha: 0.2),
                 onChanged: (val) {
                   setState(() {
-                    _downPct = val;
+                    this._downPct = val;
                     _markDirty();
                   });
                 },
@@ -436,10 +552,14 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('3%', style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
-                  Text('10%', style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
-                  Text('20%', style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
-                  Text('30%', style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
+                  Text('3%',
+                      style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
+                  Text('10%',
+                      style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
+                  Text('20%',
+                      style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
+                  Text('30%',
+                      style: AppTextStyles.dmSans(size: 8, color: mutedColor)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -447,12 +567,18 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
               // State Dropdown
               Text('State'.toUpperCase(),
                   style: AppTextStyles.dmSans(
-                      size: 9, weight: FontWeight.w800, color: mutedColor, letterSpacing: 0.5)),
+                      size: 9,
+                      weight: FontWeight.w800,
+                      color: mutedColor,
+                      letterSpacing: 0.5)),
               const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0F4FF),
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF0F4FF),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: borderColor),
                 ),
@@ -472,7 +598,7 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                     onChanged: (val) {
                       if (val != null) {
                         setState(() {
-                          _state = val;
+                          this._state = val;
                           _markDirty();
                         });
                       }
@@ -513,10 +639,12 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
         ElevatedButton(
           onPressed: _calculate,
           style: ElevatedButton.styleFrom(
-            backgroundColor: theme.accentColor, // Gold-ish/Navy button matching theme
+            backgroundColor:
+                theme.accentColor, // Gold-ish/Navy button matching theme
             foregroundColor: Colors.white,
             minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             elevation: 2,
           ),
           child: _calculating
@@ -530,14 +658,52 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                 )
               : Text(
                   '🧮 Calculate Closing Costs',
-                  style: AppTextStyles.playfair(
-                      size: 13, weight: FontWeight.w800),
+                  style:
+                      AppTextStyles.playfair(size: 13, weight: FontWeight.w800),
                 ),
         ),
 
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults) ...[
+          Container(
+            key: _resultsKey,
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded,
+                            color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate" to update results.',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: theme.getTextColor(context),
+                                weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
           // Hero Result panel
           Container(
             width: double.infinity,
@@ -583,11 +749,15 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    _buildHeroBottomBox('Down Payment', CurrencyFormatter.format(downAmt, symbol: r'$')),
+                    _buildHeroBottomBox('Down Payment',
+                        CurrencyFormatter.format(downAmt, symbol: r'$')),
                     const SizedBox(width: 8),
-                    _buildHeroBottomBox('Closing Costs', CurrencyFormatter.format(total, symbol: r'$'), gold: true),
+                    _buildHeroBottomBox('Closing Costs',
+                        CurrencyFormatter.format(total, symbol: r'$'),
+                        gold: true),
                     const SizedBox(width: 8),
-                    _buildHeroBottomBox('Cash Needed', CurrencyFormatter.format(totalCash, symbol: r'$')),
+                    _buildHeroBottomBox('Cash Needed',
+                        CurrencyFormatter.format(totalCash, symbol: r'$')),
                   ],
                 )
               ],
@@ -641,7 +811,8 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                       child: Column(
                         children: vals.map((v) {
                           final idx = vals.indexOf(v);
-                          final pctVal = totalSum > 0 ? (v / totalSum * 100).round() : 0;
+                          final pctVal =
+                              totalSum > 0 ? (v / totalSum * 100).round() : 0;
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
@@ -657,11 +828,14 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(labels[idx],
                                           style: AppTextStyles.dmSans(
-                                              size: 10, weight: FontWeight.w700, color: textColor)),
+                                              size: 10,
+                                              weight: FontWeight.w700,
+                                              color: textColor)),
                                       Text('$pctVal%',
                                           style: AppTextStyles.dmSans(
                                               size: 8, color: mutedColor)),
@@ -671,7 +845,9 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                                 Text(
                                   CurrencyFormatter.format(v, symbol: r'$'),
                                   style: AppTextStyles.playfair(
-                                      size: 10.5, weight: FontWeight.w800, color: textColor),
+                                      size: 10.5,
+                                      weight: FontWeight.w800,
+                                      color: textColor),
                                 ),
                               ],
                             ),
@@ -717,10 +893,14 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                             children: [
                               Text(labels[idx],
                                   style: AppTextStyles.dmSans(
-                                      size: 10, weight: FontWeight.w700, color: textColor)),
+                                      size: 10,
+                                      weight: FontWeight.w700,
+                                      color: textColor)),
                               Text(CurrencyFormatter.format(v, symbol: r'$'),
                                   style: AppTextStyles.playfair(
-                                      size: 10.5, weight: FontWeight.w800, color: textColor)),
+                                      size: 10.5,
+                                      weight: FontWeight.w800,
+                                      color: textColor)),
                             ],
                           ),
                           const SizedBox(height: 4),
@@ -766,7 +946,9 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                 Text(
                   '💡 Cost Intelligence',
                   style: AppTextStyles.playfair(
-                      size: 11.5, weight: FontWeight.w800, color: const Color(0xFF92400E)),
+                      size: 11.5,
+                      weight: FontWeight.w800,
+                      color: const Color(0xFF92400E)),
                 ),
                 const SizedBox(height: 5),
                 Text(
@@ -786,13 +968,14 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
               backgroundColor: const Color(0xFF15803D),
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
               elevation: 1,
             ),
             child: Text(
               '🔖 Save This Calculation',
-              style: AppTextStyles.playfair(
-                  size: 12.5, weight: FontWeight.w800),
+              style:
+                  AppTextStyles.playfair(size: 12.5, weight: FontWeight.w800),
             ),
           ),
           const SizedBox(height: 20),
@@ -817,30 +1000,60 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
 
                 // Loan Costs
                 _buildBreakdownSectionHeader('🏦 Loan Costs (Section A&B)'),
-                _buildBreakdownRow('Origination Fee', 'Lender fee · typically 0–1%', CurrencyFormatter.format(origFee, symbol: r'$')),
-                _buildBreakdownRow('Discount Points', '0.8 pts to buy down rate', _inclPoints ? CurrencyFormatter.format(pointsAmt, symbol: r'$') : '\$0'),
-                _buildBreakdownRow('Appraisal Fee', 'Licensed appraiser · \$500–\$750', '\$600'),
-                _buildBreakdownRow('Credit Report', 'Tri-merge credit report', '\$30'),
+                _buildBreakdownRow(
+                    'Origination Fee',
+                    'Lender fee · typically 0–1%',
+                    CurrencyFormatter.format(origFee, symbol: r'$')),
+                _buildBreakdownRow(
+                    'Discount Points',
+                    '0.8 pts to buy down rate',
+                    _inclPoints
+                        ? CurrencyFormatter.format(pointsAmt, symbol: r'$')
+                        : '\$0'),
+                _buildBreakdownRow('Appraisal Fee',
+                    'Licensed appraiser · \$500–\$750', '\$600'),
+                _buildBreakdownRow(
+                    'Credit Report', 'Tri-merge credit report', '\$30'),
                 const SizedBox(height: 10),
 
                 // Title Services
-                _buildBreakdownSectionHeader('📜 Other Required Services (Section C)'),
-                _buildBreakdownRow('Title – Owner\'s Insurance', 'Protects your ownership', CurrencyFormatter.format(titleOwner, symbol: r'$')),
-                _buildBreakdownRow('Title – Lender\'s Insurance', 'Required by lender', CurrencyFormatter.format(titleLender, symbol: r'$')),
-                _buildBreakdownRow('Settlement / Closing Fee', 'Escrow / attorney fee', '\$1,000'),
+                _buildBreakdownSectionHeader(
+                    '📜 Other Required Services (Section C)'),
+                _buildBreakdownRow(
+                    'Title – Owner\'s Insurance',
+                    'Protects your ownership',
+                    CurrencyFormatter.format(titleOwner, symbol: r'$')),
+                _buildBreakdownRow(
+                    'Title – Lender\'s Insurance',
+                    'Required by lender',
+                    CurrencyFormatter.format(titleLender, symbol: r'$')),
+                _buildBreakdownRow('Settlement / Closing Fee',
+                    'Escrow / attorney fee', '\$1,000'),
                 const SizedBox(height: 10),
 
                 // Taxes
-                _buildBreakdownSectionHeader('🏛️ Taxes & Government Fees (Section E)'),
-                _buildBreakdownRow('State Transfer Tax', _transferNotes[_state] ?? '', CurrencyFormatter.format(transferTax, symbol: r'$')),
-                _buildBreakdownRow('Recording Fees', 'County deed recording', '\$200'),
+                _buildBreakdownSectionHeader(
+                    '🏛️ Taxes & Government Fees (Section E)'),
+                _buildBreakdownRow(
+                    'State Transfer Tax',
+                    _transferNotes[_state] ?? '',
+                    CurrencyFormatter.format(transferTax, symbol: r'$')),
+                _buildBreakdownRow(
+                    'Recording Fees', 'County deed recording', '\$200'),
                 const SizedBox(height: 10),
 
                 // Prepaids
                 _buildBreakdownSectionHeader('📅 Prepaids (Section F)'),
-                _buildBreakdownRow('Prepaid Interest (15 days)', 'Per diem × 15 days', CurrencyFormatter.format(prepaidInt, symbol: r'$')),
-                _buildBreakdownRow('Homeowner Ins. (1 yr)', 'Full year upfront', '\$1,500'),
-                _buildBreakdownRow('Escrow Setup (2 mo reserve)', 'Tax + insurance impound', CurrencyFormatter.format(escrowSetup, symbol: r'$')),
+                _buildBreakdownRow(
+                    'Prepaid Interest (15 days)',
+                    'Per diem × 15 days',
+                    CurrencyFormatter.format(prepaidInt, symbol: r'$')),
+                _buildBreakdownRow(
+                    'Homeowner Ins. (1 yr)', 'Full year upfront', '\$1,500'),
+                _buildBreakdownRow(
+                    'Escrow Setup (2 mo reserve)',
+                    'Tax + insurance impound',
+                    CurrencyFormatter.format(escrowSetup, symbol: r'$')),
                 const SizedBox(height: 12),
 
                 const Divider(),
@@ -850,10 +1063,14 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                   children: [
                     Text('Total Estimated Closing Costs',
                         style: AppTextStyles.playfair(
-                            size: 12.5, weight: FontWeight.w800, color: textColor)),
+                            size: 12.5,
+                            weight: FontWeight.w800,
+                            color: textColor)),
                     Text(CurrencyFormatter.format(total, symbol: r'$'),
                         style: AppTextStyles.playfair(
-                            size: 14.5, weight: FontWeight.w800, color: primaryColor)),
+                            size: 14.5,
+                            weight: FontWeight.w800,
+                            color: primaryColor)),
                   ],
                 ),
               ],
@@ -879,19 +1096,31 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
           children: [
             GestureDetector(
               onTap: () => context.push('/tool/usa/piti'),
-              child: _buildRelatedCard('📊', 'PITI Calculator', 'Full monthly payment', 'All-in-one', const Color(0xFFEFF6FF), const Color(0xFF1D4ED8)),
+              child: _buildRelatedCard(
+                  '📊',
+                  'PITI Calculator',
+                  'Full monthly payment',
+                  'All-in-one',
+                  const Color(0xFFEFF6FF),
+                  const Color(0xFF1D4ED8)),
             ),
             GestureDetector(
               onTap: () => context.push('/tool/usa/downpayment'),
-              child: _buildRelatedCard('💰', 'Down Payment', '3–20% comparison', null, null, null, red: true),
+              child: _buildRelatedCard(
+                  '💰', 'Down Payment', '3–20% comparison', null, null, null,
+                  red: true),
             ),
             GestureDetector(
               onTap: () => context.push('/tool/usa/propertytax'),
-              child: _buildRelatedCard('🏛️', 'Property Tax', 'By state & county', null, null, null, gold: true),
+              child: _buildRelatedCard(
+                  '🏛️', 'Property Tax', 'By state & county', null, null, null,
+                  gold: true),
             ),
             GestureDetector(
               onTap: () => context.push('/tool/usa/pmi'),
-              child: _buildRelatedCard('🛡️', 'PMI Calculator', '<20% down impact', null, null, null, slate: true),
+              child: _buildRelatedCard(
+                  '🛡️', 'PMI Calculator', '<20% down impact', null, null, null,
+                  slate: true),
             ),
           ],
         ),
@@ -899,8 +1128,8 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
     );
   }
 
-  Widget _buildRelatedCard(String icon, String title, String desc, String? badgeText,
-      Color? badgeBg, Color? badgeTextCol,
+  Widget _buildRelatedCard(String icon, String title, String desc,
+      String? badgeText, Color? badgeBg, Color? badgeTextCol,
       {bool red = false, bool gold = false, bool slate = false}) {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -942,9 +1171,7 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
           Text(title,
               style: AppTextStyles.playfair(
                   size: 12.5, weight: FontWeight.w800, color: titleCol)),
-          Text(desc,
-              style: AppTextStyles.dmSans(
-                  size: 9.5, color: descCol)),
+          Text(desc, style: AppTextStyles.dmSans(size: 9.5, color: descCol)),
           if (badgeText != null) ...[
             const Spacer(),
             Container(
@@ -955,7 +1182,9 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
               ),
               child: Text(badgeText,
                   style: AppTextStyles.dmSans(
-                      size: 8, weight: FontWeight.w700, color: badgeTextCol ?? Colors.white)),
+                      size: 8,
+                      weight: FontWeight.w700,
+                      color: badgeTextCol ?? Colors.white)),
             )
           ]
         ],
@@ -969,7 +1198,10 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
       child: Text(
         label.toUpperCase(),
         style: AppTextStyles.dmSans(
-            size: 8, weight: FontWeight.w800, color: widget.theme.getMutedColor(context), letterSpacing: 0.5),
+            size: 8,
+            weight: FontWeight.w800,
+            color: widget.theme.getMutedColor(context),
+            letterSpacing: 0.5),
       ),
     );
   }
@@ -996,7 +1228,8 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
                         size: 11, weight: FontWeight.w700, color: textColor)),
                 if (note.isNotEmpty)
                   Text(note,
-                      style: AppTextStyles.dmSans(size: 8.5, color: mutedColor)),
+                      style:
+                          AppTextStyles.dmSans(size: 8.5, color: mutedColor)),
               ],
             ),
           ),
@@ -1033,7 +1266,8 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
     );
   }
 
-  Widget _buildToggleRow(String title, String subtitle, bool val, ValueChanged<bool> onChanged) {
+  Widget _buildToggleRow(
+      String title, String subtitle, bool val, ValueChanged<bool> onChanged) {
     final textColor = widget.theme.getTextColor(context);
     final mutedColor = widget.theme.getMutedColor(context);
 
@@ -1108,22 +1342,30 @@ class _DonutPainter extends CustomPainter {
     }
 
     // Draw central text
-    final pct = price > 0 ? (totalCosts / price * 100).toStringAsFixed(1) : '0.0';
+    final pct =
+        price > 0 ? (totalCosts / price * 100).toStringAsFixed(1) : '0.0';
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
     textPainter.text = TextSpan(
       text: '$pct%',
-      style: AppTextStyles.playfair(size: 9.5, weight: FontWeight.w800, color: textColor),
+      style: AppTextStyles.playfair(
+          size: 9.5, weight: FontWeight.w800, color: textColor),
     );
     textPainter.layout();
-    textPainter.paint(canvas, Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2 - 4));
+    textPainter.paint(
+        canvas,
+        Offset(center.dx - textPainter.width / 2,
+            center.dy - textPainter.height / 2 - 4));
 
     textPainter.text = TextSpan(
       text: 'of price',
       style: AppTextStyles.dmSans(size: 7.5, color: mutedColor),
     );
     textPainter.layout();
-    textPainter.paint(canvas, Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2 + 6));
+    textPainter.paint(
+        canvas,
+        Offset(center.dx - textPainter.width / 2,
+            center.dy - textPainter.height / 2 + 6));
   }
 
   @override
@@ -1134,4 +1376,3 @@ class _DonutPainter extends CustomPainter {
         oldDelegate.mutedColor != mutedColor;
   }
 }
-

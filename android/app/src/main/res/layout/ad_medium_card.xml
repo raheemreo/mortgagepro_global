@@ -1,69 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    NativeAdView root: the SDK auto-injects an AdChoices overlay when
+    setNativeAd() is called. Registering a dedicated AdChoicesView here
+    gives precise positioning control (standard: top-right corner) and
+    prevents the SDK from choosing an arbitrary corner that may overlap content.
+-->
 <com.google.android.gms.ads.nativead.NativeAdView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <LinearLayout
+    <!--
+        FrameLayout wrapper: allows AdChoicesView to be positioned as an
+        absolute overlay in the top-right corner of the ad card via gravity.
+    -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp"
-        android:background="#121B3A8F">
+        android:layout_height="wrap_content">
 
+        <!-- Main ad content -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="8dp">
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:background="#121B3A8F">
 
-            <ImageView
-                android:id="@+id/ad_icon"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginEnd="10dp"
-                android:scaleType="centerInside"
-                android:contentDescription="Ad Icon" />
-
+            <!-- Icon + headline + body + advertiser row -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
 
-                <TextView
-                    android:id="@+id/ad_headline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="#0B1D3A" />
+                <ImageView
+                    android:id="@+id/ad_icon"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="10dp"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Ad Icon" />
 
-                <TextView
-                    android:id="@+id/ad_body"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:textSize="11sp"
-                    android:textColor="#5B6E8F"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/ad_headline"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#0B1D3A"
+                        android:paddingEnd="28dp" />
+
+                    <!-- Advertiser name — required for brand safety compliance -->
+                    <TextView
+                        android:id="@+id/ad_advertiser"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="10sp"
+                        android:textColor="#3B82F6"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/ad_body"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="11sp"
+                        android:textColor="#5B6E8F"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
+
+                    <!-- Star rating row (app-install ads) -->
+                    <LinearLayout
+                        android:id="@+id/ad_stars_container"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:visibility="gone">
+
+                        <RatingBar
+                            android:id="@+id/ad_stars"
+                            style="?android:attr/ratingBarStyleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:isIndicator="true"
+                            android:numStars="5"
+                            android:stepSize="0.5" />
+
+                        <!-- Store / price label -->
+                        <TextView
+                            android:id="@+id/ad_store"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="10sp"
+                            android:textColor="#5B6E8F"
+                            android:layout_marginStart="4dp"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
             </LinearLayout>
+
+            <com.google.android.gms.ads.nativead.MediaView
+                android:id="@+id/ad_media"
+                android:layout_width="match_parent"
+                android:layout_height="140dp"
+                android:layout_gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <Button
+                android:id="@+id/ad_call_to_action"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:backgroundTint="#0D9488"
+                android:textColor="#FFFFFF" />
+
         </LinearLayout>
 
-        <com.google.android.gms.ads.nativead.MediaView
-            android:id="@+id/ad_media"
-            android:layout_width="match_parent"
-            android:layout_height="140dp"
-            android:layout_gravity="center"
-            android:layout_marginBottom="8dp" />
-
-        <Button
-            android:id="@+id/ad_call_to_action"
-            android:layout_width="match_parent"
+        <!--
+            AdChoicesView — pinned to the top-right corner of the card.
+            The SDK populates this with the AdChoices "i" icon automatically.
+            Registering it here prevents the SDK from auto-placing it in an
+            arbitrary corner that could overlap the headline or icon.
+            Minimum touch target: 20×20dp (SDK enforced).
+        -->
+        <com.google.android.gms.ads.nativead.AdChoicesView
+            android:id="@+id/ad_choices"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:backgroundTint="#0D9488"
-            android:textColor="#FFFFFF" />
+            android:layout_gravity="top|end"
+            android:layout_margin="4dp" />
 
-    </LinearLayout>
+    </FrameLayout>
+
 </com.google.android.gms.ads.nativead.NativeAdView>

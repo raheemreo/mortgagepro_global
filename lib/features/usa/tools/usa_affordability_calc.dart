@@ -32,6 +32,22 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
   int _selectedTerm = 30;
   double _selectedDP = 20.0;
 
+  final _resultsKey = GlobalKey();
+  bool _hasCalculated = false;
+
+  // Stored inputs for calculation
+  double _calcIncome = 0.0;
+  double _calcDebts = 0.0;
+  double _calcTaxIns = 0.0;
+  double _calcRate = 6.82;
+  int _calcTerm = 30;
+  double _calcDP = 20.0;
+
+  // Validation errors
+  String? _incomeError;
+  String? _debtsError;
+  String? _taxInsError;
+
   @override
   void dispose() {
     _incomeController.dispose();
@@ -44,13 +60,56 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
 
   void _resetInputs() {
     setState(() {
-      _incomeController.text = '120000';
-      _debtsController.text = '400';
-      _taxInsController.text = '550';
+      _incomeController.clear();
+      _debtsController.clear();
+      _taxInsController.clear();
       _rate = 6.82;
       _selectedTerm = 30;
       _selectedDP = 20.0;
+      _hasCalculated = false;
+      _incomeError = null;
+      _debtsError = null;
+      _taxInsError = null;
     });
+  }
+
+  bool _validateInputs() {
+    bool isValid = true;
+    setState(() {
+      final incomeVal = double.tryParse(_incomeController.text);
+      if (_incomeController.text.trim().isEmpty) {
+        _incomeError = 'Annual gross income is required';
+        isValid = false;
+      } else if (incomeVal == null || incomeVal < 0) {
+        _incomeError = 'Enter a valid income';
+        isValid = false;
+      } else {
+        _incomeError = null;
+      }
+
+      final debtsVal = double.tryParse(_debtsController.text);
+      if (_debtsController.text.trim().isEmpty) {
+        _debtsError = 'Monthly debt is required';
+        isValid = false;
+      } else if (debtsVal == null || debtsVal < 0) {
+        _debtsError = 'Enter valid debts';
+        isValid = false;
+      } else {
+        _debtsError = null;
+      }
+
+      final taxInsVal = double.tryParse(_taxInsController.text);
+      if (_taxInsController.text.trim().isEmpty) {
+        _taxInsError = 'Tax & insurance are required';
+        isValid = false;
+      } else if (taxInsVal == null || taxInsVal < 0) {
+        _taxInsError = 'Enter valid tax & insurance';
+        isValid = false;
+      } else {
+        _taxInsError = null;
+      }
+    });
+    return isValid;
   }
 
   void _clearAllSaved() async {
@@ -76,16 +135,17 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
   }
 
   void _saveCalculation() async {
-    final income = _val(_incomeController);
-    final debts = _val(_debtsController);
-    final taxIns = _val(_taxInsController);
+    if (!_hasCalculated) return;
+    final income = _calcIncome;
+    final debts = _calcDebts;
+    final taxIns = _calcTaxIns;
     final monthlyIncome = income / 12;
 
     final maxHousing = monthlyIncome * 0.28;
     final maxPI = max(0.0, maxHousing - taxIns);
-    final dpFrac = _selectedDP / 100;
-    final r = _rate / 100 / 12;
-    final n = _selectedTerm * 12;
+    final dpFrac = _calcDP / 100;
+    final r = _calcRate / 100 / 12;
+    final n = _calcTerm * 12;
 
     double maxLoan = 0.0;
     if (r > 0) {
@@ -100,9 +160,9 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
         0.0,
         MortgageMath.monthlyPayment(
             principal: maxLoan,
-            annualRatePercent: _rate,
-            termYears: _selectedTerm));
-    final pmi = _selectedDP < 20 ? maxLoan * 0.0085 / 12 : 0.0;
+            annualRatePercent: _calcRate,
+            termYears: _calcTerm));
+    final pmi = _calcDP < 20 ? maxLoan * 0.0085 / 12 : 0.0;
     final totalPITI = piAmt + taxIns + pmi;
 
     final labelCtrl = TextEditingController(text: 'Home Affordability');
@@ -120,7 +180,7 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Max Price ${CurrencyFormatter.compact(maxPrice, symbol: '\$')} · Max PITI: ${CurrencyFormatter.compact(totalPITI, symbol: '\$')}/mo · Down: ${_selectedDP.toStringAsFixed(0)}%',
+              'Saving: Max Price ${CurrencyFormatter.compact(maxPrice, symbol: '\$')} · Max PITI: ${CurrencyFormatter.compact(totalPITI, symbol: '\$')}/mo · Down: ${_calcDP.toStringAsFixed(0)}%',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -175,9 +235,9 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
           'AnnualIncome': income,
           'MonthlyDebts': debts,
           'MonthlyTaxIns': taxIns,
-          'Rate': _rate,
-          'Term': _selectedTerm.toDouble(),
-          'DownPct': _selectedDP,
+          'Rate': _calcRate,
+          'Term': _calcTerm.toDouble(),
+          'DownPct': _calcDP,
         },
         results: {
           'MaxPurchasePrice': maxPrice,
@@ -217,6 +277,17 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
       _rate = calc.inputs['Rate'] ?? 6.82;
       _selectedTerm = (calc.inputs['Term'] ?? 30.0).round();
       _selectedDP = calc.inputs['DownPct'] ?? 20.0;
+
+      _calcIncome = _val(_incomeController);
+      _calcDebts = _val(_debtsController);
+      _calcTaxIns = _val(_taxInsController);
+      _calcRate = _rate;
+      _calcTerm = _selectedTerm;
+      _calcDP = _selectedDP;
+      _hasCalculated = true;
+      _incomeError = null;
+      _debtsError = null;
+      _taxInsError = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -235,18 +306,18 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Inputs
-    final income = _val(_incomeController);
-    final debts = _val(_debtsController);
-    final taxIns = _val(_taxInsController);
+    final income = _calcIncome;
+    final debts = _calcDebts;
+    final taxIns = _calcTaxIns;
     final monthlyIncome = income / 12;
 
     // 28% front-end -> max housing payment
     final maxHousing = monthlyIncome * 0.28;
     // available P&I = maxHousing - taxIns
     final maxPI = max(0.0, maxHousing - taxIns);
-    final dpFrac = _selectedDP / 100;
-    final r = _rate / 100 / 12;
-    final n = _selectedTerm * 12;
+    final dpFrac = _calcDP / 100;
+    final r = _calcRate / 100 / 12;
+    final n = _calcTerm * 12;
 
     // max loan from P&I using present value of annuity
     double maxLoan = 0.0;
@@ -262,9 +333,9 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
         0.0,
         MortgageMath.monthlyPayment(
             principal: maxLoan,
-            annualRatePercent: _rate,
-            termYears: _selectedTerm));
-    final pmi = _selectedDP < 20 ? maxLoan * 0.0085 / 12 : 0.0;
+            annualRatePercent: _calcRate,
+            termYears: _calcTerm));
+    final pmi = _calcDP < 20 ? maxLoan * 0.0085 / 12 : 0.0;
     final totalPITI = piAmt + taxIns + pmi;
 
     // DTI ratios
@@ -326,6 +397,15 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
     final insPctInt = (insPct * 100).round();
     final pmiPctInt = (pmiPct * 100).round();
 
+    final showOutdatedWarning = _hasCalculated && (
+      _val(_incomeController) != _calcIncome ||
+      _val(_debtsController) != _calcDebts ||
+      _val(_taxInsController) != _calcTaxIns ||
+      _rate != _calcRate ||
+      _selectedTerm != _calcTerm ||
+      _selectedDP != _calcDP
+    );
+
     // Saved calculations watch
     final savedCalcs = ref
         .watch(savedProvider)
@@ -361,110 +441,141 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
         ]),
         const SizedBox(height: 20),
 
-        _buildSectionHeader('Your Budget',
-            onReset: _resetInputs, resetLabel: 'Recalculate'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 20),
 
-        // Result Hero
-        Container(
-          padding: const EdgeInsets.all(19),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+        if (_hasCalculated) ...[
+          _buildSectionHeader('Your Budget',
+              onReset: _resetInputs, resetLabel: 'Clear All'),
+          const SizedBox(height: 8),
+
+          if (showOutdatedWarning)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                border: Border.all(color: Colors.amber.shade700, width: 1),
+                borderRadius: BorderRadius.circular(10),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'MAXIMUM HOME PURCHASE PRICE',
-                style: AppTextStyles.dmSans(
-                  size: 9.5,
-                  weight: FontWeight.w700,
-                  color: Colors.white.withValues(alpha: 0.48),
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    '\$',
-                    style: AppTextStyles.dmSans(
-                      size: 18,
-                      weight: FontWeight.w800,
-                      color: const Color(0xFFFCD34D),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                        size: 11,
+                        color: Colors.amber.shade800,
+                        weight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  Text(
-                    CurrencyFormatter.format(maxPrice, symbol: '')
-                        .split('.')
-                        .first,
-                    style: AppTextStyles.dmSans(
-                      size: 38,
-                      weight: FontWeight.w800,
-                      color: Colors.white,
-                    ).copyWith(fontFamily: 'Georgia'),
-                  ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Based on 28/36 Rule · ${_rate.toStringAsFixed(2)}% rate · ${_selectedDP.toInt()}% down · $_selectedTerm-yr fixed',
-                style: AppTextStyles.dmSans(
-                  size: 10,
-                  color: Colors.white.withValues(alpha: 0.52),
+            ),
+
+          // Result Hero
+          Container(
+            key: _resultsKey,
+            padding: const EdgeInsets.all(19),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
-              ),
-              const SizedBox(height: 14),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'MAXIMUM HOME PURCHASE PRICE',
+                  style: AppTextStyles.dmSans(
+                    size: 9.5,
+                    weight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.48),
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '\$',
+                      style: AppTextStyles.dmSans(
+                        size: 18,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFFFCD34D),
+                      ),
+                    ),
+                    Text(
+                      CurrencyFormatter.format(maxPrice, symbol: '')
+                          .split('.')
+                          .first,
+                      style: AppTextStyles.dmSans(
+                        size: 38,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                      ).copyWith(fontFamily: 'Georgia'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Based on 28/36 Rule · ${_calcRate.toStringAsFixed(2)}% rate · ${_calcDP.toInt()}% down · $_calcTerm-yr fixed',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    color: Colors.white.withValues(alpha: 0.52),
+                  ),
+                ),
+                const SizedBox(height: 14),
 
-              // Hero metrics row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildHeroStat(
-                        'Max Monthly Pmt',
-                        CurrencyFormatter.format(maxHousing, symbol: '\$')
-                            .split('.')
-                            .first,
-                        '28% of income'),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildHeroStat(
-                        'Down Payment',
-                        CurrencyFormatter.format(downAmt, symbol: '\$')
-                            .split('.')
-                            .first,
-                        '${_selectedDP.toInt()}% suggested'),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildHeroStat(
-                        'Loan Amount',
-                        CurrencyFormatter.format(maxLoan, symbol: '\$')
-                            .split('.')
-                            .first,
-                        'Principal balance'),
-                  ),
-                ],
-              ),
-            ],
+                // Hero metrics row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildHeroStat(
+                          'Max Monthly Pmt',
+                          CurrencyFormatter.format(maxHousing, symbol: '\$')
+                              .split('.')
+                              .first,
+                          '28% of income'),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildHeroStat(
+                          'Down Payment',
+                          CurrencyFormatter.format(downAmt, symbol: '\$')
+                              .split('.')
+                              .first,
+                          '${_calcDP.toInt()}% suggested'),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildHeroStat(
+                          'Loan Amount',
+                          CurrencyFormatter.format(maxLoan, symbol: '\$')
+                              .split('.')
+                              .first,
+                          'Principal balance'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 20),
+        ],
 
-        const SizedBox(height: 20),
         _buildSectionHeader('Your Financial Info',
             onReset: _resetInputs, resetLabel: 'Reset'),
         const SizedBox(height: 8),
@@ -509,6 +620,7 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
                 hint: 'US median family: \$75,000/yr',
                 prefix: '\$',
                 suffix: '/yr',
+                errorText: _incomeError,
               ),
               const SizedBox(height: 12),
 
@@ -519,6 +631,7 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
                 hint: 'Minimum payments due monthly',
                 prefix: '\$',
                 suffix: '/mo',
+                errorText: _debtsError,
               ),
               const SizedBox(height: 12),
 
@@ -561,12 +674,34 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
                 hint: 'Property taxes & homeowner insurance',
                 prefix: '\$',
                 suffix: '/mo',
+                errorText: _taxInsError,
               ),
               const SizedBox(height: 16),
 
               // Calculate and Save Buttons inside Inputs Card
               GestureDetector(
-                onTap: () => setState(() {}),
+                onTap: () {
+                  if (_validateInputs()) {
+                    setState(() {
+                      _calcIncome = _val(_incomeController);
+                      _calcDebts = _val(_debtsController);
+                      _calcTaxIns = _val(_taxInsController);
+                      _calcRate = _rate;
+                      _calcTerm = _selectedTerm;
+                      _calcDP = _selectedDP;
+                      _hasCalculated = true;
+                    });
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (_resultsKey.currentContext != null) {
+                        Scrollable.ensureVisible(
+                          _resultsKey.currentContext!,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeInOut,
+                        );
+                      }
+                    });
+                  }
+                },
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -597,286 +732,289 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
               const SizedBox(height: 8),
 
               GestureDetector(
-                onTap: _saveCalculation,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF166534).withValues(alpha: 0.2)
-                        : const Color(0xFFDCFCE7),
-                    border:
-                        Border.all(color: const Color(0xFF15803D), width: 1.5),
-                    borderRadius: BorderRadius.circular(14),
+                onTap: _hasCalculated ? _saveCalculation : null,
+                child: Opacity(
+                  opacity: _hasCalculated ? 1.0 : 0.5,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF166534).withValues(alpha: 0.2)
+                          : const Color(0xFFDCFCE7),
+                      border:
+                          Border.all(color: const Color(0xFF15803D), width: 1.5),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('💾', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Save This Calculation',
+                          style: AppTextStyles.dmSans(
+                            size: 13,
+                            weight: FontWeight.w800,
+                            color: isDark
+                                ? const Color(0xFF4ADE80)
+                                : const Color(0xFF15803D),
+                          ).copyWith(fontFamily: 'Georgia'),
+                        ),
+                      ],
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+           if (_hasCalculated) ...[
+          const SizedBox(height: 20),
+          _buildSectionHeader('Qualification Check', onReset: null),
+          const SizedBox(height: 8),
+
+          // Qualification Card (using HTML rule-card style)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0A2E1A) : const Color(0xFFF0FDF4),
+              border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF15803D).withValues(alpha: 0.5)
+                      : const Color(0xFF86EFAC)),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '📏 28 / 36 Rule · FHA 43% DTI',
+                  style: AppTextStyles.dmSans(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    color: isDark
+                        ? const Color(0xFF4ADE80)
+                        : const Color(0xFF15803D),
+                  ).copyWith(fontFamily: 'Georgia'),
+                ),
+                const SizedBox(height: 10),
+                _buildRatioRow(
+                    'Front-End Ratio (Housing / Income)', frontRatio, 28.0, 35.0),
+                const SizedBox(height: 8),
+                _buildRatioRow(
+                    'Back-End Ratio (All Debts / Income)', backRatio, 36.0, 43.0),
+                const SizedBox(height: 8),
+                _buildRatioRow('FHA Max DTI (43%)', backRatio, 43.0, 50.0,
+                    customGoodText: '✓ Qualifies'),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+          _buildSectionHeader('Monthly Payment Breakdown', onReset: null),
+          const SizedBox(height: 8),
+
+          // Breakdown Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: theme.getBorderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07),
+                  blurRadius: 14,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    style: AppTextStyles.dmSans(
+                      size: 12.5,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context),
+                    ).copyWith(fontFamily: 'Georgia'),
                     children: [
-                      const Text('💾', style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Save This Calculation',
-                        style: AppTextStyles.dmSans(
-                          size: 13,
-                          weight: FontWeight.w800,
-                          color: isDark
-                              ? const Color(0xFF4ADE80)
-                              : const Color(0xFF15803D),
-                        ).copyWith(fontFamily: 'Georgia'),
+                      const TextSpan(text: 'Total Estimated PITI — '),
+                      TextSpan(
+                        text:
+                            '${CurrencyFormatter.format(totalPITI, symbol: '\$').split('.').first}/mo',
+                        style: TextStyle(
+                            color: isDark
+                                ? const Color(0xFF93C5FD)
+                                : const Color(0xFF1B3F72)),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
+                const SizedBox(height: 14),
 
-        const SizedBox(height: 20),
-        _buildSectionHeader('Qualification Check', onReset: null),
-        const SizedBox(height: 8),
-
-        // Qualification Card (using HTML rule-card style)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0A2E1A) : const Color(0xFFF0FDF4),
-            border: Border.all(
-                color: isDark
-                    ? const Color(0xFF15803D).withValues(alpha: 0.5)
-                    : const Color(0xFF86EFAC)),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '📏 28 / 36 Rule · FHA 43% DTI',
-                style: AppTextStyles.dmSans(
-                  size: 12,
-                  weight: FontWeight.w800,
-                  color: isDark
-                      ? const Color(0xFF4ADE80)
-                      : const Color(0xFF15803D),
-                ).copyWith(fontFamily: 'Georgia'),
-              ),
-              const SizedBox(height: 10),
-              _buildRatioRow(
-                  'Front-End Ratio (Housing / Income)', frontRatio, 28.0, 35.0),
-              const SizedBox(height: 8),
-              _buildRatioRow(
-                  'Back-End Ratio (All Debts / Income)', backRatio, 36.0, 43.0),
-              const SizedBox(height: 8),
-              _buildRatioRow('FHA Max DTI (43%)', backRatio, 43.0, 50.0,
-                  customGoodText: '✓ Qualifies'),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-        _buildSectionHeader('Monthly Payment Breakdown', onReset: null),
-        const SizedBox(height: 8),
-
-        // Breakdown Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07),
-                blurRadius: 14,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RichText(
-                text: TextSpan(
-                  style: AppTextStyles.dmSans(
-                    size: 12.5,
-                    weight: FontWeight.w800,
-                    color: theme.getTextColor(context),
-                  ).copyWith(fontFamily: 'Georgia'),
-                  children: [
-                    const TextSpan(text: 'Total Estimated PITI — '),
-                    TextSpan(
-                      text:
-                          '${CurrencyFormatter.format(totalPITI, symbol: '\$').split('.').first}/mo',
-                      style: TextStyle(
-                          color: isDark
-                              ? const Color(0xFF93C5FD)
-                              : const Color(0xFF1B3F72)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // Progress Bar composition
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  height: 8,
-                  width: double.infinity,
-                  child: Row(
-                    children: [
-                      if (piPctInt > 0)
-                        Expanded(
-                          flex: piPctInt,
-                          child: Container(color: const Color(0xFF1B3F72)),
-                        ),
-                      if (taxPctInt > 0)
-                        Expanded(
-                          flex: taxPctInt,
-                          child: Container(color: const Color(0xFFD97706)),
-                        ),
-                      if (insPctInt > 0)
-                        Expanded(
-                          flex: insPctInt,
-                          child: Container(color: const Color(0xFF15803D)),
-                        ),
-                      if (pmiPctInt > 0)
-                        Expanded(
-                          flex: pmiPctInt,
-                          child: Container(color: const Color(0xFFB91C1C)),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // Donut Row
-              Row(
-                children: [
-                  CustomPaint(
-                    size: const Size(92, 92),
-                    painter: _AffordabilityDonutPainter(
-                      piPct: piPct,
-                      taxPct: taxPct,
-                      insPct: insPct,
-                      pmiPct: pmiPct,
-                      isDark: isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
+                // Progress Bar composition
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    height: 8,
+                    width: double.infinity,
+                    child: Row(
                       children: [
-                        _buildDonutLegendRow(
-                          color: const Color(0xFF1B3F72),
-                          label: 'Principal & Interest',
-                          value: '$piPctInt%',
-                        ),
-                        const SizedBox(height: 6),
-                        _buildDonutLegendRow(
-                          color: const Color(0xFFD97706),
-                          label: 'Property Tax',
-                          value: '$taxPctInt%',
-                        ),
-                        const SizedBox(height: 6),
-                        _buildDonutLegendRow(
-                          color: const Color(0xFF15803D),
-                          label: 'Insurance',
-                          value: '$insPctInt%',
-                        ),
-                        if (pmiPctInt > 0) ...[
-                          const SizedBox(height: 6),
-                          _buildDonutLegendRow(
-                            color: const Color(0xFFB91C1C),
-                            label: 'PMI',
-                            value: '$pmiPctInt%',
+                        if (piPctInt > 0)
+                          Expanded(
+                            flex: piPctInt,
+                            child: Container(color: const Color(0xFF1B3F72)),
                           ),
-                        ],
+                        if (taxPctInt > 0)
+                          Expanded(
+                            flex: taxPctInt,
+                            child: Container(color: const Color(0xFFD97706)),
+                          ),
+                        if (insPctInt > 0)
+                          Expanded(
+                            flex: insPctInt,
+                            child: Container(color: const Color(0xFF15803D)),
+                          ),
+                        if (pmiPctInt > 0)
+                          Expanded(
+                            flex: pmiPctInt,
+                            child: Container(color: const Color(0xFFB91C1C)),
+                          ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 14),
 
-              const SizedBox(height: 14),
+                // Donut Row
+                Row(
+                  children: [
+                    CustomPaint(
+                      size: const Size(92, 92),
+                      painter: _AffordabilityDonutPainter(
+                        piPct: piPct,
+                        taxPct: taxPct,
+                        insPct: insPct,
+                        pmiPct: pmiPct,
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _buildDonutLegendRow(
+                            color: const Color(0xFF1B3F72),
+                            label: 'Principal & Interest',
+                            value: '$piPctInt%',
+                          ),
+                          const SizedBox(height: 6),
+                          _buildDonutLegendRow(
+                            color: const Color(0xFFD97706),
+                            label: 'Property Tax',
+                            value: '$taxPctInt%',
+                          ),
+                          const SizedBox(height: 6),
+                          _buildDonutLegendRow(
+                            color: const Color(0xFF15803D),
+                            label: 'Insurance',
+                            value: '$insPctInt%',
+                          ),
+                          if (pmiPctInt > 0) ...[
+                            const SizedBox(height: 6),
+                            _buildDonutLegendRow(
+                              color: const Color(0xFFB91C1C),
+                              label: 'PMI',
+                              value: '$pmiPctInt%',
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
 
-              // Detail List
-              _buildBreakdownItemDetail(
-                  'Principal & Interest',
-                  '$_selectedTerm yr @ ${_rate.toStringAsFixed(2)}%',
-                  piAmt,
-                  piPctInt,
-                  const Color(0xFF1B3F72)),
-              _buildBreakdownItemDetail(
-                  'Property Tax (est.)',
-                  'Avg 1.1% annually',
-                  taxAmt,
-                  taxPctInt,
-                  const Color(0xFFD97706)),
-              _buildBreakdownItemDetail(
-                  'Homeowner\'s Insurance',
-                  'HO-3 policy est.',
-                  insAmt,
-                  insPctInt,
-                  const Color(0xFF15803D)),
-              if (pmi > 0)
+                const SizedBox(height: 14),
+
+                // Detail List
                 _buildBreakdownItemDetail(
-                    'PMI (Private Mortgage Ins.)',
-                    '< 20% down · ~0.5–1.5%',
-                    pmi,
-                    pmiPctInt,
-                    const Color(0xFFB91C1C)),
+                    'Principal & Interest',
+                    '$_calcTerm yr @ ${_calcRate.toStringAsFixed(2)}%',
+                    piAmt,
+                    piPctInt,
+                    const Color(0xFF1B3F72)),
+                _buildBreakdownItemDetail(
+                    'Property Tax (est.)',
+                    'Avg 1.1% annually',
+                    taxAmt,
+                    taxPctInt,
+                    const Color(0xFFD97706)),
+                _buildBreakdownItemDetail(
+                    'Homeowner\'s Insurance',
+                    'HO-3 policy est.',
+                    insAmt,
+                    insPctInt,
+                    const Color(0xFF15803D)),
+                if (pmi > 0)
+                  _buildBreakdownItemDetail(
+                      'PMI (Private Mortgage Ins.)',
+                      '< 20% down · ~0.5–1.5%',
+                      pmi,
+                      pmiPctInt,
+                      const Color(0xFFB91C1C)),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+          _buildSectionHeader('Budget Scenarios', onReset: null),
+          const SizedBox(height: 8),
+
+          // Scenarios Grid
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 1.25,
+            children: [
+              _buildScenarioCard(
+                title: 'Conservative',
+                price: consPrice,
+                subtitle:
+                    '${CurrencyFormatter.format(monthlyIncome * 0.25, symbol: '\$').split('.').first}/mo · 25% DTI',
+                isHighlight: true,
+                highlightColor1: const Color(0xFF0B1D3A),
+                highlightColor2: const Color(0xFF1B3F72),
+              ),
+              _buildScenarioCard(
+                title: 'Stretch Budget',
+                price: stretchPrice,
+                subtitle:
+                    '${CurrencyFormatter.format(monthlyIncome * 0.36, symbol: '\$').split('.').first}/mo · 36% DTI',
+                isHighlight: true,
+                highlightColor1: const Color(0xFFD97706),
+                highlightColor2: const Color(0xFFB45309),
+              ),
+              _buildScenarioCard(
+                title: '15-Yr Fixed @ 6.11%',
+                price: yr15Price,
+                subtitle: 'Higher pmt, less interest',
+                isHighlight: false,
+              ),
+              _buildScenarioCard(
+                title: 'FHA 3.5% Down',
+                price: fhaPrice,
+                subtitle: '580+ FICO · with MIP',
+                isHighlight: false,
+              ),
             ],
           ),
-        ),
-
-        const SizedBox(height: 20),
-        _buildSectionHeader('Budget Scenarios', onReset: null),
-        const SizedBox(height: 8),
-
-        // Scenarios Grid
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 1.25,
-          children: [
-            _buildScenarioCard(
-              title: 'Conservative',
-              price: consPrice,
-              subtitle:
-                  '${CurrencyFormatter.format(monthlyIncome * 0.25, symbol: '\$').split('.').first}/mo · 25% DTI',
-              isHighlight: true,
-              highlightColor1: const Color(0xFF0B1D3A),
-              highlightColor2: const Color(0xFF1B3F72),
-            ),
-            _buildScenarioCard(
-              title: 'Stretch Budget',
-              price: stretchPrice,
-              subtitle:
-                  '${CurrencyFormatter.format(monthlyIncome * 0.36, symbol: '\$').split('.').first}/mo · 36% DTI',
-              isHighlight: true,
-              highlightColor1: const Color(0xFFD97706),
-              highlightColor2: const Color(0xFFB45309),
-            ),
-            _buildScenarioCard(
-              title: '15-Yr Fixed @ 6.11%',
-              price: yr15Price,
-              subtitle: 'Higher pmt, less interest',
-              isHighlight: false,
-            ),
-            _buildScenarioCard(
-              title: 'FHA 3.5% Down',
-              price: fhaPrice,
-              subtitle: '580+ FICO · with MIP',
-              isHighlight: false,
-            ),
-          ],
-        ),
 
         // Saved Calculations History Panel
         const SizedBox(height: 20),
@@ -1037,8 +1175,9 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
           ],
         ),
       ],
-    );
-  }
+    ],
+  );
+}
 
   Widget _buildSectionHeader(String title,
       {VoidCallback? onReset, String? resetLabel}) {
@@ -1119,6 +1258,7 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
     required String hint,
     String? prefix,
     String? suffix,
+    String? errorText,
   }) {
     final theme = widget.theme;
     return Column(
@@ -1137,8 +1277,10 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border:
-                Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: Row(
@@ -1188,7 +1330,18 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
             ],
           ),
         ),
-        if (hint.isNotEmpty) ...[
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(
+              size: 10,
+              color: Colors.red,
+              weight: FontWeight.w500,
+            ),
+          ),
+        ],
+        if (hint.isNotEmpty && errorText == null) ...[
           const SizedBox(height: 3),
           Text(
             hint,

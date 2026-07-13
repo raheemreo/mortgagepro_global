@@ -1,0 +1,548 @@
+USA Files Analysis for Ad Placement:
+
+File: lib/features/usa/screens/usa_arm_risk_factors_screen.dart
+Class: USAArmRiskFactorsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_arm_vs_fixed_breakeven_screen.dart
+Class: USAArmVsFixedBreakevenScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_builder_requirements_screen.dart
+Class: USABuilderRequirementsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_cpi_vs_fed_rate_screen.dart
+Class: USACpiVsFedRateScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_emergency_fund_screen.dart
+Class: USAEmergencyFundScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fed_funds_rate_screen.dart
+Class: USAFedFundsRateScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fedwatch_screen.dart
+Class: USAFedWatchScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fha_203k_alternative_screen.dart
+Class: USAFha203kAlternativeScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fha_203k_rehab_loan_screen.dart
+Class: USAFha203kRehabLoanScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fha_credit_score_requirements_screen.dart
+Class: USAFhaCreditScoreRequirementsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fha_loan_limits_screen.dart
+Class: USAFhaLoanLimitsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fha_mip_cancellation_rules_screen.dart
+Class: USAFhaMipCancellationRulesScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fha_property_standards_screen.dart
+Class: USAFhaPropertyStandardsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fico_better_rate_screen.dart
+Class: USAFicoBetterRateScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_first_time_homebuyer_screen.dart
+Class: USAFirstTimeHomebuyerScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_fred_rate_history_screen.dart
+Class: USAFredRateHistoryScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_hoa_fee_increases_screen.dart
+Class: USAHoaFeeIncreasesScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_hoa_lender_treatment_screen.dart
+Class: USAHoaLenderTreatmentScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_hoa_reserve_fund_health_screen.dart
+Class: USAHoaReserveFundHealthScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_hoa_what_fees_cover_screen.dart
+Class: USAHoaWhatFeesCoverScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_home_maintenance_budget_screen.dart
+Class: USAHomeMaintenanceBudgetScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_home_price_index_screen.dart
+Class: USAHomePriceIndexScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_jumbo_arm_options_screen.dart
+Class: USAJumboArmOptionsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_jumbo_documentation_screen.dart
+Class: USAJumboDocumentationScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_jumbo_top_lenders_screen.dart
+Class: USAJumboTopLendersScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_jumbo_vs_conforming_screen.dart
+Class: USAJumboVsConformingScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_median_home_prices_state_screen.dart
+Class: USAMedianHomePricesStateScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_one_close_vs_two_close_screen.dart
+Class: USAOneCloseVsTwoCloseScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_pmi_bpmi_screen.dart
+Class: USAPmiBpmiScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_pmi_lpmi_screen.dart
+Class: USAPmiLpmiScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_pmi_split_screen.dart
+Class: USAPmiSplitScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_pmi_spmi_screen.dart
+Class: USAPmiSpmiScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_prequal_guide_screen.dart
+Class: USAMortgagePrequalGuideScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_property_tax_by_state_screen.dart
+Class: USAPropertyTaxByStateScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_rate_trends_screen.dart
+Class: USARateTrendsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_refinancing_arm_screen.dart
+Class: USARefinancingArmScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_retirement_withdrawal_screen.dart
+Class: USARetirementWithdrawalScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_sofr_rate_history_screen.dart
+Class: USASofrRateHistoryScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_top_construction_lenders_screen.dart
+Class: USATopConstructionLendersScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_top_lenders_screen.dart
+Class: USATopLendersScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_usda_502_direct_vs_guaranteed_screen.dart
+Class: USAUsda502DirectVsGuaranteedScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_usda_2025_income_limits_screen.dart
+Class: USAUsda2025IncomeLimitsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_usda_eligibility_map_screen.dart
+Class: USAUsdaEligibilityMapScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/screens/usa_usda_rural_development_screen.dart
+Class: USAUsdaRuralDevelopmentScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_usda_streamline_refinance_screen.dart
+Class: USAUsdaStreamlineRefinanceScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_va_benefits_screen.dart
+Class: USAVaBenefitsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_va_coe_screen.dart
+Class: USAVaCoeScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_va_entitlement_limits_screen.dart
+Class: USAVaEntitlementLimitsScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_va_irrrl_refinance_screen.dart
+Class: USAVaIrrrlRefinanceScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_va_surviving_spouse_screen.dart
+Class: USAVaSurvivingSpouseScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/screens/usa_yield_curve_screen.dart
+Class: USAYieldCurveScreen
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_1031_exchange_calc.dart
+Class: USA1031ExchangeCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_affordability_calc.dart
+Class: USAAffordabilityCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_amortization_calc.dart
+Class: USAAmortizationCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_arm_calc.dart
+Class: USAArmCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_auto_loan_calc.dart
+Class: USAAutoLoanCalc
+Has Native Placeholder: True
+Has Banner Widget: True
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_closing_costs_calc.dart
+Class: USAClosingCostsCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_debt_payoff_planner.dart
+Class: USADebtPayoffPlanner
+Has Native Placeholder: False
+Has Banner Widget: True
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_cash_on_cash_calc.dart
+Class: USACashOnCashCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_credit_score_impact_calc.dart
+Class: USACreditScoreImpactCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_construction_loan_calc.dart
+Class: USAConstructionLoanCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_down_payment_calc.dart
+Class: USADownPaymentCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_dti_calc.dart
+Class: USADtiCalc
+Has Native Placeholder: True
+Has Banner Widget: True
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_fha_loan_calc.dart
+Class: USAFhaLoanCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_fix_flip_calc.dart
+Class: USAFixFlipCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_flood_insurance_calc.dart
+Class: USAFloodInsuranceCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_heloc_calc.dart
+Class: USAHelocCalc
+Has Native Placeholder: False
+Has Banner Widget: True
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_hoa_fee_impact_calc.dart
+Class: USAHoaFeeImpactCalc
+Has Native Placeholder: True
+Has Banner Widget: True
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_homeowner_insurance_ho3_calc.dart
+Class: USAHomeownerInsuranceHo3Calc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_home_equity_loan_calc.dart
+Class: USAHomeEquityLoanCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_homeowner_insurance_ho1_calc.dart
+Class: USAHomeownerInsuranceHo1Calc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_homeowner_insurance_calc.dart
+Class: USAHomeownerInsuranceCalc
+Has Native Placeholder: False
+Has Banner Widget: True
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_homeowner_insurance_ho5_calc.dart
+Class: USAHomeownerInsuranceHo5Calc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_homeowner_insurance_ho6_calc.dart
+Class: USAHomeownerInsuranceHo6Calc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_homeowner_insurance_wildfire_calc.dart
+Class: USAHomeownerInsuranceWildfireCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_hud_dpa_programs.dart
+Class: USAHudDpaPrograms
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_homeowner_insurance_hurricane_calc.dart
+Class: USAHomeownerInsuranceHurricaneCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_jumbo_loan_calc.dart
+Class: USAJumboLoanCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_mortgage_calc.dart
+Class: USAMortgageCalcSheet
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_moving_cost_calc.dart
+Class: USAMovingCostCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_piggyback_loan_calc.dart
+Class: USAPiggybackLoanCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_pmi_calc.dart
+Class: USAPmiCalc
+Has Native Placeholder: True
+Has Banner Widget: True
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_property_tax_calc.dart
+Class: USAPropertyTaxCalc
+Has Native Placeholder: True
+Has Banner Widget: True
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_piti_calc.dart
+Class: USAPitiCalc
+Has Native Placeholder: True
+Has Banner Widget: True
+Is Calc Gated: True
+--------------------------------------------------
+File: lib/features/usa/tools/usa_refinance_calc.dart
+Class: USARefinanceCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_rent_vs_buy_calc.dart
+Class: USARentVsBuyCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_rental_yield_calc.dart
+Class: USARentalYieldCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_student_loan_dti_calc.dart
+Class: USAStudentLoanDtiCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_tax_deduction_calc.dart
+Class: USATaxDeductionCalc
+Has Native Placeholder: False
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_usda_loan_calc.dart
+Class: USAUsdaLoanCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------
+File: lib/features/usa/tools/usa_va_loan_calc.dart
+Class: USAVaLoanCalc
+Has Native Placeholder: True
+Has Banner Widget: False
+Is Calc Gated: False
+--------------------------------------------------

@@ -269,41 +269,75 @@ class AnalyticsService {
   // ── Tab Navigation ────────────────────────────────────────────────────────
 
   /// Logs a screen_view event when a country tab is tapped intentionally on the Home screen.
-  Future<void> logCountryTabTap(int index) async {
+  ///
+  /// [countryCode] is the stable internal country code (e.g. 'CA', 'AU') from the
+  /// current tab order. When provided it takes precedence over [index] for deriving
+  /// the screen name, so analytics remain correct after the tab bar is reordered by
+  /// the Default Country Pinning feature.
+  Future<void> logCountryTabTap(int index, {String? countryCode}) async {
     final now = DateTime.now();
-    
+
     // Debounce: skip if same tab tapped within 500ms
     if (_lastTabLogTime != null &&
         now.difference(_lastTabLogTime!) < const Duration(milliseconds: 500)) {
       return;
     }
 
-    final String screenName = switch (index) {
-      0 => 'home_global',
-      1 => 'home_usa',
-      2 => 'home_canada',
-      3 => 'home_uk',
-      4 => 'home_australia',
-      5 => 'home_new_zealand',
-      6 => 'home_europe',
-      7 => 'home_india',
-      _ => 'home_global',
-    };
+    // Prefer code-based resolution when the caller supplies a country code,
+    // because tab indices are no longer stable after pinning reorders tabs.
+    final String screenName;
+    final String pageTitle;
+    if (countryCode != null) {
+      screenName = switch (countryCode) {
+        'GLOBAL' => 'home_global',
+        'USA'    => 'home_usa',
+        'CA'     => 'home_canada',
+        'UK'     => 'home_uk',
+        'AU'     => 'home_australia',
+        'NZ'     => 'home_new_zealand',
+        'EU'     => 'home_europe',
+        'IN'     => 'home_india',
+        _        => 'home_global',
+      };
+      pageTitle = switch (countryCode) {
+        'GLOBAL' => 'Global Home',
+        'USA'    => 'USA Home',
+        'CA'     => 'Canada Home',
+        'UK'     => 'UK Home',
+        'AU'     => 'Australia Home',
+        'NZ'     => 'New Zealand Home',
+        'EU'     => 'Europe Home',
+        'IN'     => 'India Home',
+        _        => 'Global Home',
+      };
+    } else {
+      // Legacy fallback — index-based (static tab order only).
+      screenName = switch (index) {
+        0 => 'home_global',
+        1 => 'home_usa',
+        2 => 'home_canada',
+        3 => 'home_uk',
+        4 => 'home_australia',
+        5 => 'home_new_zealand',
+        6 => 'home_europe',
+        7 => 'home_india',
+        _ => 'home_global',
+      };
+      pageTitle = switch (index) {
+        0 => 'Global Home',
+        1 => 'USA Home',
+        2 => 'Canada Home',
+        3 => 'UK Home',
+        4 => 'Australia Home',
+        5 => 'New Zealand Home',
+        6 => 'Europe Home',
+        7 => 'India Home',
+        _ => 'Global Home',
+      };
+    }
 
     // Skip if same screen_name as last logged
     if (_lastScreenName == screenName) return;
-
-    final String pageTitle = switch (index) {
-      0 => 'Global Home',
-      1 => 'USA Home',
-      2 => 'Canada Home',
-      3 => 'UK Home',
-      4 => 'Australia Home',
-      5 => 'New Zealand Home',
-      6 => 'Europe Home',
-      7 => 'India Home',
-      _ => 'Global Home',
-    };
 
     _lastTabLogTime = now;
 
@@ -453,6 +487,7 @@ class AnalyticsService {
   Future<void> trackTab(int index, String screenName) async {}
   Future<void> logEvent({required String name, Map<String, Object?>? parameters}) async {}
   Future<void> logScreenView(String screenName, [String? screenClass]) async {}
+  Future<void> logRatingEvent(String action) async {}
 }
 
 enum RewardedAdStage {

@@ -21,6 +21,10 @@ class USARetirementWithdrawalScreen extends ConsumerStatefulWidget {
 class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWithdrawalScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   final _withdrawController = TextEditingController(text: '15000');
   final _ageController = TextEditingController(text: '42');
   final _stateTaxController = TextEditingController(text: '5.0');
@@ -56,11 +60,46 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
   }
 
   void _calculate() {
-    final withdraw = double.tryParse(_withdrawController.text) ?? 15000;
-    final age = double.tryParse(_ageController.text) ?? 42;
-    final stateTaxRate = (double.tryParse(_stateTaxController.text) ?? 5.0) / 100;
-    final growth = (double.tryParse(_growthController.text) ?? 7.0) / 100;
-    final years = double.tryParse(_yearsController.text) ?? 25;
+    final errors = <String, String>{};
+    final withdraw = double.tryParse(_withdrawController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final age = double.tryParse(_ageController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final stateTaxRateVal = double.tryParse(_stateTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    final growthVal = double.tryParse(_growthController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
+    final years = double.tryParse(_yearsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final balance = double.tryParse(_balanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (withdraw <= 0) {
+      errors['withdraw'] = 'Enter positive withdrawal';
+    }
+    if (age <= 0) {
+      errors['age'] = 'Enter positive age';
+    }
+    if (stateTaxRateVal < 0) {
+      errors['stateTax'] = 'Enter valid tax rate';
+    }
+    if (growthVal < 0) {
+      errors['growth'] = 'Enter valid growth rate';
+    }
+    if (years <= 0) {
+      errors['years'] = 'Enter positive years';
+    }
+    if (balance <= 0) {
+      errors['balance'] = 'Enter positive balance';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
+    final stateTaxRate = stateTaxRateVal / 100;
+    final growth = growthVal / 100;
 
     double penalty = 0;
     double fedTax = 0;
@@ -94,6 +133,16 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
     final trueCost = penalty + fedTax + stateTax + lostGrowth;
 
     setState(() {
+      _calcSnapshot['withdraw'] = withdraw;
+      _calcSnapshot['age'] = age;
+      _calcSnapshot['stateTax'] = stateTaxRateVal;
+      _calcSnapshot['growth'] = growthVal;
+      _calcSnapshot['years'] = years;
+      _calcSnapshot['balance'] = balance;
+      _calcSnapshot['_currentAcct'] = _currentAcct;
+      _calcSnapshot['_taxBracket'] = _taxBracket;
+      _calcSnapshot['_firstTime'] = _firstTime;
+
       _gross = withdraw;
       _penalty = penalty;
       _fedTax = fedTax;
@@ -104,19 +153,32 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
       _trueCost = trueCost;
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
+    final withdraw = _calcSnapshot['withdraw'] ?? 15000.0;
+    final age = _calcSnapshot['age'] ?? 42.0;
+    final currentAcct = _calcSnapshot['_currentAcct'] ?? 'tira';
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'Retirement Withdrawal',
-      label: '${_currentAcct.toUpperCase()} · ${CurrencyFormatter.compact(_gross)} withdrawal',
+      label: '${currentAcct.toUpperCase()} · ${CurrencyFormatter.compact(withdraw)} withdrawal',
       currencyCode: 'USD',
       inputs: {
-        'withdraw': _gross,
-        'age': double.tryParse(_ageController.text) ?? 42,
+        'withdraw': withdraw,
+        'age': age,
       },
       results: {
         'Net Received': _net,
@@ -137,6 +199,18 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_withdrawController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['withdraw'] ?? 0.0) ||
+      (double.tryParse(_ageController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['age'] ?? 0.0) ||
+      (double.tryParse(_stateTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['stateTax'] ?? 0.0) ||
+      (double.tryParse(_growthController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['growth'] ?? 0.0) ||
+      (double.tryParse(_yearsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['years'] ?? 0.0) ||
+      (double.tryParse(_balanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['balance'] ?? 0.0) ||
+      _currentAcct != (_calcSnapshot['_currentAcct'] ?? 'tira') ||
+      _taxBracket != (_calcSnapshot['_taxBracket'] ?? 0.22) ||
+      _firstTime != (_calcSnapshot['_firstTime'] ?? 'yes')
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -310,9 +384,9 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              Expanded(child: _buildInputField('Withdrawal Amount (\$)', _withdrawController)),
+                              Expanded(child: _buildInputField('Withdrawal Amount (\$)', _withdrawController, errorText: _errors['withdraw'])),
                               const SizedBox(width: 10),
-                              Expanded(child: _buildInputField('Your Age', _ageController)),
+                              Expanded(child: _buildInputField('Your Age', _ageController, errorText: _errors['age'])),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -330,7 +404,7 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
                                 ], (val) => setState(() => _taxBracket = val!)),
                               ),
                               const SizedBox(width: 10),
-                              Expanded(child: _buildInputField('State Tax Rate (%)', _stateTaxController)),
+                              Expanded(child: _buildInputField('State Tax Rate (%)', _stateTaxController, errorText: _errors['stateTax'])),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -343,15 +417,15 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
                                 ], (val) => setState(() => _firstTime = val!)),
                               ),
                               const SizedBox(width: 10),
-                              Expanded(child: _buildInputField('Account Balance (\$)', _balanceController)),
+                              Expanded(child: _buildInputField('Account Balance (\$)', _balanceController, errorText: _errors['balance'])),
                             ],
                           ),
                           const SizedBox(height: 10),
                           Row(
                             children: [
-                              Expanded(child: _buildInputField('Expected Return (%/yr)', _growthController)),
+                              Expanded(child: _buildInputField('Expected Return (%/yr)', _growthController, errorText: _errors['growth'])),
                               const SizedBox(width: 10),
-                              Expanded(child: _buildInputField('Years to Retirement', _yearsController)),
+                              Expanded(child: _buildInputField('Years to Retirement', _yearsController, errorText: _errors['years'])),
                             ],
                           ),
                           const SizedBox(height: 14),
@@ -372,6 +446,36 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
                           // Calculation results
                           if (_calculated) ...[
                             const SizedBox(height: 16),
+                            Container(
+                              key: _resultsKey,
+                              child: Column(
+                                children: [
+                                  if (isDirty) ...[
+                                    Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withValues(alpha: 0.15),
+                                        border: Border.all(color: Colors.amber),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Inputs have changed. Tap "Calculate Withdrawal Impact" to update results.',
+                                              style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
@@ -640,11 +744,12 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? errorText}) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.4)),
+        Text(hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: hasError ? Colors.red : Colors.grey, letterSpacing: 0.4)),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
@@ -654,7 +759,18 @@ class _USARetirementWithdrawalScreenState extends ConsumerState<USARetirementWit
             fillColor: _theme.backgroundColor.withValues(alpha: 0.3),
             filled: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: hasError ? const BorderSide(color: Colors.red, width: 2) : BorderSide.none,
+            ),
           ),
         ),
       ],

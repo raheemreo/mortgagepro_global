@@ -20,6 +20,10 @@ class USAFha203kRehabLoanScreen extends ConsumerStatefulWidget {
 class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   String _loanType = 'limited'; // limited, standard
   final _purchasePriceController = TextEditingController(text: '280000');
   final _rehabBudgetController = TextEditingController(text: '60000');
@@ -61,10 +65,33 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
   }
 
   void _calculate() {
-    final price = double.tryParse(_purchasePriceController.text) ?? 0.0;
-    double rehab = double.tryParse(_rehabBudgetController.text) ?? 0.0;
-    final countyLimit = double.tryParse(_countyLimitController.text) ?? 541287.0;
+    final errors = <String, String>{};
+    final price = double.tryParse(_purchasePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final rehabVal = double.tryParse(_rehabBudgetController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final countyLimit = double.tryParse(_countyLimitController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
 
+    if (price <= 0) {
+      errors['price'] = 'Enter positive purchase price';
+    }
+    if (rehabVal <= 0) {
+      errors['rehab'] = 'Enter positive rehab budget';
+    }
+    if (countyLimit <= 0) {
+      errors['limit'] = 'Enter positive county limit';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
+    double rehab = rehabVal;
     bool capExceeded = false;
     if (_loanType == 'limited' && rehab > 75000) {
       rehab = 75000;
@@ -82,6 +109,12 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
     final withinLimit = finalLoan <= countyLimit;
 
     setState(() {
+      _calcSnapshot['purchasePrice'] = price;
+      _calcSnapshot['rehabBudget'] = rehabVal;
+      _calcSnapshot['countyLimit'] = countyLimit;
+      _calcSnapshot['loanType'] = _loanType;
+      _calcSnapshot['creditScore'] = _selectedScore;
+
       _rehabBudgetActual = rehab;
       _capExceeded = capExceeded;
       _contingency = contingency;
@@ -93,13 +126,25 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
       _withinLimit = withinLimit;
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
-    final price = double.tryParse(_purchasePriceController.text) ?? 0.0;
-    final rehab = double.tryParse(_rehabBudgetController.text) ?? 0.0;
-    final limit = double.tryParse(_countyLimitController.text) ?? 541287.0;
+    final price = _calcSnapshot['purchasePrice'] ?? 280000.0;
+    final rehab = _calcSnapshot['rehabBudget'] ?? 60000.0;
+    final limit = _calcSnapshot['countyLimit'] ?? 541287.0;
+    final loanType = _calcSnapshot['loanType'] ?? 'limited';
+    final creditScore = (_calcSnapshot['creditScore'] ?? 620).toDouble();
 
     final calc = SavedCalc.create(
       country: 'USA',
@@ -107,10 +152,10 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
       label: 'FHA 203k: ${CurrencyFormatter.format(_finalLoan, symbol: '\$').split('.').first}',
       currencyCode: 'USD',
       inputs: {
-        'loanType': _loanType == 'limited' ? 0.0 : 1.0,
+        'loanType': loanType == 'limited' ? 0.0 : 1.0,
         'purchasePrice': price,
         'rehabBudget': rehab,
-        'creditScore': _selectedScore.toDouble(),
+        'creditScore': creditScore,
         'countyLimit': limit,
       },
       results: {
@@ -131,6 +176,14 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_purchasePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['purchasePrice'] ?? 0.0) ||
+      (double.tryParse(_rehabBudgetController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['rehabBudget'] ?? 0.0) ||
+      (double.tryParse(_countyLimitController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['countyLimit'] ?? 0.0) ||
+      _loanType != (_calcSnapshot['loanType'] ?? 'limited') ||
+      _selectedScore != (_calcSnapshot['creditScore'] ?? 620)
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -139,11 +192,12 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Stacked bar chart values
-    final double total = _purchasePriceController.text.isEmpty ? 1.0 : (double.tryParse(_purchasePriceController.text) ?? 0.0) + _rehabBudgetActual + _contingency + _ufmip;
-    final double purchasePct = (double.tryParse(_purchasePriceController.text) ?? 0.0) / total;
-    final double rehabPct = _rehabBudgetActual / total;
-    final double contingencyPct = _contingency / total;
-    final double ufmipPct = _ufmip / total;
+    final purchasePrice = _calculated ? (_calcSnapshot['purchasePrice'] ?? 280000.0) : (double.tryParse(_purchasePriceController.text) ?? 0.0);
+    final double total = purchasePrice + _rehabBudgetActual + _contingency + _ufmip;
+    final double purchasePct = total > 0 ? (purchasePrice / total) : 0.0;
+    final double rehabPct = total > 0 ? (_rehabBudgetActual / total) : 0.0;
+    final double contingencyPct = total > 0 ? (_contingency / total) : 0.0;
+    final double ufmipPct = total > 0 ? (_ufmip / total) : 0.0;
 
     return Scaffold(
       backgroundColor: bgCol,
@@ -395,7 +449,7 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
                       Row(
                         children: [
                           Expanded(
-                            child: _buildInputField('Purchase Price (\$)', _purchasePriceController),
+                            child: _buildInputField('Purchase Price (\$)', _purchasePriceController, errorText: _errors['price']),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -403,6 +457,7 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
                               'Renovation Budget (\$)',
                               _rehabBudgetController,
                               hint: _loanType == 'limited' ? 'Max \$75,000' : 'HUD consultant limit',
+                              errorText: _errors['rehab'],
                             ),
                           ),
                         ],
@@ -429,7 +484,7 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _buildInputField('County FHA Limit (\$)', _countyLimitController, hint: 'National Floor: \$541,287'),
+                            child: _buildInputField('County FHA Limit (\$)', _countyLimitController, hint: 'National Floor: \$541,287', errorText: _errors['limit']),
                           ),
                         ],
                       ),
@@ -457,6 +512,36 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
                 // Calculation Results Card
                 if (_calculated) ...[
                   const SizedBox(height: 12),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Calculate Rehab Loan" to update results.',
+                                    style: AppTextStyles.dmSans(size: 11, color: textCol, weight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -772,16 +857,17 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? hint}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? hint, String? errorText}) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: _theme.getMutedColor(context),
+            color: hasError ? Colors.red : _theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -789,7 +875,7 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
         Container(
           decoration: BoxDecoration(
             color: _theme.getBgColor(context),
-            border: Border.all(color: _theme.getBorderColor(context), width: 1.5),
+            border: Border.all(color: hasError ? Colors.red : _theme.getBorderColor(context), width: hasError ? 2 : 1.5),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
@@ -806,7 +892,7 @@ class _USAFha203kRehabLoanScreenState extends ConsumerState<USAFha203kRehabLoanS
             ),
           ),
         ),
-        if (hint != null) ...[
+        if (hint != null && !hasError) ...[
           const SizedBox(height: 3),
           Text(hint, style: AppTextStyles.dmSans(size: 8.5, color: _theme.getMutedColor(context))),
         ],

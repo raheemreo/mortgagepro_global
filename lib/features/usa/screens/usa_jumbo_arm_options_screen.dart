@@ -22,6 +22,10 @@ class USAJumboArmOptionsScreen extends ConsumerStatefulWidget {
 class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   // Controllers
   final _loanAmtController = TextEditingController(text: '1200000');
   final _armRateController = TextEditingController(text: '6.38');
@@ -34,14 +38,7 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
   String _selectedArmLabel = '7/1 ARM';
   bool _calculated = false;
 
-  // Outputs
-  double _armPmt = 0;
-  double _fixedPmt = 0;
-  double _worstPmt = 0;
-  double _monthlySave = 0;
-  double _totalSave = 0;
-  double _rateSpread = 0;
-  int _breakEvenYr = 9;
+
 
   @override
   void initState() {
@@ -63,8 +60,6 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
                   ? '10/1 ARM'
                   : '3/1 ARM';
       _calculate();
-    } else {
-      _calculate();
     }
   }
 
@@ -85,15 +80,37 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
       _armRateController.text = defaultRate.toStringAsFixed(2);
       _rateCapController.text = (defaultRate + 5.0).toStringAsFixed(2);
     });
-    _calculate();
   }
 
   void _calculate() {
-    final loan = double.tryParse(_loanAmtController.text) ?? 0.0;
-    final ar = (double.tryParse(_armRateController.text) ?? 0.0) / 100;
-    final fr = (double.tryParse(_fixedRateController.text) ?? 0.0) / 100;
-    final cap = (double.tryParse(_rateCapController.text) ?? 0.0) / 100;
-    final horizon = int.tryParse(_horizonController.text) ?? 7;
+    final errors = <String, String>{};
+    final loan = double.tryParse(_loanAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final arRate = double.tryParse(_armRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final frRate = double.tryParse(_fixedRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final capRate = double.tryParse(_rateCapController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final horizonVal = double.tryParse(_horizonController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (loan <= 0) errors['loan'] = 'Enter positive loan amount';
+    if (arRate <= 0) errors['armRate'] = 'Enter positive rate';
+    if (frRate <= 0) errors['fixedRate'] = 'Enter positive rate';
+    if (capRate <= 0) errors['rateCap'] = 'Enter positive rate';
+    if (horizonVal <= 0) errors['horizon'] = 'Enter positive years';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) {
+      setState(() {
+        _calculated = false;
+      });
+      return;
+    }
+
+    final ar = arRate / 100;
+    final fr = frRate / 100;
+    final cap = capRate / 100;
+    final horizon = horizonVal.toInt();
     final months = _selectedTerm * 12;
 
     final armPmtVal = MortgageMath.monthlyPayment(principal: loan, annualRatePercent: ar * 100, termYears: _selectedTerm);
@@ -109,29 +126,56 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
     final breakEvenVal = armFixedYrs + ((monthlySave * armFixedYrs * 12) / (worstPmtVal - fixedPmtVal == 0 ? 1 : worstPmtVal - fixedPmtVal)) / 12;
 
     setState(() {
-      _armPmt = armPmtVal;
-      _fixedPmt = fixedPmtVal;
-      _worstPmt = worstPmtVal;
-      _monthlySave = monthlySave;
-      _totalSave = totalSave;
-      _rateSpread = spreadPercent;
-      _breakEvenYr = breakEvenVal.isInfinite || breakEvenVal.isNaN ? 30 : breakEvenVal.round().clamp(1, 30);
+      _calcSnapshot['loanAmt'] = loan;
+      _calcSnapshot['armRate'] = arRate;
+      _calcSnapshot['fixedRate'] = frRate;
+      _calcSnapshot['rateCap'] = capRate;
+      _calcSnapshot['horizon'] = horizonVal;
+      _calcSnapshot['term'] = _selectedTerm;
+      _calcSnapshot['armYrs'] = _selectedArmYrs;
+      _calcSnapshot['armLabel'] = _selectedArmLabel;
+      _calcSnapshot['armPmt'] = armPmtVal;
+      _calcSnapshot['fixedPmt'] = fixedPmtVal;
+      _calcSnapshot['worstPmt'] = worstPmtVal;
+      _calcSnapshot['monthlySave'] = monthlySave;
+      _calcSnapshot['totalSave'] = totalSave;
+      _calcSnapshot['rateSpread'] = spreadPercent;
+      _calcSnapshot['breakEvenYr'] = breakEvenVal.isInfinite || breakEvenVal.isNaN ? 30 : breakEvenVal.round().clamp(1, 30);
+
       _calculated = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
-    final loan = double.tryParse(_loanAmtController.text) ?? 0.0;
-    final ar = double.tryParse(_armRateController.text) ?? 0.0;
-    final fr = double.tryParse(_fixedRateController.text) ?? 0.0;
-    final cap = double.tryParse(_rateCapController.text) ?? 0.0;
-    final horizon = double.tryParse(_horizonController.text) ?? 7.0;
+
+    final loan = _calcSnapshot['loanAmt'] ?? 1200000.0;
+    final ar = _calcSnapshot['armRate'] ?? 6.38;
+    final fr = _calcSnapshot['fixedRate'] ?? 7.04;
+    final cap = _calcSnapshot['rateCap'] ?? 11.38;
+    final horizon = _calcSnapshot['horizon'] ?? 7.0;
+    final term = _calcSnapshot['term'] ?? 30;
+    final armYrs = _calcSnapshot['armYrs'] ?? 7;
+    final armLabel = _calcSnapshot['armLabel'] ?? '7/1 ARM';
+
+    final snapMonthlySave = _calcSnapshot['monthlySave'] ?? 0.0;
+    final snapTotalSave = _calcSnapshot['totalSave'] ?? 0.0;
+    final snapWorstPmt = _calcSnapshot['worstPmt'] ?? 0.0;
 
     final calc = SavedCalc.create(
       country: 'USA',
       calcType: 'Jumbo ARM Options',
-      label: 'ARM Savings: ${CurrencyFormatter.format(_monthlySave, symbol: '\$').split('.').first}/mo ($_selectedArmLabel)',
+      label: 'ARM Savings: ${CurrencyFormatter.format(snapMonthlySave, symbol: '\$').split('.').first}/mo ($armLabel)',
       currencyCode: 'USD',
       inputs: {
         'loanAmt': loan,
@@ -139,13 +183,13 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
         'fixedRate': fr,
         'rateCap': cap,
         'horizon': horizon,
-        'term': _selectedTerm.toDouble(),
-        'armYrs': _selectedArmYrs.toDouble(),
+        'term': term.toDouble(),
+        'armYrs': armYrs.toDouble(),
       },
       results: {
-        'MonthlySave': _monthlySave,
-        'TotalSave': _totalSave,
-        'WorstCasePmt': _worstPmt,
+        'MonthlySave': snapMonthlySave,
+        'TotalSave': snapTotalSave,
+        'WorstCasePmt': snapWorstPmt,
       },
     );
 
@@ -160,6 +204,16 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
 
   @override
   Widget build(BuildContext context) {
+    final isDirty = _calculated && (
+      (double.tryParse(_loanAmtController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['loanAmt'] ?? 0.0) ||
+      (double.tryParse(_armRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['armRate'] ?? 0.0) ||
+      (double.tryParse(_fixedRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['fixedRate'] ?? 0.0) ||
+      (double.tryParse(_rateCapController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['rateCap'] ?? 0.0) ||
+      (double.tryParse(_horizonController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot['horizon'] ?? 0.0) ||
+      _selectedTerm != (_calcSnapshot['term'] ?? 30) ||
+      _selectedArmYrs != (_calcSnapshot['armYrs'] ?? 7)
+    );
+
     final cardBg = _theme.getCardColor(context);
     final textCol = _theme.getTextColor(context);
     final mutedCol = _theme.getMutedColor(context);
@@ -167,10 +221,23 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
     final bgCol = _theme.getBgColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final arStr = _armRateController.text;
-    final frStr = _fixedRateController.text;
-    final capStr = _rateCapController.text;
-    final horizonStr = _horizonController.text;
+    final snapArmPmt = _calcSnapshot['armPmt'] ?? 0.0;
+    final snapFixedPmt = _calcSnapshot['fixedPmt'] ?? 0.0;
+    final snapWorstPmt = _calcSnapshot['worstPmt'] ?? 0.0;
+    final snapMonthlySave = _calcSnapshot['monthlySave'] ?? 0.0;
+    final snapTotalSave = _calcSnapshot['totalSave'] ?? 0.0;
+    final snapRateSpread = _calcSnapshot['rateSpread'] ?? 0.0;
+    final snapBreakEvenYr = _calcSnapshot['breakEvenYr'] ?? 30;
+    final snapArmLabel = _calcSnapshot['armLabel'] ?? '7/1 ARM';
+    final snapArmRate = _calcSnapshot['armRate'] ?? 0.0;
+    final snapFixedRate = _calcSnapshot['fixedRate'] ?? 0.0;
+    final snapRateCap = _calcSnapshot['rateCap'] ?? 0.0;
+    final snapHorizon = _calcSnapshot['horizon'] ?? 0.0;
+
+    final arStr = snapArmRate.toStringAsFixed(2);
+    final frStr = snapFixedRate.toStringAsFixed(2);
+    final capStr = snapRateCap.toStringAsFixed(2);
+    final horizonStr = snapHorizon.toStringAsFixed(0);
 
     return Scaffold(
       backgroundColor: bgCol,
@@ -293,23 +360,23 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
                     children: [
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('Loan Amount (\$)', _loanAmtController)),
+                          Expanded(child: _buildInputField('Loan Amount (\$)', _loanAmtController, errorText: _errors['loan'])),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('ARM Initial Rate (%)', _armRateController)),
+                          Expanded(child: _buildInputField('ARM Initial Rate (%)', _armRateController, errorText: _errors['armRate'])),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('Fixed 30-Yr Rate (%)', _fixedRateController)),
+                          Expanded(child: _buildInputField('Fixed 30-Yr Rate (%)', _fixedRateController, errorText: _errors['fixedRate'])),
                           const SizedBox(width: 10),
-                          Expanded(child: _buildInputField('Expected Rate Cap (%)', _rateCapController, hint: 'Typical: initial + 5%')),
+                          Expanded(child: _buildInputField('Expected Rate Cap (%)', _rateCapController, hint: 'Typical: initial + 5%', errorText: _errors['rateCap'])),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: _buildInputField('Plans to Sell/Refi (Yrs)', _horizonController)),
+                          Expanded(child: _buildInputField('Plans to Sell/Refi (Yrs)', _horizonController, errorText: _errors['horizon'])),
                           const SizedBox(width: 10),
                           Expanded(
                             child: _buildDropdownField<int>(
@@ -323,7 +390,6 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
                               onChanged: (val) {
                                 if (val != null) {
                                   setState(() => _selectedTerm = val);
-                                  _calculate();
                                 }
                               },
                             ),
@@ -351,257 +417,306 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
                   ),
                 ),
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('ARM vs Fixed Comparison'),
-
-                // Result Hero Card
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0B1D3A), Color(0xFF334155)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                // Results Hero Panel
+                if (!_calculated) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    borderRadius: BorderRadius.circular(18),
+                    child: Column(
+                      children: [
+                        const Text('🔄', style: TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'View ARM Savings Results',
+                          style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Enter your loan details above, then tap "Calculate ARM Savings" to view details.',
+                          style: AppTextStyles.dmSans(size: 10.5, color: mutedCol),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('SIDE-BY-SIDE PAYMENT ANALYSIS',
-                          style: AppTextStyles.dmSans(
-                              size: 8.5,
-                              color: Colors.white54,
-                              weight: FontWeight.w700,
-                              letterSpacing: 0.8)),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('ARM Monthly Payment', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
-                                const SizedBox(height: 3),
-                                RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: CurrencyFormatter.format(_armPmt, symbol: '\$').split('.').first,
-                                        style: AppTextStyles.playfair(size: 26, color: const Color(0xFF86EFAC), weight: FontWeight.w800),
-                                      ),
-                                      TextSpan(text: ' /mo', style: AppTextStyles.dmSans(size: 11, color: Colors.white60)),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text('$_selectedArmLabel @ $arStr%', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white38)),
-                              ],
+                ] else ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      children: [
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              border: Border.all(color: Colors.amber),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Row(
                               children: [
-                                Text('Fixed 30-Yr Payment', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
-                                const SizedBox(height: 3),
-                                RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: CurrencyFormatter.format(_fixedPmt, symbol: '\$').split('.').first,
-                                        style: AppTextStyles.playfair(size: 26, color: Colors.white, weight: FontWeight.w800),
-                                      ),
-                                      TextSpan(text: ' /mo', style: AppTextStyles.dmSans(size: 11, color: Colors.white60)),
-                                    ],
+                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Tap "Calculate ARM Savings" to update results.',
+                                    style: TextStyle(fontSize: 11, color: textCol, fontWeight: FontWeight.w600),
                                   ),
                                 ),
-                                const SizedBox(height: 3),
-                                Text('30-Yr Fixed @ $frStr%', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white38)),
                               ],
                             ),
                           ),
                         ],
+                      ],
+                    ),
+                  ),
+                  _buildSectionHeader('ARM vs Fixed Comparison'),
+
+                  // Result Hero Card
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0B1D3A), Color(0xFF334155)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      const SizedBox(height: 14),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD97706).withValues(alpha: 0.2),
-                          border: Border.all(color: const Color(0xFFFCD34D).withValues(alpha: 0.4)),
-                          borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('SIDE-BY-SIDE PAYMENT ANALYSIS',
+                            style: AppTextStyles.dmSans(
+                                size: 8.5,
+                                color: Colors.white54,
+                                weight: FontWeight.w700,
+                                letterSpacing: 0.8)),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('ARM Monthly Payment', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
+                                  const SizedBox(height: 3),
+                                  RichText(
+                                    text: TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: CurrencyFormatter.format(snapArmPmt, symbol: '\$').split('.').first,
+                                          style: AppTextStyles.playfair(size: 26, color: const Color(0xFF86EFAC), weight: FontWeight.w800),
+                                        ),
+                                        TextSpan(text: ' /mo', style: AppTextStyles.dmSans(size: 11, color: Colors.white60)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text('$snapArmLabel @ $arStr%', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white38)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Fixed 30-Yr Payment', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
+                                  const SizedBox(height: 3),
+                                  RichText(
+                                    text: TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: CurrencyFormatter.format(snapFixedPmt, symbol: '\$').split('.').first,
+                                          style: AppTextStyles.playfair(size: 26, color: Colors.white, weight: FontWeight.w800),
+                                        ),
+                                        TextSpan(text: ' /mo', style: AppTextStyles.dmSans(size: 11, color: Colors.white60)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text('30-Yr Fixed @ $frStr%', style: AppTextStyles.dmSans(size: 8.5, color: Colors.white38)),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          '💚 Save ${CurrencyFormatter.format(_monthlySave, symbol: '\$').split('.').first}/mo · ${CurrencyFormatter.format(_totalSave, symbol: '\$').split('.').first} over $horizonStr yrs',
-                          style: AppTextStyles.dmSans(size: 11, color: const Color(0xFFFCD34D), weight: FontWeight.w700),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      GestureDetector(
-                        onTap: _saveCalc,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        const SizedBox(height: 14),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.13),
-                            border: Border.all(color: Colors.white24),
-                            borderRadius: BorderRadius.circular(10),
+                            color: const Color(0xFFD97706).withValues(alpha: 0.2),
+                            border: Border.all(color: const Color(0xFFFCD34D).withValues(alpha: 0.4)),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          alignment: Alignment.center,
                           child: Text(
-                            '🔖 Save Calculation',
-                            style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w700),
+                            '💚 Save ${CurrencyFormatter.format(snapMonthlySave, symbol: '\$').split('.').first}/mo · ${CurrencyFormatter.format(snapTotalSave, symbol: '\$').split('.').first} over $horizonStr yrs',
+                            style: AppTextStyles.dmSans(size: 11, color: const Color(0xFFFCD34D), weight: FontWeight.w700),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 14),
+                        GestureDetector(
+                          onTap: _saveCalc,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.13),
+                              border: Border.all(color: Colors.white24),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '🔖 Save Calculation',
+                              style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('Monthly Payment Through Loan Life'),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Monthly Payment Through Loan Life'),
 
-                // Phase Chart Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(18),
+                  // Phase Chart Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('📊 Monthly Payment Through Loan Life',
+                            style: AppTextStyles.playfair(size: 12, color: textCol, weight: FontWeight.w800)),
+                        Text('Fixed vs ARM across all rate scenarios',
+                            style: AppTextStyles.dmSans(size: 9.5, color: mutedCol)),
+                        const SizedBox(height: 16),
+                        
+                        // Custom Graph Bars
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildChartCol('ARM Fixed', snapArmPmt, const Color(0xFF15803D)),
+                            _buildChartCol('Adj+1', snapArmPmt * 1.015, const Color(0xFFD97706)),
+                            _buildChartCol('Adj+2', snapArmPmt * 1.03, const Color(0xFFB45309)),
+                            _buildChartCol('Fixed', snapFixedPmt, const Color(0xFF0B1D3A)),
+                            _buildChartCol('Cap', snapWorstPmt, const Color(0xFFB91C1C)),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildChartLegendItem('Fixed Rate', const Color(0xFF0B1D3A)),
+                        _buildChartLegendItem('ARM (Initial Fixed)', const Color(0xFF15803D)),
+                        _buildChartLegendItem('ARM (After Adjustment)', const Color(0xFFD97706)),
+                        _buildChartLegendItem('ARM (Worst Case Cap)', const Color(0xFFB91C1C)),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Key Figures'),
+
+                  // Breakdown Grid
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.45,
+                    mainAxisSpacing: 9,
+                    crossAxisSpacing: 9,
                     children: [
-                      Text('📊 Monthly Payment Through Loan Life',
-                          style: AppTextStyles.playfair(size: 12, color: textCol, weight: FontWeight.w800)),
-                      Text('Fixed vs ARM across all rate scenarios',
-                          style: AppTextStyles.dmSans(size: 9.5, color: mutedCol)),
-                      const SizedBox(height: 16),
-                      
-                      // Custom Graph Bars
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildChartCol('ARM Fixed', _armPmt, const Color(0xFF15803D)),
-                          _buildChartCol('Adj+1', _armPmt * 1.015, const Color(0xFFD97706)),
-                          _buildChartCol('Adj+2', _armPmt * 1.03, const Color(0xFFB45309)),
-                          _buildChartCol('Fixed', _fixedPmt, const Color(0xFF0B1D3A)),
-                          _buildChartCol('Cap', _worstPmt, const Color(0xFFB91C1C)),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildChartLegendItem('Fixed Rate', const Color(0xFF0B1D3A)),
-                      _buildChartLegendItem('ARM (Initial Fixed)', const Color(0xFF15803D)),
-                      _buildChartLegendItem('ARM (After Adjustment)', const Color(0xFFD97706)),
-                      _buildChartLegendItem('ARM (Worst Case Cap)', const Color(0xFFB91C1C)),
+                      _buildBkCard('💰', 'Monthly Savings', CurrencyFormatter.format(snapMonthlySave, symbol: '\$').split('.').first, 'ARM vs 30-yr fixed'),
+                      _buildBkCard('📅', 'Total Savings', CurrencyFormatter.format(snapTotalSave, symbol: '\$').split('.').first, 'Over $horizonStr years'),
+                      _buildBkCard('📈', 'Rate Spread', '${snapRateSpread.toStringAsFixed(2)}%', 'ARM vs 30-yr fixed'),
+                      _buildBkCard('⚠️', 'Worst-Case Pmt', CurrencyFormatter.format(snapWorstPmt, symbol: '\$').split('.').first, 'At $capStr% cap'),
+                      _buildBkCard('🎯', 'Break-Even Point', 'Yr $snapBreakEvenYr', 'ARM costs more after'),
+                      _buildBkCard('🔒', 'Adjustment Caps', '2/2/5', 'Annual/Period/Lifetime'),
                     ],
                   ),
-                ),
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('Key Figures'),
-
-                // Breakdown Grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.45,
-                  mainAxisSpacing: 9,
-                  crossAxisSpacing: 9,
-                  children: [
-                    _buildBkCard('💰', 'Monthly Savings', CurrencyFormatter.format(_monthlySave, symbol: '\$').split('.').first, 'ARM vs 30-yr fixed'),
-                    _buildBkCard('📅', 'Total Savings', CurrencyFormatter.format(_totalSave, symbol: '\$').split('.').first, 'Over $horizonStr years'),
-                    _buildBkCard('📈', 'Rate Spread', '${_rateSpread.toStringAsFixed(2)}%', 'ARM vs 30-yr fixed'),
-                    _buildBkCard('⚠️', 'Worst-Case Pmt', CurrencyFormatter.format(_worstPmt, symbol: '\$').split('.').first, 'At $capStr% cap'),
-                    _buildBkCard('🎯', 'Break-Even Point', 'Yr $_breakEvenYr', 'ARM costs more after'),
-                    _buildBkCard('🔒', 'Adjustment Caps', '2/2/5', 'Annual/Period/Lifetime'),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-                _buildSectionHeader('Rate Lifecycle Scenario'),
-
-                // Lifecycle Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(18),
+                  const SizedBox(height: 20),
+                  // Risk checklist card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('⚖️ Jumbo ARM Risk Profile Check',
+                            style: AppTextStyles.playfair(size: 12, color: textCol, weight: FontWeight.w800)),
+                        const SizedBox(height: 12),
+                        _buildRiskRow('Worst-Case Payment Increase', '+${((snapWorstPmt - snapArmPmt) / (snapArmPmt == 0 ? 1 : snapArmPmt) * 100).toStringAsFixed(0)}%'),
+                        _buildRiskRow('Worst-Case Monthly Add', CurrencyFormatter.format(snapWorstPmt - snapArmPmt, symbol: '\$').split('.').first),
+                        _buildRiskRow('Initial Fixed Period', '$snapArmLabel'),
+                        _buildRiskRow('Maximum Interest Rate Cap', '$capStr%'),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('📅 $_selectedArmLabel Rate Lifecycle (Moderate Rate Rise)',
-                          style: AppTextStyles.playfair(size: 12, color: textCol, weight: FontWeight.w800)),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(child: _buildLifecycleBlock('Yr 1–$_selectedArmYrs', '$arStr%', 'Fixed', const Color(0xFF15803D))),
-                          Expanded(child: _buildLifecycleBlock('Yr ${_selectedArmYrs + 1}', '${(double.parse(arStr) + 2.0).toStringAsFixed(2)}%', '+2% cap', const Color(0xFFD97706))),
-                          Expanded(child: _buildLifecycleBlock('Yr ${_selectedArmYrs + 2}', '${(double.parse(arStr) + 4.0).toStringAsFixed(2)}%', '+2% cap', const Color(0xFFB45309))),
-                          Expanded(child: _buildLifecycleBlock('Yr ${_selectedArmYrs + 3}+', '$capStr%', 'Lifetime Cap', const Color(0xFFB91C1C))),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text('Caps shown are 2/2/5 (2% per adjustment, 2% first adjust, 5% lifetime). Index: SOFR + margin. Rates illustrative based on current SOFR ~5.30%.',
-                          style: AppTextStyles.dmSans(size: 8.5, color: mutedCol)),
-                    ],
-                  ),
-                ),
 
-                const SizedBox(height: 20),
-                _buildSectionHeader('ARM Risk Parameters', badgeText: '2025 Data'),
+                  const SizedBox(height: 20),
+                  // Cap Structure Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('⚠️ Jumbo ARM Cap Structure (Standard 2025)',
+                            style: AppTextStyles.playfair(size: 12, color: const Color(0xFF92400E), weight: FontWeight.w800)),
+                        const SizedBox(height: 8),
+                        _buildRiskRow('Initial Cap (First Adjustment)', '+2%'),
+                        _buildRiskRow('Subsequent Adjustment Cap', '+2% per year'),
+                        _buildRiskRow('Lifetime Cap Over Initial Rate', '+5%'),
+                        _buildRiskRow('Index (Most Lenders)', 'SOFR'),
+                        _buildRiskRow('Current SOFR Rate (Jun 2025)', '5.31%'),
+                        _buildRiskRow('Typical Margin', '2.25%–2.75%'),
+                        _buildRiskRow('Negative Amortization', 'None (Standard)', isGreenValue: true),
+                      ],
+                    ),
+                  ),
 
-                // Risk parameters
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)]),
-                    border: Border.all(color: const Color(0xFFF59E0B)),
-                    borderRadius: BorderRadius.circular(15),
+                  const SizedBox(height: 20),
+                  // Benefits Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF0B1D3A), Color(0xFF334155)]),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('✅ Who Benefits Most from a Jumbo ARM?',
+                            style: AppTextStyles.playfair(size: 12, color: const Color(0xFFFCD34D), weight: FontWeight.w800)),
+                        const SizedBox(height: 12),
+                        _buildBenefitItem('🏡', 'Short-Term Owners:', 'Planning to sell or move within 5–10 years. You leave before rates adjust.'),
+                        _buildBenefitItem('💼', 'High-Income Earners:', 'Income growth outpaces potential rate increases. Payment increase is manageable.'),
+                        _buildBenefitItem('📈', 'Rate-Drop Believers:', 'Expect Fed to cut rates before your fixed period ends. ARM starts lower and may fall further.'),
+                        _buildBenefitItem('🔄', 'Refi-Savvy Borrowers:', 'Plan to refinance into a fixed rate if rates drop before adjustment kicks in.'),
+                        _buildBenefitItem('⚠️', 'Caution:', 'If rates rise to cap, a \$1.2M ARM can cost \$3,700+/mo more than today. Ensure reserves cover worst-case scenario.'),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('⚠️ Jumbo ARM Cap Structure (Standard 2025)',
-                          style: AppTextStyles.playfair(size: 12, color: const Color(0xFF92400E), weight: FontWeight.w800)),
-                      const SizedBox(height: 8),
-                      _buildRiskRow('Initial Cap (First Adjustment)', '+2%'),
-                      _buildRiskRow('Subsequent Adjustment Cap', '+2% per year'),
-                      _buildRiskRow('Lifetime Cap Over Initial Rate', '+5%'),
-                      _buildRiskRow('Index (Most Lenders)', 'SOFR'),
-                      _buildRiskRow('Current SOFR Rate (Jun 2025)', '5.31%'),
-                      _buildRiskRow('Typical Margin', '2.25%–2.75%'),
-                      _buildRiskRow('Negative Amortization', 'None (Standard)', isGreenValue: true),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-                // Benefits Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF0B1D3A), Color(0xFF334155)]),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('✅ Who Benefits Most from a Jumbo ARM?',
-                          style: AppTextStyles.playfair(size: 12, color: const Color(0xFFFCD34D), weight: FontWeight.w800)),
-                      const SizedBox(height: 12),
-                      _buildBenefitItem('🏡', 'Short-Term Owners:', 'Planning to sell or move within 5–10 years. You leave before rates adjust.'),
-                      _buildBenefitItem('💼', 'High-Income Earners:', 'Income growth outpaces potential rate increases. Payment increase is manageable.'),
-                      _buildBenefitItem('📈', 'Rate-Drop Believers:', 'Expect Fed to cut rates before your fixed period ends. ARM starts lower and may fall further.'),
-                      _buildBenefitItem('🔄', 'Refi-Savvy Borrowers:', 'Plan to refinance into a fixed rate if rates drop before adjustment kicks in.'),
-                      _buildBenefitItem('⚠️', 'Caution:', 'If rates rise to cap, a \$1.2M ARM can cost \$3,700+/mo more than today. Ensure reserves cover worst-case scenario.'),
-                    ],
-                  ),
-                ),
+                ],
               ]),
             ),
           ),
@@ -636,17 +751,18 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? hint}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? hint, String? errorText}) {
     const theme = _theme;
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          hasError ? '${label.toUpperCase()} - $errorText' : label.toUpperCase(),
           style: AppTextStyles.dmSans(
             size: 8.5,
             weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
+            color: hasError ? Colors.red : theme.getMutedColor(context),
             letterSpacing: 0.5,
           ),
         ),
@@ -654,12 +770,16 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
         Container(
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.dmSans(
               size: 13,
               weight: FontWeight.w800,
@@ -671,7 +791,7 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
             ),
           ),
         ),
-        if (hint != null) ...[
+        if (hint != null && !hasError) ...[
           const SizedBox(height: 3),
           Text(hint, style: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context))),
         ],
@@ -727,8 +847,10 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
   }
 
   Widget _buildChartCol(String phase, double payment, Color color) {
+    final double snapFixedPmt = _calcSnapshot['fixedPmt'] ?? 0.0;
+    final double snapWorstPmt = _calcSnapshot['worstPmt'] ?? 0.0;
     // scale max height = 110
-    final double maxVal = max(_fixedPmt, _worstPmt) * 1.05;
+    final double maxVal = max<double>(snapFixedPmt, snapWorstPmt) * 1.05;
     final double h = max(10.0, (payment / (maxVal == 0 ? 1.0 : maxVal)) * 100);
     return Column(
       children: [
@@ -797,22 +919,7 @@ class _USAJumboArmOptionsScreenState extends ConsumerState<USAJumboArmOptionsScr
     );
   }
 
-  Widget _buildLifecycleBlock(String yrs, String rate, String lbl, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
-      decoration: BoxDecoration(color: color),
-      alignment: Alignment.center,
-      child: Column(
-        children: [
-          Text(yrs, style: AppTextStyles.dmSans(size: 8, color: Colors.white70)),
-          const SizedBox(height: 2),
-          Text(rate, style: AppTextStyles.playfair(size: 12.5, color: Colors.white, weight: FontWeight.w800)),
-          const SizedBox(height: 2),
-          Text(lbl, style: AppTextStyles.dmSans(size: 7.5, color: Colors.white60)),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildRiskRow(String label, String value, {bool isGreenValue = false}) {
     return Padding(

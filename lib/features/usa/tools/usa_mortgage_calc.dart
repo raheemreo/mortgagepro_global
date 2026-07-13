@@ -413,26 +413,62 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
   double _rate = 6.82;
   int _selectedTerm = 30;
 
+  final _resultsKey = GlobalKey();
+  bool _showResults = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+
+  void _calculate() {
+    setState(() {
+      _calcSnapshot['_homePrice'] = _homePrice;
+      _calcSnapshot['_downPct'] = _downPct;
+      _calcSnapshot['_rate'] = _rate;
+      _calcSnapshot['_selectedTerm'] = _selectedTerm;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final calcHomePrice = _showResults ? (_calcSnapshot['_homePrice'] ?? _homePrice) : _homePrice;
+    final calcDownPct = _showResults ? (_calcSnapshot['_downPct'] ?? _downPct) : _downPct;
+    final calcRate = _showResults ? (_calcSnapshot['_rate'] ?? _rate) : _rate;
+    final calcSelectedTerm = _showResults ? (_calcSnapshot['_selectedTerm'] ?? _selectedTerm) : _selectedTerm;
+
+    final isDirty = _showResults && (
+      _homePrice != _calcSnapshot['_homePrice'] ||
+      _downPct != _calcSnapshot['_downPct'] ||
+      _rate != _calcSnapshot['_rate'] ||
+      _selectedTerm != _calcSnapshot['_selectedTerm']
+    );
+
     // Calculations
-    final downAmt = _homePrice * _downPct / 100;
-    final loanAmt = _homePrice - downAmt;
-    final ltv = _homePrice > 0 ? (loanAmt / _homePrice * 100) : 0.0;
+    final downAmt = calcHomePrice * calcDownPct / 100;
+    final loanAmt = calcHomePrice - downAmt;
+    final ltv = calcHomePrice > 0 ? (loanAmt / calcHomePrice * 100) : 0.0;
 
     final monthlyPI = MortgageMath.monthlyPayment(
       principal: loanAmt,
-      annualRatePercent: _rate,
-      termYears: _selectedTerm,
+      annualRatePercent: calcRate,
+      termYears: calcSelectedTerm,
     );
 
     // Payments for active chips
     final pmt30 = MortgageMath.monthlyPayment(principal: loanAmt, annualRatePercent: 6.82, termYears: 30);
     final pmt15 = MortgageMath.monthlyPayment(principal: loanAmt, annualRatePercent: 6.11, termYears: 15);
-    final pmt10 = MortgageMath.monthlyPayment(principal: loanAmt, annualRatePercent: _rate, termYears: 10);
+    final pmt10 = MortgageMath.monthlyPayment(principal: loanAmt, annualRatePercent: calcRate, termYears: 10);
 
     // Comparison grid interest amounts
     final int10 = (pmt10 * 120) - loanAmt;
@@ -440,7 +476,7 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
     final int15 = (pmt15 * 180) - loanAmt;
 
     // Metrics
-    final totalInterest = (monthlyPI * _selectedTerm * 12) - loanAmt;
+    final totalInterest = (monthlyPI * calcSelectedTerm * 12) - loanAmt;
     final totalCost = loanAmt + totalInterest;
 
     // Saved Calculations watch
@@ -585,7 +621,7 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
 
               // Calculate Button
               GestureDetector(
-                onTap: () => setState(() {}),
+                onTap: _calculate,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -617,27 +653,27 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
 
               // Save Button (Transparent Outline style)
               GestureDetector(
-                onTap: _saveCalculation,
+                onTap: _showResults ? _saveCalculation : null,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.10),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+                    color: Colors.white.withValues(alpha: _showResults ? 0.10 : 0.05),
+                    border: Border.all(color: Colors.white.withValues(alpha: _showResults ? 0.25 : 0.10), width: 1.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('💾', style: TextStyle(fontSize: 14)),
+                      Text('💾', style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: _showResults ? 1.0 : 0.4))),
                       const SizedBox(width: 8),
                       Text(
                         'Save This Calculation',
                         style: AppTextStyles.dmSans(
                           size: 13,
                           weight: FontWeight.w800,
-                          color: Colors.white,
+                          color: Colors.white.withValues(alpha: _showResults ? 1.0 : 0.4),
                         ).copyWith(fontFamily: 'Georgia'),
                       ),
                     ],
@@ -649,8 +685,37 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
         ),
         const SizedBox(height: 20),
 
-        // Term Comparison Card
-        _buildSectionHeader('Loan Term Comparison', onReset: null),
+        if (_showResults) ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.amber),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Tap "Calculate" to update results.',
+                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                // Term Comparison Card
+                _buildSectionHeader('Loan Term Comparison', onReset: null),
         const SizedBox(height: 8),
 
         Container(
@@ -929,10 +994,14 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
             ],
           ),
         ),
-        const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ],
+      const SizedBox(height: 20),
 
-        // Saved Calculations list at bottom
-        _buildSectionHeader('Saved Calculations', onReset: null),
+      // Saved Calculations list at bottom
+      _buildSectionHeader('Saved Calculations', onReset: null),
         const SizedBox(height: 8),
 
         Container(
@@ -1087,11 +1156,12 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
   }
 
   void _saveCalculation() async {
-    final price = _homePrice;
-    final down = price * _downPct / 100;
+    final price = _calcSnapshot['_homePrice'] ?? _homePrice;
+    final downPct = _calcSnapshot['_downPct'] ?? _downPct;
+    final down = price * downPct / 100;
     final loan = price - down;
-    final rate = _rate;
-    final term = _selectedTerm;
+    final rate = _calcSnapshot['_rate'] ?? _rate;
+    final term = (_calcSnapshot['_selectedTerm'] ?? _selectedTerm).toInt();
 
     final monthlyPI = MortgageMath.monthlyPayment(
       principal: loan,
@@ -1206,6 +1276,8 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
       _downPct = 20.0;
       _rate = 6.82;
       _selectedTerm = 30;
+      _calcSnapshot.clear();
+      _showResults = false;
     });
   }
 

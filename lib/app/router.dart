@@ -92,7 +92,7 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      pageBuilder: (context, state) => _fadeTransition(
+      pageBuilder: (context, state) => _instantTransition(
         state,
         const HomeScreen(),
       ),
@@ -665,16 +665,18 @@ CustomTransitionPage<void> _slideTransition(
   );
 }
 
-CustomTransitionPage<void> _fadeTransition(
+CustomTransitionPage<void> _instantTransition(
   GoRouterState state,
   Widget child,
 ) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
     child: child,
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(opacity: animation, child: child);
-    },
-    transitionDuration: const Duration(milliseconds: 280),
+    // No animation — the splash screen already acts as the visual handoff.
+    // Animating while simultaneously inflating 8 heavy TabBarView children
+    // causes frame drops; an instant swap is imperceptibly faster.
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        child,
+    transitionDuration: Duration.zero,
   );
 }
