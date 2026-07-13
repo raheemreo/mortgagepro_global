@@ -191,8 +191,10 @@ import '../europe/tools/eu_property_tax_calc.dart';
 import '../../shared/models/saved_calc.dart';
 import '../../services/ad_config.dart';
 import '../../services/ad_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/settings_provider.dart';
 
-class ToolHostScreen extends StatefulWidget {
+class ToolHostScreen extends ConsumerStatefulWidget {
   final String country;
   final String toolId;
   final SavedCalc? savedCalc;
@@ -205,10 +207,10 @@ class ToolHostScreen extends StatefulWidget {
   });
 
   @override
-  State<ToolHostScreen> createState() => _ToolHostScreenState();
+  ConsumerState<ToolHostScreen> createState() => _ToolHostScreenState();
 }
 
-class _ToolHostScreenState extends State<ToolHostScreen> {
+class _ToolHostScreenState extends ConsumerState<ToolHostScreen> {
   CountryTheme get _theme => CountryThemes.fromCode(widget.country);
 
   bool _canPop = false;
@@ -220,6 +222,10 @@ class _ToolHostScreenState extends State<ToolHostScreen> {
         ? AdConfig.interstitialAdUnitIos
         : AdConfig.interstitialAdUnitAndroid;
     AdManager.instance.loadInterstitial(adUnitId, screen: 'tool_host_screen');
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(settingsProvider.notifier).setCalculatorTab(widget.country, widget.toolId);
+    });
   }
 
   @override

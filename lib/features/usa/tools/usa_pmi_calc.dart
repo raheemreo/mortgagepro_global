@@ -10,6 +10,7 @@ import '../../../app/theme/text_styles.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
+import '../../../providers/calculator_draft_provider.dart';
 
 class USAPmiCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -30,6 +31,26 @@ class _USAPmiCalcState extends ConsumerState<USAPmiCalc> {
   bool _showResults = false;
   bool _isCalcDirty = true;
   bool _calculating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(calculatorDraftProvider);
+    if (draft != null) {
+      if (draft.propertyPrice != null) {
+        _price = draft.propertyPrice!;
+      }
+      if (draft.downPayment != null && draft.propertyPrice != null && draft.propertyPrice! > 0) {
+        _downPct = (draft.downPayment! / draft.propertyPrice! * 100);
+      }
+      if (draft.loanTermYears != null) {
+        _loanTerm = draft.loanTermYears!;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(calculatorDraftProvider.notifier).clearDraft();
+      });
+    }
+  }
 
   final Map<String, Map<String, double>> _pmiTable = {
     '95': {'low': 1.25, 'mid': 0.78, 'high': 0.55},

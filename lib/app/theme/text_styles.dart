@@ -8,7 +8,7 @@ class AppTextStyles {
   static TextStyle playfair({
     double size = 16,
     FontWeight weight = FontWeight.w800,
-    Color color = Colors.white,
+    Color? color,
     double? height,
     double? letterSpacing,
   }) =>
@@ -24,7 +24,7 @@ class AppTextStyles {
   static TextStyle dmSans({
     double size = 14,
     FontWeight weight = FontWeight.w400,
-    Color color = Colors.black,
+    Color? color,
     double? height,
     double? letterSpacing,
   }) =>

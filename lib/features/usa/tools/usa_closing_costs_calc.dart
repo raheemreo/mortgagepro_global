@@ -12,6 +12,7 @@ import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 import '../../../shared/widgets/live_rate_banner.dart';
 import '../../../providers/usa_rates_provider.dart';
+import '../../../providers/calculator_draft_provider.dart';
 
 class USAClosingCostsCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -53,6 +54,23 @@ class _USAClosingCostsCalcState extends ConsumerState<USAClosingCostsCalc> {
   bool _showResults = false;
   bool _isCalcDirty = true;
   final bool _calculating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(calculatorDraftProvider);
+    if (draft != null) {
+      if (draft.propertyPrice != null) {
+        _price = draft.propertyPrice!;
+      }
+      if (draft.downPayment != null && draft.propertyPrice != null && draft.propertyPrice! > 0) {
+        _downPct = (draft.downPayment! / draft.propertyPrice! * 100);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(calculatorDraftProvider.notifier).clearDraft();
+      });
+    }
+  }
 
   final Map<String, double> _transferRates = {
     'DC': 0.029,

@@ -12,8 +12,11 @@ import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 import '../../../shared/widgets/live_rate_banner.dart';
 import '../../../providers/usa_rates_provider.dart';
+import '../../../providers/calculator_draft_provider.dart';
+import '../../../models/calculator_draft.dart';
+import '../../../shared/widgets/workflow_continuation_card.dart';
 
-class USAMortgageCalcSheet extends StatefulWidget {
+class USAMortgageCalcSheet extends ConsumerStatefulWidget {
   final double homePrice;
   final double downPercent;
   final int termYears;
@@ -28,10 +31,10 @@ class USAMortgageCalcSheet extends StatefulWidget {
   });
 
   @override
-  State<USAMortgageCalcSheet> createState() => _USAMortgageCalcSheetState();
+  ConsumerState<USAMortgageCalcSheet> createState() => _USAMortgageCalcSheetState();
 }
 
-class _USAMortgageCalcSheetState extends State<USAMortgageCalcSheet> {
+class _USAMortgageCalcSheetState extends ConsumerState<USAMortgageCalcSheet> {
   late double _homePrice;
   late double _downPct;
   late int _termYears;
@@ -49,6 +52,24 @@ class _USAMortgageCalcSheetState extends State<USAMortgageCalcSheet> {
     _rate = widget.rate;
     _propertyTaxRate = 1.1; // 1.1% national average
     _insuranceRate = 0.5; // 0.5% annual
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateDraft();
+    });
+  }
+
+  void _updateDraft() {
+    ref.read(calculatorDraftProvider.notifier).setDraft(
+      CalculatorDraft(
+        loanAmount: _loanAmount,
+        propertyPrice: _homePrice,
+        interestRate: _rate,
+        loanTermYears: _termYears,
+        country: 'USA',
+        currency: 'USD',
+        downPayment: _homePrice * _downPct / 100,
+      ),
+    );
   }
 
   double get _loanAmount => _homePrice * (1 - _downPct / 100);
@@ -138,7 +159,10 @@ class _USAMortgageCalcSheetState extends State<USAMortgageCalcSheet> {
                       divisions: 590,
                       displayValue: CurrencyFormatter.compact(_homePrice),
                       primaryColor: theme.primaryColor,
-                      onChanged: (v) => setState(() => _homePrice = v),
+                      onChanged: (v) => setState(() {
+                        _homePrice = v;
+                        _updateDraft();
+                      }),
                     ),
                     _SliderSection(
                       label: 'Down Payment',
@@ -148,7 +172,10 @@ class _USAMortgageCalcSheetState extends State<USAMortgageCalcSheet> {
                       divisions: 47,
                       displayValue: '${_downPct.toInt()}%',
                       primaryColor: theme.primaryColor,
-                      onChanged: (v) => setState(() => _downPct = v),
+                      onChanged: (v) => setState(() {
+                        _downPct = v;
+                        _updateDraft();
+                      }),
                     ),
                     _SliderSection(
                       label: 'Interest Rate',
@@ -158,12 +185,18 @@ class _USAMortgageCalcSheetState extends State<USAMortgageCalcSheet> {
                       divisions: 130,
                       displayValue: '${_rate.toStringAsFixed(2)}%',
                       primaryColor: theme.primaryColor,
-                      onChanged: (v) => setState(() => _rate = v),
+                      onChanged: (v) => setState(() {
+                        _rate = v;
+                        _updateDraft();
+                      }),
                     ),
                     _TermSelector(
                       selected: _termYears,
                       primaryColor: theme.primaryColor,
-                      onChanged: (v) => setState(() => _termYears = v),
+                      onChanged: (v) => setState(() {
+                        _termYears = v;
+                        _updateDraft();
+                      }),
                     ),
                     const SizedBox(height: 16),
                     // Results
@@ -251,6 +284,19 @@ class _USAMortgageCalcSheetState extends State<USAMortgageCalcSheet> {
                         ),
                       ),
                     ],
+                    WorkflowContinuationCard(
+                      country: 'USA',
+                      countryPath: 'usa',
+                      draft: CalculatorDraft(
+                        loanAmount: _loanAmount,
+                        propertyPrice: _homePrice,
+                        interestRate: _rate,
+                        loanTermYears: _termYears,
+                        country: 'USA',
+                        currency: 'USD',
+                        downPayment: _homePrice * _downPct / 100,
+                      ),
+                    ),
                     const SizedBox(height: 80),
                   ],
                 ),

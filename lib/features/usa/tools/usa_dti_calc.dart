@@ -9,6 +9,8 @@ import '../../../app/theme/text_styles.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
+import '../../../providers/calculator_draft_provider.dart';
+import '../../../core/utils/mortgage_math.dart';
 
 class USADtiCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -30,6 +32,32 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
   final _hoInsController = TextEditingController(text: '150');
   final _pmiController = TextEditingController(text: '0');
   final _hoaController = TextEditingController(text: '0');
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(calculatorDraftProvider);
+    if (draft != null) {
+      final pi = MortgageMath.monthlyPayment(
+        principal: draft.loanAmount ?? 0,
+        annualRatePercent: draft.interestRate ?? 0,
+        termYears: draft.loanTermYears ?? 30,
+      );
+      if (pi > 0) {
+        _piPaymentController.text = pi.toStringAsFixed(0);
+      }
+      if (draft.propertyPrice != null) {
+        // Estimate property tax (1.1% national average) and insurance (0.5%) monthly
+        final tax = (draft.propertyPrice! * 1.1 / 100) / 12;
+        final ins = (draft.propertyPrice! * 0.5 / 100) / 12;
+        _propTaxController.text = tax.toStringAsFixed(0);
+        _hoInsController.text = ins.toStringAsFixed(0);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(calculatorDraftProvider.notifier).clearDraft();
+      });
+    }
+  }
 
   // Other Monthly Debts (Back End)
   final _autoLoanController = TextEditingController(text: '450');

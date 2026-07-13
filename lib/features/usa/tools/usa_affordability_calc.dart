@@ -12,6 +12,7 @@ import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 import '../../../shared/widgets/live_rate_banner.dart';
 import '../../../providers/usa_rates_provider.dart';
+import '../../../providers/calculator_draft_provider.dart';
 
 class USAAffordabilityCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -34,6 +35,26 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
 
   final _resultsKey = GlobalKey();
   bool _hasCalculated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(calculatorDraftProvider);
+    if (draft != null) {
+      if (draft.interestRate != null) {
+        _rate = draft.interestRate!;
+      }
+      if (draft.loanTermYears != null) {
+        _selectedTerm = draft.loanTermYears!;
+      }
+      if (draft.downPayment != null && draft.propertyPrice != null && draft.propertyPrice! > 0) {
+        _selectedDP = (draft.downPayment! / draft.propertyPrice! * 100);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(calculatorDraftProvider.notifier).clearDraft();
+      });
+    }
+  }
 
   // Stored inputs for calculation
   double _calcIncome = 0.0;

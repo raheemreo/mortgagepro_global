@@ -12,6 +12,7 @@ import '../../../shared/models/saved_calc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/live_rate_banner.dart';
 import '../../../providers/usa_rates_provider.dart';
+import '../../../providers/calculator_draft_provider.dart';
 
 class USAPropertyTaxCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -36,6 +37,20 @@ class _USAPropertyTaxCalcState extends ConsumerState<USAPropertyTaxCalc> {
   bool _showResults = false;
   bool _isCalcDirty = true;
   bool _calculating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(calculatorDraftProvider);
+    if (draft != null) {
+      if (draft.propertyPrice != null) {
+        _assessedValue = draft.propertyPrice!;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(calculatorDraftProvider.notifier).clearDraft();
+      });
+    }
+  }
 
   final Map<String, double> _stateRates = {
     'NJ': 2.23, 'IL': 2.08, 'CT': 1.79, 'VT': 1.90, 'NY': 1.72, 'WI': 1.73, 'TX': 1.60,
