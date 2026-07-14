@@ -30,7 +30,10 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
   double _price = 350000;
   String _buyerType = 'resident'; // resident, nonresident, firsttime
   String _propertyType = 'resale'; // new, resale
-  bool _calculated = false;
+
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  bool _hasCalculated = false;
 
   static const Map<String, double> _buyerTypeToDouble = {
     'resident': 0.0,
@@ -180,11 +183,110 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
       final propVal = inputs['propertyType'] ?? 0.0;
       _propertyType = _doubleToPropertyType[propVal] ?? 'resale';
       _countryCode = widget.savedCalc!.label.split(' - ').last;
-      _calculated = true;
+
+      _calcSnapshot['countryCode'] = _countryCode;
+      _calcSnapshot['price'] = _price;
+      _calcSnapshot['buyerType'] = _buyerType;
+      _calcSnapshot['propertyType'] = _propertyType;
+      _hasCalculated = true;
     }
   }
 
-  void _saveNotaryFees(double totalFees, double totalOutlay, double cashNeeded) async {
+  void _runCalc() {
+    setState(() {
+      _calcSnapshot['countryCode'] = _countryCode;
+      _calcSnapshot['price'] = _price;
+      _calcSnapshot['buyerType'] = _buyerType;
+      _calcSnapshot['propertyType'] = _propertyType;
+      _hasCalculated = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _countryCode = 'DE';
+      _price = 350000;
+      _buyerType = 'resident';
+      _propertyType = 'resale';
+      _hasCalculated = false;
+      _calcSnapshot.clear();
+    });
+  }
+
+  void _saveNotaryFees() async {
+    if (!_hasCalculated) return;
+
+    final double snapPrice = _calcSnapshot['price'] ?? _price;
+    final String snapBuyerType = _calcSnapshot['buyerType'] ?? _buyerType;
+    final String snapPropertyType = _calcSnapshot['propertyType'] ?? _propertyType;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final cd = _countryClosingData[snapCountryCode]!;
+    final isNew = snapPropertyType == 'new';
+
+    List<Map<String, dynamic>> items = [];
+    double totalFees = 0;
+
+    final List<dynamic> rawFees = cd['fees'];
+    for (final f in rawFees) {
+      if (isNew && !f['newBld']) {
+        continue;
+      }
+      final Map<String, dynamic> pctMap = f['pct'];
+      final double pct = pctMap[snapBuyerType] ?? pctMap['resident'] ?? 0.0;
+      if (pct > 0.0) {
+        final double amt = snapPrice * (pct / 100);
+        totalFees += amt;
+        items.add({
+          'name': f['name'],
+          'pct': pct,
+          'amt': amt,
+        });
+      }
+    }
+
+    if (snapCountryCode == 'ES' && isNew) {
+      items = items.where((i) => i['name'] != 'ITP / AJD').toList();
+      items.insert(0, {
+        'name': 'IVA',
+        'pct': 10.0,
+        'amt': snapPrice * 0.10,
+      });
+      items.add({
+        'name': 'AJD',
+        'pct': 1.5,
+        'amt': snapPrice * 0.015,
+      });
+      totalFees = items.fold(0.0, (sum, i) => sum + i['amt']);
+    }
+
+    if (snapCountryCode == 'FR' && isNew) {
+      items = items.map((i) {
+        if (i['name'] == 'Droits de mutation') {
+          return {
+            ...i,
+            'pct': 0.7,
+            'amt': snapPrice * 0.007,
+          };
+        }
+        return i;
+      }).toList();
+      totalFees = items.fold(0.0, (sum, i) => sum + i['amt']);
+    }
+
+    final double deposit = snapPrice * 0.20;
+    final double totalOutlay = snapPrice + totalFees;
+    final double cashNeeded = deposit + totalFees;
+
     final labelCtrl = TextEditingController(text: 'Closing costs');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -252,16 +354,16 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
         country: 'Europe',
         calcType: 'Notary Fee Calc',
         inputs: {
-          'price': _price,
-          'buyerType': _buyerTypeToDouble[_buyerType] ?? 0.0,
-          'propertyType': _propertyTypeToDouble[_propertyType] ?? 0.0,
+          'price': snapPrice,
+          'buyerType': _buyerTypeToDouble[snapBuyerType] ?? 0.0,
+          'propertyType': _propertyTypeToDouble[snapPropertyType] ?? 0.0,
         },
         results: {
           'Total Fees': totalFees,
           'Total Outlay': totalOutlay,
           'Cash Needed': cashNeeded,
         },
-        label: '$label - $_countryCode',
+        label: '$label - $snapCountryCode',
         currencyCode: 'EUR',
       );
 
@@ -290,10 +392,15 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
     final mutedText = theme.getMutedColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Dynamic fee calculations
-    final cd = _countryClosingData[_countryCode]!;
+    final double snapPrice = _calcSnapshot['price'] ?? _price;
+    final String snapBuyerType = _calcSnapshot['buyerType'] ?? _buyerType;
+    final String snapPropertyType = _calcSnapshot['propertyType'] ?? _propertyType;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    // Dynamic fee calculations based on snapshot
+    final cd = _countryClosingData[snapCountryCode]!;
     final String countryName = cd['name'];
-    final isNew = _propertyType == 'new';
+    final isNew = snapPropertyType == 'new';
 
     List<Map<String, dynamic>> items = [];
     double totalFees = 0;
@@ -305,10 +412,10 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
       }
 
       final Map<String, dynamic> pctMap = f['pct'];
-      final double pct = pctMap[_buyerType] ?? pctMap['resident'] ?? 0.0;
+      final double pct = pctMap[snapBuyerType] ?? pctMap['resident'] ?? 0.0;
       
       if (pct > 0.0) {
-        final double amt = _price * (pct / 100);
+        final double amt = snapPrice * (pct / 100);
         totalFees += amt;
         items.add({
           'name': f['name'],
@@ -322,7 +429,7 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
     }
 
     // Special Spain calculations for new builds
-    if (_countryCode == 'ES' && isNew) {
+    if (snapCountryCode == 'ES' && isNew) {
       items = items.where((i) => i['name'] != 'ITP / AJD').toList();
       items.insert(0, {
         'name': 'IVA',
@@ -330,7 +437,7 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
         'icon': '🏛️',
         'col': const Color(0xFF003399),
         'pct': 10.0,
-        'amt': _price * 0.10,
+        'amt': snapPrice * 0.10,
       });
       items.add({
         'name': 'AJD',
@@ -338,19 +445,19 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
         'icon': '🏛️',
         'col': const Color(0xFF1E3A8A),
         'pct': 1.5,
-        'amt': _price * 0.015,
+        'amt': snapPrice * 0.015,
       });
       totalFees = items.fold(0.0, (sum, i) => sum + i['amt']);
     }
 
     // French VEFA transfer tax reduction
-    if (_countryCode == 'FR' && isNew) {
+    if (snapCountryCode == 'FR' && isNew) {
       items = items.map((i) {
         if (i['name'] == 'Droits de mutation') {
           return {
             ...i,
             'pct': 0.7,
-            'amt': _price * 0.007,
+            'amt': snapPrice * 0.007,
             'sub': 'Reduced Transfer Tax (VEFA)',
           };
         }
@@ -359,8 +466,8 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
       totalFees = items.fold(0.0, (sum, i) => sum + i['amt']);
     }
 
-    final double deposit = _price * 0.20; // assumed 20% down
-    final double totalOutlay = _price + totalFees;
+    final double deposit = snapPrice * 0.20; // assumed 20% down
+    final double totalOutlay = snapPrice + totalFees;
     final double cashNeeded = deposit + totalFees;
 
     final notes = List<String>.from(cd['notes']);
@@ -368,6 +475,13 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
     // Live ECB rate
     final liveEcb = ref.watch(europeRatesProvider).valueOrNull?.ecbRate.value ?? 4.00;
     final isLive = ref.watch(europeRatesProvider).valueOrNull?.isLive == true;
+
+    final isDirty = _hasCalculated && (
+      _price != snapPrice ||
+      _buyerType != snapBuyerType ||
+      _propertyType != snapPropertyType ||
+      _countryCode != snapCountryCode
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,7 +510,16 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
         const SizedBox(height: 16),
 
         // Select Country Pills
-        Text('SELECT COUNTRY', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('SELECT COUNTRY', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+            GestureDetector(
+              onTap: _reset,
+              child: Text('Reset', style: AppTextStyles.dmSans(size: 11, color: theme.primaryColor, weight: FontWeight.w700)),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         SizedBox(
           height: 38,
@@ -495,7 +618,7 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
               const SizedBox(height: 16),
 
               GestureDetector(
-                onTap: () => setState(() => _calculated = true),
+                onTap: _runCalc,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 15),
@@ -530,326 +653,378 @@ class _EUNotaryFeeCalcState extends ConsumerState<EUNotaryFeeCalc> {
         ),
         const SizedBox(height: 16),
 
-        if (_calculated) ...[
-          // Results Hero Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: theme.headerGradient,
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Total Closing Costs / Fees', style: AppTextStyles.dmSans(size: 11, color: Colors.white70, weight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text(
-                  CurrencyFormatter.format(totalFees, symbol: '€'),
-                  style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${((totalFees / _price) * 100).toStringAsFixed(1)}% of price · $countryName',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _resultMiniBox('Purchase Price', CurrencyFormatter.format(_price, symbol: '€')),
-                    _resultMiniBox('Total Outlay', CurrencyFormatter.format(totalOutlay, symbol: '€')),
-                    _resultMiniBox('Cash Needed', CurrencyFormatter.format(cashNeeded, symbol: '€')),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(height: 0.5, color: Colors.white12),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _saveNotaryFees(totalFees, totalOutlay, cashNeeded),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFCC00).withValues(alpha: 0.18),
-                            border: Border.all(color: const Color(0xFFFFCC00).withValues(alpha: 0.45)),
-                            borderRadius: BorderRadius.circular(12),
+        if (_hasCalculated) ...[
+          Column(
+            key: _resultsKey,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    border: Border.all(color: const Color(0xFFFCD34D)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('⚠️', style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Calculate again to update results.',
+                          style: AppTextStyles.dmSans(
+                            size: 11.5,
+                            color: const Color(0xFFB45309),
+                            weight: FontWeight.w600,
                           ),
-                          alignment: Alignment.center,
-                          child: Text('💾 Save Calculation', style: AppTextStyles.dmSans(size: 12, color: const Color(0xFFFFCC00), weight: FontWeight.w800)),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Breakdown Card (Donut Chart + List)
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Cost Breakdown', style: AppTextStyles.cardTitle(textColor)),
-                const SizedBox(height: 14),
-                // Stacked Ratio Bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    height: 16,
-                    width: double.infinity,
-                    color: Colors.grey.shade200,
-                    child: Row(
-                      children: items.map((it) {
-                        final double share = totalFees > 0 ? (it['amt'] / totalFees) : 0.0;
-                        return Expanded(
-                          flex: (share * 100).round(),
-                          child: Container(color: it['col']),
-                        );
-                      }).toList(),
-                    ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 14),
-                // Donut Chart Row
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: CustomPaint(
-                        painter: NotaryDonutPainter(
-                          items: items,
-                          total: totalFees,
-                          pctTotal: (totalFees / _price) * 100,
-                          isDark: isDark,
-                          theme: theme,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        children: items.map((it) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 3.0),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(color: it['col'], shape: BoxShape.circle),
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    it['name'],
-                                    style: AppTextStyles.dmSans(size: 10.5, color: textColor, weight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Text(
-                                  CurrencyFormatter.compact(it['amt'], symbol: '€'),
-                                  style: AppTextStyles.playfair(size: 11, color: isDark ? theme.accentColor : theme.primaryColor, weight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
+              ],
+              // Results Hero Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: theme.headerGradient,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    )
                   ],
                 ),
-                const Divider(height: 24),
-                // Detailed list
-                ...items.map((it) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Total Closing Costs / Fees', style: AppTextStyles.dmSans(size: 11, color: Colors.white70, weight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text(
+                      CurrencyFormatter.format(totalFees, symbol: '€'),
+                      style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${((totalFees / snapPrice) * 100).toStringAsFixed(1)}% of price · $countryName',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(color: (it['col'] as Color).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                          alignment: Alignment.center,
-                          child: Text(it['icon'], style: const TextStyle(fontSize: 16)),
-                        ),
-                        const SizedBox(width: 12),
+                        _resultMiniBox('Purchase Price', CurrencyFormatter.format(snapPrice, symbol: '€')),
+                        _resultMiniBox('Total Outlay', CurrencyFormatter.format(totalOutlay, symbol: '€')),
+                        _resultMiniBox('Cash Needed', CurrencyFormatter.format(cashNeeded, symbol: '€')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(height: 0.5, color: Colors.white12),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(it['name'], style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: textColor)),
-                              Text(it['sub'], style: AppTextStyles.dmSans(size: 10, color: mutedText)),
-                            ],
+                          child: GestureDetector(
+                            onTap: _saveNotaryFees,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFCC00).withValues(alpha: 0.18),
+                                border: Border.all(color: const Color(0xFFFFCC00).withValues(alpha: 0.45)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text('💾 Save Calculation', style: AppTextStyles.dmSans(size: 12, color: const Color(0xFFFFCC00), weight: FontWeight.w800)),
+                            ),
                           ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(CurrencyFormatter.format(it['amt'], symbol: '€'),
-                                style: AppTextStyles.playfair(size: 12.5, color: isDark ? theme.accentColor : theme.primaryColor, weight: FontWeight.bold)),
-                            Text('${it['pct'].toStringAsFixed(2)}% of price',
-                                style: AppTextStyles.dmSans(size: 9.5, color: mutedText)),
-                          ],
                         ),
                       ],
                     ),
-                  );
-                }),
-                const Divider(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Total Closing Costs', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.bold, color: textColor)),
-                    Text(CurrencyFormatter.format(totalFees, symbol: '€'),
-                        style: AppTextStyles.playfair(size: 15, color: isDark ? theme.accentColor : theme.primaryColor, weight: FontWeight.w900)),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
+              ),
+              const SizedBox(height: 16),
 
-          // Country comparison card
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Country Cost Comparison', style: AppTextStyles.cardTitle(textColor)),
-                const SizedBox(height: 4),
-                Text('Typical closing fees as % of purchase price', style: AppTextStyles.dmSans(size: 10, color: mutedText)),
-                const SizedBox(height: 14),
-                ..._comparisonData.map((d) {
-                  final active = d['name'] == countryName;
-                  final double val = d['pct'];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
+              // Breakdown Card (Donut Chart + List)
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Cost Breakdown', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 14),
+                    // Stacked Ratio Bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        height: 16,
+                        width: double.infinity,
+                        color: Colors.grey.shade200,
+                        child: Row(
+                          children: items.map((it) {
+                            final double share = totalFees > 0 ? (it['amt'] / totalFees) : 0.0;
+                            return Expanded(
+                              flex: (share * 100).round(),
+                              child: Container(color: it['col']),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // Donut Chart Row
+                    Row(
                       children: [
-                        Text(d['flag'], style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: 8),
                         SizedBox(
-                          width: 80,
-                          child: Text(
-                            d['name'],
-                            style: AppTextStyles.dmSans(
-                              size: 11,
-                              weight: active ? FontWeight.bold : FontWeight.normal,
-                              color: active ? (isDark ? theme.accentColor : theme.primaryColor) : textColor,
+                          width: 100,
+                          height: 100,
+                          child: CustomPaint(
+                            painter: NotaryDonutPainter(
+                              items: items,
+                              total: totalFees,
+                              pctTotal: (totalFees / snapPrice) * 100,
+                              isDark: isDark,
+                              theme: theme,
                             ),
                           ),
                         ),
+                        const SizedBox(width: 16),
                         Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(3),
-                            child: Container(
-                              height: 8,
-                              color: theme.getBgColor(context),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: FractionallySizedBox(
-                                  widthFactor: val / 14.0,
-                                  child: Container(color: active ? (isDark ? theme.accentColor : theme.primaryColor) : (d['col'] as Color).withValues(alpha: 0.5)),
+                          child: Column(
+                            children: items.map((it) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 3.0),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(color: it['col'], shape: BoxShape.circle),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        it['name'],
+                                        style: AppTextStyles.dmSans(size: 10.5, color: textColor, weight: FontWeight.bold),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Text(
+                                      CurrencyFormatter.compact(it['amt'], symbol: '€'),
+                                      style: AppTextStyles.playfair(size: 11, color: isDark ? theme.accentColor : theme.primaryColor, weight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    // Detailed list
+                    ...items.map((it) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(color: (it['col'] as Color).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                              alignment: Alignment.center,
+                              child: Text(it['icon'], style: const TextStyle(fontSize: 16)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(it['name'], style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: textColor)),
+                                  Text(it['sub'], style: AppTextStyles.dmSans(size: 10, color: mutedText)),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(CurrencyFormatter.format(it['amt'], symbol: '€'),
+                                    style: AppTextStyles.playfair(size: 12.5, color: isDark ? theme.accentColor : theme.primaryColor, weight: FontWeight.bold)),
+                                Text('${it['pct'].toStringAsFixed(2)}% of price',
+                                    style: AppTextStyles.dmSans(size: 9.5, color: mutedText)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const Divider(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Total Closing Costs', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.bold, color: textColor)),
+                        Text(CurrencyFormatter.format(totalFees, symbol: '€'),
+                            style: AppTextStyles.playfair(size: 15, color: isDark ? theme.accentColor : theme.primaryColor, weight: FontWeight.w900)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Country comparison card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Country Cost Comparison', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 4),
+                    Text('Typical closing fees as % of purchase price', style: AppTextStyles.dmSans(size: 10, color: mutedText)),
+                    const SizedBox(height: 14),
+                    ..._comparisonData.map((d) {
+                      final active = d['name'] == countryName;
+                      final double val = d['pct'];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          children: [
+                            Text(d['flag'], style: const TextStyle(fontSize: 16)),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 80,
+                              child: Text(
+                                d['name'],
+                                style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  weight: active ? FontWeight.bold : FontWeight.normal,
+                                  color: active ? (isDark ? theme.accentColor : theme.primaryColor) : textColor,
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        SizedBox(
-                          width: 36,
-                          child: Text(
-                            '${val.toStringAsFixed(1)}%',
-                            textAlign: TextAlign.right,
-                            style: AppTextStyles.playfair(
-                              size: 11,
-                              weight: active ? FontWeight.bold : FontWeight.normal,
-                              color: active ? (isDark ? theme.accentColor : theme.primaryColor) : textColor,
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(3),
+                                child: Container(
+                                  height: 8,
+                                  color: theme.getBgColor(context),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: FractionallySizedBox(
+                                      widthFactor: val / 14.0,
+                                      child: Container(color: active ? (isDark ? theme.accentColor : theme.primaryColor) : (d['col'] as Color).withValues(alpha: 0.5)),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: 36,
+                              child: Text(
+                                '${val.toStringAsFixed(1)}%',
+                                textAlign: TextAlign.right,
+                                style: AppTextStyles.playfair(
+                                  size: 11,
+                                  weight: active ? FontWeight.bold : FontWeight.normal,
+                                  color: active ? (isDark ? theme.accentColor : theme.primaryColor) : textColor,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Country notes card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [const Color(0xFF1E1B4B).withValues(alpha: 0.4), const Color(0xFF1E1B4B).withValues(alpha: 0.15)]
-                    : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isDark ? const Color(0xFF4338CA).withValues(alpha: 0.5) : const Color(0xFF818CF8)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text('🏛️', style: TextStyle(fontSize: 16)),
-                    const SizedBox(width: 8),
-                    Text('$countryName – Important Notes', style: AppTextStyles.cardTitle(isDark ? Colors.white : const Color(0xFF1E1B4B))),
+                      );
+                    }),
                   ],
                 ),
-                const SizedBox(height: 12),
-                ...notes.map((n) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 6.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              const SizedBox(height: 16),
+
+              // Country notes card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [const Color(0xFF1E1B4B).withValues(alpha: 0.4), const Color(0xFF1E1B4B).withValues(alpha: 0.15)]
+                        : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: isDark ? const Color(0xFF4338CA).withValues(alpha: 0.5) : const Color(0xFF818CF8)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text('•', style: TextStyle(color: isDark ? Colors.purpleAccent : const Color(0xFF4338CA), fontSize: 14)),
+                        const Text('🏛️', style: TextStyle(fontSize: 16)),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            n,
-                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF4338CA), height: 1.4),
-                          ),
-                        ),
+                        Text('$countryName – Important Notes', style: AppTextStyles.cardTitle(isDark ? Colors.white : const Color(0xFF1E1B4B))),
                       ],
                     ),
-                  );
-                }),
+                    const SizedBox(height: 12),
+                    ...notes.map((n) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 6.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('•', style: TextStyle(color: isDark ? Colors.purpleAccent : const Color(0xFF4338CA), fontSize: 14)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                n,
+                                style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF4338CA), height: 1.4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ] else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            child: Column(
+              children: [
+                const Text('📜', style: TextStyle(fontSize: 48)),
+                const SizedBox(height: 12),
+                Text('Calculate Closing Costs',
+                    style: AppTextStyles.playfair(
+                        size: 15, weight: FontWeight.w800, color: textColor)),
+                const SizedBox(height: 6),
+                Text(
+                  'Select country, property price, buyer type, and condition,\nthen tap Calculate to see a detailed notary & tax breakdown.',
+                  style: AppTextStyles.dmSans(size: 11, color: mutedText, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
-        ],
       ],
     );
   }

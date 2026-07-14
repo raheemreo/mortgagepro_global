@@ -14,7 +14,6 @@ import '../../providers/saved_tools_provider.dart';
 import '../../providers/canada_rates_provider.dart';
 import '../../providers/europe_rates_provider.dart';
 import '../../providers/uk_rates_provider.dart';
-import '../../providers/nz_rates_provider.dart';
 import '../../services/remote_config_service.dart';
 import '../notifications/providers/notifications_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -3078,126 +3077,7 @@ class _NewZealandTabState extends ConsumerState<_NewZealandTab>
                 watermarkEmoji: '🌿',
                 onTap: () => context.push('/newzealand'),
               ),
-              const _SecLabel(
-                  text: 'Reserve Bank NZ', textColor: Color(0xFF4A6358)),
-              Consumer(
-                builder: (context, ref, _) {
-                  final rc = RemoteConfigService.instance;
-                  final ocr = rc.nzOcrRate;
-                  final nextMeeting = rc.nzNextMeeting;
-                  final cutProb = rc.nzCutProbability;
-                  return _AlertBanner(
-                    icon: '🏛️',
-                    title: 'OCR Rate · RBNZ: $ocr%',
-                    subtitle:
-                        'Next RBNZ Review: $nextMeeting · Cut probability: $cutProb',
-                    buttonText: 'RBNZ Live',
-                    bg1: const Color(0xFF0A0F0D),
-                    bg2: const Color(0xFF0D3B2E),
-                    borderColor: const Color(0xFF0D3B2E),
-                    buttonColor: _DT.teal,
-                    titleColor: Colors.white,
-                    subtitleColor: Colors.white70,
-                    onTap: () => context.push('/newzealand'),
-                  );
-                },
-              ),
-              const _SecLabel(
-                  text: 'NZ Market Snapshot', textColor: Color(0xFF4A6358)),
-              Consumer(
-                builder: (context, ref, _) {
-                  final r = ref.watch(nzRatesProvider).valueOrNull;
-                  final rc = RemoteConfigService.instance;
-                  final nzdUsd = r?.nzdUsd.value ?? 0.5995;
-                  final nzdAud = r?.nzdAud.value ?? 0.9240;
-                  final nzdGbp = r?.nzdGbp.value ?? 0.4780;
-                  final isLive = r?.isLive == true;
-                  final badge = isLive ? '🟢 Live' : 'Est.';
-                  return _MarketTicker(
-                    title: 'NZX & Economic Indicators',
-                    items: [
-                      _TickerItem('NZD/USD', nzdUsd.toStringAsFixed(4),
-                          isLive ? badge : 'Daily', isLive),
-                      _TickerItem('NZD/AUD', nzdAud.toStringAsFixed(4),
-                          isLive ? badge : 'Daily', isLive),
-                      _TickerItem('NZD/GBP', nzdGbp.toStringAsFixed(4),
-                          isLive ? badge : 'Daily', isLive),
-                      _TickerItem('2-Yr Bond',
-                          '${rc.nzBond2yr.toStringAsFixed(2)}%', 'Govt', false),
-                      _TickerItem('10-Yr Bond',
-                          '${rc.nzBond10yr.toStringAsFixed(2)}%', 'Govt', true),
-                      _TickerItem('CPI', '${rc.nzCpi.toStringAsFixed(1)}%',
-                          '↓ Easing', true),
-                    ],
-                  );
-                },
-              ),
-              const _SecLabel(
-                  text: 'Live Home Loan Rates',
-                  more: 'Compare Lenders →',
-                  textColor: Color(0xFF4A6358),
-                  moreColor: Color(0xFF1A6B4A)),
-              Consumer(
-                builder: (context, ref, _) {
-                  final r = ref.watch(nzRatesProvider).valueOrNull;
-                  final f1 = r?.fixed1yr.value ?? 5.59;
-                  final f2 = r?.fixed2yr.value ?? 5.29;
-                  final f3 = r?.fixed3yr.value ?? 5.19;
-                  final f5 = r?.fixed5yr.value ?? 5.09;
-                  final fl = r?.floating.value ?? 7.24;
-                  final live = r?.isLive == true;
-                  final chg = live ? '🟢 Live' : 'Est.';
-                  return SizedBox(
-                    height: MediaQuery.textScalerOf(context).scale(145),
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const ClampingScrollPhysics(),
-                      clipBehavior: Clip.none,
-                      children: [
-                        _MiniRateCard(
-                            icon: '🏠',
-                            label: '1-Yr Fixed',
-                            value: '${f1.toStringAsFixed(2)}%',
-                            sub: 'ANZ / ASB',
-                            change: chg,
-                            isUp: true),
-                        const SizedBox(width: 9),
-                        _MiniRateCard(
-                            icon: '📅',
-                            label: '2-Yr Fixed',
-                            value: '${f2.toStringAsFixed(2)}%',
-                            sub: 'Kiwibank',
-                            change: chg,
-                            isUp: true),
-                        const SizedBox(width: 9),
-                        _MiniRateCard(
-                            icon: '📆',
-                            label: '3-Yr Fixed',
-                            value: '${f3.toStringAsFixed(2)}%',
-                            sub: 'Westpac',
-                            change: chg,
-                            isUp: true),
-                        const SizedBox(width: 9),
-                        _MiniRateCard(
-                            icon: '📊',
-                            label: '5-Yr Fixed',
-                            value: '${f5.toStringAsFixed(2)}%',
-                            sub: 'BNZ / Avg',
-                            change: chg,
-                            isUp: true),
-                        const SizedBox(width: 9),
-                        _MiniRateCard(
-                            icon: '🔄',
-                            label: 'Floating',
-                            value: '${fl.toStringAsFixed(2)}%',
-                            sub: 'Variable',
-                            change: chg,
-                            isUp: false),
-                      ],
-                    ),
-                  );
-                },
-              ),
+
               const _SecLabel(
                   text: 'Core Home Loan Tools', textColor: Color(0xFF4A6358)),
               _toolGrid([

@@ -119,6 +119,9 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
     },
   ];
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   @override
   void initState() {
     super.initState();
@@ -129,6 +132,12 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
       _termYears = (inputs['termYears'] ?? 20).toInt();
       final typeVal = inputs['rateType'] ?? 0.0;
       _rateType = typeVal == 0.0 ? 'fixed' : 'variable';
+
+      _calcSnapshot['propVal'] = _propVal;
+      _calcSnapshot['depositPct'] = _depositPct;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['rateType'] = _rateType;
+
       _hasCalculated = true;
     }
   }
@@ -140,7 +149,65 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
     return P * (r * math.pow(1 + r, n)) / (math.pow(1 + r, n) - 1);
   }
 
-  void _saveCalculation(String bestName, double bestMonthly, double spread) async {
+  void _runCalc() {
+    setState(() {
+      _calcSnapshot['propVal'] = _propVal;
+      _calcSnapshot['depositPct'] = _depositPct;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['rateType'] = _rateType;
+      _hasCalculated = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _propVal = 420000;
+      _depositPct = 20;
+      _termYears = 20;
+      _rateType = 'fixed';
+      _hasCalculated = false;
+      _calcSnapshot.clear();
+    });
+  }
+
+  void _saveCalculation() async {
+    final double propVal = _calcSnapshot['propVal'] ?? _propVal;
+    final double depositPct = _calcSnapshot['depositPct'] ?? _depositPct;
+    final int termYears = _calcSnapshot['termYears'] ?? _termYears;
+    final String rateType = _calcSnapshot['rateType'] ?? _rateType;
+
+    final loan = propVal * (1 - depositPct / 100);
+    final List<Map<String, dynamic>> results = _countries.map((c) {
+      final rate = rateType == 'fixed' ? c['fixed'] as double : c['variable'] as double;
+      final m = _monthlyPayment(loan, rate, termYears);
+      final total = m * termYears * 12;
+      final totalInt = total - loan;
+      return {
+        ...c,
+        'rate': rate,
+        'monthly': m,
+        'totalInt': totalInt,
+      };
+    }).toList();
+
+    results.sort((a, b) => (a['monthly'] as double).compareTo(b['monthly'] as double));
+
+    final rates = results.map((r) => r['rate'] as double).toList();
+    final lowestRate = rates.reduce(math.min);
+    final highestRate = rates.reduce(math.max);
+    final rateSpread = highestRate - lowestRate;
+    final bestMonthly = results[0]['monthly'] as double;
+    final bestName = results[0]['name'] as String;
+
     final labelCtrl = TextEditingController(text: 'Europe Comparison');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -156,7 +223,7 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Best $bestName at ${CurrencyFormatter.compact(bestMonthly, symbol: '€')}/mo · Spread ${spread.toStringAsFixed(2)}%',
+              'Saving: Best $bestName at ${CurrencyFormatter.compact(bestMonthly, symbol: '€')}/mo · Spread ${rateSpread.toStringAsFixed(2)}%',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -208,13 +275,13 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
         country: 'Europe',
         calcType: 'Comparison Calc',
         inputs: {
-          'propVal': _propVal,
-          'depositPct': _depositPct,
-          'termYears': _termYears.toDouble(),
-          'rateType': _rateType == 'fixed' ? 0.0 : 1.0,
+          'propVal': propVal,
+          'depositPct': depositPct,
+          'termYears': termYears.toDouble(),
+          'rateType': rateType == 'fixed' ? 0.0 : 1.0,
         },
         results: {
-          'Spread': spread,
+          'Spread': rateSpread,
           'Best Monthly': bestMonthly,
         },
         label: label,
@@ -226,7 +293,7 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Calculation saved!',
+            content: Text('✅ Comparison saved!',
                 style: AppTextStyles.dmSans(
                     color: Colors.white, weight: FontWeight.w700)),
             backgroundColor: widget.theme.primaryColor,
@@ -246,12 +313,17 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
     final mutedText = theme.getMutedColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final double snapPropVal = _calcSnapshot['propVal'] ?? _propVal;
+    final double snapDepositPct = _calcSnapshot['depositPct'] ?? _depositPct;
+    final int snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final String snapRateType = _calcSnapshot['rateType'] ?? _rateType;
+
     // Calculate loan details for all countries
-    final loan = _propVal * (1 - _depositPct / 100);
+    final loan = snapPropVal * (1 - snapDepositPct / 100);
     final List<Map<String, dynamic>> results = _countries.map((c) {
-      final rate = _rateType == 'fixed' ? c['fixed'] as double : c['variable'] as double;
-      final m = _monthlyPayment(loan, rate, _termYears);
-      final total = m * _termYears * 12;
+      final rate = snapRateType == 'fixed' ? c['fixed'] as double : c['variable'] as double;
+      final m = _monthlyPayment(loan, rate, snapTermYears);
+      final total = m * snapTermYears * 12;
       final totalInt = total - loan;
       return {
         ...c,
@@ -279,7 +351,13 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
     final highestRate = rates.reduce(math.max);
     final rateSpread = highestRate - lowestRate;
     final bestMonthly = results[0]['monthly'] as double;
-    final bestName = results[0]['name'] as String;
+
+    final isDirty = _hasCalculated && (
+      _propVal != snapPropVal ||
+      _depositPct != snapDepositPct ||
+      _termYears != snapTermYears ||
+      _rateType != snapRateType
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,7 +384,16 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
           ),
         ),
         const SizedBox(height: 14),
-        Text('SET LOAN PARAMETERS', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('SET LOAN PARAMETERS', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+            GestureDetector(
+              onTap: _reset,
+              child: Text('Reset', style: AppTextStyles.dmSans(size: 11, color: theme.primaryColor, weight: FontWeight.w700)),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
 
         // Inputs Card
@@ -449,7 +536,7 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
               const SizedBox(height: 14),
 
               GestureDetector(
-                onTap: () => setState(() => _hasCalculated = true),
+                onTap: _runCalc,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -486,6 +573,34 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
         const SizedBox(height: 16),
 
         if (_hasCalculated) ...[
+          if (isDirty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                border: Border.all(color: const Color(0xFFFCD34D)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Calculate again to update results.',
+                      style: AppTextStyles.dmSans(
+                        size: 11.5,
+                        color: const Color(0xFFB45309),
+                        weight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Quick stats
           Text('QUICK STATS', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
           const SizedBox(height: 8),
@@ -497,26 +612,6 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
               const SizedBox(width: 8),
               _quickStatBox('📊', 'Rate Spread', '${rateSpread.toStringAsFixed(2)}%'),
             ],
-          ),
-          const SizedBox(height: 16),
-
-          // Monthly payment bar comparison chart
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Payment by Country', style: AppTextStyles.cardTitle(textColor)),
-                Text('Based on your loan parameters · 2025 market rates', style: AppTextStyles.dmSans(size: 10, color: mutedText)),
-                const SizedBox(height: 14),
-                _buildBarChart(results),
-              ],
-            ),
           ),
           const SizedBox(height: 16),
 
@@ -536,12 +631,10 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
                   color: theme.primaryColor.withValues(alpha: 0.05),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const SizedBox(width: 22),
-                      Expanded(child: Text('COUNTRY', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: mutedText))),
-                      SizedBox(width: 60, child: Text('RATE', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: mutedText), textAlign: TextAlign.center)),
-                      SizedBox(width: 76, child: Text('MONTHLY', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: mutedText), textAlign: TextAlign.right)),
-                      SizedBox(width: 76, child: Text('TOTAL INT.', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: mutedText), textAlign: TextAlign.right)),
+                      Text('COUNTRY', style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.bold, color: mutedText)),
+                      Text('EST. MONTHLY', style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.bold, color: mutedText)),
                     ],
                   ),
                 ),
@@ -549,62 +642,122 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: results.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, thickness: 0.5, color: borderCol),
+                  separatorBuilder: (_, __) => Divider(height: 1, color: borderCol),
                   itemBuilder: (context, idx) {
                     final item = results[idx];
+                    final val = item['monthly'] as double;
                     final isBest = idx == 0;
                     return Container(
-                      color: isBest ? theme.primaryColor.withValues(alpha: 0.05) : Colors.transparent,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(item['flag'], style: const TextStyle(fontSize: 16)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item['name'], style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: textColor)),
-                                Text(item['sub'], style: AppTextStyles.dmSans(size: 9, color: mutedText)),
-                                if (isBest)
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 2),
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                    decoration: BoxDecoration(color: (isDark ? theme.accentColor : theme.primaryColor).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                                    child: Text('★ Lowest', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.bold, color: isDark ? theme.accentColor : theme.primaryColor)),
-                                  )
+                          Row(
+                            children: [
+                              Text(item['flag'], style: const TextStyle(fontSize: 14)),
+                              const SizedBox(width: 8),
+                              Text(item['name'], style: AppTextStyles.dmSans(size: 11.5, weight: isBest ? FontWeight.bold : FontWeight.w600, color: textColor)),
+                              if (isBest) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(color: const Color(0xFF22C55E).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
+                                  child: Text('🏆 BEST', style: AppTextStyles.dmSans(size: 8, color: const Color(0xFF22C55E), weight: FontWeight.bold)),
+                                ),
                               ],
-                            ),
+                            ],
                           ),
-                          SizedBox(
-                            width: 60,
-                            child: Text(
-                              '${(item['rate'] as double).toStringAsFixed(2)}%',
-                              style: AppTextStyles.playfair(size: 11.5, weight: FontWeight.bold, color: textColor),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          SizedBox(
-                            width: 76,
-                            child: Text(
-                              CurrencyFormatter.format(item['monthly'], symbol: '€'),
-                              style: AppTextStyles.playfair(size: 12, weight: FontWeight.bold, color: isDark ? theme.accentColor : theme.primaryColor),
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                          SizedBox(
-                            width: 76,
-                            child: Text(
-                              CurrencyFormatter.format(item['totalInt'], symbol: '€'),
-                              style: AppTextStyles.playfair(size: 11, weight: FontWeight.bold, color: isDark ? Colors.orangeAccent : Colors.orange.shade800),
-                              textAlign: TextAlign.right,
-                            ),
+                          Text(
+                            '${CurrencyFormatter.format(val, symbol: '€')}/mo (${(item['rate'] as double).toStringAsFixed(2)}%)',
+                            style: AppTextStyles.dmSans(size: 11.5, weight: isBest ? FontWeight.bold : FontWeight.w600, color: isBest ? theme.primaryColor : textColor),
                           ),
                         ],
                       ),
                     );
                   },
-                )
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Monthly payment bar comparison chart
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: borderCol),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Monthly Payment Comparison', style: AppTextStyles.cardTitle(textColor)),
+                const SizedBox(height: 4),
+                Text('Estimated monthly payments per country (€)', style: AppTextStyles.dmSans(size: 10.5, color: mutedText)),
+                const SizedBox(height: 16),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: results.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  itemBuilder: (context, idx) {
+                    final item = results[idx];
+                    final val = item['monthly'] as double;
+                    final double pct = bestMonthly > 0 ? (bestMonthly / val) : 1.0;
+                    final isBest = idx == 0;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Text(item['flag'], style: const TextStyle(fontSize: 14)),
+                                const SizedBox(width: 6),
+                                Text(item['name'], style: AppTextStyles.dmSans(size: 11.5, weight: isBest ? FontWeight.bold : FontWeight.w600, color: textColor)),
+                                if (isBest) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(color: const Color(0xFF22C55E).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
+                                    child: Text('🏆 BEST', style: AppTextStyles.dmSans(size: 8, color: const Color(0xFF22C55E), weight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            Text(
+                              '${CurrencyFormatter.format(val, symbol: '€')}/mo (${(item['rate'] as double).toStringAsFixed(2)}%)',
+                              style: AppTextStyles.dmSans(size: 11.5, weight: isBest ? FontWeight.bold : FontWeight.w600, color: isBest ? theme.primaryColor : textColor),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Stack(
+                          children: [
+                            Container(
+                              height: 8,
+                              width: double.infinity,
+                              decoration: BoxDecoration(color: borderCol, borderRadius: BorderRadius.circular(4)),
+                            ),
+                            FractionallySizedBox(
+                              widthFactor: pct.clamp(0.1, 1.0),
+                              child: Container(
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: item['color'] as Color,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -676,13 +829,33 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
                     backgroundColor: theme.primaryColor,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  onPressed: () => _saveCalculation(bestName, bestMonthly, rateSpread),
+                  onPressed: _saveCalculation,
                   child: Text('Save ✓', style: AppTextStyles.dmSans(size: 11, color: const Color(0xFFFFCC00), weight: FontWeight.bold)),
                 ),
               ],
             ),
           ),
-        ],
+        ] else
+          // Empty state
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            child: Column(
+              children: [
+                const Text('🇪🇺', style: TextStyle(fontSize: 48)),
+                const SizedBox(height: 12),
+                Text('Compare European Markets',
+                    style: AppTextStyles.playfair(
+                        size: 15, weight: FontWeight.w800, color: textColor)),
+                const SizedBox(height: 6),
+                Text(
+                  'Enter property value, deposit percent, term, and rate type,\nthen tap Compare All Countries to see mortgage costs.',
+                  style: AppTextStyles.dmSans(size: 11, color: mutedText, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -709,52 +882,6 @@ class _EUCountryComparisonState extends ConsumerState<EUCountryComparison> {
     );
   }
 
-  Widget _buildBarChart(List<Map<String, dynamic>> res) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final double maxVal = res[res.length - 1]['monthly'] * 1.1;
-    final List<Color> colors = [
-      const Color(0xFF003399),
-      const Color(0xFF4F46E5),
-      const Color(0xFF6D28D9),
-      const Color(0xFF0F766E),
-      const Color(0xFFB45309),
-      const Color(0xFF334155),
-    ];
-
-    return SizedBox(
-      height: 140,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: res.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final r = entry.value;
-          final heightPct = maxVal > 0 ? (r['monthly'] / maxVal) : 0.0;
-          final col = idx == 0 ? const Color(0xFFFFCC00) : colors[idx % colors.length];
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                CurrencyFormatter.compact(r['monthly'], symbol: '€').replaceFirst(' ', ''),
-                style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.bold, color: idx == 0 ? (isDark ? widget.theme.accentColor : widget.theme.primaryColor) : widget.theme.getTextColor(context)),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                width: 24,
-                height: heightPct * 100,
-                decoration: BoxDecoration(
-                  color: col,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(r['flag'], style: const TextStyle(fontSize: 14)),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
 
   Widget _snapshotDetailRow(String label, String value) {
     return Padding(

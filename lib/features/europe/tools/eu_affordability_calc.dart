@@ -27,6 +27,9 @@ class EUAffordabilityCalc extends ConsumerStatefulWidget {
 
 class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
     with SingleTickerProviderStateMixin {
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   String _countryCode = 'DE';
   double _annualInc = 72000;
   double _partnerInc = 0;
@@ -37,11 +40,6 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
   bool _hasCalculated = false;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
-
-  // Calculated results (stored after button press)
-  double _maxLoan = 0;
-  double _maxProperty = 0;
-  double _monthly = 0;
 
   final Map<String, Map<String, dynamic>> _cData = {
     'DE': {
@@ -54,7 +52,7 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
       'tips': [
         'Savings must cover 10–20% deposit plus ~5–6% closing costs (Grunderwerbsteuer, notary, registry)',
         'Germany uses income multiples of 4–5× annual gross income',
-        'No hard DTI cap but lenders prefer under 40%',
+        'No DTI cap but lenders prefer under 40%',
         'Consider KfW subsidised loans for first buyers (as low as 2.5%)',
       ],
     },
@@ -110,7 +108,7 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
       'tips': [
         'NHG (Nationale Hypotheek Garantie) allows up to 4.5× and lower rates',
         'NHG guarantee available on properties up to €435,000 (2025)',
-        'Transfer tax is only 2% (0% for buyers under 35 purchasing their first home)',
+        'Transfer tax is only 2% (0% for buyers under 35 purchasing first home)',
         'Dutch mortgages up to 100% of property value (LTV)',
       ],
     },
@@ -147,7 +145,18 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
       _debts = inputs['debts'] ?? 300;
       _rate = inputs['rate'] ?? 3.85;
       _countryCode = widget.savedCalc!.label.split(' - ').last;
-      _calculate();
+
+      _calcSnapshot['annualInc'] = _annualInc;
+      _calcSnapshot['partnerInc'] = _partnerInc;
+      _calcSnapshot['savings'] = _savings;
+      _calcSnapshot['debts'] = _debts;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['countryCode'] = _countryCode;
+
+      _hasCalculated = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _animController.forward(from: 0.0);
+      });
     }
   }
 
@@ -163,35 +172,70 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
     return r == 0 ? loanAmt / n : loanAmt * (r * math.pow(1 + r, n)) / (math.pow(1 + r, n) - 1);
   }
 
-  void _calculate() {
-    final c = _cData[_countryCode]!;
+  void _runCalc() {
+    setState(() {
+      _calcSnapshot['annualInc'] = _annualInc;
+      _calcSnapshot['partnerInc'] = _partnerInc;
+      _calcSnapshot['savings'] = _savings;
+      _calcSnapshot['debts'] = _debts;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['countryCode'] = _countryCode;
+      _hasCalculated = true;
+    });
+    _animController.forward(from: 0.0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _annualInc = 72000;
+      _partnerInc = 0;
+      _savings = 60000;
+      _debts = 300;
+      _rate = 3.85;
+      _countryCode = 'DE';
+      _hasCalculated = false;
+      _calcSnapshot.clear();
+    });
+    _animController.reverse();
+  }
+
+  void _saveCalculation() async {
+    final double annualInc = _calcSnapshot['annualInc'] ?? _annualInc;
+    final double partnerInc = _calcSnapshot['partnerInc'] ?? _partnerInc;
+    final double savings = _calcSnapshot['savings'] ?? _savings;
+    final double debts = _calcSnapshot['debts'] ?? _debts;
+    final double rate = _calcSnapshot['rate'] ?? _rate;
+    final String countryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final c = _cData[countryCode]!;
     final double multiple = c['multiple'];
     final double dtiLimit = c['dtiLimit'];
 
-    final totalInc = _annualInc + _partnerInc;
+    final totalInc = annualInc + partnerInc;
     final monthlyInc = totalInc / 12;
-    final maxDTIPayment = monthlyInc * dtiLimit - _debts;
+    final maxDTIPayment = monthlyInc * dtiLimit - debts;
 
-    final r = (_rate / 100) / 12;
+    final r = (rate / 100) / 12;
     const n = 25 * 12;
     final double maxLoanDTI = maxDTIPayment > 0
         ? maxDTIPayment * (math.pow(1 + r, n) - 1) / (r * math.pow(1 + r, n))
         : 0;
 
     final maxLoanMult = totalInc * multiple;
-    _maxLoan = math.min(maxLoanDTI, maxLoanMult).clamp(0, double.infinity);
-    final depositAvail = _savings * (1 - 0.07);
-    _maxProperty = _maxLoan + depositAvail;
-    _monthly = _calcMonthly(_maxLoan, _rate, 25);
-  }
+    final double maxLoan = math.min(maxLoanDTI, maxLoanMult).clamp(0, double.infinity);
+    final depositAvail = savings * (1 - 0.07);
+    final double maxProperty = maxLoan + depositAvail;
+    final double monthly = _calcMonthly(maxLoan, rate, 25);
 
-  void _runCalc() {
-    _calculate();
-    setState(() => _hasCalculated = true);
-    _animController.forward(from: 0.0);
-  }
-
-  void _saveCalculation() async {
     final labelCtrl = TextEditingController(text: 'Europe Affordability');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -207,7 +251,7 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Max Loan: ${CurrencyFormatter.compact(_maxLoan, symbol: '€')} · Max Property: ${CurrencyFormatter.compact(_maxProperty, symbol: '€')}',
+              'Max Loan: ${CurrencyFormatter.compact(maxLoan, symbol: '€')} · Max Property: ${CurrencyFormatter.compact(maxProperty, symbol: '€')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -259,18 +303,18 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
         country: 'Europe',
         calcType: 'Affordability Calc',
         inputs: {
-          'annualInc': _annualInc,
-          'partnerInc': _partnerInc,
-          'savings': _savings,
-          'debts': _debts,
-          'rate': _rate,
+          'annualInc': annualInc,
+          'partnerInc': partnerInc,
+          'savings': savings,
+          'debts': debts,
+          'rate': rate,
         },
         results: {
-          'Max Loan': _maxLoan,
-          'Max Property': _maxProperty,
-          'Monthly Payment': _monthly,
+          'Max Loan': maxLoan,
+          'Max Property': maxProperty,
+          'Monthly Payment': monthly,
         },
-        label: '$label - $_countryCode',
+        label: '$label - $countryCode',
         currencyCode: 'EUR',
       );
       await ref.read(savedProvider.notifier).save(calc);
@@ -300,12 +344,44 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
     final sliderActiveColor = isDark ? theme.accentColor : theme.primaryColor;
     final sliderInactiveColor = (isDark ? theme.accentColor : theme.primaryColor).withValues(alpha: 0.15);
 
-    final c = _cData[_countryCode]!;
+    final double snapAnnualInc = _calcSnapshot['annualInc'] ?? _annualInc;
+    final double snapPartnerInc = _calcSnapshot['partnerInc'] ?? _partnerInc;
+    final double snapSavings = _calcSnapshot['savings'] ?? _savings;
+    final double snapDebts = _calcSnapshot['debts'] ?? _debts;
+    final double snapRate = _calcSnapshot['rate'] ?? _rate;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final c = _cData[snapCountryCode]!;
     final double multiple = c['multiple'];
-    final double totalInc = _annualInc + _partnerInc;
-    final depositAvail = _savings * (1 - 0.07);
-    final conservative = _maxLoan * 0.75;
-    final stretch = _maxLoan * 1.1;
+    final double dtiLimit = c['dtiLimit'];
+
+    final totalInc = snapAnnualInc + snapPartnerInc;
+    final monthlyInc = totalInc / 12;
+    final maxDTIPayment = monthlyInc * dtiLimit - snapDebts;
+
+    final r = (snapRate / 100) / 12;
+    const n = 25 * 12;
+    final double maxLoanDTI = maxDTIPayment > 0
+        ? maxDTIPayment * (math.pow(1 + r, n) - 1) / (r * math.pow(1 + r, n))
+        : 0;
+
+    final maxLoanMult = totalInc * multiple;
+    final double maxLoan = math.min(maxLoanDTI, maxLoanMult).clamp(0, double.infinity);
+    final depositAvail = snapSavings * (1 - 0.07);
+    final double maxProperty = maxLoan + depositAvail;
+    final double monthly = _calcMonthly(maxLoan, snapRate, 25);
+
+    final conservative = maxLoan * 0.75;
+    final stretch = maxLoan * 1.1;
+
+    final isDirty = _hasCalculated && (
+      _annualInc != snapAnnualInc ||
+      _partnerInc != snapPartnerInc ||
+      _savings != snapSavings ||
+      _debts != snapDebts ||
+      _rate != snapRate ||
+      _countryCode != snapCountryCode
+    );
 
     // Live ECB rate context
     final ratesAsync = ref.watch(europeRatesProvider);
@@ -376,7 +452,18 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('💼 Income & Finances', style: AppTextStyles.cardTitle(textColor)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('💼 Income & Finances', style: AppTextStyles.cardTitle(textColor)),
+                  GestureDetector(
+                    onTap: _reset,
+                    child: Text('Reset',
+                        style: AppTextStyles.dmSans(
+                            size: 11, color: theme.primaryColor, weight: FontWeight.w700)),
+                  ),
+                ],
+              ),
               const SizedBox(height: 14),
 
               _sliderHeader('Annual Gross Income',
@@ -476,10 +563,38 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
         // ── Results (shown after calculation) ──
         if (_hasCalculated)
           FadeTransition(
+            key: _resultsKey,
             opacity: _fadeAnim,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Calculate again to update results.',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              color: const Color(0xFFB45309),
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 // Quick Stats Row
                 Text('QUICK STATS',
                     style: AppTextStyles.dmSans(
@@ -520,21 +635,21 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
                               size: 11, color: Colors.white70, weight: FontWeight.w600, letterSpacing: 0.8)),
                       const SizedBox(height: 6),
                       Text(
-                        CurrencyFormatter.format(_maxLoan, symbol: '€'),
+                        CurrencyFormatter.format(maxLoan, symbol: '€'),
                         style: AppTextStyles.playfair(
                             size: 38, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${c['name']} · $multiple× income rule · ${_rate.toStringAsFixed(2)}%',
+                        '${c['name']} · $multiple× income rule · ${snapRate.toStringAsFixed(2)}%',
                         style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
                       ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          _ahBox('Max Property', CurrencyFormatter.format(_maxProperty, symbol: '€')),
+                          _ahBox('Max Property', CurrencyFormatter.format(maxProperty, symbol: '€')),
                           const SizedBox(width: 8),
-                          _ahBox('Monthly Pymt', CurrencyFormatter.format(_monthly, symbol: '€')),
+                          _ahBox('Monthly Pymt', CurrencyFormatter.format(monthly, symbol: '€')),
                           const SizedBox(width: 8),
                           _ahBox('Income Multi', '$multiple×'),
                         ],
@@ -612,7 +727,7 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
                           Text(CurrencyFormatter.compact(conservative, symbol: '€'),
                               style: AppTextStyles.dmSans(
                                   size: 10, weight: FontWeight.w700, color: mutedText)),
-                          Text(CurrencyFormatter.compact(_maxLoan, symbol: '€'),
+                          Text(CurrencyFormatter.compact(maxLoan, symbol: '€'),
                               style: AppTextStyles.dmSans(
                                   size: 10, weight: FontWeight.w700, color: mutedText)),
                           Text(CurrencyFormatter.compact(stretch, symbol: '€'),
@@ -625,7 +740,7 @@ class _EUAffordabilityCalcState extends ConsumerState<EUAffordabilityCalc>
                           totalInc * 3.5, false, cardBg, borderCol, textColor, mutedText),
                       const SizedBox(height: 8),
                       _scenarioRow('Standard ($multiple× income)', '${c['name']} standard',
-                          _maxLoan, true, cardBg, borderCol, textColor, mutedText),
+                          maxLoan, true, cardBg, borderCol, textColor, mutedText),
                       const SizedBox(height: 8),
                       _scenarioRow('Stretch (5× income)', 'Subject to affordability check',
                           totalInc * 5, false, cardBg, borderCol, textColor, mutedText),

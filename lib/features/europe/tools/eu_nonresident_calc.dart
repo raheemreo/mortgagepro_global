@@ -32,7 +32,10 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
   String _purpose = 'holiday'; // holiday, investment, relocation, goldvisa
   double _income = 90000;
   double _existingDebt = 0;
-  bool _calculated = false;
+
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+  bool _hasCalculated = false;
 
   static const Map<String, double> _originToDouble = {
     'eu_nonres': 0.0,
@@ -180,8 +183,49 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
       _income = inputs['income'] ?? 90000.0;
       _existingDebt = inputs['existingDebt'] ?? 0.0;
       _countryCode = widget.savedCalc!.label.split(' - ').last;
-      _calculated = true;
+
+      _calcSnapshot['countryCode'] = _countryCode;
+      _calcSnapshot['price'] = _price;
+      _calcSnapshot['buyerOrigin'] = _buyerOrigin;
+      _calcSnapshot['purpose'] = _purpose;
+      _calcSnapshot['income'] = _income;
+      _calcSnapshot['existingDebt'] = _existingDebt;
+      _hasCalculated = true;
     }
+  }
+
+  void _runCalc() {
+    setState(() {
+      _calcSnapshot['countryCode'] = _countryCode;
+      _calcSnapshot['price'] = _price;
+      _calcSnapshot['buyerOrigin'] = _buyerOrigin;
+      _calcSnapshot['purpose'] = _purpose;
+      _calcSnapshot['income'] = _income;
+      _calcSnapshot['existingDebt'] = _existingDebt;
+      _hasCalculated = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _countryCode = 'DE';
+      _price = 400000;
+      _buyerOrigin = 'eu_nonres';
+      _purpose = 'holiday';
+      _income = 90000;
+      _existingDebt = 0;
+      _hasCalculated = false;
+      _calcSnapshot.clear();
+    });
   }
 
   double _calculateMonthly(double loan, double rate, int termYrs) {
@@ -191,7 +235,34 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
     return loan * (r * math.pow(1 + r, n)) / (math.pow(1 + r, n) - 1);
   }
 
-  void _saveAnalysis(double maxLoan, double rate, double monthly, double upfrontCash, double dti) async {
+  void _saveAnalysis() async {
+    if (!_hasCalculated) return;
+
+    final double snapPrice = _calcSnapshot['price'] ?? _price;
+    final String snapBuyerOrigin = _calcSnapshot['buyerOrigin'] ?? _buyerOrigin;
+    final String snapPurpose = _calcSnapshot['purpose'] ?? _purpose;
+    final double snapIncome = _calcSnapshot['income'] ?? _income;
+    final double snapExistingDebt = _calcSnapshot['existingDebt'] ?? _existingDebt;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final c = _countryData[snapCountryCode]!;
+    final double ltvLimit = (c['maxLTV'] as Map)[snapBuyerOrigin] ?? 50.0;
+    final double closingPct = c['closingPct'];
+    final double rateAdder = c['rateAdder'];
+
+    final ratesAsync = ref.read(europeRatesProvider);
+    final liveEcb = ratesAsync.valueOrNull?.ecbRate.value ?? 4.00;
+    final rate = liveEcb + rateAdder;
+
+    final maxLoan = snapPrice * (ltvLimit / 100);
+    final deposit = snapPrice - maxLoan;
+    final closingTotal = snapPrice * (closingPct / 100);
+    final totalUpfrontCash = deposit + closingTotal;
+
+    final monthlyPayment = _calculateMonthly(maxLoan, rate, 20); // standard 20yr term
+    final monthlyIncome = snapIncome / 12;
+    final dtiPct = monthlyIncome > 0 ? ((monthlyPayment + snapExistingDebt) / monthlyIncome * 100) : 0.0;
+
     final labelCtrl = TextEditingController(text: 'Europe Non-Resident');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -207,7 +278,7 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Max Loan ${CurrencyFormatter.compact(maxLoan, symbol: '€')} at ${rate.toStringAsFixed(2)}% · Cash Needed: ${CurrencyFormatter.compact(upfrontCash, symbol: '€')}',
+              'Saving: Max Loan ${CurrencyFormatter.compact(maxLoan, symbol: '€')} at ${rate.toStringAsFixed(2)}% · Cash Needed: ${CurrencyFormatter.compact(totalUpfrontCash, symbol: '€')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -259,20 +330,20 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
         country: 'Europe',
         calcType: 'Non-Resident Calc',
         inputs: {
-          'price': _price,
-          'buyerOrigin': _originToDouble[_buyerOrigin] ?? 0.0,
-          'purpose': _purposeToDouble[_purpose] ?? 0.0,
-          'income': _income,
-          'existingDebt': _existingDebt,
+          'price': snapPrice,
+          'buyerOrigin': _originToDouble[snapBuyerOrigin] ?? 0.0,
+          'purpose': _purposeToDouble[snapPurpose] ?? 0.0,
+          'income': snapIncome,
+          'existingDebt': snapExistingDebt,
         },
         results: {
           'Loan': maxLoan,
           'Rate': rate,
-          'Monthly': monthly,
-          'Upfront Cash': upfrontCash,
-          'DTI': dti,
+          'Monthly': monthlyPayment,
+          'Upfront Cash': totalUpfrontCash,
+          'DTI': dtiPct,
         },
-        label: '$label - $_countryCode',
+        label: '$label - $snapCountryCode',
         currencyCode: 'EUR',
       );
 
@@ -301,9 +372,16 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
     final mutedText = theme.getMutedColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final c = _countryData[_countryCode]!;
+    final double snapPrice = _calcSnapshot['price'] ?? _price;
+    final String snapBuyerOrigin = _calcSnapshot['buyerOrigin'] ?? _buyerOrigin;
+    final String snapPurpose = _calcSnapshot['purpose'] ?? _purpose;
+    final double snapIncome = _calcSnapshot['income'] ?? _income;
+    final double snapExistingDebt = _calcSnapshot['existingDebt'] ?? _existingDebt;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final c = _countryData[snapCountryCode]!;
     final String countryName = c['name'];
-    final double ltvLimit = (c['maxLTV'] as Map)[_buyerOrigin] ?? 50.0;
+    final double ltvLimit = (c['maxLTV'] as Map)[snapBuyerOrigin] ?? 50.0;
     final double closingPct = c['closingPct'];
     final double rateAdder = c['rateAdder'];
     // Live ECB base rate
@@ -312,17 +390,26 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
     final isLive = ratesAsync.valueOrNull?.isLive == true;
     final rate = liveEcb + rateAdder;
 
-    final maxLoan = _price * (ltvLimit / 100);
-    final deposit = _price - maxLoan;
-    final closingTotal = _price * (closingPct / 100);
+    final maxLoan = snapPrice * (ltvLimit / 100);
+    final deposit = snapPrice - maxLoan;
+    final closingTotal = snapPrice * (closingPct / 100);
     final totalUpfrontCash = deposit + closingTotal;
 
     final monthlyPayment = _calculateMonthly(maxLoan, rate, 20); // standard 20yr term
-    final monthlyIncome = _income / 12;
-    final dtiPct = monthlyIncome > 0 ? ((monthlyPayment + _existingDebt) / monthlyIncome * 100) : 0.0;
+    final monthlyIncome = snapIncome / 12;
+    final dtiPct = monthlyIncome > 0 ? ((monthlyPayment + snapExistingDebt) / monthlyIncome * 100) : 0.0;
     final bool dtiOk = dtiPct <= 33.0;
 
     final steps = List<String>.from(c['steps']);
+
+    final isDirty = _hasCalculated && (
+      _price != snapPrice ||
+      _buyerOrigin != snapBuyerOrigin ||
+      _purpose != snapPurpose ||
+      _income != snapIncome ||
+      _existingDebt != snapExistingDebt ||
+      _countryCode != snapCountryCode
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,7 +438,16 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
         const SizedBox(height: 16),
 
         // Select Target Country
-        Text('TARGET COUNTRY', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('TARGET COUNTRY', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+            GestureDetector(
+              onTap: _reset,
+              child: Text('Reset', style: AppTextStyles.dmSans(size: 11, color: theme.primaryColor, weight: FontWeight.w700)),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         SizedBox(
           height: 38,
@@ -473,7 +569,7 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
               const SizedBox(height: 16),
 
               GestureDetector(
-                onTap: () => setState(() => _calculated = true),
+                onTap: _runCalc,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 15),
@@ -510,189 +606,241 @@ class _EUNonResidentCalcState extends ConsumerState<EUNonResidentCalc> {
         ),
         const SizedBox(height: 16),
 
-        if (_calculated) ...[
-          // Summary Hero Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: theme.headerGradient,
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Maximum Non-Resident Loan', style: AppTextStyles.dmSans(size: 11, color: Colors.white70, weight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text(
-                  CurrencyFormatter.format(maxLoan, symbol: '€'),
-                  style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Based on ${ltvLimit.toStringAsFixed(0)}% LTV limit · $countryName',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _resultMiniBox('LTV Limit', '${ltvLimit.toStringAsFixed(0)}%'),
-                    _resultMiniBox('Rate (NR)', '${rate.toStringAsFixed(2)}%'),
-                    _resultMiniBox('Monthly Pay', CurrencyFormatter.format(monthlyPayment, symbol: '€')),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(height: 0.5, color: Colors.white12),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _saveAnalysis(maxLoan, rate, monthlyPayment, totalUpfrontCash, dtiPct),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFCC00).withValues(alpha: 0.18),
-                            border: Border.all(color: const Color(0xFFFFCC00).withValues(alpha: 0.45)),
-                            borderRadius: BorderRadius.circular(12),
+        if (_hasCalculated) ...[
+          Column(
+            key: _resultsKey,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    border: Border.all(color: const Color(0xFFFCD34D)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('⚠️', style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Calculate again to update results.',
+                          style: AppTextStyles.dmSans(
+                            size: 11.5,
+                            color: const Color(0xFFB45309),
+                            weight: FontWeight.w600,
                           ),
-                          alignment: Alignment.center,
-                          child: Text('💾 Save Analysis', style: AppTextStyles.dmSans(size: 12, color: const Color(0xFFFFCC00), weight: FontWeight.w800)),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Total upfront costs card
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('💶 Upfront Cost Breakdown', style: AppTextStyles.cardTitle(textColor)),
-                const SizedBox(height: 12),
-                _costItemRow('Property Price', CurrencyFormatter.format(_price, symbol: '€'), 'Base purchase price', textColor, mutedText),
-                _costItemRow('Required Deposit', CurrencyFormatter.format(deposit, symbol: '€'), '${(100 - ltvLimit).toStringAsFixed(0)}% down payment required', textColor, mutedText),
-                _costItemRow('Estimated Closing Costs', CurrencyFormatter.format(closingTotal, symbol: '€'), 'Taxes, notary, registry fees (~${closingPct.toStringAsFixed(2)}%)', textColor, mutedText),
-                const Divider(height: 24),
-                _costItemRow('Total Upfront Cash Required', CurrencyFormatter.format(totalUpfrontCash, symbol: '€'), 'Deposit + closing costs', isDark ? theme.accentColor : theme.primaryColor, mutedText, isTotal: true),
-                const SizedBox(height: 16),
-                // Visual horizontal bars
-                Text('Cash Requirement Split', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: textColor)),
-                const SizedBox(height: 8),
-                _costSplitBar('Deposit', deposit, totalUpfrontCash, Colors.blue),
-                const SizedBox(height: 6),
-                _costSplitBar('Closing Costs', closingTotal, totalUpfrontCash, Colors.orange),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Affordability Assessment Card
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('📊 DTI / Affordability Analysis', style: AppTextStyles.cardTitle(textColor)),
-                const SizedBox(height: 14),
-                Row(
+              // Summary Hero Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: theme.headerGradient,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    )
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: CircularProgressIndicator(
-                        value: dtiPct / 100,
-                        backgroundColor: theme.getBgColor(context),
-                        valueColor: AlwaysStoppedAnimation<Color>(dtiOk ? Colors.green : Colors.red),
-                        strokeWidth: 8,
-                      ),
+                    Text('Maximum Non-Resident Loan', style: AppTextStyles.dmSans(size: 11, color: Colors.white70, weight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text(
+                      CurrencyFormatter.format(maxLoan, symbol: '€'),
+                      style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Monthly Debt-to-Income', style: AppTextStyles.dmSans(size: 11, color: mutedText, weight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Text('${dtiPct.toStringAsFixed(1)}% DTI',
-                              style: AppTextStyles.playfair(size: 18, color: dtiOk ? Colors.green : Colors.red, weight: FontWeight.w900)),
-                          const SizedBox(height: 2),
-                          Text(dtiOk ? '✅ Within 33% standard guideline' : '⚠️ Exceeds 33% safety cap — review needed',
-                              style: AppTextStyles.dmSans(size: 10, color: textColor)),
-                        ],
-                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Based on ${ltvLimit.toStringAsFixed(0)}% LTV limit · $countryName',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Steps Guide
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('📋 Step-by-Step Buying Guide', style: AppTextStyles.cardTitle(textColor)),
-                const SizedBox(height: 4),
-                Text('How to buy in $countryName as a non-resident', style: AppTextStyles.dmSans(size: 10.5, color: mutedText)),
-                const SizedBox(height: 14),
-                ...steps.asMap().entries.map((entry) {
-                  final idx = entry.key;
-                  final step = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(color: isDark ? theme.accentColor : theme.primaryColor, borderRadius: BorderRadius.circular(6)),
-                          alignment: Alignment.center,
-                          child: Text((idx + 1).toString(), style: TextStyle(color: isDark ? Colors.black : Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text(step, style: AppTextStyles.dmSans(size: 12, color: textColor))),
+                        _resultMiniBox('LTV Limit', '${ltvLimit.toStringAsFixed(0)}%'),
+                        _resultMiniBox('Rate (NR)', '${rate.toStringAsFixed(2)}%'),
+                        _resultMiniBox('Monthly Pay', CurrencyFormatter.format(monthlyPayment, symbol: '€')),
                       ],
                     ),
-                  );
-                }),
+                    const SizedBox(height: 16),
+                    Container(height: 0.5, color: Colors.white12),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _saveAnalysis,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFCC00).withValues(alpha: 0.18),
+                                border: Border.all(color: const Color(0xFFFFCC00).withValues(alpha: 0.45)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text('💾 Save Analysis', style: AppTextStyles.dmSans(size: 12, color: const Color(0xFFFFCC00), weight: FontWeight.w800)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Total upfront costs card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('💶 Upfront Cost Breakdown', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 12),
+                    _costItemRow('Property Price', CurrencyFormatter.format(snapPrice, symbol: '€'), 'Base purchase price', textColor, mutedText),
+                    _costItemRow('Required Deposit', CurrencyFormatter.format(deposit, symbol: '€'), '${(100 - ltvLimit).toStringAsFixed(0)}% down payment required', textColor, mutedText),
+                    _costItemRow('Estimated Closing Costs', CurrencyFormatter.format(closingTotal, symbol: '€'), 'Taxes, notary, registry fees (~${closingPct.toStringAsFixed(2)}%)', textColor, mutedText),
+                    const Divider(height: 24),
+                    _costItemRow('Total Upfront Cash Required', CurrencyFormatter.format(totalUpfrontCash, symbol: '€'), 'Deposit + closing costs', isDark ? theme.accentColor : theme.primaryColor, mutedText, isTotal: true),
+                    const SizedBox(height: 16),
+                    // Visual horizontal bars
+                    Text('Cash Requirement Split', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: textColor)),
+                    const SizedBox(height: 8),
+                    _costSplitBar('Deposit', deposit, totalUpfrontCash, Colors.blue),
+                    const SizedBox(height: 6),
+                    _costSplitBar('Closing Costs', closingTotal, totalUpfrontCash, Colors.orange),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Affordability Assessment Card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('📊 DTI / Affordability Analysis', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: CircularProgressIndicator(
+                            value: dtiPct / 100,
+                            backgroundColor: theme.getBgColor(context),
+                            valueColor: AlwaysStoppedAnimation<Color>(dtiOk ? Colors.green : Colors.red),
+                            strokeWidth: 8,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Monthly Debt-to-Income', style: AppTextStyles.dmSans(size: 11, color: mutedText, weight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text('${dtiPct.toStringAsFixed(1)}% DTI',
+                                  style: AppTextStyles.playfair(size: 18, color: dtiOk ? Colors.green : Colors.red, weight: FontWeight.w900)),
+                              const SizedBox(height: 2),
+                              Text(dtiOk ? '✅ Within 33% standard guideline' : '⚠️ Exceeds 33% safety cap — review needed',
+                                  style: AppTextStyles.dmSans(size: 10, color: textColor)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Steps Guide
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('📋 Step-by-Step Buying Guide', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 4),
+                    Text('How to buy in $countryName as a non-resident', style: AppTextStyles.dmSans(size: 10.5, color: mutedText)),
+                    const SizedBox(height: 14),
+                    ...steps.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final step = entry.value;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(color: isDark ? theme.accentColor : theme.primaryColor, borderRadius: BorderRadius.circular(6)),
+                              alignment: Alignment.center,
+                              child: Text((idx + 1).toString(), style: TextStyle(color: isDark ? Colors.black : Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(step, style: AppTextStyles.dmSans(size: 12, color: textColor))),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ] else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            child: Column(
+              children: [
+                const Text('🌍', style: TextStyle(fontSize: 48)),
+                const SizedBox(height: 12),
+                Text('Analyze Non-Resident Costs',
+                    style: AppTextStyles.playfair(
+                        size: 15, weight: FontWeight.w800, color: textColor)),
+                const SizedBox(height: 6),
+                Text(
+                  'Select target country, price, buyer origin, and income,\nthen tap Calculate to see required upfront cash and guides.',
+                  style: AppTextStyles.dmSans(size: 11, color: mutedText, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
-        ],
       ],
     );
   }

@@ -72,6 +72,9 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
     6.0: '12m',
   };
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   String _chartPeriod = '6m';
   bool _calculated = false;
 
@@ -85,6 +88,12 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
       _termYears = (inputs['term'] ?? 20.0).toInt();
       final tenorVal = inputs['tenor'] ?? 4.0;
       _selectedTenor = _doubleToTenor[tenorVal] ?? '6m';
+
+      _calcSnapshot['loan'] = _loan;
+      _calcSnapshot['spread'] = _spread;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['selectedTenor'] = _selectedTenor;
+
       _calculated = true;
     }
   }
@@ -96,7 +105,72 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
     return loan * (r * math.pow(1 + r, n)) / (math.pow(1 + r, n) - 1);
   }
 
-  void _saveTrackerResult(double monthly, double totalRate, double annualSaving) async {
+  void _runCalc() {
+    setState(() {
+      _calcSnapshot['loan'] = _loan;
+      _calcSnapshot['spread'] = _spread;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['selectedTenor'] = _selectedTenor;
+      _calculated = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _selectedTenor = '6m';
+      _loan = 250000;
+      _spread = 1.50;
+      _termYears = 20;
+      _calculated = false;
+      _calcSnapshot.clear();
+    });
+  }
+
+  void _saveTrackerResult() async {
+    if (!_calculated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('⚠️ Calculate impact first, then save!',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          backgroundColor: Colors.orange.shade800,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final double snapLoan = _calcSnapshot['loan'] ?? _loan;
+    final double snapSpread = _calcSnapshot['spread'] ?? _spread;
+    final int snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final String snapSelectedTenor = _calcSnapshot['selectedTenor'] ?? _selectedTenor;
+
+    final ratesAsync = ref.read(europeRatesProvider);
+    final liveRates = ratesAsync.valueOrNull;
+    final effectiveRates = Map<String, double>.from(_euriborRates);
+    if (liveRates != null) {
+      effectiveRates['3m'] = liveRates.euribor3m.value;
+      effectiveRates['6m'] = liveRates.euribor6m.value;
+      effectiveRates['12m'] = liveRates.euribor12m.value;
+    }
+
+    final eurRate = effectiveRates[snapSelectedTenor] ?? 3.42;
+    final totalRate = eurRate + snapSpread;
+    final monthlyPayment = _calculateMonthly(snapLoan, totalRate, snapTermYears);
+
+    final peakTotalRate = 4.19 + snapSpread;
+    final peakMonthlyPayment = _calculateMonthly(snapLoan, peakTotalRate, snapTermYears);
+    final monthlySaving = peakMonthlyPayment - monthlyPayment;
+    final annualSaving = monthlySaving * 12;
+
     final labelCtrl = TextEditingController(text: 'Euribor mortgage analysis');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -112,7 +186,7 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Payment ${CurrencyFormatter.compact(monthly, symbol: '€')}/mo at ${totalRate.toStringAsFixed(2)}% rate',
+              'Saving: Payment ${CurrencyFormatter.compact(monthlyPayment, symbol: '€')}/mo at ${totalRate.toStringAsFixed(2)}% rate',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -164,17 +238,17 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
         country: 'Europe',
         calcType: 'Euribor Tracker',
         inputs: {
-          'loan': _loan,
-          'spread': _spread,
-          'term': _termYears.toDouble(),
-          'tenor': _tenorToDouble[_selectedTenor] ?? 4.0,
+          'loan': snapLoan,
+          'spread': snapSpread,
+          'term': snapTermYears.toDouble(),
+          'tenor': _tenorToDouble[snapSelectedTenor] ?? 4.0,
         },
         results: {
-          'Payment': monthly,
+          'Payment': monthlyPayment,
           'Rate': totalRate,
           'Saving': annualSaving,
         },
-        label: '$label - ${_selectedTenor.toUpperCase()} Euribor',
+        label: '$label - ${snapSelectedTenor.toUpperCase()} Euribor',
         currencyCode: 'EUR',
       );
 
@@ -216,20 +290,32 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
       effectiveRates['12m'] = liveRates.euribor12m.value;
     }
 
+    final double snapLoan = _calcSnapshot['loan'] ?? _loan;
+    final double snapSpread = _calcSnapshot['spread'] ?? _spread;
+    final int snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final String snapSelectedTenor = _calcSnapshot['selectedTenor'] ?? _selectedTenor;
+
     // Live Euribor rate selection
-    final eurRate = effectiveRates[_selectedTenor] ?? 3.42;
-    final totalRate = eurRate + _spread;
-    final monthlyPayment = _calculateMonthly(_loan, totalRate, _termYears);
+    final eurRate = effectiveRates[snapSelectedTenor] ?? 3.42;
+    final totalRate = eurRate + snapSpread;
+    final monthlyPayment = _calculateMonthly(snapLoan, totalRate, snapTermYears);
 
     // Savings compared to peak oct 2023 rate (peak rate = 4.19%)
-    final peakTotalRate = 4.19 + _spread;
-    final peakMonthlyPayment = _calculateMonthly(_loan, peakTotalRate, _termYears);
+    final peakTotalRate = 4.19 + snapSpread;
+    final peakMonthlyPayment = _calculateMonthly(snapLoan, peakTotalRate, snapTermYears);
     final monthlySaving = peakMonthlyPayment - monthlyPayment;
     final annualSaving = monthlySaving * 12;
 
     // Scenarios (-1%, current, +1%)
-    final payMinus = _calculateMonthly(_loan, totalRate - 1.0, _termYears);
-    final payPlus = _calculateMonthly(_loan, totalRate + 1.0, _termYears);
+    final payMinus = _calculateMonthly(snapLoan, totalRate - 1.0, snapTermYears);
+    final payPlus = _calculateMonthly(snapLoan, totalRate + 1.0, snapTermYears);
+
+    final isDirty = _calculated && (
+      _loan != snapLoan ||
+      _spread != snapSpread ||
+      _termYears != snapTermYears ||
+      _selectedTenor != snapSelectedTenor
+    );
 
     // Trend chart points
     final trendHistory = _historyData[_chartPeriod]!;
@@ -424,7 +510,16 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('💶 Mortgage Impact Calculator', style: AppTextStyles.cardTitle(textColor)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('💶 Mortgage Impact Calculator', style: AppTextStyles.cardTitle(textColor)),
+                  GestureDetector(
+                    onTap: _reset,
+                    child: Text('Reset', style: AppTextStyles.dmSans(size: 11, color: theme.primaryColor, weight: FontWeight.w700)),
+                  ),
+                ],
+              ),
               const SizedBox(height: 14),
 
               // Inputs Group
@@ -478,7 +573,7 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
               const SizedBox(height: 16),
 
               GestureDetector(
-                onTap: () => setState(() => _calculated = true),
+                onTap: _runCalc,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 15),
@@ -510,71 +605,131 @@ class _EUEuriborTrackerState extends ConsumerState<EUEuriborTracker> {
               ),
 
               if (_calculated) ...[
+                Column(
+                  key: _resultsKey,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isDirty) ...[
+                      Container(
+                        margin: const EdgeInsets.only(top: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          border: Border.all(color: const Color(0xFFFCD34D)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Text('⚠️', style: TextStyle(fontSize: 16)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Inputs have changed. Calculate again to update results.',
+                                style: AppTextStyles.dmSans(
+                                  size: 11.5,
+                                  color: const Color(0xFFB45309),
+                                  weight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    // Monthly payment hero
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: theme.headerGradient,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Estimated Monthly Payment', style: AppTextStyles.dmSans(size: 10.5, color: Colors.white70)),
+                          const SizedBox(height: 4),
+                          Text(
+                            CurrencyFormatter.format(monthlyPayment, symbol: '€'),
+                            style: AppTextStyles.playfair(size: 28, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'at ${totalRate.toStringAsFixed(2)}% rate ($eurRate% Euribor + ${snapSpread.toStringAsFixed(2)}% spread)',
+                            style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Saving items
+                    Row(
+                      children: [
+                        _impactMiniStat('Current Total Rate', '${totalRate.toStringAsFixed(2)}%', Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor),
+                        const SizedBox(width: 8),
+                        _impactMiniStat('Peak Saving/mo', '- ${CurrencyFormatter.compact(monthlySaving, symbol: '€')}', Colors.green),
+                        const SizedBox(width: 8),
+                        _impactMiniStat('Annual Saving', '- ${CurrencyFormatter.compact(annualSaving, symbol: '€')}/yr', Theme.of(context).brightness == Brightness.dark ? Colors.greenAccent : Colors.green.shade800),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Scenarios
+                    Text('Rate Shock Scenarios', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: textColor)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _scenarioBox('If -1% Cut', '${(totalRate - 1.0).toStringAsFixed(2)}%', payMinus),
+                        const SizedBox(width: 6),
+                        _scenarioBox('Current Rate', '${totalRate.toStringAsFixed(2)}%', monthlyPayment, isCurrent: true),
+                        const SizedBox(width: 6),
+                        _scenarioBox('If +1% Hike', '${(totalRate + 1.0).toStringAsFixed(2)}%', payPlus),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Save button
+                    ElevatedButton.icon(
+                      onPressed: _saveTrackerResult,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.primaryColor,
+                        minimumSize: const Size.fromHeight(44),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                      label: Text('Save This Analysis',
+                          style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w800)),
+                    ),
+                  ],
+                ),
+              ]
+              else ...[
                 const SizedBox(height: 16),
-                // Monthly payment hero
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 16),
                   decoration: BoxDecoration(
-                    gradient: theme.headerGradient,
+                    color: theme.getBgColor(context),
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
                   ),
                   child: Column(
                     children: [
-                      Text('Estimated Monthly Payment', style: AppTextStyles.dmSans(size: 10.5, color: Colors.white70)),
+                      const Text('📊', style: TextStyle(fontSize: 36)),
+                      const SizedBox(height: 8),
+                      Text('Euribor Impact Analysis',
+                          style: AppTextStyles.playfair(
+                              size: 14, weight: FontWeight.w800, color: textColor)),
                       const SizedBox(height: 4),
                       Text(
-                        CurrencyFormatter.format(monthlyPayment, symbol: '€'),
-                        style: AppTextStyles.playfair(size: 28, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'at ${totalRate.toStringAsFixed(2)}% rate ($eurRate% Euribor + ${_spread.toStringAsFixed(2)}% spread)',
-                        style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
+                        'Set loan parameters and click Calculate Impact\nto simulate Euribor rate cuts or hikes.',
+                        style: AppTextStyles.dmSans(size: 11, color: mutedText, height: 1.4),
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 12),
-
-                // Saving items
-                Row(
-                  children: [
-                    _impactMiniStat('Current Total Rate', '${totalRate.toStringAsFixed(2)}%', Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor),
-                    const SizedBox(width: 8),
-                    _impactMiniStat('Peak Saving/mo', '- ${CurrencyFormatter.compact(monthlySaving, symbol: '€')}', Colors.green),
-                    const SizedBox(width: 8),
-                    _impactMiniStat('Annual Saving', '- ${CurrencyFormatter.compact(annualSaving, symbol: '€')}/yr', Theme.of(context).brightness == Brightness.dark ? Colors.greenAccent : Colors.green.shade800),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Scenarios
-                Text('Rate Shock Scenarios', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: textColor)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _scenarioBox('If -1% Cut', '${(totalRate - 1.0).toStringAsFixed(2)}%', payMinus),
-                    const SizedBox(width: 6),
-                    _scenarioBox('Current Rate', '${totalRate.toStringAsFixed(2)}%', monthlyPayment, isCurrent: true),
-                    const SizedBox(width: 6),
-                    _scenarioBox('If +1% Hike', '${(totalRate + 1.0).toStringAsFixed(2)}%', payPlus),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Save button
-                ElevatedButton.icon(
-                  onPressed: () => _saveTrackerResult(monthlyPayment, totalRate, annualSaving),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.primaryColor,
-                    minimumSize: const Size.fromHeight(44),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                  label: Text('Save This Analysis',
-                      style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w800)),
                 ),
               ],
             ],

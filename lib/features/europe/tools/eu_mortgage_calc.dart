@@ -36,19 +36,11 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
   int _termYears = 20;
   double _rate = 3.85;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   // State variables for calculate-on-demand
   bool _hasCalculated = false;
-  bool _isDirty = true;
-
-  double _calculatedMonthly = 0.0;
-  double _calculatedLoan = 0.0;
-  double _calculatedTotalRepaid = 0.0;
-  double _calculatedTotalInterest = 0.0;
-  double _calculatedLtv = 0.0;
-  int? _calculatedBEvenYr;
-  double _calculatedInterestRatio = 0.0;
-  double _calculatedMonthlyInt = 0.0;
-  final List<Map<String, String>> _calculatedInsights = [];
 
   final Map<String, List<Map<String, dynamic>>> _lenders = {
     'DE': [
@@ -94,9 +86,9 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
     super.initState();
     if (widget.savedCalc != null) {
       final inputs = widget.savedCalc!.inputs;
-      _propValue = inputs['propValue'] ?? 420000;
-      _depositPct = inputs['depositPct'] ?? 20;
-      _termYears = (inputs['termYears'] ?? 20).toInt();
+      _propValue = inputs['propValue'] ?? 420000.0;
+      _depositPct = inputs['depositPct'] ?? 20.0;
+      _termYears = (inputs['termYears'] ?? 20.0).toInt();
       _rate = inputs['rate'] ?? 3.85;
       final typeVal = inputs['mortgageType'] ?? 0.0;
       _mortgageType = typeVal == 0.0
@@ -105,31 +97,84 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
               ? 'interest'
               : 'endowment';
       _countryCode = widget.savedCalc!.label.split(' - ').last;
-      _calculate();
+
+      _calcSnapshot['propValue'] = _propValue;
+      _calcSnapshot['depositPct'] = _depositPct;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['mortgageType'] = _mortgageType;
+      _calcSnapshot['countryCode'] = _countryCode;
+
       _hasCalculated = true;
-      _isDirty = false;
     }
   }
 
-  void _markDirty() {
-    if (!_isDirty) {
-      setState(() {
-        _isDirty = true;
-      });
-    }
+  void _markDirty() {}
+
+  void _runCalc() {
+    setState(() {
+      _calcSnapshot['propValue'] = _propValue;
+      _calcSnapshot['depositPct'] = _depositPct;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['mortgageType'] = _mortgageType;
+      _calcSnapshot['countryCode'] = _countryCode;
+      _hasCalculated = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
-  void _calculate() {
-    final deposit = _propValue * (_depositPct / 100);
-    final loan = _propValue - deposit;
-    final n = _termYears * 12;
-    final r = (_rate / 100) / 12;
+  void _reset() {
+    setState(() {
+      _countryCode = 'DE';
+      _mortgageType = 'repayment';
+      _propValue = 420000;
+      _depositPct = 20;
+      _termYears = 20;
+      _rate = 3.85;
+      _hasCalculated = false;
+      _calcSnapshot.clear();
+    });
+  }
+
+  void _saveCalculation() async {
+    if (!_hasCalculated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('⚠️ Calculate first, then save!',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          backgroundColor: Colors.orange.shade800,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final double snapPropValue = _calcSnapshot['propValue'] ?? _propValue;
+    final double snapDepositPct = _calcSnapshot['depositPct'] ?? _depositPct;
+    final int snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final double snapRate = _calcSnapshot['rate'] ?? _rate;
+    final String snapMortgageType = _calcSnapshot['mortgageType'] ?? _mortgageType;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final deposit = snapPropValue * (snapDepositPct / 100);
+    final loan = snapPropValue - deposit;
+    final n = snapTermYears * 12;
+    final r = (snapRate / 100) / 12;
 
     double monthly = 0;
     double totalRepaid = 0;
     double totalInterest = 0;
 
-    if (_mortgageType == 'interest') {
+    if (snapMortgageType == 'interest') {
       monthly = loan * r;
       totalInterest = monthly * n;
       totalRepaid = totalInterest + loan;
@@ -141,70 +186,7 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
       totalInterest = totalRepaid - loan;
     }
 
-    final ltv = (loan / _propValue) * 100;
-
-    // Break-even year calculation
-    int? bEvenYr;
-    if (_mortgageType != 'interest') {
-      double cumP = 0;
-      double cumI = 0;
-      double bal = loan;
-      for (int m = 1; m <= n; m++) {
-        final interest = bal * r;
-        final principal = monthly - interest;
-        cumI += interest;
-        cumP += principal;
-        bal = math.max(0, bal - principal);
-        if (bEvenYr == null && cumP >= cumI) {
-          bEvenYr = (m / 12).ceil();
-        }
-      }
-    }
-
-    _calculatedInsights.clear();
-    if (ltv > 80) {
-      _calculatedInsights.add({'icon': '⚠️', 'text': 'LTV >80% — lenders may require PMI'});
-    }
-    if (_rate > 5.0) {
-      _calculatedInsights.add({'icon': '📉', 'text': 'Rate above 5% — consider fixed-rate protection'});
-    }
-    if (loan > 0 && totalInterest / loan > 0.6) {
-      _calculatedInsights.add({'icon': '💡', 'text': 'Interest >60% of loan — consider shorter term'});
-    }
-    if (_depositPct >= 20.0) {
-      _calculatedInsights.add({'icon': '✅', 'text': '20%+ deposit — best rate tier'});
-    }
-
-    _calculatedMonthly = monthly;
-    _calculatedLoan = loan;
-    _calculatedTotalRepaid = totalRepaid;
-    _calculatedTotalInterest = totalInterest;
-    _calculatedLtv = ltv;
-    _calculatedBEvenYr = bEvenYr;
-    _calculatedInterestRatio = totalRepaid > 0 ? (totalInterest / totalRepaid) * 100 : 0.0;
-    _calculatedMonthlyInt = loan * r;
-  }
-
-  void _runCalc() {
-    setState(() {
-      _calculate();
-      _hasCalculated = true;
-      _isDirty = false;
-    });
-  }
-
-  void _saveCalculation() async {
-    if (_isDirty || !_hasCalculated) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('⚠️ Calculate first, then save!',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-          backgroundColor: Colors.orange.shade800,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
+    final ltv = (loan / snapPropValue) * 100;
 
     final labelCtrl = TextEditingController(text: 'Europe Mortgage');
     final confirmed = await showDialog<bool>(
@@ -221,7 +203,7 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Price ${CurrencyFormatter.compact(_propValue, symbol: '€')} · Payment: ${CurrencyFormatter.compact(_calculatedMonthly, symbol: '€')}/mo',
+              'Saving: Price ${CurrencyFormatter.compact(snapPropValue, symbol: '€')} · Payment: ${CurrencyFormatter.compact(monthly, symbol: '€')}/mo',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -273,24 +255,24 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
         country: 'Europe',
         calcType: 'Mortgage Calc',
         inputs: {
-          'propValue': _propValue,
-          'depositPct': _depositPct,
-          'termYears': _termYears.toDouble(),
-          'rate': _rate,
-          'mortgageType': _mortgageType == 'repayment'
+          'propValue': snapPropValue,
+          'depositPct': snapDepositPct,
+          'termYears': snapTermYears.toDouble(),
+          'rate': snapRate,
+          'mortgageType': snapMortgageType == 'repayment'
               ? 0.0
-              : _mortgageType == 'interest'
+              : snapMortgageType == 'interest'
                   ? 1.0
                   : 2.0,
         },
         results: {
-          'Payment': _calculatedMonthly,
-          'Loan Amount': _calculatedLoan,
-          'Total Repaid': _calculatedTotalRepaid,
-          'Total Interest': _calculatedTotalInterest,
-          'LTV': _calculatedLtv,
+          'Payment': monthly,
+          'Loan Amount': loan,
+          'Total Repaid': totalRepaid,
+          'Total Interest': totalInterest,
+          'LTV': ltv,
         },
-        label: '$label - $_countryCode',
+        label: '$label - $snapCountryCode',
         currencyCode: 'EUR',
       );
 
@@ -310,8 +292,29 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
   }
 
   void _shareCalculation() {
-    if (_isDirty || !_hasCalculated) return;
-    final text = 'Mortgage: ${CurrencyFormatter.format(_calculatedMonthly, symbol: '€')}/mo | $_countryCode · $_termYears yr · ${_rate.toStringAsFixed(2)}% · ${CurrencyFormatter.format(_calculatedLoan, symbol: '€')} loan';
+    if (!_hasCalculated) return;
+    final double snapPropValue = _calcSnapshot['propValue'] ?? _propValue;
+    final double snapDepositPct = _calcSnapshot['depositPct'] ?? _depositPct;
+    final int snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final double snapRate = _calcSnapshot['rate'] ?? _rate;
+    final String snapMortgageType = _calcSnapshot['mortgageType'] ?? _mortgageType;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final deposit = snapPropValue * (snapDepositPct / 100);
+    final loan = snapPropValue - deposit;
+    final n = snapTermYears * 12;
+    final r = (snapRate / 100) / 12;
+
+    double monthly = 0;
+    if (snapMortgageType == 'interest') {
+      monthly = loan * r;
+    } else {
+      monthly = r == 0
+          ? loan / n
+          : loan * (r * math.pow(1 + r, n)) / (math.pow(1 + r, n) - 1);
+    }
+
+    final text = 'Mortgage: ${CurrencyFormatter.format(monthly, symbol: '€')}/mo | $snapCountryCode · $snapTermYears yr · ${snapRate.toStringAsFixed(2)}% · ${CurrencyFormatter.format(loan, symbol: '€')} loan';
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -331,7 +334,80 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
     final textColor = theme.getTextColor(context);
     final mutedText = theme.getMutedColor(context);
 
-    final currentDeposit = _propValue * (_depositPct / 100);
+    final double snapPropValue = _calcSnapshot['propValue'] ?? _propValue;
+    final double snapDepositPct = _calcSnapshot['depositPct'] ?? _depositPct;
+    final int snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final double snapRate = _calcSnapshot['rate'] ?? _rate;
+    final String snapMortgageType = _calcSnapshot['mortgageType'] ?? _mortgageType;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final deposit = snapPropValue * (snapDepositPct / 100);
+    final loan = snapPropValue - deposit;
+    final n = snapTermYears * 12;
+    final r = (snapRate / 100) / 12;
+
+    double monthly = 0;
+    double totalRepaid = 0;
+    double totalInterest = 0;
+
+    if (snapMortgageType == 'interest') {
+      monthly = loan * r;
+      totalInterest = monthly * n;
+      totalRepaid = totalInterest + loan;
+    } else {
+      monthly = r == 0
+          ? loan / n
+          : loan * (r * math.pow(1 + r, n)) / (math.pow(1 + r, n) - 1);
+      totalRepaid = monthly * n;
+      totalInterest = totalRepaid - loan;
+    }
+
+    final ltv = (loan / snapPropValue) * 100;
+
+    // Break-even year calculation
+    int? bEvenYr;
+    if (snapMortgageType != 'interest') {
+      double cumP = 0;
+      double cumI = 0;
+      double bal = loan;
+      for (int m = 1; m <= n; m++) {
+        final interest = bal * r;
+        final principal = monthly - interest;
+        cumI += interest;
+        cumP += principal;
+        bal = math.max(0, bal - principal);
+        if (bEvenYr == null && cumP >= cumI) {
+          bEvenYr = (m / 12).ceil();
+        }
+      }
+    }
+
+    final List<Map<String, String>> insights = [];
+    if (ltv > 80) {
+      insights.add({'icon': '⚠️', 'text': 'LTV >80% — lenders may require PMI'});
+    }
+    if (snapRate > 5.0) {
+      insights.add({'icon': '📉', 'text': 'Rate above 5% — consider fixed-rate protection'});
+    }
+    if (loan > 0 && totalInterest / loan > 0.6) {
+      insights.add({'icon': '💡', 'text': 'Interest >60% of loan — consider shorter term'});
+    }
+    if (snapDepositPct >= 20.0) {
+      insights.add({'icon': '✅', 'text': '20%+ deposit — best rate tier'});
+    }
+
+    final double interestRatio = totalRepaid > 0 ? (totalInterest / totalRepaid) * 100 : 0.0;
+    final double monthlyInt = loan * r;
+
+    final isDirty = _hasCalculated && (
+      _propValue != snapPropValue ||
+      _depositPct != snapDepositPct ||
+      _termYears != snapTermYears ||
+      _rate != snapRate ||
+      _mortgageType != snapMortgageType ||
+      _countryCode != snapCountryCode
+    );
+
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sliderActiveColor = isDark ? theme.accentColor : theme.primaryColor;
@@ -371,7 +447,16 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
         const SizedBox(height: 14),
 
         // Select Country Pills
-        Text('SELECT COUNTRY', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('SELECT COUNTRY', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+            GestureDetector(
+              onTap: _reset,
+              child: Text('Reset', style: AppTextStyles.dmSans(size: 11, color: theme.primaryColor, weight: FontWeight.w700)),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         SizedBox(
           height: 38,
@@ -531,298 +616,301 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
         ),
         const SizedBox(height: 20),
 
-        // Results Section (Calculate-on-demand pending overlay style)
-        Stack(
-          children: [
-            Opacity(
-              opacity: (!_hasCalculated || _isDirty) ? 0.35 : 1.0,
-              child: IgnorePointer(
-                ignoring: !_hasCalculated || _isDirty,
+        // Results Section
+        if (_hasCalculated) ...[
+          Column(
+            key: _resultsKey,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    border: Border.all(color: const Color(0xFFFCD34D)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('⚠️', style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Calculate again to update results.',
+                          style: AppTextStyles.dmSans(
+                            size: 11.5,
+                            color: const Color(0xFFB45309),
+                            weight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              // Main Result Panel Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: theme.headerGradient,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    )
+                  ],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Main Result Panel Card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: theme.headerGradient,
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.18),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Monthly Payment', style: AppTextStyles.dmSans(size: 11, color: Colors.white70, weight: FontWeight.w600)),
-                          const SizedBox(height: 4),
-                          Text(
-                            CurrencyFormatter.format(_calculatedMonthly, symbol: '€'),
-                            style: AppTextStyles.playfair(size: 38, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '$_countryCode · $_termYears yr · ${_rate.toStringAsFixed(2)}% · ${CurrencyFormatter.format(_calculatedLoan, symbol: '€')} loan',
-                            style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _resultMiniBox('Total Repaid', CurrencyFormatter.format(_calculatedTotalRepaid, symbol: '€')),
-                              _resultMiniBox('Total Interest', CurrencyFormatter.format(_calculatedTotalInterest, symbol: '€')),
-                              _resultMiniBox('LTV Ratio', '${_calculatedLtv.toStringAsFixed(0)}%'),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Container(height: 0.5, color: Colors.white12),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: _saveCalculation,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFCC00).withValues(alpha: 0.18),
-                                      border: Border.all(color: const Color(0xFFFFCC00).withValues(alpha: 0.45)),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text('💾 Save Calculation', style: AppTextStyles.dmSans(size: 12, color: const Color(0xFFFFCC00), weight: FontWeight.w800)),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: _shareCalculation,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.08),
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text('📤 Share', style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w800)),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    Text('Monthly Payment', style: AppTextStyles.dmSans(size: 11, color: Colors.white70, weight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text(
+                      CurrencyFormatter.format(monthly, symbol: '€'),
+                      style: AppTextStyles.playfair(size: 38, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$snapCountryCode · $snapTermYears yr · ${snapRate.toStringAsFixed(2)}% · ${CurrencyFormatter.format(loan, symbol: '€')} loan',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
                     ),
                     const SizedBox(height: 16),
-
-                    // Smart Insights Badges List
-                    if (_calculatedInsights.isNotEmpty) ...[
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: _calculatedInsights.map((ins) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              border: Border.all(color: Colors.blue.shade200),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(ins['icon']!, style: const TextStyle(fontSize: 12)),
-                                const SizedBox(width: 4),
-                                Text(ins['text']!, style: AppTextStyles.dmSans(size: 10, color: Colors.blue.shade900, weight: FontWeight.w700)),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Payment Breakdown Donut Card
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: borderCol),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('💰 Payment Breakdown', style: AppTextStyles.cardTitle(textColor)),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: 90,
-                                height: 90,
-                                child: CustomPaint(
-                                  painter: DonutChartPainter(
-                                    _calculatedLoan / math.max(1.0, _calculatedLoan + _calculatedTotalInterest + currentDeposit),
-                                    _calculatedTotalInterest / math.max(1.0, _calculatedLoan + _calculatedTotalInterest + currentDeposit),
-                                    currentDeposit / math.max(1.0, _calculatedLoan + _calculatedTotalInterest + currentDeposit),
-                                  ),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          '${(_calculatedTotalRepaid > 0 ? (_calculatedLoan / _calculatedTotalRepaid * 100) : 0).toStringAsFixed(0)}%',
-                                          style: AppTextStyles.playfair(size: 13, color: textColor, weight: FontWeight.w900),
-                                        ),
-                                        Text('Principal', style: AppTextStyles.dmSans(size: 8, color: mutedText)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    _legendRow(const Color(0xFF003399), 'Principal', CurrencyFormatter.format(_calculatedLoan, symbol: '€')),
-                                    const SizedBox(height: 6),
-                                    _legendRow(const Color(0xFFFFCC00), 'Interest', CurrencyFormatter.format(_calculatedTotalInterest, symbol: '€')),
-                                    const SizedBox(height: 6),
-                                    _legendRow(const Color(0xFFE0E7FF), 'Deposit', CurrencyFormatter.format(currentDeposit, symbol: '€')),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _statCell('Interest Ratio', '${_calculatedInterestRatio.toStringAsFixed(0)}%'),
-                              _statCell('Monthly Int.', CurrencyFormatter.format(_calculatedMonthlyInt, symbol: '€')),
-                              _statCell('Break-Even Yr', _calculatedBEvenYr != null ? 'Yr $_calculatedBEvenYr' : 'N/A'),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Amortization Analysis tabs (Bar Chart vs Balance Curve)
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: borderCol),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('📈 Amortization Analysis', style: AppTextStyles.cardTitle(textColor)),
-                              Row(
-                                children: [
-                                  _chartTabButton('bar', 'Bar'),
-                                  const SizedBox(width: 4),
-                                  _chartTabButton('balance', 'Curve'),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          if (_chartView == 'bar')
-                            _buildAmortizationBars(_calculatedLoan, _calculatedMonthly, (_rate / 100) / 12)
-                          else
-                            _buildAmortizationCurve(_calculatedLoan, _calculatedMonthly, (_rate / 100) / 12),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Current Lender Rates
-                    Text('🏦 CURRENT LENDER RATES', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 110,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: (_lenders[_countryCode] ?? []).length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemBuilder: (context, idx) {
-                          final lender = _lenders[_countryCode]![idx];
-                          return Container(
-                            width: 130,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: cardBg,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: borderCol),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(lender['name'], style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textColor)),
-                                const Spacer(),
-                                Text('${lender['rate'].toStringAsFixed(2)}%', style: AppTextStyles.playfair(size: 18, color: theme.primaryColor, weight: FontWeight.w900)),
-                                const SizedBox(height: 2),
-                                Text(lender['type'], style: AppTextStyles.dmSans(size: 10, color: mutedText)),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (!_hasCalculated || _isDirty)
-              Positioned.fill(
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: cardBg.withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: borderCol),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 10,
-                        )
+                    Row(
+                      children: [
+                        _resultMiniBox('Total Repaid', CurrencyFormatter.format(totalRepaid, symbol: '€')),
+                        _resultMiniBox('Total Interest', CurrencyFormatter.format(totalInterest, symbol: '€')),
+                        _resultMiniBox('LTV Ratio', '${ltv.toStringAsFixed(0)}%'),
                       ],
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 16),
+                    Container(height: 0.5, color: Colors.white12),
+                    const SizedBox(height: 12),
+                    Row(
                       children: [
-                        Text(
-                          !_hasCalculated
-                              ? '⬆️ Tap Calculate Mortgage to see your results'
-                              : '🔄 Inputs changed. Tap Calculate Mortgage to refresh',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.dmSans(
-                            size: 12,
-                            weight: FontWeight.w700,
-                            color: theme.primaryColor,
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _saveCalculation,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFCC00).withValues(alpha: 0.18),
+                                border: Border.all(color: const Color(0xFFFFCC00).withValues(alpha: 0.45)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text('💾 Save Calculation', style: AppTextStyles.dmSans(size: 12, color: const Color(0xFFFFCC00), weight: FontWeight.w800)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _shareCalculation,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text('📤 Share', style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w800)),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
-          ],
-        ),
+              const SizedBox(height: 16),
+
+              // Smart Insights Badges List
+              if (insights.isNotEmpty) ...[
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: insights.map((ins) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        border: Border.all(color: Colors.blue.shade200),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(ins['icon']!, style: const TextStyle(fontSize: 12)),
+                          const SizedBox(width: 4),
+                          Text(ins['text']!, style: AppTextStyles.dmSans(size: 10, color: Colors.blue.shade900, weight: FontWeight.w700)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Payment Breakdown Donut Card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('💰 Payment Breakdown', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 90,
+                          height: 90,
+                          child: CustomPaint(
+                            painter: DonutChartPainter(
+                              loan / math.max(1.0, loan + totalInterest + deposit),
+                              totalInterest / math.max(1.0, loan + totalInterest + deposit),
+                              deposit / math.max(1.0, loan + totalInterest + deposit),
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '${(totalRepaid > 0 ? (loan / totalRepaid * 100) : 0).toStringAsFixed(0)}%',
+                                    style: AppTextStyles.playfair(size: 13, color: textColor, weight: FontWeight.w900),
+                                  ),
+                                  Text('Principal', style: AppTextStyles.dmSans(size: 8, color: mutedText)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              _legendRow(const Color(0xFF003399), 'Principal', CurrencyFormatter.format(loan, symbol: '€')),
+                              const SizedBox(height: 6),
+                              _legendRow(const Color(0xFFFFCC00), 'Interest', CurrencyFormatter.format(totalInterest, symbol: '€')),
+                              const SizedBox(height: 6),
+                              _legendRow(const Color(0xFFE0E7FF), 'Deposit', CurrencyFormatter.format(deposit, symbol: '€')),
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _statCell('Interest Ratio', '${interestRatio.toStringAsFixed(0)}%'),
+                        _statCell('Monthly Int.', CurrencyFormatter.format(monthlyInt, symbol: '€')),
+                        _statCell('Break-Even Yr', bEvenYr != null ? 'Yr $bEvenYr' : 'N/A'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Amortization Analysis tabs (Bar Chart vs Balance Curve)
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('📈 Amortization Analysis', style: AppTextStyles.cardTitle(textColor)),
+                        Row(
+                          children: [
+                            _chartTabButton('bar', 'Bar'),
+                            const SizedBox(width: 4),
+                            _chartTabButton('balance', 'Curve'),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    if (_chartView == 'bar')
+                      _buildAmortizationBars(loan, monthly, r, snapTermYears)
+                    else
+                      _buildAmortizationCurve(loan, monthly, r, snapTermYears),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Current Lender Rates
+              Text('🏦 CURRENT LENDER RATES', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 110,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: (_lenders[snapCountryCode] ?? []).length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, idx) {
+                    final lender = _lenders[snapCountryCode]![idx];
+                    return Container(
+                      width: 130,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: borderCol),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(lender['name'], style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textColor)),
+                          const Spacer(),
+                          Text('${lender['rate'].toStringAsFixed(2)}%', style: AppTextStyles.playfair(size: 18, color: theme.primaryColor, weight: FontWeight.w900)),
+                          const SizedBox(height: 2),
+                          Text(lender['type'], style: AppTextStyles.dmSans(size: 10, color: mutedText)),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ] else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            child: Column(
+              children: [
+                const Text('🏡', style: TextStyle(fontSize: 48)),
+                const SizedBox(height: 12),
+                Text('Calculate Mortgage',
+                    style: AppTextStyles.playfair(
+                        size: 15, weight: FontWeight.w800, color: textColor)),
+                const SizedBox(height: 6),
+                Text(
+                  'Select country, property price, deposit, term, and rate,\nthen tap Calculate Mortgage to see estimated payments.',
+                  style: AppTextStyles.dmSans(size: 11, color: mutedText, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -834,7 +922,6 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
         setState(() {
           _countryCode = code;
           _rate = rate;
-          _markDirty();
         });
       },
       child: Container(
@@ -1002,8 +1089,8 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
     );
   }
 
-  Widget _buildAmortizationBars(double loan, double monthly, double r) {
-    final List<int> checkYears = [5, 10, 15, 20, 25, 30].where((y) => y <= _termYears).toList();
+  Widget _buildAmortizationBars(double loan, double monthly, double r, int termYears) {
+    final List<int> checkYears = [5, 10, 15, 20, 25, 30].where((y) => y <= termYears).toList();
     final maxPay = monthly * 12;
     double bal = loan;
     final List<Widget> bars = [];
@@ -1058,7 +1145,7 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
     return Column(children: bars);
   }
 
-  Widget _buildAmortizationCurve(double loan, double monthly, double r) {
+  Widget _buildAmortizationCurve(double loan, double monthly, double r, int termYears) {
     return SizedBox(
       height: 140,
       width: double.infinity,
@@ -1067,7 +1154,7 @@ class _EUMortgageCalcState extends ConsumerState<EUMortgageCalc> {
           loan: loan,
           monthly: monthly,
           r: r,
-          termYears: _termYears,
+          termYears: termYears,
           theme: widget.theme,
           isDark: Theme.of(context).brightness == Brightness.dark,
         ),

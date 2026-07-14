@@ -27,6 +27,9 @@ class EUAmortizationCalc extends ConsumerStatefulWidget {
 }
 
 class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   String _countryCode = 'DE';
   String _rateType = 'fixed'; // fixed, variable
   double _loanAmount = 336000;
@@ -65,6 +68,14 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
       _rate = inputs['rate'] ?? 3.85;
       _termYears = (inputs['termYears'] ?? 20).toInt();
       _countryCode = widget.savedCalc!.label.split(' - ').last;
+
+      _calcSnapshot['loanAmount'] = _loanAmount;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['countryCode'] = _countryCode;
+      _calcSnapshot['rateType'] = _rateType;
+      _calcSnapshot['startMonth'] = _startMonth;
+
       _hasCalculated = true;
     }
   }
@@ -75,7 +86,55 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
     });
   }
 
-  void _saveCalculation(double monthly, double totalPay, double totalInt) async {
+  void _runCalc() {
+    setState(() {
+      _calcSnapshot['loanAmount'] = _loanAmount;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['countryCode'] = _countryCode;
+      _calcSnapshot['rateType'] = _rateType;
+      _calcSnapshot['startMonth'] = _startMonth;
+      _hasCalculated = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _loanAmount = 336000;
+      _rate = 3.85;
+      _termYears = 20;
+      _countryCode = 'DE';
+      _rateType = 'fixed';
+      _startMonth = '2026-01';
+      _hasCalculated = false;
+      _calcSnapshot.clear();
+    });
+  }
+
+  void _saveCalculation() async {
+    final double loanAmount = _calcSnapshot['loanAmount'] ?? _loanAmount;
+    final double rate = _calcSnapshot['rate'] ?? _rate;
+    final int termYears = _calcSnapshot['termYears'] ?? _termYears;
+    final String countryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final double P = loanAmount;
+    final double annualR = rate / 100;
+    final double r = annualR / 12;
+    final int n = termYears * 12;
+
+    final double monthly = P * (r * math.pow(1 + r, n)) / (math.pow(1 + r, n) - 1);
+    final double totalPay = monthly * n;
+    final double totalInt = totalPay - P;
+
     final labelCtrl = TextEditingController(text: 'Europe Amortization');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -91,7 +150,7 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Loan ${CurrencyFormatter.compact(_loanAmount, symbol: '€')} · Monthly: ${CurrencyFormatter.compact(monthly, symbol: '€')}',
+              'Saving: Loan ${CurrencyFormatter.compact(loanAmount, symbol: '€')} · Monthly: ${CurrencyFormatter.compact(monthly, symbol: '€')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -143,16 +202,16 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
         country: 'Europe',
         calcType: 'Amortization Calc',
         inputs: {
-          'loanAmount': _loanAmount,
-          'rate': _rate,
-          'termYears': _termYears.toDouble(),
+          'loanAmount': loanAmount,
+          'rate': rate,
+          'termYears': termYears.toDouble(),
         },
         results: {
           'Payment': monthly,
           'Total Paid': totalPay,
           'Total Interest': totalInt,
         },
-        label: '$label - $_countryCode',
+        label: '$label - $countryCode',
         currencyCode: 'EUR',
       );
 
@@ -180,11 +239,18 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
     final textColor = theme.getTextColor(context);
     final mutedText = theme.getMutedColor(context);
 
+    final double snapLoanAmount = _calcSnapshot['loanAmount'] ?? _loanAmount;
+    final double snapRate = _calcSnapshot['rate'] ?? _rate;
+    final int snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+    final String snapRateType = _calcSnapshot['rateType'] ?? _rateType;
+    final String snapStartMonth = _calcSnapshot['startMonth'] ?? _startMonth;
+
     // Calc math
-    final double P = _loanAmount;
-    final double annualR = _rate / 100;
+    final double P = snapLoanAmount;
+    final double annualR = snapRate / 100;
     final double r = annualR / 12;
-    final int n = _termYears * 12;
+    final int n = snapTermYears * 12;
 
     final double monthly = P * (r * math.pow(1 + r, n)) / (math.pow(1 + r, n) - 1);
     final double totalPay = monthly * n;
@@ -192,16 +258,16 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
     final double intPct = totalPay > 0 ? (totalInt / totalPay * 100) : 0;
 
     // Payoff Date calculation
-    final parts = _startMonth.split('-');
+    final parts = snapStartMonth.split('-');
     final startYear = int.parse(parts[0]);
     final startMonthNum = int.parse(parts[1]);
-    final payoffDateTime = DateTime(startYear, startMonthNum - 1 + _termYears * 12);
+    final payoffDateTime = DateTime(startYear, startMonthNum - 1 + snapTermYears * 12);
     final payoffDateStr = DateFormat('MMM yyyy').format(payoffDateTime);
 
     // Generating schedule list
     final List<Map<String, dynamic>> yearlyData = [];
     double bal = P;
-    for (int yr = 1; yr <= _termYears; yr++) {
+    for (int yr = 1; yr <= snapTermYears; yr++) {
       double yearPrin = 0;
       double yearInt = 0;
       double yearPay = 0;
@@ -223,7 +289,16 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
       });
     }
 
-    final visRows = _showAllYears ? _termYears : 5;
+    final visRows = _showAllYears ? snapTermYears : 5;
+
+    final isDirty = _hasCalculated && (
+      _loanAmount != snapLoanAmount ||
+      _rate != snapRate ||
+      _termYears != snapTermYears ||
+      _countryCode != snapCountryCode ||
+      _rateType != snapRateType ||
+      _startMonth != snapStartMonth
+    );
 
     // Live ECB rates
     final ratesAsync = ref.watch(europeRatesProvider);
@@ -256,7 +331,16 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
           ),
         ),
         const SizedBox(height: 14),
-        Text('LOAN DETAILS', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('LOAN DETAILS', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+            GestureDetector(
+              onTap: _reset,
+              child: Text('Reset', style: AppTextStyles.dmSans(size: 11, color: theme.primaryColor, weight: FontWeight.w700)),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
 
         // Inputs Card
@@ -483,7 +567,7 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
               const SizedBox(height: 16),
 
               GestureDetector(
-                onTap: () => setState(() => _hasCalculated = true),
+                onTap: _runCalc,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -520,176 +604,209 @@ class _EUAmortizationCalcState extends ConsumerState<EUAmortizationCalc> {
         const SizedBox(height: 16),
 
         if (_hasCalculated) ...[
-          // Summary boxes
-          Text('SUMMARY', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
-          const SizedBox(height: 8),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            childAspectRatio: 1.8,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+          Column(
+            key: _resultsKey,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    border: Border.all(color: const Color(0xFFFCD34D)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('⚠️', style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Calculate again to update results.',
+                          style: AppTextStyles.dmSans(
+                            size: 11.5,
+                            color: const Color(0xFFB45309),
+                            weight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              // Summary boxes
+              Text('SUMMARY', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+              const SizedBox(height: 8),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                childAspectRatio: 1.8,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: theme.headerGradient,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Monthly Payment', style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold)),
+                        const Spacer(),
+                        Text(CurrencyFormatter.format(monthly, symbol: '€'), style: AppTextStyles.playfair(size: 18, color: const Color(0xFFFFCC00), weight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        const Text('Fixed instalment', style: TextStyle(color: Colors.white38, fontSize: 8)),
+                      ],
+                    ),
+                  ),
+                  _summaryBox('Total Payment', CurrencyFormatter.format(totalPay, symbol: '€'), 'Over full term'),
+                  _summaryBox('Total Interest', CurrencyFormatter.format(totalInt, symbol: '€'), '${intPct.toStringAsFixed(1)}% of loan'),
+                  _summaryBox('Payoff Date', payoffDateStr, '$snapTermYears years term'),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Stacked Bar visual
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  gradient: theme.headerGradient,
-                  borderRadius: BorderRadius.circular(15),
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Monthly Payment', style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold)),
-                    const Spacer(),
-                    Text(CurrencyFormatter.format(monthly, symbol: '€'), style: AppTextStyles.playfair(size: 18, color: const Color(0xFFFFCC00), weight: FontWeight.bold)),
-                    const SizedBox(height: 2),
-                    const Text('Fixed instalment', style: TextStyle(color: Colors.white38, fontSize: 8)),
+                    Text('Composition Breakdown', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 16,
+                      width: double.infinity,
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+                      clipBehavior: Clip.hardEdge,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: (P / totalPay * 100).round(),
+                            child: Container(color: const Color(0xFF003399)),
+                          ),
+                          Expanded(
+                            flex: (totalInt / totalPay * 100).round(),
+                            child: Container(color: const Color(0xFFFFCC00)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _legendRow(const Color(0xFF003399), 'Principal ${CurrencyFormatter.format(P, symbol: '€')} (${(P / totalPay * 100).toStringAsFixed(1)}%)'),
+                    const SizedBox(height: 6),
+                    _legendRow(const Color(0xFFFFCC00), 'Interest ${CurrencyFormatter.format(totalInt, symbol: '€')} (${(totalInt / totalPay * 100).toStringAsFixed(1)}%)'),
                   ],
                 ),
               ),
-              _summaryBox('Total Payment', CurrencyFormatter.format(totalPay, symbol: '€'), 'Over full term'),
-              _summaryBox('Total Interest', CurrencyFormatter.format(totalInt, symbol: '€'), '${intPct.toStringAsFixed(1)}% of loan'),
-              _summaryBox('Payoff Date', payoffDateStr, '$_termYears years term'),
-            ],
-          ),
-          const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-          // Stacked Bar visual
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Composition Breakdown', style: AppTextStyles.cardTitle(textColor)),
-                const SizedBox(height: 12),
-                Container(
-                  height: 16,
-                  width: double.infinity,
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-                  clipBehavior: Clip.hardEdge,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: (P / totalPay * 100).round(),
-                        child: Container(color: const Color(0xFF003399)),
+              // Save Schedule Card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Row(
+                  children: [
+                    const Text('💾', style: TextStyle(fontSize: 28)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Save this Schedule', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.bold, color: textColor)),
+                          Text('Store calculation for later reference', style: AppTextStyles.dmSans(size: 10, color: mutedText)),
+                        ],
                       ),
-                      Expanded(
-                        flex: (totalInt / totalPay * 100).round(),
-                        child: Container(color: const Color(0xFFFFCC00)),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.primaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                    ],
-                  ),
+                      onPressed: _saveCalculation,
+                      child: Text('Save ✓', style: AppTextStyles.dmSans(size: 11, color: const Color(0xFFFFCC00), weight: FontWeight.bold)),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                _legendRow(const Color(0xFF003399), 'Principal ${CurrencyFormatter.format(P, symbol: '€')} (${(P / totalPay * 100).toStringAsFixed(1)}%)'),
-                const SizedBox(height: 6),
-                _legendRow(const Color(0xFFFFCC00), 'Interest ${CurrencyFormatter.format(totalInt, symbol: '€')} (${(totalInt / totalPay * 100).toStringAsFixed(1)}%)'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
+              ),
+              const SizedBox(height: 16),
 
-          // Save Schedule Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: borderCol),
-            ),
-            child: Row(
-              children: [
-                const Text('💾', style: TextStyle(fontSize: 28)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Save this Schedule', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.bold, color: textColor)),
-                      Text('Store calculation for later reference', style: AppTextStyles.dmSans(size: 10, color: mutedText)),
-                    ],
-                  ),
+              // Yearly table list
+              Text('YEARLY AMORTIZATION TABLE', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.primaryColor,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  onPressed: () => _saveCalculation(monthly, totalPay, totalInt),
-                  child: Text('Save ✓', style: AppTextStyles.dmSans(size: 11, color: const Color(0xFFFFCC00), weight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Yearly table list
-          Text('YEARLY AMORTIZATION TABLE', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            clipBehavior: Clip.hardEdge,
-            child: Column(
-              children: [
-                Container(
-                  color: theme.primaryColor.withValues(alpha: 0.05),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _headerCell('Yr'),
-                      _headerCell('Principal'),
-                      _headerCell('Interest'),
-                      _headerCell('Total Paid'),
-                      _headerCell('Balance'),
-                    ],
-                  ),
-                ),
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: visRows,
-                  separatorBuilder: (_, __) => Divider(height: 1, thickness: 0.5, color: borderCol),
-                  itemBuilder: (context, idx) {
-                    final data = yearlyData[idx];
-                    return Padding(
+                clipBehavior: Clip.hardEdge,
+                child: Column(
+                  children: [
+                    Container(
+                      color: theme.primaryColor.withValues(alpha: 0.05),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _cellText(data['year'].toString(), isBold: true, color: Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor),
-                          _cellText(CurrencyFormatter.format(data['principal'], symbol: '€')),
-                          _cellText(CurrencyFormatter.format(data['interest'], symbol: '€'), color: Theme.of(context).brightness == Brightness.dark ? Colors.orangeAccent : Colors.orange.shade800),
-                          _cellText(CurrencyFormatter.format(data['paid'], symbol: '€')),
-                          _cellText(CurrencyFormatter.format(data['balance'], symbol: '€'), color: Theme.of(context).brightness == Brightness.dark ? Colors.purple.shade200 : Colors.purple.shade900),
+                          _headerCell('Yr'),
+                          _headerCell('Principal'),
+                          _headerCell('Interest'),
+                          _headerCell('Total Paid'),
+                          _headerCell('Balance'),
                         ],
                       ),
-                    );
-                  },
-                ),
-                if (_termYears > 5 && !_showAllYears)
-                  GestureDetector(
-                    onTap: () => setState(() => _showAllYears = true),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      color: theme.primaryColor.withValues(alpha: 0.05),
-                      alignment: Alignment.center,
-                      child: Text('Show all $_termYears years ↓', style: AppTextStyles.dmSans(size: 12, color: Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor, weight: FontWeight.bold)),
                     ),
-                  ),
-              ],
-            ),
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: visRows,
+                      separatorBuilder: (_, __) => Divider(height: 1, thickness: 0.5, color: borderCol),
+                      itemBuilder: (context, idx) {
+                        final data = yearlyData[idx];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _cellText(data['year'].toString(), isBold: true, color: Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor),
+                              _cellText(CurrencyFormatter.format(data['principal'], symbol: '€')),
+                              _cellText(CurrencyFormatter.format(data['interest'], symbol: '€'), color: Theme.of(context).brightness == Brightness.dark ? Colors.orangeAccent : Colors.orange.shade800),
+                              _cellText(CurrencyFormatter.format(data['paid'], symbol: '€')),
+                              _cellText(CurrencyFormatter.format(data['balance'], symbol: '€'), color: Theme.of(context).brightness == Brightness.dark ? Colors.purple.shade200 : Colors.purple.shade900),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    if (snapTermYears > 5 && !_showAllYears)
+                      GestureDetector(
+                        onTap: () => setState(() => _showAllYears = true),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          color: theme.primaryColor.withValues(alpha: 0.05),
+                          alignment: Alignment.center,
+                          child: Text('Show all $snapTermYears years ↓', style: AppTextStyles.dmSans(size: 12, color: Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor, weight: FontWeight.bold)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ],

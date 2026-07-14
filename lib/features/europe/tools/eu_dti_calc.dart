@@ -37,18 +37,11 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
   final TextEditingController _personalCtrl = TextEditingController(text: '0');
   final TextEditingController _otherCtrl = TextEditingController(text: '0');
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   // State variables for calculation output
   bool _hasCalculated = false;
-  bool _isDirty = true;
-
-  double _calculatedDti = 0.0;
-  double _calculatedTotalInc = 0.0;
-  double _calculatedTotalDebt = 0.0;
-  double _calculatedMaxMonthlyDebt = 0.0;
-  double _calculatedHeadroom = 0.0;
-  Color _calculatedRatingColor = Colors.green;
-  String _calculatedStatusText = 'Calculate to see';
-  String _calculatedSubText = 'Enter your details above';
 
   final Map<String, Map<String, dynamic>> _countryData = {
     'DE': {'name': 'Germany', 'max': 40.0, 'flag': '🇩🇪'},
@@ -82,9 +75,18 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
       _personalCtrl.text = (inputs['personal'] ?? 0.0).toStringAsFixed(0);
       _otherCtrl.text = (inputs['other'] ?? 0.0).toStringAsFixed(0);
       _countryCode = widget.savedCalc!.label.split(' - ').last;
-      _calculate();
+
+      _calcSnapshot['income'] = _income;
+      _calcSnapshot['partnerIncome'] = _partnerIncome;
+      _calcSnapshot['rent'] = double.tryParse(_rentCtrl.text) ?? 1200.0;
+      _calcSnapshot['car'] = double.tryParse(_carCtrl.text) ?? 250.0;
+      _calcSnapshot['card'] = double.tryParse(_cardCtrl.text) ?? 80.0;
+      _calcSnapshot['student'] = double.tryParse(_studentCtrl.text) ?? 120.0;
+      _calcSnapshot['personal'] = double.tryParse(_personalCtrl.text) ?? 0.0;
+      _calcSnapshot['other'] = double.tryParse(_otherCtrl.text) ?? 0.0;
+      _calcSnapshot['countryCode'] = _countryCode;
+
       _hasCalculated = true;
-      _isDirty = false;
     }
   }
 
@@ -99,77 +101,50 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
     super.dispose();
   }
 
-  double _getDebtTotal() {
-    return (double.tryParse(_rentCtrl.text) ?? 0.0) +
-        (double.tryParse(_carCtrl.text) ?? 0.0) +
-        (double.tryParse(_cardCtrl.text) ?? 0.0) +
-        (double.tryParse(_studentCtrl.text) ?? 0.0) +
-        (double.tryParse(_personalCtrl.text) ?? 0.0) +
-        (double.tryParse(_otherCtrl.text) ?? 0.0);
-  }
-
-  void _markDirty() {
-    if (!_isDirty) {
-      setState(() {
-        _isDirty = true;
-      });
-    }
-  }
-
-  void _calculate() {
-    final totalInc = _income + _partnerIncome;
-    final totalDebt = _getDebtTotal();
-    final dti = totalInc > 0 ? (totalDebt / totalInc) * 100 : 0.0;
-
-    final countryInfo = _countryData[_countryCode]!;
-    final double maxDTI = countryInfo['max'];
-    final String countryName = countryInfo['name'];
-
-    Color ratingColor;
-    String statusText;
-    String subText;
-
-    if (dti <= 35) {
-      ratingColor = Colors.green;
-      statusText = '✅ Excellent';
-      subText = 'Well within $countryName limit (${maxDTI.toStringAsFixed(0)}%)';
-    } else if (dti <= maxDTI) {
-      ratingColor = Colors.orange;
-      statusText = '⚠️ Acceptable';
-      subText = 'Within $countryName limit (${maxDTI.toStringAsFixed(0)}%)';
-    } else if (dti <= 50) {
-      ratingColor = Colors.orange.shade700;
-      statusText = '🔶 Caution';
-      subText = 'Exceeds $countryName guideline of ${maxDTI.toStringAsFixed(0)}%';
-    } else {
-      ratingColor = Colors.red;
-      statusText = '❌ High Risk';
-      subText = 'Likely to be declined by EU lenders';
-    }
-
-    final maxMonthlyDebt = totalInc * (maxDTI / 100);
-    final headroom = math.max(0.0, maxMonthlyDebt - totalDebt);
-
-    _calculatedDti = dti;
-    _calculatedTotalInc = totalInc;
-    _calculatedTotalDebt = totalDebt;
-    _calculatedMaxMonthlyDebt = maxMonthlyDebt;
-    _calculatedHeadroom = headroom;
-    _calculatedRatingColor = ratingColor;
-    _calculatedStatusText = statusText;
-    _calculatedSubText = subText;
-  }
+  void _markDirty() {}
 
   void _runCalc() {
     setState(() {
-      _calculate();
+      _calcSnapshot['income'] = _income;
+      _calcSnapshot['partnerIncome'] = _partnerIncome;
+      _calcSnapshot['rent'] = double.tryParse(_rentCtrl.text) ?? 0.0;
+      _calcSnapshot['car'] = double.tryParse(_carCtrl.text) ?? 0.0;
+      _calcSnapshot['card'] = double.tryParse(_cardCtrl.text) ?? 0.0;
+      _calcSnapshot['student'] = double.tryParse(_studentCtrl.text) ?? 0.0;
+      _calcSnapshot['personal'] = double.tryParse(_personalCtrl.text) ?? 0.0;
+      _calcSnapshot['other'] = double.tryParse(_otherCtrl.text) ?? 0.0;
+      _calcSnapshot['countryCode'] = _countryCode;
       _hasCalculated = true;
-      _isDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _income = 5500;
+      _partnerIncome = 0;
+      _rentCtrl.text = '1200';
+      _carCtrl.text = '250';
+      _cardCtrl.text = '80';
+      _studentCtrl.text = '120';
+      _personalCtrl.text = '0';
+      _otherCtrl.text = '0';
+      _countryCode = 'DE';
+      _hasCalculated = false;
+      _calcSnapshot.clear();
     });
   }
 
   void _saveDTI() async {
-    if (_isDirty || !_hasCalculated) {
+    if (!_hasCalculated) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('⚠️ Calculate first, then save!',
@@ -180,6 +155,20 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
       );
       return;
     }
+
+    final double snapIncome = _calcSnapshot['income'] ?? _income;
+    final double snapPartnerIncome = _calcSnapshot['partnerIncome'] ?? _partnerIncome;
+    final double snapRent = _calcSnapshot['rent'] ?? 0.0;
+    final double snapCar = _calcSnapshot['car'] ?? 0.0;
+    final double snapCard = _calcSnapshot['card'] ?? 0.0;
+    final double snapStudent = _calcSnapshot['student'] ?? 0.0;
+    final double snapPersonal = _calcSnapshot['personal'] ?? 0.0;
+    final double snapOther = _calcSnapshot['other'] ?? 0.0;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final double totalInc = snapIncome + snapPartnerIncome;
+    final double totalDebt = snapRent + snapCar + snapCard + snapStudent + snapPersonal + snapOther;
+    final double dti = totalInc > 0 ? (totalDebt / totalInc) * 100 : 0.0;
 
     final labelCtrl = TextEditingController(text: 'Europe DTI');
     final confirmed = await showDialog<bool>(
@@ -196,7 +185,7 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: DTI Ratio ${_calculatedDti.toStringAsFixed(1)}% · Combined Income ${CurrencyFormatter.compact(_calculatedTotalInc, symbol: '€')}',
+              'Saving: DTI Ratio ${dti.toStringAsFixed(1)}% · Combined Income ${CurrencyFormatter.compact(totalInc, symbol: '€')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -248,22 +237,22 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
         country: 'Europe',
         calcType: 'DTI Calc',
         inputs: {
-          'income': _income,
-          'partnerIncome': _partnerIncome,
-          'rent': double.tryParse(_rentCtrl.text) ?? 0.0,
-          'car': double.tryParse(_carCtrl.text) ?? 0.0,
-          'card': double.tryParse(_cardCtrl.text) ?? 0.0,
-          'student': double.tryParse(_studentCtrl.text) ?? 0.0,
-          'personal': double.tryParse(_personalCtrl.text) ?? 0.0,
-          'other': double.tryParse(_otherCtrl.text) ?? 0.0,
+          'income': snapIncome,
+          'partnerIncome': snapPartnerIncome,
+          'rent': snapRent,
+          'car': snapCar,
+          'card': snapCard,
+          'student': snapStudent,
+          'personal': snapPersonal,
+          'other': snapOther,
         },
         results: {
-          'DTI': _calculatedDti,
-          'Income': _calculatedTotalInc,
-          'Debt': _calculatedTotalDebt,
-          'Status': _calculatedDti <= (_countryData[_countryCode]?['max'] ?? 40.0) ? 1.0 : 0.0,
+          'DTI': dti,
+          'Income': totalInc,
+          'Debt': totalDebt,
+          'Status': dti <= (_countryData[snapCountryCode]?['max'] ?? 40.0) ? 1.0 : 0.0,
         },
-        label: '$label - $_countryCode',
+        label: '$label - $snapCountryCode',
         currencyCode: 'EUR',
       );
 
@@ -290,10 +279,68 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
     final textColor = theme.getTextColor(context);
     final mutedText = theme.getMutedColor(context);
 
-    final currentTotalInc = _income + _partnerIncome;
-    final currentTotalDebt = _getDebtTotal();
-    final countryInfo = _countryData[_countryCode]!;
-    final double currentMaxDti = countryInfo['max'];
+    final double currentTotalInc = _income + _partnerIncome;
+    final double currentTotalDebt = (double.tryParse(_rentCtrl.text) ?? 0.0) +
+        (double.tryParse(_carCtrl.text) ?? 0.0) +
+        (double.tryParse(_cardCtrl.text) ?? 0.0) +
+        (double.tryParse(_studentCtrl.text) ?? 0.0) +
+        (double.tryParse(_personalCtrl.text) ?? 0.0) +
+        (double.tryParse(_otherCtrl.text) ?? 0.0);
+
+    final double snapIncome = _calcSnapshot['income'] ?? _income;
+    final double snapPartnerIncome = _calcSnapshot['partnerIncome'] ?? _partnerIncome;
+    final double snapRent = _calcSnapshot['rent'] ?? (double.tryParse(_rentCtrl.text) ?? 0.0);
+    final double snapCar = _calcSnapshot['car'] ?? (double.tryParse(_carCtrl.text) ?? 0.0);
+    final double snapCard = _calcSnapshot['card'] ?? (double.tryParse(_cardCtrl.text) ?? 0.0);
+    final double snapStudent = _calcSnapshot['student'] ?? (double.tryParse(_studentCtrl.text) ?? 0.0);
+    final double snapPersonal = _calcSnapshot['personal'] ?? (double.tryParse(_personalCtrl.text) ?? 0.0);
+    final double snapOther = _calcSnapshot['other'] ?? (double.tryParse(_otherCtrl.text) ?? 0.0);
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final double totalInc = snapIncome + snapPartnerIncome;
+    final double totalDebt = snapRent + snapCar + snapCard + snapStudent + snapPersonal + snapOther;
+    final double dti = totalInc > 0 ? (totalDebt / totalInc) * 100 : 0.0;
+
+    final countryInfo = _countryData[snapCountryCode]!;
+    final double maxDTI = countryInfo['max'];
+    final String countryName = countryInfo['name'];
+
+    Color ratingColor;
+    String statusText;
+    String subText;
+
+    if (dti <= 35) {
+      ratingColor = Colors.green;
+      statusText = '✅ Excellent';
+      subText = 'Well within $countryName limit (${maxDTI.toStringAsFixed(0)}%)';
+    } else if (dti <= maxDTI) {
+      ratingColor = Colors.orange;
+      statusText = '⚠️ Acceptable';
+      subText = 'Within $countryName limit (${maxDTI.toStringAsFixed(0)}%)';
+    } else if (dti <= 50) {
+      ratingColor = Colors.orange.shade700;
+      statusText = '🔶 Caution';
+      subText = 'Exceeds $countryName guideline of ${maxDTI.toStringAsFixed(0)}%';
+    } else {
+      ratingColor = Colors.red;
+      statusText = '❌ High Risk';
+      subText = 'Likely to be declined by EU lenders';
+    }
+
+    final maxMonthlyDebt = totalInc * (maxDTI / 100);
+    final headroom = math.max(0.0, maxMonthlyDebt - totalDebt);
+
+    final isDirty = _hasCalculated && (
+      _income != snapIncome ||
+      _partnerIncome != snapPartnerIncome ||
+      (double.tryParse(_rentCtrl.text) ?? 0.0) != snapRent ||
+      (double.tryParse(_carCtrl.text) ?? 0.0) != snapCar ||
+      (double.tryParse(_cardCtrl.text) ?? 0.0) != snapCard ||
+      (double.tryParse(_studentCtrl.text) ?? 0.0) != snapStudent ||
+      (double.tryParse(_personalCtrl.text) ?? 0.0) != snapPersonal ||
+      (double.tryParse(_otherCtrl.text) ?? 0.0) != snapOther ||
+      _countryCode != snapCountryCode
+    );
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sliderActiveColor = isDark ? theme.accentColor : theme.primaryColor;
@@ -330,7 +377,16 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
         const SizedBox(height: 16),
 
         // Select Country Pills
-        Text('COUNTRY & INCOME', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('COUNTRY & INCOME', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+            GestureDetector(
+              onTap: _reset,
+              child: Text('Reset', style: AppTextStyles.dmSans(size: 11, color: theme.primaryColor, weight: FontWeight.w700)),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         SizedBox(
           height: 38,
@@ -550,10 +606,10 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
                 width: 54,
                 height: 54,
                 decoration: BoxDecoration(
-                  color: (!_hasCalculated || _isDirty) ? Colors.grey.shade200 : cardBg,
+                  color: !_hasCalculated ? Colors.grey.shade200 : cardBg,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: (!_hasCalculated || _isDirty) ? Colors.transparent : theme.primaryColor,
+                    color: !_hasCalculated ? Colors.transparent : theme.primaryColor,
                     width: 2,
                   ),
                 ),
@@ -562,7 +618,7 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
                   '💾',
                   style: TextStyle(
                     fontSize: 20,
-                    color: (!_hasCalculated || _isDirty) ? Colors.grey : theme.primaryColor,
+                    color: !_hasCalculated ? Colors.grey : theme.primaryColor,
                   ),
                 ),
               ),
@@ -571,342 +627,346 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
         ),
         const SizedBox(height: 24),
 
-        // Results Section (Calculate-on-demand pending overlay style)
-        Stack(
-          children: [
-            Opacity(
-              opacity: (!_hasCalculated || _isDirty) ? 0.35 : 1.0,
-              child: IgnorePointer(
-                ignoring: !_hasCalculated || _isDirty,
+        // Results Section
+        if (_hasCalculated)
+          Column(
+            key: _resultsKey,
+            children: [
+              if (isDirty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    border: Border.all(color: const Color(0xFFFCD34D)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('⚠️', style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Inputs have changed. Calculate again to update results.',
+                          style: AppTextStyles.dmSans(
+                            size: 11.5,
+                            color: const Color(0xFFB45309),
+                            weight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              // Gauge Results Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: borderCol),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    )
+                  ],
+                ),
                 child: Column(
                   children: [
-                    // Gauge Results Card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: borderCol),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Text('📈 Your DTI Score', style: AppTextStyles.cardTitle(textColor)),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 120,
-                            width: 210,
-                            child: CustomPaint(
-                              painter: DTIGaugePainter(
-                                dti: _calculatedDti,
-                                limit: currentMaxDti,
-                                isDark: Theme.of(context).brightness == Brightness.dark,
-                              ),
-                              child: Container(),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${_calculatedDti.toStringAsFixed(1)}%',
-                            style: AppTextStyles.playfair(size: 34, color: _calculatedRatingColor, weight: FontWeight.w900),
-                          ),
-                          Text(
-                            _calculatedStatusText,
-                            style: AppTextStyles.dmSans(size: 14, color: _calculatedRatingColor, weight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _calculatedSubText,
-                            style: AppTextStyles.dmSans(size: 11, color: mutedText),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _bandBox('Excellent\n≤35%', Colors.green, _calculatedDti <= 35),
-                              const SizedBox(width: 4),
-                              _bandBox('Good\n36–43%', Colors.orange, _calculatedDti > 35 && _calculatedDti <= 43),
-                              const SizedBox(width: 4),
-                              _bandBox('Caution\n44–50%', Colors.orange.shade800, _calculatedDti > 43 && _calculatedDti <= 50),
-                              const SizedBox(width: 4),
-                              _bandBox('High Risk\n50%+', Colors.red, _calculatedDti > 50),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    Text('📈 Your DTI Score', style: AppTextStyles.cardTitle(textColor)),
                     const SizedBox(height: 16),
-
-                    // Mini Stats Card Grid
-                    Row(
-                      children: [
-                        _miniStatBox('Your DTI', '${_calculatedDti.toStringAsFixed(1)}%', _calculatedRatingColor),
-                        const SizedBox(width: 8),
-                        _miniStatBox('Max Budget', CurrencyFormatter.compact(_calculatedMaxMonthlyDebt, symbol: '€'), Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor),
-                        const SizedBox(width: 8),
-                        _miniStatBox('Headroom', CurrencyFormatter.compact(_calculatedHeadroom, symbol: '€'), _calculatedHeadroom > 0 ? Colors.green : Colors.red),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Stacked Allocation Bar Card
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: borderCol),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('💰 Income Allocation', style: AppTextStyles.cardTitle(textColor)),
-                          const SizedBox(height: 6),
-                          Text('Monthly gross income breakdown', style: AppTextStyles.dmSans(size: 10, color: mutedText)),
-                          const SizedBox(height: 14),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              height: 24,
-                              width: double.infinity,
-                              color: Colors.green,
-                              child: Row(
-                                children: [
-                                  if (_calculatedDti > 0)
-                                    Flexible(
-                                      flex: _calculatedDti.round(),
-                                      child: Container(
-                                        color: _calculatedRatingColor,
-                                        alignment: Alignment.center,
-                                        child: FittedBox(
-                                          child: Text(
-                                            '${_calculatedDti.toStringAsFixed(0)}%',
-                                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  Flexible(
-                                    flex: (100 - math.min(100.0, _calculatedDti)).round(),
-                                    child: Container(
-                                      color: Colors.green,
-                                      alignment: Alignment.center,
-                                      child: FittedBox(
-                                        child: Text(
-                                          '${(100 - math.min(100.0, _calculatedDti)).toStringAsFixed(0)}%',
-                                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              _legendDot(_calculatedRatingColor, 'Debt (${_calculatedDti.toStringAsFixed(1)}%)'),
-                              const SizedBox(width: 16),
-                              _legendDot(Colors.green, 'Free Income (${(100 - math.min(100.0, _calculatedDti)).toStringAsFixed(1)}%)'),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Itemized Debt Breakdown
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: borderCol),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('🔍 Payment Breakdown', style: AppTextStyles.cardTitle(textColor)),
-                          const SizedBox(height: 14),
-                          _buildDebtBreakdownList(theme, cardBg),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Headroom checks against other EU countries
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: borderCol),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('🏳️ Your DTI vs EU Country Limits', style: AppTextStyles.cardTitle(textColor)),
-                          const SizedBox(height: 14),
-                          ..._euLimits.map((limitInfo) {
-                            final double limitVal = limitInfo['max'];
-                            final double pctOfLimit = _calculatedTotalInc > 0 ? math.min((_calculatedDti / limitVal) * 100, 130.0) : 0.0;
-                            final bool overLimit = _calculatedDti > limitVal;
-                            final Color fillCol = overLimit ? Colors.red : (Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor);
-                            final statusLabel = overLimit
-                                ? '❌ Over limit by ${(_calculatedDti - limitVal).toStringAsFixed(1)}%'
-                                : '✅ ${(limitVal - _calculatedDti).toStringAsFixed(1)}% headroom';
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12.0),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('${limitInfo['flag']} ${limitInfo['name']} (Limit: ${limitVal.toStringAsFixed(0)}%)',
-                                          style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: textColor)),
-                                      Text(statusLabel,
-                                          style: AppTextStyles.dmSans(
-                                              size: 10.5,
-                                              weight: FontWeight.bold,
-                                              color: overLimit ? Colors.red : Colors.green.shade800)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 5),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: Container(
-                                      height: 8,
-                                      width: double.infinity,
-                                      color: theme.getBgColor(context),
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: FractionallySizedBox(
-                                          widthFactor: math.min(pctOfLimit / 100, 1.0),
-                                          child: Container(color: fillCol),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Personalized Smart Insight
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: Theme.of(context).brightness == Brightness.dark
-                              ? [theme.primaryColor.withValues(alpha: 0.7), theme.primaryColor.withValues(alpha: 0.5)]
-                              : [theme.primaryColor, theme.primaryColor.withValues(alpha: 0.8)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    SizedBox(
+                      height: 120,
+                      width: 210,
+                      child: CustomPaint(
+                        painter: DTIGaugePainter(
+                          dti: dti,
+                          limit: maxDTI,
+                          isDark: Theme.of(context).brightness == Brightness.dark,
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('💡 Smart Insight', style: AppTextStyles.cardTitle(Colors.white)),
-                          const SizedBox(height: 8),
-                          Text(
-                            _calculatedDti <= 35
-                                ? '🟢 Strong Financial Position'
-                                : _calculatedDti <= currentMaxDti
-                                    ? '🟡 Borderline Acceptable'
-                                    : '🔴 Exceeds Country Limit',
-                            style: AppTextStyles.dmSans(size: 13, color: const Color(0xFFFFCC00), weight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _calculatedDti <= 35
-                                ? 'Your DTI of ${_calculatedDti.toStringAsFixed(1)}% qualifies you with all major EU lenders. You have ${CurrencyFormatter.compact(_calculatedHeadroom, symbol: '€')}/month headroom before hitting limit.'
-                                : _calculatedDti <= currentMaxDti
-                                    ? 'You qualify but are approaching the limit. Reducing monthly debt by ${CurrencyFormatter.compact(_calculatedTotalDebt - _calculatedTotalInc * 0.35, symbol: '€')} would put you in the "Excellent" range.'
-                                    : 'Your DTI of ${_calculatedDti.toStringAsFixed(1)}% is above the ${currentMaxDti.toStringAsFixed(0)}% guideline. Consider paying down credit cards or personal loans first.',
-                            style: AppTextStyles.dmSans(size: 11.5, color: Colors.white.withValues(alpha: 0.95), height: 1.4),
-                          ),
-                        ],
+                        child: Container(),
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${dti.toStringAsFixed(1)}%',
+                      style: AppTextStyles.playfair(size: 34, color: ratingColor, weight: FontWeight.w900),
+                    ),
+                    Text(
+                      statusText,
+                      style: AppTextStyles.dmSans(size: 14, color: ratingColor, weight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subText,
+                      style: AppTextStyles.dmSans(size: 11, color: mutedText),
+                    ),
                     const SizedBox(height: 16),
-
-                    // EU Lender Limits guidelines card
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.blue.shade900,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('🏛️ EU Lender DTI Limits (2025)', style: AppTextStyles.cardTitle(Colors.white)),
-                          const SizedBox(height: 14),
-                          _euLenderLimitRow('🇩🇪 Germany – BaFin Guidelines', 'No hard cap; 40% common practice', '40%', 0.57),
-                          _euLenderLimitRow('🇫🇷 France – HCSF Regulation', 'Hard cap enforced since Jan 2022', '35%', 0.50),
-                          _euLenderLimitRow('🇪🇸 Spain – Banco de España', 'Max 40% recommended', '40%', 0.57),
-                          _euLenderLimitRow('🇳🇱 Netherlands – NHG Rules', 'Up to 43% with NHG guarantee', '43%', 0.61),
-                          _euLenderLimitRow('🇵🇹 Portugal – Banco de Portugal', 'Max 50% (36% preferred)', '50%', 0.71),
-                        ],
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _bandBox('Excellent\n≤35%', Colors.green, dti <= 35),
+                        const SizedBox(width: 4),
+                        _bandBox('Good\n36–43%', Colors.orange, dti > 35 && dti <= 43),
+                        const SizedBox(width: 4),
+                        _bandBox('Caution\n44–50%', Colors.orange.shade800, dti > 43 && dti <= 50),
+                        const SizedBox(width: 4),
+                        _bandBox('High Risk\n50%+', Colors.red, dti > 50),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ),
-            if (!_hasCalculated || _isDirty)
-              Positioned.fill(
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: cardBg.withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: borderCol),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 10,
-                        )
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          !_hasCalculated
-                              ? '⬆️ Tap Calculate DTI to see your results'
-                              : '🔄 Inputs changed. Tap Calculate DTI to refresh',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.dmSans(
-                            size: 12,
-                            weight: FontWeight.w700,
-                            color: theme.primaryColor,
-                          ),
+              const SizedBox(height: 16),
+
+              // Mini Stats Card Grid
+              Row(
+                children: [
+                  _miniStatBox('Your DTI', '${dti.toStringAsFixed(1)}%', ratingColor),
+                  const SizedBox(width: 8),
+                  _miniStatBox('Max Budget', CurrencyFormatter.compact(maxMonthlyDebt, symbol: '€'), Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor),
+                  const SizedBox(width: 8),
+                  _miniStatBox('Headroom', CurrencyFormatter.compact(headroom, symbol: '€'), headroom > 0 ? Colors.green : Colors.red),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Stacked Allocation Bar Card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('💰 Income Allocation', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 6),
+                    Text('Monthly gross income breakdown', style: AppTextStyles.dmSans(size: 10, color: mutedText)),
+                    const SizedBox(height: 14),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 24,
+                        width: double.infinity,
+                        color: Colors.green,
+                        child: Row(
+                          children: [
+                            if (dti > 0)
+                              Flexible(
+                                flex: dti.round(),
+                                child: Container(
+                                  color: ratingColor,
+                                  alignment: Alignment.center,
+                                  child: FittedBox(
+                                    child: Text(
+                                      '${dti.toStringAsFixed(0)}%',
+                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            Flexible(
+                              flex: (100 - math.min(100.0, dti)).round(),
+                              child: Container(
+                                color: Colors.green,
+                                alignment: Alignment.center,
+                                child: FittedBox(
+                                  child: Text(
+                                    '${(100 - math.min(100.0, dti)).toStringAsFixed(0)}%',
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _legendDot(ratingColor, 'Debt (${dti.toStringAsFixed(1)}%)'),
+                        const SizedBox(width: 16),
+                        _legendDot(Colors.green, 'Free Income (${(100 - math.min(100.0, dti)).toStringAsFixed(1)}%)'),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
-          ],
-        ),
+              const SizedBox(height: 16),
+
+              // Itemized Debt Breakdown
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('🔍 Payment Breakdown', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 14),
+                    _buildDebtBreakdownList(theme, cardBg),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Headroom checks against other EU countries
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('🏳️ Your DTI vs EU Country Limits', style: AppTextStyles.cardTitle(textColor)),
+                    const SizedBox(height: 14),
+                    ..._euLimits.map((limitInfo) {
+                      final double limitVal = limitInfo['max'];
+                      final double pctOfLimit = totalInc > 0 ? math.min((dti / limitVal) * 100, 130.0) : 0.0;
+                      final bool overLimit = dti > limitVal;
+                      final Color fillCol = overLimit ? Colors.red : (Theme.of(context).brightness == Brightness.dark ? theme.accentColor : theme.primaryColor);
+                      final statusLabel = overLimit
+                          ? '❌ Over limit by ${(dti - limitVal).toStringAsFixed(1)}%'
+                          : '✅ ${(limitVal - dti).toStringAsFixed(1)}% headroom';
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('${limitInfo['flag']} ${limitInfo['name']} (Limit: ${limitVal.toStringAsFixed(0)}%)',
+                                    style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: textColor)),
+                                Text(statusLabel,
+                                    style: AppTextStyles.dmSans(
+                                        size: 10.5,
+                                        weight: FontWeight.bold,
+                                        color: overLimit ? Colors.red : Colors.green.shade800)),
+                              ],
+                            ),
+                            const SizedBox(height: 5),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Container(
+                                height: 8,
+                                width: double.infinity,
+                                color: theme.getBgColor(context),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: FractionallySizedBox(
+                                    widthFactor: math.min(pctOfLimit / 100, 1.0),
+                                    child: Container(color: fillCol),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Personalized Smart Insight
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: Theme.of(context).brightness == Brightness.dark
+                        ? [theme.primaryColor.withValues(alpha: 0.7), theme.primaryColor.withValues(alpha: 0.5)]
+                        : [theme.primaryColor, theme.primaryColor.withValues(alpha: 0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('💡 Smart Insight', style: AppTextStyles.cardTitle(Colors.white)),
+                    const SizedBox(height: 8),
+                    Text(
+                      dti <= 35
+                          ? '🟢 Strong Financial Position'
+                          : dti <= maxDTI
+                              ? '🟡 Borderline Acceptable'
+                              : '🔴 Exceeds Country Limit',
+                      style: AppTextStyles.dmSans(size: 13, color: const Color(0xFFFFCC00), weight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      dti <= 35
+                          ? 'Your DTI of ${dti.toStringAsFixed(1)}% qualifies you with all major EU lenders. You have ${CurrencyFormatter.compact(headroom, symbol: '€')}/month headroom before hitting limit.'
+                          : dti <= maxDTI
+                              ? 'You qualify but are approaching the limit. Reducing monthly debt by ${CurrencyFormatter.compact(totalDebt - totalInc * 0.35, symbol: '€')} would put you in the "Excellent" range.'
+                              : 'Your DTI of ${dti.toStringAsFixed(1)}% is above the ${maxDTI.toStringAsFixed(0)}% guideline. Consider paying down credit cards or personal loans first.',
+                      style: AppTextStyles.dmSans(size: 11.5, color: Colors.white.withValues(alpha: 0.95), height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // EU Lender Limits guidelines card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.blue.shade900,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('🏛️ EU Lender DTI Limits (2025)', style: AppTextStyles.cardTitle(Colors.white)),
+                    const SizedBox(height: 14),
+                    _euLenderLimitRow('🇩🇪 Germany – BaFin Guidelines', 'No hard cap; 40% common practice', '40%', 0.57),
+                    _euLenderLimitRow('🇫🇷 France – HCSF Regulation', 'Hard cap enforced since Jan 2022', '35%', 0.50),
+                    _euLenderLimitRow('🇪🇸 Spain – Banco de España', 'Max 40% recommended', '40%', 0.57),
+                    _euLenderLimitRow('🇳🇱 Netherlands – NHG Rules', 'Up to 43% with NHG guarantee', '43%', 0.61),
+                    _euLenderLimitRow('🇵🇹 Portugal – Banco de Portugal', 'Max 50% (36% preferred)', '50%', 0.71),
+                  ],
+                ),
+              ),
+            ],
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            child: Column(
+              children: [
+                const Text('⚖️', style: TextStyle(fontSize: 48)),
+                const SizedBox(height: 12),
+                Text('Calculate DTI Ratio',
+                    style: AppTextStyles.playfair(
+                        size: 15, weight: FontWeight.w800, color: textColor)),
+                const SizedBox(height: 6),
+                Text(
+                  'Enter your monthly gross income and current monthly debts,\nthen tap Calculate DTI to see your debt-to-income ratio guidelines.',
+                  style: AppTextStyles.dmSans(size: 11, color: mutedText, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -1032,13 +1092,27 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
   }
 
   Widget _buildDebtBreakdownList(CountryTheme theme, Color cardBg) {
+    final double snapIncome = _calcSnapshot['income'] ?? _income;
+    final double snapPartnerIncome = _calcSnapshot['partnerIncome'] ?? _partnerIncome;
+    final double snapRent = _calcSnapshot['rent'] ?? 0.0;
+    final double snapCar = _calcSnapshot['car'] ?? 0.0;
+    final double snapCard = _calcSnapshot['card'] ?? 0.0;
+    final double snapStudent = _calcSnapshot['student'] ?? 0.0;
+    final double snapPersonal = _calcSnapshot['personal'] ?? 0.0;
+    final double snapOther = _calcSnapshot['other'] ?? 0.0;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final double totalInc = snapIncome + snapPartnerIncome;
+    final double totalDebt = snapRent + snapCar + snapCard + snapStudent + snapPersonal + snapOther;
+    final double dti = totalInc > 0 ? (totalDebt / totalInc) * 100 : 0.0;
+
     final List<Map<String, dynamic>> debts = [
-      {'name': 'Mortgage / Rent', 'color': const Color(0xFF003399), 'val': double.tryParse(_rentCtrl.text) ?? 0.0},
-      {'name': 'Car Loan', 'color': const Color(0xFF6D28D9), 'val': double.tryParse(_carCtrl.text) ?? 0.0},
-      {'name': 'Credit Cards', 'color': const Color(0xFFFFCC00), 'val': double.tryParse(_cardCtrl.text) ?? 0.0},
-      {'name': 'Student Loan', 'color': const Color(0xFF0F766E), 'val': double.tryParse(_studentCtrl.text) ?? 0.0},
-      {'name': 'Personal Loan', 'color': const Color(0xFFB45309), 'val': double.tryParse(_personalCtrl.text) ?? 0.0},
-      {'name': 'Other', 'color': const Color(0xFF6B21A8), 'val': double.tryParse(_otherCtrl.text) ?? 0.0},
+      {'name': 'Mortgage / Rent', 'color': const Color(0xFF003399), 'val': snapRent},
+      {'name': 'Car Loan', 'color': const Color(0xFF6D28D9), 'val': snapCar},
+      {'name': 'Credit Cards', 'color': const Color(0xFFFFCC00), 'val': snapCard},
+      {'name': 'Student Loan', 'color': const Color(0xFF0F766E), 'val': snapStudent},
+      {'name': 'Personal Loan', 'color': const Color(0xFFB45309), 'val': snapPersonal},
+      {'name': 'Other', 'color': const Color(0xFF6B21A8), 'val': snapOther},
     ].where((d) => (d['val'] as double) > 0.0).toList();
 
     if (debts.isEmpty) {
@@ -1053,15 +1127,15 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
       );
     }
 
-    final double countryMax = _countryData[_countryCode]?['max'] ?? 40.0;
+    final double countryMax = _countryData[snapCountryCode]?['max'] ?? 40.0;
 
     return Column(
       children: [
         ...debts.map((d) {
           final double val = d['val'];
-          final double pct = _calculatedTotalInc > 0 ? (val / _calculatedTotalInc) * 100 : 0.0;
-          final double barW = _calculatedTotalInc > 0
-              ? math.min((val / _calculatedTotalInc) * 100 / countryMax * 100, 100.0)
+          final double pct = totalInc > 0 ? (val / totalInc) * 100 : 0.0;
+          final double barW = totalInc > 0
+              ? math.min((val / totalInc) * 100 / countryMax * 100, 100.0)
               : 0.0;
 
           return Padding(
@@ -1146,10 +1220,10 @@ class _EUDtiCalcState extends ConsumerState<EUDtiCalc> {
                 Expanded(
                   child: Text('Total Debt', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: totalText)),
                 ),
-                Text(CurrencyFormatter.format(_calculatedTotalDebt, symbol: '€'),
+                Text(CurrencyFormatter.format(totalDebt, symbol: '€'),
                     style: AppTextStyles.playfair(size: 13, color: totalText, weight: FontWeight.w800)),
                 const SizedBox(width: 8),
-                Text('${_calculatedDti.toStringAsFixed(1)}%', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: totalText)),
+                Text('${dti.toStringAsFixed(1)}%', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: totalText)),
               ],
             ),
           );

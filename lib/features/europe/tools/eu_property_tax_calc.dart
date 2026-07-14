@@ -35,6 +35,9 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   static const Map<String, double> _propertyTypeToDouble = {
     'new': 0.0,
     'resale': 1.0,
@@ -190,6 +193,11 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
       final buyerVal = inputs['buyerType'] ?? 0.0;
       _buyerType = _doubleToBuyerType[buyerVal] ?? 'resident';
       _countryCode = widget.savedCalc!.label.split(' - ').last;
+
+      _calcSnapshot['countryCode'] = _countryCode;
+      _calcSnapshot['price'] = _price;
+      _calcSnapshot['buyerType'] = _buyerType;
+      _calcSnapshot['propertyType'] = _propertyType;
       _hasCalculated = true;
       _animController.value = 1.0;
     }
@@ -202,11 +210,56 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
   }
 
   void _runCalc() {
-    setState(() => _hasCalculated = true);
+    setState(() {
+      _calcSnapshot['countryCode'] = _countryCode;
+      _calcSnapshot['price'] = _price;
+      _calcSnapshot['buyerType'] = _buyerType;
+      _calcSnapshot['propertyType'] = _propertyType;
+      _hasCalculated = true;
+    });
     _animController.forward(from: 0.0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
-  void _savePropertyTax(double totalTax, double totalPct) async {
+  void _reset() {
+    setState(() {
+      _countryCode = 'DE';
+      _price = 420000;
+      _buyerType = 'resident';
+      _propertyType = 'new';
+      _hasCalculated = false;
+      _calcSnapshot.clear();
+    });
+    _animController.value = 0.0;
+  }
+
+  void _savePropertyTax() async {
+    if (!_hasCalculated) return;
+
+    final double snapPrice = _calcSnapshot['price'] ?? _price;
+    final String snapPropertyType = _calcSnapshot['propertyType'] ?? _propertyType;
+    final String snapBuyerType = _calcSnapshot['buyerType'] ?? _buyerType;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final cd = _countryData[snapCountryCode]!;
+    final Map<String, dynamic> taxConfig = cd['taxes'][snapPropertyType] ?? {};
+
+    double totalTax = 0;
+    taxConfig.forEach((key, rateVal) {
+      final double r = (rateVal as num).toDouble();
+      totalTax += snapPrice * (r / 100);
+    });
+
+    final double totalPct = snapPrice > 0 ? (totalTax / snapPrice * 100) : 0.0;
+
     final labelCtrl = TextEditingController(text: 'Property Taxes');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -274,15 +327,15 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
         country: 'Europe',
         calcType: 'Property Tax Calc',
         inputs: {
-          'price': _price,
-          'propertyType': _propertyTypeToDouble[_propertyType] ?? 0.0,
-          'buyerType': _buyerTypeToDouble[_buyerType] ?? 0.0,
+          'price': snapPrice,
+          'propertyType': _propertyTypeToDouble[snapPropertyType] ?? 0.0,
+          'buyerType': _buyerTypeToDouble[snapBuyerType] ?? 0.0,
         },
         results: {
           'Tax Amount': totalTax,
           'Tax Percent': totalPct,
         },
-        label: '$label - $_countryCode',
+        label: '$label - $snapCountryCode',
         currencyCode: 'EUR',
       );
 
@@ -311,21 +364,26 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
     final mutedText = theme.getMutedColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final c = _countryData[_countryCode]!;
+    final double snapPrice = _calcSnapshot['price'] ?? _price;
+    final String snapPropertyType = _calcSnapshot['propertyType'] ?? _propertyType;
+    final String snapBuyerType = _calcSnapshot['buyerType'] ?? _buyerType;
+    final String snapCountryCode = _calcSnapshot['countryCode'] ?? _countryCode;
+
+    final c = _countryData[snapCountryCode]!;
     final String countryName = c['name'];
-    final taxes = c['taxes'][_propertyType] ?? c['taxes']['resale'];
+    final taxes = c['taxes'][snapPropertyType] ?? c['taxes']['resale'];
 
     double transferRate = taxes['transfer'];
-    if (_buyerType == 'nonresident') transferRate *= 1.20;
-    if (_buyerType == 'investor') transferRate *= 1.35;
+    if (snapBuyerType == 'nonresident') transferRate *= 1.20;
+    if (snapBuyerType == 'investor') transferRate *= 1.35;
 
-    final transferVal = _price * (transferRate / 100);
-    final notaryVal = _price * (taxes['notary'] / 100);
-    final registryVal = _price * (taxes['registry'] / 100);
-    final agentVal = _price * (taxes['agent'] / 100);
+    final transferVal = snapPrice * (transferRate / 100);
+    final notaryVal = snapPrice * (taxes['notary'] / 100);
+    final registryVal = snapPrice * (taxes['registry'] / 100);
+    final agentVal = snapPrice * (taxes['agent'] / 100);
 
     final totalTax = transferVal + notaryVal + registryVal + agentVal;
-    final totalPct = _price > 0 ? (totalTax / _price) * 100 : 0.0;
+    final totalPct = snapPrice > 0 ? (totalTax / snapPrice) * 100 : 0.0;
     final monthlySpread = totalTax / 360.0;
 
     final List<Map<String, dynamic>> segments = [
@@ -348,8 +406,8 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
       insightTitle = '🔴 High Tax Load';
       insightText = 'At ${totalPct.toStringAsFixed(1)}%, your upfront costs are significant. Consider factoring this into your financing plan from day one.';
     }
-    if (_buyerType == 'nonresident') insightText += ' Non-resident surcharge of 20% applies to transfer tax.';
-    if (_buyerType == 'investor') insightText += ' Investor bracket attracts a 35% transfer tax premium.';
+    if (snapBuyerType == 'nonresident') insightText += ' Non-resident surcharge of 20% applies to transfer tax.';
+    if (snapBuyerType == 'investor') insightText += ' Investor bracket attracts a 35% transfer tax premium.';
 
     final rankLabels = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
     final euRank = c['euRank'] as int;
@@ -360,6 +418,13 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
     // Live ECB rate
     final liveEcb = ref.watch(europeRatesProvider).valueOrNull?.ecbRate.value ?? 4.00;
     final isLive = ref.watch(europeRatesProvider).valueOrNull?.isLive == true;
+
+    final isDirty = _hasCalculated && (
+      _price != snapPrice ||
+      _propertyType != snapPropertyType ||
+      _buyerType != snapBuyerType ||
+      _countryCode != snapCountryCode
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,9 +453,18 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
         const SizedBox(height: 16),
 
         // ── Country Grid ──
-        Text('SELECT COUNTRY',
-            style: AppTextStyles.dmSans(
-                size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('SELECT COUNTRY',
+                style: AppTextStyles.dmSans(
+                    size: 11, weight: FontWeight.w700, color: mutedText, letterSpacing: 1.0)),
+            GestureDetector(
+              onTap: _reset,
+              child: Text('Reset', style: AppTextStyles.dmSans(size: 11, color: theme.primaryColor, weight: FontWeight.w700)),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         GridView.count(
           crossAxisCount: 3,
@@ -540,7 +614,7 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
             ),
             const SizedBox(width: 10),
             GestureDetector(
-              onTap: _hasCalculated ? () => _savePropertyTax(totalTax, totalPct) : null,
+              onTap: _hasCalculated ? _savePropertyTax : null,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 54,
@@ -570,8 +644,36 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
           FadeTransition(
             opacity: _fadeAnim,
             child: Column(
+              key: _resultsKey,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Calculate again to update results.',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              color: const Color(0xFFB45309),
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 // Hero result
                 Container(
                   width: double.infinity,
@@ -597,11 +699,11 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
                       Text(
                         CurrencyFormatter.format(totalTax, symbol: '€'),
                         style: AppTextStyles.playfair(
-                            size: 36, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
+                            size: 34, color: const Color(0xFFFFCC00), weight: FontWeight.w900),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${c['flag']} ${c['name']} · ${_propertyType[0].toUpperCase()}${_propertyType.substring(1)} · ${_buyerType[0].toUpperCase()}${_buyerType.substring(1)}',
+                        '${c['flag']} ${c['name']} · ${snapPropertyType[0].toUpperCase()}${snapPropertyType.substring(1)} · ${snapBuyerType[0].toUpperCase()}${snapBuyerType.substring(1)}',
                         style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
                       ),
                       const SizedBox(height: 14),
@@ -654,101 +756,114 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('🥧 Fee Composition', style: AppTextStyles.cardTitle(textColor)),
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          height: 14,
+                          width: double.infinity,
+                          color: Colors.grey.shade200,
+                          child: Row(
+                            children: segments.map((seg) {
+                              final double share = totalTax > 0 ? (seg['val'] / totalTax) : 0.0;
+                              return Expanded(
+                                flex: (share * 100).round(),
+                                child: Container(color: seg['color']),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 14),
-                      // SVG-style donut with CustomPaint
-                      Center(
-                        child: SizedBox(
-                          width: 160,
-                          height: 160,
-                          child: Stack(
-                            alignment: Alignment.center,
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 100,
+                            height: 100,
+                            child: CustomPaint(
+                              painter: PropertyTaxDonutPainter(
+                                segments: segments,
+                                total: totalTax,
+                                isDark: isDark,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              children: segments.map((seg) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 2.0),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 7,
+                                        height: 7,
+                                        decoration: BoxDecoration(color: seg['color'], shape: BoxShape.circle),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          seg['name'],
+                                          style: AppTextStyles.dmSans(size: 10, color: textColor, weight: FontWeight.bold),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Text(
+                                        CurrencyFormatter.compact(seg['val'], symbol: '€'),
+                                        style: AppTextStyles.playfair(size: 10.5, color: isDark ? theme.accentColor : theme.primaryColor, weight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 24),
+                      ...segments.map((seg) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
                             children: [
-                              CustomPaint(
-                                size: const Size(160, 160),
-                                painter: PropertyTaxDonutPainter(
-                                  segments: segments,
-                                  total: totalTax,
-                                  isDark: isDark,
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(color: (seg['color'] as Color).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                                alignment: Alignment.center,
+                                child: Text(seg['icon'], style: const TextStyle(fontSize: 16)),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(seg['name'], style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: textColor)),
+                                    Text('${seg['pct'].toStringAsFixed(2)}% rate applied', style: AppTextStyles.dmSans(size: 10, color: mutedText)),
+                                  ],
                                 ),
                               ),
                               Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('TOTAL',
-                                      style: AppTextStyles.dmSans(
-                                          size: 9, weight: FontWeight.w700, color: isDark ? Colors.purple.shade200 : const Color(0xFF6B21A8))),
-                                  Text(
-                                    CurrencyFormatter.compact(totalTax, symbol: '€'),
-                                    style: AppTextStyles.playfair(
-                                        size: 14, weight: FontWeight.w900, color: isDark ? theme.accentColor : const Color(0xFF003399)),
-                                  ),
+                                  Text(CurrencyFormatter.format(seg['val'], symbol: '€'),
+                                      style: AppTextStyles.playfair(size: 12.5, color: isDark ? theme.accentColor : theme.primaryColor, weight: FontWeight.bold)),
+                                  Text('${(totalTax > 0 ? (seg['val'] / totalTax * 100) : 0).toStringAsFixed(0)}% of total',
+                                      style: AppTextStyles.dmSans(size: 9.5, color: mutedText)),
                                 ],
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // 2×2 legend grid
-                      GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        childAspectRatio: 3.2,
-                        crossAxisSpacing: 6,
-                        mainAxisSpacing: 6,
-                        children: segments.map((seg) {
-                          final share = totalTax > 0 ? (seg['val'] / totalTax * 100) : 0.0;
-                          return Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: (seg['color'] as Color).withValues(alpha: 0.06),
-                              borderRadius: BorderRadius.circular(9),
-                              border: Border.all(
-                                  color: (seg['color'] as Color).withValues(alpha: 0.15)),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 9,
-                                  height: 9,
-                                  decoration: BoxDecoration(
-                                      color: seg['color'] as Color,
-                                      borderRadius: BorderRadius.circular(3)),
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(seg['name'],
-                                          style: AppTextStyles.dmSans(
-                                              size: 9, weight: FontWeight.w700, color: textColor),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis),
-                                      Text('${share.toStringAsFixed(1)}%',
-                                          style: AppTextStyles.dmSans(
-                                              size: 9, color: isDark ? Colors.purple.shade200 : const Color(0xFF6B21A8))),
-                                    ],
-                                  ),
-                                ),
-                                Text(CurrencyFormatter.compact(seg['val'], symbol: '€'),
-                                    style: AppTextStyles.playfair(
-                                        size: 10,
-                                        weight: FontWeight.w800,
-                                        color: seg['color'] as Color)),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                        );
+                      }),
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
-                // Tax Breakdown Timeline
+                // Market Insights Card
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -759,156 +874,32 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('📋 Tax Breakdown Timeline', style: AppTextStyles.cardTitle(textColor)),
+                      Text('💡 Market Insights', style: AppTextStyles.cardTitle(textColor)),
                       const SizedBox(height: 12),
-                      // Fee timeline items
-                      ...segments.asMap().entries.map((entry) {
-                        final seg = entry.value;
-                        final isLast = entry.key == segments.length - 1;
-                        return Column(
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: (seg['color'] as Color).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(seg['icon'], style: const TextStyle(fontSize: 16)),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(seg['name'],
-                                          style: AppTextStyles.dmSans(
-                                              size: 12.5, weight: FontWeight.w800, color: textColor)),
-                                      Text(
-                                        '${(seg['pct'] as double).toStringAsFixed(2)}% fee rate',
-                                        style: AppTextStyles.dmSans(size: 10, color: mutedText),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  CurrencyFormatter.format(seg['val'], symbol: '€'),
-                                  style: AppTextStyles.playfair(
-                                      size: 13,
-                                      weight: FontWeight.w800,
-                                      color: seg['color'] as Color),
-                                ),
-                              ],
-                            ),
-                            if (!isLast) ...[
-                              const SizedBox(height: 10),
-                              Divider(height: 1, color: borderCol),
-                              const SizedBox(height: 10),
-                            ],
-                          ],
-                        );
-                      }),
-                      const SizedBox(height: 12),
-                      // Country-specific timeline
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: (isDark ? theme.accentColor : theme.primaryColor).withValues(alpha: 0.06),
+                          color: isDark ? widget.theme.primaryColor.withValues(alpha: 0.1) : Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: (isDark ? theme.accentColor : theme.primaryColor).withValues(alpha: 0.15)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${c['name']} Purchase Milestones',
-                                style: AppTextStyles.dmSans(
-                                    size: 11, weight: FontWeight.w800, color: isDark ? theme.accentColor : theme.primaryColor)),
-                            const SizedBox(height: 10),
-                            ...timeline.map((step) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: Row(
-                                  children: [
-                                    Text(step['icon'], style: const TextStyle(fontSize: 16)),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(step['phase'],
-                                              style: AppTextStyles.dmSans(
-                                                  size: 11, weight: FontWeight.w700, color: textColor)),
-                                          Text(step['desc'],
-                                              style: AppTextStyles.dmSans(
-                                                  size: 9.5, color: mutedText)),
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: (isDark ? theme.accentColor : theme.primaryColor).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(step['when'],
-                                          style: AppTextStyles.dmSans(
-                                              size: 9,
-                                              weight: FontWeight.w700,
-                                              color: isDark ? theme.accentColor : theme.primaryColor)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Insight Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF6B21A8), Color(0xFF1A0040)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('💡', style: TextStyle(fontSize: 22)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(insightTitle,
-                                style: AppTextStyles.dmSans(
-                                    size: 12, color: const Color(0xFFFFCC00), weight: FontWeight.w800)),
+                            Text(insightTitle, style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.bold, color: isDark ? theme.accentColor : theme.primaryColor)),
                             const SizedBox(height: 4),
-                            Text(insightText,
-                                style: AppTextStyles.dmSans(
-                                    size: 11, color: Colors.white.withValues(alpha: 0.8), height: 1.5)),
+                            Text(
+                              insightText,
+                              style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : Colors.black87, height: 1.45),
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
-                // EU Transfer Tax Comparison bars
+                // Transaction Timeline Card
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -919,78 +910,108 @@ class _EUPropertyTaxCalcState extends ConsumerState<EUPropertyTaxCalc>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('📊 EU Transfer Tax Comparison', style: AppTextStyles.cardTitle(textColor)),
+                      Text('📅 Transaction Timeline', style: AppTextStyles.cardTitle(textColor)),
                       const SizedBox(height: 4),
-                      Text('Average transfer taxes across target countries',
-                          style: AppTextStyles.dmSans(size: 10, color: mutedText)),
-                      const SizedBox(height: 12),
-                      ...(_compareData
-                        ..sort((a, b) => (a['pct'] as double).compareTo(b['pct'] as double)))
-                          .map((d) {
-                        final active = d['name'] == c['name'];
+                      Text('Typical payment schedule in $countryName', style: AppTextStyles.dmSans(size: 11, color: mutedText)),
+                      const SizedBox(height: 16),
+                      ...timeline.map((t) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(t['icon'], style: const TextStyle(fontSize: 18)),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(t['phase'], style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: textColor)),
+                                    const SizedBox(height: 2),
+                                    Text(t['desc'], style: AppTextStyles.dmSans(size: 11, color: mutedText)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: theme.getBgColor(context),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: borderCol),
+                                ),
+                                child: Text(t['when'], style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.bold, color: textColor)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // European Cost Comparison Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('European Cost Comparison', style: AppTextStyles.cardTitle(textColor)),
+                      const SizedBox(height: 4),
+                      Text('Typical closing tax burden as % of property price', style: AppTextStyles.dmSans(size: 10.5, color: mutedText)),
+                      const SizedBox(height: 14),
+                      ..._compareData.map((d) {
+                        final active = d['name'] == countryName;
                         final double val = d['pct'];
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 5.0),
-                          child: Column(
+                          padding: const EdgeInsets.symmetric(vertical: 6.0),
+                          child: Row(
                             children: [
-                              Row(
-                                children: [
-                                  Text(d['flag'], style: const TextStyle(fontSize: 16)),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      d['name'],
-                                      style: AppTextStyles.dmSans(
-                                        size: 11,
-                                        weight: active ? FontWeight.w800 : FontWeight.w500,
-                                        color: active ? (isDark ? theme.accentColor : theme.primaryColor) : textColor,
-                                      ),
-                                    ),
+                              Text(d['flag'], style: const TextStyle(fontSize: 16)),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 80,
+                                child: Text(
+                                  d['name'],
+                                  style: AppTextStyles.dmSans(
+                                    size: 11,
+                                    weight: active ? FontWeight.bold : FontWeight.normal,
+                                    color: active ? (isDark ? theme.accentColor : theme.primaryColor) : textColor,
                                   ),
-                                  if (active)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                      margin: const EdgeInsets.only(right: 8),
-                                      decoration: BoxDecoration(
-                                        color: isDark ? theme.accentColor : theme.primaryColor,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text('YOU',
-                                          style: AppTextStyles.dmSans(
-                                              size: 8, weight: FontWeight.w800, color: isDark ? Colors.black : const Color(0xFFFFCC00))),
-                                    ),
-                                  Text(
-                                    '${val.toStringAsFixed(1)}%',
-                                    style: AppTextStyles.playfair(
-                                      size: 12,
-                                      weight: active ? FontWeight.bold : FontWeight.normal,
-                                      color: active ? (isDark ? theme.accentColor : theme.primaryColor) : textColor,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                              const SizedBox(height: 4),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(5),
-                                child: Container(
-                                  height: 10,
-                                  color: theme.getBgColor(context),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: FractionallySizedBox(
-                                      widthFactor: val / 10.0,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: active
-                                              ? (isDark ? theme.accentColor : theme.primaryColor)
-                                              : (d['col'] as Color).withValues(alpha: 0.5),
-                                          borderRadius: BorderRadius.circular(5),
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(5),
+                                  child: Container(
+                                    height: 10,
+                                    color: theme.getBgColor(context),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: FractionallySizedBox(
+                                        widthFactor: val / 10.0,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: active
+                                                ? (isDark ? theme.accentColor : theme.primaryColor)
+                                                : (d['col'] as Color).withValues(alpha: 0.5),
+                                            borderRadius: BorderRadius.circular(5),
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
+                              const SizedBox(width: 8),
+                              Text('${val.toStringAsFixed(1)}%',
+                                  style: AppTextStyles.dmSans(size: 10, weight: FontWeight.bold, color: textColor)),
                             ],
                           ),
                         );
