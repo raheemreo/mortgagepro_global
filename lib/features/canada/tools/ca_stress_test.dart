@@ -213,6 +213,11 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
   final _downController = TextEditingController(text: '100000');
   final _debtsController = TextEditingController(text: '500');
 
+  final _resultsKey = GlobalKey();
+  bool _showResults = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   @override
   void dispose() {
     _incomeController.dispose();
@@ -248,11 +253,70 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
     return lo;
   }
 
+  double _val(TextEditingController c, double defaultVal) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    final income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (income <= 0) errors['income'] = 'Enter gross annual income';
+
+    final contract = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (contract <= 0 || contract > 25) errors['rate'] = 'Enter interest rate (0.1% - 25%)';
+
+    final down = double.tryParse(_downController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (down < 0) errors['down'] = 'Enter a valid down payment';
+
+    final otherDebts = double.tryParse(_debtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (otherDebts < 0) errors['debts'] = 'Enter valid monthly debts';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_incomeController] = income;
+      _calcSnapshot[_rateController] = contract;
+      _calcSnapshot[_downController] = down;
+      _calcSnapshot[_debtsController] = otherDebts;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _incomeController.text = '120000';
+      _rateController.text = '4.99';
+      _downController.text = '100000';
+      _debtsController.text = '500';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   void _saveCalculation() async {
-    final double income = double.tryParse(_incomeController.text) ?? 120000;
-    final double contract = double.tryParse(_rateController.text) ?? 4.99;
-    final double down = double.tryParse(_downController.text) ?? 100000;
-    final double otherDebts = double.tryParse(_debtsController.text) ?? 500;
+    final double income = _val(_incomeController, 120000);
+    final double contract = _val(_rateController, 4.99);
+    final double down = _val(_downController, 100000);
+    final double otherDebts = _val(_debtsController, 500);
 
     final double qualRate = CMHCCalculator.stressTestRate(contract);
     final double maxLoanAmt = _maxLoan(income, otherDebts, qualRate, 25);
@@ -369,10 +433,10 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
       _rateInitialized = true;
     }
 
-    final double income = double.tryParse(_incomeController.text) ?? 120000;
-    final double contract = double.tryParse(_rateController.text) ?? 4.99;
-    final double down = double.tryParse(_downController.text) ?? 100000;
-    final double otherDebts = double.tryParse(_debtsController.text) ?? 500;
+    final double income = _val(_incomeController, 120000);
+    final double contract = _val(_rateController, 4.99);
+    final double down = _val(_downController, 100000);
+    final double otherDebts = _val(_debtsController, 500);
 
     final double cPlus2 = contract + 2.0;
     const double floor = 5.25;
@@ -393,6 +457,13 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
     final double gdsW = (gds / 39 * 100).clamp(0, 100);
     final double tdsW = (tds / 44 * 100).clamp(0, 100);
 
+    final isDirty = _showResults && (
+      (double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_incomeController] ?? 0.0) ||
+      (double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_rateController] ?? 0.0) ||
+      (double.tryParse(_downController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_downController] ?? 0.0) ||
+      (double.tryParse(_debtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_debtsController] ?? 0.0)
+    );
+
     Color getStatusColor(double val, double limit) {
       if (val > limit) return const Color(0xFFC8102E);
       if (val > limit * 0.85) return const Color(0xFFF59E0B);
@@ -403,14 +474,30 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section label
-        Text(
-          'YOUR DETAILS',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'YOUR DETAILS',
+              style: AppTextStyles.dmSans(
+                size: 10,
+                weight: FontWeight.bold,
+                color: theme.getMutedColor(context),
+                letterSpacing: 0.6,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -429,18 +516,21 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
                 prefix: 'CA\$',
                 suffix: '/yr',
                 controller: _incomeController,
+                errorText: _errors['income'],
               ),
               const SizedBox(height: 12),
               _buildInputField(
                 label: 'Contract Mortgage Rate',
                 suffix: '% / yr',
                 controller: _rateController,
+                errorText: _errors['rate'],
               ),
               const SizedBox(height: 12),
               _buildInputField(
                 label: 'Down Payment',
                 prefix: 'CA\$',
                 controller: _downController,
+                errorText: _errors['down'],
               ),
               const SizedBox(height: 12),
               _buildInputField(
@@ -448,13 +538,14 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
                 prefix: 'CA\$',
                 suffix: '/mo',
                 controller: _debtsController,
+                errorText: _errors['debts'],
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => setState(() {}),
+                      onPressed: _calculate,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFC8102E),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -466,20 +557,22 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _saveCalculation,
-                    child: Container(
-                      width: 50,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1B3F72),
-                        borderRadius: BorderRadius.circular(12),
+                  if (_showResults) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: _saveCalculation,
+                      child: Container(
+                        width: 50,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1B3F72),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text('💾', style: TextStyle(fontSize: 18)),
                       ),
-                      alignment: Alignment.center,
-                      child: const Text('💾', style: TextStyle(fontSize: 18)),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ],
@@ -487,203 +580,236 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
         ),
         const SizedBox(height: 20),
 
-        // Qualifying rate comparator
-        Text(
-          'QUALIFYING RATE USED',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            children: [
-              _buildRateRow('Contract Rate + 2%', '${cPlus2.toStringAsFixed(2)}%', !usingFloor, theme),
-              const Divider(height: 16, thickness: 0.5),
-              _buildRateRow('Regulatory Floor Rate', '${floor.toStringAsFixed(2)}%', usingFloor, theme),
-              const Divider(height: 16, thickness: 0.5),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Qualifying Rate',
-                    style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: theme.getTextColor(context)),
-                  ),
-                  Text(
-                    '${qualRate.toStringAsFixed(2)}%',
-                    style: AppTextStyles.playfair(size: 16, weight: FontWeight.bold, color: const Color(0xFFC8102E)),
-                  ),
-                ],
+        if (_showResults) ...[
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Result Card
-        Text(
-          'STRESS TEST RESULT',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+              child: Row(
                 children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: qualifies ? const Color(0xFF6EDFA0) : const Color(0xFFFF8A9A),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    alignment: Alignment.center,
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
                     child: Text(
-                      qualifies ? '✓' : '✗',
-                      style: AppTextStyles.playfair(size: 24, weight: FontWeight.w900, color: const Color(0xFF0A2E1A)),
+                      'Inputs have changed. Tap Calculate to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+            ),
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Qualifying rate comparator
+                Text(
+                  'QUALIFYING RATE USED',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
                     children: [
-                      Text(
-                        qualifies ? 'You Qualify' : 'Does Not Qualify',
-                        style: AppTextStyles.playfair(size: 20, weight: FontWeight.bold, color: Colors.white),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        qualifies
-                            ? 'Max home: ${CurrencyFormatter.format(maxPrice, symbol: 'CA\$')} at stress rate'
-                            : 'Reduce debts or increase income to qualify',
-                        style: AppTextStyles.dmSans(size: 10.5, color: Colors.white70),
+                      _buildRateRow('Contract Rate + 2%', '${cPlus2.toStringAsFixed(2)}%', !usingFloor, theme),
+                      const Divider(height: 16, thickness: 0.5),
+                      _buildRateRow('Regulatory Floor Rate', '${floor.toStringAsFixed(2)}%', usingFloor, theme),
+                      const Divider(height: 16, thickness: 0.5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Qualifying Rate',
+                            style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: theme.getTextColor(context)),
+                          ),
+                          Text(
+                            '${qualRate.toStringAsFixed(2)}%',
+                            style: AppTextStyles.playfair(size: 16, weight: FontWeight.bold, color: const Color(0xFFC8102E)),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(color: Colors.white12),
-              const SizedBox(height: 12),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                childAspectRatio: 2.2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                children: [
-                  _resBox('Max Home Price', CurrencyFormatter.format(maxPrice, symbol: 'CA\$'), const Color(0xFF6EDFA0)),
-                  _resBox('Stress Payment/mo', CurrencyFormatter.format(stressPmt, symbol: 'CA\$'), const Color(0xFFFF8A9A)),
-                  _resBox('GDS at Stress', '${gds.toStringAsFixed(1)}%', Colors.white),
-                  _resBox('TDS at Stress', '${tds.toStringAsFixed(1)}%', Colors.white),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Visual Analysis (Utilization Ranges)
-        Text(
-          'VISUAL ANALYSIS',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Qualifying Ratio Gauges',
-                style: AppTextStyles.playfair(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context)),
-              ),
-              const SizedBox(height: 16),
-              _buildProgressTrack('GDS Utilization', '${gds.toStringAsFixed(1)}% / 39% Limit', gdsW / 100, getStatusColor(gds, 39)),
-              const SizedBox(height: 16),
-              _buildProgressTrack('TDS Utilization', '${tds.toStringAsFixed(1)}% / 44% Limit', tdsW / 100, getStatusColor(tds, 44)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Contract vs Stress payment comparison
-        Text(
-          'CONTRACT VS. STRESS PAYMENT',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            children: [
-              _compareRow('At Contract Rate', '${contract.toStringAsFixed(2)}% — your actual payment', CurrencyFormatter.format(contractPmt, symbol: 'CA\$'), const Color(0xFF1A5C35)),
-              const Divider(height: 20, thickness: 0.5),
-              _compareRow('At Stress Rate', '${qualRate.toStringAsFixed(2)}% — qualifying test', CurrencyFormatter.format(stressPmt, symbol: 'CA\$'), const Color(0xFFC8102E)),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  '+${CurrencyFormatter.format(stressPmt - contractPmt, symbol: 'CA\$')}/mo difference at stress rate',
-                  style: AppTextStyles.dmSans(size: 10, color: theme.getMutedColor(context), weight: FontWeight.bold),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+
+                // Result Card
+                Text(
+                  'STRESS TEST RESULT',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: qualifies ? const Color(0xFF6EDFA0) : const Color(0xFFFF8A9A),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              qualifies ? '✓' : '✗',
+                              style: AppTextStyles.playfair(size: 24, weight: FontWeight.w900, color: const Color(0xFF0A2E1A)),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  qualifies ? 'You Qualify' : 'Does Not Qualify',
+                                  style: AppTextStyles.playfair(size: 20, weight: FontWeight.bold, color: Colors.white),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  qualifies
+                                      ? 'Max home: ${CurrencyFormatter.format(maxPrice, symbol: 'CA\$')} at stress rate'
+                                      : 'Reduce debts or increase income to qualify',
+                                  style: AppTextStyles.dmSans(size: 10.5, color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(color: Colors.white12),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.2,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        children: [
+                          _resBox('Max Home Price', CurrencyFormatter.format(maxPrice, symbol: 'CA\$'), const Color(0xFF6EDFA0)),
+                          _resBox('Stress Payment/mo', CurrencyFormatter.format(stressPmt, symbol: 'CA\$'), const Color(0xFFFF8A9A)),
+                          _resBox('GDS at Stress', '${gds.toStringAsFixed(1)}%', Colors.white),
+                          _resBox('TDS at Stress', '${tds.toStringAsFixed(1)}%', Colors.white),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Visual Analysis (Utilization Ranges)
+                Text(
+                  'VISUAL ANALYSIS',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Qualifying Ratio Gauges',
+                        style: AppTextStyles.playfair(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context)),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProgressTrack('GDS Utilization', '${gds.toStringAsFixed(1)}% / 39% Limit', gdsW / 100, getStatusColor(gds, 39)),
+                      const SizedBox(height: 16),
+                      _buildProgressTrack('TDS Utilization', '${tds.toStringAsFixed(1)}% / 44% Limit', tdsW / 100, getStatusColor(tds, 44)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Contract vs Stress payment comparison
+                Text(
+                  'CONTRACT VS. STRESS PAYMENT',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    children: [
+                      _compareRow('At Contract Rate', '${contract.toStringAsFixed(2)}% — your actual payment', CurrencyFormatter.format(contractPmt, symbol: 'CA\$'), const Color(0xFF1A5C35)),
+                      const Divider(height: 20, thickness: 0.5),
+                      _compareRow('At Stress Rate', '${qualRate.toStringAsFixed(2)}% — qualifying test', CurrencyFormatter.format(stressPmt, symbol: 'CA\$'), const Color(0xFFC8102E)),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '+${CurrencyFormatter.format(stressPmt - contractPmt, symbol: 'CA\$')}/mo difference at stress rate',
+                          style: AppTextStyles.dmSans(size: 10, color: theme.getMutedColor(context), weight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -693,6 +819,7 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
     String? prefix,
     String? suffix,
     required TextEditingController controller,
+    String? errorText,
   }) {
     final theme = widget.theme;
     return Column(
@@ -712,7 +839,10 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
           ),
           child: Row(
             children: [
@@ -746,6 +876,13 @@ class _CAStressTestState extends ConsumerState<CAStressTest> {
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500),
+          ),
+        ],
       ],
     );
   }

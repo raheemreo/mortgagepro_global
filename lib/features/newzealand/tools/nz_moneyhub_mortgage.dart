@@ -24,6 +24,11 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
   double _intRate = 6.59;
   int _loanTerm = 30;
 
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
+
   @override
   void dispose() {
     _propValController.dispose();
@@ -31,13 +36,64 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
     super.dispose();
   }
 
-  void _saveCalculation() async {
-    final propVal = double.tryParse(_propValController.text) ?? 850000;
-    final deposit = double.tryParse(_depositController.text) ?? 170000;
-    final loanAmount = math.max(propVal - deposit, 0.0);
+  void _reset() {
+    setState(() {
+      _propValController.text = '850000';
+      _depositController.text = '170000';
+      _intRate = 6.59;
+      _loanTerm = 30;
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
 
-    final double rate = _intRate / 100;
-    final int n = _loanTerm * 12;
+  void _calculate() {
+    final errors = <String, String>{};
+    final double propVal = double.tryParse(_propValController.text) ?? 0.0;
+    final double deposit = double.tryParse(_depositController.text) ?? 0.0;
+
+    if (propVal <= 0) {
+      errors['propVal'] = 'Enter valid property value';
+    }
+    if (deposit < 0) {
+      errors['deposit'] = 'Enter valid deposit';
+    } else if (deposit > propVal) {
+      errors['deposit'] = 'Deposit cannot exceed property value';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['propertyValue'] = propVal;
+      _calcSnapshot['deposit'] = deposit;
+      _calcSnapshot['interestRate'] = _intRate;
+      _calcSnapshot['loanTerm'] = _loanTerm;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _saveCalculation() async {
+    final double propVal = ((_calcSnapshot['propertyValue'] as num?) ?? (double.tryParse(_propValController.text) ?? 850000.0)).toDouble();
+    final double deposit = ((_calcSnapshot['deposit'] as num?) ?? (double.tryParse(_depositController.text) ?? 170000.0)).toDouble();
+    final loanAmount = math.max<double>(propVal - deposit, 0.0);
+
+    final double rate = (_calcSnapshot['interestRate'] ?? _intRate) / 100;
+    final int n = (_calcSnapshot['loanTerm'] ?? _loanTerm) * 12;
     final double r = rate / 12;
 
     final double monthly = r == 0
@@ -64,7 +120,7 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving MoneyHub Repayment Calc:\nLoan: ${CurrencyFormatter.compact(loanAmount, symbol: "NZ\$")} · Rate: $_intRate%\nTerm: $_loanTerm Years · Payment: ${CurrencyFormatter.compact(monthly, symbol: "NZ\$")}/mo',
+              'Saving MoneyHub Repayment Calc:\nLoan: ${CurrencyFormatter.compact(loanAmount, symbol: "NZ\$")} · Rate: ${(_calcSnapshot['interestRate'] ?? _intRate)}%\nTerm: ${(_calcSnapshot['loanTerm'] ?? _loanTerm)} Years · Payment: ${CurrencyFormatter.compact(monthly, symbol: "NZ\$")}/mo',
               style: AppTextStyles.dmSans(
                   size: 11.5, color: widget.theme.getMutedColor(context)),
             ),
@@ -117,8 +173,8 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
         inputs: {
           'propertyValue': propVal,
           'deposit': deposit,
-          'interestRate': _intRate,
-          'loanTerm': _loanTerm.toDouble(),
+          'interestRate': (_calcSnapshot['interestRate'] ?? _intRate).toDouble(),
+          'loanTerm': (_calcSnapshot['loanTerm'] ?? _loanTerm).toDouble(),
         },
         results: {
           'monthlyPayment': monthly,
@@ -213,12 +269,20 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
     final borderCol = theme.getBorderColor(context);
 
     // Compute basic calculation
-    final propVal = double.tryParse(_propValController.text) ?? 850000;
-    final deposit = double.tryParse(_depositController.text) ?? 170000;
-    final loanAmount = math.max(propVal - deposit, 0.0);
+    final double propVal = (_showResults
+        ? ((_calcSnapshot['propertyValue'] as num?) ?? 850000.0)
+        : (double.tryParse(_propValController.text) ?? 850000.0)).toDouble();
+    final double deposit = (_showResults
+        ? ((_calcSnapshot['deposit'] as num?) ?? 170000.0)
+        : (double.tryParse(_depositController.text) ?? 170000.0)).toDouble();
+    final loanAmount = math.max<double>(propVal - deposit, 0.0);
 
-    final double rate = _intRate / 100;
-    final int n = _loanTerm * 12;
+    final double rate = (_showResults
+            ? (_calcSnapshot['interestRate'] ?? 6.59)
+            : _intRate) / 100;
+    final int n = (_showResults
+            ? (_calcSnapshot['loanTerm'] ?? 30)
+            : _loanTerm) * 12;
     final double r = rate / 12;
 
     final double monthly = r == 0
@@ -271,7 +335,7 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
     // Amortization schedule calculation
     final List<Map<String, dynamic>> amortRows = [];
     double tempBal = loanAmount;
-    final int showYears = math.min(5, _loanTerm);
+    final int showYears = math.min(5, _showResults ? (_calcSnapshot['loanTerm'] ?? _loanTerm) : _loanTerm);
     for (int y = 1; y <= showYears; y++) {
       double yearInterest = 0.0;
       double yearPrincipal = 0.0;
@@ -297,6 +361,13 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
         .where((c) => c.calcType == 'MoneyHub NZ Calculation' && c.country == 'New Zealand')
         .toList();
 
+    final isDirty = _showResults && (
+      (double.tryParse(_propValController.text) ?? 0.0) != (_calcSnapshot['propertyValue'] ?? 0.0) ||
+      (double.tryParse(_depositController.text) ?? 0.0) != (_calcSnapshot['deposit'] ?? 0.0) ||
+      _intRate != (_calcSnapshot['interestRate'] ?? 0.0) ||
+      _loanTerm != (_calcSnapshot['loanTerm'] ?? 0)
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -316,7 +387,23 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
         ),
 
         // Section Title
-        Text('NZ Mortgage Calculator', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('NZ Mortgage Calculator', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+            GestureDetector(
+              onTap: _reset,
+              child: Text(
+                'Reset ↺',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.w600,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
 
         // Hero Mortgage Card
@@ -359,11 +446,13 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
 
               // Inputs Row 1
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _buildInputBox(
                       label: 'Property Value (NZD)',
                       controller: _propValController,
+                      errorText: _errors['propVal'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -371,6 +460,7 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
                     child: _buildInputBox(
                       label: 'Deposit (NZD)',
                       controller: _depositController,
+                      errorText: _errors['deposit'],
                     ),
                   ),
                 ],
@@ -379,6 +469,7 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
 
               // Inputs Row 2
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _buildDropdownBox<double>(
@@ -414,47 +505,49 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
               ),
               const SizedBox(height: 16),
 
-              // Results Row 1
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.07),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
-                  borderRadius: BorderRadius.circular(12),
+              if (_showResults) ...[
+                // Results Row 1
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.07),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildResultItem('Monthly', CurrencyFormatter.compact(monthly, symbol: 'NZ\$')),
+                      _buildResultItem('Total Interest', CurrencyFormatter.compact(totalInt, symbol: 'NZ\$')),
+                      _buildResultItem('LVR', '${lvr.round()}%'),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildResultItem('Monthly', CurrencyFormatter.compact(monthly, symbol: 'NZ\$')),
-                    _buildResultItem('Total Interest', CurrencyFormatter.compact(totalInt, symbol: 'NZ\$')),
-                    _buildResultItem('LVR', '${lvr.round()}%'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              // Results Row 2
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.07),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
-                  borderRadius: BorderRadius.circular(12),
+                // Results Row 2
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.07),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildResultItem('Loan Amount', CurrencyFormatter.compact(loanAmount, symbol: 'NZ\$')),
+                      _buildResultItem('Total Repaid', CurrencyFormatter.compact(totalPaid, symbol: 'NZ\$')),
+                      _buildResultItem('LVR Status', lvrText, valColor: lvrColor),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildResultItem('Loan Amount', CurrencyFormatter.compact(loanAmount, symbol: 'NZ\$')),
-                    _buildResultItem('Total Repaid', CurrencyFormatter.compact(totalPaid, symbol: 'NZ\$')),
-                    _buildResultItem('LVR Status', lvrText, valColor: lvrColor),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
 
               // Action Buttons
               ElevatedButton(
-                onPressed: () => setState(() {}),
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryColor,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -463,167 +556,385 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
                 ),
                 child: Text('🏠 Calculate My NZ Mortgage', style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800)),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4A017),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  minimumSize: const Size(double.infinity, 44),
+              if (_showResults) ...[
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4A017),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    minimumSize: const Size(double.infinity, 44),
+                  ),
+                  child: Text('💾 Save This Calculation', style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800)),
                 ),
-                child: Text('💾 Save This Calculation', style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800)),
-              ),
+              ],
             ],
           ),
         ),
-        const SizedBox(height: 20),
 
-        // Cost Breakdown Section
-        Text('Loan Cost Breakdown', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderCol),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Principal vs Interest Paid · Over $_loanTerm years', style: AppTextStyles.playfair(size: 12.5, weight: FontWeight.w800, color: textCol)),
-              const SizedBox(height: 16),
-              Row(
+        if (_showResults) ...[
+          if (isDirty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
                 children: [
-                  SizedBox(
-                    width: 110,
-                    height: 110,
-                    child: CustomPaint(
-                      painter: _MHDonutPainter(
-                        principal: loanAmount,
-                        totalInterest: totalInt,
-                        isDark: isDark,
-                        theme: theme,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
                   Expanded(
-                    child: Column(
-                      children: [
-                        _buildLegendItem('Principal', CurrencyFormatter.compact(loanAmount, symbol: 'NZ\$'), theme.primaryColor),
-                        _buildLegendItem('Total Interest', CurrencyFormatter.compact(totalInt, symbol: 'NZ\$'), const Color(0xFFC0392B)),
-                        _buildLegendItem('Total Repaid', CurrencyFormatter.compact(totalPaid, symbol: 'NZ\$'), const Color(0xFFD4A017)),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: theme.getBgColor(context),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Interest ratio', style: AppTextStyles.dmSans(size: 9, color: mutedCol)),
-                              Text(
-                                totalPaid > 0 ? '${(totalInt / totalPaid * 100).round()}%' : '0%',
-                                style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: const Color(0xFFC0392B)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Inputs have changed. Tap Calculate My NZ Mortgage to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Rate Comparison Chart
-        Text('NZ Rate Comparison', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderCol),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Fixed Rate Terms · All Major Lenders (June 2025)', style: AppTextStyles.playfair(size: 12.5, weight: FontWeight.w800, color: textCol)),
-              const SizedBox(height: 16),
-
-              // Bar Chart Layout
-              SizedBox(
-                height: 120,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: List.generate(terms.length, (i) {
-                    final term = terms[i];
-                    final bRate = bestRates[i];
-                    final aRate = avgRates[i];
-
-                    // Scale heights
-                    final bH = math.max(4.0, ((bRate - minBarRate) / (maxBarRate - minBarRate)) * maxBarH);
-                    final aH = math.max(4.0, ((aRate - minBarRate) / (maxBarRate - minBarRate)) * maxBarH);
-
-                    return Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
+            ),
+          ],
+          const SizedBox(height: 20),
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Cost Breakdown Section
+                Text('Loan Cost Breakdown', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Principal vs Interest Paid · Over ${(_calcSnapshot['loanTerm'] ?? _loanTerm)} years', style: AppTextStyles.playfair(size: 12.5, weight: FontWeight.w800, color: textCol)),
+                      const SizedBox(height: 16),
+                      Row(
                         children: [
-                          Text('$aRate%', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.bold, color: theme.primaryColor)),
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Container(
-                                width: 12,
-                                height: bH,
-                                decoration: BoxDecoration(
-                                  color: theme.primaryColor,
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-                                ),
+                          SizedBox(
+                            width: 110,
+                            height: 110,
+                            child: CustomPaint(
+                              painter: _MHDonutPainter(
+                                principal: loanAmount,
+                                totalInterest: totalInt,
+                                isDark: isDark,
+                                theme: theme,
                               ),
-                              const SizedBox(width: 2),
-                              Container(
-                                width: 12,
-                                height: aH,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF0D9488),
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(term, style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildLegendItem('Principal', CurrencyFormatter.compact(loanAmount, symbol: 'NZ\$'), theme.primaryColor),
+                                _buildLegendItem('Total Interest', CurrencyFormatter.compact(totalInt, symbol: 'NZ\$'), const Color(0xFFC0392B)),
+                                _buildLegendItem('Total Repaid', CurrencyFormatter.compact(totalPaid, symbol: 'NZ\$'), const Color(0xFFD4A017)),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: theme.getBgColor(context),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Interest ratio', style: AppTextStyles.dmSans(size: 9, color: mutedCol)),
+                                      Text(
+                                        totalPaid > 0 ? '${(totalInt / totalPaid * 100).round()}%' : '0%',
+                                        style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: const Color(0xFFC0392B)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                    );
-                  }),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildChartLegend('Best rate', theme.primaryColor),
-                  const SizedBox(width: 14),
-                  _buildChartLegend('Market avg', const Color(0xFF0D9488)),
-                ],
-              ),
-            ],
+                // Rate Comparison Chart
+                Text('NZ Rate Comparison', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Fixed Rate Terms · All Major Lenders (June 2025)', style: AppTextStyles.playfair(size: 12.5, weight: FontWeight.w800, color: textCol)),
+                      const SizedBox(height: 16),
+
+                      // Bar Chart Layout
+                      SizedBox(
+                        height: 120,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: List.generate(terms.length, (i) {
+                            final term = terms[i];
+                            final bRate = bestRates[i];
+                            final aRate = avgRates[i];
+
+                            // Scale heights
+                            final bH = math.max(4.0, ((bRate - minBarRate) / (maxBarRate - minBarRate)) * maxBarH);
+                            final aH = math.max(4.0, ((aRate - minBarRate) / (maxBarRate - minBarRate)) * maxBarH);
+
+                            return Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text('$aRate%', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.bold, color: theme.primaryColor)),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Container(
+                                        width: 12,
+                                        height: bH,
+                                        decoration: BoxDecoration(
+                                          color: theme.primaryColor,
+                                          borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Container(
+                                        width: 12,
+                                        height: aH,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF0D9488),
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(term, style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                                ],
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildChartLegend('Best rate', theme.primaryColor),
+                          const SizedBox(width: 14),
+                          _buildChartLegend('Market avg', const Color(0xFF0D9488)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // NZ Lender Rates Comparison Table
+                Text('NZ Lender Rates Comparison', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      // Header Row
+                      Container(
+                        color: theme.getBgColor(context),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        child: Row(
+                          children: [
+                            Expanded(flex: 3, child: Text('Lender', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: mutedCol))),
+                            Expanded(flex: 2, child: Text('1-Yr', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: mutedCol), textAlign: TextAlign.center)),
+                            Expanded(flex: 2, child: Text('2-Yr', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: mutedCol), textAlign: TextAlign.center)),
+                            Expanded(flex: 3, child: Text('Monthly*', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: mutedCol), textAlign: TextAlign.right)),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1),
+
+                      // Lender Rows
+                      ...lenders.map((l) {
+                        final String name = l['name'] as String;
+                        final String icon = l['icon'] as String;
+                        final double rate1 = l['rate1'] as double;
+                        final double rate2 = l['rate2'] as double;
+                        final bool isBest = l['isBest'] as bool;
+
+                        // Compute dynamic repayment for this bank's 1-Yr Fixed rate
+                        final double bankRate = rate1 / 100 / 12;
+                        final double bankMo = loanAmount * (bankRate * math.pow(1 + bankRate, n)) / (math.pow(1 + bankRate, n) - 1);
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                          decoration: BoxDecoration(
+                            color: isBest ? theme.primaryColor.withValues(alpha: 0.05) : Colors.transparent,
+                            border: Border(bottom: BorderSide(color: borderCol, width: 0.5)),
+                          ),
+                          child: Row(
+                            children: [
+                              // Lender Name & Icon
+                              Expanded(
+                                flex: 3,
+                                child: Row(
+                                  children: [
+                                    Text(icon, style: const TextStyle(fontSize: 16)),
+                                    const SizedBox(width: 7),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(name, style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textCol)),
+                                          if (isBest)
+                                            Container(
+                                              margin: const EdgeInsets.only(top: 2),
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFECFDF5),
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                              child: Text('BEST RATE', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: const Color(0xFF065F46))),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // 1-Yr Rate
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  '${rate1.toStringAsFixed(2)}%',
+                                  style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.primaryColor),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              // 2-Yr Rate
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  '${rate2.toStringAsFixed(2)}%',
+                                  style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: textCol),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              // Monthly
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  CurrencyFormatter.compact(bankMo, symbol: 'NZ\$'),
+                                  style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textCol),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+
+                      // Table Note
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        color: theme.getBgColor(context),
+                        width: double.infinity,
+                        child: Text(
+                          '*Repayments calculated dynamically based on your ${CurrencyFormatter.compact(loanAmount, symbol: "NZ\$")} loan and ${(_calcSnapshot['loanTerm'] ?? _loanTerm)}-year P&I term.',
+                          style: AppTextStyles.dmSans(size: 8.5, color: mutedCol, height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Amortisation Preview Table
+                Text('Amortisation Preview', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('First 5 Years · P&I Breakdown · ${(_calcSnapshot['interestRate'] ?? _intRate)}% · ${(_calcSnapshot['loanTerm'] ?? _loanTerm)} yr', style: AppTextStyles.playfair(size: 12.5, weight: FontWeight.w800, color: textCol)),
+                      const SizedBox(height: 12),
+
+                      Table(
+                        columnWidths: const {
+                          0: FlexColumnWidth(1.2),
+                          1: FlexColumnWidth(1.5),
+                          2: FlexColumnWidth(1.5),
+                          3: FlexColumnWidth(1.5),
+                          4: FlexColumnWidth(1.5),
+                        },
+                        children: [
+                          TableRow(
+                            decoration: BoxDecoration(color: theme.getBgColor(context)),
+                            children: [
+                              _buildAmortHeaderCell('Year'),
+                              _buildAmortHeaderCell('Monthly'),
+                              _buildAmortHeaderCell('Principal'),
+                              _buildAmortHeaderCell('Interest'),
+                              _buildAmortHeaderCell('Balance'),
+                            ],
+                          ),
+                          ...amortRows.map((row) {
+                            final int y = row['year'] as int;
+                            final double moVal = row['monthly'] as double;
+                            final double prinVal = row['principal'] as double;
+                            final double intVal = row['interest'] as double;
+                            final double balVal = row['balance'] as double;
+
+                            return TableRow(
+                              decoration: BoxDecoration(
+                                border: Border(bottom: BorderSide(color: borderCol, width: 0.5)),
+                              ),
+                              children: [
+                                _buildAmortCell('Year $y', alignLeft: true),
+                                _buildAmortCell(CurrencyFormatter.compact(moVal, symbol: 'NZ\$')),
+                                _buildAmortCell(CurrencyFormatter.compact(prinVal, symbol: 'NZ\$'), color: theme.primaryColor),
+                                _buildAmortCell(CurrencyFormatter.compact(intVal, symbol: 'NZ\$'), color: const Color(0xFFC0392B)),
+                                _buildAmortCell(CurrencyFormatter.compact(balVal, symbol: 'NZ\$')),
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
+        ],
 
         // OCR Rate History Chart
         Text('OCR Rate History', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
@@ -1061,30 +1372,41 @@ class _NZMoneyHubMortgageState extends ConsumerState<NZMoneyHubMortgage> {
     );
   }
 
-  Widget _buildInputBox({required String label, required TextEditingController controller}) {
+  Widget _buildInputBox({required String label, required TextEditingController controller, String? errorText}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      height: errorText != null ? 62 : 46,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        border: Border.all(color: errorText != null ? Colors.red : Colors.white.withValues(alpha: 0.14)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: AppTextStyles.dmSans(size: 8.5, color: Colors.white60)),
           const SizedBox(height: 2),
-          TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            style: AppTextStyles.dmSans(size: 13, weight: FontWeight.bold, color: Colors.white),
-            decoration: const InputDecoration(
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-              border: InputBorder.none,
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              style: AppTextStyles.dmSans(size: 13, weight: FontWeight.bold, color: Colors.white),
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                border: InputBorder.none,
+              ),
+              onChanged: (_) => setState(() {}),
             ),
-            onChanged: (_) => setState(() {}),
           ),
+          if (errorText != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                errorText,
+                style: AppTextStyles.dmSans(size: 7.5, color: Colors.red, weight: FontWeight.bold),
+              ),
+            ),
         ],
       ),
     );

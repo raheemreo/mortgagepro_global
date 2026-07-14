@@ -409,8 +409,6 @@ String _routeForCalc(SavedCalc calc) {
       toolId = 'rentalyield';
     else if (type.contains('ring'))
       toolId = 'ringfencing';
-    else if (type.contains('bright'))
-      toolId = 'brightline';
     else if (type.contains('investment'))
       toolId = 'investmentproperty';
     else if (type.contains('interest'))
@@ -457,8 +455,6 @@ String _routeForCalc(SavedCalc calc) {
       toolId = 'healthy_homes';
     else if (type.contains('moneyhub'))
       toolId = 'moneyhub_mortgage';
-    else if (type.contains('property market') || type.contains('market report'))
-      toolId = 'property_market_report';
     else if (type.contains('mortgage')) toolId = 'mortgage';
   } else if (country == 'europe') {
     if (type.contains('dti'))

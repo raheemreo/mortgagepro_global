@@ -29,6 +29,11 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
   final _ccController = TextEditingController(text: '150');
   final _otherController = TextEditingController(text: '0');
 
+  final _resultsKey = GlobalKey();
+  bool _showResults = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   @override
   void dispose() {
     _incomeController.dispose();
@@ -42,15 +47,111 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
     super.dispose();
   }
 
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    double defaultVal = 0.0;
+    if (c == _incomeController) {
+      defaultVal = 9000.0;
+    } else if (c == _mortgageController) {
+      defaultVal = 2832.0;
+    } else if (c == _taxController) {
+      defaultVal = 400.0;
+    } else if (c == _heatingController) {
+      defaultVal = 150.0;
+    } else if (c == _condoController) {
+      defaultVal = 0.0;
+    } else if (c == _carController) {
+      defaultVal = 350.0;
+    } else if (c == _ccController) {
+      defaultVal = 150.0;
+    } else if (c == _otherController) {
+      defaultVal = 0.0;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (income <= 0) errors['income'] = 'Enter a valid gross monthly income';
+
+    final mortgage = double.tryParse(_mortgageController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (mortgage < 0) errors['mortgage'] = 'Enter a valid mortgage payment';
+
+    final tax = double.tryParse(_taxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (tax < 0) errors['tax'] = 'Enter a valid property tax';
+
+    final heating = double.tryParse(_heatingController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (heating < 0) errors['heating'] = 'Enter a valid heating cost';
+
+    final condo = double.tryParse(_condoController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (condo < 0) errors['condo'] = 'Enter a valid condo fee';
+
+    final car = double.tryParse(_carController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (car < 0) errors['car'] = 'Enter a valid car payment';
+
+    final cc = double.tryParse(_ccController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (cc < 0) errors['cc'] = 'Enter a valid credit card payment';
+
+    final other = double.tryParse(_otherController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (other < 0) errors['other'] = 'Enter a valid amount';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_incomeController] = income;
+      _calcSnapshot[_mortgageController] = mortgage;
+      _calcSnapshot[_taxController] = tax;
+      _calcSnapshot[_heatingController] = heating;
+      _calcSnapshot[_condoController] = condo;
+      _calcSnapshot[_carController] = car;
+      _calcSnapshot[_ccController] = cc;
+      _calcSnapshot[_otherController] = other;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _incomeController.text = '9000';
+      _mortgageController.text = '2832';
+      _taxController.text = '400';
+      _heatingController.text = '150';
+      _condoController.text = '0';
+      _carController.text = '350';
+      _ccController.text = '150';
+      _otherController.text = '0';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   void _saveCalculation() async {
-    final double income = double.tryParse(_incomeController.text) ?? 9000;
-    final double mortgage = double.tryParse(_mortgageController.text) ?? 2832;
-    final double tax = double.tryParse(_taxController.text) ?? 400;
-    final double heating = double.tryParse(_heatingController.text) ?? 150;
-    final double condo = double.tryParse(_condoController.text) ?? 0;
-    final double car = double.tryParse(_carController.text) ?? 350;
-    final double cc = double.tryParse(_ccController.text) ?? 150;
-    final double other = double.tryParse(_otherController.text) ?? 0;
+    final double income = _val(_incomeController);
+    final double mortgage = _val(_mortgageController);
+    final double tax = _val(_taxController);
+    final double heating = _val(_heatingController);
+    final double condo = _val(_condoController);
+    final double car = _val(_carController);
+    final double cc = _val(_ccController);
+    final double other = _val(_otherController);
 
     final double condoHalf = condo * 0.5;
     final double gdsTotal = mortgage + tax + heating + condoHalf;
@@ -165,14 +266,14 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double income = double.tryParse(_incomeController.text) ?? 9000;
-    final double mortgage = double.tryParse(_mortgageController.text) ?? 2832;
-    final double tax = double.tryParse(_taxController.text) ?? 400;
-    final double heating = double.tryParse(_heatingController.text) ?? 150;
-    final double condo = double.tryParse(_condoController.text) ?? 0;
-    final double car = double.tryParse(_carController.text) ?? 350;
-    final double cc = double.tryParse(_ccController.text) ?? 150;
-    final double other = double.tryParse(_otherController.text) ?? 0;
+    final double income = _val(_incomeController);
+    final double mortgage = _val(_mortgageController);
+    final double tax = _val(_taxController);
+    final double heating = _val(_heatingController);
+    final double condo = _val(_condoController);
+    final double car = _val(_carController);
+    final double cc = _val(_ccController);
+    final double other = _val(_otherController);
 
     final double condoHalf = condo * 0.5;
     final double gdsTotal = mortgage + tax + heating + condoHalf;
@@ -184,6 +285,17 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
 
     final bool gdsPass = gds <= 39;
     final bool tdsPass = tds <= 44;
+
+    final isDirty = _showResults && (
+      (double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_incomeController] ?? 0.0) ||
+      (double.tryParse(_mortgageController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_mortgageController] ?? 0.0) ||
+      (double.tryParse(_taxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_taxController] ?? 0.0) ||
+      (double.tryParse(_heatingController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_heatingController] ?? 0.0) ||
+      (double.tryParse(_condoController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_condoController] ?? 0.0) ||
+      (double.tryParse(_carController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_carController] ?? 0.0) ||
+      (double.tryParse(_ccController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_ccController] ?? 0.0) ||
+      (double.tryParse(_otherController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_otherController] ?? 0.0)
+    );
 
     // Filter saved calcs locally
     final saved = ref.watch(savedProvider);
@@ -238,14 +350,30 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
           ),
         ),
         // Section Label
-        Text(
-          'MONTHLY INCOME',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'MONTHLY INCOME',
+              style: AppTextStyles.dmSans(
+                size: 10,
+                weight: FontWeight.bold,
+                color: theme.getMutedColor(context),
+                letterSpacing: 0.6,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.w600,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -260,7 +388,7 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInputField('Gross Monthly Household Income', _incomeController, prefix: 'CA\$', suffix: '/mo'),
+              _buildInputField('Gross Monthly Household Income', _incomeController, prefix: 'CA\$', suffix: '/mo', errorText: _errors['income']),
               const SizedBox(height: 4),
               Text(
                 'Before-tax income. Include all co-borrowers.',
@@ -291,46 +419,13 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
           ),
           child: Column(
             children: [
-              _buildInputField('Mortgage Payment', _mortgageController, prefix: 'CA\$', suffix: '/mo'),
+              _buildInputField('Mortgage Payment', _mortgageController, prefix: 'CA\$', suffix: '/mo', errorText: _errors['mortgage']),
               const SizedBox(height: 12),
-              _buildInputField('Property Tax', _taxController, prefix: 'CA\$', suffix: '/mo'),
+              _buildInputField('Property Tax', _taxController, prefix: 'CA\$', suffix: '/mo', errorText: _errors['tax']),
               const SizedBox(height: 12),
-              _buildInputField('Heating Costs', _heatingController, prefix: 'CA\$', suffix: '/mo'),
+              _buildInputField('Heating Costs', _heatingController, prefix: 'CA\$', suffix: '/mo', errorText: _errors['heating']),
               const SizedBox(height: 12),
-              _buildInputField('Condo Fees (if applicable)', _condoController, prefix: 'CA\$', suffix: '/mo'),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => setState(() {}),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFC8102E),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text(
-                        '📊 Calculate Ratios',
-                        style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _saveCalculation,
-                    child: Container(
-                      width: 50,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: theme.primaryColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text('💾', style: TextStyle(fontSize: 18)),
-                    ),
-                  ),
-                ],
-              ),
+              _buildInputField('Condo Fees (if applicable)', _condoController, prefix: 'CA\$', suffix: '/mo', errorText: _errors['condo']),
             ],
           ),
         ),
@@ -356,230 +451,305 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
           ),
           child: Column(
             children: [
-              _buildInputField('Car Loan / Lease', _carController, prefix: 'CA\$', suffix: '/mo'),
+              _buildInputField('Car Loan / Lease', _carController, prefix: 'CA\$', suffix: '/mo', errorText: _errors['car']),
               const SizedBox(height: 12),
-              _buildInputField('Credit Cards (3% of balance)', _ccController, prefix: 'CA\$', suffix: '/mo'),
+              _buildInputField('Credit Cards (3% of balance)', _ccController, prefix: 'CA\$', suffix: '/mo', errorText: _errors['cc']),
               const SizedBox(height: 12),
-              _buildInputField('Student / Other Loans', _otherController, prefix: 'CA\$', suffix: '/mo'),
+              _buildInputField('Student / Other Loans', _otherController, prefix: 'CA\$', suffix: '/mo', errorText: _errors['other']),
             ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        ElevatedButton(
+          onPressed: _calculate,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFC8102E),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            minimumSize: const Size.fromHeight(48),
+          ),
+          child: Text(
+            '📊 Calculate Ratios',
+            style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.bold),
           ),
         ),
         const SizedBox(height: 20),
 
-        // Ratios Summary Gauges
-        Text(
-          'YOUR RATIOS',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _buildGaugeCard('GDS Ratio', '${gds.toStringAsFixed(1)}%', 'Limit: 39%', getStatusText(gds, 39), getStatusColor(gds, 39), gds / 39, theme),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildGaugeCard('TDS Ratio', '${tds.toStringAsFixed(1)}%', 'Limit: 44%', getStatusText(tds, 44), getStatusColor(tds, 44), tds / 44, theme),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // Qualification Result Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+        if (_showResults) ...[
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'QUALIFICATION SUMMARY',
-                style: AppTextStyles.dmSans(
-                  size: 9,
-                  color: Colors.white60,
-                  weight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _qualRow('GDS — Housing Costs', '${gds.toStringAsFixed(1)}% / 39%', gdsPass),
-              const Divider(color: Colors.white12, height: 16),
-              _qualRow('TDS — Total Debt', '${tds.toStringAsFixed(1)}% / 44%', tdsPass),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Visual Income Allocation
-        Text(
-          'VISUAL BREAKDOWN',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Monthly Income Distribution',
-                style: AppTextStyles.playfair(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context)),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'GDS: ${gds.toStringAsFixed(1)}%',
-                style: AppTextStyles.dmSans(size: 10, weight: FontWeight.bold, color: theme.getMutedColor(context)),
-              ),
-              const SizedBox(height: 4),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: SizedBox(
-                  height: 16,
-                  child: Row(
-                    children: [
-                      if (mortgage > 0)
-                        Expanded(flex: (mortgage / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF1A5C35))),
-                      if (tax > 0)
-                        Expanded(flex: (tax / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF4A7C5F))),
-                      if (heating > 0)
-                        Expanded(flex: (heating / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF6EDFA0))),
-                      if (condoHalf > 0)
-                        Expanded(flex: (condoHalf / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF9EDED8))),
-                      Expanded(flex: ((income - gdsTotal).clamp(0, income) / income * 100).round().clamp(1, 100), child: Container(color: theme.getBgColor(context))),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'TDS: ${tds.toStringAsFixed(1)}%',
-                style: AppTextStyles.dmSans(size: 10, weight: FontWeight.bold, color: theme.getMutedColor(context)),
-              ),
-              const SizedBox(height: 4),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: SizedBox(
-                  height: 16,
-                  child: Row(
-                    children: [
-                      if (gdsTotal > 0)
-                        Expanded(flex: (gdsTotal / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF1A5C35))),
-                      if (car > 0)
-                        Expanded(flex: (car / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFFF59E0B))),
-                      if (cc > 0)
-                        Expanded(flex: (cc / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFFFCD34D))),
-                      if (other > 0)
-                        Expanded(flex: (other / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFFFEF08A))),
-                      Expanded(flex: ((income - tdsTotal).clamp(0, income) / income * 100).round().clamp(1, 100), child: Container(color: theme.getBgColor(context))),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Divider(height: 1, thickness: 0.5),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Row(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Discretionary Income',
-                        style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: theme.getTextColor(context)),
-                      ),
-                      Text(
-                        'After housing + all debts',
-                        style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context)),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        CurrencyFormatter.format(dm.max(0, discretionary), symbol: 'CA\$'),
-                        style: AppTextStyles.playfair(size: 18, weight: FontWeight.bold, color: theme.primaryColor),
-                      ),
-                      Text(
-                        '${income > 0 ? (discretionary / income * 100).toStringAsFixed(1) : 0}% of income',
-                        style: AppTextStyles.dmSans(size: 10, color: theme.getMutedColor(context), weight: FontWeight.bold),
-                      ),
-                    ],
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+            ),
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Ratios Summary Gauges
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'YOUR RATIOS',
+                      style: AppTextStyles.dmSans(
+                        size: 10,
+                        weight: FontWeight.bold,
+                        color: theme.getMutedColor(context),
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _saveCalculation,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            const Text('💾', style: TextStyle(fontSize: 10)),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Save Scenario',
+                              style: AppTextStyles.dmSans(
+                                size: 10,
+                                weight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildGaugeCard('GDS Ratio', '${gds.toStringAsFixed(1)}%', 'Limit: 39%', getStatusText(gds, 39), getStatusColor(gds, 39), gds / 39, theme),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildGaugeCard('TDS Ratio', '${tds.toStringAsFixed(1)}%', 'Limit: 44%', getStatusText(tds, 44), getStatusColor(tds, 44), tds / 44, theme),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
 
-        // Monthly Cost Breakdown
-        Text(
-          'MONTHLY COST BREAKDOWN',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
+                // Qualification Result Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'QUALIFICATION SUMMARY',
+                        style: AppTextStyles.dmSans(
+                          size: 9,
+                          color: Colors.white60,
+                          weight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _qualRow('GDS — Housing Costs', '${gds.toStringAsFixed(1)}% / 39%', gdsPass),
+                      const Divider(color: Colors.white12, height: 16),
+                      _qualRow('TDS — Total Debt', '${tds.toStringAsFixed(1)}% / 44%', tdsPass),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Visual Income Allocation
+                Text(
+                  'VISUAL BREAKDOWN',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Monthly Income Distribution',
+                        style: AppTextStyles.playfair(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context)),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'GDS: ${gds.toStringAsFixed(1)}%',
+                        style: AppTextStyles.dmSans(size: 10, weight: FontWeight.bold, color: theme.getMutedColor(context)),
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: SizedBox(
+                          height: 16,
+                          child: Row(
+                            children: [
+                              if (mortgage > 0)
+                                Expanded(flex: (mortgage / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF1A5C35))),
+                              if (tax > 0)
+                                Expanded(flex: (tax / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF4A7C5F))),
+                              if (heating > 0)
+                                Expanded(flex: (heating / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF6EDFA0))),
+                              if (condoHalf > 0)
+                                Expanded(flex: (condoHalf / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF9EDED8))),
+                              Expanded(flex: ((income - gdsTotal).clamp(0, income) / income * 100).round().clamp(1, 100), child: Container(color: theme.getBgColor(context))),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'TDS: ${tds.toStringAsFixed(1)}%',
+                        style: AppTextStyles.dmSans(size: 10, weight: FontWeight.bold, color: theme.getMutedColor(context)),
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: SizedBox(
+                          height: 16,
+                          child: Row(
+                            children: [
+                              if (gdsTotal > 0)
+                                Expanded(flex: (gdsTotal / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFF1A5C35))),
+                              if (car > 0)
+                                Expanded(flex: (car / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFFF59E0B))),
+                              if (cc > 0)
+                                Expanded(flex: (cc / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFFFCD34D))),
+                              if (other > 0)
+                                Expanded(flex: (other / income * 100).round().clamp(1, 100), child: Container(color: const Color(0xFFFEF08A))),
+                              Expanded(flex: ((income - tdsTotal).clamp(0, income) / income * 100).round().clamp(1, 100), child: Container(color: theme.getBgColor(context))),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1, thickness: 0.5),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Discretionary Income',
+                                style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: theme.getTextColor(context)),
+                              ),
+                              Text(
+                                'After housing + all debts',
+                                style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context)),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                CurrencyFormatter.format(dm.max(0, discretionary), symbol: 'CA\$'),
+                                style: AppTextStyles.playfair(size: 18, weight: FontWeight.bold, color: theme.primaryColor),
+                              ),
+                              Text(
+                                '${income > 0 ? (discretionary / income * 100).toStringAsFixed(1) : 0}% of income',
+                                style: AppTextStyles.dmSans(size: 10, color: theme.getMutedColor(context), weight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Monthly Cost Breakdown
+                Text(
+                  'MONTHLY COST BREAKDOWN',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    children: [
+                      _bkItem('Gross Income', income, null, theme),
+                      const Divider(height: 14, thickness: 0.5),
+                      _bkItem('Mortgage', mortgage, income > 0 ? (mortgage / income * 100) : 0, theme),
+                      const Divider(height: 14, thickness: 0.5),
+                      _bkItem('Property Tax + Heating', tax + heating, income > 0 ? ((tax + heating) / income * 100) : 0, theme),
+                      const Divider(height: 14, thickness: 0.5),
+                      _bkItem('Condo Fees (50%)', condoHalf, income > 0 ? (condoHalf / income * 100) : 0, theme),
+                      const Divider(height: 14, thickness: 0.5),
+                      _bkItem('Total GDS', gdsTotal, gds, theme, isBold: true, overrideColor: theme.primaryColor),
+                      const Divider(height: 14, thickness: 0.5),
+                      _bkItem('Car + Credit + Other', otherDebt, income > 0 ? (otherDebt / income * 100) : 0, theme),
+                      const Divider(height: 14, thickness: 0.5),
+                      _bkItem('Total TDS', tdsTotal, tds, theme, isBold: true, overrideColor: tdsPass ? const Color(0xFF1A5C35) : const Color(0xFFC8102E)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            children: [
-              _bkItem('Gross Income', income, null, theme),
-              const Divider(height: 14, thickness: 0.5),
-              _bkItem('Mortgage', mortgage, income > 0 ? (mortgage / income * 100) : 0, theme),
-              const Divider(height: 14, thickness: 0.5),
-              _bkItem('Property Tax + Heating', tax + heating, income > 0 ? ((tax + heating) / income * 100) : 0, theme),
-              const Divider(height: 14, thickness: 0.5),
-              _bkItem('Condo Fees (50%)', condoHalf, income > 0 ? (condoHalf / income * 100) : 0, theme),
-              const Divider(height: 14, thickness: 0.5),
-              _bkItem('Total GDS', gdsTotal, gds, theme, isBold: true, overrideColor: theme.primaryColor),
-              const Divider(height: 14, thickness: 0.5),
-              _bkItem('Car + Credit + Other', otherDebt, income > 0 ? (otherDebt / income * 100) : 0, theme),
-              const Divider(height: 14, thickness: 0.5),
-              _bkItem('Total TDS', tdsTotal, tds, theme, isBold: true, overrideColor: tdsPass ? const Color(0xFF1A5C35) : const Color(0xFFC8102E)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+        ],
 
         // Local saved calcs
         if (localSaved.isNotEmpty) ...[
@@ -656,7 +826,7 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? prefix, String? suffix}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? prefix, String? suffix, String? errorText}) {
     final theme = widget.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -675,7 +845,10 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
           ),
           child: Row(
             children: [
@@ -709,6 +882,13 @@ class _CAGdsTdsRatioState extends ConsumerState<CAGdsTdsRatio> {
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500),
+          ),
+        ],
       ],
     );
   }

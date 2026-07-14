@@ -25,6 +25,9 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
   String _expiryMonth = '2025-09';
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   final List<Map<String, dynamic>> _rates = [
     {'term': '1 Year', 'years': 1, 'rate': 6.59, 'bank': 'ANZ/ASB'},
@@ -42,6 +45,8 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
       _breakFee = 0;
       _expiryMonth = '2025-09';
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
     });
   }
 
@@ -52,13 +57,57 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
     return loan * (r * pow(1 + r, n)) / (pow(1 + r, n) - 1);
   }
 
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_balance <= 0) {
+      errors['balance'] = 'Enter valid loan balance';
+    }
+    if (_currentRate <= 0 || _currentRate > 25) {
+      errors['currentRate'] = 'Enter rate between 0.1% and 25%';
+    }
+    if (_breakFee < 0) {
+      errors['breakFee'] = 'Break fee cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['balance'] = _balance;
+      _calcSnapshot['currentRate'] = _currentRate;
+      _calcSnapshot['term'] = _termYears;
+      _calcSnapshot['breakFee'] = _breakFee;
+      _calcSnapshot['expiryMonth'] = _expiryMonth;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation() async {
-    final currPmt = _calcMonthlyPmt(_balance, _currentRate, _termYears);
+    final snapBalance = _calcSnapshot['balance'] ?? _balance;
+    final snapCurrentRate = _calcSnapshot['currentRate'] ?? _currentRate;
+    final snapTerm = _calcSnapshot['term'] ?? _termYears;
+    final snapBreakFee = _calcSnapshot['breakFee'] ?? _breakFee;
+
+    final currPmt = _calcMonthlyPmt(snapBalance, snapCurrentRate, snapTerm);
     List<Map<String, dynamic>> results = _rates.map((opt) {
-      final pmt = _calcMonthlyPmt(_balance, opt['rate'] as double, _termYears);
+      final pmt = _calcMonthlyPmt(snapBalance, opt['rate'] as double, snapTerm);
       final savingPerMonth = currPmt - pmt;
       final savingPerTerm = savingPerMonth * (opt['years'] as int) * 12;
-      final netSaving = savingPerTerm - _breakFee;
+      final netSaving = savingPerTerm - snapBreakFee;
       return {...opt, 'pmt': pmt, 'netSaving': netSaving};
     }).toList();
 
@@ -82,7 +131,7 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving refix analysis for ${CurrencyFormatter.compact(_balance, symbol: "NZ\$")} balance. Best: ${best['term']}',
+                'Saving refix analysis for ${CurrencyFormatter.compact(snapBalance, symbol: "NZ\$")} balance. Best: ${best['term']}',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -132,13 +181,13 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'Refixing Calc',
-        inputs: {
-          'balance': _balance,
-          'currentRate': _currentRate,
-          'term': _termYears.toDouble(),
-          'breakFee': _breakFee,
+        inputs: <String, double>{
+          'balance': snapBalance,
+          'currentRate': snapCurrentRate,
+          'term': snapTerm.toDouble(),
+          'breakFee': snapBreakFee,
         },
-        results: {
+        results: <String, double>{
           'bestTerm': best['years'].toDouble(),
           'bestRate': best['rate'] as double,
           'netSaving': best['netSaving'] as double,
@@ -167,19 +216,28 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    // Calculations
-    final currPmt = _calcMonthlyPmt(_balance, _currentRate, _termYears);
-    List<Map<String, dynamic>> results = [];
+    final double rawBalance = _balance;
+    final double rawCurrentRate = _currentRate;
+    final int rawTerm = _termYears;
+    final double rawBreakFee = _breakFee;
 
+    final double balance = _showResults ? (_calcSnapshot['balance'] ?? rawBalance) : rawBalance;
+    final double currentRate = _showResults ? (_calcSnapshot['currentRate'] ?? rawCurrentRate) : rawCurrentRate;
+    final int termYears = _showResults ? (_calcSnapshot['term'] ?? rawTerm) : rawTerm;
+    final double breakFee = _showResults ? (_calcSnapshot['breakFee'] ?? rawBreakFee) : rawBreakFee;
+
+    // Calculations
+    final currPmt = _calcMonthlyPmt(balance, currentRate, termYears);
+    List<Map<String, dynamic>> results = [];
     Map<String, dynamic>? best;
 
     if (_showResults) {
       results = _rates.map((opt) {
         final pmt =
-            _calcMonthlyPmt(_balance, opt['rate'] as double, _termYears);
+            _calcMonthlyPmt(balance, opt['rate'] as double, termYears);
         final savingPerMonth = currPmt - pmt;
         final savingPerTerm = savingPerMonth * (opt['years'] as int) * 12;
-        final netSaving = savingPerTerm - _breakFee;
+        final netSaving = savingPerTerm - breakFee;
         return {
           ...opt,
           'pmt': pmt,
@@ -196,9 +254,16 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
       best = fixedOptions.first;
     }
 
-    final half = _balance / 2;
-    final splitPmt1 = _calcMonthlyPmt(half, 6.59, _termYears);
-    final splitPmt2 = _calcMonthlyPmt(half, 6.35, _termYears);
+    final half = balance / 2;
+    final splitPmt1 = _calcMonthlyPmt(half, 6.59, termYears);
+    final splitPmt2 = _calcMonthlyPmt(half, 6.35, termYears);
+
+    final isDirty = _showResults && (
+      _balance != (_calcSnapshot['balance'] ?? 0.0) ||
+      _currentRate != (_calcSnapshot['currentRate'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['term'] ?? 0) ||
+      _breakFee != (_calcSnapshot['breakFee'] ?? 0.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,6 +316,7 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
               _buildInputBox(
                 prefix: 'NZD \$',
                 value: _balance,
+                errorText: _errors['balance'],
                 onChanged: (val) => setState(() => _balance = val),
               ),
               const SizedBox(height: 10),
@@ -266,6 +332,7 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
                           prefix: '',
                           value: _currentRate,
                           isPercent: true,
+                          errorText: _errors['currentRate'],
                           onChanged: (val) =>
                               setState(() => _currentRate = val),
                         ),
@@ -279,6 +346,7 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
                       children: [
                         _buildFieldLabel('Remaining Term'),
                         Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
@@ -332,6 +400,7 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
                       children: [
                         _buildFieldLabel('Fixed Expiry Month'),
                         Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 11),
                           decoration: BoxDecoration(
@@ -357,6 +426,7 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
                         _buildInputBox(
                           prefix: 'NZ\$',
                           value: _breakFee,
+                          errorText: _errors['breakFee'],
                           onChanged: (val) => setState(() => _breakFee = val),
                         ),
                       ],
@@ -368,10 +438,7 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
 
               // Calculate Button
               ElevatedButton(
-                onPressed: () {
-                  if (_balance <= 0) return;
-                  setState(() => _showResults = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),
                   foregroundColor: Colors.white,
@@ -392,276 +459,240 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
 
         // Results Recommendation
         if (_showResults && best != null) ...[
-          const SizedBox(height: 20),
-          Text('Best Refix Strategy',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Best Refix Strategy · NZD',
-                    style:
-                        AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
-                const SizedBox(height: 6),
-                Text('Refix to ${best['term']} Fixed @ ${best['rate']}%',
-                    style: AppTextStyles.dmSans(
-                        size: 18,
-                        color: Colors.white,
-                        weight: FontWeight.w800)),
-                const SizedBox(height: 4),
-                Text(
-                  'Best available: ${best['bank']} · Saves ${CurrencyFormatter.format(best['savingPerMonth'] as double, currencyCode: "NZD")}/month vs your current rate',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
-                ),
-                const SizedBox(height: 12),
-                Text('Total Savings vs Current Rate',
-                    style: AppTextStyles.dmSans(
-                        size: 9,
-                        color: Colors.white54,
-                        weight: FontWeight.w700)),
-                Text(
-                  '${best['netSaving'] >= 0 ? "+" : ""}${CurrencyFormatter.compact(best['netSaving'] as double, symbol: "NZ\$")}',
-                  style: AppTextStyles.playfair(
-                      size: 28,
-                      color: const Color(0xFF6EE7B7),
-                      weight: FontWeight.w800),
-                ),
-                Text(
-                    'over ${best['years']} year${best['years'] > 1 ? "s" : ""} vs current rate of $_currentRate%',
-                    style: AppTextStyles.dmSans(
-                        size: 10.5, color: Colors.white54)),
-                const SizedBox(height: 14),
-                ElevatedButton(
-                  onPressed: _saveCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: Text('💾 Save This Analysis',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          color: Colors.white,
-                          weight: FontWeight.w800)),
-                ),
-              ],
-            ),
-          ),
-
-          // Refix options list
-          const SizedBox(height: 20),
-          Text('All Refix Options',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('NZ 2025 Rates comparison',
-                    style: AppTextStyles.dmSans(
-                        size: 11,
-                        weight: FontWeight.w700,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 10),
-                ...results.map((opt) {
-                  final isBest = opt['term'] == best?['term'];
-                  final netSaving = opt['netSaving'] as double;
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                    margin: const EdgeInsets.only(bottom: 6),
-                    decoration: BoxDecoration(
-                      color:
-                          isBest ? const Color(0x101A6B4A) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Find Best Refix Term to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                gradient: isBest
-                                    ? const LinearGradient(colors: [
-                                        Color(0xFF1A6B4A),
-                                        Color(0xFF0D9488)
-                                      ])
-                                    : null,
-                                color:
-                                    isBest ? null : theme.getBgColor(context),
-                                borderRadius: BorderRadius.circular(12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                Text('Best Refix Strategy',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
+
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Best Refix Strategy · NZD',
+                          style:
+                              AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
+                      const SizedBox(height: 6),
+                      Text('Refix to ${best['term']} Fixed @ ${best['rate']}%',
+                          style: AppTextStyles.dmSans(
+                              size: 18,
+                              color: Colors.white,
+                              weight: FontWeight.w800)),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Best available: ${best['bank']} · Saves ${CurrencyFormatter.format(best['savingPerMonth'] as double, currencyCode: "NZD")}/month vs your current rate',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 12),
+                      Text('Total Savings vs Current Rate',
+                          style: AppTextStyles.dmSans(
+                              size: 9,
+                              color: Colors.white54,
+                              weight: FontWeight.w700)),
+                      Text(
+                        '${best['netSaving'] >= 0 ? "+" : ""}${CurrencyFormatter.compact(best['netSaving'] as double, symbol: "NZ\$")}',
+                        style: AppTextStyles.playfair(
+                            size: 28,
+                            color: const Color(0xFF6EE7B7),
+                            weight: FontWeight.w800),
+                      ),
+                      Text(
+                          'over ${best['years']} year${best['years'] > 1 ? "s" : ""} vs current rate of $currentRate%',
+                          style: AppTextStyles.dmSans(
+                              size: 10.5, color: Colors.white54)),
+                      const SizedBox(height: 14),
+                      ElevatedButton(
+                        onPressed: _saveCalculation,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D9488),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text('💾 Save This Analysis',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: Colors.white,
+                                weight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Refix options list
+                const SizedBox(height: 20),
+                Text('All Refix Options',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('NZ 2025 Rates comparison',
+                          style: AppTextStyles.dmSans(
+                              size: 11,
+                              weight: FontWeight.w700,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 10),
+                      ...results.map((opt) {
+                        final isBest = opt['term'] == best?['term'];
+                        final netSaving = opt['netSaving'] as double;
+                        return Container(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                          margin: const EdgeInsets.only(bottom: 6),
+                          decoration: BoxDecoration(
+                            color:
+                                isBest ? const Color(0x101A6B4A) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: isBest
+                                          ? const Color(0xFF1A6B4A)
+                                          : theme.getMutedColor(context),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${opt['term']} fixed (${opt['bank']})',
+                                    style: AppTextStyles.dmSans(
+                                        size: 12,
+                                        weight: FontWeight.bold,
+                                        color: theme.getTextColor(context)),
+                                  ),
+                                ],
                               ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                isBest ? '★ Best' : '${opt['years']}yr',
-                                style: AppTextStyles.dmSans(
-                                    size: 10,
-                                    weight: FontWeight.w800,
-                                    color: isBest
-                                        ? Colors.white
-                                        : theme.getMutedColor(context)),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('${opt['term']} Fixed',
+                              Row(
+                                children: [
+                                  Text(
+                                    '${(opt['rate'] as double).toStringAsFixed(2)}%',
+                                    style: AppTextStyles.dmSans(
+                                        size: 12,
+                                        weight: FontWeight.bold,
+                                        color: theme.getTextColor(context)),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    '${netSaving >= 0 ? "+" : ""}${CurrencyFormatter.compact(netSaving, symbol: "NZ\$")}',
                                     style: AppTextStyles.dmSans(
                                         size: 12,
                                         weight: FontWeight.w800,
-                                        color: theme.getTextColor(context))),
-                                Text('${opt['rate']}% p.a. · ${opt['bank']}',
-                                    style: AppTextStyles.dmSans(
-                                        size: 9.5,
-                                        color: theme.getMutedColor(context))),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                                '${CurrencyFormatter.compact(opt['pmt'] as double, symbol: "NZ\$")}/mo',
-                                style: AppTextStyles.dmSans(
-                                    size: 13,
-                                    weight: FontWeight.w800,
-                                    color: theme.getTextColor(context))),
-                            Text(
-                              netSaving >= 0
-                                  ? 'Save ${CurrencyFormatter.compact(netSaving, symbol: "NZ\$")}'
-                                  : 'Extra ${CurrencyFormatter.compact(netSaving.abs(), symbol: "NZ\$")}',
-                              style: AppTextStyles.dmSans(
-                                  size: 9.5,
-                                  color: netSaving >= 0
-                                      ? const Color(0xFF1A6B4A)
-                                      : const Color(0xFFC0392B),
-                                  weight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-
-          // Split Mortgage Strategy Card
-          const SizedBox(height: 20),
-          Text('Split Mortgage Strategy',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('💡 Split Mortgage Strategy',
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                              colors: [Color(0xFF0D3B2E), Color(0xFF1A6B4A)]),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Column(
-                          children: [
-                            Text('Split 1 (50%)',
-                                style: AppTextStyles.dmSans(
-                                    size: 8.5,
-                                    color: Colors.white60,
-                                    weight: FontWeight.w700)),
-                            const SizedBox(height: 4),
-                            Text(
-                                '${CurrencyFormatter.compact(splitPmt1, symbol: "NZ\$")}/mo',
-                                style: AppTextStyles.dmSans(
-                                    size: 13,
-                                    weight: FontWeight.w800,
-                                    color: Colors.white)),
-                            Text('1-yr @ 6.59%',
-                                style: AppTextStyles.dmSans(
-                                    size: 9, color: Colors.white60)),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                              colors: [Color(0xFF0D9488), Color(0xFF0F766E)]),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Column(
-                          children: [
-                            Text('Split 2 (50%)',
-                                style: AppTextStyles.dmSans(
-                                    size: 8.5,
-                                    color: Colors.white60,
-                                    weight: FontWeight.w700)),
-                            const SizedBox(height: 4),
-                            Text(
-                                '${CurrencyFormatter.compact(splitPmt2, symbol: "NZ\$")}/mo',
-                                style: AppTextStyles.dmSans(
-                                    size: 13,
-                                    weight: FontWeight.w800,
-                                    color: Colors.white)),
-                            Text('2-yr @ 6.35%',
-                                style: AppTextStyles.dmSans(
-                                    size: 9, color: Colors.white60)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                                        color: netSaving >= 0
+                                            ? const Color(0xFF1A6B4A)
+                                            : const Color(0xFFC0392B)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Splitting your loan across multiple terms reduces rate risk. If rates drop, your 1-year portion refixes sooner. If rates rise, your 2-year portion is protected. Popular NZ strategy in uncertain rate environments.',
-                  style: AppTextStyles.dmSans(
-                      size: 10,
-                      color: theme.getMutedColor(context),
-                      height: 1.5),
+
+                const SizedBox(height: 20),
+
+                // Co-borrower / Split fix rate visualizer
+                Text('Split Rate Visualiser (50:50 Example)',
+                    style: AppTextStyles.playfair(
+                        size: 14, color: theme.getTextColor(context))),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Rather than fixing 100% of your loan in one term, many Kiwi borrowers split: e.g. 50% in 1-Yr and 50% in 2-Yr to hedge interest rate cycles.',
+                        style: AppTextStyles.dmSans(
+                            size: 10, color: theme.getMutedColor(context), height: 1.4),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildSplitPill('Portion 1 (1-Yr)', splitPmt1, '6.59%', theme),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildSplitPill('Portion 2 (2-Yr)', splitPmt2, '6.35%', theme),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Combined Split Payment:',
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context))),
+                          Text(
+                            '${CurrencyFormatter.format(splitPmt1 + splitPmt2, currencyCode: 'NZD')}/mo',
+                            style: AppTextStyles.playfair(
+                                size: 16,
+                                color: const Color(0xFF1A6B4A),
+                                weight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -671,14 +702,46 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
     );
   }
 
+  Widget _buildSplitPill(String label, double pmt, String rateStr, CountryTheme theme) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.getBgColor(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.getBorderColor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: AppTextStyles.dmSans(
+                  size: 9,
+                  color: theme.getMutedColor(context),
+                  weight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Text(rateStr,
+              style: AppTextStyles.playfair(
+                  size: 14,
+                  color: theme.getTextColor(context),
+                  weight: FontWeight.w800)),
+          Text(
+            '${CurrencyFormatter.compact(pmt, symbol: "NZ\$")}/mo',
+            style: AppTextStyles.dmSans(
+                size: 10, color: theme.getMutedColor(context)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFieldLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4.0),
       child: Text(label,
           style: AppTextStyles.dmSans(
-              size: 9,
-              weight: FontWeight.w700,
-              color: widget.theme.getMutedColor(context))),
+              size: 8.5,
+              color: widget.theme.getMutedColor(context),
+              weight: FontWeight.w600)),
     );
   }
 
@@ -687,49 +750,60 @@ class _NZRefixingCalcState extends ConsumerState<NZRefixingCalc> {
     required double value,
     bool isPercent = false,
     required ValueChanged<double> onChanged,
+    String? errorText,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFEDF5F2),
-        border: Border.all(color: const Color(0x150D3B2E)),
+        border: Border.all(color: errorText != null ? Colors.red : const Color(0x150D3B2E)),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (prefix.isNotEmpty)
-            Text('$prefix ',
-                style: AppTextStyles.dmSans(
-                    size: 11,
-                    color: const Color(0xFF4A6358),
-                    weight: FontWeight.w700)),
-          Expanded(
-            child: TextFormField(
-              initialValue: value.toString(),
-              keyboardType: TextInputType.number,
-              style: AppTextStyles.playfair(
-                  size: 15,
-                  color: const Color(0xFF0A0F0D),
-                  weight: FontWeight.w800),
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-                border: InputBorder.none,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              if (prefix.isNotEmpty)
+                Text('$prefix ',
+                    style: AppTextStyles.dmSans(
+                        size: 11,
+                        color: const Color(0xFF0A0F0D),
+                        weight: FontWeight.w700)),
+              Expanded(
+                child: TextFormField(
+                  key: ValueKey(value),
+                  initialValue: value.toString(),
+                  keyboardType: TextInputType.number,
+                  style: AppTextStyles.playfair(
+                      size: 15,
+                      color: const Color(0xFF0A0F0D),
+                      weight: FontWeight.w800),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (val) {
+                    final d = double.tryParse(val) ?? 0.0;
+                    onChanged(d);
+                  },
+                ),
               ),
-              onChanged: (val) {
-                final d = double.tryParse(val) ?? 0.0;
-                onChanged(d);
-              },
-            ),
+              if (isPercent)
+                Text('%',
+                    style: AppTextStyles.dmSans(
+                        size: 11,
+                        color: const Color(0xFF0A0F0D),
+                        weight: FontWeight.w700)),
+            ],
           ),
-          if (isPercent)
-            Text('%',
-                style: AppTextStyles.dmSans(
-                    size: 11,
-                    color: const Color(0xFF4A6358),
-                    weight: FontWeight.w700)),
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+          ],
         ],
       ),
     );

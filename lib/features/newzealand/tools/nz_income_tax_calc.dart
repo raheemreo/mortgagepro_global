@@ -26,12 +26,64 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
   bool _accLevy = true;
   bool _secondaryTax = false;
 
-  final bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
     _incomeController.dispose();
     super.dispose();
+  }
+
+  void _reset() {
+    setState(() {
+      _incomeController.text = '75000';
+      _frequency = 12;
+      _ksRate = 3.0;
+      _studentLoan = false;
+      _accLevy = true;
+      _secondaryTax = false;
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final income = double.tryParse(_incomeController.text) ?? 0.0;
+
+    if (income < 0) {
+      errors['income'] = 'Annual income cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['gross'] = income;
+      _calcSnapshot['freq'] = _frequency;
+      _calcSnapshot['ksRate'] = _ksRate;
+      _calcSnapshot['studentLoan'] = _studentLoan;
+      _calcSnapshot['accLevy'] = _accLevy;
+      _calcSnapshot['secondaryTax'] = _secondaryTax;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalculation(
@@ -110,14 +162,15 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'Income Tax Calc',
-        inputs: {
+        inputs: <String, double>{
           'gross': gross,
-          'freq': _frequency.toDouble(),
-          'ksRate': _ksRate,
-          'studentLoan': _studentLoan ? 1.0 : 0.0,
-          'accLevy': _accLevy ? 1.0 : 0.0,
+          'freq': (_calcSnapshot['freq'] ?? _frequency).toDouble(),
+          'ksRate': _calcSnapshot['ksRate'] ?? _ksRate,
+          'studentLoan': (_calcSnapshot['studentLoan'] ?? _studentLoan) ? 1.0 : 0.0,
+          'accLevy': (_calcSnapshot['accLevy'] ?? _accLevy) ? 1.0 : 0.0,
+          'secondaryTax': (_calcSnapshot['secondaryTax'] ?? _secondaryTax) ? 1.0 : 0.0,
         },
-        results: {
+        results: <String, double>{
           'paye': paye,
           'acc': acc,
           'ks': ks,
@@ -149,7 +202,17 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double income = double.tryParse(_incomeController.text) ?? 75000;
+    final double rawIncome = double.tryParse(_incomeController.text) ?? 75000;
+    final int rawFreq = _frequency;
+    final double rawKsRate = _ksRate;
+    final bool rawStudent = _studentLoan;
+    final bool rawAcc = _accLevy;
+
+    final double income = _showResults ? (_calcSnapshot['gross'] ?? rawIncome) : rawIncome;
+    final int frequency = _showResults ? (_calcSnapshot['freq'] ?? rawFreq) : rawFreq;
+    final double ksRate = _showResults ? (_calcSnapshot['ksRate'] ?? rawKsRate) : rawKsRate;
+    final bool studentLoan = _showResults ? (_calcSnapshot['studentLoan'] ?? rawStudent) : rawStudent;
+    final bool accLevy = _showResults ? (_calcSnapshot['accLevy'] ?? rawAcc) : rawAcc;
 
     // PAYE brackets 2025-26
     double tax = 0;
@@ -159,16 +222,16 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
     if (income > 14000) tax += min(income - 14000, 34000) * 0.175;
     tax += min(income, 14000) * 0.105;
 
-    final double acc = _accLevy ? min(income, 139384) * 0.016 : 0.0;
-    final double ks = income * _ksRate / 100;
-    final double slDeduct = _studentLoan ? max(0.0, income - 22828) * 0.12 : 0.0;
+    final double acc = accLevy ? min(income, 139384) * 0.016 : 0.0;
+    final double ks = income * ksRate / 100;
+    final double slDeduct = studentLoan ? max(0.0, income - 22828) * 0.12 : 0.0;
     final double netAnnual = income - tax - acc - ks - slDeduct;
 
-    final int periodDivider = _frequency == 1
+    final int periodDivider = frequency == 1
         ? 1
-        : _frequency == 12
+        : frequency == 12
             ? 12
-            : _frequency == 26
+            : frequency == 26
                 ? 26
                 : 52;
     final double takeHome = netAnnual / periodDivider;
@@ -187,6 +250,15 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
     final double slPct = income > 0 ? (slDeduct / income * 100) : 0.0;
     final double netPct = income > 0 ? (netAnnual / income * 100) : 0.0;
 
+    final isDirty = _showResults && (
+      _incomeController.text != (_calcSnapshot['gross']?.toString() ?? '') ||
+      _frequency != (_calcSnapshot['freq'] ?? 0) ||
+      _ksRate != (_calcSnapshot['ksRate'] ?? 0.0) ||
+      _studentLoan != (_calcSnapshot['studentLoan'] ?? false) ||
+      _accLevy != (_calcSnapshot['accLevy'] ?? false) ||
+      _secondaryTax != (_calcSnapshot['secondaryTax'] ?? false)
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -202,18 +274,13 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
                 color: theme.getTextColor(context),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                border: Border.all(color: const Color(0xFFA7F3D0)),
-                borderRadius: BorderRadius.circular(20),
-              ),
+            GestureDetector(
+              onTap: _reset,
               child: Text(
-                'FY2025–26',
+                'Reset ↺',
                 style: AppTextStyles.dmSans(
-                  size: 9,
-                  color: const Color(0xFF065F46),
+                  size: 11,
+                  color: const Color(0xFFC0392B),
                   weight: FontWeight.bold,
                 ),
               ),
@@ -281,7 +348,7 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['income'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(11),
                           ),
                           child: TextField(
@@ -296,6 +363,10 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
+                        if (_errors['income'] != null) ...[
+                          const SizedBox(height: 2),
+                          Text(_errors['income']!, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+                        ],
                       ],
                     ),
                   ),
@@ -440,6 +511,22 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
                   ),
                 ],
               ),
+
+              const SizedBox(height: 14),
+              ElevatedButton(
+                onPressed: _calculate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A6B4A),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  minimumSize: const Size(double.infinity, 44),
+                ),
+                child: Text(
+                  '📊 Calculate Take-Home Pay',
+                  style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                ),
+              ),
             ],
           ),
         ),
@@ -447,122 +534,152 @@ class _NZIncomeTaxCalcState extends ConsumerState<NZIncomeTaxCalc> {
 
         // Results Card
         if (_showResults) ...[
-          Text(
-            'Your PAYE Breakdown',
-            style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context),
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Take-Home Pay to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 12),
+          ],
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+            key: _resultsKey,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Take Home Pay Box
+                Text(
+                  'Your PAYE Breakdown',
+                  style: AppTextStyles.playfair(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    color: theme.getTextColor(context),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Container(
-                  width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'TAKE-HOME PAY',
-                        style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54, weight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        CurrencyFormatter.compact(takeHome, symbol: 'NZ\$'),
-                        style: AppTextStyles.playfair(
-                            size: 32, weight: FontWeight.w800, color: const Color(0xFFF5D060)),
-                      ),
-                      Text(
-                        'per ${freqLabels[_frequency]}',
-                        style: AppTextStyles.dmSans(size: 9.5, color: Colors.white70),
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 12),
-
-                // Grid Details
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.8,
-                  children: [
-                    _buildResultBox('Gross Income', CurrencyFormatter.compact(income, symbol: 'NZ\$'), 'Annual / year', theme.getTextColor(context)),
-                    _buildResultBox('Total Tax (PAYE)', CurrencyFormatter.compact(tax, symbol: 'NZ\$'), 'Annual PAYE', const Color(0xFFC0392B)),
-                    _buildResultBox('ACC Levy', CurrencyFormatter.compact(acc, symbol: 'NZ\$'), '1.60% of income', const Color(0xFFC2410C)),
-                    _buildResultBox('KiwiSaver', CurrencyFormatter.compact(ks, symbol: 'NZ\$'), 'Your contribution', const Color(0xFFD4A017)),
-                    _buildResultBox('Effective Tax Rate', '${effRate.toStringAsFixed(1)}%', 'All deductions', theme.getTextColor(context)),
-                    _buildResultBox('Net Annual', CurrencyFormatter.compact(netAnnual, symbol: 'NZ\$'), 'After deductions', const Color(0xFF1A6B4A)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Breakdown list bars
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: theme.getBgColor(context),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Where Your Dollar Goes',
-                        style: AppTextStyles.dmSans(
-                            size: 11, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                      // Take Home Pay Box
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'TAKE-HOME PAY',
+                              style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54, weight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              CurrencyFormatter.compact(takeHome, symbol: 'NZ\$'),
+                              style: AppTextStyles.playfair(
+                                  size: 32, weight: FontWeight.w800, color: const Color(0xFFF5D060)),
+                            ),
+                            Text(
+                              'per ${freqLabels[frequency]}',
+                              style: AppTextStyles.dmSans(size: 9.5, color: Colors.white70),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      _buildBreakdownRow('PAYE Tax', tax, income, taxPct, const Color(0xFFC0392B)),
-                      _buildBreakdownRow('ACC Levy', acc, income, accPct, const Color(0xFFD97706)),
-                      if (_ksRate > 0)
-                        _buildBreakdownRow('KiwiSaver', ks, income, ksPct, const Color(0xFFD4A017)),
-                      if (_studentLoan)
-                        _buildBreakdownRow('Student Loan', slDeduct, income, slPct, const Color(0xFF0EA5E9)),
-                      _buildBreakdownRow('Take-Home', netAnnual, income, netPct, const Color(0xFF1A6B4A)),
+                      const SizedBox(height: 12),
+
+                      // Grid Details
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.8,
+                        children: [
+                          _buildResultBox('Gross Income', CurrencyFormatter.compact(income, symbol: 'NZ\$'), 'Annual / year', theme.getTextColor(context)),
+                          _buildResultBox('Total Tax (PAYE)', CurrencyFormatter.compact(tax, symbol: 'NZ\$'), 'Annual PAYE', const Color(0xFFC0392B)),
+                          _buildResultBox('ACC Levy', CurrencyFormatter.compact(acc, symbol: 'NZ\$'), '1.60% of income', const Color(0xFFC2410C)),
+                          _buildResultBox('KiwiSaver', CurrencyFormatter.compact(ks, symbol: 'NZ\$'), 'Your contribution', const Color(0xFFD4A017)),
+                          _buildResultBox('Effective Tax Rate', '${effRate.toStringAsFixed(1)}%', 'All deductions', theme.getTextColor(context)),
+                          _buildResultBox('Net Annual', CurrencyFormatter.compact(netAnnual, symbol: 'NZ\$'), 'After deductions', const Color(0xFF1A6B4A)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Breakdown list bars
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: theme.getBgColor(context),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Where Your Dollar Goes',
+                              style: AppTextStyles.dmSans(
+                                  size: 11, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildBreakdownRow('PAYE Tax', tax, income, taxPct, const Color(0xFFC0392B)),
+                            _buildBreakdownRow('ACC Levy', acc, income, accPct, const Color(0xFFD97706)),
+                            if (ksRate > 0)
+                              _buildBreakdownRow('KiwiSaver', ks, income, ksPct, const Color(0xFFD4A017)),
+                            if (studentLoan)
+                              _buildBreakdownRow('Student Loan', slDeduct, income, slPct, const Color(0xFF0EA5E9)),
+                            _buildBreakdownRow('Take-Home', netAnnual, income, netPct, const Color(0xFF1A6B4A)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      ElevatedButton.icon(
+                        onPressed: () => _saveCalculation(income, tax, acc, ks, slDeduct, netAnnual, takeHome),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: theme.primaryColor,
+                          side: BorderSide(color: theme.primaryColor, width: 1.5),
+                          minimumSize: const Size(double.infinity, 44),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                        label: Text('Save Calculation',
+                            style: AppTextStyles.playfair(
+                                size: 13, weight: FontWeight.w800, color: theme.primaryColor)),
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 12),
-
-                ElevatedButton.icon(
-                  onPressed: () => _saveCalculation(income, tax, acc, ks, slDeduct, netAnnual, takeHome),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: theme.primaryColor,
-                    side: BorderSide(color: theme.primaryColor, width: 1.5),
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                  label: Text('Save Calculation',
-                      style: AppTextStyles.playfair(
-                          size: 13, weight: FontWeight.w800, color: theme.primaryColor)),
                 ),
               ],
             ),

@@ -18,13 +18,16 @@ class USAHomeownerInsuranceHurricaneCalc extends ConsumerStatefulWidget {
 }
 
 class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeownerInsuranceHurricaneCalc> {
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   double _dwellingValue = 300000;
   String _state = 'FL';
   String _location = 'coast';
   double _dedPct = 2;
   String _construction = 'wood';
 
-  bool _showResults = true;
+  bool _showResults = false;
   bool _isCalcDirty = false;
   bool _calculating = false;
 
@@ -67,6 +70,11 @@ class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeowne
       _dedPct = inputs['DeductiblePct'] ?? 2.0;
       final constCode = inputs['ConstructionCode'] ?? 0.0;
       _construction = constCode == 0.0 ? 'wood' : constCode == 1.0 ? 'masonry' : 'fortified';
+      _calcSnapshot['DwellingValue'] = _dwellingValue;
+      _calcSnapshot['State'] = _state;
+      _calcSnapshot['Location'] = _location;
+      _calcSnapshot['DeductiblePct'] = _dedPct;
+      _calcSnapshot['Construction'] = _construction;
       _showResults = true;
       _isCalcDirty = false;
     }
@@ -87,8 +95,9 @@ class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeowne
       _location = 'coast';
       _dedPct = 2;
       _construction = 'wood';
-      _showResults = true;
+      _showResults = false;
       _isCalcDirty = false;
+      _calcSnapshot.clear();
     });
   }
 
@@ -97,20 +106,41 @@ class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeowne
       _calculating = true;
     });
     await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
     setState(() {
       _calculating = false;
+      _calcSnapshot['DwellingValue'] = _dwellingValue;
+      _calcSnapshot['State'] = _state;
+      _calcSnapshot['Location'] = _location;
+      _calcSnapshot['DeductiblePct'] = _dedPct;
+      _calcSnapshot['Construction'] = _construction;
       _showResults = true;
       _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    final baseRate = _stateBaseRates[_state] ?? 0.0080;
-    double annual = _dwellingValue *
+    final double dwellingValue = _calcSnapshot['DwellingValue'] ?? _dwellingValue;
+    final String state = _calcSnapshot['State'] ?? _state;
+    final String location = _calcSnapshot['Location'] ?? _location;
+    final double dedPct = _calcSnapshot['DeductiblePct'] ?? _dedPct;
+    final String construction = _calcSnapshot['Construction'] ?? _construction;
+
+    final baseRate = _stateBaseRates[state] ?? 0.0080;
+    double annual = dwellingValue *
         baseRate *
-        (_locationMultipliers[_location] ?? 1.0) *
-        (1 + (_deductibleDiscounts[_dedPct] ?? 0.0)) *
-        (1 + (_constructionDiscounts[_construction] ?? 0.0));
+        (_locationMultipliers[location] ?? 1.0) *
+        (1 + (_deductibleDiscounts[dedPct] ?? 0.0)) *
+        (1 + (_constructionDiscounts[construction] ?? 0.0));
     annual = (annual / 10).round() * 10.0;
     final monthly = (annual / 12).roundToDouble();
 
@@ -129,7 +159,7 @@ class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeowne
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Annual: ${CurrencyFormatter.compact(annual, symbol: r'$')}/yr · Dwelling: ${CurrencyFormatter.compact(_dwellingValue, symbol: r'$')}',
+              'Saving: Annual: ${CurrencyFormatter.compact(annual, symbol: r'$')}/yr · Dwelling: ${CurrencyFormatter.compact(dwellingValue, symbol: r'$')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -181,16 +211,16 @@ class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeowne
         country: 'USA',
         calcType: 'Hurricane Rider',
         inputs: {
-          'DwellingValue': _dwellingValue,
-          'StateCode': _state == 'FL' ? 0.0 : _state == 'TX' ? 1.0 : _state == 'LA' ? 2.0 : 3.0,
-          'LocationCode': _location == 'coast' ? 0.0 : _location == 'near' ? 1.0 : 2.0,
-          'DeductiblePct': _dedPct,
-          'ConstructionCode': _construction == 'wood' ? 0.0 : _construction == 'masonry' ? 1.0 : 2.0,
+          'DwellingValue': dwellingValue,
+          'StateCode': state == 'FL' ? 0.0 : state == 'TX' ? 1.0 : state == 'LA' ? 2.0 : 3.0,
+          'LocationCode': location == 'coast' ? 0.0 : location == 'near' ? 1.0 : 2.0,
+          'DeductiblePct': dedPct,
+          'ConstructionCode': construction == 'wood' ? 0.0 : construction == 'masonry' ? 1.0 : 2.0,
         },
         results: {
           'Annual Premium': annual,
           'Monthly Premium': monthly,
-          'Dwelling Limit': _dwellingValue,
+          'Dwelling Limit': dwellingValue,
         },
         label: label,
         currencyCode: 'USD',
@@ -222,21 +252,35 @@ class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeowne
     final mutedColor = theme.getMutedColor(context);
     final borderColor = theme.getBorderColor(context);
 
-    final covDwelling = _dwellingValue;
+    final double snapDwellingValue = _calcSnapshot['DwellingValue'] ?? _dwellingValue;
+    final String snapState = _calcSnapshot['State'] ?? _state;
+    final String snapLocation = _calcSnapshot['Location'] ?? _location;
+    final double snapDedPct = _calcSnapshot['DeductiblePct'] ?? _dedPct;
+    final String snapConstruction = _calcSnapshot['Construction'] ?? _construction;
+
+    final covDwelling = snapDwellingValue;
 
     // Compute active calculation
-    final baseRate = _stateBaseRates[_state] ?? 0.0080;
-    double annualPremium = _dwellingValue *
+    final baseRate = _stateBaseRates[snapState] ?? 0.0080;
+    double annualPremium = snapDwellingValue *
         baseRate *
-        (_locationMultipliers[_location] ?? 1.0) *
-        (1 + (_deductibleDiscounts[_dedPct] ?? 0.0)) *
-        (1 + (_constructionDiscounts[_construction] ?? 0.0));
+        (_locationMultipliers[snapLocation] ?? 1.0) *
+        (1 + (_deductibleDiscounts[snapDedPct] ?? 0.0)) *
+        (1 + (_constructionDiscounts[snapConstruction] ?? 0.0));
     annualPremium = (annualPremium / 10).round() * 10.0;
     final monthlyPremium = (annualPremium / 12).round();
-    final windDed = (_dwellingValue * _dedPct / 100).roundToDouble();
-    final surge = (_dwellingValue * 0.10).roundToDouble();
-    final ale = (_dwellingValue * 0.20).roundToDouble();
-    final debris = (_dwellingValue * 0.05).roundToDouble();
+    final windDed = (snapDwellingValue * snapDedPct / 100).roundToDouble();
+    final surge = (snapDwellingValue * 0.10).roundToDouble();
+    final ale = (snapDwellingValue * 0.20).roundToDouble();
+    final debris = (snapDwellingValue * 0.05).roundToDouble();
+
+    final isDirty = _showResults && (
+      _dwellingValue != snapDwellingValue ||
+      _state != snapState ||
+      _location != snapLocation ||
+      _dedPct != snapDedPct ||
+      _construction != snapConstruction
+    );
 
     // Rate strip values
     const rateStats = [
@@ -331,68 +375,130 @@ class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeowne
           ),
         ),
 
-        // Result Hero Panel
-        Text(
-          'Your Hurricane Rider Estimate',
-          style: AppTextStyles.playfair(
-              size: 13, weight: FontWeight.w700, color: textColor),
-        ),
-        const SizedBox(height: 8),
-
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0C4A6E), Color(0xFF0284C7), Color(0xFF0284C7)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        // Results section or placeholder
+        if (!_showResults) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              border: Border.all(color: borderColor),
+              borderRadius: BorderRadius.circular(16),
             ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0C4A6E).withValues(alpha: 0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
-              )
-            ],
+            child: Column(
+              children: [
+                const Text('📊', style: TextStyle(fontSize: 28)),
+                const SizedBox(height: 8),
+                Text(
+                  'View Hurricane Rider Estimate',
+                  style: AppTextStyles.playfair(size: 13, color: textColor, weight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Adjust parameters below and tap "Calculate Hurricane Rider" to estimate your rates.',
+                  style: AppTextStyles.dmSans(size: 10.5, color: mutedColor),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ANNUAL RIDER PREMIUM ESTIMATE',
-                style: AppTextStyles.dmSans(
-                    size: 8,
-                    weight: FontWeight.w700,
-                    color: Colors.white70,
-                    letterSpacing: 0.8),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                CurrencyFormatter.format(annualPremium, symbol: r'$'),
-                style: AppTextStyles.playfair(
-                    size: 32, weight: FontWeight.w800, color: Colors.white),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Hurricane Rider · ${CurrencyFormatter.compact(_dwellingValue, symbol: r'$')} dwelling · ${locLabels[_location]} · $_state',
-                style: AppTextStyles.dmSans(
-                    size: 9.5, color: Colors.white.withValues(alpha: 0.82)),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _buildHeroBottomBox('Monthly', CurrencyFormatter.format(monthlyPremium.toDouble(), symbol: r'$')),
-                  const SizedBox(width: 8),
-                  _buildHeroBottomBox('Wind Deductible', CurrencyFormatter.format(windDed, symbol: r'$')),
-                  const SizedBox(width: 8),
-                  _buildHeroBottomBox('Storm Surge', CurrencyFormatter.format(surge, symbol: r'$')),
+        ] else ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Calculate again to update results.',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              color: const Color(0xFFB45309),
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-              )
-            ],
+                Text(
+                  'Your Hurricane Rider Estimate',
+                  style: AppTextStyles.playfair(
+                      size: 13, weight: FontWeight.w700, color: textColor),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0C4A6E), Color(0xFF0284C7), Color(0xFF0284C7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0C4A6E).withValues(alpha: 0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 6),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ANNUAL RIDER PREMIUM ESTIMATE',
+                        style: AppTextStyles.dmSans(
+                            size: 8,
+                            weight: FontWeight.w700,
+                            color: Colors.white70,
+                            letterSpacing: 0.8),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        CurrencyFormatter.format(annualPremium, symbol: r'$'),
+                        style: AppTextStyles.playfair(
+                            size: 32, weight: FontWeight.w800, color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Hurricane Rider · ${CurrencyFormatter.compact(snapDwellingValue, symbol: r'$')} dwelling · ${locLabels[snapLocation]} · $snapState',
+                        style: AppTextStyles.dmSans(
+                            size: 9.5, color: Colors.white.withValues(alpha: 0.82)),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          _buildHeroBottomBox('Monthly', CurrencyFormatter.format(monthlyPremium.toDouble(), symbol: r'$')),
+                          const SizedBox(width: 8),
+                          _buildHeroBottomBox('Wind Deductible', CurrencyFormatter.format(windDed, symbol: r'$')),
+                          const SizedBox(width: 8),
+                          _buildHeroBottomBox('Storm Surge', CurrencyFormatter.format(surge, symbol: r'$')),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
 
         const SizedBox(height: 20),
 
@@ -638,7 +744,7 @@ class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeowne
                             ),
                     ),
                   ),
-                  if (_showResults && !_isCalcDirty) ...[
+                  if (_showResults && !isDirty) ...[
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: _saveCalculation,
@@ -663,7 +769,7 @@ class _USAHomeownerInsuranceHurricaneCalcState extends ConsumerState<USAHomeowne
 
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults && !isDirty) ...[
           // Saffir-Simpson Scale & Premium Impact
           Text(
             'Saffir-Simpson Scale & Premium Impact',

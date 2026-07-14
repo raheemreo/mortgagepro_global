@@ -26,14 +26,13 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
   final _yearsController = TextEditingController(text: '0');
   final _currValController = TextEditingController(text: '320000');
 
-  double _price = 320000;
   double _regionPct = 20; // England = 20, London = 40
   double _loanPct = 20; // 5% to max regionPct
-  double _rate = 4.75;
-  int _yearsSince = 0;
-  double _currVal = 320000;
 
   bool _hasCalculated = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void initState() {
@@ -45,11 +44,9 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
       _loanPct = inputs['loanPct'] ?? 20.0;
       _rateController.text = (inputs['rate'] ?? 4.75).toString();
       _yearsController.text = (inputs['yearsSince'] ?? 0.0).toStringAsFixed(0);
-      _currValController.text =
-          (inputs['currVal'] ?? 320000.0).toStringAsFixed(0);
-      _hasCalculated = true;
+      _currValController.text = (inputs['currVal'] ?? 320000.0).toStringAsFixed(0);
+      _calculate();
     }
-    _calculateValues();
   }
 
   @override
@@ -61,12 +58,66 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
     super.dispose();
   }
 
-  void _calculateValues() {
+  double _val(TextEditingController c, double defaultVal) {
+    if (_hasCalculated && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    final price = double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (price <= 0) errors['price'] = 'Enter valid purchase price';
+
+    final rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (rate <= 0 || rate > 25) errors['rate'] = 'Enter mortgage rate (0.1% - 25%)';
+
+    final yearsSince = double.tryParse(_yearsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (yearsSince < 0 || yearsSince > 50) errors['yearsSince'] = 'Enter valid years (0 - 50)';
+
+    final currVal = double.tryParse(_currValController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (currVal <= 0) errors['currVal'] = 'Enter valid current value';
+
     setState(() {
-      _price = double.tryParse(_priceController.text) ?? 0;
-      _rate = double.tryParse(_rateController.text) ?? 4.75;
-      _yearsSince = int.tryParse(_yearsController.text) ?? 0;
-      _currVal = double.tryParse(_currValController.text) ?? _price;
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_priceController] = price;
+      _calcSnapshot[_rateController] = rate;
+      _calcSnapshot[_yearsController] = yearsSince;
+      _calcSnapshot[_currValController] = currVal;
+      _calcSnapshot['_regionPct'] = _regionPct;
+      _calcSnapshot['_loanPct'] = _loanPct;
+      _hasCalculated = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _priceController.text = '320000';
+      _rateController.text = '4.75';
+      _yearsController.text = '0';
+      _currValController.text = '320000';
+      _regionPct = 20;
+      _loanPct = 20;
+      _calcSnapshot.clear();
+      _errors.clear();
+      _hasCalculated = false;
     });
   }
 
@@ -77,6 +128,31 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
 
   @override
   Widget build(BuildContext context) {
+    final double priceVal = _val(_priceController, 320000);
+    final double rateVal = _val(_rateController, 4.75);
+    final double yearsSinceVal = _val(_yearsController, 0);
+    final double currValVal = _val(_currValController, 320000);
+    final double activeRegionPct = _hasCalculated ? (_calcSnapshot['_regionPct'] ?? _regionPct) : _regionPct;
+    final double activeLoanPct = _hasCalculated ? (_calcSnapshot['_loanPct'] ?? _loanPct) : _loanPct;
+
+    const depositPct = 0.05; // 5%
+    final deposit = priceVal * depositPct;
+    final loanAmt = priceVal * (activeLoanPct / 100);
+    final mortAmt = priceVal - loanAmt - deposit;
+    final mortPct = 100 - activeLoanPct - (depositPct * 100);
+
+    final rMo = rateVal / 100 / 12;
+    final monthlyMort = _pmt(rMo, 300, mortAmt); // 25 year term = 300 months
+
+    final currLoanVal = currValVal * (activeLoanPct / 100);
+    const baseFeeRate = 0.0175; // 1.75%
+    final yr6FeeAmt = loanAmt * baseFeeRate / 12;
+    final yr10Rate = baseFeeRate * math.pow(1.04, 4); // ~4% inflation each year
+    final yr10Fee = loanAmt * yr10Rate / 12;
+
+    final ownedEquity = currValVal * (1 - activeLoanPct / 100);
+    final savings = mortAmt - (priceVal * 0.75); // vs standard 75% LTV mortgage
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = widget.theme.getCardColor(context);
     final textThemeColor = isDark ? Colors.white : const Color(0xFF0D0D2B);
@@ -88,24 +164,14 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
     final boeBase  = ukRates?.boeBase.value ?? 4.25;
     final isLive   = ukRates?.isLive == true;
 
-    // Calculation results
-    const depositPct = 0.05; // 5%
-    final deposit = _price * depositPct;
-    final loanAmt = _price * (_loanPct / 100);
-    final mortAmt = _price - loanAmt - deposit;
-    final mortPct = 100 - _loanPct - (depositPct * 100);
-
-    final rMo = _rate / 100 / 12;
-    final monthlyMort = _pmt(rMo, 300, mortAmt); // 25 year term = 300 months
-
-    final currLoanVal = _currVal * (_loanPct / 100);
-    const baseFeeRate = 0.0175; // 1.75%
-    final yr6FeeAmt = loanAmt * baseFeeRate / 12;
-    final yr10Rate = baseFeeRate * math.pow(1.04, 4); // ~4% inflation each year
-    final yr10Fee = loanAmt * yr10Rate / 12;
-
-    final ownedEquity = _currVal * (1 - _loanPct / 100);
-    final savings = mortAmt - (_price * 0.75); // vs standard 75% LTV mortgage
+    final isDirty = _hasCalculated && (
+      (double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_priceController] ?? 0.0) ||
+      (double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_rateController] ?? 0.0) ||
+      (double.tryParse(_yearsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_yearsController] ?? 0.0) ||
+      (double.tryParse(_currValController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_currValController] ?? 0.0) ||
+      _regionPct != (_calcSnapshot['_regionPct'] ?? 0.0) ||
+      _loanPct != (_calcSnapshot['_loanPct'] ?? 0.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,21 +186,13 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
           ),
           child: Row(
             children: [
-              Expanded(
-                  child: _rateCell(
-                      'Equity Loan', 'Up to 20%', 'England', textThemeColor)),
+              Expanded(child: _rateCell('Equity Loan', 'Up to 20%', 'England', textThemeColor)),
               _divider(),
-              Expanded(
-                  child: _rateCell('London Limit', 'Up to 40%', 'GLA areas',
-                      isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))),
+              Expanded(child: _rateCell('London Limit', 'Up to 40%', 'GLA areas', isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))),
               _divider(),
-              Expanded(
-                  child: _rateCell(
-                      'Min Deposit', '5%', 'Of price', textThemeColor)),
+              Expanded(child: _rateCell('Min Deposit', '5%', 'Of price', textThemeColor)),
               _divider(),
-              Expanded(
-                  child: _rateCell('BoE Base', '${boeBase.toStringAsFixed(2)}%${isLive ? ' 🟢' : ''}', 'Mortgage ref',
-                      isDark ? const Color(0xFF34D399) : const Color(0xFF059669))),
+              Expanded(child: _rateCell('BoE Base', '${boeBase.toStringAsFixed(2)}%${isLive ? ' 🟢' : ''}', 'Mortgage ref', isDark ? const Color(0xFF34D399) : const Color(0xFF059669))),
             ],
           ),
         ),
@@ -144,8 +202,7 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-                colors: [Color(0xFF1E1B4B), Color(0xFF3730A3)]),
+            gradient: const LinearGradient(colors: [Color(0xFF1E1B4B), Color(0xFF3730A3)]),
             borderRadius: BorderRadius.circular(15),
           ),
           child: Column(
@@ -153,8 +210,7 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
             children: [
               Text(
                 'Help to Buy: Equity Loan (Legacy)',
-                style: AppTextStyles.dmSans(
-                    size: 13, weight: FontWeight.w800, color: Colors.white),
+                style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: Colors.white),
               ),
               const SizedBox(height: 5),
               Text(
@@ -164,24 +220,37 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
               const SizedBox(height: 6),
               Text(
                 '⚠️ New applicants: See Shared Ownership or First Homes scheme instead.',
-                style: AppTextStyles.dmSans(
-                    size: 10,
-                    color: const Color(0xFFFFD700),
-                    weight: FontWeight.w700),
+                style: AppTextStyles.dmSans(size: 10, color: const Color(0xFFFFD700), weight: FontWeight.w700),
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
 
-        Text(
-          'PROPERTY & LOAN DETAILS',
-          style: AppTextStyles.dmSans(
-            size: 11,
-            weight: FontWeight.w700,
-            color: widget.theme.getMutedColor(context),
-            letterSpacing: 1.0,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'PROPERTY & LOAN DETAILS',
+              style: AppTextStyles.dmSans(
+                size: 11,
+                weight: FontWeight.w700,
+                color: widget.theme.getMutedColor(context),
+                letterSpacing: 1.0,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: widget.theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -196,9 +265,7 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _inputField(
-                  label: 'Property Purchase Price (£)',
-                  controller: _priceController),
+              _inputField(label: 'Property Purchase Price (£)', controller: _priceController, errorText: _errors['price']),
               const SizedBox(height: 12),
               Text(
                 'REGION',
@@ -212,9 +279,7 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : const Color(0xFFF5F5F8),
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF5F5F8),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -222,16 +287,10 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
                     value: _regionPct,
                     isExpanded: true,
                     dropdownColor: cardBg,
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        weight: FontWeight.w700,
-                        color: textThemeColor),
+                    style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w700, color: textThemeColor),
                     items: const [
-                      DropdownMenuItem(
-                          value: 20.0,
-                          child: Text('England (outside London) – 20% limit')),
-                      DropdownMenuItem(
-                          value: 40.0, child: Text('London – 40% limit')),
+                      DropdownMenuItem(value: 20.0, child: Text('England (outside London) – 20% limit')),
+                      DropdownMenuItem(value: 40.0, child: Text('London – 40% limit')),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -240,7 +299,6 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
                           if (_loanPct > _regionPct) {
                             _loanPct = _regionPct;
                           }
-                          _calculateValues();
                         });
                       }
                     },
@@ -261,10 +319,7 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
                   ),
                   Text(
                     '${_loanPct.toInt()}%',
-                    style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: widget.theme.accentColor),
+                    style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: widget.theme.accentColor),
                   ),
                 ],
               ),
@@ -277,13 +332,11 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
                 onChanged: (val) {
                   setState(() {
                     _loanPct = val;
-                    _calculateValues();
                   });
                 },
               ),
               const SizedBox(height: 4),
-              _inputField(
-                  label: 'Your Mortgage Rate (%)', controller: _rateController),
+              _inputField(label: 'Your Mortgage Rate (%)', controller: _rateController, errorText: _errors['rate']),
             ],
           ),
         ),
@@ -299,349 +352,355 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
           ),
           child: Column(
             children: [
-              _inputField(
-                  label: 'Years Since Purchase (for fee calculation)',
-                  controller: _yearsController),
+              _inputField(label: 'Years Since Purchase (for fee calculation)', controller: _yearsController, errorText: _errors['yearsSince']),
               const SizedBox(height: 12),
-              _inputField(
-                  label: 'Current Property Value (£) (if different)',
-                  controller: _currValController),
+              _inputField(label: 'Current Property Value (£) (if different)', controller: _currValController, errorText: _errors['currVal']),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC8102E),
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                  ),
+                  onPressed: _calculate,
+                  child: Text(
+                    '🏘️ Calculate Help to Buy',
+                    style: AppTextStyles.dmSans(size: 14, color: Colors.white, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
             ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Calculate Button
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFC8102E),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13)),
-            ),
-            onPressed: () {
-              _calculateValues();
-              setState(() => _hasCalculated = true);
-            },
-            child: Text(
-              '🏘️ Calculate Help to Buy',
-              style: AppTextStyles.dmSans(
-                  size: 14, color: Colors.white, weight: FontWeight.w800),
-            ),
           ),
         ),
         const SizedBox(height: 20),
 
         if (_hasCalculated) ...[
-          // Results Header Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Help to Buy to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'YOUR MORTGAGE NEEDED',
-                  style: AppTextStyles.dmSans(
-                      size: 10,
-                      weight: FontWeight.w700,
-                      color: Colors.white60,
-                      letterSpacing: 0.7),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      CurrencyFormatter.format(mortAmt, symbol: '£')
-                          .split('.')
-                          .first,
-                      style: AppTextStyles.dmSans(
-                              size: 34,
-                              weight: FontWeight.w800,
-                              color: Colors.white)
-                          .copyWith(fontFamily: 'Georgia'),
-                    ),
-                    GestureDetector(
-                      onTap: () async {
-                        final calc = SavedCalc.create(
-                          country: 'UK',
-                          calcType: 'Help to Buy',
-                          inputs: {
-                            'price': _price,
-                            'regionPct': _regionPct,
-                            'loanPct': _loanPct,
-                            'rate': _rate,
-                            'yearsSince': _yearsSince.toDouble(),
-                            'currVal': _currVal,
-                          },
-                          results: {
-                            'Mortgage Needed': mortAmt,
-                            'Government Loan': loanAmt,
-                            'Deposit': deposit,
-                            'Monthly Mortgage': monthlyMort,
-                            'Year 6 Fee': yr6FeeAmt,
-                            'Current Loan Value': currLoanVal,
-                          },
-                          label:
-                              '${CurrencyFormatter.compact(mortAmt, symbol: '£')} mortgage · ${_loanPct.toInt()}% govt loan',
-                          currencyCode: 'GBP',
-                        );
-                        final messenger = ScaffoldMessenger.of(context);
-                        await ref.read(savedProvider.notifier).save(calc);
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text('✓ Help to Buy calculation saved'),
-                            backgroundColor: Color(0xFF0D9488),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3)),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.save,
-                                color: Colors.white, size: 14),
-                            const SizedBox(width: 4),
-                            Text('Save',
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    weight: FontWeight.w800,
-                                    color: Colors.white)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${CurrencyFormatter.format(deposit, symbol: '£').split('.').first} deposit + ${CurrencyFormatter.format(loanAmt, symbol: '£').split('.').first} government loan',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
-                ),
-                const SizedBox(height: 8),
+                // Results Header Card
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.2),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    'Save ${CurrencyFormatter.format(savings.abs(), symbol: '£').split('.').first} vs. standard 75% LTV mortgage',
-                    style: AppTextStyles.dmSans(
-                        size: 10.5,
-                        color: const Color(0xFF90EE90),
-                        weight: FontWeight.w700),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'YOUR MORTGAGE NEEDED',
+                        style: AppTextStyles.dmSans(
+                            size: 10,
+                            weight: FontWeight.w700,
+                            color: Colors.white60,
+                            letterSpacing: 0.7),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            CurrencyFormatter.format(mortAmt, symbol: '£').split('.').first,
+                            style: AppTextStyles.dmSans(
+                                    size: 34,
+                                    weight: FontWeight.w800,
+                                    color: Colors.white)
+                                .copyWith(fontFamily: 'Georgia'),
+                          ),
+                          GestureDetector(
+                            onTap: () async {
+                              final calc = SavedCalc.create(
+                                country: 'UK',
+                                calcType: 'Help to Buy',
+                                inputs: {
+                                  'price': priceVal,
+                                  'regionPct': activeRegionPct,
+                                  'loanPct': activeLoanPct,
+                                  'rate': rateVal,
+                                  'yearsSince': yearsSinceVal,
+                                  'currVal': currValVal,
+                                },
+                                results: {
+                                  'Mortgage Needed': mortAmt,
+                                  'Government Loan': loanAmt,
+                                  'Deposit': deposit,
+                                  'Monthly Mortgage': monthlyMort,
+                                  'Year 6 Fee': yr6FeeAmt,
+                                  'Current Loan Value': currLoanVal,
+                                },
+                                label: '${CurrencyFormatter.compact(mortAmt, symbol: '£')} mortgage · ${activeLoanPct.toInt()}% govt loan',
+                                currencyCode: 'GBP',
+                              );
+                              final messenger = ScaffoldMessenger.of(context);
+                              await ref.read(savedProvider.notifier).save(calc);
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text('✓ Help to Buy calculation saved'),
+                                  backgroundColor: Color(0xFF0D9488),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.save, color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text('Save',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11,
+                                          weight: FontWeight.w800,
+                                          color: Colors.white)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${CurrencyFormatter.format(deposit, symbol: '£').split('.').first} deposit + ${CurrencyFormatter.format(loanAmt, symbol: '£').split('.').first} government loan',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Save ${CurrencyFormatter.format(savings.abs(), symbol: '£').split('.').first} vs. standard 75% LTV mortgage',
+                          style: AppTextStyles.dmSans(
+                              size: 10.5,
+                              color: const Color(0xFF90EE90),
+                              weight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-          // Funding Stack Visual Bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Funding Structure',
-                  style: AppTextStyles.dmSans(
-                          size: 12,
-                          weight: FontWeight.w800,
-                          color: textThemeColor)
-                      .copyWith(fontFamily: 'Georgia'),
-                ),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: SizedBox(
-                    height: 28,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 5, // 5% Deposit
-                          child: Container(
-                            color: depositColor,
-                            alignment: Alignment.center,
-                            child: Text('5%',
-                                style: AppTextStyles.dmSans(
-                                    size: 9.5,
-                                    color: isDark ? const Color(0xFF0D0D2B) : Colors.white,
-                                    weight: FontWeight.w800)),
+                // Funding Stack Visual Bar
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(17),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Funding Structure',
+                        style: AppTextStyles.dmSans(
+                                size: 12,
+                                weight: FontWeight.w800,
+                                color: textThemeColor)
+                            .copyWith(fontFamily: 'Georgia'),
+                      ),
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          height: 28,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 5, // 5% Deposit
+                                child: Container(
+                                  color: depositColor,
+                                  alignment: Alignment.center,
+                                  child: Text('5%',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9.5,
+                                          color: isDark ? const Color(0xFF0D0D2B) : Colors.white,
+                                          weight: FontWeight.w800)),
+                                ),
+                              ),
+                              Expanded(
+                                flex: activeLoanPct.toInt(),
+                                child: Container(
+                                  color: const Color(0xFF4F46E5),
+                                  alignment: Alignment.center,
+                                  child: Text('${activeLoanPct.toInt()}%',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9.5,
+                                          color: Colors.white,
+                                          weight: FontWeight.w800)),
+                                ),
+                              ),
+                              Expanded(
+                                flex: mortPct.toInt(),
+                                child: Container(
+                                  color: const Color(0xFFC8102E),
+                                  alignment: Alignment.center,
+                                  child: Text('${mortPct.round()}%',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9.5,
+                                          color: Colors.white,
+                                          weight: FontWeight.w800)),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Expanded(
-                          flex: _loanPct.toInt(),
-                          child: Container(
-                            color: const Color(0xFF4F46E5),
-                            alignment: Alignment.center,
-                            child: Text('${_loanPct.toInt()}%',
-                                style: AppTextStyles.dmSans(
-                                    size: 9.5,
-                                    color: Colors.white,
-                                    weight: FontWeight.w800)),
-                          ),
-                        ),
-                        Expanded(
-                          flex: mortPct.toInt(),
-                          child: Container(
-                            color: const Color(0xFFC8102E),
-                            alignment: Alignment.center,
-                            child: Text('${mortPct.round()}%',
-                                style: AppTextStyles.dmSans(
-                                    size: 9.5,
-                                    color: Colors.white,
-                                    weight: FontWeight.w800)),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 12),
+                      _legendRow(depositColor, 'Your Deposit (5%)', deposit),
+                      const SizedBox(height: 6),
+                      _legendRow(const Color(0xFF4F46E5), 'Govt Equity Loan (${activeLoanPct.toInt()}%)', loanAmt),
+                      const SizedBox(height: 6),
+                      _legendRow(const Color(0xFFC8102E), 'Your Mortgage (${mortPct.round()}%)', mortAmt),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                _legendRow(
-                    depositColor, 'Your Deposit (5%)', deposit),
-                const SizedBox(height: 6),
-                _legendRow(const Color(0xFF4F46E5),
-                    'Govt Equity Loan (${_loanPct.toInt()}%)', loanAmt),
-                const SizedBox(height: 6),
-                _legendRow(const Color(0xFFC8102E),
-                    'Your Mortgage (${mortPct.round()}%)', mortAmt),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
- 
-          // Metrics Panel
-          ResultPanel(
-            primaryColor: widget.theme.primaryColor,
-            rows: [
-              ResultRow(
-                  label: 'Monthly Mortgage (25 yr)',
-                  value: monthlyMort,
-                  currencyCode: 'GBP'),
-              ResultRow(
-                  label: 'Equity Loan Fee (Yr 6)',
-                  value: yr6FeeAmt,
-                  currencyCode: 'GBP',
-                  isHighlighted: true),
-              ResultRow(
-                  label: 'Current Loan Value',
-                  value: currLoanVal,
-                  currencyCode: 'GBP'),
-              ResultRow(
-                  label: 'Equity Owned (${(100 - _loanPct).toInt()}%)',
-                  value: ownedEquity,
-                  currencyCode: 'GBP'),
-            ],
-          ),
-          const SizedBox(height: 12),
- 
-          // Timeline Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '📅 Equity Loan Fee Timeline',
-                  style: AppTextStyles.dmSans(
-                          size: 12,
-                          weight: FontWeight.w800,
-                          color: textThemeColor)
-                      .copyWith(fontFamily: 'Georgia'),
+
+                // Metrics Panel
+                ResultPanel(
+                  primaryColor: widget.theme.primaryColor,
+                  rows: [
+                    ResultRow(
+                        label: 'Monthly Mortgage (25 yr)',
+                        value: monthlyMort,
+                        currencyCode: 'GBP'),
+                    ResultRow(
+                        label: 'Equity Loan Fee (Yr 6)',
+                        value: yr6FeeAmt,
+                        currencyCode: 'GBP',
+                        isHighlighted: true),
+                    ResultRow(
+                        label: 'Current Loan Value',
+                        value: currLoanVal,
+                        currencyCode: 'GBP'),
+                    ResultRow(
+                        label: 'Equity Owned (${(100 - activeLoanPct).toInt()}%)',
+                        value: ownedEquity,
+                        currencyCode: 'GBP'),
+                  ],
                 ),
                 const SizedBox(height: 12),
-                _timelineRow(
-                  icon: '✓',
-                  iconColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
-                  title: 'Years 1–5',
-                  description: 'Interest-free government equity loan',
-                  feeText: '£0/month fee',
+
+                // Timeline Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(17),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📅 Equity Loan Fee Timeline',
+                        style: AppTextStyles.dmSans(
+                                size: 12,
+                                weight: FontWeight.w800,
+                                color: textThemeColor)
+                            .copyWith(fontFamily: 'Georgia'),
+                      ),
+                      const SizedBox(height: 12),
+                      _timelineRow(
+                        icon: '✓',
+                        iconColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
+                        title: 'Years 1–5',
+                        description: 'Interest-free government equity loan',
+                        feeText: '£0/month fee',
+                      ),
+                      const SizedBox(height: 10),
+                      _timelineRow(
+                        icon: '£',
+                        iconColor: isDark ? const Color(0xFF78350F) : const Color(0xFFFEF3C7),
+                        title: 'Year 6 onwards',
+                        description: 'Fee starts at 1.75% of loan, rising annually',
+                        feeText: '${CurrencyFormatter.format(yr6FeeAmt, symbol: '£').split('.').first}/month',
+                      ),
+                      const SizedBox(height: 10),
+                      _timelineRow(
+                        icon: '↑',
+                        iconColor: isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2),
+                        title: 'Annual increase',
+                        description: 'CPI/RPI + 1% each year – can become costly',
+                        feeText: 'Est. yr 10: ${CurrencyFormatter.format(yr10Fee, symbol: '£').split('.').first}/mo',
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 10),
-                _timelineRow(
-                  icon: '£',
-                  iconColor: isDark ? const Color(0xFF78350F) : const Color(0xFFFEF3C7),
-                  title: 'Year 6 onwards',
-                  description: 'Fee starts at 1.75% of loan, rising annually',
-                  feeText:
-                      '${CurrencyFormatter.format(yr6FeeAmt, symbol: '£').split('.').first}/month',
+                const SizedBox(height: 12),
+
+                // Warning Box
+                Container(
+                  padding: const EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.2) : const Color(0xFFFEF2F2),
+                    border: Border.all(color: isDark ? const Color(0xFFFCA5A5).withValues(alpha: 0.3) : const Color(0xFFFECACA)),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '⚠️ Key Risks to Consider',
+                        style: AppTextStyles.dmSans(
+                            size: 12,
+                            weight: FontWeight.w800,
+                            color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B)),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '• Equity loan repayment is % of property value — if prices rise, you repay more.\n• Fees escalate rapidly after year 5 (RPI + 1% p.a.).\n• You cannot part-repay less than 10% of property value.\n• Scheme closed Oct 2022 — existing borrowers only.',
+                        style: AppTextStyles.dmSans(
+                            size: 11, color: isDark ? const Color(0xFFFECACA) : const Color(0xFF7F1D1D), height: 1.5),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 10),
-                _timelineRow(
-                  icon: '↑',
-                  iconColor: isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2),
-                  title: 'Annual increase',
-                  description: 'CPI/RPI + 1% each year – can become costly',
-                  feeText:
-                      'Est. yr 10: ${CurrencyFormatter.format(yr10Fee, symbol: '£').split('.').first}/mo',
-                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-          const SizedBox(height: 12),
- 
-          // Warning Box
-          Container(
-            padding: const EdgeInsets.all(13),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.2) : const Color(0xFFFEF2F2),
-              border: Border.all(color: isDark ? const Color(0xFFFCA5A5).withValues(alpha: 0.3) : const Color(0xFFFECACA)),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '⚠️ Key Risks to Consider',
-                  style: AppTextStyles.dmSans(
-                      size: 12,
-                      weight: FontWeight.w800,
-                      color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B)),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '• Equity loan repayment is % of property value — if prices rise, you repay more.\n• Fees escalate rapidly after year 5 (RPI + 1% p.a.).\n• You cannot part-repay less than 10% of property value.\n• Scheme closed Oct 2022 — existing borrowers only.',
-                  style: AppTextStyles.dmSans(
-                      size: 11, color: isDark ? const Color(0xFFFECACA) : const Color(0xFF7F1D1D), height: 1.5),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
         ],
       ],
     );
@@ -653,8 +712,7 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
         Container(
           width: 10,
           height: 10,
-          decoration: BoxDecoration(
-              color: color, borderRadius: BorderRadius.circular(3)),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -752,7 +810,7 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
   }
 
   Widget _inputField(
-      {required String label, required TextEditingController controller}) {
+      {required String label, required TextEditingController controller, String? errorText}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -770,7 +828,9 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
         TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onChanged: (v) => _calculateValues(),
+          onChanged: (v) {
+            setState(() {});
+          },
           style: AppTextStyles.dmSans(
             size: 13,
             weight: FontWeight.w700,
@@ -786,10 +846,18 @@ class _UKHelpToBuyState extends ConsumerState<UKHelpToBuy> {
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
+              borderSide: errorText != null ? const BorderSide(color: Colors.red, width: 1.5) : BorderSide.none,
             ),
+            enabledBorder: errorText != null ? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ) : null,
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(errorText, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+        ],
       ],
     );
   }

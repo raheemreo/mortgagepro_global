@@ -30,6 +30,10 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
   String _selectedVehicleName = 'New Car';
   String _selectedVehicleIcon = '🚗';
 
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
+
   final List<Map<String, dynamic>> _vehicles = [
     {'icon': '🚗', 'name': 'New Car', 'rate': 7.95},
     {'icon': '🚙', 'name': 'Used Car', 'rate': 9.95},
@@ -82,13 +86,75 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
       _selectedVehicleName = 'New Car';
       _selectedVehicleIcon = '🚗';
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_vehiclePrice <= 0) {
+      errors['vehiclePrice'] = 'Enter valid vehicle price';
+    }
+    if (_deposit < 0) {
+      errors['deposit'] = 'Deposit cannot be negative';
+    }
+    if (_deposit >= _vehiclePrice) {
+      errors['deposit'] = 'Deposit must be less than vehicle price';
+    }
+    if (_rate <= 0 || _rate > 25) {
+      errors['rate'] = 'Enter rate between 0.1% and 25%';
+    }
+    if (_termYears <= 0 || _termYears > 50) {
+      errors['term'] = 'Enter term between 1 and 50 years';
+    }
+    if (_estFee < 0) {
+      errors['estFee'] = 'Fee cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['vehiclePrice'] = _vehiclePrice;
+      _calcSnapshot['deposit'] = _deposit;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['estFee'] = _estFee;
+      _calcSnapshot['freq'] = _freq;
+      _calcSnapshot['vehicleName'] = _selectedVehicleName;
+      _calcSnapshot['vehicleIcon'] = _selectedVehicleIcon;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation(double repayment, double totalInterest,
       double totalCost, double loanAmt) async {
+    final snapVehicleName = _calcSnapshot['vehicleName'] ?? _selectedVehicleName;
+    final snapVehicleIcon = _calcSnapshot['vehicleIcon'] ?? _selectedVehicleIcon;
+    final snapVehiclePrice = _calcSnapshot['vehiclePrice'] ?? _vehiclePrice;
+    final snapDeposit = _calcSnapshot['deposit'] ?? _deposit;
+    final snapRate = _calcSnapshot['rate'] ?? _rate;
+    final snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final snapEstFee = _calcSnapshot['estFee'] ?? _estFee;
+    final snapFreq = _calcSnapshot['freq'] ?? _freq;
+
     final labelCtrl = TextEditingController(
-        text: 'NZ $_selectedVehicleIcon $_selectedVehicleName Loan');
+        text: 'NZ $snapVehicleIcon $snapVehicleName Loan');
     final confirmed = await showDialog<bool>(
       context: context,
       routeSettings: const RouteSettings(name: '/dialog/nz_car_loan_calc/save'),
@@ -105,7 +171,7 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Saving: ${CurrencyFormatter.compact(loanAmt, symbol: 'NZ\$')} loan @ $_rate% → ${CurrencyFormatter.compact(repayment, symbol: 'NZ\$')}/${_freq == 'weekly' ? 'wk' : _freq == 'fortnightly' ? 'fn' : 'mo'}',
+                'Saving: ${CurrencyFormatter.compact(loanAmt, symbol: 'NZ\$')} loan @ $snapRate% → ${CurrencyFormatter.compact(repayment, symbol: 'NZ\$')}/${snapFreq == 'weekly' ? 'wk' : snapFreq == 'fortnightly' ? 'fn' : 'mo'}',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context)),
               ),
@@ -156,14 +222,14 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
         country: 'New Zealand',
         calcType: 'Car Loan Calc',
         inputs: {
-          'vehiclePrice': _vehiclePrice,
-          'deposit': _deposit,
-          'rate': _rate,
-          'termYears': _termYears.toDouble(),
-          'estFee': _estFee,
-          'freq': _freq == 'weekly'
+          'vehiclePrice': snapVehiclePrice,
+          'deposit': snapDeposit,
+          'rate': snapRate,
+          'termYears': snapTermYears.toDouble(),
+          'estFee': snapEstFee,
+          'freq': snapFreq == 'weekly'
               ? 0.0
-              : _freq == 'fortnightly'
+              : snapFreq == 'fortnightly'
                   ? 1.0
                   : 2.0,
         },
@@ -211,22 +277,36 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
     const rateSecured = 7.95;
     final rateOCR = double.tryParse(RemoteConfigService.instance.nzOcrRate) ?? 2.25;
 
+    final double rawVehiclePrice = _vehiclePrice;
+    final double rawDeposit = _deposit;
+    final double rawRate = _rate;
+    final int rawTermYears = _termYears;
+    final double rawEstFee = _estFee;
+    final String rawFreq = _freq;
+
+    final double vehiclePrice = _showResults ? (_calcSnapshot['vehiclePrice'] ?? rawVehiclePrice) : rawVehiclePrice;
+    final double deposit = _showResults ? (_calcSnapshot['deposit'] ?? rawDeposit) : rawDeposit;
+    final double rate = _showResults ? (_calcSnapshot['rate'] ?? rawRate) : rawRate;
+    final int termYears = _showResults ? (_calcSnapshot['termYears'] ?? rawTermYears) : rawTermYears;
+    final double estFee = _showResults ? (_calcSnapshot['estFee'] ?? rawEstFee) : rawEstFee;
+    final String freq = _showResults ? (_calcSnapshot['freq'] ?? rawFreq) : rawFreq;
+
     // Calculation logic
-    final P = max(0.0, _vehiclePrice - _deposit);
-    final months = _termYears * 12;
-    final monthlyRepay = _calculateMonthlyRepayment(P, _rate, _termYears);
+    final P = max(0.0, vehiclePrice - deposit);
+    final months = termYears * 12;
+    final monthlyRepay = _calculateMonthlyRepayment(P, rate, termYears);
     final totalPay = monthlyRepay * months;
     final totalInterest = max(0.0, totalPay - P);
-    final totalCost = totalPay + _estFee;
-    final effRate = P > 0 ? (totalInterest / P / _termYears * 100) : 0.0;
+    final totalCost = totalPay + estFee;
+    final effRate = P > 0 ? (totalInterest / P / termYears * 100) : 0.0;
 
     // Repayments based on frequency
     double displayRepayment;
     String freqLabel;
-    if (_freq == 'weekly') {
+    if (freq == 'weekly') {
       displayRepayment = monthlyRepay * 12 / 52;
       freqLabel = 'Weekly';
-    } else if (_freq == 'fortnightly') {
+    } else if (freq == 'fortnightly') {
       displayRepayment = monthlyRepay * 12 / 26;
       freqLabel = 'Fortnightly';
     } else {
@@ -234,11 +314,20 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
       freqLabel = 'Monthly';
     }
 
-    final totalBreakdown = P + totalInterest + _estFee;
+    final totalBreakdown = P + totalInterest + estFee;
     final principalPct = totalBreakdown > 0 ? P / totalBreakdown : 0.0;
     final interestPct =
         totalBreakdown > 0 ? totalInterest / totalBreakdown : 0.0;
-    final feePct = totalBreakdown > 0 ? _estFee / totalBreakdown : 0.0;
+    final feePct = totalBreakdown > 0 ? estFee / totalBreakdown : 0.0;
+
+    final isDirty = _showResults && (
+      _vehiclePrice != (_calcSnapshot['vehiclePrice'] ?? 0.0) ||
+      _deposit != (_calcSnapshot['deposit'] ?? 0.0) ||
+      _rate != (_calcSnapshot['rate'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['termYears'] ?? 0) ||
+      _estFee != (_calcSnapshot['estFee'] ?? 0.0) ||
+      _freq != (_calcSnapshot['freq'] ?? '')
+    );
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
@@ -397,6 +486,7 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
                       child: _buildNumericField(
                         label: 'Vehicle Price (NZD)',
                         value: _vehiclePrice,
+                        errorText: _errors['vehiclePrice'],
                         onChanged: (val) => setState(() => _vehiclePrice = val),
                       ),
                     ),
@@ -405,6 +495,7 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
                       child: _buildNumericField(
                         label: 'Deposit (NZD)',
                         value: _deposit,
+                        errorText: _errors['deposit'],
                         onChanged: (val) => setState(() => _deposit = val),
                       ),
                     ),
@@ -456,6 +547,7 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
                         label: 'Interest Rate %',
                         value: _rate,
                         isPercent: true,
+                        errorText: _errors['rate'],
                         onChanged: (val) => setState(() => _rate = val),
                       ),
                     ),
@@ -464,6 +556,7 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
                       child: _buildNumericField(
                         label: 'Establishment Fee',
                         value: _estFee,
+                        errorText: _errors['estFee'],
                         onChanged: (val) => setState(() => _estFee = val),
                         subtitle: 'Typical: \$150–\$350',
                       ),
@@ -515,18 +608,7 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
 
                 // Calculate Button
                 ElevatedButton(
-                  onPressed: () {
-                    if (P <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                'Deposit must be less than vehicle price',
-                                style: AppTextStyles.dmSans())),
-                      );
-                      return;
-                    }
-                    setState(() => _showResults = true);
-                  },
+                  onPressed: _calculate,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFC0392B),
                     foregroundColor: Colors.white,
@@ -548,292 +630,322 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
 
           // Results Block
           if (_showResults) ...[
-            const SizedBox(height: 18),
-
-            // Hero Repayment Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF0A0F0D), Color(0xFF922B21)],
+            if (isDirty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                 ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  )
-                ],
+                child: Row(
+                  children: [
+                    const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Text(
+                        'Inputs have changed. Tap Calculate Car Loan to refresh results.',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ],
+            Container(
+              key: _resultsKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('$freqLabel Repayment · NZD',
-                      style: AppTextStyles.dmSans(
-                          size: 9.5,
-                          color: Colors.white54,
-                          weight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  Text(
-                    CurrencyFormatter.format(displayRepayment,
-                        currencyCode: 'NZD'),
-                    style: AppTextStyles.playfair(
-                        size: 36,
-                        color: const Color(0xFFF5D060),
-                        weight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$freqLabel repayment · $_termYears year term · $_rate% p.a.',
-                    style:
-                        AppTextStyles.dmSans(size: 10, color: Colors.white60),
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(color: Colors.white24),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
 
-                  // 3-Box Results Grid
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildHeroBox(
-                            'Total Cost',
-                            CurrencyFormatter.compact(totalCost,
-                                symbol: 'NZ\$'),
-                            const Color(0xFFF5D060)),
+                  // Hero Repayment Card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF0A0F0D), Color(0xFF922B21)],
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildHeroBox(
-                            'Interest Paid',
-                            CurrencyFormatter.compact(totalInterest,
-                                symbol: 'NZ\$'),
-                            const Color(0xFFFCA5A5)),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildHeroBox(
-                            'Effective Rate',
-                            '${effRate.toStringAsFixed(2)}%',
-                            const Color(0xFF6EE7B7)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Save Calculation Card
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.getBorderColor(context)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        )
+                      ],
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('💾 Save This Scenario',
-                            style: AppTextStyles.dmSans(
-                                size: 12,
-                                weight: FontWeight.w800,
-                                color: theme.getTextColor(context))),
-                        const SizedBox(height: 2),
-                        Text('Compare different terms and rates easily',
+                        Text('$freqLabel Repayment · NZD',
                             style: AppTextStyles.dmSans(
                                 size: 9.5,
-                                color: theme.getMutedColor(context))),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => _saveCalculation(
-                        displayRepayment, totalInterest, totalCost, P),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFC0392B),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                    ),
-                    child: Text('Save ›',
-                        style: AppTextStyles.dmSans(
-                            size: 11,
-                            color: Colors.white,
-                            weight: FontWeight.w800)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Cost Breakdown Donut
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: theme.getBorderColor(context)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('💰 Total Cost Breakdown',
-                      style: AppTextStyles.playfair(
-                          size: 13,
-                          color: theme.getTextColor(context),
-                          weight: FontWeight.w800)),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 90,
-                        height: 90,
-                        child: CustomPaint(
-                          painter: _NZCarDonutPainter(
-                            principalPct: principalPct,
-                            interestPct: interestPct,
-                            feePct: feePct,
-                            isDark: isDark,
-                          ),
+                                color: Colors.white54,
+                                weight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text(
+                          CurrencyFormatter.format(displayRepayment,
+                              currencyCode: 'NZD'),
+                          style: AppTextStyles.playfair(
+                              size: 36,
+                              color: const Color(0xFFF5D060),
+                              weight: FontWeight.w800),
                         ),
-                      ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
+                        const SizedBox(height: 2),
+                        Text(
+                          '$freqLabel repayment · $termYears year term · $rate% p.a.',
+                          style:
+                              AppTextStyles.dmSans(size: 10, color: Colors.white60),
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(color: Colors.white24),
+                        const SizedBox(height: 12),
+
+                        // 3-Box Results Grid
+                        Row(
                           children: [
-                            _buildLegendRow(
-                                'Principal', P, const Color(0xFF1A6B4A)),
-                            const SizedBox(height: 8),
-                            _buildLegendRow('Interest', totalInterest,
-                                const Color(0xFFC0392B)),
-                            const SizedBox(height: 8),
-                            _buildLegendRow(
-                                'Fees', _estFee, const Color(0xFFD4A017)),
+                            Expanded(
+                              child: _buildHeroBox(
+                                  'Total Cost',
+                                  CurrencyFormatter.compact(totalCost,
+                                      symbol: 'NZ\$'),
+                                  const Color(0xFFF5D060)),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildHeroBox(
+                                  'Interest Paid',
+                                  CurrencyFormatter.compact(totalInterest,
+                                      symbol: 'NZ\$'),
+                                  const Color(0xFFFCA5A5)),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildHeroBox(
+                                  'Effective Rate',
+                                  '${effRate.toStringAsFixed(2)}%',
+                                  const Color(0xFF6EE7B7)),
+                            ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Cost Composition Stacked Bar & Freq Compare
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: theme.getBorderColor(context)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('📊 Cost Composition',
-                      style: AppTextStyles.playfair(
-                          size: 13,
-                          color: theme.getTextColor(context),
-                          weight: FontWeight.w800)),
-                  const SizedBox(height: 12),
-
-                  // Stacked Bar
-                  Container(
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: theme.getBgColor(context),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Row(
-                      children: [
-                        if (principalPct > 0)
-                          Expanded(
-                            flex: (principalPct * 100).round(),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(colors: [
-                                  Color(0xFF0D3B2E),
-                                  Color(0xFF1A6B4A)
-                                ]),
-                              ),
-                            ),
-                          ),
-                        if (interestPct > 0)
-                          Expanded(
-                            flex: (interestPct * 100).round(),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(colors: [
-                                  Color(0xFFC0392B),
-                                  Color(0xFF922B21)
-                                ]),
-                              ),
-                            ),
-                          ),
-                        if (feePct > 0)
-                          Expanded(
-                            flex: (feePct * 100).round(),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(colors: [
-                                  Color(0xFFD4A017),
-                                  Color(0xFFA07810)
-                                ]),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-
-                  // Stacked Bar Labels
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                          'Principal ${(principalPct * 100).toStringAsFixed(0)}%',
-                          style: AppTextStyles.dmSans(
-                              size: 9.5, color: theme.getMutedColor(context))),
-                      Text(
-                          'Interest ${(interestPct * 100).toStringAsFixed(0)}%',
-                          style: AppTextStyles.dmSans(
-                              size: 9.5, color: theme.getMutedColor(context))),
-                      Text('Fees ${(feePct * 100).toStringAsFixed(0)}%',
-                          style: AppTextStyles.dmSans(
-                              size: 9.5, color: theme.getMutedColor(context))),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  const Divider(),
                   const SizedBox(height: 12),
 
-                  Text('Weekly vs Monthly Comparison',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          weight: FontWeight.w800,
-                          color: theme.getTextColor(context))),
-                  const SizedBox(height: 8),
+                  // Save Calculation Card
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('💾 Save This Scenario',
+                                  style: AppTextStyles.dmSans(
+                                      size: 12,
+                                      weight: FontWeight.w800,
+                                      color: theme.getTextColor(context))),
+                              const SizedBox(height: 2),
+                              Text('Compare different terms and rates easily',
+                                  style: AppTextStyles.dmSans(
+                                      size: 9.5,
+                                      color: theme.getMutedColor(context))),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => _saveCalculation(
+                              displayRepayment, totalInterest, totalCost, P),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFC0392B),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                          ),
+                          child: Text('Save ›',
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  color: Colors.white,
+                                  weight: FontWeight.w800)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
 
-                  _buildFreqCompareRow(
-                      'Weekly', monthlyRepay * 12 / 52, '52 × year', theme),
-                  const SizedBox(height: 6),
-                  _buildFreqCompareRow('Fortnightly', monthlyRepay * 12 / 26,
-                      '26 × year', theme),
-                  const SizedBox(height: 6),
-                  _buildFreqCompareRow(
-                      'Monthly', monthlyRepay, '12 × year', theme),
+                  // Cost Breakdown Donut
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('💰 Total Cost Breakdown',
+                            style: AppTextStyles.playfair(
+                                size: 13,
+                                color: theme.getTextColor(context),
+                                weight: FontWeight.w800)),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 90,
+                              height: 90,
+                              child: CustomPaint(
+                                painter: _NZCarDonutPainter(
+                                  principalPct: principalPct,
+                                  interestPct: interestPct,
+                                  feePct: feePct,
+                                  isDark: isDark,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  _buildLegendRow(
+                                      'Principal', P, const Color(0xFF1A6B4A)),
+                                  const SizedBox(height: 8),
+                                  _buildLegendRow('Interest', totalInterest,
+                                      const Color(0xFFC0392B)),
+                                  const SizedBox(height: 8),
+                                  _buildLegendRow(
+                                      'Fees', estFee, const Color(0xFFD4A017)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Cost Composition Stacked Bar & Freq Compare
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('📊 Cost Composition',
+                            style: AppTextStyles.playfair(
+                                size: 13,
+                                color: theme.getTextColor(context),
+                                weight: FontWeight.w800)),
+                        const SizedBox(height: 12),
+
+                        // Stacked Bar
+                        Container(
+                          height: 18,
+                          decoration: BoxDecoration(
+                            color: theme.getBgColor(context),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Row(
+                            children: [
+                              if (principalPct > 0)
+                                Expanded(
+                                  flex: (principalPct * 100).round(),
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(colors: [
+                                        Color(0xFF0D3B2E),
+                                        Color(0xFF1A6B4A)
+                                      ]),
+                                    ),
+                                  ),
+                                ),
+                              if (interestPct > 0)
+                                Expanded(
+                                  flex: (interestPct * 100).round(),
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(colors: [
+                                        Color(0xFFC0392B),
+                                        Color(0xFF922B21)
+                                      ]),
+                                    ),
+                                  ),
+                                ),
+                              if (feePct > 0)
+                                Expanded(
+                                  flex: (feePct * 100).round(),
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(colors: [
+                                        Color(0xFFD4A017),
+                                        Color(0xFFA07810)
+                                      ]),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Stacked Bar Labels
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                                'Principal ${(principalPct * 100).toStringAsFixed(0)}%',
+                                style: AppTextStyles.dmSans(
+                                    size: 9.5, color: theme.getMutedColor(context))),
+                            Text(
+                                'Interest ${(interestPct * 100).toStringAsFixed(0)}%',
+                                style: AppTextStyles.dmSans(
+                                    size: 9.5, color: theme.getMutedColor(context))),
+                            Text('Fees ${(feePct * 100).toStringAsFixed(0)}%',
+                                style: AppTextStyles.dmSans(
+                                    size: 9.5, color: theme.getMutedColor(context))),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        const Divider(),
+                        const SizedBox(height: 12),
+
+                        Text('Weekly vs Monthly Comparison',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                weight: FontWeight.w800,
+                                color: theme.getTextColor(context))),
+                        const SizedBox(height: 8),
+
+                        _buildFreqCompareRow(
+                            'Weekly', monthlyRepay * 12 / 52, '52 × year', theme),
+                        const SizedBox(height: 6),
+                        _buildFreqCompareRow('Fortnightly', monthlyRepay * 12 / 26,
+                            '26 × year', theme),
+                        const SizedBox(height: 6),
+                        _buildFreqCompareRow(
+                            'Monthly', monthlyRepay, '12 × year', theme),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -980,13 +1092,14 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
     bool isPercent = false,
     required ValueChanged<double> onChanged,
     String? subtitle,
+    String? errorText,
   }) {
     final theme = widget.theme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: theme.getBgColor(context),
-        border: Border.all(color: theme.getBorderColor(context)),
+        border: Border.all(color: errorText != null ? Colors.red : theme.getBorderColor(context)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -1008,6 +1121,7 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
                         weight: FontWeight.w700)),
               Expanded(
                 child: TextFormField(
+                  key: ValueKey(value),
                   initialValue: value.toString(),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
@@ -1034,7 +1148,12 @@ class _NZCarLoanCalcState extends ConsumerState<NZCarLoanCalc> {
                         weight: FontWeight.w700)),
             ],
           ),
-          if (subtitle != null) ...[
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText,
+                style: AppTextStyles.dmSans(
+                    size: 8, color: Colors.red, weight: FontWeight.bold)),
+          ] else if (subtitle != null) ...[
             const SizedBox(height: 2),
             Text(subtitle,
                 style: AppTextStyles.dmSans(

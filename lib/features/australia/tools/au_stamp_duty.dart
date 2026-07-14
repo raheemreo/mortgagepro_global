@@ -24,6 +24,9 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
   String _propType = 'established'; // 'established', 'new', 'vacant'
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   void _reset() {
     setState(() {
@@ -32,6 +35,8 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
       _buyerType = 'owner';
       _propType = 'established';
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
     });
   }
 
@@ -219,16 +224,52 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
     };
   }
 
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_propVal <= 0) {
+      errors['propertyValue'] = 'Enter valid property value';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['selectedState'] = _selectedState;
+      _calcSnapshot['propVal'] = _propVal;
+      _calcSnapshot['buyerType'] = _buyerType;
+      _calcSnapshot['propType'] = _propType;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation() async {
-    final res = _calcStamp(_selectedState, _propVal, _buyerType, _propType);
+    final String snapState = _calcSnapshot['selectedState'] ?? _selectedState;
+    final double snapPropVal = _calcSnapshot['propVal'] ?? _propVal;
+    final String snapBuyerType = _calcSnapshot['buyerType'] ?? _buyerType;
+    final String snapPropType = _calcSnapshot['propType'] ?? _propType;
+
+    final res = _calcStamp(snapState, snapPropVal, snapBuyerType, snapPropType);
     final duty = res['duty']!;
     final concession = res['concession']!;
     final dutyAfterConc = res['dutyAfterConc']!;
     final fhog = res['fhog']!;
     final netCost = max(0.0, dutyAfterConc - fhog);
 
-    final labelCtrl =
-        TextEditingController(text: 'Stamp Duty - $_selectedState');
+    final labelCtrl = TextEditingController(text: 'Stamp Duty - $snapState');
     final confirmed = await showDialog<bool>(
       context: context,
       routeSettings: const RouteSettings(name: '/dialog/au_stamp_duty'),
@@ -236,30 +277,24 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('💾 Save Stamp Duty Calc',
-            style: AppTextStyles.playfair(
-                size: 16, color: widget.theme.getTextColor(context))),
+            style: AppTextStyles.playfair(size: 16, color: widget.theme.getTextColor(context))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-                'Saving: \$${CurrencyFormatter.compact(dutyAfterConc, symbol: 'AU\$')} stamp duty in $_selectedState',
-                style: AppTextStyles.dmSans(
-                    size: 11, color: widget.theme.getMutedColor(context))),
+            Text('Saving: \$${CurrencyFormatter.compact(dutyAfterConc, symbol: 'AU\$')} stamp duty in $snapState',
+                style: AppTextStyles.dmSans(size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
             TextField(
               controller: labelCtrl,
               autofocus: true,
-              style: AppTextStyles.dmSans(
-                  size: 13, color: widget.theme.getTextColor(context)),
+              style: AppTextStyles.dmSans(size: 13, color: widget.theme.getTextColor(context)),
               decoration: InputDecoration(
                 hintText: 'Label (e.g. My NSW Stamp Duty)',
                 hintStyle: AppTextStyles.dmSans(size: 13, color: Colors.grey),
                 filled: true,
                 fillColor: widget.theme.getBgColor(context),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
             ),
           ],
@@ -267,57 +302,50 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel',
-                style: AppTextStyles.dmSans(
-                    size: 12, color: Colors.grey, weight: FontWeight.w700)),
+            child: Text('Cancel', style: AppTextStyles.dmSans(size: 12, color: Colors.grey, weight: FontWeight.w700)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: widget.theme.primaryColor,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('Save',
-                style: AppTextStyles.dmSans(
-                    size: 12, color: Colors.white, weight: FontWeight.w700)),
+            child: Text('Save', style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w700)),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      final label = labelCtrl.text.trim().isNotEmpty
-          ? labelCtrl.text.trim()
-          : 'Stamp Duty Plan';
+      final label = labelCtrl.text.trim().isNotEmpty ? labelCtrl.text.trim() : 'Stamp Duty Plan';
       final calc = SavedCalc.create(
         country: 'Australia',
         calcType: 'Stamp Duty (AUS)',
         inputs: {
-          'propertyValue': _propVal,
-          'state': _selectedState == 'NSW'
+          'propertyValue': snapPropVal,
+          'state': snapState == 'NSW'
               ? 0.0
-              : _selectedState == 'VIC'
+              : snapState == 'VIC'
                   ? 1.0
-                  : _selectedState == 'QLD'
+                  : snapState == 'QLD'
                       ? 2.0
-                      : _selectedState == 'WA'
+                      : snapState == 'WA'
                           ? 3.0
-                          : _selectedState == 'SA'
+                          : snapState == 'SA'
                               ? 4.0
-                              : _selectedState == 'TAS'
+                              : snapState == 'TAS'
                                   ? 5.0
-                                  : _selectedState == 'ACT'
+                                  : snapState == 'ACT'
                                       ? 6.0
                                       : 7.0,
-          'buyerType': _buyerType == 'owner'
+          'buyerType': snapBuyerType == 'owner'
               ? 0.0
-              : _buyerType == 'fhb'
+              : snapBuyerType == 'fhb'
                   ? 1.0
                   : 2.0,
-          'propertyType': _propType == 'established'
+          'propertyType': snapPropType == 'established'
               ? 0.0
-              : _propType == 'new'
+              : snapPropType == 'new'
                   ? 1.0
                   : 2.0,
         },
@@ -337,9 +365,7 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Stamp duty saved!',
-                style: AppTextStyles.dmSans(
-                    color: Colors.white, weight: FontWeight.w700)),
+            content: Text('✅ Stamp duty saved!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
             backgroundColor: widget.theme.primaryColor,
             behavior: SnackBarBehavior.floating,
           ),
@@ -353,13 +379,18 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final String snapState = _showResults ? (_calcSnapshot['selectedState'] ?? _selectedState) : _selectedState;
+    final double snapPropVal = _showResults ? (_calcSnapshot['propVal'] ?? _propVal) : _propVal;
+    final String snapBuyerType = _showResults ? (_calcSnapshot['buyerType'] ?? _buyerType) : _buyerType;
+    final String snapPropType = _showResults ? (_calcSnapshot['propType'] ?? _propType) : _propType;
+
     // Stamp duty results
-    final res = _calcStamp(_selectedState, _propVal, _buyerType, _propType);
+    final res = _calcStamp(snapState, snapPropVal, snapBuyerType, snapPropType);
     final duty = res['duty']!;
     final concession = res['concession']!;
     final dutyAfterConc = res['dutyAfterConc']!;
     final fhog = res['fhog']!;
-    final effRate = _propVal > 0 ? (duty / _propVal * 100) : 0.0;
+    final effRate = snapPropVal > 0 ? (duty / snapPropVal * 100) : 0.0;
     final netCost = max(0.0, dutyAfterConc - fhog);
 
     // Costs details
@@ -367,33 +398,25 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
     const inspection = 600.0;
     const lender = 800.0;
     const registration = 160.0;
-    final totalUpfront = dutyAfterConc +
-        conveyancing +
-        inspection +
-        lender +
-        registration -
-        fhog;
+    final totalUpfront = dutyAfterConc + conveyancing + inspection + lender + registration - fhog;
 
     // States comparison duties list
-    final List<String> statesList = [
-      'NSW',
-      'VIC',
-      'QLD',
-      'WA',
-      'SA',
-      'TAS',
-      'ACT',
-      'NT'
-    ];
+    final List<String> statesList = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
     final List<Map<String, dynamic>> comparisonList = statesList.map((st) {
-      final r = _calcStamp(st, _propVal, _buyerType, _propType);
+      final r = _calcStamp(st, snapPropVal, snapBuyerType, snapPropType);
       return {
         'state': st,
         'duty': r['dutyAfterConc']!,
       };
     }).toList();
-    final maxDutyValue =
-        comparisonList.map((c) => c['duty'] as double).reduce(max);
+    final maxDutyValue = comparisonList.map((c) => c['duty'] as double).reduce(max);
+
+    final isDirty = _showResults && (
+      _selectedState != (_calcSnapshot['selectedState'] ?? '') ||
+      _propVal != (_calcSnapshot['propVal'] ?? 0.0) ||
+      _buyerType != (_calcSnapshot['buyerType'] ?? '') ||
+      _propType != (_calcSnapshot['propType'] ?? '')
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,9 +427,7 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
           decoration: BoxDecoration(
             color: isDark ? theme.getCardColor(context) : Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-                color:
-                    isDark ? theme.getBorderColor(context) : theme.borderColor),
+            border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,9 +446,7 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
                     child: Text('Reset ↺',
                         style: AppTextStyles.dmSans(
                             size: 11,
-                            color: isDark
-                                ? const Color(0xFFFFD700)
-                                : theme.primaryColor,
+                            color: isDark ? const Color(0xFFFFD700) : theme.primaryColor,
                             weight: FontWeight.w700)),
                   ),
                 ],
@@ -450,15 +469,11 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
                       decoration: BoxDecoration(
                         color: active
                             ? theme.primaryColor
-                            : (isDark
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : const Color(0xFFFFF8F0)),
+                            : (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFFFF8F0)),
                         border: Border.all(
                             color: active
                                 ? theme.primaryColor
-                                : (isDark
-                                    ? theme.getBorderColor(context)
-                                    : const Color(0x3B7C2D12))),
+                                : (isDark ? theme.getBorderColor(context) : const Color(0x3B7C2D12))),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       alignment: Alignment.center,
@@ -467,11 +482,7 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
                         style: AppTextStyles.dmSans(
                           size: 11,
                           weight: FontWeight.w700,
-                          color: active
-                              ? Colors.white
-                              : (isDark
-                                  ? const Color(0xFFFFD700)
-                                  : const Color(0xFF92400E)),
+                          color: active ? Colors.white : (isDark ? const Color(0xFFFFD700) : const Color(0xFF92400E)),
                         ),
                       ),
                     ),
@@ -485,58 +496,35 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
                 value: _propVal,
                 min: 100000,
                 max: 3000000,
+                errorText: _errors['propertyValue'],
                 onChanged: (val) => setState(() => _propVal = val),
               ),
               const SizedBox(height: 12),
 
               // Buyer Type Tabs
               Text('BUYER TYPE',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: theme.getMutedColor(context),
-                      weight: FontWeight.w800)),
+                  style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context), weight: FontWeight.w800)),
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Expanded(
-                      child: _buildBuyerTab(
-                          'Owner Occupier',
-                          _buyerType == 'owner',
-                          () => setState(() => _buyerType = 'owner'))),
+                  Expanded(child: _buildBuyerTab('Owner Occupier', _buyerType == 'owner', () => setState(() => _buyerType = 'owner'))),
                   const SizedBox(width: 4),
-                  Expanded(
-                      child: _buildBuyerTab(
-                          'First Home Buyer',
-                          _buyerType == 'fhb',
-                          () => setState(() => _buyerType = 'fhb'))),
+                  Expanded(child: _buildBuyerTab('First Home Buyer', _buyerType == 'fhb', () => setState(() => _buyerType = 'fhb'))),
                   const SizedBox(width: 4),
-                  Expanded(
-                      child: _buildBuyerTab(
-                          'Investor',
-                          _buyerType == 'investor',
-                          () => setState(() => _buyerType = 'investor'))),
+                  Expanded(child: _buildBuyerTab('Investor', _buyerType == 'investor', () => setState(() => _buyerType = 'investor'))),
                 ],
               ),
               const SizedBox(height: 12),
 
               // Property Type Select Dropdown
               Text('PROPERTY TYPE',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: theme.getMutedColor(context),
-                      weight: FontWeight.w800)),
+                  style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context), weight: FontWeight.w800)),
               const SizedBox(height: 6),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFFFF8F0),
-                  border: Border.all(
-                      color: isDark
-                          ? theme.getBorderColor(context)
-                          : theme.borderColor),
+                  color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFFFF8F0),
+                  border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
                   borderRadius: BorderRadius.circular(11),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -544,26 +532,11 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
                     value: _propType,
                     dropdownColor: theme.getCardColor(context),
                     isExpanded: true,
-                    style: AppTextStyles.dmSans(
-                        size: 14,
-                        color: theme.getTextColor(context),
-                        weight: FontWeight.w800),
+                    style: AppTextStyles.dmSans(size: 14, color: theme.getTextColor(context), weight: FontWeight.w800),
                     items: [
-                      DropdownMenuItem(
-                          value: 'established',
-                          child: Text('Established Home',
-                              style: AppTextStyles.dmSans(
-                                  color: theme.getTextColor(context)))),
-                      DropdownMenuItem(
-                          value: 'new',
-                          child: Text('New Home / Off-the-Plan',
-                              style: AppTextStyles.dmSans(
-                                  color: theme.getTextColor(context)))),
-                      DropdownMenuItem(
-                          value: 'vacant',
-                          child: Text('Vacant Land',
-                              style: AppTextStyles.dmSans(
-                                  color: theme.getTextColor(context)))),
+                      DropdownMenuItem(value: 'established', child: Text('Established Home', style: AppTextStyles.dmSans(color: theme.getTextColor(context)))),
+                      DropdownMenuItem(value: 'new', child: Text('New Home / Off-the-Plan', style: AppTextStyles.dmSans(color: theme.getTextColor(context)))),
+                      DropdownMenuItem(value: 'vacant', child: Text('Vacant Land', style: AppTextStyles.dmSans(color: theme.getTextColor(context)))),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -576,22 +549,16 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
               const SizedBox(height: 16),
 
               ElevatedButton(
-                onPressed: () {
-                  setState(() => _showResults = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD97706),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   minimumSize: const Size(double.infinity, 44),
                 ),
                 child: Text('🏘️ Calculate Stamp Duty',
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        color: Colors.white,
-                        weight: FontWeight.w800)),
+                    style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.w800)),
               ),
             ],
           ),
@@ -599,325 +566,251 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
 
         // Results Section
         if (_showResults) ...[
-          const SizedBox(height: 20),
-
-          // Result Card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFD97706), Color(0xFF92400E)],
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFD97706).withValues(alpha: 0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$_selectedState Transfer Duty',
-                    style: AppTextStyles.dmSans(
-                        size: 10,
-                        color: Colors.white70,
-                        weight: FontWeight.w700,
-                        letterSpacing: 0.8)),
-                const SizedBox(height: 4),
-                Text(CurrencyFormatter.format(duty, currencyCode: 'AUD'),
-                    style: AppTextStyles.playfair(
-                        size: 36,
-                        color: Colors.white,
-                        weight: FontWeight.w800)),
-                Text('Transfer duty payable at settlement',
-                    style:
-                        AppTextStyles.dmSans(size: 12, color: Colors.white70)),
-                const SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 2.2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  children: [
-                    _buildResultBox(
-                        'Effective Rate', '${effRate.toStringAsFixed(2)}%'),
-                    _buildResultBox(
-                        'After Concessions',
-                        concession > 0
-                            ? CurrencyFormatter.format(dutyAfterConc,
-                                currencyCode: 'AUD')
-                            : 'No concession',
-                        color: const Color(0xFFFFD700)),
-                    _buildResultBox(
-                        'FHOG Grant',
-                        fhog > 0
-                            ? CurrencyFormatter.format(fhog,
-                                currencyCode: 'AUD')
-                            : 'N/A'),
-                    _buildResultBox('Net Cost',
-                        CurrencyFormatter.format(netCost, currencyCode: 'AUD'),
-                        color: const Color(0xFFFFD700)),
-                  ],
-                ),
-                if (_buyerType == 'fhb' &&
-                    _stampRates[_selectedState]['concessions'] != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10)),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
                     child: Text(
-                        '✅ FHB Concession: ${_stampRates[_selectedState]['concessions']}',
-                        style: AppTextStyles.dmSans(
-                            size: 11, color: Colors.white)),
+                      'Inputs have changed. Tap Calculate Stamp Duty to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
                   ),
                 ],
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _saveCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.18),
-                    foregroundColor: Colors.white,
-                    side:
-                        BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(11)),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    minimumSize: const Size(double.infinity, 40),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('🔖', style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 6),
-                      Text('Save This Calculation',
-                          style: AppTextStyles.dmSans(
-                              size: 13, weight: FontWeight.w700)),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-
-          // Upfront Cost Breakdown Card
-          const SizedBox(height: 20),
+          ],
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? theme.getCardColor(context) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                  color: isDark
-                      ? theme.getBorderColor(context)
-                      : theme.borderColor),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Upfront Cost Breakdown',
-                    style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w700,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 8),
-                _buildCostRow(
-                    'Stamp Duty',
-                    '$_selectedState transfer duty ${_buyerType == 'fhb' ? '(FHB concession applied)' : ''}',
-                    CurrencyFormatter.format(dutyAfterConc,
-                        currencyCode: 'AUD')),
-                _buildCostRow(
-                    'Conveyancing / Legal',
-                    'Estimated solicitor fees',
-                    CurrencyFormatter.format(conveyancing,
-                        currencyCode: 'AUD')),
-                _buildCostRow(
-                    'Building & Pest Inspection',
-                    'Pre-purchase inspection',
-                    CurrencyFormatter.format(inspection, currencyCode: 'AUD')),
-                _buildCostRow(
-                    'Lender / Mortgage Fees',
-                    'Application + valuation',
-                    CurrencyFormatter.format(lender, currencyCode: 'AUD')),
-                _buildCostRow(
-                    'Title & Land Registration',
-                    'Gov. registration fees',
-                    CurrencyFormatter.format(registration,
-                        currencyCode: 'AUD')),
-                if (fhog > 0)
-                  _buildCostRow('FHOG Grant', 'First Home Owner Grant offset',
-                      '-${CurrencyFormatter.format(fhog, currencyCode: 'AUD')}',
-                      isNegative: true),
-                const Divider(),
+                const SizedBox(height: 20),
+
+                // Result Card
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : const Color(0x0C7C2D12),
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFD97706), Color(0xFF92400E)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFD97706).withValues(alpha: 0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      )
+                    ],
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Total Upfront Costs',
-                          style: AppTextStyles.dmSans(
-                              size: 13,
-                              weight: FontWeight.bold,
-                              color: theme.getTextColor(context))),
-                      Text(
-                          CurrencyFormatter.format(totalUpfront,
-                              currencyCode: 'AUD'),
-                          style: AppTextStyles.playfair(
-                              size: 17,
-                              weight: FontWeight.w800,
-                              color: isDark
-                                  ? const Color(0xFFFFD700)
-                                  : const Color(0xFF7C2D12))),
+                      Text('$snapState Transfer Duty',
+                          style: AppTextStyles.dmSans(size: 10, color: Colors.white70, weight: FontWeight.w700, letterSpacing: 0.8)),
+                      const SizedBox(height: 4),
+                      Text(CurrencyFormatter.format(duty, currencyCode: 'AUD'),
+                          style: AppTextStyles.playfair(size: 36, color: Colors.white, weight: FontWeight.w800)),
+                      Text('Transfer duty payable at settlement', style: AppTextStyles.dmSans(size: 12, color: Colors.white70)),
+                      const SizedBox(height: 16),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        children: [
+                          _buildResultBox('Effective Rate', '${effRate.toStringAsFixed(2)}%'),
+                          _buildResultBox('After Concessions', concession > 0 ? CurrencyFormatter.format(dutyAfterConc, currencyCode: 'AUD') : 'No concession', color: const Color(0xFFFFD700)),
+                          _buildResultBox('FHOG Grant', fhog > 0 ? CurrencyFormatter.format(fhog, currencyCode: 'AUD') : 'N/A'),
+                          _buildResultBox('Net Cost', CurrencyFormatter.format(netCost, currencyCode: 'AUD'), color: const Color(0xFFFFD700)),
+                        ],
+                      ),
+                      if (snapBuyerType == 'fhb' && _stampRates[snapState]['concessions'] != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+                          child: Text('✅ FHB Concession: ${_stampRates[snapState]['concessions']}', style: AppTextStyles.dmSans(size: 11, color: Colors.white)),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _saveCalculation,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.18),
+                          foregroundColor: Colors.white,
+                          side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          minimumSize: const Size(double.infinity, 40),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('🔖', style: TextStyle(fontSize: 14)),
+                            const SizedBox(width: 6),
+                            Text('Save This Calculation', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
 
-          // State comparison bar chart
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? theme.getCardColor(context) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                  color: isDark
-                      ? theme.getBorderColor(context)
-                      : theme.borderColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('State Comparison (same property)',
-                    style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w700,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 12),
-                ...comparisonList.map((c) {
-                  final double dVal = c['duty'];
-                  final String st = c['state'];
-                  final active = st == _selectedState;
-                  final barPct = maxDutyValue > 0 ? (dVal / maxDutyValue) : 0.0;
+                // Upfront Cost Breakdown Card
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? theme.getCardColor(context) : Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Upfront Cost Breakdown', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w700, color: theme.getTextColor(context))),
+                      const SizedBox(height: 8),
+                      _buildCostRow('Stamp Duty', '$snapState transfer duty ${snapBuyerType == 'fhb' ? '(FHB concession applied)' : ''}', CurrencyFormatter.format(dutyAfterConc, currencyCode: 'AUD')),
+                      _buildCostRow('Conveyancing / Legal', 'Estimated solicitor fees', CurrencyFormatter.format(conveyancing, currencyCode: 'AUD')),
+                      _buildCostRow('Building & Pest Inspection', 'Pre-purchase inspection', CurrencyFormatter.format(inspection, currencyCode: 'AUD')),
+                      _buildCostRow('Lender / Mortgage Fees', 'Application + valuation', CurrencyFormatter.format(lender, currencyCode: 'AUD')),
+                      _buildCostRow('Title & Land Registration', 'Gov. registration fees', CurrencyFormatter.format(registration, currencyCode: 'AUD')),
+                      if (fhog > 0)
+                        _buildCostRow('FHOG Grant', 'First Home Owner Grant offset', '-${CurrencyFormatter.format(fhog, currencyCode: 'AUD')}', isNegative: true),
+                      const Divider(),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0x0C7C2D12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Total Upfront Costs', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context))),
+                            Text(CurrencyFormatter.format(totalUpfront, currencyCode: 'AUD'),
+                                style: AppTextStyles.playfair(
+                                    size: 17,
+                                    weight: FontWeight.w800,
+                                    color: isDark ? const Color(0xFFFFD700) : const Color(0xFF7C2D12))),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                            width: 32,
-                            child: Text(st,
-                                style: AppTextStyles.dmSans(
-                                    size: 10,
-                                    weight: FontWeight.bold,
-                                    color: isDark
-                                        ? const Color(0xFFFFD700)
-                                        : const Color(0xFF92400E)))),
-                        Expanded(
-                          child: Container(
-                            height: 9,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.1)
-                                  : const Color(0xFFFFF8F0),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            alignment: Alignment.centerLeft,
-                            child: FractionallySizedBox(
-                              widthFactor: barPct.clamp(0.0, 1.0),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: active
-                                      ? const LinearGradient(colors: [
-                                          Color(0xFFFFD700),
-                                          Color(0xFFD97706)
-                                        ])
-                                      : LinearGradient(colors: [
-                                          const Color(0xFFD97706),
-                                          isDark
-                                              ? const Color(0xFF60A5FA)
-                                              : const Color(0xFF7C2D12)
-                                        ]),
-                                  borderRadius: BorderRadius.circular(5),
+                // State comparison bar chart
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? theme.getCardColor(context) : Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('State Comparison (same property)', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w700, color: theme.getTextColor(context))),
+                      const SizedBox(height: 12),
+                      ...comparisonList.map((c) {
+                        final double dVal = c['duty'];
+                        final String st = c['state'];
+                        final active = st == snapState;
+                        final barPct = maxDutyValue > 0 ? (dVal / maxDutyValue) : 0.0;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                  width: 32,
+                                  child: Text(st,
+                                      style: AppTextStyles.dmSans(
+                                          size: 10,
+                                          weight: FontWeight.bold,
+                                          color: isDark ? const Color(0xFFFFD700) : const Color(0xFF92400E)))),
+                              Expanded(
+                                child: Container(
+                                  height: 9,
+                                  decoration: BoxDecoration(
+                                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFFFF8F0),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  alignment: Alignment.centerLeft,
+                                  child: FractionallySizedBox(
+                                    widthFactor: barPct.clamp(0.0, 1.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: active
+                                            ? const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFD97706)])
+                                            : LinearGradient(colors: [
+                                                const Color(0xFFD97706),
+                                                isDark ? const Color(0xFF60A5FA) : const Color(0xFF7C2D12)
+                                              ]),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                  width: 65,
+                                  child: Text(CurrencyFormatter.format(dVal, currencyCode: 'AUD'),
+                                      style: AppTextStyles.dmSans(
+                                          size: 10,
+                                          weight: FontWeight.bold,
+                                          color: active
+                                              ? (isDark ? const Color(0xFFFFD700) : const Color(0xFF7C2D12))
+                                              : theme.getTextColor(context)),
+                                      textAlign: TextAlign.right)),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                            width: 65,
-                            child: Text(
-                                CurrencyFormatter.format(dVal,
-                                    currencyCode: 'AUD'),
-                                style: AppTextStyles.dmSans(
-                                    size: 10,
-                                    weight: FontWeight.bold,
-                                    color: active
-                                        ? (isDark
-                                            ? const Color(0xFFFFD700)
-                                            : const Color(0xFF7C2D12))
-                                        : theme.getTextColor(context)),
-                                textAlign: TextAlign.right)),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+
+                // Info tips
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF7C2D12).withValues(alpha: 0.3) : const Color(0xFFFFF7ED),
+                    border: Border.all(color: isDark ? const Color(0xFFF59E0B) : const Color(0xFFFCA5A5)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: RichText(
+                    text: TextSpan(
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? const Color(0xFFFFD700) : const Color(0xFF92400E), height: 1.5),
+                      children: [
+                        TextSpan(
+                            text: '📋 2025 Note: ',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFFFD700) : const Color(0xFF7C2D12))),
+                        TextSpan(
+                            text:
+                                '${_stampRates[snapState]['concessions'] ?? 'No concessions available for this buyer type.'} Rates updated for financial year 2024–25. Stamp duty is also known as transfer duty in QLD and WA. Always verify with your state revenue office.'),
                       ],
                     ),
-                  );
-                }),
+                  ),
+                ),
               ],
-            ),
-          ),
-
-          // Info tips
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF7C2D12).withValues(alpha: 0.3)
-                  : const Color(0xFFFFF7ED),
-              border: Border.all(
-                  color: isDark
-                      ? const Color(0xFFF59E0B)
-                      : const Color(0xFFFCA5A5)),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: RichText(
-              text: TextSpan(
-                style: AppTextStyles.dmSans(
-                    size: 11,
-                    color: isDark
-                        ? const Color(0xFFFFD700)
-                        : const Color(0xFF92400E),
-                    height: 1.5),
-                children: [
-                  TextSpan(
-                      text: '📋 2025 Note: ',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? const Color(0xFFFFD700)
-                              : const Color(0xFF7C2D12))),
-                  TextSpan(
-                      text:
-                          '${_stampRates[_selectedState]['concessions'] ?? 'No concessions available for this buyer type.'} Rates updated for financial year 2024–25. Stamp duty is also known as transfer duty in QLD and WA. Always verify with your state revenue office.'),
-                ],
-              ),
             ),
           ),
         ],
@@ -930,6 +823,7 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
     required double value,
     required double min,
     required double max,
+    String? errorText,
     required ValueChanged<double> onChanged,
   }) {
     final theme = widget.theme;
@@ -938,21 +832,13 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label.toUpperCase(),
-            style: AppTextStyles.dmSans(
-                size: 9,
-                color: theme.getMutedColor(context),
-                weight: FontWeight.w800,
-                letterSpacing: 0.5)),
+            style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context), weight: FontWeight.w800, letterSpacing: 0.5)),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : const Color(0xFFFFF8F0),
-            border: Border.all(
-                color:
-                    isDark ? theme.getBorderColor(context) : theme.borderColor),
+            color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFFFF8F0),
+            border: Border.all(color: errorText != null ? Colors.red : (isDark ? theme.getBorderColor(context) : theme.borderColor)),
             borderRadius: BorderRadius.circular(11),
           ),
           child: Row(
@@ -960,22 +846,15 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
               Text('\$ ',
                   style: AppTextStyles.dmSans(
                       size: 14,
-                      color:
-                          isDark ? const Color(0xFFFFD700) : theme.primaryColor,
+                      color: isDark ? const Color(0xFFFFD700) : theme.primaryColor,
                       weight: FontWeight.w700)),
               Expanded(
                 child: TextFormField(
                   key: ValueKey(value),
                   initialValue: value.toInt().toString(),
                   keyboardType: TextInputType.number,
-                  style: AppTextStyles.dmSans(
-                      size: 14,
-                      color: theme.getTextColor(context),
-                      weight: FontWeight.w800),
-                  decoration: const InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero),
+                  style: AppTextStyles.dmSans(size: 14, color: theme.getTextColor(context), weight: FontWeight.w800),
+                  decoration: const InputDecoration(isDense: true, border: InputBorder.none, contentPadding: EdgeInsets.zero),
                   onChanged: (val) {
                     final d = double.tryParse(val) ?? 0.0;
                     onChanged(d);
@@ -985,18 +864,17 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(errorText, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+        ],
         SliderTheme(
           data: SliderThemeData(
-            activeTrackColor:
-                isDark ? const Color(0xFFFFD700) : theme.primaryColor,
-            inactiveTrackColor:
-                (isDark ? const Color(0xFFFFD700) : theme.primaryColor)
-                    .withValues(alpha: 0.15),
+            activeTrackColor: isDark ? const Color(0xFFFFD700) : theme.primaryColor,
+            inactiveTrackColor: (isDark ? const Color(0xFFFFD700) : theme.primaryColor).withValues(alpha: 0.15),
             thumbColor: isDark ? const Color(0xFFFFD700) : theme.primaryColor,
             trackHeight: 3,
-            overlayColor:
-                (isDark ? const Color(0xFFFFD700) : theme.primaryColor)
-                    .withValues(alpha: 0.1),
+            overlayColor: (isDark ? const Color(0xFFFFD700) : theme.primaryColor).withValues(alpha: 0.1),
           ),
           child: Slider(
             value: value.clamp(min, max),
@@ -1008,12 +886,8 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('\$${(min / 1000).toStringAsFixed(0)}K',
-                style: AppTextStyles.dmSans(
-                    size: 9, color: theme.getMutedColor(context))),
-            Text('\$${(max / 1000000).toStringAsFixed(1)}M',
-                style: AppTextStyles.dmSans(
-                    size: 9, color: theme.getMutedColor(context))),
+            Text('\$${(min / 1000).toStringAsFixed(0)}K', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
+            Text('\$${(max / 1000000).toStringAsFixed(1)}M', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
           ],
         ),
       ],
@@ -1027,17 +901,11 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: active
-              ? widget.theme.primaryColor
-              : (isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : const Color(0xFFFFF8F0)),
+          color: active ? widget.theme.primaryColor : (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFFFF8F0)),
           border: Border.all(
               color: active
                   ? widget.theme.primaryColor
-                  : (isDark
-                      ? widget.theme.getBorderColor(context)
-                      : const Color(0x3B7C2D12))),
+                  : (isDark ? widget.theme.getBorderColor(context) : const Color(0x3B7C2D12))),
           borderRadius: BorderRadius.circular(10),
         ),
         alignment: Alignment.center,
@@ -1046,9 +914,7 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
           style: AppTextStyles.dmSans(
             size: 11,
             weight: FontWeight.w700,
-            color: active
-                ? Colors.white
-                : (isDark ? const Color(0xFFFFD700) : const Color(0xFF92400E)),
+            color: active ? Colors.white : (isDark ? const Color(0xFFFFD700) : const Color(0xFF92400E)),
           ),
         ),
       ),
@@ -1067,23 +933,15 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label,
-              style: AppTextStyles.dmSans(size: 8.5, color: Colors.white60)),
+          Text(label, style: AppTextStyles.dmSans(size: 8.5, color: Colors.white60)),
           const SizedBox(height: 2),
-          Text(value,
-              style: AppTextStyles.dmSans(
-                  size: 13,
-                  weight: FontWeight.w800,
-                  color: color ?? Colors.white),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(value, style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: color ?? Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );
   }
 
-  Widget _buildCostRow(String title, String sub, String val,
-      {bool isNegative = false}) {
+  Widget _buildCostRow(String title, String sub, String val, {bool isNegative = false}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1093,14 +951,8 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.bold,
-                        color: widget.theme.getTextColor(context))),
-                Text(sub,
-                    style: AppTextStyles.dmSans(
-                        size: 10, color: widget.theme.getMutedColor(context))),
+                Text(title, style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: widget.theme.getTextColor(context))),
+                Text(sub, style: AppTextStyles.dmSans(size: 10, color: widget.theme.getMutedColor(context))),
               ],
             ),
           ),
@@ -1110,9 +962,7 @@ class _AUStampDutyState extends ConsumerState<AUStampDuty> {
                   weight: FontWeight.w800,
                   color: isNegative
                       ? const Color(0xFF0F766E)
-                      : (isDark
-                          ? const Color(0xFFFFD700)
-                          : const Color(0xFF7C2D12)))),
+                      : (isDark ? const Color(0xFFFFD700) : const Color(0xFF7C2D12)))),
         ],
       ),
     );

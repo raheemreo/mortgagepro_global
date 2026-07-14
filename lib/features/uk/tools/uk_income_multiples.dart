@@ -9,6 +9,7 @@ import '../../../providers/saved_provider.dart';
 import '../../../providers/uk_rates_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 
+
 class UKIncomeMultiples extends ConsumerStatefulWidget {
   final CountryTheme theme;
   final SavedCalc? savedCalc;
@@ -27,13 +28,10 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
   final _targetPriceController = TextEditingController(text: '350000');
   final _depController = TextEditingController(text: '50000');
 
-  double _sal1 = 60000;
-  double _sal2 = 40000;
-  double _bonus = 10000;
-  double _targetPrice = 350000;
-  double _dep = 50000;
-
   bool _hasCalculated = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void initState() {
@@ -44,13 +42,11 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
       final double s2 = inputs['sal2'] ?? 0.0;
       _sal2Controller.text = s2.toStringAsFixed(0);
       _bonusController.text = (inputs['bonus'] ?? 10000.0).toStringAsFixed(0);
-      _targetPriceController.text =
-          (inputs['targetPrice'] ?? 350000.0).toStringAsFixed(0);
+      _targetPriceController.text = (inputs['targetPrice'] ?? 350000.0).toStringAsFixed(0);
       _depController.text = (inputs['dep'] ?? 50000.0).toStringAsFixed(0);
       _appType = s2 > 0.0 ? 'joint' : 'solo';
-      _hasCalculated = true;
+      _calculate();
     }
-    _calculateValues();
   }
 
   @override
@@ -63,15 +59,72 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
     super.dispose();
   }
 
-  void _calculateValues() {
+  double _val(TextEditingController c, double defaultVal) {
+    if (_hasCalculated && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    final sal1 = double.tryParse(_sal1Controller.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (sal1 <= 0) errors['sal1'] = 'Enter salary for Applicant 1';
+
+    double sal2 = 0;
+    if (_appType == 'joint') {
+      sal2 = double.tryParse(_sal2Controller.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      if (sal2 <= 0) errors['sal2'] = 'Enter salary for Applicant 2';
+    }
+
+    final bonus = double.tryParse(_bonusController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (bonus < 0) errors['bonus'] = 'Enter valid bonus';
+
+    final targetPrice = double.tryParse(_targetPriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (targetPrice <= 0) errors['targetPrice'] = 'Enter valid property price';
+
+    final dep = double.tryParse(_depController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (dep < 0) errors['dep'] = 'Enter valid deposit';
+
     setState(() {
-      _sal1 = double.tryParse(_sal1Controller.text) ?? 0;
-      _sal2 = _appType == 'joint'
-          ? (double.tryParse(_sal2Controller.text) ?? 0)
-          : 0;
-      _bonus = double.tryParse(_bonusController.text) ?? 0;
-      _targetPrice = double.tryParse(_targetPriceController.text) ?? 0;
-      _dep = double.tryParse(_depController.text) ?? 0;
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_sal1Controller] = sal1;
+      _calcSnapshot[_sal2Controller] = sal2;
+      _calcSnapshot[_bonusController] = bonus;
+      _calcSnapshot[_targetPriceController] = targetPrice;
+      _calcSnapshot[_depController] = dep;
+      _calcSnapshot['_appType'] = _appType;
+      _hasCalculated = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _sal1Controller.text = '60000';
+      _sal2Controller.text = '40000';
+      _bonusController.text = '10000';
+      _targetPriceController.text = '350000';
+      _depController.text = '50000';
+      _appType = 'solo';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _hasCalculated = false;
     });
   }
 
@@ -150,9 +203,15 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
 
   @override
   Widget build(BuildContext context) {
-    final s2Val = _appType == 'joint' ? _sal2 : 0.0;
-    final totalIncome = _sal1 + s2Val + (_bonus * 0.5);
-    final reqBorrow = _targetPrice - _dep;
+    final double sal1Val = _val(_sal1Controller, 60000);
+    final String activeAppType = _hasCalculated ? (_calcSnapshot['_appType'] ?? _appType) : _appType;
+    final double sal2Val = activeAppType == 'joint' ? _val(_sal2Controller, 40000) : 0.0;
+    final double bonusVal = _val(_bonusController, 10000);
+    final double targetPriceVal = _val(_targetPriceController, 350000);
+    final double depVal = _val(_depController, 50000);
+
+    final totalIncome = sal1Val + sal2Val + (bonusVal * 0.5);
+    final reqBorrow = targetPriceVal - depVal;
     final stdBorrow = totalIncome * 4.5;
     final shortfall = reqBorrow - stdBorrow;
     final multUsed = totalIncome > 0 ? (reqBorrow / totalIncome) : 0.0;
@@ -161,13 +220,21 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? const Color(0xFF141C33) : Colors.white;
     final textThemeColor = isDark ? Colors.white : const Color(0xFF0D0D2B);
-    final borderCol =
-        isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0x161A1A5E);
+    final borderCol = isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0x161A1A5E);
 
     // Live BoE base rate for context
     final ukRates = ref.watch(ukRatesProvider).valueOrNull;
     final boeBase  = ukRates?.boeBase.value ?? 4.25;
     final isLive   = ukRates?.isLive == true;
+
+    final isDirty = _hasCalculated && (
+      (double.tryParse(_sal1Controller.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_sal1Controller] ?? 0.0) ||
+      (_appType == 'joint' && (double.tryParse(_sal2Controller.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_sal2Controller] ?? 0.0)) ||
+      (double.tryParse(_bonusController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_bonusController] ?? 0.0) ||
+      (double.tryParse(_targetPriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_targetPriceController] ?? 0.0) ||
+      (double.tryParse(_depController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_depController] ?? 0.0) ||
+      _appType != (_calcSnapshot['_appType'] ?? '')
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,34 +249,42 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
           ),
           child: Row(
             children: [
-              Expanded(
-                  child: _rateCell(
-                      'Standard', '4–4.5×', 'Most lenders', textThemeColor)),
+              Expanded(child: _rateCell('Standard', '4–4.5×', 'Most lenders', textThemeColor)),
               _divider(),
-              Expanded(
-                  child: _rateCell('Higher LTI', '4.5–5×', 'FCA limit',
-                      isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))),
+              Expanded(child: _rateCell('Higher LTI', '4.5–5×', 'FCA limit', isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))),
               _divider(),
-              Expanded(
-                  child: _rateCell('Maximum', '5–5.5×', 'Specialist',
-                      isDark ? const Color(0xFF34D399) : const Color(0xFF059669))),
+              Expanded(child: _rateCell('Maximum', '5–5.5×', 'Specialist', isDark ? const Color(0xFF34D399) : const Color(0xFF059669))),
               _divider(),
-              Expanded(
-                  child: _rateCell(
-                      'BoE Base', '${boeBase.toStringAsFixed(2)}%${isLive ? ' 🟢' : ''}', 'Mortgage ref', textThemeColor)),
+              Expanded(child: _rateCell('BoE Base', '${boeBase.toStringAsFixed(2)}%${isLive ? ' 🟢' : ''}', 'Mortgage ref', textThemeColor)),
             ],
           ),
         ),
         const SizedBox(height: 16),
 
-        Text(
-          'INCOME DETAILS',
-          style: AppTextStyles.dmSans(
-            size: 11,
-            weight: FontWeight.w700,
-            color: widget.theme.mutedColor,
-            letterSpacing: 1.0,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'INCOME DETAILS',
+              style: AppTextStyles.dmSans(
+                size: 11,
+                weight: FontWeight.w700,
+                color: widget.theme.mutedColor,
+                letterSpacing: 1.0,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: widget.theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -241,7 +316,6 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
                       active: _appType == 'solo',
                       onTap: () => setState(() {
                         _appType = 'solo';
-                        _calculateValues();
                       }),
                     ),
                   ),
@@ -252,26 +326,19 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
                       active: _appType == 'joint',
                       onTap: () => setState(() {
                         _appType = 'joint';
-                        _calculateValues();
                       }),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 14),
-              _inputField(
-                  label: 'Annual Salary (Applicant 1) (£)',
-                  controller: _sal1Controller),
+              _inputField(label: 'Annual Salary (Applicant 1) (£)', controller: _sal1Controller, errorText: _errors['sal1']),
               if (_appType == 'joint') ...[
                 const SizedBox(height: 12),
-                _inputField(
-                    label: 'Annual Salary (Applicant 2) (£)',
-                    controller: _sal2Controller),
+                _inputField(label: 'Annual Salary (Applicant 2) (£)', controller: _sal2Controller, errorText: _errors['sal2']),
               ],
               const SizedBox(height: 12),
-              _inputField(
-                  label: 'Bonus / Other Income (50% counted) (£)',
-                  controller: _bonusController),
+              _inputField(label: 'Bonus / Other Income (50% counted) (£)', controller: _bonusController, errorText: _errors['bonus']),
             ],
           ),
         ),
@@ -298,421 +365,509 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
           ),
           child: Column(
             children: [
-              _inputField(
-                  label: 'Target Property Price (£)',
-                  controller: _targetPriceController),
+              _inputField(label: 'Target Property Price (£)', controller: _targetPriceController, errorText: _errors['targetPrice']),
               const SizedBox(height: 12),
-              _inputField(
-                  label: 'Deposit Available (£)', controller: _depController),
+              _inputField(label: 'Deposit Available (£)', controller: _depController, errorText: _errors['dep']),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC8102E),
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                  ),
+                  onPressed: _calculate,
+                  child: Text(
+                    '📋 Check Income Multiples',
+                    style: AppTextStyles.dmSans(size: 14, color: Colors.white, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
             ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Calculate Button
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFC8102E),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13)),
-            ),
-            onPressed: () {
-              _calculateValues();
-              setState(() => _hasCalculated = true);
-            },
-            child: Text(
-              '📋 Check Income Multiples',
-              style: AppTextStyles.dmSans(
-                  size: 14, color: Colors.white, weight: FontWeight.w800),
-            ),
           ),
         ),
         const SizedBox(height: 20),
 
         if (_hasCalculated) ...[
-          // Result Hero Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'STANDARD BORROWING (4.5×)',
-                  style: AppTextStyles.dmSans(
-                      size: 10,
-                      weight: FontWeight.w700,
-                      color: Colors.white60,
-                      letterSpacing: 0.7),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      CurrencyFormatter.format(stdBorrow, symbol: '£')
-                          .split('.')
-                          .first,
-                      style: AppTextStyles.dmSans(
-                              size: 34,
-                              weight: FontWeight.w800,
-                              color: Colors.white)
-                          .copyWith(fontFamily: 'Georgia'),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Check Income Multiples to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
-                    GestureDetector(
-                      onTap: () async {
-                        final calc = SavedCalc.create(
-                          country: 'UK',
-                          calcType: 'Income Multiples',
-                          inputs: {
-                            'sal1': _sal1,
-                            'sal2': _sal2,
-                            'bonus': _bonus,
-                            'targetPrice': _targetPrice,
-                            'dep': _dep,
-                          },
-                          results: {
-                            'Standard Borrowing': stdBorrow,
-                            'Required Borrowing': reqBorrow,
-                            'Shortfall': shortfall,
-                            'Multiple Used': multUsed,
-                          },
-                          label:
-                              '${CurrencyFormatter.compact(stdBorrow, symbol: '£')} std borrow · ${multUsed.toStringAsFixed(1)}x multiple',
-                          currencyCode: 'GBP',
-                        );
-                        final messenger = ScaffoldMessenger.of(context);
-                        await ref.read(savedProvider.notifier).save(calc);
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content:
-                                Text('✓ Income Multiple calculation saved'),
-                            backgroundColor: Color(0xFF0D9488),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3)),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.save,
-                                color: Colors.white, size: 14),
-                            const SizedBox(width: 4),
-                            Text('Save',
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    weight: FontWeight.w800,
-                                    color: Colors.white)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Combined income: ${CurrencyFormatter.format(totalIncome, symbol: '£').split('.').first} p.a.',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10)),
-                        child: Column(
-                          children: [
-                            Text('Required',
-                                style: AppTextStyles.dmSans(
-                                    size: 9, color: Colors.white54)),
-                            const SizedBox(height: 2),
-                            Text(
-                              CurrencyFormatter.format(reqBorrow, symbol: '£')
-                                  .split('.')
-                                  .first,
-                              style: AppTextStyles.dmSans(
-                                  size: 13,
-                                  weight: FontWeight.w800,
-                                  color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10)),
-                        child: Column(
-                          children: [
-                            Text('Shortfall',
-                                style: AppTextStyles.dmSans(
-                                    size: 9, color: Colors.white54)),
-                            const SizedBox(height: 2),
-                            Text(
-                              shortfall > 0
-                                  ? '-${CurrencyFormatter.format(shortfall, symbol: '£').split('.').first}'
-                                  : '+${CurrencyFormatter.format(shortfall.abs(), symbol: '£').split('.').first}',
-                              style: AppTextStyles.dmSans(
-                                  size: 13,
-                                  weight: FontWeight.w800,
-                                  color: shortfall > 0
-                                      ? Colors.redAccent
-                                      : const Color(0xFF90EE90)),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10)),
-                        child: Column(
-                          children: [
-                            Text('Multiple Used',
-                                style: AppTextStyles.dmSans(
-                                    size: 9, color: Colors.white54)),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${multUsed.toStringAsFixed(2)}×',
-                              style: AppTextStyles.dmSans(
-                                  size: 13,
-                                  weight: FontWeight.w800,
-                                  color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          Text(
-            'LENDER CAPACITY & BANDS',
-            style: AppTextStyles.dmSans(
-              size: 11,
-              weight: FontWeight.w700,
-              color: widget.theme.mutedColor,
-              letterSpacing: 1.0,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Lender list grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1.25,
-            ),
-            itemCount: lenders.length,
-            itemBuilder: (context, idx) {
-              final lender = lenders[idx];
-              final mult = lender['multiple'] as double;
-              final maxAmt = totalIncome * mult;
-              final ok = maxAmt >= reqBorrow;
-              final topLender = lender['type'] == 'top' && ok;
-
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: topLender
-                      ? (isDark
-                          ? const Color(0xFF022C22)
-                          : const Color(0xFFF0FDF4))
-                      : cardBg,
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: topLender
-                        ? const Color(0xFF059669)
-                        : (isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0x161A1A5E)),
-                    width: topLender ? 2 : 1,
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          lender['name'] as String,
-                          style: AppTextStyles.dmSans(
-                                  size: 11.5,
-                                  weight: FontWeight.w800,
-                                  color: textThemeColor)
-                              .copyWith(fontFamily: 'Georgia'),
-                        ),
-                        Text(
-                          '$mult× income · ${lender['note']}',
-                          style: AppTextStyles.dmSans(
-                              size: 8.5, color: widget.theme.mutedColor),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      CurrencyFormatter.format(maxAmt, symbol: '£')
-                          .split('.')
-                          .first,
-                      style: AppTextStyles.dmSans(
-                          size: 14.5,
-                          weight: FontWeight.w800,
-                          color: ok
-                              ? (isDark ? const Color(0xFF34D399) : const Color(0xFF059669))
-                              : (isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E))),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: ok
-                            ? (isDark
-                                ? const Color(0xFF065F46).withValues(alpha: 0.2)
-                                : const Color(0xFFD1FAE5))
-                            : (isDark
-                                ? const Color(0xFF991B1B).withValues(alpha: 0.2)
-                                : const Color(0xFFFEE2E2)),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        ok ? '✓ Sufficient' : '✗ Short',
-                        style: AppTextStyles.dmSans(
-                          size: 8,
-                          weight: FontWeight.w800,
-                          color: ok
-                              ? (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF065F46))
-                              : (isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Capacity Bars Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: borderCol),
+                ],
+              ),
             ),
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Borrowing Capacity by Multiple',
-                  style: AppTextStyles.dmSans(
-                          size: 12,
-                          weight: FontWeight.w800,
-                          color: textThemeColor)
-                      .copyWith(fontFamily: 'Georgia'),
-                ),
-                const SizedBox(height: 12),
-                ...[3.5, 4.0, 4.5, 5.0, 5.5].map((m) {
-                  final amt = totalIncome * m;
-                  final pct = maxBorrow > 0 ? (amt / maxBorrow) : 0.0;
-                  final color = m <= 4.0
-                      ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E))
-                      : m <= 4.5
-                          ? (isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
-                          : (isDark ? const Color(0xFF34D399) : const Color(0xFF059669));
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 70,
-                          child: Text(
-                            '$m× salary',
+                // Result Hero Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'STANDARD BORROWING (4.5×)',
+                        style: AppTextStyles.dmSans(
+                            size: 10,
+                            weight: FontWeight.w700,
+                            color: Colors.white60,
+                            letterSpacing: 0.7),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            CurrencyFormatter.format(stdBorrow, symbol: '£')
+                                .split('.')
+                                .first,
                             style: AppTextStyles.dmSans(
-                                size: 10,
-                                color: widget.theme.mutedColor,
-                                weight: FontWeight.w700),
+                                    size: 34,
+                                    weight: FontWeight.w800,
+                                    color: Colors.white)
+                                .copyWith(fontFamily: 'Georgia'),
                           ),
-                        ),
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(5),
-                            child: Container(
-                              height: 18,
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : const Color(0xFFF5F5F8),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: FractionallySizedBox(
-                                  widthFactor: pct.clamp(0.0, 1.0),
-                                  child: Container(color: color),
+                          GestureDetector(
+                            onTap: () async {
+                              final calc = SavedCalc.create(
+                                country: 'UK',
+                                calcType: 'Income Multiples',
+                                inputs: {
+                                  'sal1': sal1Val,
+                                  'sal2': sal2Val,
+                                  'bonus': bonusVal,
+                                  'targetPrice': targetPriceVal,
+                                  'dep': depVal,
+                                },
+                                results: {
+                                  'Standard Borrowing': stdBorrow,
+                                  'Required Borrowing': reqBorrow,
+                                  'Shortfall': shortfall,
+                                  'Multiple Used': multUsed,
+                                },
+                                label:
+                                    '${CurrencyFormatter.compact(stdBorrow, symbol: '£')} std borrow · ${multUsed.toStringAsFixed(1)}x multiple',
+                                currencyCode: 'GBP',
+                              );
+                              final messenger = ScaffoldMessenger.of(context);
+                              await ref.read(savedProvider.notifier).save(calc);
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text('✓ Income Multiple calculation saved'),
+                                  backgroundColor: Color(0xFF0D9488),
                                 ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.3)),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.save,
+                                      color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text('Save',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11,
+                                          weight: FontWeight.w800,
+                                          color: Colors.white)),
+                                ],
                               ),
                             ),
                           ),
-                        ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Combined income: ${CurrencyFormatter.format(totalIncome, symbol: '£').split('.').first} p.a.',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: Column(
+                                children: [
+                                  Text('Required',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9, color: Colors.white54)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    CurrencyFormatter.format(reqBorrow, symbol: '£')
+                                        .split('.')
+                                        .first,
+                                    style: AppTextStyles.dmSans(
+                                        size: 13,
+                                        weight: FontWeight.w800,
+                                        color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: Column(
+                                children: [
+                                  Text('Shortfall',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9, color: Colors.white54)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    shortfall > 0
+                                        ? '-${CurrencyFormatter.format(shortfall, symbol: '£').split('.').first}'
+                                        : '+${CurrencyFormatter.format(shortfall.abs(), symbol: '£').split('.').first}',
+                                    style: AppTextStyles.dmSans(
+                                        size: 13,
+                                        weight: FontWeight.w800,
+                                        color: shortfall > 0
+                                            ? Colors.redAccent
+                                            : const Color(0xFF90EE90)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: Column(
+                                children: [
+                                  Text('Multiple Req',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9, color: Colors.white54)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${multUsed.toStringAsFixed(2)}x',
+                                    style: AppTextStyles.dmSans(
+                                        size: 13,
+                                        weight: FontWeight.w800,
+                                        color: multUsed > 4.75
+                                            ? Colors.redAccent
+                                            : const Color(0xFFFFD700)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // LTV alert / warning
+                if (shortfall > 0 && reqBorrow > maxBorrow)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withValues(alpha: 0.15),
+                      border: Border.all(
+                          color: Colors.redAccent.withValues(alpha: 0.3)),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 18)),
                         const SizedBox(width: 10),
-                        SizedBox(
-                          width: 60,
-                          child: Text(
-                            CurrencyFormatter.compact(amt, symbol: '£'),
-                            style: AppTextStyles.dmSans(
-                                size: 11,
-                                weight: FontWeight.w800,
-                                color: textThemeColor),
-                            textAlign: TextAlign.right,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Shortfall Exceeds Maximum Borrowing',
+                                style: AppTextStyles.dmSans(
+                                    size: 13,
+                                    weight: FontWeight.w800,
+                                    color: Colors.redAccent),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Your required borrowing of ${CurrencyFormatter.format(reqBorrow, symbol: '£').split('.').first} exceeds the absolute maximum 5.5× multiple of ${CurrencyFormatter.format(maxBorrow, symbol: '£').split('.').first}. You will need a larger deposit of at least ${CurrencyFormatter.format(reqBorrow - maxBorrow + depVal, symbol: '£').split('.').first} to buy this property.',
+                                style: AppTextStyles.dmSans(
+                                    size: 10.5,
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                    height: 1.4),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  );
-                }),
+                  )
+                else if (shortfall > 0)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      border:
+                          Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('ℹ️', style: TextStyle(fontSize: 18)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Shortfall Detected (Standard 4.5×)',
+                                style: AppTextStyles.dmSans(
+                                    size: 13,
+                                    weight: FontWeight.w800,
+                                    color: isDark
+                                        ? const Color(0xFFFBBF24)
+                                        : const Color(0xFFB45309)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'A standard 4.5× mortgage results in a shortfall of ${CurrencyFormatter.format(shortfall, symbol: '£').split('.').first}. However, your required multiple is ${multUsed.toStringAsFixed(2)}x, which is within the 5.5× maximum. You may qualify for high-LTI or specialist lending schemes.',
+                                style: AppTextStyles.dmSans(
+                                    size: 10.5,
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                    height: 1.4),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF059669).withValues(alpha: 0.15),
+                      border: Border.all(
+                          color: const Color(0xFF059669).withValues(alpha: 0.3)),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('✅', style: TextStyle(fontSize: 18)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Standard Borrowing Confirmed',
+                                style: AppTextStyles.dmSans(
+                                    size: 13,
+                                    weight: FontWeight.w800,
+                                    color: const Color(0xFF059669)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Great news! Your required borrowing is within the standard 4.5× multiple. Most high-street banks in the UK will support this application.',
+                                style: AppTextStyles.dmSans(
+                                    size: 10.5,
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                    height: 1.4),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 16),
+
+                // Lenders List Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'UK Lenders & Multiples Matcher',
+                        style: AppTextStyles.dmSans(
+                            size: 12,
+                            weight: FontWeight.w800,
+                            color: textThemeColor),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Matches your required ${multUsed.toStringAsFixed(2)}x multiple against typical UK lender caps',
+                        style: AppTextStyles.dmSans(
+                            size: 9.5, color: widget.theme.mutedColor),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('LENDER',
+                              style: AppTextStyles.dmSans(
+                                  size: 8.5,
+                                  weight: FontWeight.w800,
+                                  color: widget.theme.mutedColor)),
+                          Text('STATUS & CAP',
+                              style: AppTextStyles.dmSans(
+                                  size: 8.5,
+                                  weight: FontWeight.w800,
+                                  color: widget.theme.mutedColor)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ...lenders.map((l) {
+                        final double multCap = l['multiple'] as double;
+                        final double amt = totalIncome * multCap;
+                        final bool match = multUsed <= multCap;
+
+                        final statusColor = match
+                            ? (isDark
+                                ? const Color(0xFF34D399)
+                                : const Color(0xFF065F46))
+                            : (isDark
+                                ? const Color(0xFFFCA5A5)
+                                : const Color(0xFF991B1B));
+                        final statusBg = match
+                            ? (isDark
+                                ? const Color(0xFF065F46)
+                                : const Color(0xFFD1FAE5))
+                            : (isDark
+                                ? const Color(0xFF991B1B)
+                                : const Color(0xFFFEE2E2));
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          margin: const EdgeInsets.only(bottom: 6),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.02)
+                                : const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: isDark ? Colors.white12 : Colors.black12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l['name'] as String,
+                                    style: AppTextStyles.dmSans(
+                                        size: 11.5,
+                                        weight: FontWeight.w800,
+                                        color: textThemeColor),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${l['note']} (${multCap.toStringAsFixed(1)}x)',
+                                    style: AppTextStyles.dmSans(
+                                        size: 9, color: widget.theme.mutedColor),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                        color: statusBg,
+                                        borderRadius: BorderRadius.circular(8)),
+                                    child: Text(
+                                      match ? 'Match' : 'Shortfall',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9,
+                                          weight: FontWeight.w800,
+                                          color: statusColor),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  SizedBox(
+                                    width: 70,
+                                    child: Text(
+                                      CurrencyFormatter.format(amt, symbol: '£')
+                                          .split('.')
+                                          .first,
+                                      style: AppTextStyles.dmSans(
+                                          size: 11,
+                                          weight: FontWeight.w800,
+                                          color: textThemeColor),
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-          const SizedBox(height: 20),
         ],
       ],
     );
@@ -783,7 +938,7 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
   }
 
   Widget _inputField(
-      {required String label, required TextEditingController controller}) {
+      {required String label, required TextEditingController controller, String? errorText}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -801,7 +956,9 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
         TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onChanged: (v) => _calculateValues(),
+          onChanged: (v) {
+            setState(() {});
+          },
           style: AppTextStyles.dmSans(
             size: 13,
             weight: FontWeight.w700,
@@ -817,10 +974,18 @@ class _UKIncomeMultiplesState extends ConsumerState<UKIncomeMultiples> {
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
+              borderSide: errorText != null ? const BorderSide(color: Colors.red, width: 1.5) : BorderSide.none,
             ),
+            enabledBorder: errorText != null ? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ) : null,
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(errorText, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+        ],
       ],
     );
   }

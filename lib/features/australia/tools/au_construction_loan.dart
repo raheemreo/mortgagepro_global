@@ -32,11 +32,13 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
     _BuildStage(name: 'Frame', pct: 20, status: 'done', months: 2.0),
     _BuildStage(name: 'Lock-Up', pct: 25, status: 'active', months: 2.5),
     _BuildStage(name: 'Fit-Out', pct: 25, status: 'pending', months: 3.5),
-    _BuildStage(
-        name: 'Practical Completion', pct: 15, status: 'pending', months: 2.5),
+    _BuildStage(name: 'Practical Completion', pct: 15, status: 'pending', months: 2.5),
   ];
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   void _reset() {
     setState(() {
@@ -59,6 +61,8 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
       _stages[4].status = 'pending';
       _stages[4].pct = 15;
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
     });
   }
 
@@ -69,25 +73,88 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
     return p * r * pow(1 + r, n) / (pow(1 + r, n) - 1);
   }
 
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_totalCost <= 0) {
+      errors['totalCost'] = 'Enter valid build cost';
+    }
+    if (_landValue <= 0) {
+      errors['landValue'] = 'Enter valid land value';
+    }
+    if (_deposit < 0) {
+      errors['deposit'] = 'Deposit cannot be negative';
+    }
+    if (_constRate <= 0 || _constRate > 25) {
+      errors['constRate'] = 'Enter rate (0.1% - 25%)';
+    }
+    if (_piRate <= 0 || _piRate > 25) {
+      errors['piRate'] = 'Enter rate (0.1% - 25%)';
+    }
+    if (_loanTermYr <= 0 || _loanTermYr > 50) {
+      errors['loanTermYr'] = 'Enter term (1-50)';
+    }
+    if (_buildMonths <= 0 || _buildMonths > 120) {
+      errors['buildMonths'] = 'Enter duration (1-120)';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['totalCost'] = _totalCost;
+      _calcSnapshot['landValue'] = _landValue;
+      _calcSnapshot['deposit'] = _deposit;
+      _calcSnapshot['constRate'] = _constRate;
+      _calcSnapshot['piRate'] = _piRate;
+      _calcSnapshot['loanTermYr'] = _loanTermYr;
+      _calcSnapshot['buildMonths'] = _buildMonths;
+      _calcSnapshot['builderType'] = _builderType;
+      _calcSnapshot['stageStatuses'] = _stages.map((s) => s.status).toList();
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation() async {
-    final loanAmt = _landValue + _totalCost - _deposit;
-    final propValue = _landValue + _totalCost;
+    final double snapTotalCost = _calcSnapshot['totalCost'] ?? _totalCost;
+    final double snapLandValue = _calcSnapshot['landValue'] ?? _landValue;
+    final double snapDeposit = _calcSnapshot['deposit'] ?? _deposit;
+    final double snapConstRate = _calcSnapshot['constRate'] ?? _constRate;
+    final double snapPiRate = _calcSnapshot['piRate'] ?? _piRate;
+    final int snapLoanTermYr = _calcSnapshot['loanTermYr'] ?? _loanTermYr;
+    final int snapBuildMonths = _calcSnapshot['buildMonths'] ?? _buildMonths;
+
+    final loanAmt = snapLandValue + snapTotalCost - snapDeposit;
+    final propValue = snapLandValue + snapTotalCost;
     final lvr = propValue > 0 ? (loanAmt / propValue) * 100 : 0.0;
-    final monthlyConstRate = _constRate / 100 / 12;
+    final monthlyConstRate = snapConstRate / 100 / 12;
 
     final List<_DrawdownEvent> drawdownEvents = [];
     double cumMonths = 0;
     for (int i = 0; i < _stages.length; i++) {
       final s = _stages[i];
       cumMonths += s.months;
-      final mo = min(cumMonths.round(), _buildMonths);
+      final mo = min(cumMonths.round(), snapBuildMonths);
       drawdownEvents.add(_DrawdownEvent(
           mo: mo, amt: loanAmt * s.pct / 100, stageName: s.name, stageIdx: i));
     }
 
     double drawn = 0;
     double totalConstInt = 0;
-    for (int mo = 1; mo <= _buildMonths; mo++) {
+    for (int mo = 1; mo <= snapBuildMonths; mo++) {
       for (final ev in drawdownEvents) {
         if (ev.mo == mo) drawn += ev.amt;
       }
@@ -96,7 +163,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
       totalConstInt += interest;
     }
 
-    final piPmt = _monthlyPmt(loanAmt, _piRate, _loanTermYr);
+    final piPmt = _monthlyPmt(loanAmt, snapPiRate, snapLoanTermYr);
 
     final labelCtrl = TextEditingController(text: 'My Construction Loan');
     final confirmed = await showDialog<bool>(
@@ -106,30 +173,24 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('💾 Save Project',
-            style: AppTextStyles.playfair(
-                size: 16, color: widget.theme.getTextColor(context))),
+            style: AppTextStyles.playfair(size: 16, color: widget.theme.getTextColor(context))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-                'Saving: \$${CurrencyFormatter.compact(loanAmt, symbol: 'AU\$')} total loan',
-                style: AppTextStyles.dmSans(
-                    size: 11, color: widget.theme.getMutedColor(context))),
+            Text('Saving: \$${CurrencyFormatter.compact(loanAmt, symbol: 'AU\$')} total loan',
+                style: AppTextStyles.dmSans(size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
             TextField(
               controller: labelCtrl,
               autofocus: true,
-              style: AppTextStyles.dmSans(
-                  size: 13, color: widget.theme.getTextColor(context)),
+              style: AppTextStyles.dmSans(size: 13, color: widget.theme.getTextColor(context)),
               decoration: InputDecoration(
                 hintText: 'Label (e.g. Knockdown Rebuild)',
                 hintStyle: AppTextStyles.dmSans(size: 13, color: Colors.grey),
                 filled: true,
                 fillColor: widget.theme.getBgColor(context),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
             ),
           ],
@@ -137,40 +198,33 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel',
-                style: AppTextStyles.dmSans(
-                    size: 12, color: Colors.grey, weight: FontWeight.w700)),
+            child: Text('Cancel', style: AppTextStyles.dmSans(size: 12, color: Colors.grey, weight: FontWeight.w700)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF002868),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('Save',
-                style: AppTextStyles.dmSans(
-                    size: 12, color: Colors.white, weight: FontWeight.w700)),
+            child: Text('Save', style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w700)),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      final label = labelCtrl.text.trim().isNotEmpty
-          ? labelCtrl.text.trim()
-          : 'Construction Project';
+      final label = labelCtrl.text.trim().isNotEmpty ? labelCtrl.text.trim() : 'Construction Project';
       final calc = SavedCalc.create(
         country: 'Australia',
         calcType: 'Construction Loan',
         inputs: {
-          'totalCost': _totalCost,
-          'landValue': _landValue,
-          'deposit': _deposit,
-          'constRate': _constRate,
-          'piRate': _piRate,
-          'loanTermYr': _loanTermYr.toDouble(),
-          'buildMonths': _buildMonths.toDouble(),
+          'totalCost': snapTotalCost,
+          'landValue': snapLandValue,
+          'deposit': snapDeposit,
+          'constRate': snapConstRate,
+          'piRate': snapPiRate,
+          'loanTermYr': snapLoanTermYr.toDouble(),
+          'buildMonths': snapBuildMonths.toDouble(),
         },
         results: {
           'loanAmount': loanAmt,
@@ -187,9 +241,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Project saved!',
-                style: AppTextStyles.dmSans(
-                    color: Colors.white, weight: FontWeight.w700)),
+            content: Text('✅ Project saved!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
             backgroundColor: const Color(0xFF002868),
             behavior: SnackBarBehavior.floating,
           ),
@@ -203,17 +255,25 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final loanAmt = _landValue + _totalCost - _deposit;
-    final propValue = _landValue + _totalCost;
+    final double snapTotalCost = _showResults ? (_calcSnapshot['totalCost'] ?? _totalCost) : _totalCost;
+    final double snapLandValue = _showResults ? (_calcSnapshot['landValue'] ?? _landValue) : _landValue;
+    final double snapDeposit = _showResults ? (_calcSnapshot['deposit'] ?? _deposit) : _deposit;
+    final double snapConstRate = _showResults ? (_calcSnapshot['constRate'] ?? _constRate) : _constRate;
+    final double snapPiRate = _showResults ? (_calcSnapshot['piRate'] ?? _piRate) : _piRate;
+    final int snapLoanTermYr = _showResults ? (_calcSnapshot['loanTermYr'] ?? _loanTermYr) : _loanTermYr;
+    final int snapBuildMonths = _showResults ? (_calcSnapshot['buildMonths'] ?? _buildMonths) : _buildMonths;
+
+    final loanAmt = snapLandValue + snapTotalCost - snapDeposit;
+    final propValue = snapLandValue + snapTotalCost;
     final lvr = propValue > 0 ? (loanAmt / propValue) * 100 : 0.0;
-    final monthlyConstRate = _constRate / 100 / 12;
+    final monthlyConstRate = snapConstRate / 100 / 12;
 
     final List<_DrawdownEvent> drawdownEvents = [];
     double cumMonths = 0;
     for (int i = 0; i < _stages.length; i++) {
       final s = _stages[i];
       cumMonths += s.months;
-      final mo = min(cumMonths.round(), _buildMonths);
+      final mo = min(cumMonths.round(), snapBuildMonths);
       drawdownEvents.add(_DrawdownEvent(
           mo: mo, amt: loanAmt * s.pct / 100, stageName: s.name, stageIdx: i));
     }
@@ -221,7 +281,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
     double drawn = 0;
     final List<_DrawdownMonthData> monthlyData = [];
     double totalConstInt = 0;
-    for (int mo = 1; mo <= _buildMonths; mo++) {
+    for (int mo = 1; mo <= snapBuildMonths; mo++) {
       for (final ev in drawdownEvents) {
         if (ev.mo == mo) drawn += ev.amt;
       }
@@ -235,16 +295,23 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
           remaining: loanAmt - drawn));
     }
 
-    final piPmt = _monthlyPmt(loanAmt, _piRate, _loanTermYr);
-    final avgMonthlyInt = _buildMonths > 0 ? totalConstInt / _buildMonths : 0.0;
+    final piPmt = _monthlyPmt(loanAmt, snapPiRate, snapLoanTermYr);
+    final avgMonthlyInt = snapBuildMonths > 0 ? totalConstInt / snapBuildMonths : 0.0;
+
+    // Stage statuses from snapshot if calculated
+    final snapStatuses = _showResults
+        ? (_calcSnapshot['stageStatuses'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? _stages.map((s) => s.status).toList()
+        : _stages.map((s) => s.status).toList();
 
     // Build stage tracker progress
     double donePct = 0;
-    for (final s in _stages) {
-      if (s.status == 'done') {
-        donePct += s.pct;
-      } else if (s.status == 'active') {
-        donePct += s.pct / 2;
+    for (int i = 0; i < _stages.length; i++) {
+      final status = snapStatuses[i];
+      final pct = _stages[i].pct;
+      if (status == 'done') {
+        donePct += pct;
+      } else if (status == 'active') {
+        donePct += pct / 2;
       }
     }
     final drawnProgress = loanAmt * donePct / 100;
@@ -262,8 +329,8 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
     // Post-build first 10 years amortization stacked bar points
     final List<_PostBuildYearData> postBuildPts = [];
     double pbBal = loanAmt;
-    final r = _piRate / 100 / 12;
-    for (int y = 1; y <= min(_loanTermYr, 10); y++) {
+    final r = snapPiRate / 100 / 12;
+    for (int y = 1; y <= min(snapLoanTermYr, 10); y++) {
       double intYear = 0;
       double prinYear = 0;
       for (int m = 0; m < 12; m++) {
@@ -275,6 +342,29 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
       postBuildPts.add(
           _PostBuildYearData(year: y, principal: prinYear, interest: intYear));
     }
+
+    bool stagesDirty = false;
+    if (_showResults && _calcSnapshot['stageStatuses'] != null) {
+      final snapList = _calcSnapshot['stageStatuses'] as List<dynamic>;
+      for (int i = 0; i < _stages.length; i++) {
+        if (_stages[i].status != snapList[i]) {
+          stagesDirty = true;
+          break;
+        }
+      }
+    }
+
+    final isDirty = _showResults && (
+      _totalCost != (_calcSnapshot['totalCost'] ?? 0.0) ||
+      _landValue != (_calcSnapshot['landValue'] ?? 0.0) ||
+      _deposit != (_calcSnapshot['deposit'] ?? 0.0) ||
+      _constRate != (_calcSnapshot['constRate'] ?? 0.0) ||
+      _piRate != (_calcSnapshot['piRate'] ?? 0.0) ||
+      _loanTermYr != (_calcSnapshot['loanTermYr'] ?? 0) ||
+      _buildMonths != (_calcSnapshot['buildMonths'] ?? 0) ||
+      _builderType != (_calcSnapshot['builderType'] ?? '') ||
+      stagesDirty
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,12 +378,8 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                     const Color(0xFF7C2D12).withValues(alpha: 0.2),
                     const Color(0xFF7C2D12).withValues(alpha: 0.1)
                   ])
-                : const LinearGradient(
-                    colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5)]),
-            border: Border.all(
-                color: isDark
-                    ? const Color(0xFFEA580C).withValues(alpha: 0.4)
-                    : const Color(0xFFFCA5A5)),
+                : const LinearGradient(colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5)]),
+            border: Border.all(color: isDark ? const Color(0xFFEA580C).withValues(alpha: 0.4) : const Color(0xFFFCA5A5)),
             borderRadius: BorderRadius.circular(15),
           ),
           child: Row(
@@ -308,18 +394,14 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                     Text('How Construction Loans Work in Australia',
                         style: AppTextStyles.playfair(
                             size: 12,
-                            color: isDark
-                                ? const Color(0xFFFFD700)
-                                : const Color(0xFF7C2D12),
+                            color: isDark ? const Color(0xFFFFD700) : const Color(0xFF7C2D12),
                             weight: FontWeight.w800)),
                     const SizedBox(height: 2),
                     Text(
                       'Funds are released in progressive drawdowns at each build stage. You only pay interest on the amount drawn down — not the full loan — during construction. Once the build is complete, it converts to a standard P&I mortgage.',
                       style: AppTextStyles.dmSans(
                           size: 10,
-                          color: isDark
-                              ? const Color(0xFFFFEDD5)
-                              : const Color(0xFFC2410C),
+                          color: isDark ? const Color(0xFFFFEDD5) : const Color(0xFFC2410C),
                           height: 1.4),
                     ),
                   ],
@@ -337,9 +419,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
           decoration: BoxDecoration(
             color: isDark ? theme.getCardColor(context) : Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-                color:
-                    isDark ? theme.getBorderColor(context) : theme.borderColor),
+            border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,9 +430,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                   Text('Construction Finance',
                       style: AppTextStyles.dmSans(
                           size: 11,
-                          color: isDark
-                              ? const Color(0xFFFFD700)
-                              : theme.primaryColor,
+                          color: isDark ? const Color(0xFFFFD700) : theme.primaryColor,
                           weight: FontWeight.w700,
                           letterSpacing: 0.5)),
                   GestureDetector(
@@ -360,9 +438,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                     child: Text('Reset ↺',
                         style: AppTextStyles.dmSans(
                             size: 11,
-                            color: isDark
-                                ? const Color(0xFFFFD700)
-                                : theme.primaryColor,
+                            color: isDark ? const Color(0xFFFFD700) : theme.primaryColor,
                             weight: FontWeight.w700)),
                   ),
                 ],
@@ -371,12 +447,13 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
               Row(
                 children: [
                   Expanded(
-                      child: _buildInputBox(
-                          'Total Build Cost', 'AUD \$', _totalCost,
+                      child: _buildInputBox('Total Build Cost', 'AUD \$', _totalCost,
+                          errorText: _errors['totalCost'],
                           onChanged: (v) => setState(() => _totalCost = v))),
                   const SizedBox(width: 10),
                   Expanded(
                       child: _buildInputBox('Land Value', 'AUD \$', _landValue,
+                          errorText: _errors['landValue'],
                           onChanged: (v) => setState(() => _landValue = v))),
                 ],
               ),
@@ -385,12 +462,13 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                 children: [
                   Expanded(
                       child: _buildInputBox('Deposit Paid', 'AUD \$', _deposit,
+                          errorText: _errors['deposit'],
                           onChanged: (v) => setState(() => _deposit = v))),
                   const SizedBox(width: 10),
                   Expanded(
-                      child: _buildInputBox(
-                          'Construction Rate', '% p.a.', _constRate,
+                      child: _buildInputBox('Construction Rate', '% p.a.', _constRate,
                           isPercent: true,
+                          errorText: _errors['constRate'],
                           onChanged: (v) => setState(() => _constRate = v))),
                 ],
               ),
@@ -398,28 +476,26 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
               Row(
                 children: [
                   Expanded(
-                      child: _buildInputBox(
-                          'P&I Rate (post-build)', '% p.a.', _piRate,
+                      child: _buildInputBox('P&I Rate (post-build)', '% p.a.', _piRate,
                           isPercent: true,
+                          errorText: _errors['piRate'],
                           onChanged: (v) => setState(() => _piRate = v))),
                   const SizedBox(width: 10),
                   Expanded(
-                      child: _buildInputBox(
-                          'Loan Term', 'yrs', _loanTermYr.toDouble(),
+                      child: _buildInputBox('Loan Term', 'yrs', _loanTermYr.toDouble(),
                           isInteger: true,
-                          onChanged: (v) =>
-                              setState(() => _loanTermYr = v.toInt()))),
+                          errorText: _errors['loanTermYr'],
+                          onChanged: (v) => setState(() => _loanTermYr = v.toInt()))),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
-                      child: _buildInputBox(
-                          'Build Duration', 'months', _buildMonths.toDouble(),
+                      child: _buildInputBox('Build Duration', 'months', _buildMonths.toDouble(),
                           isInteger: true,
-                          onChanged: (v) =>
-                              setState(() => _buildMonths = v.toInt()))),
+                          errorText: _errors['buildMonths'],
+                          onChanged: (v) => setState(() => _buildMonths = v.toInt()))),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -432,16 +508,10 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                                 weight: FontWeight.w800)),
                         const SizedBox(height: 5),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : const Color(0xFFFFF8F0),
-                            border: Border.all(
-                                color: isDark
-                                    ? theme.getBorderColor(context)
-                                    : theme.borderColor),
+                            color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFFFF8F0),
+                            border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: DropdownButtonHideUnderline(
@@ -454,24 +524,9 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                                   color: theme.getTextColor(context),
                                   weight: FontWeight.bold),
                               items: [
-                                DropdownMenuItem(
-                                    value: 'vol',
-                                    child: Text('Volume Builder',
-                                        style: AppTextStyles.dmSans(
-                                            color:
-                                                theme.getTextColor(context)))),
-                                DropdownMenuItem(
-                                    value: 'cus',
-                                    child: Text('Custom Builder',
-                                        style: AppTextStyles.dmSans(
-                                            color:
-                                                theme.getTextColor(context)))),
-                                DropdownMenuItem(
-                                    value: 'ow',
-                                    child: Text('Owner-Builder',
-                                        style: AppTextStyles.dmSans(
-                                            color:
-                                                theme.getTextColor(context)))),
+                                DropdownMenuItem(value: 'vol', child: Text('Volume Builder', style: AppTextStyles.dmSans(color: theme.getTextColor(context)))),
+                                DropdownMenuItem(value: 'cus', child: Text('Custom Builder', style: AppTextStyles.dmSans(color: theme.getTextColor(context)))),
+                                DropdownMenuItem(value: 'ow', child: Text('Owner-Builder', style: AppTextStyles.dmSans(color: theme.getTextColor(context)))),
                               ],
                               onChanged: (v) {
                                 if (v != null) setState(() => _builderType = v);
@@ -496,9 +551,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
           decoration: BoxDecoration(
             color: isDark ? theme.getCardColor(context) : Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-                color:
-                    isDark ? theme.getBorderColor(context) : theme.borderColor),
+            border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,15 +559,14 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
               Text('Build Stages (AUS Standard)',
                   style: AppTextStyles.dmSans(
                       size: 11,
-                      color:
-                          isDark ? const Color(0xFFFFD700) : theme.primaryColor,
+                      color: isDark ? const Color(0xFFFFD700) : theme.primaryColor,
                       weight: FontWeight.w700,
                       letterSpacing: 0.5)),
               const SizedBox(height: 12),
               ..._stages.asMap().entries.map((entry) {
                 final idx = entry.key;
                 final s = entry.value;
-                final amt = _totalCost * s.pct / 100;
+                final amt = snapTotalCost * s.pct / 100;
                 final isActive = s.status == 'active';
 
                 return Container(
@@ -522,18 +574,9 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? (isDark
-                            ? theme.primaryColor.withValues(alpha: 0.25)
-                            : const Color(0xFFFFF0E4))
-                        : (isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : const Color(0xFFFFF8F0)),
-                    border: Border.all(
-                        color: isActive
-                            ? theme.primaryColor
-                            : (isDark
-                                ? theme.getBorderColor(context)
-                                : const Color(0xFFE2E8F0))),
+                        ? (isDark ? theme.primaryColor.withValues(alpha: 0.25) : const Color(0xFFFFF0E4))
+                        : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFFFF8F0)),
+                    border: Border.all(color: isActive ? theme.primaryColor : (isDark ? theme.getBorderColor(context) : const Color(0xFFE2E8F0))),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -561,31 +604,11 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                               style: AppTextStyles.dmSans(
                                   size: 10,
                                   weight: FontWeight.bold,
-                                  color: isDark
-                                      ? const Color(0xFFFFD700)
-                                      : theme.primaryColor),
+                                  color: isDark ? const Color(0xFFFFD700) : theme.primaryColor),
                               items: [
-                                DropdownMenuItem(
-                                    value: 'done',
-                                    child: Text('Done',
-                                        style: AppTextStyles.dmSans(
-                                            size: 10,
-                                            color:
-                                                theme.getTextColor(context)))),
-                                DropdownMenuItem(
-                                    value: 'active',
-                                    child: Text('In Progress',
-                                        style: AppTextStyles.dmSans(
-                                            size: 10,
-                                            color:
-                                                theme.getTextColor(context)))),
-                                DropdownMenuItem(
-                                    value: 'pending',
-                                    child: Text('Pending',
-                                        style: AppTextStyles.dmSans(
-                                            size: 10,
-                                            color:
-                                                theme.getTextColor(context)))),
+                                DropdownMenuItem(value: 'done', child: Text('Done', style: AppTextStyles.dmSans(size: 10, color: theme.getTextColor(context)))),
+                                DropdownMenuItem(value: 'active', child: Text('In Progress', style: AppTextStyles.dmSans(size: 10, color: theme.getTextColor(context)))),
+                                DropdownMenuItem(value: 'pending', child: Text('Pending', style: AppTextStyles.dmSans(size: 10, color: theme.getTextColor(context)))),
                               ],
                               onChanged: (val) {
                                 if (val != null) {
@@ -605,11 +628,8 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                               child: LinearProgressIndicator(
                                 value: s.pct / 100,
                                 minHeight: 6,
-                                backgroundColor: isDark
-                                    ? Colors.white.withValues(alpha: 0.1)
-                                    : const Color(0xFFE5E7EB),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    stageColors[idx]),
+                                backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB),
+                                valueColor: AlwaysStoppedAnimation<Color>(stageColors[idx]),
                               ),
                             ),
                           ),
@@ -625,13 +645,8 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Drawdown Amount',
-                              style: AppTextStyles.dmSans(
-                                  size: 10,
-                                  color: theme.getMutedColor(context))),
-                          Text(
-                              CurrencyFormatter.format(amt,
-                                  currencyCode: 'AUD'),
+                          Text('Drawdown Amount', style: AppTextStyles.dmSans(size: 10, color: theme.getMutedColor(context))),
+                          Text(CurrencyFormatter.format(amt, currencyCode: 'AUD'),
                               style: AppTextStyles.dmSans(
                                   size: 11,
                                   weight: FontWeight.bold,
@@ -644,14 +659,11 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
               }),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: () {
-                  setState(() => _showResults = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryColor,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   minimumSize: const Size(double.infinity, 44),
                 ),
@@ -688,8 +700,9 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                 children: _stages.asMap().entries.map((entry) {
                   final idx = entry.key;
                   final s = entry.value;
-                  final isDone = s.status == 'done';
-                  final isActive = s.status == 'active';
+                  final status = snapStatuses[idx];
+                  final isDone = status == 'done';
+                  final isActive = status == 'active';
 
                   return Expanded(
                     child: Column(
@@ -705,9 +718,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                                     : Colors.white10,
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: isDone || isActive
-                                    ? const Color(0xFFFFD700)
-                                    : Colors.white30,
+                                color: isDone || isActive ? const Color(0xFFFFD700) : Colors.white30,
                                 width: 2),
                           ),
                           alignment: Alignment.center,
@@ -727,8 +738,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                         const SizedBox(height: 4),
                         Text(
                           s.name.split(' ')[0],
-                          style: const TextStyle(
-                              fontSize: 8, color: Colors.white60),
+                          style: const TextStyle(fontSize: 8, color: Colors.white60),
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -741,19 +751,11 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(
-                      child: _buildProgressStat(
-                          'Drawn Down', formatAud(drawnProgress),
-                          isGold: true)),
+                  Expanded(child: _buildProgressStat('Drawn Down', formatAud(drawnProgress), isGold: true)),
                   const SizedBox(width: 8),
-                  Expanded(
-                      child: _buildProgressStat(
-                          'Remaining', formatAud(remainingProgress))),
+                  Expanded(child: _buildProgressStat('Remaining', formatAud(remainingProgress))),
                   const SizedBox(width: 8),
-                  Expanded(
-                      child: _buildProgressStat(
-                          'Build %', '${donePct.round()}%',
-                          isGold: true)),
+                  Expanded(child: _buildProgressStat('Build %', '${donePct.round()}%', isGold: true)),
                 ],
               ),
             ],
@@ -762,365 +764,295 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
 
         // Results Section
         if (_showResults) ...[
-          const SizedBox(height: 20),
-
-          // Result Summary Card
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Cost Summary',
-                  style: AppTextStyles.playfair(
-                      size: 15, color: theme.getTextColor(context))),
-              GestureDetector(
-                onTap: _saveCalculation,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isDark ? theme.getCardColor(context) : Colors.white,
-                    border: Border.all(
-                        color: isDark
-                            ? theme.getBorderColor(context)
-                            : theme.borderColor),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text('💾 Save',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          color: isDark
-                              ? const Color(0xFFFFD700)
-                              : theme.primaryColor,
-                          weight: FontWeight.w700)),
-                ),
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF1A0A00), Color(0xFF7C2D12)],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8))
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Total Interest During Construction',
-                    style: AppTextStyles.dmSans(
-                        size: 10,
-                        color: Colors.white60,
-                        weight: FontWeight.w700,
-                        letterSpacing: 0.8)),
-                const SizedBox(height: 4),
-                Text(
-                    CurrencyFormatter.format(totalConstInt,
-                        currencyCode: 'AUD'),
-                    style: AppTextStyles.playfair(
-                        size: 34,
-                        color: const Color(0xFFFFD700),
-                        weight: FontWeight.w800)),
-                Text('interest-only during build period',
-                    style:
-                        AppTextStyles.dmSans(size: 12, color: Colors.white70)),
-                const SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 2.2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  children: [
-                    _buildHeroBox('Monthly P&I (post-build)',
-                        '${CurrencyFormatter.format(piPmt, currencyCode: 'AUD')}/mo',
-                        color: const Color(0xFFFFD700)),
-                    _buildHeroBox('Total Loan Amount',
-                        CurrencyFormatter.format(loanAmt, currencyCode: 'AUD')),
-                    _buildHeroBox('LVR',
-                        '${lvr.toStringAsFixed(1)}%${lvr > 80 ? ' ⚠️' : ' ✓'}'),
-                    _buildHeroBox('Avg Interest / Month',
-                        '${CurrencyFormatter.format(avgMonthlyInt, currencyCode: 'AUD')}/mo',
-                        color: const Color(0xFFBBF7D0)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Progressive Drawdown chart
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? theme.getCardColor(context) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                  color: isDark
-                      ? theme.getBorderColor(context)
-                      : theme.borderColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('📊 Progressive Drawdown & Interest',
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildLegendItem(
-                        isDark
-                            ? const Color(0xFF60A5FA)
-                            : const Color(0xFF002868),
-                        'Cumul. Draw'),
-                    const SizedBox(width: 14),
-                    _buildLegendItem(
-                        const Color(0xFFEF4444), 'Monthly Interest'),
-                    const SizedBox(width: 14),
-                    _buildLegendItem(
-                        const Color(0xFFFFD700), 'Remaining Funds'),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 160,
-                  child: CustomPaint(
-                    size: Size.infinite,
-                    painter: _DrawdownChartPainter(
-                      monthlyData: monthlyData,
-                      loanAmt: loanAmt,
-                      isDark: isDark,
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Construction Costs to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-
-          // Stage Interest Table Card
-          const SizedBox(height: 20),
+          ],
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? theme.getCardColor(context) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                  color: isDark
-                      ? theme.getBorderColor(context)
-                      : theme.borderColor),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('📋 Stage-by-Stage Interest Breakdown',
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 12),
-                DataTable(
-                  columnSpacing: 10,
-                  horizontalMargin: 4,
-                  columns: [
-                    DataColumn(
-                        label: Text('Stage',
-                            style:
-                                TextStyle(color: theme.getTextColor(context)))),
-                    DataColumn(
-                        label: Text('Drawdown',
-                            style:
-                                TextStyle(color: theme.getTextColor(context)))),
-                    DataColumn(
-                        label: Text('Balance',
-                            style:
-                                TextStyle(color: theme.getTextColor(context)))),
-                    DataColumn(
-                        label: Text('Int. Due',
-                            style:
-                                TextStyle(color: theme.getTextColor(context)))),
-                  ],
-                  rows: _stages.asMap().entries.map((entry) {
-                    final idx = entry.key;
-                    final s = entry.value;
-                    final amt = loanAmt * s.pct / 100;
+                const SizedBox(height: 20),
 
-                    double cumBalance = 0;
-                    for (int i = 0; i <= idx; i++) {
-                      cumBalance += loanAmt * _stages[i].pct / 100;
-                    }
-                    final stageInt = cumBalance * monthlyConstRate * s.months;
-
-                    return DataRow(
-                      cells: [
-                        DataCell(Row(
-                          children: [
-                            Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                    color: stageColors[idx],
-                                    shape: BoxShape.circle)),
-                            const SizedBox(width: 4),
-                            Text('${idx + 1}',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.getTextColor(context))),
-                          ],
-                        )),
-                        DataCell(Text(
-                            CurrencyFormatter.format(amt, currencyCode: 'AUD'),
-                            style:
-                                TextStyle(color: theme.getTextColor(context)))),
-                        DataCell(Text(
-                            CurrencyFormatter.format(cumBalance,
-                                currencyCode: 'AUD'),
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.getTextColor(context)))),
-                        DataCell(Text(
-                            CurrencyFormatter.format(stageInt,
-                                currencyCode: 'AUD'),
-                            style: TextStyle(
-                                color: isDark
-                                    ? const Color(0xFF34D399)
-                                    : const Color(0xFF15803D),
-                                fontWeight: FontWeight.bold))),
-                      ],
-                    );
-                  }).toList(),
-                ),
-                const Divider(),
+                // Result Summary Card
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Total Construction Interest',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? const Color(0xFFFFD700)
-                                : const Color(0xFF7C2D12))),
-                    Text(
-                        CurrencyFormatter.format(totalConstInt,
-                            currencyCode: 'AUD'),
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? const Color(0xFFFFD700)
-                                : const Color(0xFF7C2D12))),
+                    Text('Cost Summary', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
+                    GestureDetector(
+                      onTap: _saveCalculation,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isDark ? theme.getCardColor(context) : Colors.white,
+                          border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text('💾 Save',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: isDark ? const Color(0xFFFFD700) : theme.primaryColor,
+                                weight: FontWeight.w700)),
+                      ),
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
+                const SizedBox(height: 10),
 
-          // Total Cost Breakdown
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                  colors: [Color(0xFF0F766E), Color(0xFF115E59)]),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('💰 Total Project Cost Breakdown',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
-                const SizedBox(height: 12),
-                _buildCostRow('Land Cost',
-                    CurrencyFormatter.format(_landValue, currencyCode: 'AUD')),
-                _buildCostRow('Build Contract',
-                    CurrencyFormatter.format(_totalCost, currencyCode: 'AUD')),
-                _buildCostRow(
-                    'Construction Interest',
-                    CurrencyFormatter.format(totalConstInt,
-                        currencyCode: 'AUD')),
-                _buildCostRow('Loan Est. Fees', '~\$1,200'),
-                _buildCostRow('Building Insurance', '~\$1,500/yr'),
-                _buildCostRow('Deposit / Equity',
-                    '−${CurrencyFormatter.format(_deposit, currencyCode: 'AUD')}',
-                    valColor: const Color(0xFFFCA5A5)),
-                const Divider(color: Colors.white24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Total Project Value',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFFD700))),
-                    Text(
-                        CurrencyFormatter.format(
-                            _landValue + _totalCost + totalConstInt,
-                            currencyCode: 'AUD'),
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFFD700))),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF1A0A00), Color(0xFF7C2D12)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8))
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Total Interest During Construction',
+                          style: AppTextStyles.dmSans(
+                              size: 10,
+                              color: Colors.white60,
+                              weight: FontWeight.w700,
+                              letterSpacing: 0.8)),
+                      const SizedBox(height: 4),
+                      Text(CurrencyFormatter.format(totalConstInt, currencyCode: 'AUD'),
+                          style: AppTextStyles.playfair(
+                              size: 34,
+                              color: const Color(0xFFFFD700),
+                              weight: FontWeight.w800)),
+                      Text('interest-only during build period', style: AppTextStyles.dmSans(size: 12, color: Colors.white70)),
+                      const SizedBox(height: 16),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        children: [
+                          _buildHeroBox('Monthly P&I (post-build)', '${CurrencyFormatter.format(piPmt, currencyCode: 'AUD')}/mo', color: const Color(0xFFFFD700)),
+                          _buildHeroBox('Total Loan Amount', CurrencyFormatter.format(loanAmt, currencyCode: 'AUD')),
+                          _buildHeroBox('LVR', '${lvr.toStringAsFixed(1)}%${lvr > 80 ? ' ⚠️' : ' ✓'}'),
+                          _buildHeroBox('Avg Interest / Month', '${CurrencyFormatter.format(avgMonthlyInt, currencyCode: 'AUD')}/mo', color: const Color(0xFFBBF7D0)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
 
-          // Post-build first 10 years stacked bars
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? theme.getCardColor(context) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                  color: isDark
-                      ? theme.getBorderColor(context)
-                      : theme.borderColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('📈 Post-Build Amortisation (First 10 Years)',
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildLegendItem(
-                        isDark
-                            ? const Color(0xFF60A5FA)
-                            : const Color(0xFF002868),
-                        'Principal'),
-                    const SizedBox(width: 14),
-                    _buildLegendItem(const Color(0xFFEF4444), 'Interest'),
-                  ],
+                // Progressive Drawdown chart
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? theme.getCardColor(context) : Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('📊 Progressive Drawdown & Interest',
+                          style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildLegendItem(isDark ? const Color(0xFF60A5FA) : const Color(0xFF002868), 'Cumul. Draw'),
+                          const SizedBox(width: 14),
+                          _buildLegendItem(const Color(0xFFEF4444), 'Monthly Interest'),
+                          const SizedBox(width: 14),
+                          _buildLegendItem(const Color(0xFFFFD700), 'Remaining Funds'),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 160,
+                        child: CustomPaint(
+                          size: Size.infinite,
+                          painter: _DrawdownChartPainter(
+                            monthlyData: monthlyData,
+                            loanAmt: loanAmt,
+                            isDark: isDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 150,
-                  child: CustomPaint(
-                    size: Size.infinite,
-                    painter: _StackedBarChartPainter(
-                        pts: postBuildPts, isDark: isDark),
+
+                // Stage Interest Table Card
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? theme.getCardColor(context) : Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('📋 Stage-by-Stage Interest Breakdown',
+                          style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 12),
+                      DataTable(
+                        columnSpacing: 10,
+                        horizontalMargin: 4,
+                        columns: [
+                          DataColumn(label: Text('Stage', style: TextStyle(color: theme.getTextColor(context)))),
+                          DataColumn(label: Text('Drawdown', style: TextStyle(color: theme.getTextColor(context)))),
+                          DataColumn(label: Text('Balance', style: TextStyle(color: theme.getTextColor(context)))),
+                          DataColumn(label: Text('Int. Due', style: TextStyle(color: theme.getTextColor(context)))),
+                        ],
+                        rows: _stages.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final s = entry.value;
+                          final amt = loanAmt * s.pct / 100;
+
+                          double cumBalance = 0;
+                          for (int i = 0; i <= idx; i++) {
+                            cumBalance += loanAmt * _stages[i].pct / 100;
+                          }
+                          final stageInt = cumBalance * monthlyConstRate * s.months;
+
+                          return DataRow(
+                            cells: [
+                              DataCell(Row(
+                                children: [
+                                  Container(width: 8, height: 8, decoration: BoxDecoration(color: stageColors[idx], shape: BoxShape.circle)),
+                                  const SizedBox(width: 4),
+                                  Text('${idx + 1}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.getTextColor(context))),
+                                ],
+                              )),
+                              DataCell(Text(CurrencyFormatter.format(amt, currencyCode: 'AUD'), style: TextStyle(color: theme.getTextColor(context)))),
+                              DataCell(Text(CurrencyFormatter.format(cumBalance, currencyCode: 'AUD'), style: TextStyle(fontWeight: FontWeight.bold, color: theme.getTextColor(context)))),
+                              DataCell(Text(CurrencyFormatter.format(stageInt, currencyCode: 'AUD'), style: TextStyle(color: isDark ? const Color(0xFF34D399) : const Color(0xFF15803D), fontWeight: FontWeight.bold))),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Total Construction Interest',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? const Color(0xFFFFD700) : const Color(0xFF7C2D12))),
+                          Text(CurrencyFormatter.format(totalConstInt, currencyCode: 'AUD'),
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? const Color(0xFFFFD700) : const Color(0xFF7C2D12))),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Total Cost Breakdown
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F766E),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('💰 Total Project Cost Breakdown',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 12),
+                      _buildCostRow('Land Cost', CurrencyFormatter.format(snapLandValue, currencyCode: 'AUD')),
+                      _buildCostRow('Build Contract', CurrencyFormatter.format(snapTotalCost, currencyCode: 'AUD')),
+                      _buildCostRow('Construction Interest', CurrencyFormatter.format(totalConstInt, currencyCode: 'AUD')),
+                      _buildCostRow('Loan Est. Fees', '~\$1,200'),
+                      _buildCostRow('Building Insurance', '~\$1,500/yr'),
+                      _buildCostRow('Deposit / Equity', '−${CurrencyFormatter.format(snapDeposit, currencyCode: 'AUD')}', valColor: const Color(0xFFFCA5A5)),
+                      const Divider(color: Colors.white24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total Project Value', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFFFD700))),
+                          Text(CurrencyFormatter.format(snapLandValue + snapTotalCost + totalConstInt, currencyCode: 'AUD'),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFFFD700))),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Post-build first 10 years stacked bars
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? theme.getCardColor(context) : Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: isDark ? theme.getBorderColor(context) : theme.borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('📈 Post-Build Amortisation (First 10 Years)',
+                          style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildLegendItem(isDark ? const Color(0xFF60A5FA) : const Color(0xFF002868), 'Principal'),
+                          const SizedBox(width: 14),
+                          _buildLegendItem(const Color(0xFFEF4444), 'Interest'),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 150,
+                        child: CustomPaint(
+                          size: Size.infinite,
+                          painter: _StackedBarChartPainter(pts: postBuildPts, isDark: isDark),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1130,73 +1062,52 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
 
         // Help Tips
         const SizedBox(height: 20),
-        Text('Key Tips for Australian Construction Loans',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
+        Text('Key Tips for Australian Construction Loans', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
         const SizedBox(height: 10),
-        _buildTipCard('🛡️', 'Home Builder Insurance is Mandatory',
-            'All states except QLD, WA and TAS require Domestic Building Insurance (DBI) for work over \$16,000. Your builder must provide evidence before receiving progress payments.'),
-        _buildTipCard('📝', 'Fixed-Price Building Contract',
-            'Lenders prefer a fixed-price contract with a registered builder. Cost-plus contracts can make it harder to get approved. Get an independent valuation before the slab is poured.'),
-        _buildTipCard('📋', 'Council Approvals & HESS',
-            'Ensure Development Approval (DA) or a Complying Development Certificate (CDC) is in hand. HESS (HomeStart) in SA or similar state grants may reduce your construction loan amount.'),
-        _buildTipCard('💡', 'Interest Only Saves Cash During Build',
-            'During the construction phase you only pay interest on drawn funds — not the full loan. This frees up cash while you may be paying rent. Plan your budget around the P&I conversion date.'),
+        _buildTipCard('🛡️', 'Home Builder Insurance is Mandatory', 'All states except QLD, WA and TAS require Domestic Building Insurance (DBI) for work over \$16,000. Your builder must provide evidence before receiving progress payments.'),
+        _buildTipCard('📝', 'Fixed-Price Building Contract', 'Lenders prefer a fixed-price contract with a registered builder. Cost-plus contracts can make it harder to get approved. Get an independent valuation before the slab is poured.'),
+        _buildTipCard('📋', 'Council Approvals & HESS', 'Ensure Development Approval (DA) or a Complying Development Certificate (CDC) is in hand. HESS (HomeStart) in SA or similar state grants may reduce your construction loan amount.'),
+        _buildTipCard('💡', 'Interest Only Saves Cash During Build', 'During the construction phase you only pay interest on drawn funds — not the full loan. This frees up cash while you may be paying rent. Plan your budget around the P&I conversion date.'),
       ],
     );
   }
 
-  String formatAud(double amount) =>
-      CurrencyFormatter.format(amount, currencyCode: 'AUD');
+  String formatAud(double amount) => CurrencyFormatter.format(amount, currencyCode: 'AUD');
 
-  Widget _buildInputBox(String label, String prefix, double value,
-      {bool isPercent = false,
-      bool isInteger = false,
-      required ValueChanged<double> onChanged}) {
+  Widget _buildInputBox(
+    String label,
+    String prefix,
+    double value, {
+    bool isPercent = false,
+    bool isInteger = false,
+    String? errorText,
+    required ValueChanged<double> onChanged,
+  }) {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(),
-            style: AppTextStyles.dmSans(
-                size: 9,
-                color: theme.getMutedColor(context),
-                weight: FontWeight.w800)),
+        Text(label.toUpperCase(), style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context), weight: FontWeight.w800)),
         const SizedBox(height: 5),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : const Color(0xFFFFF8F0),
-            border: Border.all(
-                color:
-                    isDark ? theme.getBorderColor(context) : theme.borderColor),
+            color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFFFF8F0),
+            border: Border.all(color: errorText != null ? Colors.red : (isDark ? theme.getBorderColor(context) : theme.borderColor)),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
               if (!isPercent)
-                Text('$prefix ',
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        color: theme.getMutedColor(context),
-                        weight: FontWeight.bold)),
+                Text('$prefix ', style: AppTextStyles.dmSans(size: 13, color: theme.getMutedColor(context), weight: FontWeight.bold)),
               Expanded(
                 child: TextFormField(
                   key: ValueKey(value),
-                  initialValue:
-                      isInteger ? value.toInt().toString() : value.toString(),
+                  initialValue: isInteger ? value.toInt().toString() : value.toString(),
                   keyboardType: TextInputType.number,
-                  style: AppTextStyles.dmSans(
-                      size: 14,
-                      color: theme.getTextColor(context),
-                      weight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero),
+                  style: AppTextStyles.dmSans(size: 14, color: theme.getTextColor(context), weight: FontWeight.bold),
+                  decoration: const InputDecoration(isDense: true, border: InputBorder.none, contentPadding: EdgeInsets.zero),
                   onChanged: (v) {
                     final d = double.tryParse(v) ?? 0.0;
                     onChanged(d);
@@ -1204,14 +1115,14 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
                 ),
               ),
               if (isPercent)
-                Text('%',
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        color: theme.getMutedColor(context),
-                        weight: FontWeight.bold)),
+                Text('%', style: AppTextStyles.dmSans(size: 13, color: theme.getMutedColor(context), weight: FontWeight.bold)),
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(errorText, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+        ],
       ],
     );
   }
@@ -1224,12 +1135,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
         decoration: BoxDecoration(
             color: isDark ? const Color(0x3334D399) : const Color(0xFFBBF7D0),
             borderRadius: BorderRadius.circular(10)),
-        child: Text('✓ Done',
-            style: TextStyle(
-                fontSize: 8,
-                color:
-                    isDark ? const Color(0xFF34D399) : const Color(0xFF15803D),
-                fontWeight: FontWeight.bold)),
+        child: Text('✓ Done', style: TextStyle(fontSize: 8, color: isDark ? const Color(0xFF34D399) : const Color(0xFF15803D), fontWeight: FontWeight.bold)),
       );
     } else if (status == 'active') {
       return Container(
@@ -1237,26 +1143,15 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
         decoration: BoxDecoration(
             color: isDark ? const Color(0x33F59E0B) : const Color(0xFFFEF9C3),
             borderRadius: BorderRadius.circular(10)),
-        child: Text('⚡ In Progress',
-            style: TextStyle(
-                fontSize: 8,
-                color:
-                    isDark ? const Color(0xFFFFD700) : const Color(0xFF92400E),
-                fontWeight: FontWeight.bold)),
+        child: Text('⚡ In Progress', style: TextStyle(fontSize: 8, color: isDark ? const Color(0xFFFFD700) : const Color(0xFF92400E), fontWeight: FontWeight.bold)),
       );
     } else {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : const Color(0xFFF3F4F6),
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(10)),
-        child: Text('⏳ Pending',
-            style: TextStyle(
-                fontSize: 8,
-                color: isDark ? Colors.white70 : const Color(0xFF6B7280),
-                fontWeight: FontWeight.bold)),
+        child: Text('⏳ Pending', style: TextStyle(fontSize: 8, color: isDark ? Colors.white70 : const Color(0xFF6B7280), fontWeight: FontWeight.bold)),
       );
     }
   }
@@ -1264,19 +1159,12 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
   Widget _buildProgressStat(String label, String value, {bool isGold = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
-      decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
       child: Column(
         children: [
-          Text(label,
-              style: const TextStyle(fontSize: 9, color: Colors.white54)),
+          Text(label, style: const TextStyle(fontSize: 9, color: Colors.white54)),
           const SizedBox(height: 2),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: isGold ? const Color(0xFFFFD700) : Colors.white)),
+          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isGold ? const Color(0xFFFFD700) : Colors.white)),
         ],
       ),
     );
@@ -1294,16 +1182,9 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label,
-              style: const TextStyle(fontSize: 9, color: Colors.white54)),
+          Text(label, style: const TextStyle(fontSize: 9, color: Colors.white54)),
           const SizedBox(height: 2),
-          Text(val,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: color ?? Colors.white),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color ?? Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );
@@ -1312,14 +1193,9 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
   Widget _buildLegendItem(Color col, String text) {
     return Row(
       children: [
-        Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: col, shape: BoxShape.circle)),
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: col, shape: BoxShape.circle)),
         const SizedBox(width: 5),
-        Text(text,
-            style: TextStyle(
-                fontSize: 10, color: widget.theme.getTextColor(context))),
+        Text(text, style: TextStyle(fontSize: 10, color: widget.theme.getTextColor(context))),
       ],
     );
   }
@@ -1330,13 +1206,8 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(name,
-              style: const TextStyle(fontSize: 12, color: Colors.white70)),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: valColor ?? Colors.white)),
+          Text(name, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: valColor ?? Colors.white)),
         ],
       ),
     );
@@ -1350,10 +1221,7 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
       decoration: BoxDecoration(
         color: isDark ? widget.theme.getCardColor(context) : Colors.white,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-            color: isDark
-                ? widget.theme.getBorderColor(context)
-                : widget.theme.borderColor),
+        border: Border.all(color: isDark ? widget.theme.getBorderColor(context) : widget.theme.borderColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1364,19 +1232,9 @@ class _AUConstructionLoanState extends ConsumerState<AUConstructionLoan> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: AppTextStyles.playfair(
-                        size: 12,
-                        weight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black)),
+                Text(title, style: AppTextStyles.playfair(size: 12, weight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
                 const SizedBox(height: 3),
-                Text(body,
-                    style: AppTextStyles.dmSans(
-                        size: 10,
-                        color: isDark
-                            ? widget.theme.getMutedColor(context)
-                            : const Color(0xFF92400E),
-                        height: 1.5)),
+                Text(body, style: AppTextStyles.dmSans(size: 10, color: isDark ? widget.theme.getMutedColor(context) : const Color(0xFF92400E), height: 1.5)),
               ],
             ),
           ),
@@ -1445,8 +1303,7 @@ class _DrawdownChartPainter extends CustomPainter {
   final double loanAmt;
   final bool isDark;
 
-  _DrawdownChartPainter(
-      {required this.monthlyData, required this.loanAmt, required this.isDark});
+  _DrawdownChartPainter({required this.monthlyData, required this.loanAmt, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1480,9 +1337,7 @@ class _DrawdownChartPainter extends CustomPainter {
 
       final yDraw = size.height - (d.drawn / loanAmt * size.height);
       final yRem = size.height - ((loanAmt - d.drawn) / loanAmt * size.height);
-      final yInt = maxInt > 0
-          ? size.height - (d.interest / maxInt * size.height)
-          : size.height;
+      final yInt = maxInt > 0 ? size.height - (d.interest / maxInt * size.height) : size.height;
 
       if (i == 0) {
         pathDraw.moveTo(x, yDraw);
@@ -1540,15 +1395,13 @@ class _StackedBarChartPainter extends CustomPainter {
 
       // Draw principal rect
       canvas.drawRRect(
-        RRect.fromRectAndRadius(
-            Rect.fromLTWH(x, yP, barW, hP), const Radius.circular(2)),
+        RRect.fromRectAndRadius(Rect.fromLTWH(x, yP, barW, hP), const Radius.circular(2)),
         paintP,
       );
 
       // Draw interest rect
       canvas.drawRRect(
-        RRect.fromRectAndRadius(
-            Rect.fromLTWH(x, yI, barW, hI), const Radius.circular(2)),
+        RRect.fromRectAndRadius(Rect.fromLTWH(x, yI, barW, hI), const Radius.circular(2)),
         paintI,
       );
     }

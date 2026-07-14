@@ -24,11 +24,10 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
   final _equityController = TextEditingController(text: '76000');
   final _outstandingController = TextEditingController(text: '0');
 
-  double _propVal = 380000;
-  double _equity = 76000;
-  double _outstanding = 0;
-
   bool _hasCalculated = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   final List<Map<String, dynamic>> tiers = const [
     {
@@ -87,14 +86,11 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
     super.initState();
     if (widget.savedCalc != null) {
       final inputs = widget.savedCalc!.inputs;
-      _propValController.text =
-          (inputs['propVal'] ?? 380000.0).toStringAsFixed(0);
+      _propValController.text = (inputs['propVal'] ?? 380000.0).toStringAsFixed(0);
       _equityController.text = (inputs['equity'] ?? 76000.0).toStringAsFixed(0);
-      _outstandingController.text =
-          (inputs['outstanding'] ?? 0.0).toStringAsFixed(0);
-      _hasCalculated = true;
+      _outstandingController.text = (inputs['outstanding'] ?? 0.0).toStringAsFixed(0);
+      _calculate();
     }
-    _calculateValues();
   }
 
   @override
@@ -105,19 +101,69 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
     super.dispose();
   }
 
-  void _calculateValues() {
+  double _val(TextEditingController c, double defaultVal) {
+    if (_hasCalculated && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    final propVal = double.tryParse(_propValController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (propVal <= 0) errors['propVal'] = 'Enter valid property value';
+
+    final equity = double.tryParse(_equityController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (equity < 0) errors['equity'] = 'Enter valid equity/deposit';
+
+    final outstanding = double.tryParse(_outstandingController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (outstanding < 0) errors['outstanding'] = 'Enter valid mortgage balance';
+
     setState(() {
-      _propVal = double.tryParse(_propValController.text) ?? 0;
-      _equity = double.tryParse(_equityController.text) ?? 0;
-      _outstanding = double.tryParse(_outstandingController.text) ?? 0;
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_propValController] = propVal;
+      _calcSnapshot[_equityController] = equity;
+      _calcSnapshot[_outstandingController] = outstanding;
+      _hasCalculated = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _propValController.text = '380000';
+      _equityController.text = '76000';
+      _outstandingController.text = '0';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _hasCalculated = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final loan = _outstanding > 0 ? _outstanding : (_propVal - _equity);
-    final ltv = _propVal > 0 ? (loan / _propVal * 100) : 0.0;
-    final equityAmt = _propVal - loan;
+    final double propValVal = _val(_propValController, 380000);
+    final double equityVal = _val(_equityController, 76000);
+    final double outstandingVal = _val(_outstandingController, 0);
+
+    final loan = outstandingVal > 0 ? outstandingVal : (propValVal - equityVal);
+    final ltv = propValVal > 0 ? (loan / propValVal * 100) : 0.0;
+    final equityAmt = propValVal - loan;
 
     // Find tier
     Map<String, dynamic> activeTier = tiers.last;
@@ -139,6 +185,12 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
     final boeBase  = ukRates?.boeBase.value  ?? 4.25;
     final isLive   = ukRates?.isLive == true;
 
+    final isDirty = _hasCalculated && (
+      (double.tryParse(_propValController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_propValController] ?? 0.0) ||
+      (double.tryParse(_equityController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_equityController] ?? 0.0) ||
+      (double.tryParse(_outstandingController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_outstandingController] ?? 0.0)
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -152,33 +204,42 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
           ),
           child: Row(
             children: [
-              Expanded(
-                  child: _rateCell('60% LTV', '3.99%', 'Best rate',
-                      isDark ? const Color(0xFF34D399) : const Color(0xFF059669))),
+              Expanded(child: _rateCell('60% LTV', '3.99%', 'Best rate', isDark ? const Color(0xFF34D399) : const Color(0xFF059669))),
               _divider(),
-              Expanded(
-                  child: _rateCell('75% LTV', '${fixed5yr.toStringAsFixed(2)}%', isLive ? 'Live 🟢' : 'Good', textThemeColor)),
+              Expanded(child: _rateCell('75% LTV', '${fixed5yr.toStringAsFixed(2)}%', isLive ? 'Live 🟢' : 'Good', textThemeColor)),
               _divider(),
-              Expanded(
-                  child: _rateCell(
-                      '90% LTV', '4.95%', 'Higher', isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))),
+              Expanded(child: _rateCell('90% LTV', '4.95%', 'Higher', isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))),
               _divider(),
-              Expanded(
-                  child: _rateCell(
-                      'BoE Base', '${boeBase.toStringAsFixed(2)}%', isLive ? '🟢 Live' : 'Est.', isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E))),
+              Expanded(child: _rateCell('BoE Base', '${boeBase.toStringAsFixed(2)}%', isLive ? '🟢 Live' : 'Est.', isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E))),
             ],
           ),
         ),
         const SizedBox(height: 16),
 
-        Text(
-          'PROPERTY & LOAN DETAILS',
-          style: AppTextStyles.dmSans(
-            size: 11,
-            weight: FontWeight.w700,
-            color: widget.theme.getMutedColor(context),
-            letterSpacing: 1.0,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'PROPERTY & LOAN DETAILS',
+              style: AppTextStyles.dmSans(
+                size: 11,
+                weight: FontWeight.w700,
+                color: widget.theme.getMutedColor(context),
+                letterSpacing: 1.0,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: widget.theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -194,344 +255,342 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
             children: [
               Row(
                 children: [
-                  Expanded(
-                      child: _inputField(
-                          label: 'Property Value (£)',
-                          controller: _propValController)),
+                  Expanded(child: _inputField(label: 'Property Value (£)', controller: _propValController, errorText: _errors['propVal'])),
                   const SizedBox(width: 10),
-                  Expanded(
-                      child: _inputField(
-                          label: 'Deposit / Equity (£)',
-                          controller: _equityController)),
+                  Expanded(child: _inputField(label: 'Deposit / Equity (£)', controller: _equityController, errorText: _errors['equity'])),
                 ],
               ),
               const SizedBox(height: 12),
-              _inputField(
-                  label: 'Outstanding Mortgage (£) — leave 0 for purchase',
-                  controller: _outstandingController),
+              _inputField(label: 'Outstanding Mortgage (£) — leave 0 for purchase', controller: _outstandingController, errorText: _errors['outstanding']),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F46E5),
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                  ),
+                  onPressed: _calculate,
+                  child: Text(
+                    '📊 Calculate LTV',
+                    style: AppTextStyles.dmSans(size: 14, color: Colors.white, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
             ],
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        // Calculate Button
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13)),
-            ),
-            onPressed: () {
-              _calculateValues();
-              setState(() => _hasCalculated = true);
-            },
-            child: Text(
-              '📊 Calculate LTV',
-              style: AppTextStyles.dmSans(
-                  size: 14, color: Colors.white, weight: FontWeight.w800),
-            ),
           ),
         ),
         const SizedBox(height: 20),
 
         if (_hasCalculated) ...[
-          // Results Header Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'LOAN-TO-VALUE RATIO',
-                  style: AppTextStyles.dmSans(
-                      size: 10,
-                      weight: FontWeight.w700,
-                      color: Colors.white60,
-                      letterSpacing: 0.7),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${ltv.toStringAsFixed(1)}%',
-                      style: AppTextStyles.dmSans(
-                        size: 38,
-                        weight: FontWeight.w800,
-                        color: ltv <= 75
-                            ? const Color(0xFF90EE90)
-                            : (ltv <= 85
-                                ? const Color(0xFFFFD700)
-                                : const Color(0xFFFF8A9A)),
-                      ).copyWith(fontFamily: 'Georgia'),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate LTV to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
-                    GestureDetector(
-                      onTap: () async {
-                        final calc = SavedCalc.create(
-                          country: 'UK',
-                          calcType: 'LTV Ratio',
-                          inputs: {
-                            'propVal': _propVal,
-                            'equity': _equity,
-                            'outstanding': _outstanding,
-                          },
-                          results: {
-                            'LTV Ratio': ltv,
-                            'Loan Amount': loan,
-                            'Equity Amount': equityAmt,
-                            'Indicative Rate': activeTier['rate'],
-                          },
-                          label:
-                              '${CurrencyFormatter.compact(_propVal, symbol: '£')} property · ${ltv.toStringAsFixed(1)}% LTV',
-                          currencyCode: 'GBP',
-                        );
-                        final messenger = ScaffoldMessenger.of(context);
-                        await ref.read(savedProvider.notifier).save(calc);
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text('✓ LTV calculation saved'),
-                            backgroundColor: Color(0xFF0D9488),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3)),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.save,
-                                color: Colors.white, size: 14),
-                            const SizedBox(width: 4),
-                            Text('Save',
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    weight: FontWeight.w800,
-                                    color: Colors.white)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${activeTier['label']} tier · ${activeTier['badgeText']}',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-
-          // LTV Grid
-          ResultPanel(
-            primaryColor: widget.theme.primaryColor,
-            rows: [
-              ResultRow(label: 'Loan Amount', value: loan, currencyCode: 'GBP'),
-              ResultRow(
-                  label: 'Equity Amount',
-                  value: equityAmt,
-                  currencyCode: 'GBP'),
-              ResultRow(
-                  label: 'Indicative Rate',
-                  value: activeTier['rate'] as double,
-                  isPercent: false,
-                  isHighlighted: true),
-              ResultRow(
-                  label: 'Rate Tier Limit',
-                  value: activeTier['max'] as double,
-                  isPercent: false),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Loan vs Equity Visual Bar
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: borderCol),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Loan vs Equity Split',
-                  style: AppTextStyles.dmSans(
-                          size: 12,
-                          weight: FontWeight.w800,
-                          color: textThemeColor)
-                      .copyWith(fontFamily: 'Georgia'),
-                ),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: SizedBox(
-                    height: 52,
-                    child: Row(
-                      children: [
-                        if (ltv > 0)
-                          Expanded(
-                            flex: ltv.clamp(0.0, 100.0).round(),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(colors: [
-                                  Color(0xFFC8102E),
-                                  Color(0xFF991B1B)
-                                ]),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                '${ltv.toStringAsFixed(0)}% Loan',
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    color: Colors.white,
-                                    weight: FontWeight.w800),
-                              ),
-                            ),
-                          ),
-                        if (ltv < 100)
-                          Expanded(
-                            flex: (100 - ltv.clamp(0.0, 100.0)).round(),
-                            child: Container(
-                              color: isDark
-                                  ? const Color(0xFF1E293B)
-                                  : const Color(0xFFEEF2FF),
-                              alignment: Alignment.center,
-                              child: Text(
-                                '${(100 - ltv).toStringAsFixed(0)}% Equity',
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    color: widget.theme.getTextColor(context),
-                                    weight: FontWeight.w800),
-                              ),
-                            ),
-                          ),
-                      ],
+                // Results Header Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'LOAN-TO-VALUE RATIO',
+                        style: AppTextStyles.dmSans(
+                            size: 10,
+                            weight: FontWeight.w700,
+                            color: Colors.white60,
+                            letterSpacing: 0.7),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${ltv.toStringAsFixed(1)}%',
+                            style: AppTextStyles.dmSans(
+                              size: 38,
+                              weight: FontWeight.w800,
+                              color: ltv <= 75
+                                  ? const Color(0xFF90EE90)
+                                  : (ltv <= 85
+                                      ? const Color(0xFFFFD700)
+                                      : const Color(0xFFFF8A9A)),
+                            ).copyWith(fontFamily: 'Georgia'),
+                          ),
+                          GestureDetector(
+                            onTap: () async {
+                              final calc = SavedCalc.create(
+                                country: 'UK',
+                                calcType: 'LTV Ratio',
+                                inputs: {
+                                  'propVal': propValVal,
+                                  'equity': equityVal,
+                                  'outstanding': outstandingVal,
+                                },
+                                results: {
+                                  'LTV Ratio': ltv,
+                                  'Loan Amount': loan,
+                                  'Equity Amount': equityAmt,
+                                  'Indicative Rate': activeTier['rate'],
+                                },
+                                label: '${CurrencyFormatter.compact(propValVal, symbol: '£')} property · ${ltv.toStringAsFixed(1)}% LTV',
+                                currencyCode: 'GBP',
+                              );
+                              final messenger = ScaffoldMessenger.of(context);
+                              await ref.read(savedProvider.notifier).save(calc);
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text('✓ LTV calculation saved'),
+                                  backgroundColor: Color(0xFF0D9488),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.save, color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text('Save',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11,
+                                          weight: FontWeight.w800,
+                                          color: Colors.white)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${activeTier['label']} tier · ${activeTier['badgeText']}',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _legendItem(const Color(0xFFC8102E), 'Loan'),
-                    const SizedBox(width: 16),
-                    _legendItem(
-                        isDark
-                            ? const Color(0xFF1E293B)
-                            : const Color(0xFFEEF2FF),
-                        'Equity'),
+
+                // LTV Grid
+                ResultPanel(
+                  primaryColor: widget.theme.primaryColor,
+                  rows: [
+                    ResultRow(label: 'Loan Amount', value: loan, currencyCode: 'GBP'),
+                    ResultRow(label: 'Equity Amount', value: equityAmt, currencyCode: 'GBP'),
+                    ResultRow(
+                        label: 'Indicative Rate',
+                        value: activeTier['rate'] as double,
+                        isPercent: false,
+                        isHighlighted: true),
+                    ResultRow(
+                        label: 'Rate Tier Limit',
+                        value: activeTier['max'] as double,
+                        isPercent: false),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-          // UK Rate Tiers Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '📈 UK Rate Tiers (2025 Best Buys)',
-                  style: AppTextStyles.dmSans(
-                          size: 12,
-                          weight: FontWeight.w800,
-                          color: textThemeColor)
-                      .copyWith(fontFamily: 'Georgia'),
+                // Loan vs Equity Visual Bar
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(17),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Loan vs Equity Split',
+                        style: AppTextStyles.dmSans(
+                                size: 12,
+                                weight: FontWeight.w800,
+                                color: textThemeColor)
+                            .copyWith(fontFamily: 'Georgia'),
+                      ),
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          height: 52,
+                          child: Row(
+                            children: [
+                              if (ltv > 0)
+                                Expanded(
+                                  flex: ltv.clamp(0.0, 100.0).round(),
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(colors: [
+                                        Color(0xFFC8102E),
+                                        Color(0xFF991B1B)
+                                      ]),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${ltv.toStringAsFixed(0)}% Loan',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11,
+                                          color: Colors.white,
+                                          weight: FontWeight.w800),
+                                    ),
+                                  ),
+                                ),
+                              if (ltv < 100)
+                                Expanded(
+                                  flex: (100 - ltv.clamp(0.0, 100.0)).round(),
+                                  child: Container(
+                                    color: isDark
+                                        ? const Color(0xFF1E293B)
+                                        : const Color(0xFFEEF2FF),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${(100 - ltv).toStringAsFixed(0)}% Equity',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11,
+                                          color: widget.theme.getTextColor(context),
+                                          weight: FontWeight.w800),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _legendItem(const Color(0xFFC8102E), 'Loan'),
+                          const SizedBox(width: 16),
+                          _legendItem(isDark ? const Color(0xFF1E293B) : const Color(0xFFEEF2FF), 'Equity'),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
-                ...tiers.map((t) {
-                  final isCurrent = activeTier == t;
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 6),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isCurrent
-                          ? (isDark
-                              ? const Color(0xFF1E1B4B)
-                              : const Color(0xFFEEF2FF))
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isCurrent
-                            ? const Color(0xFFA5B4FC)
-                            : Colors.transparent,
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SizedBox(
-                          width: 80,
-                          child: Text(
-                            t['label'] as String,
-                            style: AppTextStyles.dmSans(
-                                size: 11.5,
+                // UK Rate Tiers Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(17),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📈 UK Rate Tiers (2025 Best Buys)',
+                        style: AppTextStyles.dmSans(
+                                size: 12,
                                 weight: FontWeight.w800,
-                                color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1A1A5E)),
+                                color: textThemeColor)
+                            .copyWith(fontFamily: 'Georgia'),
+                      ),
+                      const SizedBox(height: 12),
+                      ...tiers.map((t) {
+                        final isCurrent = activeTier == t;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isCurrent
+                                ? (isDark
+                                    ? const Color(0xFF1E1B4B)
+                                    : const Color(0xFFEEF2FF))
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isCurrent ? const Color(0xFFA5B4FC) : Colors.transparent,
+                              width: 1,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${t['rate']}%',
-                          style: AppTextStyles.dmSans(
-                              size: 12,
-                              weight: FontWeight.w800,
-                              color: textThemeColor),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '5-yr fixed indicative',
-                            style: AppTextStyles.dmSans(
-                                  size: 9.5, color: widget.theme.getMutedColor(context)),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SizedBox(
+                                width: 80,
+                                child: Text(
+                                  t['label'] as String,
+                                  style: AppTextStyles.dmSans(
+                                      size: 11.5,
+                                      weight: FontWeight.w800,
+                                      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1A1A5E)),
+                                ),
+                              ),
+                              Text(
+                                '${t['rate']}%',
+                                style: AppTextStyles.dmSans(
+                                    size: 12,
+                                    weight: FontWeight.w800,
+                                    color: textThemeColor),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '5-yr fixed indicative',
+                                  style: AppTextStyles.dmSans(
+                                      size: 9.5, color: widget.theme.getMutedColor(context)),
+                                ),
+                              ),
+                              _badgeWidget(
+                                  t['badge'] as String,
+                                  isCurrent ? '✓ Your tier' : t['badgeText'] as String),
+                            ],
                           ),
-                        ),
-                        _badgeWidget(
-                            t['badge'] as String,
-                            isCurrent
-                                ? '✓ Your tier'
-                                : t['badgeText'] as String),
-                      ],
-                    ),
-                  );
-                }),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-          const SizedBox(height: 20),
         ],
       ],
     );
@@ -543,8 +602,7 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
         Container(
           width: 10,
           height: 10,
-          decoration: BoxDecoration(
-              color: color, borderRadius: BorderRadius.circular(3)),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
         ),
         const SizedBox(width: 6),
         Text(
@@ -577,12 +635,10 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
       child: Text(
         text,
-        style:
-            AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: fg),
+        style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: fg),
       ),
     );
   }
@@ -618,7 +674,7 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
   }
 
   Widget _inputField(
-      {required String label, required TextEditingController controller}) {
+      {required String label, required TextEditingController controller, String? errorText}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -636,7 +692,9 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
         TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onChanged: (v) => _calculateValues(),
+          onChanged: (v) {
+            setState(() {});
+          },
           style: AppTextStyles.dmSans(
             size: 13,
             weight: FontWeight.w700,
@@ -644,18 +702,23 @@ class _UKLtvCalculatorState extends ConsumerState<UKLtvCalculator> {
           ),
           decoration: InputDecoration(
             isDense: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            fillColor: isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : const Color(0xFFF5F5F8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF5F5F8),
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
+              borderSide: errorText != null ? const BorderSide(color: Colors.red, width: 1.5) : BorderSide.none,
             ),
+            enabledBorder: errorText != null ? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ) : null,
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(errorText, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+        ],
       ],
     );
   }

@@ -26,6 +26,9 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
   int _termYears = 30;
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  final _resultsKey = GlobalKey();
+  Map<String, String?> _errors = {};
 
   void _reset() {
     setState(() {
@@ -36,6 +39,8 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
       _deposit = 80000;
       _termYears = 30;
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
     });
   }
 
@@ -58,22 +63,82 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
     return gross - tax;
   }
 
-  void _saveCalculation() async {
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_income < 0) {
+      errors['income'] = 'Income cannot be negative';
+    }
+    if (_partnerIncome < 0) {
+      errors['partnerIncome'] = 'Partner income cannot be negative';
+    }
+    if (_expenses < 0) {
+      errors['expenses'] = 'Expenses cannot be negative';
+    }
+    if (_debts < 0) {
+      errors['debts'] = 'Debts cannot be negative';
+    }
+    if (_deposit < 0) {
+      errors['deposit'] = 'Deposit cannot be negative';
+    }
+
     final netMthly = (_netIncome(_income) + _netIncome(_partnerIncome)) / 12;
+    final availRepay = netMthly - _expenses - _debts;
+
+    if (availRepay <= 0 && errors.isEmpty) {
+      errors['income'] = 'Expenses and debts exceed your net monthly income!';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['income'] = _income;
+      _calcSnapshot['partnerIncome'] = _partnerIncome;
+      _calcSnapshot['expenses'] = _expenses;
+      _calcSnapshot['debts'] = _debts;
+      _calcSnapshot['deposit'] = _deposit;
+      _calcSnapshot['termYears'] = _termYears;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _saveCalculation() async {
+    final double snapIncome = _calcSnapshot['income'] ?? _income;
+    final double snapPartnerIncome = _calcSnapshot['partnerIncome'] ?? _partnerIncome;
+    final double snapExpenses = _calcSnapshot['expenses'] ?? _expenses;
+    final double snapDebts = _calcSnapshot['debts'] ?? _debts;
+    final double snapDeposit = _calcSnapshot['deposit'] ?? _deposit;
+    final int snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+
+    final netMthly = (_netIncome(snapIncome) + _netIncome(snapPartnerIncome)) / 12;
     const assessRate = 0.0609 + 0.03;
     const r = assessRate / 12;
-    final n = _termYears * 12;
+    final n = snapTermYears * 12;
 
-    final availRepay = netMthly - _expenses - _debts;
+    final availRepay = netMthly - snapExpenses - snapDebts;
     if (availRepay <= 0) return;
 
     final loanAmt = availRepay * (1 - pow(1 + r, -n)) / r;
     const realRate = 0.0609 / 12;
     final realRepay = loanAmt * realRate / (1 - pow(1 + realRate, -n));
-    final maxProp = loanAmt + _deposit;
+    final maxProp = loanAmt + snapDeposit;
     final totalRepay = realRepay * n;
     final totalInterest = totalRepay - loanAmt;
-    final dti = loanAmt / (max(1.0, _income + _partnerIncome));
+    final dti = loanAmt / (max(1.0, snapIncome + snapPartnerIncome));
 
     final labelCtrl = TextEditingController(text: 'My Borrowing Power');
     final confirmed = await showDialog<bool>(
@@ -127,12 +192,12 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
         country: 'Australia',
         calcType: 'Affordability',
         inputs: {
-          'income': _income,
-          'partnerIncome': _partnerIncome,
-          'expenses': _expenses,
-          'debts': _debts,
-          'deposit': _deposit,
-          'termYears': _termYears.toDouble(),
+          'income': snapIncome,
+          'partnerIncome': snapPartnerIncome,
+          'expenses': snapExpenses,
+          'debts': snapDebts,
+          'deposit': snapDeposit,
+          'termYears': snapTermYears.toDouble(),
         },
         results: {
           'loanAmt': loanAmt,
@@ -165,16 +230,23 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final double snapIncome = _showResults ? (_calcSnapshot['income'] ?? _income) : _income;
+    final double snapPartnerIncome = _showResults ? (_calcSnapshot['partnerIncome'] ?? _partnerIncome) : _partnerIncome;
+    final double snapExpenses = _showResults ? (_calcSnapshot['expenses'] ?? _expenses) : _expenses;
+    final double snapDebts = _showResults ? (_calcSnapshot['debts'] ?? _debts) : _debts;
+    final double snapDeposit = _showResults ? (_calcSnapshot['deposit'] ?? _deposit) : _deposit;
+    final int snapTermYears = _showResults ? (_calcSnapshot['termYears'] ?? _termYears) : _termYears;
+
     // Calculations
-    final totalGross = _income + _partnerIncome;
-    final netMthly = (_netIncome(_income) + _netIncome(_partnerIncome)) / 12;
+    final totalGross = snapIncome + snapPartnerIncome;
+    final netMthly = (_netIncome(snapIncome) + _netIncome(snapPartnerIncome)) / 12;
 
     // APRA buffer: assess at 6.09% + 3% = 9.09%
     const assessRate = 0.0609 + 0.03;
     const r = assessRate / 12;
-    final n = _termYears * 12;
+    final n = snapTermYears * 12;
 
-    final availRepay = max(0.0, netMthly - _expenses - _debts);
+    final availRepay = max(0.0, netMthly - snapExpenses - snapDebts);
 
     // Loan amount from annuity formula
     final loanAmt = r > 0 ? availRepay * (1 - pow(1 + r, -n)) / r : 0.0;
@@ -183,20 +255,29 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
     const realRate = 0.0609 / 12;
     final realRepay = loanAmt > 0 ? loanAmt * realRate / (1 - pow(1 + realRate, -n)) : 0.0;
 
-    final maxProp = loanAmt + _deposit;
+    final maxProp = loanAmt + snapDeposit;
     final totalRepay = realRepay * n;
     final totalInterest = max(0.0, totalRepay - loanAmt);
     final dti = totalGross > 0 ? loanAmt / totalGross : 0.0;
 
     // Alloc bar percentages
     final repayPct = netMthly > 0 ? (realRepay / netMthly).clamp(0.0, 1.0) : 0.0;
-    final expPct = netMthly > 0 ? (_expenses / netMthly).clamp(0.0, 1.0 - repayPct) : 0.0;
+    final expPct = netMthly > 0 ? (snapExpenses / netMthly).clamp(0.0, 1.0 - repayPct) : 0.0;
     final freePct = max(0.0, 1.0 - repayPct - expPct);
 
     // Donut percentages
     final donutTotal = loanAmt + totalInterest;
     final principalPct = donutTotal > 0 ? loanAmt / donutTotal : 0.0;
     final interestPct = donutTotal > 0 ? totalInterest / donutTotal : 0.0;
+
+    final isDirty = _showResults && (
+      _income != (_calcSnapshot['income'] ?? 0.0) ||
+      _partnerIncome != (_calcSnapshot['partnerIncome'] ?? 0.0) ||
+      _expenses != (_calcSnapshot['expenses'] ?? 0.0) ||
+      _debts != (_calcSnapshot['debts'] ?? 0.0) ||
+      _deposit != (_calcSnapshot['deposit'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['termYears'] ?? 0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,6 +317,7 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
                 value: _income,
                 min: 50000,
                 max: 400000,
+                errorText: _errors['income'],
                 onChanged: (val) => setState(() => _income = val),
               ),
               const SizedBox(height: 12),
@@ -245,6 +327,7 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
                 value: _partnerIncome,
                 min: 0,
                 max: 300000,
+                errorText: _errors['partnerIncome'],
                 onChanged: (val) => setState(() => _partnerIncome = val),
               ),
               const SizedBox(height: 12),
@@ -254,6 +337,7 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
                 value: _expenses,
                 min: 1000,
                 max: 15000,
+                errorText: _errors['expenses'],
                 onChanged: (val) => setState(() => _expenses = val),
               ),
               const SizedBox(height: 12),
@@ -265,7 +349,7 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFFFF8F0),
-                  border: Border.all(color: theme.getBorderColor(context)),
+                  border: Border.all(color: _errors['debts'] != null ? Colors.red : theme.getBorderColor(context)),
                   borderRadius: BorderRadius.circular(11),
                 ),
                 child: Row(
@@ -286,6 +370,10 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
                   ],
                 ),
               ),
+              if (_errors['debts'] != null) ...[
+                const SizedBox(height: 4),
+                Text(_errors['debts']!, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+              ],
               const SizedBox(height: 12),
 
               _buildSliderInputRow(
@@ -293,6 +381,7 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
                 value: _deposit,
                 min: 0,
                 max: 500000,
+                errorText: _errors['deposit'],
                 onChanged: (val) => setState(() => _deposit = val),
               ),
               const SizedBox(height: 12),
@@ -329,15 +418,7 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
               const SizedBox(height: 16),
 
               ElevatedButton(
-                onPressed: () {
-                  if (availRepay <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Expenses and debts exceed your net monthly income!', style: AppTextStyles.dmSans())),
-                    );
-                    return;
-                  }
-                  setState(() => _showResults = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryColor,
                   foregroundColor: Colors.white,
@@ -351,142 +432,171 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
           ),
         ),
 
-        // Results Card
         if (_showResults) ...[
-          const SizedBox(height: 20),
-          // Capacity Summary Card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF1A0A00), Color(0xFF7C2D12)],
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                )
-              ],
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Borrowing Capacity to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Maximum Borrowing Capacity', style: AppTextStyles.dmSans(size: 10, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.8)),
-                const SizedBox(height: 4),
-                Text(CurrencyFormatter.format(loanAmt, currencyCode: 'AUD'), style: AppTextStyles.playfair(size: 36, color: const Color(0xFFFFD700), weight: FontWeight.w800)),
-                Text('Based on APRA serviceability buffer of 3%', style: AppTextStyles.dmSans(size: 11, color: Colors.white70)),
-                const SizedBox(height: 16),
-
-                // rc-grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 2.2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  children: [
-                    _buildResultBox('Max Property', CurrencyFormatter.format(maxProp, currencyCode: 'AUD'), color: const Color(0xFFFFD700)),
-                    _buildResultBox('Monthly Repayment', '${CurrencyFormatter.format(realRepay, currencyCode: 'AUD')}/mo'),
-                    _buildResultBox('Serviceability Rate', '9.09%', color: const Color(0xFFBBF7D0)),
-                    _buildResultBox('DTI Ratio', '${dti.toStringAsFixed(1)}x', color: dti > 6 ? const Color(0xFFFCA5A5) : dti > 4.5 ? const Color(0xFFFBBF24) : const Color(0xFF86EFAC)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Income allocation bar
-                Text('INCOME ALLOCATION', style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.5)),
-                const SizedBox(height: 6),
-                Container(
-                  height: 10,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(5)),
-                  clipBehavior: Clip.antiAlias,
-                  child: Row(
-                    children: [
-                      if (repayPct > 0) Expanded(flex: (repayPct * 100).toInt(), child: Container(color: const Color(0xFFFFD700))),
-                      if (expPct > 0) Expanded(flex: (expPct * 100).toInt(), child: Container(color: const Color(0xFF60A5FA))),
-                      if (freePct > 0) Expanded(flex: (freePct * 100).toInt(), child: Container(color: const Color(0xFFBBF7D0))),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildAllocLegend(const Color(0xFFFFD700), 'Repayment'),
-                    const SizedBox(width: 10),
-                    _buildAllocLegend(const Color(0xFF60A5FA), 'Expenses'),
-                    const SizedBox(width: 10),
-                    _buildAllocLegend(const Color(0xFFBBF7D0), 'Surplus'),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                ElevatedButton(
-                  onPressed: _saveCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.12),
-                    foregroundColor: Colors.white,
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    minimumSize: const Size(double.infinity, 40),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('🔖', style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 6),
-                      Text('Save This Calculation', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w700)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Donut repays card
-          const SizedBox(height: 20),
+          ],
           Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Repayment Breakdown', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context), weight: FontWeight.w800)),
-                const SizedBox(height: 16),
-                Center(
+                const SizedBox(height: 20),
+                // Capacity Summary Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF1A0A00), Color(0xFF7C2D12)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      )
+                    ],
+                  ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        width: 130,
-                        height: 130,
-                        child: CustomPaint(
-                          painter: _SimpleDonutPainter(
-                            principalPct: principalPct,
-                            interestPct: interestPct,
-                            isDark: isDark,
-                          ),
+                      Text('Maximum Borrowing Capacity', style: AppTextStyles.dmSans(size: 10, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.8)),
+                      const SizedBox(height: 4),
+                      Text(CurrencyFormatter.format(loanAmt, currencyCode: 'AUD'), style: AppTextStyles.playfair(size: 36, color: const Color(0xFFFFD700), weight: FontWeight.w800)),
+                      Text('Based on APRA serviceability buffer of 3%', style: AppTextStyles.dmSans(size: 11, color: Colors.white70)),
+                      const SizedBox(height: 16),
+
+                      // rc-grid
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        children: [
+                          _buildResultBox('Max Property', CurrencyFormatter.format(maxProp, currencyCode: 'AUD'), color: const Color(0xFFFFD700)),
+                          _buildResultBox('Monthly Repayment', '${CurrencyFormatter.format(realRepay, currencyCode: 'AUD')}/mo'),
+                          _buildResultBox('Serviceability Rate', '9.09%', color: const Color(0xFFBBF7D0)),
+                          _buildResultBox('DTI Ratio', '${dti.toStringAsFixed(1)}x', color: dti > 6 ? const Color(0xFFFCA5A5) : dti > 4.5 ? const Color(0xFFFBBF24) : const Color(0xFF86EFAC)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Income allocation bar
+                      Text('INCOME ALLOCATION', style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.5)),
+                      const SizedBox(height: 6),
+                      Container(
+                        height: 10,
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(5)),
+                        clipBehavior: Clip.antiAlias,
+                        child: Row(
+                          children: [
+                            if (repayPct > 0) Expanded(flex: (repayPct * 100).toInt(), child: Container(color: const Color(0xFFFFD700))),
+                            if (expPct > 0) Expanded(flex: (expPct * 100).toInt(), child: Container(color: const Color(0xFF60A5FA))),
+                            if (freePct > 0) Expanded(flex: (freePct * 100).toInt(), child: Container(color: const Color(0xFFBBF7D0))),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Text('Total Repayable', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.w700)),
-                      Text(CurrencyFormatter.format(totalRepay, currencyCode: 'AUD'), style: AppTextStyles.playfair(size: 22, color: theme.getTextColor(context), weight: FontWeight.w800)),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 8),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildDonutLegendItem('Principal', const Color(0xFF7C2D12), CurrencyFormatter.format(loanAmt, currencyCode: 'AUD')),
-                          const SizedBox(width: 16),
-                          _buildDonutLegendItem('Interest', const Color(0xFF002868), CurrencyFormatter.format(totalInterest, currencyCode: 'AUD')),
+                          _buildAllocLegend(const Color(0xFFFFD700), 'Repayment'),
+                          const SizedBox(width: 10),
+                          _buildAllocLegend(const Color(0xFF60A5FA), 'Expenses'),
+                          const SizedBox(width: 10),
+                          _buildAllocLegend(const Color(0xFFBBF7D0), 'Surplus'),
                         ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      ElevatedButton(
+                        onPressed: _saveCalculation,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.12),
+                          foregroundColor: Colors.white,
+                          side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          minimumSize: const Size(double.infinity, 40),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('🔖', style: TextStyle(fontSize: 14)),
+                            const SizedBox(width: 6),
+                            Text('Save This Calculation', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Donut repays card
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Repayment Breakdown', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context), weight: FontWeight.w800)),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              width: 130,
+                              height: 130,
+                              child: CustomPaint(
+                                painter: _SimpleDonutPainter(
+                                  principalPct: principalPct,
+                                  interestPct: interestPct,
+                                  isDark: isDark,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text('Total Repayable', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.w700)),
+                            Text(CurrencyFormatter.format(totalRepay, currencyCode: 'AUD'), style: AppTextStyles.playfair(size: 22, color: theme.getTextColor(context), weight: FontWeight.w800)),
+                            const SizedBox(height: 14),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildDonutLegendItem('Principal', const Color(0xFF7C2D12), CurrencyFormatter.format(loanAmt, currencyCode: 'AUD')),
+                                const SizedBox(width: 16),
+                                _buildDonutLegendItem('Interest', const Color(0xFF002868), CurrencyFormatter.format(totalInterest, currencyCode: 'AUD')),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -527,6 +637,7 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
     required double value,
     required double min,
     required double max,
+    String? errorText,
     required ValueChanged<double> onChanged,
   }) {
     final theme = widget.theme;
@@ -541,7 +652,7 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFFFF8F0),
-            border: Border.all(color: theme.getBorderColor(context)),
+            border: Border.all(color: errorText != null ? Colors.red : theme.getBorderColor(context)),
             borderRadius: BorderRadius.circular(11),
           ),
           child: Row(
@@ -563,6 +674,10 @@ class _AUAffordabilityState extends ConsumerState<AUAffordability> {
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(errorText, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+        ],
         SliderTheme(
           data: SliderThemeData(
             activeTrackColor: primaryColor,

@@ -26,6 +26,11 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
   final _bestRateController = TextEditingController(text: '4.64');
   final _penaltyController = TextEditingController(text: '0');
 
+  final _resultsKey = GlobalKey();
+  bool _showResults = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   @override
   void dispose() {
     _balanceController.dispose();
@@ -61,13 +66,82 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
     return totalInt;
   }
 
+  double _val(TextEditingController c, double defaultVal) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    final bal = double.tryParse(_balanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (bal <= 0) errors['balance'] = 'Enter a valid balance';
+
+    final curRate = double.tryParse(_currentRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (curRate <= 0 || curRate > 25) errors['curRate'] = 'Enter interest rate (0.1% - 25%)';
+
+    final remAmort = double.tryParse(_remAmortController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (remAmort <= 0 || remAmort > 50) errors['remAmort'] = 'Enter a valid amortization term';
+
+    final newRate = double.tryParse(_newRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (newRate <= 0 || newRate > 25) errors['newRate'] = 'Enter interest rate (0.1% - 25%)';
+
+    final bestRate = double.tryParse(_bestRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (bestRate <= 0 || bestRate > 25) errors['bestRate'] = 'Enter interest rate (0.1% - 25%)';
+
+    final penaltyVal = double.tryParse(_penaltyController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (penaltyVal < 0) errors['penalty'] = 'Enter a valid break penalty';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_balanceController] = bal;
+      _calcSnapshot[_currentRateController] = curRate;
+      _calcSnapshot[_remAmortController] = remAmort;
+      _calcSnapshot[_newRateController] = newRate;
+      _calcSnapshot[_bestRateController] = bestRate;
+      _calcSnapshot[_penaltyController] = penaltyVal;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _balanceController.text = '480000';
+      _currentRateController.text = '2.39';
+      _remAmortController.text = '20';
+      _newRateController.text = '4.99';
+      _bestRateController.text = '4.64';
+      _penaltyController.text = '0';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   void _saveCalculation() async {
-    final double bal = double.tryParse(_balanceController.text) ?? 480000;
-    final double curRate = double.tryParse(_currentRateController.text) ?? 2.39;
-    final double remAmort = double.tryParse(_remAmortController.text) ?? 20;
-    final double newRate = double.tryParse(_newRateController.text) ?? 4.99;
-    final double bestRate = double.tryParse(_bestRateController.text) ?? 4.64;
-    final double penaltyVal = double.tryParse(_penaltyController.text) ?? 0;
+    final double bal = _val(_balanceController, 480000);
+    final double curRate = _val(_currentRateController, 2.39);
+    final double remAmort = _val(_remAmortController, 20);
+    final double newRate = _val(_newRateController, 4.99);
+    final double bestRate = _val(_bestRateController, 4.64);
+    final double penaltyVal = _val(_penaltyController, 0);
 
     final double oldPmtVal = _pmt(bal, curRate, remAmort);
     final double newPmtVal = _pmt(bal, newRate, remAmort);
@@ -189,12 +263,12 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
       _ratesInitialized = true;
     }
 
-    final double bal = double.tryParse(_balanceController.text) ?? 480000;
-    final double curRate = double.tryParse(_currentRateController.text) ?? 2.39;
-    final double remAmort = double.tryParse(_remAmortController.text) ?? 20;
-    final double newRate = double.tryParse(_newRateController.text) ?? 4.99;
-    final double bestRate = double.tryParse(_bestRateController.text) ?? 4.64;
-    final double penaltyVal = double.tryParse(_penaltyController.text) ?? 0;
+    final double bal = _val(_balanceController, 480000);
+    final double curRate = _val(_currentRateController, 2.39);
+    final double remAmort = _val(_remAmortController, 20);
+    final double newRate = _val(_newRateController, 4.99);
+    final double bestRate = _val(_bestRateController, 4.64);
+    final double penaltyVal = _val(_penaltyController, 0);
 
     final double oldPmtVal = _pmt(bal, curRate, remAmort);
     final double newPmtVal = _pmt(bal, newRate, remAmort);
@@ -208,6 +282,15 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
     final double barOldW = maxPmt > 0 ? (oldPmtVal / maxPmt) : 0;
     final double barNewW = maxPmt > 0 ? (newPmtVal / maxPmt) : 0;
     final double barBestW = maxPmt > 0 ? (bestPmtVal / maxPmt) : 0;
+
+    final isDirty = _showResults && (
+      (double.tryParse(_balanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_balanceController] ?? 0.0) ||
+      (double.tryParse(_currentRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_currentRateController] ?? 0.0) ||
+      (double.tryParse(_remAmortController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_remAmortController] ?? 0.0) ||
+      (double.tryParse(_newRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_newRateController] ?? 0.0) ||
+      (double.tryParse(_bestRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_bestRateController] ?? 0.0) ||
+      (double.tryParse(_penaltyController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_penaltyController] ?? 0.0)
+    );
 
     // Cumulative 5-yr Interest comparisons
     final List<Map<String, double>> cumInterestData = [];
@@ -231,14 +314,30 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Current Mortgage Details
-        Text(
-          'CURRENT MORTGAGE',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'CURRENT MORTGAGE',
+              style: AppTextStyles.dmSans(
+                size: 10,
+                weight: FontWeight.bold,
+                color: theme.getMutedColor(context),
+                letterSpacing: 0.6,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -251,16 +350,16 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
           ),
           child: Column(
             children: [
-              _buildInputField('Outstanding Balance at Renewal', _balanceController, prefix: 'CA\$'),
+              _buildInputField('Outstanding Balance at Renewal', _balanceController, prefix: 'CA\$', errorText: _errors['balance']),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Current Rate (Expiring)', _currentRateController, suffix: '%'),
+                    child: _buildInputField('Current Rate (Expiring)', _currentRateController, suffix: '%', errorText: _errors['curRate']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Remaining Amortization', _remAmortController, suffix: 'yrs'),
+                    child: _buildInputField('Remaining Amortization', _remAmortController, suffix: 'yrs', errorText: _errors['remAmort']),
                   ),
                 ],
               ),
@@ -290,17 +389,17 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
           ),
           child: Column(
             children: [
-              _buildInputField('New Rate — Lender Offer', _newRateController, suffix: '%'),
+              _buildInputField('New Rate — Lender Offer', _newRateController, suffix: '%', errorText: _errors['newRate']),
               const SizedBox(height: 12),
-              _buildInputField('Best Rate You\'ve Found', _bestRateController, suffix: '%'),
+              _buildInputField('Best Rate You\'ve Found', _bestRateController, suffix: '%', errorText: _errors['bestRate']),
               const SizedBox(height: 12),
-              _buildInputField('Break Penalty (if breaking early)', _penaltyController, prefix: 'CA\$'),
+              _buildInputField('Break Penalty (if breaking early)', _penaltyController, prefix: 'CA\$', errorText: _errors['penalty']),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => setState(() {}),
+                      onPressed: _calculate,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFC8102E),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -312,239 +411,272 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _saveCalculation,
-                    child: Container(
-                      width: 50,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: theme.primaryColor,
-                        borderRadius: BorderRadius.circular(12),
+                  if (_showResults) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: _saveCalculation,
+                      child: Container(
+                        width: 50,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text('💾', style: TextStyle(fontSize: 18)),
                       ),
-                      alignment: Alignment.center,
-                      child: const Text('💾', style: TextStyle(fontSize: 18)),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        if (_showResults) ...[
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Renewal Impact
-        Text(
-          'RENEWAL IMPACT',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'MONTHLY PAYMENT CHANGE AT RENEWAL',
-                style: AppTextStyles.dmSans(
-                  size: 9,
-                  color: Colors.white60,
-                  weight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 12),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                childAspectRatio: 2.2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                children: [
-                  _resBox('Old Payment', CurrencyFormatter.format(oldPmtVal, symbol: 'CA\$'), const Color(0xFF6EDFA0)),
-                  _resBox('New Payment', CurrencyFormatter.format(newPmtVal, symbol: 'CA\$'), const Color(0xFFFF8A9A)),
-                  _resBox('Monthly Change', '${diff >= 0 ? '+' : ''}${CurrencyFormatter.format(diff, symbol: 'CA\$')}', const Color(0xFFFFD580)),
-                  _resBox('5-Yr Extra Cost', '${extra5yr >= 0 ? '+' : ''}${CurrencyFormatter.format(extra5yr, symbol: 'CA\$')}', const Color(0xFFFF8A9A)),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Visual Analysis
-        Text(
-          'VISUAL ANALYSIS',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Monthly Payment Comparison',
-                style: AppTextStyles.playfair(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context)),
-              ),
-              const SizedBox(height: 14),
-
-              // Expiring Rate Bar
-              _compareBar('Expiring Rate', CurrencyFormatter.format(oldPmtVal, symbol: 'CA\$'), 'At ${curRate.toStringAsFixed(2)}%', barOldW, const Color(0xFF6EDFA0)),
-              const Divider(height: 20, thickness: 0.5),
-
-              // Lender Offer Bar
-              _compareBar('Lender Offer', CurrencyFormatter.format(newPmtVal, symbol: 'CA\$'), 'At ${newRate.toStringAsFixed(2)}%', barNewW, const Color(0xFFFF8A9A)),
-              const Divider(height: 20, thickness: 0.5),
-
-              // Best Rate Bar
-              _compareBar('🏆 Best Rate', CurrencyFormatter.format(bestPmtVal, symbol: 'CA\$'), 'At ${bestRate.toStringAsFixed(2)}%', barBestW, const Color(0xFFFFD580)),
-
-              const SizedBox(height: 24),
-              Text(
-                '5-Year Cumulative Interest Cost',
-                style: AppTextStyles.playfair(size: 12, weight: FontWeight.bold, color: theme.getTextColor(context)),
-              ),
-              const SizedBox(height: 16),
-              // Cumulative double bars chart
-              SizedBox(
-                height: 70,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: cumInterestData.asMap().entries.map((entry) {
-                    final idx = entry.key;
-                    final d = entry.value;
-
-                    final double nh = (d['new']! / maxInterestVal) * 50;
-                    final double bh = (d['best']! / maxInterestVal) * 50;
-
-                    return Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: nh.clamp(2.0, 50.0),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFF8A9A),
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
-                                ),
-                              ),
-                              const SizedBox(width: 2),
-                              Container(
-                                width: 8,
-                                height: bh.clamp(2.0, 50.0),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFFD580),
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Yr ${idx + 1}',
-                            style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.bold, color: theme.getMutedColor(context)),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  _chartLeg('Lender Offer', const Color(0xFFFF8A9A)),
-                  const SizedBox(width: 14),
-                  _chartLeg('Best Rate', const Color(0xFFFFD580)),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Scenario Comparison
-        Text(
-          'SCENARIO COMPARISON',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        _scenarioCard('Your Expiring Rate', '${curRate.toStringAsFixed(2)}% Fixed', CurrencyFormatter.format(oldPmtVal, symbol: 'CA\$'), 'This rate expires at renewal — for reference only', const Color(0xFFDCF4E8), const Color(0xFF1A5C35)),
-        const SizedBox(height: 8),
-        _scenarioCard('Lender Renewal Offer', '${newRate.toStringAsFixed(2)}% Fixed', CurrencyFormatter.format(newPmtVal, symbol: 'CA\$'), '+${CurrencyFormatter.format(diff, symbol: 'CA\$')}/mo vs expiring rate', const Color(0xFFFFE4E8), const Color(0xFFC8102E), diffTag: '↑ +${CurrencyFormatter.format(diff.abs(), symbol: 'CA\$')}/mo'),
-        const SizedBox(height: 8),
-        _scenarioCard('🏆 Best Rate Found', '${bestRate.toStringAsFixed(2)}% Fixed', CurrencyFormatter.format(bestPmtVal, symbol: 'CA\$'), 'Save ${CurrencyFormatter.format(diffVsNew, symbol: 'CA\$')}/mo vs lender offer', const Color(0xFFFEF3C7), const Color(0xFFD97706), diffTag: '↓ Save ${CurrencyFormatter.format(diffVsNew.abs(), symbol: 'CA\$')}/mo'),
-        const SizedBox(height: 20),
-
-        // Early break penalty analysis if applicable
-        if (penaltyVal > 0) ...[
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              border: Border.all(color: const Color(0xFFF59E0B)),
-              borderRadius: BorderRadius.circular(16),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Renewal Impact
                 Text(
-                  '⚠️ Early Break Penalty Analysis',
-                  style: AppTextStyles.dmSans(size: 12, color: const Color(0xFF92400E), weight: FontWeight.bold),
+                  'RENEWAL IMPACT',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                _penItem('Break Penalty', CurrencyFormatter.format(penaltyVal, symbol: 'CA\$')),
-                const Divider(color: Colors.black12, height: 16),
-                _penItem('Monthly Savings (by switching)', '${CurrencyFormatter.format(diffVsNew.abs(), symbol: 'CA\$')}/mo'),
-                const Divider(color: Colors.black12, height: 16),
-                _penItem('Break-Even Period', diffVsNew > 0 ? '${(penaltyVal / diffVsNew).ceil()} months' : '— months'),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'MONTHLY PAYMENT CHANGE AT RENEWAL',
+                        style: AppTextStyles.dmSans(
+                          size: 9,
+                          color: Colors.white60,
+                          weight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.2,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        children: [
+                          _resBox('Old Payment', CurrencyFormatter.format(oldPmtVal, symbol: 'CA\$'), const Color(0xFF6EDFA0)),
+                          _resBox('New Payment', CurrencyFormatter.format(newPmtVal, symbol: 'CA\$'), const Color(0xFFFF8A9A)),
+                          _resBox('Monthly Change', '${diff >= 0 ? '+' : ''}${CurrencyFormatter.format(diff, symbol: 'CA\$')}', const Color(0xFFFFD580)),
+                          _resBox('5-Yr Extra Cost', '${extra5yr >= 0 ? '+' : ''}${CurrencyFormatter.format(extra5yr, symbol: 'CA\$')}', const Color(0xFFFF8A9A)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Visual Analysis
+                Text(
+                  'VISUAL ANALYSIS',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Monthly Payment Comparison',
+                        style: AppTextStyles.playfair(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context)),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Expiring Rate Bar
+                      _compareBar('Expiring Rate', CurrencyFormatter.format(oldPmtVal, symbol: 'CA\$'), 'At ${curRate.toStringAsFixed(2)}%', barOldW, const Color(0xFF6EDFA0)),
+                      const Divider(height: 20, thickness: 0.5),
+
+                      // Lender Offer Bar
+                      _compareBar('Lender Offer', CurrencyFormatter.format(newPmtVal, symbol: 'CA\$'), 'At ${newRate.toStringAsFixed(2)}%', barNewW, const Color(0xFFFF8A9A)),
+                      const Divider(height: 20, thickness: 0.5),
+
+                      // Best Rate Bar
+                      _compareBar('🏆 Best Rate', CurrencyFormatter.format(bestPmtVal, symbol: 'CA\$'), 'At ${bestRate.toStringAsFixed(2)}%', barBestW, const Color(0xFFFFD580)),
+
+                      const SizedBox(height: 24),
+                      Text(
+                        '5-Year Cumulative Interest Cost',
+                        style: AppTextStyles.playfair(size: 12, weight: FontWeight.bold, color: theme.getTextColor(context)),
+                      ),
+                      const SizedBox(height: 16),
+                      // Cumulative double bars chart
+                      SizedBox(
+                        height: 70,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: cumInterestData.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final d = entry.value;
+
+                            final double nh = (d['new']! / maxInterestVal) * 50;
+                            final double bh = (d['best']! / maxInterestVal) * 50;
+
+                            return Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: nh.clamp(2.0, 50.0),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFFF8A9A),
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Container(
+                                        width: 8,
+                                        height: bh.clamp(2.0, 50.0),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFFFD580),
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Yr ${idx + 1}',
+                                    style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.bold, color: theme.getMutedColor(context)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          _chartLeg('Lender Offer', const Color(0xFFFF8A9A)),
+                          const SizedBox(width: 14),
+                          _chartLeg('Best Rate', const Color(0xFFFFD580)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Scenario Comparison
+                Text(
+                  'SCENARIO COMPARISON',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _scenarioCard('Your Expiring Rate', '${curRate.toStringAsFixed(2)}% Fixed', CurrencyFormatter.format(oldPmtVal, symbol: 'CA\$'), 'This rate expires at renewal — for reference only', const Color(0xFFDCF4E8), const Color(0xFF1A5C35)),
+                const SizedBox(height: 8),
+                _scenarioCard('Lender Renewal Offer', '${newRate.toStringAsFixed(2)}% Fixed', CurrencyFormatter.format(newPmtVal, symbol: 'CA\$'), '+${CurrencyFormatter.format(diff, symbol: 'CA\$')}/mo vs expiring rate', const Color(0xFFFFE4E8), const Color(0xFFC8102E), diffTag: '↑ +${CurrencyFormatter.format(diff.abs(), symbol: 'CA\$')}/mo'),
+                const SizedBox(height: 8),
+                _scenarioCard('🏆 Best Rate Found', '${bestRate.toStringAsFixed(2)}% Fixed', CurrencyFormatter.format(bestPmtVal, symbol: 'CA\$'), 'Save ${CurrencyFormatter.format(diffVsNew, symbol: 'CA\$')}/mo vs lender offer', const Color(0xFFFEF3C7), const Color(0xFFD97706), diffTag: '↓ Save ${CurrencyFormatter.format(diffVsNew.abs(), symbol: 'CA\$')}/mo'),
+                const SizedBox(height: 20),
+
+                // Early break penalty analysis if applicable
+                if (penaltyVal > 0) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      border: Border.all(color: const Color(0xFFF59E0B)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '⚠️ Early Break Penalty Analysis',
+                          style: AppTextStyles.dmSans(size: 12, color: const Color(0xFF92400E), weight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        _penItem('Break Penalty', CurrencyFormatter.format(penaltyVal, symbol: 'CA\$')),
+                        const Divider(color: Colors.black12, height: 16),
+                        _penItem('Monthly Savings (by switching)', '${CurrencyFormatter.format(diffVsNew.abs(), symbol: 'CA\$')}/mo'),
+                        const Divider(color: Colors.black12, height: 16),
+                        _penItem('Break-Even Period', diffVsNew > 0 ? '${(penaltyVal / diffVsNew).ceil()} months' : '— months'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ],
             ),
           ),
-          const SizedBox(height: 20),
         ],
 
         // Checklist Card
@@ -641,7 +773,7 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? prefix, String? suffix}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? prefix, String? suffix, String? errorText}) {
     final theme = widget.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -660,7 +792,10 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
             borderRadius: BorderRadius.circular(11),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
           ),
           child: Row(
             children: [
@@ -694,6 +829,13 @@ class _CARenewalPlannerState extends ConsumerState<CARenewalPlanner> {
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500),
+          ),
+        ],
       ],
     );
   }

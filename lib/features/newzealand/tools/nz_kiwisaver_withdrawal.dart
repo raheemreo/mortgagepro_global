@@ -25,24 +25,94 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
   String _region = 'Auckland'; // 'Auckland', 'Wellington', 'Christchurch', 'Hamilton', 'Tauranga', 'Dunedin'
   String _contribRate = '3%'; // '3%', '4%', '6%', '8%', '10%'
 
-  void _saveCalc() async {
-    final double balance = double.tryParse(_balanceController.text) ?? 48500;
-    final double years = double.tryParse(_yearsController.text) ?? 7;
-    final double income = double.tryParse(_incomeController.text) ?? 85000;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
-    final withdrawable = balance >= 1000 && years >= 3 ? balance - 1000 : 0.0;
-    final grant = _calcGrant(years, income);
+  @override
+  void dispose() {
+    _balanceController.dispose();
+    _yearsController.dispose();
+    _incomeController.dispose();
+    super.dispose();
+  }
+
+  void _reset() {
+    setState(() {
+      _balanceController.text = '48500';
+      _yearsController.text = '7';
+      _incomeController.text = '85000';
+      _propertyType = 'Existing home';
+      _region = 'Auckland';
+      _contribRate = '3%';
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final double balance = double.tryParse(_balanceController.text) ?? 0.0;
+    final double years = double.tryParse(_yearsController.text) ?? 0.0;
+    final double income = double.tryParse(_incomeController.text) ?? 0.0;
+
+    if (balance <= 0) {
+      errors['balance'] = 'Enter valid KiwiSaver balance';
+    }
+    if (years < 0) {
+      errors['years'] = 'Enter valid contribution years';
+    }
+    if (income < 0) {
+      errors['income'] = 'Enter valid annual income';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['balance'] = balance;
+      _calcSnapshot['years'] = years;
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['propertyType'] = _propertyType;
+      _calcSnapshot['region'] = _region;
+      _calcSnapshot['contribRate'] = _contribRate;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _saveCalc() async {
+    final snapBal = _calcSnapshot['balance'] ?? (double.tryParse(_balanceController.text) ?? 48500.0);
+    final snapYrs = _calcSnapshot['years'] ?? (double.tryParse(_yearsController.text) ?? 7.0);
+    final snapInc = _calcSnapshot['income'] ?? (double.tryParse(_incomeController.text) ?? 85000.0);
+    final snapPropType = _calcSnapshot['propertyType'] ?? _propertyType;
+    final withdrawable = snapBal >= 1000 && snapYrs >= 3 ? snapBal - 1000 : 0.0;
+    final grant = _calcGrant(snapYrs, snapInc, snapPropType);
     final total = withdrawable + grant;
 
-    final results = {
+    final Map<String, double> results = {
       'Withdrawable': withdrawable,
       'Grant Amount': grant,
       'Total Deposit': total,
     };
-    final inputs = {
-      'Balance': balance,
-      'Years': years,
-      'Income': income,
+    final Map<String, double> inputs = {
+      'Balance': snapBal,
+      'Years': snapYrs,
+      'Income': snapInc,
     };
 
     final labelCtrl = TextEditingController(text: 'KiwiSaver Withdrawal');
@@ -127,9 +197,9 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
     }
   }
 
-  double _calcGrant(double years, double income) {
+  double _calcGrant(double years, double income, String propType) {
     if (years < 3 || income > 95000) return 0.0;
-    final isNew = _propertyType == 'New build';
+    final isNew = propType == 'New build';
     final double multiplier = isNew ? 2000 : 1000;
     final double maxGrant = isNew ? 10000 : 5000;
     final double calculated = years * multiplier;
@@ -158,30 +228,65 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
     final mutedCol = theme.getMutedColor(context);
     final borderCol = theme.getBorderColor(context);
 
-    final double balance = double.tryParse(_balanceController.text) ?? 48500;
-    final double years = double.tryParse(_yearsController.text) ?? 7;
-    final double income = double.tryParse(_incomeController.text) ?? 85000;
+    // Snapshot variables if results are shown, otherwise live inputs
+    final double balance = _showResults
+        ? (_calcSnapshot['balance'] ?? 0.0)
+        : (double.tryParse(_balanceController.text) ?? 0.0);
+    final double years = _showResults
+        ? (_calcSnapshot['years'] ?? 0.0)
+        : (double.tryParse(_yearsController.text) ?? 0.0);
+    final double income = _showResults
+        ? (_calcSnapshot['income'] ?? 0.0)
+        : (double.tryParse(_incomeController.text) ?? 0.0);
+    final String currentPropType = _showResults
+        ? (_calcSnapshot['propertyType'] ?? _propertyType)
+        : _propertyType;
+    final String currentRegion = _showResults
+        ? (_calcSnapshot['region'] ?? _region)
+        : _region;
+    final String currentContribRate = _showResults
+        ? (_calcSnapshot['contribRate'] ?? _contribRate)
+        : _contribRate;
 
     final withdrawable = balance >= 1000 && years >= 3 ? balance - 1000 : 0.0;
-    final grant = _calcGrant(years, income);
+    final grant = _calcGrant(years, income, currentPropType);
     final totalDeposit = withdrawable + grant;
 
     final hasThreeYears = years >= 3;
     final isIncomeEligible = income <= 95000;
-    final priceCap = _priceCapFor(_region, _propertyType);
+    final priceCap = _priceCapFor(currentRegion, currentPropType);
 
     // Breakdown parts
     final double memberContrib = withdrawable * 0.6;
     final double employerContrib = withdrawable * 0.3;
     final double govtContrib = withdrawable * 0.1;
 
+    final isDirty = _showResults && (
+      (double.tryParse(_balanceController.text) ?? 0.0) != (_calcSnapshot['balance'] ?? 0.0) ||
+      (double.tryParse(_yearsController.text) ?? 0.0) != (_calcSnapshot['years'] ?? 0.0) ||
+      (double.tryParse(_incomeController.text) ?? 0.0) != (_calcSnapshot['income'] ?? 0.0) ||
+      _propertyType != (_calcSnapshot['propertyType'] ?? '') ||
+      _region != (_calcSnapshot['region'] ?? '') ||
+      _contribRate != (_calcSnapshot['contribRate'] ?? '')
+    );
+
     return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 50),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Input panel
-          Text('YOUR DETAILS', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: mutedCol, letterSpacing: 0.8)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('YOUR DETAILS', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: mutedCol, letterSpacing: 0.8)),
+              GestureDetector(
+                onTap: _reset,
+                child: Text('Reset ↺', style: AppTextStyles.dmSans(size: 11, color: theme.primaryColor, weight: FontWeight.bold)),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(18),
@@ -220,52 +325,18 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('KIWISAVER BALANCE', style: AppTextStyles.dmSans(size: 8, color: Colors.white38)),
-                            const SizedBox(height: 2),
-                            TextField(
-                              controller: _balanceController,
-                              style: AppTextStyles.dmSans(size: 13.5, weight: FontWeight.bold, color: Colors.white),
-                              keyboardType: TextInputType.number,
-                              onChanged: (val) => setState(() {}),
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _buildInputBox(
+                        label: 'KIWISAVER BALANCE',
+                        controller: _balanceController,
+                        errorText: _errors['balance'],
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('YEARS CONTRIBUTING', style: AppTextStyles.dmSans(size: 8, color: Colors.white38)),
-                            const SizedBox(height: 2),
-                            TextField(
-                              controller: _yearsController,
-                              style: AppTextStyles.dmSans(size: 13.5, weight: FontWeight.bold, color: Colors.white),
-                              keyboardType: TextInputType.number,
-                              onChanged: (val) => setState(() {}),
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _buildInputBox(
+                        label: 'YEARS CONTRIBUTING',
+                        controller: _yearsController,
+                        errorText: _errors['years'],
                       ),
                     ),
                   ],
@@ -275,7 +346,7 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
                   children: [
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +373,7 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,33 +407,16 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('ANNUAL INCOME', style: AppTextStyles.dmSans(size: 8, color: Colors.white38)),
-                            const SizedBox(height: 2),
-                            TextField(
-                              controller: _incomeController,
-                              style: AppTextStyles.dmSans(size: 13.5, weight: FontWeight.bold, color: Colors.white),
-                              keyboardType: TextInputType.number,
-                              onChanged: (val) => setState(() {}),
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _buildInputBox(
+                        label: 'ANNUAL INCOME',
+                        controller: _incomeController,
+                        errorText: _errors['income'],
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,7 +447,7 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
                 ),
                 const SizedBox(height: 14),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _calculate,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.primaryColor,
                     minimumSize: const Size(double.infinity, 44),
@@ -406,232 +460,298 @@ class _NZKiwiSaverWithdrawalState extends ConsumerState<NZKiwiSaverWithdrawal> {
           ),
           const SizedBox(height: 20),
 
-          // Eligibility Status Badge row
-          Text('ELIGIBILITY STATUS', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: mutedCol, letterSpacing: 0.8)),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              _buildEligBadge(hasThreeYears, '3-yr min met', 'Under 3 years'),
-              _buildEligBadge(true, 'First-home buyer', 'Not FHB'),
-              _buildEligBadge(true, 'NZ Citizen/Res.', 'Overseas buyer'),
-              _buildEligBadge(isIncomeEligible, 'Income eligible', 'Income cap exceeded'),
-              _buildEligBadge(true, 'Price cap check', 'Exceeds cap', isWarning: true),
+          if (_showResults) ...[
+            if (isDirty) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Text(
+                        'Inputs have changed. Tap Calculate My Withdrawal to refresh results.',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
-          ),
-          const SizedBox(height: 16),
-
-          // Results Card
-          Text('YOUR WITHDRAWAL ESTIMATE', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: mutedCol, letterSpacing: 0.8)),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFFF0FDFA), Color(0xFFCCFBF1)]),
-              border: Border.all(color: const Color(0xFF0D9488), width: 2),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text('🥝', style: TextStyle(fontSize: 16)),
-                    const SizedBox(width: 8),
-                    Text('KiwiSaver Withdrawal Breakdown', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: const Color(0xFF0F766E))),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.8,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  children: [
-                    _buildResultBox('Your Contributions', memberContrib, '${years.toInt()} yrs @ $_contribRate salary'),
-                    _buildResultBox('Employer Contributions', employerContrib, '3% employer match'),
-                    _buildResultBox('Govt Contribution', govtContrib, '\$521.43/yr max credits'),
-                    _buildResultBox('Withdrawable Amount', withdrawable, 'Balance minus \$1,000'),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: const Color(0xFF0D3B2E), borderRadius: BorderRadius.circular(12)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Container(
+              key: _resultsKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Eligibility Status Badge row
+                  Text('ELIGIBILITY STATUS', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: mutedCol, letterSpacing: 0.8)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Total Available for Deposit', style: AppTextStyles.dmSans(size: 11, color: Colors.white70)),
-                          Text('KiwiSaver + HomeStart Grant', style: AppTextStyles.dmSans(size: 8, color: Colors.white54)),
-                        ],
-                      ),
-                      Text(
-                        CurrencyFormatter.compact(totalDeposit, symbol: 'NZ\$'),
-                        style: AppTextStyles.dmSans(size: 22, weight: FontWeight.w800, color: const Color(0xFFF5D060)),
-                      ),
+                      _buildEligBadge(hasThreeYears, '3-yr min met', 'Under 3 years'),
+                      _buildEligBadge(true, 'First-home buyer', 'Not FHB'),
+                      _buildEligBadge(true, 'NZ Citizen/Res.', 'Overseas buyer'),
+                      _buildEligBadge(isIncomeEligible, 'Income eligible', 'Income cap exceeded'),
+                      _buildEligBadge(true, 'Price cap check', 'Exceeds cap', isWarning: true),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-          // Save calculation snapshot
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF0D3B2E), Color(0xFF1A6B4A)]),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                const Text('💾', style: TextStyle(fontSize: 22)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Save This Calculation', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.bold, color: Colors.white)),
-                      Text('${CurrencyFormatter.compact(totalDeposit, symbol: 'NZ\$')} available · $_region', style: AppTextStyles.dmSans(size: 9, color: Colors.white70)),
-                    ],
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: _saveCalc,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF5D060),
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    minimumSize: Size.zero,
-                  ),
-                  child: Text('Save', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.w800)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Donut Composition Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Deposit Composition', style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: textCol)),
-                    Text('${CurrencyFormatter.compact(totalDeposit, symbol: 'NZ\$')} total', style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.w600, color: theme.primaryColor)),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 110,
-                      height: 110,
-                      child: CustomPaint(
-                        painter: DepositDonutPainter(
-                          withdrawable: withdrawable,
-                          grant: grant,
-                          accentColor: theme.primaryColor,
-                          secondaryColor: const Color(0xFFF5D060),
-                          bgCol: theme.getBgColor(context),
+                  // Results Card
+                  Text('YOUR WITHDRAWAL ESTIMATE', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: mutedCol, letterSpacing: 0.8)),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFFF0FDFA), Color(0xFFCCFBF1)]),
+                      border: Border.all(color: const Color(0xFF0D9488), width: 2),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text('🥝', style: TextStyle(fontSize: 16)),
+                            const SizedBox(width: 8),
+                            Text('KiwiSaver Withdrawal Breakdown', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: const Color(0xFF0F766E))),
+                          ],
                         ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                        const SizedBox(height: 12),
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          childAspectRatio: 1.8,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          children: [
+                            _buildResultBox('Your Contributions', memberContrib, '${years.toInt()} yrs @ $currentContribRate salary'),
+                            _buildResultBox('Employer Contributions', employerContrib, '3% employer match'),
+                            _buildResultBox('Govt Contribution', govtContrib, '\$521.43/yr max credits'),
+                            _buildResultBox('Withdrawable Amount', withdrawable, 'Balance minus \$1,000'),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: const Color(0xFF0D3B2E), borderRadius: BorderRadius.circular(12)),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                '${(totalDeposit / 1000).toStringAsFixed(1)}K',
-                                style: AppTextStyles.dmSans(size: 15, weight: FontWeight.w800, color: textCol),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Total Available for Deposit', style: AppTextStyles.dmSans(size: 11, color: Colors.white70)),
+                                  Text('KiwiSaver + HomeStart Grant', style: AppTextStyles.dmSans(size: 8, color: Colors.white54)),
+                                ],
                               ),
-                              Text('Deposit', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                              Text(
+                                CurrencyFormatter.compact(totalDeposit, symbol: 'NZ\$'),
+                                style: AppTextStyles.dmSans(size: 22, weight: FontWeight.w800, color: const Color(0xFFF5D060)),
+                              ),
                             ],
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLegendRow('KiwiSaver', withdrawable, theme.primaryColor),
-                          const SizedBox(height: 6),
-                          _buildLegendRow('HomeStart Grant', grant, const Color(0xFFF5D060)),
-                          const SizedBox(height: 8),
-                          const Divider(height: 1),
-                          const SizedBox(height: 8),
-                          Text('Property value cap:', style: AppTextStyles.dmSans(size: 9, color: mutedCol)),
-                          Text('Max \$${(priceCap / 1000).toInt()}K ($_region)', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: textCol)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // HomeStart Grant Box
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)]),
-              border: Border.all(color: const Color(0xFFF59E0B)),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                const Text('🎁', style: TextStyle(fontSize: 26)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(grant > 0 ? 'First Home Grant — You Qualify' : 'First Home Grant — Ineligible',
-                          style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: const Color(0xFF92400E))),
-                      Text(grant > 0
-                          ? '$_propertyType · ${years.toInt()} yrs contributing · Income eligible'
-                          : 'Exceeds \$95K single income limit or under 3 yrs contributions',
-                          style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFFB45309))),
-                    ],
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('\$${(grant / 1000).toInt()}K', style: AppTextStyles.dmSans(size: 18, weight: FontWeight.w800, color: const Color(0xFF78350F))),
-                    Text('Eligible Grant', style: AppTextStyles.dmSans(size: 8, color: const Color(0xFF92400E))),
-                  ],
-                ),
-              ],
+                  const SizedBox(height: 16),
+
+                  // Save calculation snapshot
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF0D3B2E), Color(0xFF1A6B4A)]),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('💾', style: TextStyle(fontSize: 22)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Save This Calculation', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.bold, color: Colors.white)),
+                              Text('${CurrencyFormatter.compact(totalDeposit, symbol: 'NZ\$')} available · $currentRegion', style: AppTextStyles.dmSans(size: 9, color: Colors.white70)),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: _saveCalc,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF5D060),
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            minimumSize: Size.zero,
+                          ),
+                          child: Text('Save', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.w800)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Donut Composition Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: borderCol),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Deposit Composition', style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: textCol)),
+                            Text('${CurrencyFormatter.compact(totalDeposit, symbol: 'NZ\$')} total', style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.w600, color: theme.primaryColor)),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 110,
+                              height: 110,
+                              child: CustomPaint(
+                                painter: DepositDonutPainter(
+                                  withdrawable: withdrawable,
+                                  grant: grant,
+                                  accentColor: theme.primaryColor,
+                                  secondaryColor: const Color(0xFFF5D060),
+                                  bgCol: theme.getBgColor(context),
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '${(totalDeposit / 1000).toStringAsFixed(1)}K',
+                                        style: AppTextStyles.dmSans(size: 15, weight: FontWeight.w800, color: textCol),
+                                      ),
+                                      Text('Deposit', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildLegendRow('KiwiSaver', withdrawable, theme.primaryColor),
+                                  const SizedBox(height: 6),
+                                  _buildLegendRow('HomeStart Grant', grant, const Color(0xFFF5D060)),
+                                  const SizedBox(height: 8),
+                                  const Divider(height: 1),
+                                  const SizedBox(height: 8),
+                                  Text('Property value cap:', style: AppTextStyles.dmSans(size: 9, color: mutedCol)),
+                                  Text('Max \$${(priceCap / 1000).toInt()}K ($currentRegion)', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: textCol)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // HomeStart Grant Box
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)]),
+                      border: Border.all(color: const Color(0xFFF59E0B)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('🎁', style: TextStyle(fontSize: 26)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(grant > 0 ? 'First Home Grant — You Qualify' : 'First Home Grant — Ineligible',
+                                  style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: const Color(0xFF92400E))),
+                              Text(grant > 0
+                                  ? '$currentPropType · ${years.toInt()} yrs contributing · Income eligible'
+                                  : 'Exceeds \$95K single income limit or under 3 yrs contributions',
+                                  style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFFB45309))),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('\$${(grant / 1000).toInt()}K', style: AppTextStyles.dmSans(size: 18, weight: FontWeight.w800, color: const Color(0xFF78350F))),
+                            Text('Eligible Grant', style: AppTextStyles.dmSans(size: 8, color: const Color(0xFF92400E))),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+            // Key Rules list
+            Text('KEY RULES & STEPS', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: mutedCol, letterSpacing: 0.8)),
+            const SizedBox(height: 10),
+            _buildRuleStep(1, '3+ Year Contribution Minimum', 'Must have been a KiwiSaver member for at least 3 years to withdraw. You have contributed for ${years.toInt()} years.'),
+            _buildRuleStep(2, '\$1,000 Must Stay in Account', 'IRD requires a minimum \$1,000 balance to remain in your KiwiSaver account after withdrawal. Withdrawable amount includes all tax credits.'),
+            _buildRuleStep(3, 'House Price Cap — $currentRegion', 'Max purchase price for existing homes in $currentRegion: \$${(priceCap/1000).toInt()}K. Ensure your selected property falls below this cap.'),
+            _buildRuleStep(4, 'Apply via IRD — My KiwiSaver', 'Submit withdrawal application through ird.govt.nz or myIR portal. Processing takes 10–15 working days before settlement.'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputBox({
+    required String label,
+    required TextEditingController controller,
+    String? errorText,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white12,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: errorText != null ? Colors.red : Colors.transparent),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTextStyles.dmSans(size: 8, color: Colors.white38)),
+          const SizedBox(height: 2),
+          TextField(
+            controller: controller,
+            style: AppTextStyles.dmSans(size: 13.5, weight: FontWeight.bold, color: Colors.white),
+            keyboardType: TextInputType.number,
+            onChanged: (val) => setState(() {}),
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+              border: InputBorder.none,
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Key Rules list
-          Text('KEY RULES & STEPS', style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: mutedCol, letterSpacing: 0.8)),
-          const SizedBox(height: 10),
-          _buildRuleStep(1, '3+ Year Contribution Minimum', 'Must have been a KiwiSaver member for at least 3 years to withdraw. You have contributed for ${years.toInt()} years.'),
-          _buildRuleStep(2, '\$1,000 Must Stay in Account', 'IRD requires a minimum \$1,000 balance to remain in your KiwiSaver account after withdrawal. Withdrawable amount includes all tax credits.'),
-          _buildRuleStep(3, 'House Price Cap — $_region', 'Max purchase price for existing homes in $_region: \$${(priceCap/1000).toInt()}K. Ensure your selected property falls below this cap.'),
-          _buildRuleStep(4, 'Apply via IRD — My KiwiSaver', 'Submit withdrawal application through ird.govt.nz or myIR portal. Processing takes 10–15 working days before settlement.'),
+          if (errorText != null)
+            Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red[300], weight: FontWeight.bold)),
         ],
       ),
     );

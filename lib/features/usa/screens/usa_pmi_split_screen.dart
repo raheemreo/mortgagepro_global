@@ -21,12 +21,15 @@ class USAPmiSplitScreen extends ConsumerStatefulWidget {
 class _USAPmiSplitScreenState extends ConsumerState<USAPmiSplitScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   double _loanAmount = 350000;
   double _bpmiRate = 0.75;
   double _splitPct = 35.0;
 
   bool _calculating = false;
-  bool _showResults = true;
+  bool _showResults = false;
   bool _isCalcDirty = false;
 
   @override
@@ -37,6 +40,10 @@ class _USAPmiSplitScreenState extends ConsumerState<USAPmiSplitScreen> {
       _loanAmount = inputs['LoanAmt'] ?? 350000;
       _bpmiRate = inputs['BpmiRate'] ?? 0.75;
       _splitPct = inputs['SplitPct'] ?? 35.0;
+      _calcSnapshot['LoanAmt'] = _loanAmount;
+      _calcSnapshot['BpmiRate'] = _bpmiRate;
+      _calcSnapshot['SplitPct'] = _splitPct;
+      _showResults = true;
     }
   }
 
@@ -53,8 +60,9 @@ class _USAPmiSplitScreenState extends ConsumerState<USAPmiSplitScreen> {
       _loanAmount = 350000;
       _bpmiRate = 0.75;
       _splitPct = 35.0;
-      _showResults = true;
+      _showResults = false;
       _isCalcDirty = false;
+      _calcSnapshot.clear();
     });
   }
 
@@ -65,17 +73,33 @@ class _USAPmiSplitScreenState extends ConsumerState<USAPmiSplitScreen> {
     await Future.delayed(const Duration(milliseconds: 300));
     setState(() {
       _calculating = false;
+      _calcSnapshot['LoanAmt'] = _loanAmount;
+      _calcSnapshot['BpmiRate'] = _bpmiRate;
+      _calcSnapshot['SplitPct'] = _splitPct;
       _showResults = true;
       _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    final fullBpmiAnnual = _loanAmount * _bpmiRate / 100;
+    final loanAmt = _calcSnapshot['LoanAmt'] ?? _loanAmount;
+    final bpmiRate = _calcSnapshot['BpmiRate'] ?? _bpmiRate;
+    final splitPct = _calcSnapshot['SplitPct'] ?? _splitPct;
+
+    final fullBpmiAnnual = loanAmt * bpmiRate / 100;
     final fullBpmiMonthly = fullBpmiAnnual / 12;
     final totalPremiumValue = fullBpmiAnnual * 5;
-    final upfrontAmount = totalPremiumValue * (_splitPct / 100);
-    final remainingMonthlyFactor = 1.0 - (_splitPct / 100) * 0.9;
+    final upfrontAmount = totalPremiumValue * (splitPct / 100);
+    final remainingMonthlyFactor = 1.0 - (splitPct / 100) * 0.9;
     final monthlyAmount = fullBpmiMonthly * remainingMonthlyFactor;
 
     final labelCtrl = TextEditingController(text: 'Split Premium PMI');
@@ -182,16 +206,26 @@ class _USAPmiSplitScreenState extends ConsumerState<USAPmiSplitScreen> {
     final borderCol = _theme.getBorderColor(context);
     final bgCol = _theme.getBgColor(context);
 
-    // Calculations
-    final fullBpmiAnnual = _loanAmount * _bpmiRate / 100;
+    // Compute active calculation from snapshot or default to current values when not calculated yet
+    final double snapLoanAmount = _calcSnapshot['LoanAmt'] ?? _loanAmount;
+    final double snapBpmiRate = _calcSnapshot['BpmiRate'] ?? _bpmiRate;
+    final double snapSplitPct = _calcSnapshot['SplitPct'] ?? _splitPct;
+
+    final fullBpmiAnnual = snapLoanAmount * snapBpmiRate / 100;
     final fullBpmiMonthly = fullBpmiAnnual / 12;
 
     // Total premium value approximated as 5x annual premium
     final totalPremiumValue = fullBpmiAnnual * 5;
-    final upfrontAmount = totalPremiumValue * (_splitPct / 100);
-    final remainingMonthlyFactor = 1.0 - (_splitPct / 100) * 0.9;
+    final upfrontAmount = totalPremiumValue * (snapSplitPct / 100);
+    final remainingMonthlyFactor = 1.0 - (snapSplitPct / 100) * 0.9;
     final monthlyAmount = fullBpmiMonthly * remainingMonthlyFactor;
     final monthlySavings = fullBpmiMonthly - monthlyAmount;
+
+    final isDirty = _showResults && (
+      _loanAmount != snapLoanAmount ||
+      _bpmiRate != snapBpmiRate ||
+      _splitPct != snapSplitPct
+    );
 
     // Rate strip values
     final rateStats = [
@@ -673,7 +707,7 @@ class _USAPmiSplitScreenState extends ConsumerState<USAPmiSplitScreen> {
                                   ),
                           ),
                         ),
-                        if (_showResults && !_isCalcDirty) ...[
+                        if (_showResults) ...[
                           const SizedBox(width: 10),
                           ElevatedButton(
                             onPressed: _saveCalculation,
@@ -697,9 +731,38 @@ class _USAPmiSplitScreenState extends ConsumerState<USAPmiSplitScreen> {
               ),
 
               // Result Hero Card
-              if (_showResults && !_isCalcDirty) ...[
+              if (_showResults) ...[
+                if (isDirty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Calculate again to update results.',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              color: const Color(0xFFB45309),
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 Container(
+                  key: _resultsKey,
                   margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(

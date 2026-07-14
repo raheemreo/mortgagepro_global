@@ -25,9 +25,11 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
   String _propType = 'residential'; // residential, commercial
 
   final _priceController = TextEditingController(text: '380000');
-  double _price = 380000;
 
   bool _hasCalculated = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   // England SDLT (post April 2025)
   final List<Map<String, dynamic>> englandStd = const [
@@ -40,7 +42,7 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
   final List<Map<String, dynamic>> englandFtb = const [
     {'from': 0.0, 'to': 300000.0, 'rate': 0.0},
     {'from': 300000.0, 'to': 500000.0, 'rate': 5.0},
-    {'from': 500000.0, 'to': 925000.0, 'rate': 5.0}, // Reverts to std rate above 500K (no relief at all, but handled band by band)
+    {'from': 500000.0, 'to': 925000.0, 'rate': 5.0},
     {'from': 925000.0, 'to': 1500000.0, 'rate': 10.0},
     {'from': 1500000.0, 'to': double.infinity, 'rate': 12.0},
   ];
@@ -69,12 +71,15 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
     if (widget.savedCalc != null) {
       final inputs = widget.savedCalc!.inputs;
       _priceController.text = (inputs['price'] ?? 380000.0).toStringAsFixed(0);
-      _buyerType = widget.savedCalc!.label.contains('First-Time')
+      _buyerType = (inputs['isFTB'] ?? 0.0) == 1.0
           ? 'ftb'
-          : (widget.savedCalc!.label.contains('2nd Home') ? '2nd' : 'std');
-      _hasCalculated = true;
+          : ((inputs['is2nd'] ?? 0.0) == 1.0 ? '2nd' : ((inputs['isBtl'] ?? 0.0) == 1.0 ? 'btl' : 'std'));
+      _region = (inputs['isScotland'] ?? 0.0) == 1.0
+          ? 'scotland'
+          : ((inputs['isWales'] ?? 0.0) == 1.0 ? 'wales' : 'england');
+      _propType = (inputs['isCommercial'] ?? 0.0) == 1.0 ? 'commercial' : 'residential';
+      _calculate();
     }
-    _calculateValues();
   }
 
   @override
@@ -83,9 +88,53 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
     super.dispose();
   }
 
-  void _calculateValues() {
+  double _val(TextEditingController c, double defaultVal) {
+    if (_hasCalculated && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    final price = double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (price <= 0) errors['price'] = 'Enter valid purchase price';
+
     setState(() {
-      _price = double.tryParse(_priceController.text) ?? 0;
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_priceController] = price;
+      _calcSnapshot['_buyerType'] = _buyerType;
+      _calcSnapshot['_region'] = _region;
+      _calcSnapshot['_propType'] = _propType;
+      _hasCalculated = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _priceController.text = '380000';
+      _buyerType = 'ftb';
+      _region = 'england';
+      _propType = 'residential';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _hasCalculated = false;
     });
   }
 
@@ -118,6 +167,11 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
 
   @override
   Widget build(BuildContext context) {
+    final double priceVal = _val(_priceController, 380000);
+    final String activeBuyerType = _hasCalculated ? (_calcSnapshot['_buyerType'] ?? _buyerType) : _buyerType;
+    final String activeRegion = _hasCalculated ? (_calcSnapshot['_region'] ?? _region) : _region;
+    final String activePropType = _hasCalculated ? (_calcSnapshot['_propType'] ?? _propType) : _propType;
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = widget.theme.getCardColor(context);
     final textThemeColor = isDark ? Colors.white : const Color(0xFF0D0D2B);
@@ -134,41 +188,48 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
     String regionLabel = 'England (SDLT)';
     String taxName = 'SDLT';
 
-    if (_region == 'scotland') {
+    if (activeRegion == 'scotland') {
       activeBands = scotlandStd;
       regionLabel = 'Scotland (LBTT)';
       taxName = 'LBTT';
-    } else if (_region == 'wales') {
+    } else if (activeRegion == 'wales') {
       activeBands = walesStd;
       regionLabel = 'Wales (LTT)';
       taxName = 'LTT';
     } else {
-      if (_buyerType == 'ftb' && _price <= 500000) {
+      if (activeBuyerType == 'ftb' && priceVal <= 500000) {
         activeBands = englandFtb;
       } else {
         activeBands = englandStd;
       }
-      if (_buyerType == '2nd' || _buyerType == 'btl') {
+      if (activeBuyerType == '2nd' || activeBuyerType == 'btl') {
         surcharge = 3.0;
       }
     }
 
-    final computed = _compute(_price, activeBands, surcharge);
+    final computed = _compute(priceVal, activeBands, surcharge);
     final double sdlt = computed['total'];
     final List<Map<String, dynamic>> rows = List<Map<String, dynamic>>.from(computed['rows']);
 
-    final computedStd = _compute(_price, englandStd, 0);
+    final computedStd = _compute(priceVal, englandStd, 0);
     final double stdSDLT = computedStd['total'];
     final saving = math.max(0.0, stdSDLT - sdlt);
 
-    final effRate = _price > 0 ? (sdlt / _price * 100) : 0.0;
-    final totalCost = _price + sdlt;
+    final effRate = priceVal > 0 ? (sdlt / priceVal * 100) : 0.0;
+    final totalCost = priceVal + sdlt;
 
     // Scenarios for comparison
-    final double ftbVal = _compute(_price, _price <= 500000 ? englandFtb : englandStd, 0)['total'];
-    final double stdVal = _compute(_price, englandStd, 0)['total'];
-    final double extraVal = _compute(_price, englandStd, 3)['total'];
+    final double ftbVal = _compute(priceVal, priceVal <= 500000 ? englandFtb : englandStd, 0)['total'];
+    final double stdVal = _compute(priceVal, englandStd, 0)['total'];
+    final double extraVal = _compute(priceVal, englandStd, 3)['total'];
     final double maxCompare = math.max(1.0, math.max(ftbVal, math.max(stdVal, extraVal)));
+
+    final isDirty = _hasCalculated && (
+      (double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_priceController] ?? 0.0) ||
+      _buyerType != (_calcSnapshot['_buyerType'] ?? '') ||
+      _region != (_calcSnapshot['_region'] ?? '') ||
+      _propType != (_calcSnapshot['_propType'] ?? '')
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,6 +256,33 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
         ),
         const SizedBox(height: 16),
 
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'BUYER SITUATION',
+              style: AppTextStyles.dmSans(
+                size: 11,
+                weight: FontWeight.w700,
+                color: widget.theme.getMutedColor(context),
+                letterSpacing: 1.0,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: widget.theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
         // Buyer type selector
         Row(
           children: [
@@ -217,7 +305,7 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _inputField(label: 'Property Purchase Price (£)', controller: _priceController),
+              _inputField(label: 'Property Purchase Price (£)', controller: _priceController, errorText: _errors['price']),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -248,7 +336,6 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
                                 if (val != null) {
                                   setState(() {
                                     _region = val;
-                                    _calculateValues();
                                   });
                                 }
                               },
@@ -285,7 +372,6 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
                                 if (val != null) {
                                   setState(() {
                                     _propType = val;
-                                    _calculateValues();
                                   });
                                 }
                               },
@@ -297,371 +383,422 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC8102E),
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                  ),
+                  onPressed: _calculate,
+                  child: Text(
+                    '👑 Calculate Stamp Duty',
+                    style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
             ],
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        // Calculate Button
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFC8102E),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-            ),
-            onPressed: () {
-              _calculateValues();
-              setState(() => _hasCalculated = true);
-            },
-            child: Text(
-              '👑 Calculate Stamp Duty',
-              style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800),
-            ),
           ),
         ),
         const SizedBox(height: 20),
 
         if (_hasCalculated) ...[
-          // Results Header Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Stamp Duty to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '$taxName — $regionLabel',
-                  style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w700, color: Colors.white60, letterSpacing: 0.7),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      CurrencyFormatter.format(sdlt, symbol: '£').split('.').first,
-                      style: AppTextStyles.dmSans(size: 34, weight: FontWeight.w800, color: const Color(0xFFFFD700)).copyWith(fontFamily: 'Georgia'),
+                // Results Header Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    GestureDetector(
-                      onTap: () async {
-                        final calc = SavedCalc.create(
-                          country: 'UK',
-                          calcType: 'Stamp Duty Standalone',
-                          inputs: {
-                            'price': _price,
-                          },
-                          results: {
-                            'Stamp Duty': sdlt,
-                            'Effective Rate': effRate,
-                            'Total Cost': totalCost,
-                            'Saving': saving,
-                          },
-                          label: '${_buyerType.toUpperCase()} buyer · ${CurrencyFormatter.compact(_price, symbol: '£')} property',
-                          currencyCode: 'GBP',
-                        );
-                        final messenger = ScaffoldMessenger.of(context);
-                        await ref.read(savedProvider.notifier).save(calc);
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text('✓ SDLT calculation saved'),
-                            backgroundColor: Color(0xFF0D9488),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.save, color: Colors.white, size: 14),
-                            const SizedBox(width: 4),
-                            Text('Save', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: Colors.white)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _infoCell('Effective Rate', '${effRate.toStringAsFixed(2)}%'),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _infoCell('Buyer Type', _buyerType == 'ftb' ? 'First-Time' : 'Standard'),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _infoCell('SDLT Saving', saving > 0 ? CurrencyFormatter.format(saving, symbol: '£').split('.').first : '£0'),
-                    ),
-                  ],
-                ),
-                const Divider(color: Colors.white24, height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Total Cost (Price + SDLT)', style: AppTextStyles.dmSans(size: 11, color: Colors.white60)),
-                    Text(
-                      CurrencyFormatter.format(totalCost, symbol: '£').split('.').first,
-                      style: AppTextStyles.dmSans(size: 15, weight: FontWeight.w800, color: Colors.white),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Cost Distribution Donut
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Cost Distribution Visual Split',
-                  style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 110,
-                      height: 110,
-                      child: Stack(
-                        children: [
-                          CustomPaint(
-                            size: const Size(110, 110),
-                            painter: _UKMortgageDonutPainter(
-                              interestPct: effRate,
-                              isDark: isDark,
-                            ),
-                          ),
-                          Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '${effRate.toStringAsFixed(1)}%',
-                                  style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
-                                ),
-                                Text(
-                                  'of price',
-                                  style: AppTextStyles.dmSans(size: 8, color: widget.theme.getMutedColor(context), weight: FontWeight.w700),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _legendItem(isDark ? const Color(0xFF93C5FD) : const Color(0xFF1a1a5e), 'Property Price', _price),
-                          const SizedBox(height: 6),
-                          _legendItem(isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E), 'SDLT Due', sdlt),
-                          const SizedBox(height: 6),
-                          _legendItem(const Color(0xFF4F46E5), 'Total Outlay', totalCost),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Band breakdown table
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Band-by-Band Breakdown',
-                  style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
-                ),
-                const SizedBox(height: 12),
-                Table(
-                  columnWidths: const {
-                    0: FlexColumnWidth(1.2),
-                    1: FlexColumnWidth(1.0),
-                    2: FlexColumnWidth(1.0),
-                    3: FlexColumnWidth(1.0),
-                  },
-                  children: [
-                    TableRow(
-                      decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
-                      ),
-                      children: [
-                        TableCell(child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('BAND', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: widget.theme.getMutedColor(context))))),
-                        TableCell(child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('RATE', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: widget.theme.getMutedColor(context))))),
-                        TableCell(child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('TAXABLE', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: widget.theme.getMutedColor(context))))),
-                        TableCell(child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('TAX', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: widget.theme.getMutedColor(context))))),
-                      ],
-                    ),
-                    ...rows.map((r) {
-                      final double tx = r['tax'] as double;
-                      final double txb = r['taxable'] as double;
-                      return TableRow(
-                        children: [
-                          TableCell(child: Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(r['band'] as String, style: AppTextStyles.dmSans(size: 10, color: textThemeColor)))),
-                          TableCell(child: Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text('${r['rate']}%', style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w800, color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E))))),
-                          TableCell(child: Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(txb > 0 ? CurrencyFormatter.compact(txb, symbol: '£') : '—', style: AppTextStyles.dmSans(size: 10, color: textThemeColor)))),
-                          TableCell(child: Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(tx > 0 ? CurrencyFormatter.compact(tx, symbol: '£') : '£0', style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w800, color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4F46E5))))),
-                        ],
-                      );
-                    }),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Buyer Type Comparison
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Buyer Type Comparison',
-                  style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
-                ),
-                const SizedBox(height: 12),
-                _compareBarRow('First-Time Buyer', ftbVal, isDark ? const Color(0xFF34D399) : const Color(0xFF047857), maxCompare),
-                const SizedBox(height: 8),
-                _compareBarRow('Standard Buyer', stdVal, isDark ? const Color(0xFF93C5FD) : const Color(0xFF1a1a5e), maxCompare),
-                const SizedBox(height: 8),
-                _compareBarRow('2nd Home / BTL', extraVal, isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E), maxCompare),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Info Notice
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: isDark
-                  ? const LinearGradient(colors: [Color(0xFF1E1B4B), Color(0xFF121230)])
-                  : const LinearGradient(colors: [Color(0xFFEEF2FF), Color(0xFFE0E7FF)]),
-              border: Border.all(color: isDark ? const Color(0xFF4338CA).withValues(alpha: 0.5) : const Color(0xFFA5B4FC)),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('⚠️', style: TextStyle(fontSize: 20)),
-                const SizedBox(width: 10),
-                Expanded(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Important Notice',
-                        style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF1E1B4B)),
+                        '$taxName — $regionLabel',
+                        style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w700, color: Colors.white60, letterSpacing: 0.7),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'Rates reflect HMRC SDLT thresholds effective from 1 April 2025 (temporary FTB threshold reverted to £300K). Verify with HMRC or a solicitor before completion. Figures are estimates only.',
-                        style: AppTextStyles.dmSans(size: 9.5, color: isDark ? const Color(0xFFC7D2FE) : const Color(0xFF4338CA), height: 1.4),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            CurrencyFormatter.format(sdlt, symbol: '£').split('.').first,
+                            style: AppTextStyles.dmSans(size: 34, weight: FontWeight.w800, color: const Color(0xFFFFD700)).copyWith(fontFamily: 'Georgia'),
+                          ),
+                          GestureDetector(
+                            onTap: () async {
+                              final calc = SavedCalc.create(
+                                country: 'UK',
+                                calcType: 'Stamp Duty Standalone',
+                                inputs: {
+                                  'price': priceVal,
+                                  'isFTB': activeBuyerType == 'ftb' ? 1.0 : 0.0,
+                                  'is2nd': activeBuyerType == '2nd' ? 1.0 : 0.0,
+                                  'isBtl': activeBuyerType == 'btl' ? 1.0 : 0.0,
+                                  'isScotland': activeRegion == 'scotland' ? 1.0 : 0.0,
+                                  'isWales': activeRegion == 'wales' ? 1.0 : 0.0,
+                                  'isCommercial': activePropType == 'commercial' ? 1.0 : 0.0,
+                                },
+                                results: {
+                                  'Stamp Duty': sdlt,
+                                  'Effective Rate': effRate,
+                                  'Total Cost': totalCost,
+                                  'Saving': saving,
+                                },
+                                label: '${activeBuyerType.toUpperCase()} buyer · ${CurrencyFormatter.compact(priceVal, symbol: '£')} property',
+                                currencyCode: 'GBP',
+                              );
+                              final messenger = ScaffoldMessenger.of(context);
+                              await ref.read(savedProvider.notifier).save(calc);
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text('✓ SDLT calculation saved'),
+                                  backgroundColor: Color(0xFF0D9488),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.save, color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text('Save', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: Colors.white)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _infoCell('Effective Rate', '${effRate.toStringAsFixed(2)}%'),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _infoCell('Buyer Type', activeBuyerType == 'ftb' ? 'First-Time' : 'Standard'),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _infoCell('SDLT Saving', saving > 0 ? CurrencyFormatter.format(saving, symbol: '£').split('.').first : '£0'),
+                          ),
+                        ],
+                      ),
+                      const Divider(color: Colors.white24, height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Total Cost (Price + SDLT)', style: AppTextStyles.dmSans(size: 11, color: Colors.white60)),
+                          Text(
+                            CurrencyFormatter.format(totalCost, symbol: '£').split('.').first,
+                            style: AppTextStyles.dmSans(size: 15, weight: FontWeight.w800, color: Colors.white),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+
+                // Cost Distribution Visual Split
+                if (sdlt > 0) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(17),
+                      border: Border.all(color: borderCol),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Cost Distribution Visual Split',
+                          style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 110,
+                              height: 110,
+                              child: Stack(
+                                children: [
+                                  CustomPaint(
+                                    size: const Size(110, 110),
+                                    painter: _UKMortgageDonutPainter(
+                                      interestPct: (sdlt / totalCost * 100),
+                                      isDark: isDark,
+                                    ),
+                                  ),
+                                  Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '${(sdlt / totalCost * 100).toStringAsFixed(1)}%',
+                                          style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor),
+                                        ),
+                                        Text(
+                                          'tax fraction',
+                                          style: AppTextStyles.dmSans(size: 8, color: widget.theme.getMutedColor(context)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _legendItem(isDark ? const Color(0xFF93C5FD) : const Color(0xFF1a1a5e), 'Property price', priceVal),
+                                  const SizedBox(height: 8),
+                                  _legendItem(const Color(0xFFC8102E), 'Stamp Duty ($taxName)', sdlt),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Tax Bands breakdown
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tax Bands Breakdown',
+                        style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('BAND', style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: widget.theme.getMutedColor(context))),
+                          Text('TAXABLE AMOUNT / TAX DUE', style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: widget.theme.getMutedColor(context))),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ...rows.map((r) {
+                        final double rateVal = r['rate'] as double;
+                        final double taxableVal = r['taxable'] as double;
+                        final double taxVal = r['tax'] as double;
+
+                        return Container(
+                          padding: const EdgeInsets.all(10),
+                          margin: const EdgeInsets.only(bottom: 6),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(r['band'] as String, style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: textThemeColor)),
+                                  const SizedBox(height: 2),
+                                  Text('Rate: ${rateVal.toStringAsFixed(1)}%', style: AppTextStyles.dmSans(size: 9.5, color: widget.theme.getMutedColor(context))),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    CurrencyFormatter.format(taxVal, symbol: '£').split('.').first,
+                                    style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor),
+                                  ),
+                                  Text(
+                                    'Taxable: ${CurrencyFormatter.format(taxableVal, symbol: '£').split('.').first}',
+                                    style: AppTextStyles.dmSans(size: 8.5, color: widget.theme.getMutedColor(context)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Scenarios Comparison Chart
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Buyer Category Comparison',
+                        style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor),
+                      ),
+                      const SizedBox(height: 14),
+                      _comparisonRow('First-Time Buyer', ftbVal, activeBuyerType == 'ftb', maxCompare),
+                      const SizedBox(height: 10),
+                      _comparisonRow('Standard Mover', stdVal, activeBuyerType == 'std', maxCompare),
+                      const SizedBox(height: 10),
+                      _comparisonRow('Additional / BTL', extraVal, activeBuyerType == '2nd' || activeBuyerType == 'btl', maxCompare),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-          const SizedBox(height: 20),
         ],
       ],
     );
   }
 
-  Widget _compareBarRow(String label, double val, Color color, double max) {
-    final pct = max > 0 ? (val / max) : 0.0;
-    return Row(
-      children: [
-        SizedBox(
-          width: 90,
+  Widget _buyerTabButton(String label, String type) {
+    final active = _buyerType == type;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeBg = isDark ? const Color(0xFF93C5FD) : const Color(0xFF1a1a5e);
+    final textCol = active ? (isDark ? const Color(0xFF0D0D2B) : Colors.white) : widget.theme.getMutedColor(context);
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _buyerType = type),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: active ? activeBg : Colors.grey.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          alignment: Alignment.center,
           child: Text(
             label,
-            style: AppTextStyles.dmSans(size: 10, color: widget.theme.getMutedColor(context), weight: FontWeight.w700),
+            style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.w800, color: textCol),
+            textAlign: TextAlign.center,
           ),
         ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(7),
-            child: Container(
-              height: 26,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEEF2FF),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FractionallySizedBox(
-                  widthFactor: pct.clamp(0.0, 1.0),
-                  child: Container(
-                    color: color,
-                    padding: const EdgeInsets.only(left: 8),
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      val > 0 ? '' : '£0',
-                      style: AppTextStyles.dmSans(size: 9.5, color: Colors.white, weight: FontWeight.w800),
-                    ),
-                  ),
-                ),
+      ),
+    );
+  }
+
+  Widget _comparisonRow(String label, double val, bool isCurrent, double max) {
+    final pct = val / max;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textThemeColor = isDark ? Colors.white : const Color(0xFF0D0D2B);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label + (isCurrent ? ' (Selected)' : ''),
+              style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: isCurrent ? FontWeight.w800 : FontWeight.w600,
+                  color: isCurrent ? widget.theme.primaryColor : widget.theme.getMutedColor(context)),
+            ),
+            Text(
+              CurrencyFormatter.format(val, symbol: '£').split('.').first,
+              style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: textThemeColor),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: Container(
+            height: 14,
+            width: double.infinity,
+            color: isDark ? Colors.white10 : Colors.black12,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: pct.clamp(0.0, 1.0),
+                child: Container(color: isCurrent ? const Color(0xFFC8102E) : Colors.grey),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        SizedBox(
-          width: 60,
-          child: Text(
-            CurrencyFormatter.compact(val, symbol: '£'),
-            style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w800, color: widget.theme.getTextColor(context)),
-            textAlign: TextAlign.right,
-          ),
-        ),
       ],
+    );
+  }
+
+  Widget _infoCell(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)),
+      child: Column(
+        children: [
+          Text(label, style: AppTextStyles.dmSans(size: 8, color: Colors.white54)),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -675,74 +812,13 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(label, style: AppTextStyles.dmSans(size: 10, color: widget.theme.getTextColor(context).withValues(alpha: 0.7))),
+          child: Text(label, style: AppTextStyles.dmSans(size: 10.5, color: widget.theme.getTextColor(context).withValues(alpha: 0.7))),
         ),
         Text(
           CurrencyFormatter.format(value, symbol: '£').split('.').first,
-          style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.w800, color: widget.theme.getTextColor(context)),
+          style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: widget.theme.getTextColor(context)),
         ),
       ],
-    );
-  }
-
-  Widget _infoCell(String label, String val) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        children: [
-          Text(label, style: AppTextStyles.dmSans(size: 8, color: Colors.white54)),
-          const SizedBox(height: 2),
-          Text(val, style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: Colors.white)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buyerTabButton(String label, String type) {
-    final active = _buyerType == type;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() {
-          _buyerType = type;
-          _calculateValues();
-        }),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: active
-                ? const Color(0xFF0D0D2B)
-                : (Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.05) : Colors.white),
-            border: Border(
-              right: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Column(
-            children: [
-              Text(
-                label,
-                style: AppTextStyles.dmSans(
-                  size: 10.5,
-                  weight: FontWeight.w800,
-                  color: active ? const Color(0xFFFFD700) : widget.theme.getTextColor(context),
-                ),
-              ),
-              Text(
-                type == 'ftb'
-                    ? 'FTB Relief'
-                    : type == 'std'
-                        ? 'Main home'
-                        : '+3% surcharge',
-                style: AppTextStyles.dmSans(
-                  size: 8,
-                  color: active ? Colors.white70 : widget.theme.getMutedColor(context),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -774,7 +850,7 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
     );
   }
 
-  Widget _inputField({required String label, required TextEditingController controller}) {
+  Widget _inputField({required String label, required TextEditingController controller, String? errorText}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -792,7 +868,9 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
         TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onChanged: (v) => _calculateValues(),
+          onChanged: (v) {
+            setState(() {});
+          },
           style: AppTextStyles.dmSans(
             size: 13,
             weight: FontWeight.w700,
@@ -805,10 +883,18 @@ class _UKSdltCalculatorState extends ConsumerState<UKSdltCalculator> {
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
+              borderSide: errorText != null ? const BorderSide(color: Colors.red, width: 1.5) : BorderSide.none,
             ),
+            enabledBorder: errorText != null ? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ) : null,
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(errorText, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+        ],
       ],
     );
   }

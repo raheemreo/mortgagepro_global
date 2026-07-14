@@ -41,13 +41,16 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
   late final AnimationController _animCtrl;
   late Animation<double> _animation;
 
+  final _resultsKey = GlobalKey();
+  bool _showResults = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   @override
   void initState() {
     super.initState();
     _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _animation = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic);
-    // Auto-calculate on first render
-    WidgetsBinding.instance.addPostFrameCallback((_) => _calculate());
   }
 
   @override
@@ -63,13 +66,39 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
 
   // ── Core Calculation ─────────────────────────────────────────────────────
   void _calculate() {
-    final double P = double.tryParse(_balanceController.text) ?? 0;
-    final double annualRate = double.tryParse(_rateController.text) ?? 0;
-    final double years = double.tryParse(_amortController.text) ?? 1;
-    final double lumpsum = double.tryParse(_lumpsumController.text) ?? 0;
-    final double extraPmt = double.tryParse(_extraController.text) ?? 0;
+    final errors = <String, String>{};
 
-    if (P <= 0 || annualRate <= 0 || years <= 0) return;
+    final P = double.tryParse(_balanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (P <= 0) errors['balance'] = 'Enter a valid mortgage balance';
+
+    final annualRate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (annualRate <= 0 || annualRate > 25) errors['rate'] = 'Enter interest rate (0.1% - 25%)';
+
+    final years = double.tryParse(_amortController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (years <= 0 || years > 50) errors['amort'] = 'Enter a valid amortization term';
+
+    final lumpsum = double.tryParse(_lumpsumController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (lumpsum < 0) errors['lumpsum'] = 'Enter a valid lumpsum amount';
+
+    final extraPmt = double.tryParse(_extraController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (extraPmt < 0) errors['extra'] = 'Enter a valid extra payment';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    // Save to snapshot
+    setState(() {
+      _calcSnapshot[_balanceController] = P;
+      _calcSnapshot[_rateController] = annualRate;
+      _calcSnapshot[_amortController] = years;
+      _calcSnapshot[_lumpsumController] = lumpsum;
+      _calcSnapshot[_extraController] = extraPmt;
+      _calcSnapshot['_payFreq'] = _payFreq;
+      _showResults = true;
+    });
 
     // Canadian compounding: semi-annual → effective annual
     final double ea = dm.pow(1 + annualRate / 200, 2).toDouble() - 1;
@@ -81,7 +110,6 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
         periodsPerYear = 12;
         break;
       case 'accel':
-        // Accelerated bi-weekly: payment = monthly / 2, but 26 payments per year
         periodsPerYear = 26;
         break;
       default: // biweekly
@@ -156,7 +184,6 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
     }
 
     final double saved = (totalInt - totalInt2).clamp(0, double.infinity);
-    // Convert periods to months for display
     final double baseMonths = (months / periodsPerYear) * 12;
     final double prepMonths = (months2 / periodsPerYear) * 12;
     final double yrsSaved = (baseMonths - prepMonths) / 12;
@@ -182,15 +209,37 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
 
     setState(() => _result = newResult);
     _animCtrl.forward(from: 0);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _balanceController.text = '400000';
+      _rateController.text = '4.99';
+      _amortController.text = '22';
+      _lumpsumController.text = '20000';
+      _extraController.text = '200';
+      _payFreq = 'biweekly';
+      _result = null;
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
   }
 
   // ── Save to Provider ──────────────────────────────────────────────────────
   void _saveCalculation() async {
     final r = _result;
-    if (r == null) {
-      _calculate();
-      return;
-    }
+    if (r == null) return;
 
     final labelCtrl = TextEditingController(text: 'Prepayment Plan');
     final confirmed = await showDialog<bool>(
@@ -302,9 +351,16 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
       final defaultRate = ratesAsync.value!.rate5yrFixed;
       _rateController.text = defaultRate.toStringAsFixed(2);
       _rateInitialized = true;
-      // Re-calculate since the rate changed
-      WidgetsBinding.instance.addPostFrameCallback((_) => _calculate());
     }
+
+    final isDirty = _showResults && (
+      (double.tryParse(_balanceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_balanceController] ?? 0.0) ||
+      (double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_rateController] ?? 0.0) ||
+      (double.tryParse(_amortController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_amortController] ?? 0.0) ||
+      (double.tryParse(_lumpsumController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_lumpsumController] ?? 0.0) ||
+      (double.tryParse(_extraController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_extraController] ?? 0.0) ||
+      _payFreq != (_calcSnapshot['_payFreq'] ?? '')
+    );
 
     final saved = ref.watch(savedProvider);
     final localSaved = saved
@@ -317,21 +373,37 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Mortgage Details ─────────────────────────────────────────────
-        _sectionLabel('MORTGAGE DETAILS', theme),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _sectionLabel('MORTGAGE DETAILS', theme),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         _inputCard(theme, children: [
           _inputField('Balance Owing', _balanceController,
-              prefix: 'CA\$', theme: theme),
+              prefix: 'CA\$', errorText: _errors['balance'], theme: theme),
           const SizedBox(height: 12),
           Row(children: [
             Expanded(
               child: _inputField('Interest Rate', _rateController,
-                  suffix: '%', theme: theme),
+                  suffix: '%', errorText: _errors['rate'], theme: theme),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _inputField('Amortization Left', _amortController,
-                  suffix: 'yrs', theme: theme),
+                  suffix: 'yrs', errorText: _errors['amort'], theme: theme),
             ),
           ]),
           const SizedBox(height: 14),
@@ -351,10 +423,10 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
         const SizedBox(height: 8),
         _inputCard(theme, children: [
           _inputField('Annual Lump Sum', _lumpsumController,
-              prefix: 'CA\$', theme: theme),
+              prefix: 'CA\$', errorText: _errors['lumpsum'], theme: theme),
           const SizedBox(height: 12),
           _inputField('Payment Increase', _extraController,
-              prefix: 'CA\$', theme: theme),
+              prefix: 'CA\$', errorText: _errors['extra'], theme: theme),
           const SizedBox(height: 16),
           Row(children: [
             Expanded(
@@ -371,47 +443,78 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
                         size: 13, color: Colors.white, weight: FontWeight.bold)),
               ),
             ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: _saveCalculation,
-              child: Container(
-                width: 50,
-                height: 46,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1A4A8A), Color(0xFF2563EB)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+            if (_showResults && _result != null) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _saveCalculation,
+                child: Container(
+                  width: 50,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1A4A8A), Color(0xFF2563EB)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  alignment: Alignment.center,
+                  child: const Text('💾', style: TextStyle(fontSize: 18)),
                 ),
-                alignment: Alignment.center,
-                child: const Text('💾', style: TextStyle(fontSize: 18)),
               ),
-            ),
+            ],
           ]),
         ]),
         const SizedBox(height: 20),
 
         // ── Results ──────────────────────────────────────────────────────
-        if (_result != null) ...[
-          _sectionLabel('YOUR SAVINGS', theme),
-          const SizedBox(height: 8),
-          _buildResultHero(_result!, theme),
-          const SizedBox(height: 20),
+        if (_showResults && _result != null) ...[
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _sectionLabel('YOUR SAVINGS', theme),
+                const SizedBox(height: 8),
+                _buildResultHero(_result!, theme),
+                const SizedBox(height: 20),
 
-          _sectionLabel('VISUAL ANALYSIS', theme),
-          const SizedBox(height: 8),
-          _buildChartCard(_result!, theme),
-          const SizedBox(height: 20),
+                _sectionLabel('VISUAL ANALYSIS', theme),
+                const SizedBox(height: 8),
+                _buildChartCard(_result!, theme),
+                const SizedBox(height: 20),
 
-          _sectionLabel('BREAKDOWN', theme),
-          const SizedBox(height: 8),
-          _buildBreakdownCard(_result!, theme),
-          const SizedBox(height: 20),
+                _sectionLabel('BREAKDOWN', theme),
+                const SizedBox(height: 8),
+                _buildBreakdownCard(_result!, theme),
+                const SizedBox(height: 20),
 
-          _buildProTip(_result!, theme),
-          const SizedBox(height: 20),
+                _buildProTip(_result!, theme),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
         ],
 
         // ── Lender Privilege Guide ───────────────────────────────────────
@@ -941,7 +1044,8 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
   Widget _inputField(String label, TextEditingController controller,
       {required CountryTheme theme,
       String? prefix,
-      String? suffix}) {
+      String? suffix,
+      String? errorText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -956,7 +1060,10 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
             borderRadius: BorderRadius.circular(11),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
           ),
           child: Row(
             children: [
@@ -974,7 +1081,9 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
                   controller: controller,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) {},
+                  onChanged: (_) {
+                    setState(() {});
+                  },
                   style: AppTextStyles.dmSans(
                       size: 16,
                       weight: FontWeight.bold,
@@ -999,6 +1108,13 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500),
+          ),
+        ],
       ],
     );
   }
@@ -1022,7 +1138,6 @@ class _CAPrepaymentState extends ConsumerState<CAPrepayment>
             child: GestureDetector(
               onTap: () {
                 setState(() => _payFreq = f.$2);
-                _calculate();
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),

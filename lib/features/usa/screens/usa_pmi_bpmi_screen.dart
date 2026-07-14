@@ -21,12 +21,15 @@ class USAPmiBpmiScreen extends ConsumerStatefulWidget {
 class _USAPmiBpmiScreenState extends ConsumerState<USAPmiBpmiScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   double _price = 400000;
   double _downPct = 5.0;
   double _creditScore = 700;
 
   bool _calculating = false;
-  bool _showResults = true;
+  bool _showResults = false;
   bool _isCalcDirty = false;
 
   @override
@@ -37,6 +40,10 @@ class _USAPmiBpmiScreenState extends ConsumerState<USAPmiBpmiScreen> {
       _price = inputs['Price'] ?? 400000;
       _downPct = inputs['DownPct'] ?? 5.0;
       _creditScore = inputs['CreditScore'] ?? 700;
+      _calcSnapshot['Price'] = _price;
+      _calcSnapshot['DownPct'] = _downPct;
+      _calcSnapshot['CreditScore'] = _creditScore;
+      _showResults = true;
     }
   }
 
@@ -53,8 +60,9 @@ class _USAPmiBpmiScreenState extends ConsumerState<USAPmiBpmiScreen> {
       _price = 400000;
       _downPct = 5.0;
       _creditScore = 700;
-      _showResults = true;
+      _showResults = false;
       _isCalcDirty = false;
+      _calcSnapshot.clear();
     });
   }
 
@@ -87,16 +95,32 @@ class _USAPmiBpmiScreenState extends ConsumerState<USAPmiBpmiScreen> {
     await Future.delayed(const Duration(milliseconds: 300));
     setState(() {
       _calculating = false;
+      _calcSnapshot['Price'] = _price;
+      _calcSnapshot['DownPct'] = _downPct;
+      _calcSnapshot['CreditScore'] = _creditScore;
       _showResults = true;
       _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    final downAmt = _price * _downPct / 100;
-    final loanAmt = _price - downAmt;
-    final ltv = (loanAmt / _price) * 100;
-    final rate = _getBpmiRate(ltv, _creditScore);
+    final price = _calcSnapshot['Price'] ?? _price;
+    final downPct = _calcSnapshot['DownPct'] ?? _downPct;
+    final creditScore = _calcSnapshot['CreditScore'] ?? _creditScore;
+
+    final downAmt = price * downPct / 100;
+    final loanAmt = price - downAmt;
+    final ltv = (loanAmt / price) * 100;
+    final rate = _getBpmiRate(ltv, creditScore);
     final annualPmi = loanAmt * rate / 100;
     final monthlyPmi = rate > 0 ? (annualPmi / 12) : 0.0;
 
@@ -206,16 +230,21 @@ class _USAPmiBpmiScreenState extends ConsumerState<USAPmiBpmiScreen> {
     final bgCol = _theme.getBgColor(context);
 
     // Compute active calculation
-    final downAmt = _price * _downPct / 100;
-    final loanAmt = _price - downAmt;
-    final ltv = (loanAmt / _price) * 100;
-    final rate = _getBpmiRate(ltv, _creditScore);
+    // Compute active calculation from snapshot or default to current values when not calculated yet
+    final double snapPrice = _calcSnapshot['Price'] ?? _price;
+    final double snapDownPct = _calcSnapshot['DownPct'] ?? _downPct;
+    final double snapCreditScore = _calcSnapshot['CreditScore'] ?? _creditScore;
+
+    final downAmt = snapPrice * snapDownPct / 100;
+    final loanAmt = snapPrice - downAmt;
+    final ltv = (loanAmt / snapPrice) * 100;
+    final rate = _getBpmiRate(ltv, snapCreditScore);
     final annualPmi = loanAmt * rate / 100;
     final monthlyPmi = rate > 0 ? (annualPmi / 12) : 0.0;
 
     // Years to 80% LTV (PMI cancellation timeline)
     const monthlyRate = 0.0682 / 12;
-    final targetLoan = _price * 0.80;
+    final targetLoan = snapPrice * 0.80;
     double balance = loanAmt;
     int months = 0;
     const nPayments = 360;
@@ -225,6 +254,12 @@ class _USAPmiBpmiScreenState extends ConsumerState<USAPmiBpmiScreen> {
       months++;
     }
     final double yearsTo80 = months / 12.0;
+
+    final isDirty = _showResults && (
+      _price != snapPrice ||
+      _downPct != snapDownPct ||
+      _creditScore != snapCreditScore
+    );
 
     // Rate strip values
     final rateStats = [
@@ -640,7 +675,7 @@ class _USAPmiBpmiScreenState extends ConsumerState<USAPmiBpmiScreen> {
                                   ),
                           ),
                         ),
-                        if (_showResults && !_isCalcDirty) ...[
+                        if (_showResults) ...[
                           const SizedBox(width: 10),
                           ElevatedButton(
                             onPressed: _saveCalculation,
@@ -664,9 +699,38 @@ class _USAPmiBpmiScreenState extends ConsumerState<USAPmiBpmiScreen> {
               ),
 
               // Result hero Card
-              if (_showResults && !_isCalcDirty) ...[
+              if (_showResults) ...[
+                if (isDirty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Calculate again to update results.',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              color: const Color(0xFFB45309),
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 Container(
+                  key: _resultsKey,
                   margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(

@@ -18,13 +18,16 @@ class USAHomeownerInsuranceWildfireCalc extends ConsumerStatefulWidget {
 }
 
 class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeownerInsuranceWildfireCalc> {
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   double _dwellingValue = 400000;
   double _homeAge = 10;
   double _deductible = 2500;
   String _riskLevel = 'ca_std';
   String _mitigation = 'partial';
 
-  bool _showResults = true;
+  bool _showResults = false;
   bool _isCalcDirty = false;
   bool _calculating = false;
 
@@ -60,6 +63,11 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
       _riskLevel = riskCode == 0.0 ? 'low' : riskCode == 1.0 ? 'ca_std' : riskCode == 2.0 ? 'ca_sra' : 'extreme';
       final mitCode = inputs['MitigationCode'] ?? 1.0;
       _mitigation = mitCode == 0.0 ? 'none' : mitCode == 1.0 ? 'partial' : 'full';
+      _calcSnapshot['DwellingValue'] = _dwellingValue;
+      _calcSnapshot['HomeAge'] = _homeAge;
+      _calcSnapshot['Deductible'] = _deductible;
+      _calcSnapshot['RiskLevel'] = _riskLevel;
+      _calcSnapshot['Mitigation'] = _mitigation;
       _showResults = true;
       _isCalcDirty = false;
     }
@@ -80,8 +88,9 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
       _deductible = 2500;
       _riskLevel = 'ca_std';
       _mitigation = 'partial';
-      _showResults = true;
+      _showResults = false;
       _isCalcDirty = false;
+      _calcSnapshot.clear();
     });
   }
 
@@ -90,24 +99,45 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
       _calculating = true;
     });
     await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
     setState(() {
       _calculating = false;
+      _calcSnapshot['DwellingValue'] = _dwellingValue;
+      _calcSnapshot['HomeAge'] = _homeAge;
+      _calcSnapshot['Deductible'] = _deductible;
+      _calcSnapshot['RiskLevel'] = _riskLevel;
+      _calcSnapshot['Mitigation'] = _mitigation;
       _showResults = true;
       _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    double rate = _stateRates[_riskLevel] ?? 0.0039;
-    if (_homeAge > 40) {
+    final double dwellingValue = _calcSnapshot['DwellingValue'] ?? _dwellingValue;
+    final double homeAge = _calcSnapshot['HomeAge'] ?? _homeAge;
+    final double deductible = _calcSnapshot['Deductible'] ?? _deductible;
+    final String riskLevel = _calcSnapshot['RiskLevel'] ?? _riskLevel;
+    final String mitigation = _calcSnapshot['Mitigation'] ?? _mitigation;
+
+    double rate = _stateRates[riskLevel] ?? 0.0039;
+    if (homeAge > 40) {
       rate *= 1.20;
-    } else if (_homeAge > 20) {
+    } else if (homeAge > 20) {
       rate *= 1.10;
     }
 
-    final disc = (_deductibleDiscounts[_deductible] ?? 0.0) +
-        (_mitigationDiscounts[_mitigation] ?? 0.0);
-    double annual = _dwellingValue * rate * (1 + disc);
+    final disc = (_deductibleDiscounts[deductible] ?? 0.0) +
+        (_mitigationDiscounts[mitigation] ?? 0.0);
+    double annual = dwellingValue * rate * (1 + disc);
     annual = (annual / 10).round() * 10.0;
     final monthly = (annual / 12).roundToDouble();
 
@@ -126,7 +156,7 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Annual: ${CurrencyFormatter.compact(annual, symbol: r'$')}/yr · Dwelling: ${CurrencyFormatter.compact(_dwellingValue, symbol: r'$')}',
+              'Saving: Annual: ${CurrencyFormatter.compact(annual, symbol: r'$')}/yr · Dwelling: ${CurrencyFormatter.compact(dwellingValue, symbol: r'$')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -178,16 +208,16 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
         country: 'USA',
         calcType: 'Wildfire Rider',
         inputs: {
-          'DwellingValue': _dwellingValue,
-          'HomeAge': _homeAge,
-          'Deductible': _deductible,
-          'RiskLevelCode': _riskLevel == 'low' ? 0.0 : _riskLevel == 'ca_std' ? 1.0 : _riskLevel == 'ca_sra' ? 2.0 : 3.0,
-          'MitigationCode': _mitigation == 'none' ? 0.0 : _mitigation == 'partial' ? 1.0 : 2.0,
+          'DwellingValue': dwellingValue,
+          'HomeAge': homeAge,
+          'Deductible': deductible,
+          'RiskLevelCode': riskLevel == 'low' ? 0.0 : riskLevel == 'ca_std' ? 1.0 : riskLevel == 'ca_sra' ? 2.0 : 3.0,
+          'MitigationCode': mitigation == 'none' ? 0.0 : mitigation == 'partial' ? 1.0 : 2.0,
         },
         results: {
           'Annual Premium': annual,
           'Monthly Premium': monthly,
-          'Dwelling Limit': _dwellingValue,
+          'Dwelling Limit': dwellingValue,
         },
         label: label,
         currencyCode: 'USD',
@@ -219,26 +249,40 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
     final mutedColor = theme.getMutedColor(context);
     final borderColor = theme.getBorderColor(context);
 
+    final double snapDwellingValue = _calcSnapshot['DwellingValue'] ?? _dwellingValue;
+    final double snapHomeAge = _calcSnapshot['HomeAge'] ?? _homeAge;
+    final double snapDeductible = _calcSnapshot['Deductible'] ?? _deductible;
+    final String snapRiskLevel = _calcSnapshot['RiskLevel'] ?? _riskLevel;
+    final String snapMitigation = _calcSnapshot['Mitigation'] ?? _mitigation;
+
     // Compute active calculation
-    double rate = _stateRates[_riskLevel] ?? 0.0039;
-    if (_homeAge > 40) {
+    double rate = _stateRates[snapRiskLevel] ?? 0.0039;
+    if (snapHomeAge > 40) {
       rate *= 1.20;
-    } else if (_homeAge > 20) {
+    } else if (snapHomeAge > 20) {
       rate *= 1.10;
     }
 
-    final disc = (_deductibleDiscounts[_deductible] ?? 0.0) +
-        (_mitigationDiscounts[_mitigation] ?? 0.0);
-    double annualPremium = _dwellingValue * rate * (1 + disc);
+    final disc = (_deductibleDiscounts[snapDeductible] ?? 0.0) +
+        (_mitigationDiscounts[snapMitigation] ?? 0.0);
+    double annualPremium = snapDwellingValue * rate * (1 + disc);
     annualPremium = (annualPremium / 10).round() * 10.0;
     final monthlyPremium = (annualPremium / 12).round();
-    final pct = (annualPremium / _dwellingValue * 100);
+    final pct = (annualPremium / snapDwellingValue * 100);
 
     // Coverages breakdown
-    final covDwelling = _dwellingValue;
-    final covSmoke = (_dwellingValue * 0.10).roundToDouble();
-    final covDebris = (_dwellingValue * 0.10).roundToDouble();
-    final covALE = (_dwellingValue * 0.20).roundToDouble();
+    final covDwelling = snapDwellingValue;
+    final covSmoke = (snapDwellingValue * 0.10).roundToDouble();
+    final covDebris = (snapDwellingValue * 0.10).roundToDouble();
+    final covALE = (snapDwellingValue * 0.20).roundToDouble();
+
+    final isDirty = _showResults && (
+      _dwellingValue != snapDwellingValue ||
+      _homeAge != snapHomeAge ||
+      _deductible != snapDeductible ||
+      _riskLevel != snapRiskLevel ||
+      _mitigation != snapMitigation
+    );
 
     final riskLabels = {
       'low': 'OR/WA Standard',
@@ -368,68 +412,130 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
           ),
         ),
 
-        // Result Hero
-        Text(
-          'Your Rider Estimate',
-          style: AppTextStyles.playfair(
-              size: 13, weight: FontWeight.w700, color: textColor),
-        ),
-        const SizedBox(height: 8),
-
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF7C2D12), Color(0xFFC2410C), Color(0xFFD97706)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        // Results section or placeholder
+        if (!_showResults) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              border: Border.all(color: borderColor),
+              borderRadius: BorderRadius.circular(16),
             ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF7C2D12).withValues(alpha: 0.35),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
-              )
-            ],
+            child: Column(
+              children: [
+                const Text('📊', style: TextStyle(fontSize: 28)),
+                const SizedBox(height: 8),
+                Text(
+                  'View Wildfire Rider Estimate',
+                  style: AppTextStyles.playfair(size: 13, color: textColor, weight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Adjust parameters below and tap "Calculate Wildfire Rider" to estimate your rates.',
+                  style: AppTextStyles.dmSans(size: 10.5, color: mutedColor),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ANNUAL WILDFIRE RIDER PREMIUM',
-                style: AppTextStyles.dmSans(
-                    size: 8,
-                    weight: FontWeight.w700,
-                    color: Colors.white70,
-                    letterSpacing: 0.8),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                CurrencyFormatter.format(annualPremium, symbol: r'$'),
-                style: AppTextStyles.playfair(
-                    size: 32, weight: FontWeight.w800, color: Colors.white),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${riskLabels[_riskLevel] ?? ''} · ${CurrencyFormatter.compact(_dwellingValue, symbol: r'$')} dwelling · ${CurrencyFormatter.compact(_deductible, symbol: r'$')} ded.',
-                style: AppTextStyles.dmSans(
-                    size: 9.5, color: Colors.white.withValues(alpha: 0.82)),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _buildHeroBottomBox('Monthly Add-On', CurrencyFormatter.format(monthlyPremium.toDouble(), symbol: r'$')),
-                  const SizedBox(width: 8),
-                  _buildHeroBottomBox('% of Dwelling', '${pct.toStringAsFixed(2)}%'),
-                  const SizedBox(width: 8),
-                  _buildHeroBottomBox('Ded. (Fire)', CurrencyFormatter.format(_deductible, symbol: r'$')),
+        ] else ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Calculate again to update results.',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              color: const Color(0xFFB45309),
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-              )
-            ],
+                Text(
+                  'Your Rider Estimate',
+                  style: AppTextStyles.playfair(
+                      size: 13, weight: FontWeight.w700, color: textColor),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF7C2D12), Color(0xFFC2410C), Color(0xFFD97706)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF7C2D12).withValues(alpha: 0.35),
+                        blurRadius: 15,
+                        offset: const Offset(0, 6),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ANNUAL WILDFIRE RIDER PREMIUM',
+                        style: AppTextStyles.dmSans(
+                            size: 8,
+                            weight: FontWeight.w700,
+                            color: Colors.white70,
+                            letterSpacing: 0.8),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        CurrencyFormatter.format(annualPremium, symbol: r'$'),
+                        style: AppTextStyles.playfair(
+                            size: 32, weight: FontWeight.w800, color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${riskLabels[snapRiskLevel] ?? ''} · ${CurrencyFormatter.compact(snapDwellingValue, symbol: r'$')} dwelling · ${CurrencyFormatter.compact(snapDeductible, symbol: r'$')} ded.',
+                        style: AppTextStyles.dmSans(
+                            size: 9.5, color: Colors.white.withValues(alpha: 0.82)),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          _buildHeroBottomBox('Monthly Add-On', CurrencyFormatter.format(monthlyPremium.toDouble(), symbol: r'$')),
+                          const SizedBox(width: 8),
+                          _buildHeroBottomBox('% of Dwelling', '${pct.toStringAsFixed(2)}%'),
+                          const SizedBox(width: 8),
+                          _buildHeroBottomBox('Ded. (Fire)', CurrencyFormatter.format(snapDeductible, symbol: r'$')),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
 
         const SizedBox(height: 20),
 
@@ -682,7 +788,7 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
                             ),
                     ),
                   ),
-                  if (_showResults && !_isCalcDirty) ...[
+                  if (_showResults && !isDirty) ...[
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: _saveCalculation,
@@ -707,7 +813,7 @@ class _USAHomeownerInsuranceWildfireCalcState extends ConsumerState<USAHomeowner
 
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults && !isDirty) ...[
           // Stats grid
           Text(
             '2025 Wildfire Statistics',

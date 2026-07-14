@@ -71,6 +71,20 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _curBalanceController.text = '380000';
+      _curRateController.text = '7.00';
+      _newRateController.text = '5.96';
+      _termYears = 30;
+      _selectedExempt = 'no';
+      _closingCostsController.text = '2500';
+      _calculated = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
   double _pmtFor(double principal, double annualRate, int months) {
     final mr = annualRate / 12;
     if (mr == 0) return principal / months;
@@ -401,8 +415,49 @@ class _USAVaIrrrlRefinanceScreenState extends ConsumerState<USAVaIrrrlRefinanceS
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
 
-                const SizedBox(height: 12),
+                // Calculate & Reset Buttons Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _calculate,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1B3F72),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 2,
+                        ),
+                        child: Text(
+                          'Calculate Refi Savings',
+                          style: AppTextStyles.playfair(size: 13.5, weight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: _reset,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cardBg,
+                        foregroundColor: textCol,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(color: borderCol, width: 1.5),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Reset',
+                        style: AppTextStyles.playfair(size: 13.5, weight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
 
                 // Result Hero Card
                 if (!_calculated) ...[

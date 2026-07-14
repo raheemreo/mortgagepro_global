@@ -26,6 +26,11 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
   double _fundType = 5.5; // Conservative (3.5), Balanced (5.5), Growth (7.0), Aggressive (8.5)
   double _salaryGrowth = 2.0; // 0, 2, 3, 5
 
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
+
   @override
   void dispose() {
     _ageController.dispose();
@@ -34,12 +39,70 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
     super.dispose();
   }
 
-  void _saveCalculation() async {
-    final int age = int.tryParse(_ageController.text) ?? 33;
-    final double curBal = double.tryParse(_balanceController.text) ?? 0;
-    final double salary = double.tryParse(_salaryController.text) ?? 75000;
+  void _reset() {
+    setState(() {
+      _ageController.text = '33';
+      _balanceController.text = '28000';
+      _salaryController.text = '75000';
+      _contribRate = 4.0;
+      _fundType = 5.5;
+      _salaryGrowth = 2.0;
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
 
-    final result = _runProjection(age, curBal, salary);
+  void _calculate() {
+    final errors = <String, String>{};
+    final int age = int.tryParse(_ageController.text) ?? 0;
+    final double curBal = double.tryParse(_balanceController.text) ?? 0.0;
+    final double salary = double.tryParse(_salaryController.text) ?? 0.0;
+
+    if (age <= 0 || age >= 65) {
+      errors['age'] = 'Enter valid age between 1 and 64';
+    }
+    if (curBal < 0) {
+      errors['balance'] = 'Balance cannot be negative';
+    }
+    if (salary < 0) {
+      errors['salary'] = 'Salary cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['age'] = age.toDouble();
+      _calcSnapshot['currentBalance'] = curBal;
+      _calcSnapshot['salary'] = salary;
+      _calcSnapshot['contribRate'] = _contribRate;
+      _calcSnapshot['fundType'] = _fundType;
+      _calcSnapshot['salaryGrowth'] = _salaryGrowth;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _saveCalculation(double total, double totalYou, double totalEmp, double totalReturns) async {
+    final snapAge = _calcSnapshot['age'] ?? (double.tryParse(_ageController.text) ?? 33.0);
+    final snapCurBal = _calcSnapshot['currentBalance'] ?? (double.tryParse(_balanceController.text) ?? 28000.0);
+    final snapSalary = _calcSnapshot['salary'] ?? (double.tryParse(_salaryController.text) ?? 75000.0);
+    final snapContribRate = _calcSnapshot['contribRate'] ?? _contribRate;
+    final snapFundType = _calcSnapshot['fundType'] ?? _fundType;
+    final snapSalaryGrowth = _calcSnapshot['salaryGrowth'] ?? _salaryGrowth;
 
     final labelCtrl = TextEditingController(text: 'NZ KiwiSaver Balance');
     final confirmed = await showDialog<bool>(
@@ -56,7 +119,7 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Projected Balance ${CurrencyFormatter.compact(result.total, symbol: 'NZ\$')} at Age 65',
+              'Saving: Projected Balance ${CurrencyFormatter.compact(total, symbol: 'NZ\$')} at Age 65',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -108,18 +171,18 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
         country: 'New Zealand',
         calcType: 'KiwiSaver Balance',
         inputs: {
-          'age': age.toDouble(),
-          'currentBalance': curBal,
-          'salary': salary,
-          'contribRate': _contribRate,
-          'fundType': _fundType,
-          'salaryGrowth': _salaryGrowth,
+          'age': snapAge,
+          'currentBalance': snapCurBal,
+          'salary': snapSalary,
+          'contribRate': snapContribRate,
+          'fundType': snapFundType,
+          'salaryGrowth': snapSalaryGrowth,
         },
         results: {
-          'projectedBalance': result.total,
-          'yourContributions': result.totalYou,
-          'employerGovtContributions': result.totalEmp,
-          'investmentReturns': result.totalReturns,
+          'projectedBalance': total,
+          'yourContributions': totalYou,
+          'employerGovtContributions': totalEmp,
+          'investmentReturns': totalReturns,
         },
         label: label,
         currencyCode: 'NZD',
@@ -141,8 +204,8 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
     }
   }
 
-  _ProjectionResult _runProjection(int age, double curBal, double salary) {
-    final rate = _fundType / 100;
+  _ProjectionResult _runProjection(int age, double curBal, double salary, double contribRate, double fundType, double salaryGrowth) {
+    final rate = fundType / 100;
     const empRate = 0.03;
     const govtMax = 521.43;
     final years = max(0, 65 - age);
@@ -156,7 +219,7 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
     final List<_YearPoint> points = [_YearPoint(0, curBal)];
 
     for (int y = 1; y <= years; y++) {
-      final yourContrib = annualSalary * (_contribRate / 100);
+      final yourContrib = annualSalary * (contribRate / 100);
       final empContrib = annualSalary * empRate;
       final govtContrib = min(yourContrib * 0.5, govtMax);
       final yearContrib = yourContrib + empContrib + govtContrib;
@@ -168,7 +231,7 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
       totalEmp += empContrib + govtContrib;
       totalReturns += interest;
 
-      annualSalary *= (1 + _salaryGrowth / 100);
+      annualSalary *= (1 + salaryGrowth / 100);
 
       if (y % max(1, (years / 8).floor()) == 0 || y == years) {
         points.add(_YearPoint(y, balance));
@@ -193,20 +256,20 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
     );
   }
 
-  double _projectToAge(int targetAge, int currentAge, double curBal, double salary) {
+  double _projectToAge(int targetAge, int currentAge, double curBal, double salary, double contribRate, double fundType, double salaryGrowth) {
     if (targetAge <= currentAge) return curBal;
-    final rate = _fundType / 100;
+    final rate = fundType / 100;
     final years = targetAge - currentAge;
     double balance = curBal;
     double annualSalary = salary;
 
     for (int y = 0; y < years; y++) {
-      final contrib = (annualSalary * (_contribRate / 100)) +
+      final contrib = (annualSalary * (contribRate / 100)) +
           (annualSalary * 0.03) +
-          min(annualSalary * (_contribRate / 100) * 0.5, 521.43);
+          min(annualSalary * (contribRate / 100) * 0.5, 521.43);
       final interest = (balance + contrib / 2) * rate;
       balance += contrib + interest;
-      annualSalary *= (1 + _salaryGrowth / 100);
+      annualSalary *= (1 + salaryGrowth / 100);
     }
     return balance;
   }
@@ -215,505 +278,587 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final int age = int.tryParse(_ageController.text) ?? 33;
-    final double curBal = double.tryParse(_balanceController.text) ?? 0;
-    final double salary = double.tryParse(_salaryController.text) ?? 75000;
+    // Snapshot variables if results are shown, otherwise live inputs
+    final double rawAge = double.tryParse(_ageController.text) ?? 33.0;
+    final double rawCurBal = double.tryParse(_balanceController.text) ?? 28000.0;
+    final double rawSalary = double.tryParse(_salaryController.text) ?? 75000.0;
+    final double rawContribRate = _contribRate;
+    final double rawFundType = _fundType;
+    final double rawSalaryGrowth = _salaryGrowth;
 
-    final result = _runProjection(age, curBal, salary);
+    final int age = _showResults ? ((_calcSnapshot['age'] ?? rawAge) as double).toInt() : rawAge.toInt();
+    final double curBal = _showResults ? (_calcSnapshot['currentBalance'] ?? rawCurBal) : rawCurBal;
+    final double salary = _showResults ? (_calcSnapshot['salary'] ?? rawSalary) : rawSalary;
+    final double contribRate = _showResults ? (_calcSnapshot['contribRate'] ?? rawContribRate) : rawContribRate;
+    final double fundType = _showResults ? (_calcSnapshot['fundType'] ?? rawFundType) : rawFundType;
+    final double salaryGrowth = _showResults ? (_calcSnapshot['salaryGrowth'] ?? rawSalaryGrowth) : rawSalaryGrowth;
 
+    final result = _runProjection(age, curBal, salary, contribRate, fundType, salaryGrowth);
     final currentYear = DateTime.now().year;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Projected Balance',
-              style: AppTextStyles.playfair(
-                  size: 15,
-                  weight: FontWeight.w800,
-                  color: theme.getTextColor(context)),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDFA),
-                border: Border.all(color: const Color(0xFF5EEAD4)),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'Live Estimate',
-                style: AppTextStyles.dmSans(
-                    size: 9, color: const Color(0xFF0F766E), weight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
+    final isDirty = _showResults && (
+      (double.tryParse(_ageController.text) ?? 0.0) != (_calcSnapshot['age'] ?? 0.0) ||
+      (double.tryParse(_balanceController.text) ?? 0.0) != (_calcSnapshot['currentBalance'] ?? 0.0) ||
+      (double.tryParse(_salaryController.text) ?? 0.0) != (_calcSnapshot['salary'] ?? 0.0) ||
+      _contribRate != (_calcSnapshot['contribRate'] ?? 0.0) ||
+      _fundType != (_calcSnapshot['fundType'] ?? 0.0) ||
+      _salaryGrowth != (_calcSnapshot['salaryGrowth'] ?? 0.0)
+    );
 
-        // Result Hero Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'KIWISAVER PROJECTION · AT RETIREMENT (AGE 65)',
-                style: AppTextStyles.dmSans(
-                  size: 8,
-                  color: Colors.white60,
-                  weight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                CurrencyFormatter.format(result.total, currencyCode: 'NZD'),
+                'Projected Balance',
                 style: AppTextStyles.playfair(
-                  size: 30,
-                  weight: FontWeight.w800,
-                  color: const Color(0xFFF5D060),
-                ),
+                    size: 15,
+                    weight: FontWeight.w800,
+                    color: theme.getTextColor(context)),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Estimated balance in ${result.years} years (${currentYear + result.years})',
-                style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildHeroStatBox(
-                      label: 'Your Contribs',
-                      val: CurrencyFormatter.compact(result.totalYou, symbol: 'NZ\$'),
-                      valColor: const Color(0xFF5EEAD4),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildHeroStatBox(
-                      label: 'Employer + Govt',
-                      val: CurrencyFormatter.compact(result.totalEmp, symbol: 'NZ\$'),
-                      valColor: const Color(0xFFF5D060),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildHeroStatBox(
-                      label: 'Returns',
-                      val: CurrencyFormatter.compact(result.totalReturns, symbol: 'NZ\$'),
-                      valColor: const Color(0xFF6EE7B7),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Inputs Card
-        Text(
-          'Your Details',
-          style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context)),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '👤 Personal & Income',
-                style: AppTextStyles.dmSans(
-                  size: 11,
-                  weight: FontWeight.w800,
-                  color: theme.getTextColor(context),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextInput(
-                      label: 'Current Age',
-                      controller: _ageController,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildTextInput(
-                      label: 'Current Balance',
-                      controller: _balanceController,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              _buildTextInput(
-                label: 'Annual Salary (NZD)',
-                controller: _salaryController,
-              ),
-              const SizedBox(height: 12),
-
-              // Contrib Rate Buttons
-              Text(
-                'Employee Contribution Rate',
-                style: AppTextStyles.dmSans(
-                    size: 9, weight: FontWeight.w700, color: theme.getMutedColor(context)),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [3.0, 4.0, 6.0, 8.0, 10.0].map((rate) {
-                  final active = _contribRate == rate;
-                  return InkWell(
-                    onTap: () => setState(() => _contribRate = rate),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: active ? theme.primaryColor : theme.getBgColor(context),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: active ? theme.primaryColor : theme.getBorderColor(context)),
-                      ),
-                      child: Text(
-                        '${rate.toInt()}%',
-                        style: AppTextStyles.dmSans(
-                          size: 10,
-                          weight: FontWeight.bold,
-                          color: active ? Colors.white : theme.getTextColor(context),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 14),
-
-              // Fund Type Dropdown
-              Text(
-                'KiwiSaver Fund Type',
-                style: AppTextStyles.dmSans(
-                    size: 9, weight: FontWeight.w700, color: theme.getMutedColor(context)),
-              ),
-              const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: theme.getBgColor(context),
-                  border: Border.all(color: theme.getBorderColor(context)),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<double>(
-                    value: _fundType,
-                    items: const [
-                      DropdownMenuItem(value: 3.5, child: Text('Conservative (avg 3.5% p.a.)')),
-                      DropdownMenuItem(value: 5.5, child: Text('Balanced (avg 5.5% p.a.)')),
-                      DropdownMenuItem(value: 7.0, child: Text('Growth (avg 7.0% p.a.)')),
-                      DropdownMenuItem(value: 8.5, child: Text('Aggressive Growth (avg 8.5% p.a.)')),
-                    ],
-                    onChanged: (val) => setState(() => _fundType = val!),
-                    dropdownColor: theme.getCardColor(context),
-                    style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context)),
-                    isExpanded: true,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // Salary Growth Buttons
-              Text(
-                'Expected Annual Salary Growth',
-                style: AppTextStyles.dmSans(
-                    size: 9, weight: FontWeight.w700, color: theme.getMutedColor(context)),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [0.0, 2.0, 3.0, 5.0].map((rate) {
-                  final active = _salaryGrowth == rate;
-                  return InkWell(
-                    onTap: () => setState(() => _salaryGrowth = rate),
-                    child: Container(
-                      width: 65,
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: active ? theme.primaryColor : theme.getBgColor(context),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: active ? theme.primaryColor : theme.getBorderColor(context)),
-                      ),
-                      child: Text(
-                        '${rate.toInt()}%',
-                        style: AppTextStyles.dmSans(
-                          size: 10,
-                          weight: FontWeight.bold,
-                          color: active ? Colors.white : theme.getTextColor(context),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A6B4A),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  minimumSize: const Size(double.infinity, 44),
+                  color: const Color(0xFFF0FDFA),
+                  border: Border.all(color: const Color(0xFF5EEAD4)),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '🔖 Save This Calculation',
-                  style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                  'NZ Calculator',
+                  style: AppTextStyles.dmSans(
+                      size: 9, color: const Color(0xFF0F766E), weight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 10),
 
-        // Chart Card
-        Text(
-          'Balance Growth Over Time',
-          style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context)),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
+          // Inputs Card
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '👤 Personal & Income',
+                      style: AppTextStyles.dmSans(
+                        size: 11,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _reset,
+                      child: Text(
+                        'Reset ↺',
+                        style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: theme.primaryColor,
+                          weight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextInput(
+                        label: 'Current Age',
+                        controller: _ageController,
+                        errorText: _errors['age'],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildTextInput(
+                        label: 'Current Balance',
+                        controller: _balanceController,
+                        errorText: _errors['balance'],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                _buildTextInput(
+                  label: 'Annual Salary (NZD)',
+                  controller: _salaryController,
+                  errorText: _errors['salary'],
+                ),
+                const SizedBox(height: 12),
+
+                // Contrib Rate Buttons
+                Text(
+                  'Employee Contribution Rate',
+                  style: AppTextStyles.dmSans(
+                      size: 9, weight: FontWeight.w700, color: theme.getMutedColor(context)),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [3.0, 4.0, 6.0, 8.0, 10.0].map((rate) {
+                    final active = _contribRate == rate;
+                    return InkWell(
+                      onTap: () => setState(() => _contribRate = rate),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: active ? theme.primaryColor : theme.getBgColor(context),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: active ? theme.primaryColor : theme.getBorderColor(context)),
+                        ),
+                        child: Text(
+                          '${rate.toInt()}%',
+                          style: AppTextStyles.dmSans(
+                            size: 10,
+                            weight: FontWeight.bold,
+                            color: active ? Colors.white : theme.getTextColor(context),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+
+                // Fund Type Dropdown
+                Text(
+                  'KiwiSaver Fund Type',
+                  style: AppTextStyles.dmSans(
+                      size: 9, weight: FontWeight.w700, color: theme.getMutedColor(context)),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: theme.getBgColor(context),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<double>(
+                      value: _fundType,
+                      items: const [
+                        DropdownMenuItem(value: 3.5, child: Text('Conservative (avg 3.5% p.a.)')),
+                        DropdownMenuItem(value: 5.5, child: Text('Balanced (avg 5.5% p.a.)')),
+                        DropdownMenuItem(value: 7.0, child: Text('Growth (avg 7.0% p.a.)')),
+                        DropdownMenuItem(value: 8.5, child: Text('Aggressive Growth (avg 8.5% p.a.)')),
+                      ],
+                      onChanged: (val) => setState(() => _fundType = val!),
+                      dropdownColor: theme.getCardColor(context),
+                      style: AppTextStyles.dmSans(size: 11, color: theme.getTextColor(context)),
+                      isExpanded: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Salary Growth Buttons
+                Text(
+                  'Expected Annual Salary Growth',
+                  style: AppTextStyles.dmSans(
+                      size: 9, weight: FontWeight.w700, color: theme.getMutedColor(context)),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [0.0, 2.0, 3.0, 5.0].map((rate) {
+                    final active = _salaryGrowth == rate;
+                    return InkWell(
+                      onTap: () => setState(() => _salaryGrowth = rate),
+                      child: Container(
+                        width: 65,
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: active ? theme.primaryColor : theme.getBgColor(context),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: active ? theme.primaryColor : theme.getBorderColor(context)),
+                        ),
+                        child: Text(
+                          '${rate.toInt()}%',
+                          style: AppTextStyles.dmSans(
+                            size: 10,
+                            weight: FontWeight.bold,
+                            color: active ? Colors.white : theme.getTextColor(context),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _calculate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    minimumSize: const Size(double.infinity, 44),
+                  ),
+                  child: Text(
+                    '📈 Calculate Projection',
+                    style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Balance Trajectory',
-                    style: AppTextStyles.dmSans(
-                      size: 12,
-                      weight: FontWeight.bold,
-                      color: theme.getTextColor(context),
-                    ),
-                  ),
-                  Text(
-                    'Growth to Age 65',
-                    style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: const Color(0xFF0D9488),
-                      weight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-              // Area Chart via CustomPainter
-              SizedBox(
-                height: 160,
-                width: double.infinity,
-                child: CustomPaint(
-                  painter: _NZKiwiSaverBalanceAreaPainter(
-                    points: result.points,
-                    maxBal: result.points.map((p) => p.balance).reduce(max),
-                    theme: theme,
-                  ),
+          if (_showResults) ...[
+            if (isDirty) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Text(
+                        'Inputs have changed. Tap Calculate Projection to refresh results.',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Legend and Breakdown bars
-              _buildBreakdownRow(
-                label: 'Your Contributions',
-                val: CurrencyFormatter.compact(result.totalYou, symbol: 'NZ\$'),
-                pct: '${result.pYou}%',
-                color: const Color(0xFF5EEAD4),
-                widthFactor: result.pYou / 100,
-              ),
-              const SizedBox(height: 10),
-              _buildBreakdownRow(
-                label: 'Employer + Govt',
-                val: CurrencyFormatter.compact(result.totalEmp, symbol: 'NZ\$'),
-                pct: '${result.pEmp}%',
-                color: const Color(0xFFF5D060),
-                widthFactor: result.pEmp / 100,
-              ),
-              const SizedBox(height: 10),
-              _buildBreakdownRow(
-                label: 'Investment Returns',
-                val: CurrencyFormatter.compact(result.totalReturns, symbol: 'NZ\$'),
-                pct: '${result.pRet}%',
-                color: const Color(0xFF6EE7B7),
-                widthFactor: result.pRet / 100,
-              ),
             ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Milestones
-        Text(
-          'Balance Milestones',
-          style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context)),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            children: [45, 55, 60, 65].map((targetAge) {
-              if (targetAge <= age) return const SizedBox.shrink();
-              final yearsFromNow = targetAge - age;
-              final balAtAge = _projectToAge(targetAge, age, curBal, salary);
-              final isLast = targetAge == 65;
-
-              return Column(
+            Container(
+              key: _resultsKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Row(
+                  // Result Hero Card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: targetAge >= 60
-                                  ? [const Color(0xFFD4A017), const Color(0xFFA07810)]
-                                  : [const Color(0xFF0D9488), const Color(0xFF0F766E)],
-                            ),
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            targetAge == 65 ? '🥝' : '🌿',
-                            style: const TextStyle(fontSize: 12),
+                        Text(
+                          'KIWISAVER PROJECTION · AT RETIREMENT (AGE 65)',
+                          style: AppTextStyles.dmSans(
+                            size: 8,
+                            color: Colors.white60,
+                            weight: FontWeight.w700,
+                            letterSpacing: 0.8,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Age $targetAge (${currentYear + yearsFromNow})',
-                              style: AppTextStyles.dmSans(
-                                  size: 11,
-                                  weight: FontWeight.bold,
-                                  color: theme.getTextColor(context)),
-                            ),
-                            Text(
-                              '$yearsFromNow years from now',
-                              style: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context)),
-                            ),
-                          ],
+                        const SizedBox(height: 6),
+                        Text(
+                          CurrencyFormatter.format(result.total, currencyCode: 'NZD'),
+                          style: AppTextStyles.playfair(
+                            size: 30,
+                            weight: FontWeight.w800,
+                            color: const Color(0xFFF5D060),
+                          ),
                         ),
-                        const Spacer(),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                        const SizedBox(height: 4),
+                        Text(
+                          'Estimated balance in ${result.years} years (${currentYear + result.years})',
+                          style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
                           children: [
-                            Text(
-                              CurrencyFormatter.compact(balAtAge, symbol: 'NZ\$'),
-                              style: AppTextStyles.playfair(
-                                size: 12,
-                                weight: FontWeight.bold,
-                                color: const Color(0xFF1A6B4A),
+                            Expanded(
+                              child: _buildHeroStatBox(
+                                label: 'Your Contribs',
+                                val: CurrencyFormatter.compact(result.totalYou, symbol: 'NZ\$'),
+                                valColor: const Color(0xFF5EEAD4),
                               ),
                             ),
-                            Text(
-                              'Projected balance',
-                              style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildHeroStatBox(
+                                label: 'Employer + Govt',
+                                val: CurrencyFormatter.compact(result.totalEmp, symbol: 'NZ\$'),
+                                valColor: const Color(0xFFF5D060),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildHeroStatBox(
+                                label: 'Returns',
+                                val: CurrencyFormatter.compact(result.totalReturns, symbol: 'NZ\$'),
+                                valColor: const Color(0xFF6EE7B7),
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  if (!isLast) const Divider(height: 1),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-        // Info Banner
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFF0FDFA), Color(0xFFCCFBF1)],
-            ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF5EEAD4)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '🏛️ 2025 KiwiSaver Rules (IRD / MSD)',
-                style: AppTextStyles.dmSans(
-                    size: 11, weight: FontWeight.bold, color: const Color(0xFF0F766E)),
+                  // Chart Card
+                  Text(
+                    'Balance Growth Over Time',
+                    style: AppTextStyles.playfair(
+                        size: 12,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context)),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Balance Trajectory',
+                              style: AppTextStyles.dmSans(
+                                size: 12,
+                                weight: FontWeight.bold,
+                                color: theme.getTextColor(context),
+                              ),
+                            ),
+                            Text(
+                              'Growth to Age 65',
+                              style: AppTextStyles.dmSans(
+                                size: 9,
+                                color: const Color(0xFF0D9488),
+                                weight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Area Chart via CustomPainter
+                        SizedBox(
+                          height: 160,
+                          width: double.infinity,
+                          child: CustomPaint(
+                            painter: _NZKiwiSaverBalanceAreaPainter(
+                              points: result.points,
+                              maxBal: result.points.map((p) => p.balance).reduce(max),
+                              theme: theme,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Legend and Breakdown bars
+                        _buildBreakdownRow(
+                          label: 'Your Contributions',
+                          val: CurrencyFormatter.compact(result.totalYou, symbol: 'NZ\$'),
+                          pct: '${result.pYou}%',
+                          color: const Color(0xFF5EEAD4),
+                          widthFactor: result.pYou / 100,
+                        ),
+                        const SizedBox(height: 10),
+                        _buildBreakdownRow(
+                          label: 'Employer + Govt',
+                          val: CurrencyFormatter.compact(result.totalEmp, symbol: 'NZ\$'),
+                          pct: '${result.pEmp}%',
+                          color: const Color(0xFFF5D060),
+                          widthFactor: result.pEmp / 100,
+                        ),
+                        const SizedBox(height: 10),
+                        _buildBreakdownRow(
+                          label: 'Investment Returns',
+                          val: CurrencyFormatter.compact(result.totalReturns, symbol: 'NZ\$'),
+                          pct: '${result.pRet}%',
+                          color: const Color(0xFF6EE7B7),
+                          widthFactor: result.pRet / 100,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Milestones
+                  Text(
+                    'Balance Milestones',
+                    style: AppTextStyles.playfair(
+                        size: 12,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context)),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Column(
+                      children: [45, 55, 60, 65].map((targetAge) {
+                        if (targetAge <= age) return const SizedBox.shrink();
+                        final yearsFromNow = targetAge - age;
+                        final balAtAge = _projectToAge(targetAge, age, curBal, salary, contribRate, fundType, salaryGrowth);
+                        final isLast = targetAge == 65;
+
+                        return Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: targetAge >= 60
+                                            ? [const Color(0xFFD4A017), const Color(0xFFA07810)]
+                                            : [const Color(0xFF0D9488), const Color(0xFF0F766E)],
+                                      ),
+                                      borderRadius: BorderRadius.circular(9),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      targetAge == 65 ? '🥝' : '🌿',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Age $targetAge (${currentYear + yearsFromNow})',
+                                        style: AppTextStyles.dmSans(
+                                            size: 11,
+                                            weight: FontWeight.bold,
+                                            color: theme.getTextColor(context)),
+                                      ),
+                                      Text(
+                                        '$yearsFromNow years from now',
+                                        style: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context)),
+                                      ),
+                                    ],
+                                  ),
+                                  const Spacer(),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        CurrencyFormatter.compact(balAtAge, symbol: 'NZ\$'),
+                                        style: AppTextStyles.playfair(
+                                          size: 12,
+                                          weight: FontWeight.bold,
+                                          color: const Color(0xFF1A6B4A),
+                                        ),
+                                      ),
+                                      Text(
+                                        'Projected balance',
+                                        style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context)),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!isLast) const Divider(height: 1),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Save Button
+                  ElevatedButton(
+                    onPressed: () => _saveCalculation(result.total, result.totalYou, result.totalEmp, result.totalReturns),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A6B4A),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      minimumSize: const Size(double.infinity, 44),
+                    ),
+                    child: Text(
+                      '💾 Save This Calculation',
+                      style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
-              const SizedBox(height: 6),
-              _buildBulletItem('Min employee contrib: 3%'),
-              _buildBulletItem('Employer min: 3%'),
-              _buildBulletItem('Govt contribution: 50c per \$1'),
-              _buildBulletItem('Max govt: \$521.43/yr'),
-              _buildBulletItem('First-home withdrawal after 3 years'),
-              _buildBulletItem('NZ Super age: 65'),
-              _buildBulletItem('PIE tax rate up to 28%'),
-              _buildBulletItem('Contribution holiday: up to 1yr'),
-            ],
+            ),
+          ],
+
+          // Info Banner
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFF0FDFA), Color(0xFFCCFBF1)],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF5EEAD4)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '🏛️ 2025 KiwiSaver Rules (IRD / MSD)',
+                  style: AppTextStyles.dmSans(
+                      size: 11, weight: FontWeight.bold, color: const Color(0xFF0F766E)),
+                ),
+                const SizedBox(height: 6),
+                _buildBulletItem('Min employee contrib: 3%'),
+                _buildBulletItem('Employer min: 3%'),
+                _buildBulletItem('Govt contribution: 50c per \$1'),
+                _buildBulletItem('Max govt: \$521.43/yr'),
+                _buildBulletItem('First-home withdrawal after 3 years'),
+                _buildBulletItem('NZ Super age: 65'),
+                _buildBulletItem('PIE tax rate up to 28%'),
+                _buildBulletItem('Contribution holiday: up to 1yr'),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -742,7 +887,11 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
     );
   }
 
-  Widget _buildTextInput({required String label, required TextEditingController controller}) {
+  Widget _buildTextInput({
+    required String label,
+    required TextEditingController controller,
+    String? errorText,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -756,27 +905,40 @@ class _NZKiwiSaverBalanceState extends ConsumerState<NZKiwiSaverBalance> {
         ),
         const SizedBox(height: 4),
         Container(
-          height: 40,
+          height: errorText != null ? 54 : 40,
           decoration: BoxDecoration(
             color: widget.theme.getBgColor(context),
-            border: Border.all(color: widget.theme.getBorderColor(context)),
+            border: Border.all(color: errorText != null ? Colors.red : widget.theme.getBorderColor(context)),
             borderRadius: BorderRadius.circular(10),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           alignment: Alignment.center,
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            style: AppTextStyles.playfair(
-                size: 14,
-                color: widget.theme.getTextColor(context),
-                weight: FontWeight.w800),
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            onChanged: (_) => setState(() {}),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  style: AppTextStyles.playfair(
+                      size: 14,
+                      color: widget.theme.getTextColor(context),
+                      weight: FontWeight.w800),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              if (errorText != null)
+                Text(
+                  errorText,
+                  style: AppTextStyles.dmSans(size: 7, color: Colors.red, weight: FontWeight.bold),
+                ),
+            ],
           ),
         ),
       ],

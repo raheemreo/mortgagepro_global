@@ -28,7 +28,12 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
   double _deposit = 200000;
   int _termYears = 30;
   double _rate = 5.59;
+
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
+
   final List<Map<String, dynamic>> _regions = [
     {'icon': '🏙️', 'city': 'Auckland', 'price': 950000.0},
     {'icon': '🌊', 'city': 'Wellington', 'price': 780000.0},
@@ -48,6 +53,8 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
       _termYears = 30;
       _rate = 5.59;
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
     });
   }
 
@@ -82,14 +89,78 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
     return loan * (r * pow(1 + r, n)) / (pow(1 + r, n) - 1);
   }
 
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_borrower1Income <= 0 && _borrower2Income <= 0) {
+      errors['income'] = 'Enter gross income for at least one borrower';
+    }
+    if (_borrower1Income < 0) {
+      errors['income1'] = 'Income cannot be negative';
+    }
+    if (_borrower2Income < 0) {
+      errors['income2'] = 'Income cannot be negative';
+    }
+    if (_expenses < 0) {
+      errors['expenses'] = 'Expenses cannot be negative';
+    }
+    if (_debts < 0) {
+      errors['debts'] = 'Debts cannot be negative';
+    }
+    if (_deposit < 0) {
+      errors['deposit'] = 'Deposit cannot be negative';
+    }
+    if (_termYears <= 0 || _termYears > 50) {
+      errors['term'] = 'Enter term between 1 and 50';
+    }
+    if (_rate <= 0 || _rate > 25) {
+      errors['rate'] = 'Enter interest rate between 0.1% and 25%';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['income1'] = _borrower1Income;
+      _calcSnapshot['income2'] = _borrower2Income;
+      _calcSnapshot['expenses'] = _expenses;
+      _calcSnapshot['debts'] = _debts;
+      _calcSnapshot['deposit'] = _deposit;
+      _calcSnapshot['term'] = _termYears;
+      _calcSnapshot['rate'] = _rate;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation() async {
-    final income = _borrower1Income + _borrower2Income;
+    final double snapIncome1 = _calcSnapshot['income1'] ?? _borrower1Income;
+    final double snapIncome2 = _calcSnapshot['income2'] ?? _borrower2Income;
+    final double snapExpenses = _calcSnapshot['expenses'] ?? _expenses;
+    final double snapDebts = _calcSnapshot['debts'] ?? _debts;
+    final double snapDeposit = _calcSnapshot['deposit'] ?? _deposit;
+    final double snapRate = _calcSnapshot['rate'] ?? _rate;
+    final int snapTerm = _calcSnapshot['term'] ?? _termYears;
+
+    final income = snapIncome1 + snapIncome2;
     final netMo = _netIncome(income) / 12;
-    final maxByBudget = (netMo - _expenses - _debts) * 0.95;
-    final singlePayment = _calcMonthly(1.0, _rate, _termYears);
+    final maxByBudget = (netMo - snapExpenses - snapDebts) * 0.95;
+    final singlePayment = _calcMonthly(1.0, snapRate, snapTerm);
     final maxLoanByBudget =
         singlePayment > 0 ? maxByBudget / singlePayment : 0.0;
-    final maxLoanByDTI = (income * 6) - (_debts * 12);
+    final maxLoanByDTI = (income * 6) - (snapDebts * 12);
     final maxLoan =
         max(0.0, min(maxLoanByBudget, min(maxLoanByDTI, income * 6)));
 
@@ -159,17 +230,17 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
         country: 'New Zealand',
         calcType: 'Affordability Calc',
         inputs: {
-          'income1': _borrower1Income,
-          'income2': _borrower2Income,
-          'expenses': _expenses,
-          'debts': _debts,
-          'deposit': _deposit,
-          'rate': _rate,
-          'term': _termYears.toDouble(),
+          'income1': snapIncome1,
+          'income2': snapIncome2,
+          'expenses': snapExpenses,
+          'debts': snapDebts,
+          'deposit': snapDeposit,
+          'rate': snapRate,
+          'term': snapTerm.toDouble(),
         },
         results: {
           'maxLoan': maxLoan,
-          'maxPropPrice': maxLoan + _deposit,
+          'maxPropPrice': maxLoan + snapDeposit,
         },
         label: label,
         currencyCode: 'NZD',
@@ -199,7 +270,6 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
     final nzRates = ref.watch(nzRatesProvider).valueOrNull;
     final liveRate = nzRates?.fixed1yr.value;
     if (liveRate != null && _rate == 5.59) {
-      // Only pre-fill on first build if still default
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _rate == 5.59) setState(() => _rate = liveRate);
       });
@@ -214,28 +284,45 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
     _regions[4]['price'] = rc.nzPriceTauranga * 1000.0;
     _regions[5]['price'] = rc.nzPriceDunedin * 1000.0;
 
+    final double snapIncome1 = _showResults ? (_calcSnapshot['income1'] ?? _borrower1Income) : _borrower1Income;
+    final double snapIncome2 = _showResults ? (_calcSnapshot['income2'] ?? _borrower2Income) : _borrower2Income;
+    final double snapExpenses = _showResults ? (_calcSnapshot['expenses'] ?? _expenses) : _expenses;
+    final double snapDebts = _showResults ? (_calcSnapshot['debts'] ?? _debts) : _debts;
+    final double snapDeposit = _showResults ? (_calcSnapshot['deposit'] ?? _deposit) : _deposit;
+    final double snapRate = _showResults ? (_calcSnapshot['rate'] ?? _rate) : _rate;
+    final int snapTerm = _showResults ? (_calcSnapshot['term'] ?? _termYears) : _termYears;
+
     // Calculations
-    final income = _borrower1Income + _borrower2Income;
+    final income = snapIncome1 + snapIncome2;
     final netMo = _netIncome(income) / 12;
-    final maxByBudget = (netMo - _expenses - _debts) * 0.95;
-    final singlePayment =
-        _isMonthlyView ? 0.0 : _calcMonthly(1.0, _rate, _termYears);
+    final maxByBudget = (netMo - snapExpenses - snapDebts) * 0.95;
+    final singlePayment = _calcMonthly(1.0, snapRate, snapTerm);
     final maxLoanByBudget =
         singlePayment > 0 ? maxByBudget / singlePayment : 0.0;
-    final maxLoanByDTI = (income * 6) - (_debts * 12);
+    final maxLoanByDTI = (income * 6) - (snapDebts * 12);
     final maxLoan =
         max(0.0, min(maxLoanByBudget, min(maxLoanByDTI, income * 6)));
-    final maxProp = maxLoan + _deposit;
+    final maxProp = maxLoan + snapDeposit;
 
-    final monthly = _calcMonthly(maxLoan, _rate, _termYears);
-    final monthlyStress = _calcMonthly(maxLoan, _rate + 2.0, _termYears);
+    final monthly = _calcMonthly(maxLoan, snapRate, snapTerm);
+    final monthlyStress = _calcMonthly(maxLoan, snapRate + 2.0, snapTerm);
 
     // Health metrics
     final mortPct = netMo > 0 ? (monthly / netMo * 100) : 0.0;
-    final totDebtPct = netMo > 0 ? ((monthly + _debts) / netMo * 100) : 0.0;
+    final totDebtPct = netMo > 0 ? ((monthly + snapDebts) / netMo * 100) : 0.0;
     final dti = income > 0 ? (maxLoan / income) : 0.0;
-    final remaining = netMo - monthly - _debts - _expenses;
+    final remaining = netMo - monthly - snapDebts - snapExpenses;
     final remPct = netMo > 0 ? (remaining / netMo * 100) : 0.0;
+
+    final isDirty = _showResults && (
+      _borrower1Income != (_calcSnapshot['income1'] ?? 0.0) ||
+      _borrower2Income != (_calcSnapshot['income2'] ?? 0.0) ||
+      _expenses != (_calcSnapshot['expenses'] ?? 0.0) ||
+      _debts != (_calcSnapshot['debts'] ?? 0.0) ||
+      _deposit != (_calcSnapshot['deposit'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['term'] ?? 0) ||
+      _rate != (_calcSnapshot['rate'] ?? 0.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,6 +371,11 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
                       weight: FontWeight.w800)),
               const SizedBox(height: 16),
 
+              if (_errors['income'] != null) ...[
+                Text(_errors['income']!, style: AppTextStyles.dmSans(size: 11, color: Colors.red, weight: FontWeight.bold)),
+                const SizedBox(height: 10),
+              ],
+
               // Inputs Row
               Row(
                 children: [
@@ -292,6 +384,7 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
                       label: 'Gross Annual Income',
                       prefix: 'NZD \$',
                       value: _borrower1Income,
+                      errorText: _errors['income1'],
                       onChanged: (val) =>
                           setState(() => _borrower1Income = val),
                     ),
@@ -302,6 +395,7 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
                       label: 'Partner Income (Yr)',
                       prefix: 'NZD \$',
                       value: _borrower2Income,
+                      errorText: _errors['income2'],
                       onChanged: (val) =>
                           setState(() => _borrower2Income = val),
                     ),
@@ -317,6 +411,7 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
                       label: 'Monthly Expenses',
                       prefix: 'NZD \$',
                       value: _expenses,
+                      errorText: _errors['expenses'],
                       onChanged: (val) => setState(() => _expenses = val),
                     ),
                   ),
@@ -326,6 +421,7 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
                       label: 'Existing Debts (Mo)',
                       prefix: 'NZD \$',
                       value: _debts,
+                      errorText: _errors['debts'],
                       onChanged: (val) => setState(() => _debts = val),
                     ),
                   ),
@@ -340,6 +436,7 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
                       label: 'Deposit Available',
                       prefix: 'NZD \$',
                       value: _deposit,
+                      errorText: _errors['deposit'],
                       onChanged: (val) => setState(() => _deposit = val),
                     ),
                   ),
@@ -350,6 +447,7 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
                       prefix: '',
                       value: _termYears.toDouble(),
                       isInteger: true,
+                      errorText: _errors['term'],
                       onChanged: (val) =>
                           setState(() => _termYears = val.toInt()),
                     ),
@@ -359,11 +457,18 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
               const SizedBox(height: 14),
 
               // Rate Slider
-              Text('Interest Rate: ${_rate.toStringAsFixed(2)}%',
-                  style: AppTextStyles.dmSans(
-                      size: 10,
-                      weight: FontWeight.w700,
-                      color: theme.getMutedColor(context))),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Interest Rate: ${_rate.toStringAsFixed(2)}%',
+                      style: AppTextStyles.dmSans(
+                          size: 10,
+                          weight: FontWeight.w700,
+                          color: theme.getMutedColor(context))),
+                  if (_errors['rate'] != null)
+                    Text(_errors['rate']!, style: AppTextStyles.dmSans(size: 9, color: Colors.red, weight: FontWeight.bold)),
+                ],
+              ),
               SliderTheme(
                 data: SliderThemeData(
                   activeTrackColor: const Color(0xFF1A6B4A),
@@ -384,10 +489,7 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
               const SizedBox(height: 10),
               // Calculate Button
               ElevatedButton(
-                onPressed: () {
-                  if (income <= 0) return;
-                  setState(() => _showResults = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),
                   foregroundColor: Colors.white,
@@ -408,301 +510,331 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
 
         // Results
         if (_showResults) ...[
-          const SizedBox(height: 20),
-          Text('Your Borrowing Capacity',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-
-          // Borrowing Hero Panel
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Affordability to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ],
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Maximum Loan Amount · NZD',
-                    style:
-                        AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
-                const SizedBox(height: 4),
-                Text(CurrencyFormatter.format(maxLoan, currencyCode: 'NZD'),
+                const SizedBox(height: 20),
+                Text('Your Borrowing Capacity',
                     style: AppTextStyles.playfair(
-                        size: 36,
-                        color: const Color(0xFFF5D060),
-                        weight: FontWeight.w800)),
-                Text(
-                  'Max property: ${CurrencyFormatter.compact(maxProp, symbol: "NZ\$")} with ${CurrencyFormatter.compact(_deposit, symbol: "NZ\$")} deposit',
-                  style:
-                      AppTextStyles.dmSans(size: 10.5, color: Colors.white70),
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
+
+                // Borrowing Hero Panel
+                Container(
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Maximum Loan Amount · NZD',
+                          style:
+                              AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
+                      const SizedBox(height: 4),
+                      Text(CurrencyFormatter.format(maxLoan, currencyCode: 'NZD'),
+                          style: AppTextStyles.playfair(
+                              size: 36,
+                              color: const Color(0xFFF5D060),
+                              weight: FontWeight.w800)),
+                      Text(
+                        'Max property: ${CurrencyFormatter.compact(maxProp, symbol: "NZ\$")} with ${CurrencyFormatter.compact(snapDeposit, symbol: "NZ\$")} deposit',
+                        style:
+                            AppTextStyles.dmSans(size: 10.5, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 16),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.3,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        children: [
+                          _buildHeroBox('Monthly Payment',
+                              '\$${monthly.toStringAsFixed(0)}/mo'),
+                          _buildHeroBox('Stress-Test Rate',
+                              '\$${monthlyStress.toStringAsFixed(0)}/mo'),
+                          _buildHeroBox(
+                              'Max by DTI 6x',
+                              CurrencyFormatter.compact(maxLoanByDTI,
+                                  symbol: 'NZ\$')),
+                          _buildHeroBox('Max Property',
+                              CurrencyFormatter.compact(maxProp, symbol: 'NZ\$')),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
+
+                // Budget Health Check Card
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Budget Health Check',
+                          style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 14),
+                      _buildHealthBar(
+                          '🏠 Mortgage vs Net Income',
+                          mortPct,
+                          '${mortPct.toStringAsFixed(0)}%',
+                          mortPct <= 30
+                              ? const Color(0xFF1A6B4A)
+                              : mortPct <= 35
+                                  ? const Color(0xFFD4A017)
+                                  : const Color(0xFFC0392B),
+                          'NZ guideline: keep under 30–35% of net income',
+                          theme),
+                      const SizedBox(height: 14),
+                      _buildHealthBar(
+                          '💳 Total Debt vs Net Income',
+                          totDebtPct,
+                          '${totDebtPct.toStringAsFixed(0)}%',
+                          totDebtPct <= 40
+                              ? const Color(0xFF0D9488)
+                              : const Color(0xFFC0392B),
+                          'All debts: NZ banks prefer under 40% of net',
+                          theme),
+                      const SizedBox(height: 14),
+                      _buildHealthBar(
+                          '📊 DTI Ratio',
+                          dti / 8 * 100,
+                          '${dti.toStringAsFixed(1)}x',
+                          dti <= 5
+                              ? const Color(0xFF1A6B4A)
+                              : dti <= 6
+                                  ? const Color(0xFFD4A017)
+                                  : const Color(0xFFC0392B),
+                          'RBNZ cap: 6x owner-occupier',
+                          theme),
+                      const SizedBox(height: 14),
+                      _buildHealthBar(
+                          '💵 Remaining After Mortgage',
+                          remPct,
+                          '\$${remaining.toStringAsFixed(0)}/mo',
+                          const Color(0xFF1A6B4A),
+                          'After mortgage, debts & living costs',
+                          theme),
+                    ],
+                  ),
+                ),
+
+                // NZ Region Match
+                const SizedBox(height: 20),
+                Text('NZ Region Match',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
                 GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 2,
-                  childAspectRatio: 2.3,
+                  childAspectRatio: 1.4,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
-                  children: [
-                    _buildHeroBox('Monthly Payment',
-                        '\$${monthly.toStringAsFixed(0)}/mo'),
-                    _buildHeroBox('Stress-Test Rate',
-                        '\$${monthlyStress.toStringAsFixed(0)}/mo'),
-                    _buildHeroBox(
-                        'Max by DTI 6x',
-                        CurrencyFormatter.compact(maxLoanByDTI,
-                            symbol: 'NZ\$')),
-                    _buildHeroBox('Max Property',
-                        CurrencyFormatter.compact(maxProp, symbol: 'NZ\$')),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Budget Health Check Card
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Budget Health Check',
-                    style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 14),
-                _buildHealthBar(
-                    '🏠 Mortgage vs Net Income',
-                    mortPct,
-                    '${mortPct.toStringAsFixed(0)}%',
-                    mortPct <= 30
-                        ? const Color(0xFF1A6B4A)
-                        : mortPct <= 35
-                            ? const Color(0xFFD4A017)
-                            : const Color(0xFFC0392B),
-                    'NZ guideline: keep under 30–35% of net income',
-                    theme),
-                const SizedBox(height: 14),
-                _buildHealthBar(
-                    '💳 Total Debt vs Net Income',
-                    totDebtPct,
-                    '${totDebtPct.toStringAsFixed(0)}%',
-                    totDebtPct <= 40
-                        ? const Color(0xFF0D9488)
-                        : const Color(0xFFC0392B),
-                    'All debts: NZ banks prefer under 40% of net',
-                    theme),
-                const SizedBox(height: 14),
-                _buildHealthBar(
-                    '📊 DTI Ratio',
-                    dti / 8 * 100,
-                    '${dti.toStringAsFixed(1)}x',
-                    dti <= 5
-                        ? const Color(0xFF1A6B4A)
-                        : dti <= 6
-                            ? const Color(0xFFD4A017)
-                            : const Color(0xFFC0392B),
-                    'RBNZ cap: 6x owner-occupier',
-                    theme),
-                const SizedBox(height: 14),
-                _buildHealthBar(
-                    '💵 Remaining After Mortgage',
-                    remPct,
-                    '\$${remaining.toStringAsFixed(0)}/mo',
-                    const Color(0xFF1A6B4A),
-                    'After mortgage, debts & living costs',
-                    theme),
-              ],
-            ),
-          ),
-
-          // NZ Region Match
-          const SizedBox(height: 20),
-          Text('NZ Region Match',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            childAspectRatio: 1.4,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            children: _regions.map((r) {
-              final price = r['price'] as double;
-              final needed = max(0.0, price - _deposit);
-              final canAfford = needed <= maxLoan;
-              final close = !canAfford && needed <= maxLoan * 1.15;
-              Color badgeBg;
-              Color badgeFg;
-              String badgeText;
-              if (canAfford) {
-                badgeBg = const Color(0xFFECFDF5);
-                badgeFg = const Color(0xFF065F46);
-                badgeText = '✅ Affordable';
-              } else if (close) {
-                badgeBg = const Color(0xFFFFFBEB);
-                badgeFg = const Color(0xFF92400E);
-                badgeText = '⚠️ Just Outside';
-              } else {
-                badgeBg = const Color(0xFFFEF2F2);
-                badgeFg = const Color(0xFFC0392B);
-                badgeText = '❌ Out of Range';
-              }
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.getCardColor(context),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: theme.getBorderColor(context)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      children: [
-                        Text(r['icon'], style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: 4),
-                        Text(r['city'],
-                            style: AppTextStyles.dmSans(
-                                size: 10.5,
-                                weight: FontWeight.w800,
-                                color: theme.getTextColor(context))),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(CurrencyFormatter.compact(price, symbol: 'NZ\$'),
-                        style: AppTextStyles.dmSans(
-                            size: 13,
-                            weight: FontWeight.w800,
-                            color: const Color(0xFF1A6B4A))),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 3),
+                  children: _regions.map((r) {
+                    final price = r['price'] as double;
+                    final needed = max(0.0, price - snapDeposit);
+                    final canAfford = needed <= maxLoan;
+                    final close = !canAfford && needed <= maxLoan * 1.15;
+                    Color badgeBg;
+                    Color badgeFg;
+                    String badgeText;
+                    if (canAfford) {
+                      badgeBg = const Color(0xFFECFDF5);
+                      badgeFg = const Color(0xFF065F46);
+                      badgeText = '✅ Affordable';
+                    } else if (close) {
+                      badgeBg = const Color(0xFFFFFBEB);
+                      badgeFg = const Color(0xFF92400E);
+                      badgeText = '⚠️ Just Outside';
+                    } else {
+                      badgeBg = const Color(0xFFFEF2F2);
+                      badgeFg = const Color(0xFFC0392B);
+                      badgeText = '❌ Out of Range';
+                    }
+                    return Container(
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                          color: badgeBg,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Text(badgeText,
-                          style: AppTextStyles.dmSans(
-                              size: 8.5,
-                              weight: FontWeight.w700,
-                              color: badgeFg)),
-                    ),
-                  ],
+                        color: theme.getCardColor(context),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: theme.getBorderColor(context)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              Text(r['icon'], style: const TextStyle(fontSize: 16)),
+                              const SizedBox(width: 4),
+                              Text(r['city'],
+                                  style: AppTextStyles.dmSans(
+                                      size: 10.5,
+                                      weight: FontWeight.w800,
+                                      color: theme.getTextColor(context))),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(CurrencyFormatter.compact(price, symbol: 'NZ\$'),
+                              style: AppTextStyles.dmSans(
+                                  size: 13,
+                                  weight: FontWeight.w800,
+                                  color: const Color(0xFF1A6B4A))),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Text(badgeText,
+                                style: AppTextStyles.dmSans(
+                                    size: 8.5,
+                                    weight: FontWeight.w700,
+                                    color: badgeFg)),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
-              );
-            }).toList(),
-          ),
 
-          // Monthly Budget Breakdown Card
-          const SizedBox(height: 20),
-          Text('Monthly Budget Breakdown',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Monthly Budget Plan',
-                    style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context))),
+                // Monthly Budget Breakdown Card
+                const SizedBox(height: 20),
+                Text('Monthly Budget Breakdown',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
                 const SizedBox(height: 10),
-                _buildBudgetRow(
-                    '💼 Net Monthly Income (est.)',
-                    '\$${netMo.toStringAsFixed(0)}/mo',
-                    '',
-                    const Color(0xFF1A6B4A),
-                    theme),
-                _buildBudgetRow(
-                    '🏠 Mortgage Repayment',
-                    '-\$${monthly.toStringAsFixed(0)}',
-                    '${mortPct.toStringAsFixed(0)}% of net',
-                    const Color(0xFFC0392B),
-                    theme),
-                _buildBudgetRow(
-                    '💳 Debt Repayments',
-                    '-\$${_debts.toStringAsFixed(0)}',
-                    '${(netMo > 0 ? (_debts / netMo * 100) : 0).toStringAsFixed(0)}% of net',
-                    const Color(0xFFC0392B),
-                    theme),
-                _buildBudgetRow(
-                    '🛒 Living Expenses',
-                    '-\$${_expenses.toStringAsFixed(0)}',
-                    '${(netMo > 0 ? (_expenses / netMo * 100) : 0).toStringAsFixed(0)}% of net',
-                    const Color(0xFFC0392B),
-                    theme),
-                const Divider(),
-                _buildBudgetRow(
-                    '✅ Remaining / Savings',
-                    '\$${remaining.toStringAsFixed(0)}',
-                    '${remPct.toStringAsFixed(0)}% of net',
-                    const Color(0xFF1A6B4A),
-                    theme),
-              ],
-            ),
-          ),
-
-          // Save report
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('💾 Save affordability report',
-                        style: AppTextStyles.dmSans(
-                            size: 11,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context))),
-                    Text('Income & budget snapshot saved',
-                        style: AppTextStyles.dmSans(
-                            size: 9, color: theme.getMutedColor(context))),
-                  ],
-                ),
-                ElevatedButton(
-                  onPressed: _saveCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
                   ),
-                  child: Text('Save',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          color: Colors.white,
-                          weight: FontWeight.w800)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Monthly Budget Plan',
+                          style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 10),
+                      _buildBudgetRow(
+                          '💼 Net Monthly Income (est.)',
+                          '\$${netMo.toStringAsFixed(0)}/mo',
+                          '',
+                          const Color(0xFF1A6B4A),
+                          theme),
+                      _buildBudgetRow(
+                          '🏠 Mortgage Repayment',
+                          '-\$${monthly.toStringAsFixed(0)}',
+                          '${mortPct.toStringAsFixed(0)}% of net',
+                          const Color(0xFFC0392B),
+                          theme),
+                      _buildBudgetRow(
+                          '💳 Debt Repayments',
+                          '-\$${snapDebts.toStringAsFixed(0)}',
+                          '${(netMo > 0 ? (snapDebts / netMo * 100) : 0).toStringAsFixed(0)}% of net',
+                          const Color(0xFFC0392B),
+                          theme),
+                      _buildBudgetRow(
+                          '🛒 Living Expenses',
+                          '-\$${snapExpenses.toStringAsFixed(0)}',
+                          '${(netMo > 0 ? (snapExpenses / netMo * 100) : 0).toStringAsFixed(0)}% of net',
+                          const Color(0xFFC0392B),
+                          theme),
+                      const Divider(),
+                      _buildBudgetRow(
+                          '✅ Remaining / Savings',
+                          '\$${remaining.toStringAsFixed(0)}',
+                          '${remPct.toStringAsFixed(0)}% of net',
+                          const Color(0xFF1A6B4A),
+                          theme),
+                    ],
+                  ),
+                ),
+
+                // Save report
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('💾 Save affordability report',
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context))),
+                          Text('Income & budget snapshot saved',
+                              style: AppTextStyles.dmSans(
+                                  size: 9, color: theme.getMutedColor(context))),
+                        ],
+                      ),
+                      ElevatedButton(
+                        onPressed: _saveCalculation,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D9488),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text('Save',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: Colors.white,
+                                weight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -712,21 +844,20 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
     );
   }
 
-  bool get _isMonthlyView => false; // Dummy to compile smoothly
-
   Widget _buildInputBox({
     required String label,
     required String prefix,
     required double value,
     bool isPercent = false,
     bool isInteger = false,
+    String? errorText,
     required ValueChanged<double> onChanged,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFEDF5F2),
-        border: Border.all(color: const Color(0x150D3B2E)),
+        border: Border.all(color: errorText != null ? Colors.red : const Color(0x150D3B2E)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -750,6 +881,7 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
                         weight: FontWeight.w700)),
               Expanded(
                 child: TextFormField(
+                  key: ValueKey(value),
                   initialValue:
                       isInteger ? value.toInt().toString() : value.toString(),
                   keyboardType: TextInputType.number,
@@ -776,6 +908,10 @@ class _NZAffordabilityCalcState extends ConsumerState<NZAffordabilityCalc> {
                         weight: FontWeight.w700)),
             ],
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText, style: AppTextStyles.dmSans(size: 9, color: Colors.red, weight: FontWeight.bold)),
+          ],
         ],
       ),
     );

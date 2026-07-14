@@ -89,9 +89,19 @@ class _NZScreenState extends ConsumerState<NZScreen> {
           value: '${(r?.fixed1yr.value ?? 5.59).toStringAsFixed(2)}%',
           note: r?.isLive == true ? '🟢 Live' : 'Avg Lenders',
           color: RateColor.red),
-      RateItem(label: '2-Yr Fixed', value: '${(r?.fixed2yr.value ?? 5.29).toStringAsFixed(2)}%', note: 'Avg'),
-      RateItem(label: 'Floating', value: '${(r?.floating.value ?? 7.24).toStringAsFixed(2)}%', note: 'Avg'),
-      RateItem(label: 'OCR Rate', value: '${rc.nzOcrRate}%', note: 'RBNZ', color: RateColor.gold),
+      RateItem(
+          label: '2-Yr Fixed',
+          value: '${(r?.fixed2yr.value ?? 5.29).toStringAsFixed(2)}%',
+          note: 'Avg'),
+      RateItem(
+          label: 'Floating',
+          value: '${(r?.floating.value ?? 7.24).toStringAsFixed(2)}%',
+          note: 'Avg'),
+      RateItem(
+          label: 'OCR Rate',
+          value: '${rc.nzOcrRate}%',
+          note: 'RBNZ',
+          color: RateColor.gold),
     ];
   }
 
@@ -100,7 +110,8 @@ class _NZScreenState extends ConsumerState<NZScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      routeSettings: const RouteSettings(name: '/tool/newzealand/mortgage/result'),
+      routeSettings:
+          const RouteSettings(name: '/tool/newzealand/mortgage/result'),
       builder: (_) => _NZCalcSheet(
           propValue: _propValue,
           depositPct: _depositPct,
@@ -131,7 +142,8 @@ class _NZScreenState extends ConsumerState<NZScreen> {
                     if (widget.fallback) ...[
                       const SizedBox(height: 10),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFEF2F2),
                           border: Border.all(color: const Color(0xFFFCA5A5)),
@@ -183,8 +195,6 @@ class _NZScreenState extends ConsumerState<NZScreen> {
                         colors: [Color(0xFF1A6B4A), Color(0xFF0D3B2E)],
                       ),
                     ),
-
-
 
                     // Core Home Loan Tools Grid
                     SectionLabel(
@@ -275,14 +285,6 @@ class _NZScreenState extends ConsumerState<NZScreen> {
                           context.push('/tool/newzealand/allregions'),
                     ),
                     _RegionPricesScroll(),
-
-                    // Lender Comparison
-                    SectionLabel(
-                      text: 'NZ Lenders & Banks',
-                      labelColor: _theme.mutedColor,
-                      moreColor: _theme.primaryColor,
-                    ),
-                    _lendersGrid(context, nzRates),
 
                     // Government & Resources List
                     SectionLabel(
@@ -726,24 +728,6 @@ class _NZScreenState extends ConsumerState<NZScreen> {
           ),
         ),
         DeepLinkHighlightWrapper(
-          toolId: 'nz_tax_bright_line_test',
-          activeToolId: widget.toolId,
-          highlightColor: _theme.primaryColor,
-          child: ToolCard(
-            key: _getKey('nz_tax_bright_line_test'),
-            toolId: 'nz_tax_bright_line_test',
-            flagIcon: '🇳🇿',
-            icon: '🚫',
-            name: 'Bright-Line Test',
-            description: '2yr / 5yr / 10yr CGT',
-            badgeText: 'Capital gains',
-            badgeTextColor: const Color(0xFFEA580C),
-            badgeBgColor: const Color(0xFFFFF7ED),
-            onTap: () => context.push('/tool/newzealand/brightline'),
-            lightBorderColor: _theme.borderColor,
-          ),
-        ),
-        DeepLinkHighlightWrapper(
           toolId: 'nz_tax_investment_property',
           activeToolId: widget.toolId,
           highlightColor: _theme.primaryColor,
@@ -916,62 +900,6 @@ class _NZScreenState extends ConsumerState<NZScreen> {
     );
   }
 
-  Widget _lendersGrid(BuildContext context, NZRatesModel? r) {
-    final anz      = r?.anz1yr      ?? 5.59;
-    final asb      = r?.asb1yr      ?? 5.59;
-    final westpac  = r?.westpac1yr  ?? 5.65;
-    final kiwibank = r?.kiwibank1yr ?? 5.55;
-    final bnz      = r?.bnz1yr      ?? 5.59;
-    final live = r?.isLive == true;
-    String fmt(double v) => '1yr: ${v.toStringAsFixed(2)}%${live ? ' 🟢' : ''}';
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 3,
-      mainAxisSpacing: 9,
-      crossAxisSpacing: 9,
-      childAspectRatio: 1.05,
-      children: [
-        ToolCard(
-            icon: '🏦',
-            name: 'ANZ',
-            description: fmt(anz),
-            onTap: () {},
-            lightBorderColor: _theme.borderColor),
-        ToolCard(
-            icon: '🏦',
-            name: 'ASB Bank',
-            description: fmt(asb),
-            variant: ToolCardVariant.dark,
-            onTap: () {}),
-        ToolCard(
-            icon: '🏦',
-            name: 'Westpac',
-            description: fmt(westpac),
-            onTap: () {},
-            lightBorderColor: _theme.borderColor),
-        ToolCard(
-            icon: '🥝',
-            name: 'Kiwibank',
-            description: fmt(kiwibank),
-            variant: ToolCardVariant.green,
-            onTap: () {}),
-        ToolCard(
-            icon: '🏦',
-            name: 'BNZ',
-            description: fmt(bnz),
-            onTap: () {},
-            lightBorderColor: _theme.borderColor),
-        ToolCard(
-            icon: '🏦',
-            name: 'SBS / TSB',
-            description: 'Non-bank options',
-            variant: ToolCardVariant.teal,
-            onTap: () {}),
-      ],
-    );
-  }
-
   List<Widget> _resources(BuildContext context) {
     final items = [
       (
@@ -1010,18 +938,6 @@ class _NZScreenState extends ConsumerState<NZScreen> {
         'Independent NZ mortgage comparison',
         '/tool/newzealand/moneyhub_mortgage'
       ),
-      (
-        '📰',
-        'NZ Property Market Report',
-        'CoreLogic · QV · Quotable Value data',
-        '/tool/newzealand/property_market_report'
-      ),
-      (
-        '🤖',
-        'NZ AI Mortgage Advisor',
-        'LVR · KiwiSaver · bright-line guidance',
-        '/ai/nz'
-      ),
     ];
     return items
         .map((item) => Padding(
@@ -1040,8 +956,6 @@ class _NZScreenState extends ConsumerState<NZScreen> {
         .toList();
   }
 }
-
-
 
 // ─── Region House Prices Scroll ──────────────────────────────────
 class _RegionPricesScroll extends StatelessWidget {

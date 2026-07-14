@@ -36,7 +36,10 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
     {'name': 'Completion (CCC)', 'icon': '✅', 'pct': 10.0},
   ];
 
-  final bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -47,6 +50,82 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
     _endRateController.dispose();
     _loanTermController.dispose();
     super.dispose();
+  }
+
+  void _reset() {
+    setState(() {
+      _landValController.text = '400000';
+      _buildCostController.text = '600000';
+      _depositController.text = '200000';
+      _constRateController.text = '7.45';
+      _endRateController.text = '6.59';
+      _loanTermController.text = '30';
+      _buildMonths = 12;
+      _activeStageIndex = 0;
+      _stageData[0]['pct'] = 10.0;
+      _stageData[1]['pct'] = 20.0;
+      _stageData[2]['pct'] = 25.0;
+      _stageData[3]['pct'] = 35.0;
+      _stageData[4]['pct'] = 10.0;
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final landVal = double.tryParse(_landValController.text) ?? 0.0;
+    final buildCost = double.tryParse(_buildCostController.text) ?? 0.0;
+    final deposit = double.tryParse(_depositController.text) ?? 0.0;
+    final constRate = double.tryParse(_constRateController.text) ?? 0.0;
+    final endRate = double.tryParse(_endRateController.text) ?? 0.0;
+    final term = int.tryParse(_loanTermController.text) ?? 0;
+
+    if (landVal <= 0) errors['landVal'] = 'Enter valid land value';
+    if (buildCost <= 0) errors['buildCost'] = 'Enter valid build cost';
+    if (deposit < 0) errors['deposit'] = 'Cannot be negative';
+    if (deposit >= (landVal + buildCost)) {
+      errors['deposit'] = 'Deposit must be less than total property value';
+    }
+    if (constRate <= 0 || constRate > 25) {
+      errors['constRate'] = 'Enter rate between 0.1% and 25%';
+    }
+    if (endRate <= 0 || endRate > 25) {
+      errors['endRate'] = 'Enter rate between 0.1% and 25%';
+    }
+    if (term <= 0 || term > 50) {
+      errors['term'] = 'Enter term between 1 and 50 years';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['landVal'] = landVal;
+      _calcSnapshot['buildCost'] = buildCost;
+      _calcSnapshot['deposit'] = deposit;
+      _calcSnapshot['constRate'] = constRate;
+      _calcSnapshot['endRate'] = endRate;
+      _calcSnapshot['loanTerm'] = term;
+      _calcSnapshot['buildMonths'] = _buildMonths;
+      // Copy current stage specs
+      _calcSnapshot['stages'] = _stageData.map((s) => Map<String, dynamic>.from(s)).toList();
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   double _pmt(double P, double annualRate, int months) {
@@ -132,13 +211,13 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
         country: 'New Zealand',
         calcType: 'Construction Loan',
         inputs: {
-          'landVal': double.tryParse(_landValController.text) ?? 400000,
-          'buildCost': double.tryParse(_buildCostController.text) ?? 600000,
-          'deposit': double.tryParse(_depositController.text) ?? 200000,
-          'constRate': double.tryParse(_constRateController.text) ?? 7.45,
-          'endRate': double.tryParse(_endRateController.text) ?? 6.59,
-          'loanTerm': double.tryParse(_loanTermController.text) ?? 30,
-          'buildMonths': _buildMonths.toDouble(),
+          'landVal': _calcSnapshot['landVal'] ?? 400000.0,
+          'buildCost': _calcSnapshot['buildCost'] ?? 600000.0,
+          'deposit': _calcSnapshot['deposit'] ?? 200000.0,
+          'constRate': _calcSnapshot['constRate'] ?? 7.45,
+          'endRate': _calcSnapshot['endRate'] ?? 6.59,
+          'loanTerm': _calcSnapshot['loanTerm'] ?? 30.0,
+          'buildMonths': (_calcSnapshot['buildMonths'] ?? _buildMonths).toDouble(),
         },
         results: {
           'totalLoan': totalLoan,
@@ -168,46 +247,32 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
     }
   }
 
-  Widget _buildInputBox(TextEditingController controller) {
-    final theme = widget.theme;
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: theme.getBgColor(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.getBorderColor(context)),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style: AppTextStyles.dmSans(
-            size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: InputBorder.none,
-        ),
-        onChanged: (_) => setState(() {}),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double landVal = double.tryParse(_landValController.text) ?? 400000;
-    final double buildCost = double.tryParse(_buildCostController.text) ?? 600000;
-    final double deposit = double.tryParse(_depositController.text) ?? 200000;
-    final double constRate = double.tryParse(_constRateController.text) ?? 7.45;
-    final double endRate = double.tryParse(_endRateController.text) ?? 6.59;
-    final int loanTerm = int.tryParse(_loanTermController.text) ?? 30;
+    final double rawLandVal = double.tryParse(_landValController.text) ?? 400000;
+    final double rawBuildCost = double.tryParse(_buildCostController.text) ?? 600000;
+    final double rawDeposit = double.tryParse(_depositController.text) ?? 200000;
+    final double rawConstRate = double.tryParse(_constRateController.text) ?? 7.45;
+    final double rawEndRate = double.tryParse(_endRateController.text) ?? 6.59;
+    final int rawLoanTerm = int.tryParse(_loanTermController.text) ?? 30;
+
+    final double landVal = _showResults ? (_calcSnapshot['landVal'] ?? rawLandVal) : rawLandVal;
+    final double buildCost = _showResults ? (_calcSnapshot['buildCost'] ?? rawBuildCost) : rawBuildCost;
+    final double deposit = _showResults ? (_calcSnapshot['deposit'] ?? rawDeposit) : rawDeposit;
+    final double constRate = _showResults ? (_calcSnapshot['constRate'] ?? rawConstRate) : rawConstRate;
+    final double endRate = _showResults ? (_calcSnapshot['endRate'] ?? rawEndRate) : rawEndRate;
+    final int loanTerm = _showResults ? (_calcSnapshot['loanTerm'] ?? rawLoanTerm) : rawLoanTerm;
+    final int buildMonths = _showResults ? (_calcSnapshot['buildMonths'] ?? _buildMonths) : _buildMonths;
+    final List<Map<String, dynamic>> stageList = _showResults ? (_calcSnapshot['stages'] ?? _stageData) : _stageData;
 
     final double totalValue = landVal + buildCost;
     final double totalLoan = totalValue - deposit;
     final double lvr = totalValue > 0 ? (totalLoan / totalValue * 100) : 0.0;
 
     // Progressive drawdown calculations
-    final int stageMonths = max(1, _buildMonths ~/ _stageData.length);
+    final int stageMonths = max(1, buildMonths ~/ stageList.length);
     double runningLoan = landVal;
     double totalBuildInt = 0.0;
 
@@ -215,19 +280,19 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
     final List<Map<String, dynamic>> tableRows = [];
     int monthCounter = 0;
 
-    for (int i = 0; i < _stageData.length; i++) {
-      final double pct = _stageData[i]['pct'];
+    for (int i = 0; i < stageList.length; i++) {
+      final double pct = stageList[i]['pct'];
       final double drawAmount = buildCost * pct / 100;
       runningLoan += drawAmount;
       final double monthInt = runningLoan * (constRate / 100) / 12;
-      final int phaseDuration = i < _stageData.length - 1
+      final int phaseDuration = i < stageList.length - 1
           ? stageMonths
-          : _buildMonths - stageMonths * (_stageData.length - 1);
+          : buildMonths - stageMonths * (stageList.length - 1);
 
       totalBuildInt += monthInt * phaseDuration;
 
       phases.add({
-        'stage': _stageData[i]['name'],
+        'stage': stageList[i]['name'],
         'drawn': runningLoan,
         'drawAmount': drawAmount,
         'monthInt': monthInt,
@@ -245,8 +310,18 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
       }
     }
 
-    final double avgIntPmt = _buildMonths > 0 ? totalBuildInt / _buildMonths : 0.0;
+    final double avgIntPmt = buildMonths > 0 ? totalBuildInt / buildMonths : 0.0;
     final double finalPmt = _pmt(totalLoan, endRate, loanTerm * 12);
+
+    final isDirty = _showResults && (
+      _landValController.text != (_calcSnapshot['landVal']?.toString() ?? '') ||
+      _buildCostController.text != (_calcSnapshot['buildCost']?.toString() ?? '') ||
+      _depositController.text != (_calcSnapshot['deposit']?.toString() ?? '') ||
+      _constRateController.text != (_calcSnapshot['constRate']?.toString() ?? '') ||
+      _endRateController.text != (_calcSnapshot['endRate']?.toString() ?? '') ||
+      _loanTermController.text != (_calcSnapshot['loanTerm']?.toString() ?? '') ||
+      _buildMonths != (_calcSnapshot['buildMonths'] ?? 0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,18 +338,13 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                 color: theme.getTextColor(context),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFFBEB),
-                border: Border.all(color: const Color(0xFFFDE68A)),
-                borderRadius: BorderRadius.circular(20),
-              ),
+            GestureDetector(
+              onTap: _reset,
               child: Text(
-                'NZ Standard',
+                'Reset ↺',
                 style: AppTextStyles.dmSans(
-                  size: 9,
-                  color: const Color(0xFFD4A017),
+                  size: 11,
+                  color: const Color(0xFFC0392B),
                   weight: FontWeight.bold,
                 ),
               ),
@@ -383,7 +453,7 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                       children: [
                         Text('LAND VALUE (NZD)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_landValController),
+                        _buildInputField(_landValController, _errors['landVal']),
                       ],
                     ),
                   ),
@@ -394,7 +464,7 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                       children: [
                         Text('TOTAL BUILD COST (NZD)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_buildCostController),
+                        _buildInputField(_buildCostController, _errors['buildCost']),
                       ],
                     ),
                   ),
@@ -410,7 +480,7 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                       children: [
                         Text('DEPOSIT / EQUITY (NZD)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_depositController),
+                        _buildInputField(_depositController, _errors['deposit']),
                       ],
                     ),
                   ),
@@ -421,7 +491,7 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                       children: [
                         Text('CONSTRUCTION RATE (%)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_constRateController),
+                        _buildInputField(_constRateController, _errors['constRate']),
                       ],
                     ),
                   ),
@@ -437,7 +507,7 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                       children: [
                         Text('END RATE (P&I RATE %)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_endRateController),
+                        _buildInputField(_endRateController, _errors['endRate']),
                       ],
                     ),
                   ),
@@ -448,7 +518,7 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                       children: [
                         Text('LOAN TERM (YRS)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_loanTermController),
+                        _buildInputField(_loanTermController, _errors['term']),
                       ],
                     ),
                   ),
@@ -464,6 +534,7 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                 decoration: BoxDecoration(
                   color: theme.getBgColor(context),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.getBorderColor(context)),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<int>(
@@ -481,6 +552,18 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                     onChanged: (val) => setState(() => _buildMonths = val ?? 12),
                   ),
                 ),
+              ),
+              const SizedBox(height: 14),
+
+              ElevatedButton(
+                onPressed: _calculate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A6B4A),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text('🏗️ Calculate Construction Loan', style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.bold)),
               ),
             ],
           ),
@@ -503,7 +586,7 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
           itemCount: _stageData.length,
           itemBuilder: (context, index) {
             final s = _stageData[index];
-            final double amt = buildCost * s['pct'] / 100;
+            final double amt = (double.tryParse(_buildCostController.text) ?? 600000) * s['pct'] / 100;
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(12),
@@ -536,7 +619,7 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
                       color: theme.getBgColor(context),
                       child: FractionallySizedBox(
                         alignment: Alignment.centerLeft,
-                        widthFactor: s['pct'] / 100.0,
+                        widthFactor: s['pct'].clamp(0.0, 100.0) / 100.0,
                         child: Container(
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(colors: [Color(0xFFD4A017), Color(0xFF8B4513)]),
@@ -608,187 +691,217 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
 
         // Results Card
         if (_showResults) ...[
-          Text(
-            'Construction Loan Summary',
-            style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A0F0D), Color(0xFF2C1A0E)],
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'CONSTRUCTION SUMMARY',
-                  style: AppTextStyles.dmSans(
-                      size: 8, weight: FontWeight.w800, color: Colors.white54, letterSpacing: 0.5),
-                ),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.7,
-                  children: [
-                    _buildResultBox('Total Loan Amount', CurrencyFormatter.compact(totalLoan, symbol: 'NZ\$'), 'Land + Build - Deposit', const Color(0xFFF5D060)),
-                    _buildResultBox('LVR', '${lvr.toStringAsFixed(1)}%', 'Loan to Value Ratio', Colors.white),
-                    _buildResultBox('Interest During Build', CurrencyFormatter.compact(totalBuildInt, symbol: 'NZ\$'), 'Interest-only phase', Colors.white),
-                    _buildResultBox('Final Monthly Payment', CurrencyFormatter.compact(finalPmt, symbol: 'NZ\$'), 'P&I after completion', const Color(0xFF6EE7B7)),
-                    _buildResultBox('Avg Interest-Only Pmt', CurrencyFormatter.compact(avgIntPmt, symbol: 'NZ\$'), 'During construction', Colors.white),
-                    _buildResultBox('Total Cost of Build', CurrencyFormatter.compact(buildCost + totalBuildInt, symbol: 'NZ\$'), 'Build + build interest', Colors.white),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Drawdown Chart
-                Text(
-                  'DRAWDOWN SCHEDULE',
-                  style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: Colors.white60),
-                ),
-                const SizedBox(height: 10),
-                ...phases.map((p) {
-                  final pctOfLoan = totalLoan > 0 ? (p['drawn'] / totalLoan) : 0.0;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(p['stage'], style: AppTextStyles.dmSans(size: 9, color: Colors.white70)),
-                            Text(CurrencyFormatter.compact(p['drawAmount'], symbol: 'NZ\$'), style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.bold, color: const Color(0xFFF5D060))),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(5),
-                          child: Container(
-                            height: 9,
-                            color: Colors.white.withValues(alpha: 0.08),
-                            child: FractionallySizedBox(
-                              alignment: Alignment.centerLeft,
-                              widthFactor: min(1.0, pctOfLoan),
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  gradient: LinearGradient(colors: [Color(0xFFD4A017), Color(0xFFF5D060)]),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Construction Loan to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
-                  );
-                }),
-                const SizedBox(height: 14),
-
-                ElevatedButton.icon(
-                  onPressed: () => _saveCalculation(
-                    totalLoan,
-                    lvr,
-                    totalBuildInt,
-                    finalPmt,
-                    avgIntPmt,
-                    buildCost + totalBuildInt,
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.1),
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white30),
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                  ),
-                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                  label: Text(
-                    'Save Construction Loan Specs',
-                    style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: Colors.white),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-
-          // Monthly Interest During Build Table Card
+            const SizedBox(height: 12),
+          ],
           Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '📅 Monthly Interest During Build',
+                  'Construction Loan Summary',
                   style: AppTextStyles.playfair(
-                    size: 13,
+                    size: 12,
                     weight: FontWeight.w800,
                     color: theme.getTextColor(context),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Table(
-                  columnWidths: const {
-                    0: FlexColumnWidth(1.2),
-                    1: FlexColumnWidth(1.1),
-                    2: FlexColumnWidth(0.8),
-                    3: FlexColumnWidth(1.1),
-                  },
-                  children: [
-                    TableRow(
-                      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: theme.getBorderColor(context)))),
-                      children: [
-                        _tableHeader('Stage Month'),
-                        _tableHeader('Drawn'),
-                        _tableHeader('Month #'),
-                        _tableHeader('Monthly Int'),
-                      ],
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A0F0D), Color(0xFF2C1A0E)],
                     ),
-                    ...tableRows.map((r) {
-                      return TableRow(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'CONSTRUCTION SUMMARY',
+                        style: AppTextStyles.dmSans(
+                            size: 8, weight: FontWeight.w800, color: Colors.white54, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.7,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(r['stage'], style: AppTextStyles.dmSans(size: 10, color: theme.getTextColor(context))),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(CurrencyFormatter.compact(r['drawn'], symbol: 'NZ\$'), style: AppTextStyles.dmSans(size: 10, color: theme.getTextColor(context))),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text('${r['month']}', style: AppTextStyles.dmSans(size: 10, color: theme.getTextColor(context))),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              CurrencyFormatter.compact(r['monthInt'], symbol: 'NZ\$'),
-                              style: AppTextStyles.dmSans(size: 10, weight: FontWeight.bold, color: const Color(0xFFD4A017)),
-                            ),
-                          ),
+                          _buildResultBox('Total Loan Amount', CurrencyFormatter.compact(totalLoan, symbol: 'NZ\$'), 'Land + Build - Deposit', const Color(0xFFF5D060)),
+                          _buildResultBox('LVR', '${lvr.toStringAsFixed(1)}%', 'Loan to Value Ratio', Colors.white),
+                          _buildResultBox('Interest During Build', CurrencyFormatter.compact(totalBuildInt, symbol: 'NZ\$'), 'Interest-only phase', Colors.white),
+                          _buildResultBox('Final Monthly Payment', CurrencyFormatter.compact(finalPmt, symbol: 'NZ\$'), 'P&I after completion', const Color(0xFF6EE7B7)),
+                          _buildResultBox('Avg Interest-Only Pmt', CurrencyFormatter.compact(avgIntPmt, symbol: 'NZ\$'), 'During construction', Colors.white),
+                          _buildResultBox('Total Cost of Build', CurrencyFormatter.compact(buildCost + totalBuildInt, symbol: 'NZ\$'), 'Build + build interest', Colors.white),
                         ],
-                      );
-                    }),
-                  ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Drawdown Chart
+                      Text(
+                        'DRAWDOWN SCHEDULE',
+                        style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: Colors.white60),
+                      ),
+                      const SizedBox(height: 10),
+                      ...phases.map((p) {
+                        final pctOfLoan = totalLoan > 0 ? (p['drawn'] / totalLoan) : 0.0;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(p['stage'], style: AppTextStyles.dmSans(size: 9, color: Colors.white70)),
+                                  Text(CurrencyFormatter.compact(p['drawAmount'], symbol: 'NZ\$'), style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.bold, color: const Color(0xFFF5D060))),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(5),
+                                child: Container(
+                                  height: 9,
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                  child: FractionallySizedBox(
+                                    alignment: Alignment.centerLeft,
+                                    widthFactor: min(1.0, pctOfLoan),
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(colors: [Color(0xFFD4A017), Color(0xFFF5D060)]),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 14),
+
+                      ElevatedButton.icon(
+                        onPressed: () => _saveCalculation(
+                          totalLoan,
+                          lvr,
+                          totalBuildInt,
+                          finalPmt,
+                          avgIntPmt,
+                          buildCost + totalBuildInt,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white30),
+                          minimumSize: const Size(double.infinity, 44),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                        ),
+                        icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                        label: Text(
+                          'Save Construction Loan Specs',
+                          style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 20),
+
+                // Monthly Interest During Build Table Card
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📅 Monthly Interest During Build',
+                        style: AppTextStyles.playfair(
+                          size: 13,
+                          weight: FontWeight.w800,
+                          color: theme.getTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Table(
+                        columnWidths: const {
+                          0: FlexColumnWidth(1.2),
+                          1: FlexColumnWidth(1.1),
+                          2: FlexColumnWidth(0.8),
+                          3: FlexColumnWidth(1.1),
+                        },
+                        children: [
+                          TableRow(
+                            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: theme.getBorderColor(context)))),
+                            children: [
+                              _tableHeader('Stage Month'),
+                              _tableHeader('Drawn'),
+                              _tableHeader('Month #'),
+                              _tableHeader('Monthly Int'),
+                            ],
+                          ),
+                          ...tableRows.map((r) {
+                            return TableRow(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(r['stage'], style: AppTextStyles.dmSans(size: 10, color: theme.getTextColor(context))),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(CurrencyFormatter.compact(r['drawn'], symbol: 'NZ\$'), style: AppTextStyles.dmSans(size: 10, color: theme.getTextColor(context))),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text('${r['month']}', style: AppTextStyles.dmSans(size: 10, color: theme.getTextColor(context))),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    CurrencyFormatter.compact(r['monthInt'], symbol: 'NZ\$'),
+                                    style: AppTextStyles.dmSans(size: 10, weight: FontWeight.bold, color: const Color(0xFFD4A017)),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-          const SizedBox(height: 20),
         ],
 
         // NZ construction process steps card
@@ -820,6 +933,38 @@ class _NZConstructionLoanState extends ConsumerState<NZConstructionLoan> {
           ),
         ),
         const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildInputField(TextEditingController controller, String? errorText) {
+    final theme = widget.theme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: theme.getBgColor(context),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: errorText != null ? Colors.red : theme.getBorderColor(context)),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: AppTextStyles.dmSans(
+                size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
+            decoration: const InputDecoration(
+              contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: InputBorder.none,
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 2),
+          Text(errorText, style: AppTextStyles.dmSans(size: 9, color: Colors.red, weight: FontWeight.bold)),
+        ],
       ],
     );
   }

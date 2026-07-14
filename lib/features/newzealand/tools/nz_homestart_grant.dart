@@ -27,6 +27,9 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
   String _region = 'other'; // 'auckland' | 'wellington' | 'christchurch' | 'other'
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   final Map<String, Map<String, double>> _priceCaps = {
     'auckland': {'new': 875000, 'exist': 650000},
@@ -43,24 +46,81 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _yearsController.text = '5';
+      _incomeController.text = '80000';
+      _priceController.text = '700000';
+      _propType = 'new';
+      _couple = 'no';
+      _region = 'other';
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
 
+  void _calculate() {
+    final errors = <String, String>{};
+    final yrs = double.tryParse(_yearsController.text) ?? 0.0;
+    final income = double.tryParse(_incomeController.text) ?? 0.0;
+    final price = double.tryParse(_priceController.text) ?? 0.0;
+
+    if (yrs < 0 || yrs > 50) {
+      errors['years'] = 'Enter valid years (0-50)';
+    }
+    if (income < 0) {
+      errors['income'] = 'Income cannot be negative';
+    }
+    if (price < 0) {
+      errors['price'] = 'Price cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['ksYears'] = yrs;
+      _calcSnapshot['propType'] = _propType;
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['couple'] = _couple;
+      _calcSnapshot['propPrice'] = price;
+      _calcSnapshot['region'] = _region;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
 
   void _saveCalculation() async {
-    final double yrs = double.tryParse(_yearsController.text) ?? 0;
-    final double income = double.tryParse(_incomeController.text) ?? 0;
-    final double price = double.tryParse(_priceController.text) ?? 0;
+    final double snapYrs = _calcSnapshot['ksYears'] ?? (double.tryParse(_yearsController.text) ?? 5.0);
+    final String snapPropType = _calcSnapshot['propType'] ?? _propType;
+    final double snapIncome = _calcSnapshot['income'] ?? (double.tryParse(_incomeController.text) ?? 80000.0);
+    final String snapCouple = _calcSnapshot['couple'] ?? _couple;
+    final double snapPrice = _calcSnapshot['propPrice'] ?? (double.tryParse(_priceController.text) ?? 700000.0);
+    final String snapRegion = _calcSnapshot['region'] ?? _region;
 
-    final incomeCap = _couple == 'yes' ? 150000.0 : 95000.0;
-    final capKey = _region;
-    final priceCap = _priceCaps[capKey]?[_propType] ?? 500000.0;
+    final incomeCap = snapCouple == 'yes' ? 150000.0 : 95000.0;
+    final priceCap = _priceCaps[snapRegion]?[snapPropType] ?? 500000.0;
 
-    final yrOk = yrs >= 3;
-    final incomeOk = income <= incomeCap;
-    final priceOk = price <= priceCap;
+    final yrOk = snapYrs >= 3;
+    final incomeOk = snapIncome <= incomeCap;
+    final priceOk = snapPrice <= priceCap;
     final eligible = yrOk && incomeOk && priceOk;
 
-    final eligYrs = min(yrs.floor(), 5);
-    final ratePerYr = _propType == 'new' ? 2000.0 : 1000.0;
+    final eligYrs = min(snapYrs.floor(), 5);
+    final ratePerYr = snapPropType == 'new' ? 2000.0 : 1000.0;
     final grantAmt = eligible ? eligYrs * ratePerYr : 0.0;
 
     final labelCtrl = TextEditingController(text: 'NZ HomeStart Grant');
@@ -78,7 +138,7 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: HomeStart Grant ${CurrencyFormatter.compact(grantAmt, symbol: 'NZ\$')} · Salary: ${CurrencyFormatter.compact(income, symbol: 'NZ\$')}',
+              'Saving: HomeStart Grant ${CurrencyFormatter.compact(grantAmt, symbol: 'NZ\$')} · Salary: ${CurrencyFormatter.compact(snapIncome, symbol: 'NZ\$')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -129,21 +189,21 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'HomeStart Grant',
-        inputs: {
-          'ksYears': yrs,
-          'propType': _propType == 'new' ? 1.0 : 0.0,
-          'income': income,
-          'couple': _couple == 'yes' ? 1.0 : 0.0,
-          'propPrice': price,
-          'region': _region == 'auckland'
+        inputs: <String, double>{
+          'ksYears': snapYrs,
+          'propType': snapPropType == 'new' ? 1.0 : 0.0,
+          'income': snapIncome,
+          'couple': snapCouple == 'yes' ? 1.0 : 0.0,
+          'propPrice': snapPrice,
+          'region': snapRegion == 'auckland'
               ? 0.0
-              : _region == 'wellington'
+              : snapRegion == 'wellington'
                   ? 1.0
-                  : _region == 'christchurch'
+                  : snapRegion == 'christchurch'
                       ? 2.0
                       : 3.0,
         },
-        results: {
+        results: <String, double>{
           'grantAmount': grantAmt,
           'eligible': eligible ? 1.0 : 0.0,
         },
@@ -171,12 +231,22 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double yrs = double.tryParse(_yearsController.text) ?? 0;
-    final double income = double.tryParse(_incomeController.text) ?? 0;
-    final double price = double.tryParse(_priceController.text) ?? 0;
+    final double rawYrs = double.tryParse(_yearsController.text) ?? 5;
+    final double rawIncome = double.tryParse(_incomeController.text) ?? 80000;
+    final double rawPrice = double.tryParse(_priceController.text) ?? 700000;
+    final String rawPropType = _propType;
+    final String rawCouple = _couple;
+    final String rawRegion = _region;
 
-    final incomeCap = _couple == 'yes' ? 150000.0 : 95000.0;
-    final priceCap = _priceCaps[_region]?[_propType] ?? 500000.0;
+    final double yrs = _showResults ? (_calcSnapshot['ksYears'] ?? rawYrs) : rawYrs;
+    final double income = _showResults ? (_calcSnapshot['income'] ?? rawIncome) : rawIncome;
+    final double price = _showResults ? (_calcSnapshot['propPrice'] ?? rawPrice) : rawPrice;
+    final String propType = _showResults ? (_calcSnapshot['propType'] ?? rawPropType) : rawPropType;
+    final String couple = _showResults ? (_calcSnapshot['couple'] ?? rawCouple) : rawCouple;
+    final String region = _showResults ? (_calcSnapshot['region'] ?? rawRegion) : rawRegion;
+
+    final incomeCap = couple == 'yes' ? 150000.0 : 95000.0;
+    final priceCap = _priceCaps[region]?[propType] ?? 500000.0;
 
     final yrOk = yrs >= 3;
     final incomeOk = income <= incomeCap;
@@ -184,8 +254,17 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
     final eligible = yrOk && incomeOk && priceOk;
 
     final eligYrs = min(yrs.floor(), 5);
-    final ratePerYr = _propType == 'new' ? 2000.0 : 1000.0;
+    final ratePerYr = propType == 'new' ? 2000.0 : 1000.0;
     final grantAmt = eligible ? eligYrs * ratePerYr : 0.0;
+
+    final isDirty = _showResults && (
+      _yearsController.text != (_calcSnapshot['ksYears']?.toString() ?? '') ||
+      _incomeController.text != (_calcSnapshot['income']?.toString() ?? '') ||
+      _priceController.text != (_calcSnapshot['propPrice']?.toString() ?? '') ||
+      _propType != (_calcSnapshot['propType'] ?? '') ||
+      _couple != (_calcSnapshot['couple'] ?? '') ||
+      _region != (_calcSnapshot['region'] ?? '')
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,17 +280,15 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
                   weight: FontWeight.w800,
                   color: theme.getTextColor(context)),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
-                border: Border.all(color: const Color(0xFFF59E0B)),
-                borderRadius: BorderRadius.circular(20),
-              ),
+            GestureDetector(
+              onTap: _reset,
               child: Text(
-                'Kāinga Ora',
+                'Reset ↺',
                 style: AppTextStyles.dmSans(
-                    size: 9, color: const Color(0xFF92400E), weight: FontWeight.bold),
+                  size: 11,
+                  color: const Color(0xFFC0392B),
+                  weight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -268,6 +345,7 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
                     child: _buildHeroInputBox(
                       label: 'KiwiSaver Years',
                       controller: _yearsController,
+                      errorText: _errors['years'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -293,6 +371,7 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
                     child: _buildHeroInputBox(
                       label: 'Annual Income (NZD)',
                       controller: _incomeController,
+                      errorText: _errors['income'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -318,6 +397,7 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
                     child: _buildHeroInputBox(
                       label: 'Property Price (NZD)',
                       controller: _priceController,
+                      errorText: _errors['price'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -340,7 +420,7 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
 
               // Calculate Button
               ElevatedButton(
-                onPressed: () => setState(() => _showResults = true),
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0A0F0D),
                   foregroundColor: Colors.white,
@@ -401,165 +481,195 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
 
         // Result Card
         if (_showResults) ...[
-          const SizedBox(height: 20),
-          Text(
-            'Your Grant Result',
-            style: AppTextStyles.playfair(
-                size: 12,
-                weight: FontWeight.w800,
-                color: theme.getTextColor(context)),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Check Grant Eligibility to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ],
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'HomeStart Grant Result',
-                      style: AppTextStyles.dmSans(
-                        size: 12.5,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: eligible ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        eligible ? 'Eligible ✓' : 'Not Eligible',
-                        style: AppTextStyles.dmSans(
-                          size: 9.5,
-                          weight: FontWeight.w800,
-                          color: eligible ? const Color(0xFF065F46) : const Color(0xFFC0392B),
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 20),
+                Text(
+                  'Your Grant Result',
+                  style: AppTextStyles.playfair(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context)),
                 ),
-                const SizedBox(height: 12),
-                Center(
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Your HomeStart Grant Amount',
-                        style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'HomeStart Grant Result',
+                            style: AppTextStyles.dmSans(
+                              size: 12.5,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: eligible ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              eligible ? 'Eligible ✓' : 'Not Eligible',
+                              style: AppTextStyles.dmSans(
+                                size: 9.5,
+                                weight: FontWeight.w800,
+                                color: eligible ? const Color(0xFF065F46) : const Color(0xFFC0392B),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        CurrencyFormatter.format(grantAmt, currencyCode: 'NZD'),
-                        style: AppTextStyles.playfair(
-                          size: 28,
-                          weight: FontWeight.w800,
-                          color: const Color(0xFFD4A017),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              'Your HomeStart Grant Amount',
+                              style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              CurrencyFormatter.format(grantAmt, currencyCode: 'NZD'),
+                              style: AppTextStyles.playfair(
+                                size: 28,
+                                weight: FontWeight.w800,
+                                color: const Color(0xFFD4A017),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              eligible
+                                  ? '$eligYrs yrs × ${CurrencyFormatter.compact(ratePerYr, symbol: 'NZ\$')}/yr · ${propType == 'new' ? 'New Build' : 'Existing Home'} grant'
+                                  : 'One or more eligibility criteria not met',
+                              style: AppTextStyles.dmSans(size: 10, color: theme.getMutedColor(context)),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatBox(
+                              label: 'Grant',
+                              val: CurrencyFormatter.compact(grantAmt, symbol: 'NZ\$'),
+                              isOk: eligible,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildStatBox(
+                              label: 'KiwiSaver Yrs',
+                              val: '${yrs.toInt()} yrs',
+                              isOk: yrOk,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildStatBox(
+                              label: 'Income OK?',
+                              val: incomeOk ? '✓ Yes' : '✗ Over cap',
+                              isOk: incomeOk,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                       Text(
-                        eligible
-                            ? '$eligYrs yrs × ${CurrencyFormatter.compact(ratePerYr, symbol: 'NZ\$')}/yr · ${_propType == 'new' ? 'New Build' : 'Existing Home'} grant'
-                            : 'One or more eligibility criteria not met',
-                        style: AppTextStyles.dmSans(size: 10, color: theme.getMutedColor(context)),
-                        textAlign: TextAlign.center,
+                        'Eligibility Checklist',
+                        style: AppTextStyles.dmSans(
+                          size: 10.5,
+                          weight: FontWeight.bold,
+                          color: theme.getTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildCheckRow(
+                        isOk: yrOk,
+                        title: '3+ Years in KiwiSaver',
+                        sub: 'Minimum membership required',
+                        valueText: yrOk ? '✓ ${yrs.toInt()}yrs' : '✗ ${yrs.toInt()}yrs',
+                      ),
+                      const Divider(height: 12),
+                      _buildCheckRow(
+                        isOk: incomeOk,
+                        title: 'Income Under Cap',
+                        sub: 'Cap: ${CurrencyFormatter.compact(incomeCap, symbol: 'NZ\$')} · Your: ${CurrencyFormatter.compact(income, symbol: 'NZ\$')}',
+                        valueText: incomeOk ? '✓ Under cap' : '✗ Exceeds cap',
+                      ),
+                      const Divider(height: 12),
+                      _buildCheckRow(
+                        isOk: priceOk,
+                        title: 'Price Under Cap',
+                        sub: 'Cap: ${CurrencyFormatter.compact(priceCap, symbol: 'NZ\$')} · Asking: ${CurrencyFormatter.compact(price, symbol: 'NZ\$')}',
+                        valueText: priceOk ? '✓ Under cap' : '✗ Exceeds cap',
+                      ),
+                      const Divider(height: 12),
+                      _buildCheckRow(
+                        isOk: true,
+                        title: 'First Home Buyer',
+                        sub: 'Must not have previously owned NZ property',
+                        valueText: 'Required',
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatBox(
-                        label: 'Grant',
-                        val: CurrencyFormatter.compact(grantAmt, symbol: 'NZ\$'),
-                        isOk: eligible,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildStatBox(
-                        label: 'KiwiSaver Yrs',
-                        val: '${yrs.toInt()} yrs',
-                        isOk: yrOk,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildStatBox(
-                        label: 'Income OK?',
-                        val: incomeOk ? '✓ Yes' : '✗ Over cap',
-                        isOk: incomeOk,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Eligibility Checklist',
-                  style: AppTextStyles.dmSans(
-                    size: 10.5,
-                    weight: FontWeight.bold,
-                    color: theme.getTextColor(context),
+                const SizedBox(height: 10),
+
+                // Save Button
+                ElevatedButton.icon(
+                  onPressed: _saveCalculation,
+                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                  label: Text(
+                    'Save This Calculation',
+                    style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A6B4A),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    minimumSize: const Size(double.infinity, 44),
                   ),
                 ),
-                const SizedBox(height: 8),
-                _buildCheckRow(
-                  isOk: yrOk,
-                  title: '3+ Years in KiwiSaver',
-                  sub: 'Minimum membership required',
-                  valueText: yrOk ? '✓ ${yrs.toInt()}yrs' : '✗ ${yrs.toInt()}yrs',
-                ),
-                const Divider(height: 12),
-                _buildCheckRow(
-                  isOk: incomeOk,
-                  title: 'Income Under Cap',
-                  sub: 'Cap: ${CurrencyFormatter.compact(incomeCap, symbol: 'NZ\$')} · Your: ${CurrencyFormatter.compact(income, symbol: 'NZ\$')}',
-                  valueText: incomeOk ? '✓ Under cap' : '✗ Exceeds cap',
-                ),
-                const Divider(height: 12),
-                _buildCheckRow(
-                  isOk: priceOk,
-                  title: 'Price Under Cap',
-                  sub: 'Cap: ${CurrencyFormatter.compact(priceCap, symbol: 'NZ\$')} · Asking: ${CurrencyFormatter.compact(price, symbol: 'NZ\$')}',
-                  valueText: priceOk ? '✓ Under cap' : '✗ Exceeds cap',
-                ),
-                const Divider(height: 12),
-                _buildCheckRow(
-                  isOk: true,
-                  title: 'First Home Buyer',
-                  sub: 'Must not have previously owned NZ property',
-                  valueText: 'Required',
-                ),
               ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Save Button
-          ElevatedButton.icon(
-            onPressed: _saveCalculation,
-            icon: const Text('💾', style: TextStyle(fontSize: 14)),
-            label: Text(
-              'Save This Calculation',
-              style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1A6B4A),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              minimumSize: const Size(double.infinity, 44),
             ),
           ),
         ],
@@ -626,7 +736,7 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
     );
   }
 
-  Widget _buildHeroInputBox({required String label, required TextEditingController controller}) {
+  Widget _buildHeroInputBox({required String label, required TextEditingController controller, String? errorText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -639,7 +749,7 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
           height: 38,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+            border: Border.all(color: errorText != null ? Colors.red : Colors.white.withValues(alpha: 0.22)),
             borderRadius: BorderRadius.circular(10),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -656,6 +766,10 @@ class _NZHomeStartGrantState extends ConsumerState<NZHomeStartGrant> {
             onChanged: (_) => setState(() {}),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 2),
+          Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+        ],
       ],
     );
   }

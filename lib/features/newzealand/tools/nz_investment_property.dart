@@ -25,7 +25,10 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
   final _annExpController = TextEditingController(text: '9500');
   final _capGrowthController = TextEditingController(text: '3.5');
 
-  bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -38,22 +41,91 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _priceController.text = '750000';
+      _depositController.text = '262500';
+      _wkRentController.text = '620';
+      _intRateController.text = '6.59';
+      _annExpController.text = '9500';
+      _capGrowthController.text = '3.5';
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
 
+  void _calculate() {
+    final errors = <String, String>{};
+    final price = double.tryParse(_priceController.text) ?? 0.0;
+    final dep = double.tryParse(_depositController.text) ?? 0.0;
+    final wkR = double.tryParse(_wkRentController.text) ?? 0.0;
+    final rate = double.tryParse(_intRateController.text) ?? 0.0;
+    final exp = double.tryParse(_annExpController.text) ?? 0.0;
+    final cg = double.tryParse(_capGrowthController.text) ?? 0.0;
+
+    if (price <= 0) {
+      errors['price'] = 'Enter valid purchase price';
+    }
+    if (dep < 0) {
+      errors['deposit'] = 'Deposit cannot be negative';
+    } else if (dep >= price && price > 0) {
+      errors['deposit'] = 'Deposit must be less than purchase price';
+    }
+    if (wkR < 0) {
+      errors['wkRent'] = 'Weekly rent cannot be negative';
+    }
+    if (rate <= 0 || rate > 25) {
+      errors['intRate'] = 'Enter interest rate between 0.1% and 25%';
+    }
+    if (exp < 0) {
+      errors['annExp'] = 'Expenses cannot be negative';
+    }
+    if (cg < 0 || cg > 30) {
+      errors['capGrowth'] = 'Enter growth rate between 0% and 30%';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['deposit'] = dep;
+      _calcSnapshot['wkRent'] = wkR;
+      _calcSnapshot['intRate'] = rate;
+      _calcSnapshot['annExp'] = exp;
+      _calcSnapshot['capGrowth'] = cg;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
 
   void _saveCalculation() async {
-    final double price = double.tryParse(_priceController.text) ?? 750000;
-    final double dep = double.tryParse(_depositController.text) ?? 262500;
-    final double wkR = double.tryParse(_wkRentController.text) ?? 620;
-    final double rate = double.tryParse(_intRateController.text) ?? 6.59;
-    final double exp = double.tryParse(_annExpController.text) ?? 9500;
-    final double cg = double.tryParse(_capGrowthController.text) ?? 3.5;
+    final double snapPrice = _calcSnapshot['price'] ?? (double.tryParse(_priceController.text) ?? 750000.0);
+    final double snapDep = _calcSnapshot['deposit'] ?? (double.tryParse(_depositController.text) ?? 262500.0);
+    final double snapWkR = _calcSnapshot['wkRent'] ?? (double.tryParse(_wkRentController.text) ?? 620.0);
+    final double snapRate = _calcSnapshot['intRate'] ?? (double.tryParse(_intRateController.text) ?? 6.59);
+    final double snapExp = _calcSnapshot['annExp'] ?? (double.tryParse(_annExpController.text) ?? 9500.0);
+    final double snapCg = _calcSnapshot['capGrowth'] ?? (double.tryParse(_capGrowthController.text) ?? 3.5);
 
-    final loan = price - dep;
-    final annRent = wkR * 52;
-    final annInt = loan * (rate / 100);
+    final loan = snapPrice - snapDep;
+    final annRent = snapWkR * 52;
+    final annInt = loan * (snapRate / 100);
     final mgmt = annRent * 0.08;
-    final grossY = (annRent / price * 100);
-    final netCF = annRent - annInt - exp - mgmt;
+    final grossY = snapPrice > 0 ? (annRent / snapPrice * 100) : 0.0;
+    final netCF = annRent - annInt - snapExp - mgmt;
 
     final labelCtrl = TextEditingController(text: 'NZ Rental Investment');
     final confirmed = await showDialog<bool>(
@@ -121,19 +193,19 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'Investment Property',
-        inputs: {
-          'price': price,
-          'deposit': dep,
-          'wkRent': wkR,
-          'intRate': rate,
-          'annExp': exp,
-          'capGrowth': cg,
+        inputs: <String, double>{
+          'price': snapPrice,
+          'deposit': snapDep,
+          'wkRent': snapWkR,
+          'intRate': snapRate,
+          'annExp': snapExp,
+          'capGrowth': snapCg,
         },
-        results: {
+        results: <String, double>{
           'loanAmt': loan,
           'grossYield': grossY,
           'netCashflow': netCF,
-          'lvr': loan / price * 100,
+          'lvr': snapPrice > 0 ? (loan / snapPrice * 100) : 0.0,
         },
         label: label,
         currencyCode: 'NZD',
@@ -159,12 +231,19 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double price = double.tryParse(_priceController.text) ?? 750000;
-    final double dep = double.tryParse(_depositController.text) ?? 262500;
-    final double wkR = double.tryParse(_wkRentController.text) ?? 620;
-    final double rate = double.tryParse(_intRateController.text) ?? 6.59;
-    final double exp = double.tryParse(_annExpController.text) ?? 9500;
-    final double cg = double.tryParse(_capGrowthController.text) ?? 3.5;
+    final double rawPrice = double.tryParse(_priceController.text) ?? 750000;
+    final double rawDep = double.tryParse(_depositController.text) ?? 262500;
+    final double rawWkR = double.tryParse(_wkRentController.text) ?? 620;
+    final double rawRate = double.tryParse(_intRateController.text) ?? 6.59;
+    final double rawExp = double.tryParse(_annExpController.text) ?? 9500;
+    final double rawCg = double.tryParse(_capGrowthController.text) ?? 3.5;
+
+    final double price = _showResults ? (_calcSnapshot['price'] ?? rawPrice) : rawPrice;
+    final double dep = _showResults ? (_calcSnapshot['deposit'] ?? rawDep) : rawDep;
+    final double wkR = _showResults ? (_calcSnapshot['wkRent'] ?? rawWkR) : rawWkR;
+    final double rate = _showResults ? (_calcSnapshot['intRate'] ?? rawRate) : rawRate;
+    final double exp = _showResults ? (_calcSnapshot['annExp'] ?? rawExp) : rawExp;
+    final double cg = _showResults ? (_calcSnapshot['capGrowth'] ?? rawCg) : rawCg;
 
     final loan = price - dep;
     final lvr = price > 0 ? (loan / price * 100) : 0.0;
@@ -180,6 +259,15 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
     final monthlyInt = annInt / 12;
     final topup = netCF / 12;
 
+    final isDirty = _showResults && (
+      _priceController.text != (_calcSnapshot['price']?.toString() ?? '') ||
+      _depositController.text != (_calcSnapshot['deposit']?.toString() ?? '') ||
+      _wkRentController.text != (_calcSnapshot['wkRent']?.toString() ?? '') ||
+      _intRateController.text != (_calcSnapshot['intRate']?.toString() ?? '') ||
+      _annExpController.text != (_calcSnapshot['annExp']?.toString() ?? '') ||
+      _capGrowthController.text != (_calcSnapshot['capGrowth']?.toString() ?? '')
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,17 +282,15 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
                   weight: FontWeight.w800,
                   color: theme.getTextColor(context)),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDFA),
-                border: Border.all(color: const Color(0xFF5EEAD4)),
-                borderRadius: BorderRadius.circular(20),
-              ),
+            GestureDetector(
+              onTap: _reset,
               child: Text(
-                'Full Return',
+                'Reset ↺',
                 style: AppTextStyles.dmSans(
-                    size: 9, color: const Color(0xFF0F766E), weight: FontWeight.bold),
+                  size: 11,
+                  color: const Color(0xFFC0392B),
+                  weight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -260,6 +346,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
                     child: _buildHeroInputBox(
                       label: 'Purchase Price',
                       controller: _priceController,
+                      errorText: _errors['price'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -267,6 +354,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
                     child: _buildHeroInputBox(
                       label: 'Deposit (LVR 35% min)',
                       controller: _depositController,
+                      errorText: _errors['deposit'],
                     ),
                   ),
                 ],
@@ -280,6 +368,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
                       label: 'Weekly Rent',
                       controller: _wkRentController,
                       suffix: '/wk',
+                      errorText: _errors['wkRent'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -288,6 +377,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
                       label: 'Interest Rate',
                       controller: _intRateController,
                       suffix: '%',
+                      errorText: _errors['intRate'],
                     ),
                   ),
                 ],
@@ -300,6 +390,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
                     child: _buildHeroInputBox(
                       label: 'Annual Expenses',
                       controller: _annExpController,
+                      errorText: _errors['annExp'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -308,6 +399,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
                       label: 'Expected Cap Growth',
                       controller: _capGrowthController,
                       suffix: '%',
+                      errorText: _errors['capGrowth'],
                     ),
                   ),
                 ],
@@ -315,7 +407,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
               const SizedBox(height: 12),
 
               ElevatedButton(
-                onPressed: () => setState(() => _showResults = true),
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),
                   foregroundColor: Colors.white,
@@ -378,299 +470,329 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
         ),
         const SizedBox(height: 20),
 
-        // Waterfall bar chart
+        // Results Card
         if (_showResults) ...[
-          Text(
-            'Cash Flow Waterfall',
-            style: AppTextStyles.playfair(
-                size: 12,
-                weight: FontWeight.w800,
-                color: theme.getTextColor(context)),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Analyse Investment Return to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 12),
+          ],
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Annual Cash Flow Components',
-                  style: AppTextStyles.dmSans(
-                    size: 11,
-                    weight: FontWeight.bold,
-                    color: theme.getTextColor(context),
+                  'Cash Flow Waterfall',
+                  style: AppTextStyles.playfair(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
                   ),
-                ),
-                const SizedBox(height: 12),
-
-                // Rent Income bar
-                _buildWaterfallRow(
-                  label: 'Rent Income',
-                  valText: '+${CurrencyFormatter.format(annRent, currencyCode: 'NZD')}',
-                  pct: 1.0,
-                  barColors: const [Color(0xFF1A6B4A), Color(0xFF0D9488)],
-                  valColor: const Color(0xFF1A6B4A),
-                ),
-                const SizedBox(height: 10),
-
-                // Interest bar
-                _buildWaterfallRow(
-                  label: 'Mortgage Interest',
-                  valText: '–${CurrencyFormatter.format(annInt, currencyCode: 'NZD')}',
-                  pct: annRent > 0 ? (annInt / annRent).clamp(0.0, 1.0) : 0.0,
-                  barColors: const [Color(0xFFC0392B), Color(0xFF922B21)],
-                  valColor: const Color(0xFFC0392B),
-                ),
-                const SizedBox(height: 10),
-
-                // Expenses bar
-                _buildWaterfallRow(
-                  label: 'Expenses',
-                  valText: '–${CurrencyFormatter.format(exp, currencyCode: 'NZD')}',
-                  pct: annRent > 0 ? (exp / annRent).clamp(0.0, 1.0) : 0.0,
-                  barColors: const [Color(0xFFD4A017), Color(0xFFA07810)],
-                  valColor: const Color(0xFFD97706),
-                ),
-                const SizedBox(height: 10),
-
-                // Management fee bar
-                _buildWaterfallRow(
-                  label: 'Mgmt (8%)',
-                  valText: '–${CurrencyFormatter.format(mgmt, currencyCode: 'NZD')}',
-                  pct: annRent > 0 ? (mgmt / annRent).clamp(0.0, 1.0) : 0.0,
-                  barColors: const [Color(0xFF334155), Color(0xFF475569)],
-                  valColor: const Color(0xFF334155),
-                ),
-
-                const Divider(height: 20, thickness: 1.5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Net Annual Cash Flow',
-                      style: AppTextStyles.dmSans(
-                        size: 11,
-                        weight: FontWeight.bold,
-                        color: theme.getTextColor(context),
-                      ),
-                    ),
-                    Text(
-                      (netCF < 0 ? '–' : '') + CurrencyFormatter.format(netCF.abs(), currencyCode: 'NZD'),
-                      style: AppTextStyles.playfair(
-                        size: 15,
-                        weight: FontWeight.w800,
-                        color: netCF >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Full cost breakdown
-          Text(
-            'Full Cost Breakdown',
-            style: AppTextStyles.playfair(
-                size: 12,
-                weight: FontWeight.w800,
-                color: theme.getTextColor(context)),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              children: [
-                _buildCostRow(
-                  dotColor: const Color(0xFF1A6B4A),
-                  label: 'Loan Amount',
-                  note: 'Purchase price minus deposit',
-                  val: CurrencyFormatter.format(loan, currencyCode: 'NZD'),
-                ),
-                const Divider(height: 16),
-                _buildCostRow(
-                  dotColor: const Color(0xFFD4A017),
-                  label: 'LVR Ratio',
-                  note: 'Must be ≤65% for investors',
-                  val: '${lvr.toStringAsFixed(1)}%',
-                  customColor: lvr <= 65 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
-                ),
-                const Divider(height: 16),
-                _buildCostRow(
-                  dotColor: const Color(0xFF0D9488),
-                  label: 'Monthly Rent',
-                  note: 'Weekly rent × 52 ÷ 12',
-                  val: CurrencyFormatter.format(monthlyRent, currencyCode: 'NZD'),
-                  isPositive: true,
-                ),
-                const Divider(height: 16),
-                _buildCostRow(
-                  dotColor: const Color(0xFFC0392B),
-                  label: 'Monthly Interest',
-                  note: 'Interest-only equivalent',
-                  val: '–${CurrencyFormatter.format(monthlyInt, currencyCode: 'NZD')}',
-                  isPositive: false,
-                ),
-                const Divider(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(color: Color(0xFF334155), shape: BoxShape.circle),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Annual Cash Flow Components',
+                        style: AppTextStyles.dmSans(
+                          size: 11,
+                          weight: FontWeight.bold,
+                          color: theme.getTextColor(context),
                         ),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Monthly Top-up',
-                              style: AppTextStyles.dmSans(
-                                  size: 10.5, weight: FontWeight.bold, color: theme.getTextColor(context)),
-                            ),
-                            Text(
-                              'Cash you need to add monthly',
-                              style: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context)),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Text(
-                      (topup < 0 ? '–' : '') + CurrencyFormatter.format(topup.abs(), currencyCode: 'NZD'),
-                      style: AppTextStyles.playfair(
-                        size: 15,
-                        weight: FontWeight.w800,
-                        color: topup >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
+                      const SizedBox(height: 12),
 
-                ElevatedButton.icon(
-                  onPressed: _saveCalculation,
-                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                  label: Text(
-                    'Save Investment Analysis',
-                    style: AppTextStyles.playfair(size: 12.5, color: Colors.white, weight: FontWeight.w800),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A6B4A),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    minimumSize: const Size(double.infinity, 42),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
+                      // Rent Income bar
+                      _buildWaterfallRow(
+                        label: 'Rent Income',
+                        valText: '+${CurrencyFormatter.format(annRent, currencyCode: 'NZD')}',
+                        pct: 1.0,
+                        barColors: const [Color(0xFF1A6B4A), Color(0xFF0D9488)],
+                        valColor: const Color(0xFF1A6B4A),
+                      ),
+                      const SizedBox(height: 10),
 
-          // 5-Year Property Value Projection
-          Text(
-            '5-Year Property Value Projection',
-            style: AppTextStyles.playfair(
-                size: 12,
-                weight: FontWeight.w800,
-                color: theme.getTextColor(context)),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Property Value Growth Forecast',
-                  style: AppTextStyles.dmSans(
-                    size: 11,
-                    weight: FontWeight.bold,
-                    color: theme.getTextColor(context),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...[1, 3, 5, 7, 9].map((yr) {
-                  final val = price * pow(1 + cg / 100, yr);
-                  final maxVal = price * pow(1 + cg / 100, 9);
-                  final pct = maxVal > 0 ? (val / maxVal) : 0.0;
-                  final barColor = yr <= 3
-                      ? const Color(0xFF0D9488)
-                      : yr <= 5
-                          ? const Color(0xFF1A6B4A)
-                          : const Color(0xFFD4A017);
+                      // Interest bar
+                      _buildWaterfallRow(
+                        label: 'Mortgage Interest',
+                        valText: '–${CurrencyFormatter.format(annInt, currencyCode: 'NZD')}',
+                        pct: annRent > 0 ? (annInt / annRent).clamp(0.0, 1.0) : 0.0,
+                        barColors: const [Color(0xFFC0392B), Color(0xFF922B21)],
+                        valColor: const Color(0xFFC0392B),
+                      ),
+                      const SizedBox(height: 10),
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5.0),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 40,
-                          child: Text(
-                            'Yr $yr',
+                      // Expenses bar
+                      _buildWaterfallRow(
+                        label: 'Expenses',
+                        valText: '–${CurrencyFormatter.format(exp, currencyCode: 'NZD')}',
+                        pct: annRent > 0 ? (exp / annRent).clamp(0.0, 1.0) : 0.0,
+                        barColors: const [Color(0xFFD4A017), Color(0xFFA07810)],
+                        valColor: const Color(0xFFD97706),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Management fee bar
+                      _buildWaterfallRow(
+                        label: 'Mgmt (8%)',
+                        valText: '–${CurrencyFormatter.format(mgmt, currencyCode: 'NZD')}',
+                        pct: annRent > 0 ? (mgmt / annRent).clamp(0.0, 1.0) : 0.0,
+                        barColors: const [Color(0xFF334155), Color(0xFF475569)],
+                        valColor: const Color(0xFF334155),
+                      ),
+
+                      const Divider(height: 20, thickness: 1.5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Net Annual Cash Flow',
                             style: AppTextStyles.dmSans(
-                              size: 10,
+                              size: 11,
                               weight: FontWeight.bold,
-                              color: theme.getMutedColor(context),
+                              color: theme.getTextColor(context),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: theme.getBgColor(context),
-                              borderRadius: BorderRadius.circular(5),
+                          Text(
+                            (netCF < 0 ? '–' : '') + CurrencyFormatter.format(netCF.abs(), currencyCode: 'NZD'),
+                            style: AppTextStyles.playfair(
+                              size: 15,
+                              weight: FontWeight.w800,
+                              color: netCF >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
                             ),
-                            alignment: Alignment.centerLeft,
-                            child: FractionallySizedBox(
-                              widthFactor: pct.clamp(0.0, 1.0),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: barColor,
-                                  borderRadius: BorderRadius.circular(5),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Full cost breakdown
+                Text(
+                  'Full Cost Breakdown',
+                  style: AppTextStyles.playfair(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildCostRow(
+                        dotColor: const Color(0xFF1A6B4A),
+                        label: 'Loan Amount',
+                        note: 'Purchase price minus deposit',
+                        val: CurrencyFormatter.format(loan, currencyCode: 'NZD'),
+                      ),
+                      const Divider(height: 16),
+                      _buildCostRow(
+                        dotColor: const Color(0xFFD4A017),
+                        label: 'LVR Ratio',
+                        note: 'Must be ≤65% for investors',
+                        val: '${lvr.toStringAsFixed(1)}%',
+                        customColor: lvr <= 65 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
+                      ),
+                      const Divider(height: 16),
+                      _buildCostRow(
+                        dotColor: const Color(0xFF0D9488),
+                        label: 'Monthly Rent',
+                        note: 'Weekly rent × 52 ÷ 12',
+                        val: CurrencyFormatter.format(monthlyRent, currencyCode: 'NZD'),
+                        isPositive: true,
+                      ),
+                      const Divider(height: 16),
+                      _buildCostRow(
+                        dotColor: const Color(0xFFC0392B),
+                        label: 'Monthly Interest',
+                        note: 'Interest-only equivalent',
+                        val: '–${CurrencyFormatter.format(monthlyInt, currencyCode: 'NZD')}',
+                        isPositive: false,
+                      ),
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(color: Color(0xFF334155), shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Monthly Top-up',
+                                    style: AppTextStyles.dmSans(
+                                        size: 10.5, weight: FontWeight.bold, color: theme.getTextColor(context)),
+                                  ),
+                                  Text(
+                                    'Cash you need to add monthly',
+                                    style: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Text(
+                            (topup < 0 ? '–' : '') + CurrencyFormatter.format(topup.abs(), currencyCode: 'NZD'),
+                            style: AppTextStyles.playfair(
+                              size: 15,
+                              weight: FontWeight.w800,
+                              color: topup >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      ElevatedButton.icon(
+                        onPressed: _saveCalculation,
+                        icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                        label: Text(
+                          'Save Investment Analysis',
+                          style: AppTextStyles.playfair(size: 12.5, color: Colors.white, weight: FontWeight.w800),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A6B4A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          minimumSize: const Size(double.infinity, 42),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 5-Year Property Value Projection
+                Text(
+                  '5-Year Property Value Projection',
+                  style: AppTextStyles.playfair(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Property Value Growth Forecast',
+                        style: AppTextStyles.dmSans(
+                          size: 11,
+                          weight: FontWeight.bold,
+                          color: theme.getTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...[1, 3, 5, 7, 9].map((yr) {
+                        final val = price * pow(1 + cg / 100, yr);
+                        final maxVal = price * pow(1 + cg / 100, 9);
+                        final pct = maxVal > 0 ? (val / maxVal) : 0.0;
+                        final barColor = yr <= 3
+                            ? const Color(0xFF0D9488)
+                            : yr <= 5
+                                ? const Color(0xFF1A6B4A)
+                                : const Color(0xFFD4A017);
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 5.0),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 40,
+                                child: Text(
+                                  'Yr $yr',
+                                  style: AppTextStyles.dmSans(
+                                    size: 10,
+                                    weight: FontWeight.bold,
+                                    color: theme.getMutedColor(context),
+                                  ),
                                 ),
                               ),
-                            ),
+                              Expanded(
+                                child: Container(
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: theme.getBgColor(context),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  alignment: Alignment.centerLeft,
+                                  child: FractionallySizedBox(
+                                    widthFactor: pct.clamp(0.0, 1.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: barColor,
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 70,
+                                child: Text(
+                                  'NZ\$${(val / 1000).round()}K',
+                                  style: AppTextStyles.dmSans(
+                                    size: 10,
+                                    weight: FontWeight.w800,
+                                    color: barColor,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        SizedBox(
-                          width: 70,
-                          child: Text(
-                            'NZ\$${(val / 1000).round()}K',
-                            style: AppTextStyles.dmSans(
-                              size: 10,
-                              weight: FontWeight.w800,
-                              color: barColor,
-                            ),
-                            textAlign: TextAlign.right,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -729,6 +851,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
     required String label,
     required TextEditingController controller,
     String suffix = '',
+    String? errorText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -742,7 +865,7 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
           height: 38,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+            border: Border.all(color: errorText != null ? Colors.red : Colors.white.withValues(alpha: 0.22)),
             borderRadius: BorderRadius.circular(10),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -774,6 +897,10 @@ class _NZInvestmentPropertyState extends ConsumerState<NZInvestmentProperty> {
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 2),
+          Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+        ],
       ],
     );
   }

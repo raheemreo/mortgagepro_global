@@ -23,11 +23,14 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
   final _ksController = TextEditingController(text: '28000');
   final _monthlyController = TextEditingController(text: '2800');
 
-  double _depPct = 20.0; // 10, 20, 25, 30
-  double _savingsRate = 4.8; // 4.5, 4.8, 5.0, 5.5
+  double _depPct = 20.0;
+  double _savingsRate = 4.8;
   bool _includeKs = true;
 
-  bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -38,30 +41,106 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
     super.dispose();
   }
 
-  int _calcMonthsToGoal(double target, double current, double monthly, double annualRate) {
-    if (current >= target) return 0;
-    if (monthly <= 0) return 999; // infinite
-    final double r = annualRate / 12 / 100;
-    if (r == 0) return ((target - current) / monthly).ceil();
-
-    double balance = current;
-    int months = 0;
-    while (balance < target && months < 600) {
-      balance = balance * (1 + r) + monthly;
-      months++;
+  int _calcMonthsToGoal(double target, double startBal, double monthlySave, double rateVal) {
+    if (startBal >= target) return 0;
+    if (monthlySave <= 0) return 999; // infinite
+    double bal = startBal;
+    final r = rateVal / 12 / 100;
+    int m = 0;
+    while (bal < target && m < 600) {
+      bal = bal * (1 + r) + monthlySave;
+      m++;
     }
-    return months;
+    return m;
   }
 
-  void _saveCalculation() async {
-    final double price = double.tryParse(_priceController.text) ?? 800000;
-    final double current = double.tryParse(_currentController.text) ?? 22000;
-    final double ks = double.tryParse(_ksController.text) ?? 28000;
-    final double monthly = double.tryParse(_monthlyController.text) ?? 2800;
+  void _reset() {
+    setState(() {
+      _priceController.text = '800000';
+      _currentController.text = '22000';
+      _ksController.text = '28000';
+      _monthlyController.text = '2800';
+      _depPct = 20.0;
+      _savingsRate = 4.8;
+      _includeKs = true;
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final price = double.tryParse(_priceController.text) ?? 0.0;
+    final current = double.tryParse(_currentController.text) ?? 0.0;
+    final ks = double.tryParse(_ksController.text) ?? 0.0;
+    final monthly = double.tryParse(_monthlyController.text) ?? 0.0;
 
     final target = price * _depPct / 100;
     final startSav = current + (_includeKs ? ks : 0);
-    final months = _calcMonthsToGoal(target, startSav, monthly, _savingsRate);
+
+    if (price <= 0) errors['price'] = 'Enter valid property price';
+    if (current < 0) errors['current'] = 'Cannot be negative';
+    if (ks < 0) errors['ks'] = 'Cannot be negative';
+    if (monthly <= 0 && startSav < target) {
+      errors['monthly'] = 'Enter a monthly savings amount greater than 0';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['current'] = current;
+      _calcSnapshot['ks'] = ks;
+      _calcSnapshot['monthly'] = monthly;
+      _calcSnapshot['depPct'] = _depPct;
+      _calcSnapshot['savingsRate'] = _savingsRate;
+      _calcSnapshot['includeKs'] = _includeKs;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _saveCalculation() async {
+    final double snapPrice = _calcSnapshot['price'] ?? 800000.0;
+    final double snapCurrent = _calcSnapshot['current'] ?? 22000.0;
+    final double snapKs = _calcSnapshot['ks'] ?? 28000.0;
+    final double snapMonthly = _calcSnapshot['monthly'] ?? 2800.0;
+    final double snapDepPct = _calcSnapshot['depPct'] ?? 20.0;
+    final double snapSavingsRate = _calcSnapshot['savingsRate'] ?? 4.8;
+    final bool snapIncludeKs = _calcSnapshot['includeKs'] ?? true;
+
+    final double target = snapPrice * snapDepPct / 100;
+    final double startSav = snapCurrent + (snapIncludeKs ? snapKs : 0);
+    final int months = _calcMonthsToGoal(target, startSav, snapMonthly, snapSavingsRate);
+
+    final inputs = <String, double>{
+      'price': snapPrice,
+      'current': snapCurrent,
+      'ks': snapKs,
+      'monthly': snapMonthly,
+      'depPct': snapDepPct,
+      'savingsRate': snapSavingsRate,
+      'includeKs': snapIncludeKs ? 1.0 : 0.0,
+    };
+    final results = <String, double>{
+      'target': target,
+      'needed': max(0.0, target - startSav),
+      'months': months.toDouble(),
+    };
 
     final labelCtrl = TextEditingController(text: 'NZ Deposit Savings');
     final confirmed = await showDialog<bool>(
@@ -70,7 +149,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('💾 Save Calculation',
+        title: Text('💾 Save Savings Plan',
             style: AppTextStyles.playfair(
                 size: 16, color: widget.theme.getTextColor(context))),
         content: Column(
@@ -78,7 +157,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Target: ${CurrencyFormatter.compact(target, symbol: 'NZ\$')} · Timeline: ${months == 0 ? "Ready!" : "${(months/12).toStringAsFixed(1)} years"}',
+              'Target: ${CurrencyFormatter.compact(target, symbol: 'NZ\$')} · Timeline: ${months == 0 ? "Ready" : "$months months"}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -89,7 +168,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
               style: AppTextStyles.dmSans(
                   size: 13, color: widget.theme.getTextColor(context)),
               decoration: InputDecoration(
-                hintText: 'Label (e.g. Auckland First Home)',
+                hintText: 'Label (e.g. First Home Fund)',
                 hintStyle: AppTextStyles.dmSans(size: 13, color: Colors.grey),
                 filled: true,
                 fillColor: widget.theme.getBgColor(context),
@@ -125,24 +204,13 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
     if (confirmed == true && mounted) {
       final label = labelCtrl.text.trim().isNotEmpty
           ? labelCtrl.text.trim()
-          : 'NZ Deposit Calculator';
+          : 'Savings Plan';
 
       final calc = SavedCalc.create(
         country: 'New Zealand',
-        calcType: 'Deposit Calculator',
-        inputs: {
-          'price': price,
-          'depositPct': _depPct,
-          'currentSavings': current,
-          'ksBalance': ks,
-          'monthlySaving': monthly,
-          'savingsRate': _savingsRate,
-          'includeKiwiSaver': _includeKs ? 1.0 : 0.0,
-        },
-        results: {
-          'targetDeposit': target,
-          'monthsToGoal': months.toDouble(),
-        },
+        calcType: 'Deposit Planner',
+        inputs: inputs,
+        results: results,
         label: label,
         currencyCode: 'NZD',
       );
@@ -167,19 +235,30 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double price = double.tryParse(_priceController.text) ?? 800000;
-    final double current = double.tryParse(_currentController.text) ?? 22000;
-    final double ks = double.tryParse(_ksController.text) ?? 28000;
-    final double monthly = double.tryParse(_monthlyController.text) ?? 2800;
+    final double rawPrice = double.tryParse(_priceController.text) ?? 800000;
+    final double rawCurrent = double.tryParse(_currentController.text) ?? 22000;
+    final double rawKs = double.tryParse(_ksController.text) ?? 28000;
+    final double rawMonthly = double.tryParse(_monthlyController.text) ?? 2800;
+    final double rawDepPct = _depPct;
+    final double rawSavingsRate = _savingsRate;
+    final bool rawIncludeKs = _includeKs;
 
-    final double target = price * _depPct / 100;
-    final double startSav = current + (_includeKs ? ks : 0);
+    final double price = _showResults ? (_calcSnapshot['price'] ?? rawPrice) : rawPrice;
+    final double current = _showResults ? (_calcSnapshot['current'] ?? rawCurrent) : rawCurrent;
+    final double ks = _showResults ? (_calcSnapshot['ks'] ?? rawKs) : rawKs;
+    final double monthly = _showResults ? (_calcSnapshot['monthly'] ?? rawMonthly) : rawMonthly;
+    final double depPct = _showResults ? (_calcSnapshot['depPct'] ?? rawDepPct) : rawDepPct;
+    final double savingsRate = _showResults ? (_calcSnapshot['savingsRate'] ?? rawSavingsRate) : rawSavingsRate;
+    final bool includeKs = _showResults ? (_calcSnapshot['includeKs'] ?? rawIncludeKs) : rawIncludeKs;
+
+    final double target = price * depPct / 100;
+    final double startSav = current + (includeKs ? ks : 0);
     final double needed = max(0.0, target - startSav);
-    final int months = _calcMonthsToGoal(target, startSav, monthly, _savingsRate);
+    final int months = _calcMonthsToGoal(target, startSav, monthly, savingsRate);
     final double yrs = months / 12;
 
     // Total with interest
-    final double r = _savingsRate / 12 / 100;
+    final double r = savingsRate / 12 / 100;
     double finalBalance = startSav;
     for (int m = 0; m < months; m++) {
       finalBalance = finalBalance * (1 + r) + monthly;
@@ -187,10 +266,20 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
 
     final double progressPct = min(100.0, target > 0 ? (startSav / target * 100) : 0.0);
 
+    final isDirty = _showResults && (
+      _priceController.text != (_calcSnapshot['price']?.toString() ?? '') ||
+      _currentController.text != (_calcSnapshot['current']?.toString() ?? '') ||
+      _ksController.text != (_calcSnapshot['ks']?.toString() ?? '') ||
+      _monthlyController.text != (_calcSnapshot['monthly']?.toString() ?? '') ||
+      _depPct != (_calcSnapshot['depPct'] ?? 0.0) ||
+      _savingsRate != (_calcSnapshot['savingsRate'] ?? 0.0) ||
+      _includeKs != (_calcSnapshot['includeKs'] ?? true)
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title banner matching HTML layout
+        // Title banner
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -202,18 +291,13 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
                 color: theme.getTextColor(context),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                border: Border.all(color: const Color(0xFF93C5FD)),
-                borderRadius: BorderRadius.circular(20),
-              ),
+            GestureDetector(
+              onTap: _reset,
               child: Text(
-                'Live Estimate',
+                'Reset ↺',
                 style: AppTextStyles.dmSans(
-                  size: 9,
-                  color: const Color(0xFF1D4ED8),
+                  size: 11,
+                  color: const Color(0xFFC0392B),
                   weight: FontWeight.bold,
                 ),
               ),
@@ -267,7 +351,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
               ),
               const SizedBox(height: 4),
               Text(
-                'to save ${CurrencyFormatter.compact(target, symbol: 'NZ\$')} (${_depPct.toStringAsFixed(0)}% of ${CurrencyFormatter.compact(price, symbol: 'NZ\$')})',
+                'to save ${CurrencyFormatter.compact(target, symbol: 'NZ\$')} (${depPct.toStringAsFixed(0)}% of ${CurrencyFormatter.compact(price, symbol: 'NZ\$')})',
                 style: AppTextStyles.dmSans(
                   size: 10.5,
                   color: Colors.white60,
@@ -431,7 +515,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
                           weight: FontWeight.w800,
                           color: theme.getMutedColor(context))),
                   const SizedBox(height: 6),
-                  _buildInputBox(_priceController),
+                  _buildInputField(_priceController, _errors['price']),
                 ],
               ),
               const SizedBox(height: 12),
@@ -495,7 +579,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
                                 weight: FontWeight.w800,
                                 color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_currentController),
+                        _buildInputField(_currentController, _errors['current']),
                       ],
                     ),
                   ),
@@ -510,7 +594,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
                                 weight: FontWeight.w800,
                                 color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_ksController),
+                        _buildInputField(_ksController, _errors['ks']),
                       ],
                     ),
                   ),
@@ -529,7 +613,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
                                 weight: FontWeight.w800,
                                 color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_monthlyController),
+                        _buildInputField(_monthlyController, _errors['monthly']),
                       ],
                     ),
                   ),
@@ -550,6 +634,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
                           decoration: BoxDecoration(
                             color: theme.getBgColor(context),
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: theme.getBorderColor(context)),
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<double>(
@@ -592,6 +677,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
                     decoration: BoxDecoration(
                       color: theme.getBgColor(context),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: theme.getBorderColor(context)),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<bool>(
@@ -613,7 +699,7 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
               ),
               const SizedBox(height: 14),
               ElevatedButton(
-                onPressed: () => setState(() => _showResults = true),
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0EA5E9),
                   foregroundColor: Colors.white,
@@ -633,111 +719,141 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
 
         // Savings Trajectory Chart Card
         if (_showResults) ...[
-          const SizedBox(height: 20),
-          Text(
-            'Savings Trajectory',
-            style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context),
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Savings Timeline to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+          ],
           Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                const SizedBox(height: 20),
+                Text(
+                  'Savings Trajectory',
+                  style: AppTextStyles.playfair(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    color: theme.getTextColor(context),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Projected Balance',
+                            style: AppTextStyles.playfair(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context),
+                            ),
+                          ),
+                          Text(
+                            'Monthly View',
+                            style: AppTextStyles.dmSans(
+                              size: 9,
+                              color: const Color(0xFF0EA5E9),
+                              weight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      // Custom Painter Savings Chart
+                      SizedBox(
+                        height: 140,
+                        width: double.infinity,
+                        child: CustomPaint(
+                          painter: _NZDepositSavingsChartPainter(
+                            start: startSav,
+                            monthly: monthly,
+                            target: target,
+                            rate: savingsRate,
+                            months: months,
+                            theme: theme,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Scenarios Card
+                Text(
+                  'Savings Scenarios',
+                  style: AppTextStyles.playfair(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    color: theme.getTextColor(context),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.25,
                   children: [
-                    Text(
-                      'Projected Balance',
-                      style: AppTextStyles.playfair(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context),
-                      ),
-                    ),
-                    Text(
-                      'Monthly View',
-                      style: AppTextStyles.dmSans(
-                        size: 9,
-                        color: const Color(0xFF0EA5E9),
-                        weight: FontWeight.bold,
-                      ),
-                    ),
+                    _buildScenarioCard('Save \$1K/mo', 1000, startSav, target, months),
+                    _buildScenarioCard('Save \$2K/mo', 2000, startSav, target, months),
+                    _buildScenarioCard('Current Plan', monthly, startSav, target, months, highlight: true),
+                    _buildScenarioCard('Save \$5K/mo', 5000, startSav, target, months),
                   ],
                 ),
                 const SizedBox(height: 14),
-                // Custom Painter Savings Chart
-                SizedBox(
-                  height: 140,
-                  width: double.infinity,
-                  child: CustomPaint(
-                    painter: _NZDepositSavingsChartPainter(
-                      start: startSav,
-                      monthly: monthly,
-                      target: target,
-                      rate: _savingsRate,
-                      months: months,
-                      theme: theme,
-                    ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A6B4A),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 44),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('💾 ', style: TextStyle(fontSize: 14)),
+                      Text('Save This Savings Plan',
+                          style: AppTextStyles.playfair(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: Colors.white)),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Scenarios Card
-          Text(
-            'Savings Scenarios',
-            style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 1.25,
-            children: [
-              _buildScenarioCard('Save \$1K/mo', 1000, startSav, target, months),
-              _buildScenarioCard('Save \$2K/mo', 2000, startSav, target, months),
-              _buildScenarioCard('Current Plan', monthly, startSav, target, months, highlight: true),
-              _buildScenarioCard('Save \$5K/mo', 5000, startSav, target, months),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ElevatedButton(
-            onPressed: _saveCalculation,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1A6B4A),
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 44),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('💾 ', style: TextStyle(fontSize: 14)),
-                Text('Save This Savings Plan',
-                    style: AppTextStyles.playfair(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: Colors.white)),
               ],
             ),
           ),
@@ -868,25 +984,35 @@ class _NZDepositCalcState extends ConsumerState<NZDepositCalc> {
     );
   }
 
-  Widget _buildInputBox(TextEditingController controller) {
+  Widget _buildInputField(TextEditingController controller, String? errorText) {
     final theme = widget.theme;
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: theme.getBgColor(context),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: TextInputType.number,
-        style: AppTextStyles.dmSans(
-            size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: InputBorder.none,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: theme.getBgColor(context),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: errorText != null ? Colors.red : theme.getBorderColor(context)),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            style: AppTextStyles.dmSans(
+                size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
+            decoration: const InputDecoration(
+              contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: InputBorder.none,
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
         ),
-        onChanged: (_) => setState(() {}),
-      ),
+        if (errorText != null) ...[
+          const SizedBox(height: 2),
+          Text(errorText, style: AppTextStyles.dmSans(size: 9, color: Colors.red, weight: FontWeight.bold)),
+        ],
+      ],
     );
   }
 

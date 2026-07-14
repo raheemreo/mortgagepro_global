@@ -23,7 +23,10 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
   double _taxRate = 30.0; // 10.5 | 17.5 | 30 | 33 | 39
   String _propType = 'existing'; // 'existing' | 'newbuild'
 
-  bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -31,13 +34,60 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _interestController.text = '24000';
+      _taxYear = 100.0;
+      _taxRate = 30.0;
+      _propType = 'existing';
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
 
+  void _calculate() {
+    final errors = <String, String>{};
+    final interest = double.tryParse(_interestController.text) ?? 0.0;
+
+    if (interest < 0) {
+      errors['interest'] = 'Interest paid cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['interest'] = interest;
+      _calcSnapshot['taxYear'] = _taxYear;
+      _calcSnapshot['taxRate'] = _taxRate;
+      _calcSnapshot['propType'] = _propType;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
 
   void _saveCalculation() async {
-    final double interest = double.tryParse(_interestController.text) ?? 24000;
-    final effectivePct = _propType == 'newbuild' ? 100.0 : _taxYear;
-    final deductAmt = interest * effectivePct / 100;
-    final taxSaving = deductAmt * (_taxRate / 100);
+    final double snapInterest = _calcSnapshot['interest'] ?? (double.tryParse(_interestController.text) ?? 24000.0);
+    final double snapTaxYear = _calcSnapshot['taxYear'] ?? _taxYear;
+    final double snapTaxRate = _calcSnapshot['taxRate'] ?? _taxRate;
+    final String snapPropType = _calcSnapshot['propType'] ?? _propType;
+
+    final effectivePct = snapPropType == 'newbuild' ? 100.0 : snapTaxYear;
+    final deductAmt = snapInterest * effectivePct / 100;
+    final taxSaving = deductAmt * (snapTaxRate / 100);
 
     final labelCtrl = TextEditingController(text: 'NZ Interest Deductibility');
     final confirmed = await showDialog<bool>(
@@ -65,7 +115,7 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
               style: AppTextStyles.dmSans(
                   size: 13, color: widget.theme.getTextColor(context)),
               decoration: InputDecoration(
-                hintText: 'Label (e.g. FY25 Deductions)',
+                hintText: 'Label (e.g. My Deductions Plan)',
                 hintStyle: AppTextStyles.dmSans(size: 13, color: Colors.grey),
                 filled: true,
                 fillColor: widget.theme.getBgColor(context),
@@ -105,13 +155,13 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'Interest Deductibility',
-        inputs: {
-          'interest': interest,
-          'taxYear': _taxYear,
-          'taxRate': _taxRate,
-          'propType': _propType == 'newbuild' ? 1.0 : 0.0,
+        inputs: <String, double>{
+          'interest': snapInterest,
+          'taxYear': snapTaxYear,
+          'taxRate': snapTaxRate,
+          'propType': snapPropType == 'newbuild' ? 1.0 : 0.0,
         },
-        results: {
+        results: <String, double>{
           'deductAmt': deductAmt,
           'taxSaving': taxSaving,
           'effectivePct': effectivePct,
@@ -140,12 +190,28 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double interest = double.tryParse(_interestController.text) ?? 24000;
-    final effectivePct = _propType == 'newbuild' ? 100.0 : _taxYear;
+    final double rawInterest = double.tryParse(_interestController.text) ?? 24000;
+    final double rawTaxYear = _taxYear;
+    final double rawTaxRate = _taxRate;
+    final String rawPropType = _propType;
+
+    final double interest = _showResults ? (_calcSnapshot['interest'] ?? rawInterest) : rawInterest;
+    final double taxYear = _showResults ? (_calcSnapshot['taxYear'] ?? rawTaxYear) : rawTaxYear;
+    final double taxRate = _showResults ? (_calcSnapshot['taxRate'] ?? rawTaxRate) : rawTaxRate;
+    final String propType = _showResults ? (_calcSnapshot['propType'] ?? rawPropType) : rawPropType;
+
+    final effectivePct = propType == 'newbuild' ? 100.0 : taxYear;
     final deductAmt = interest * effectivePct / 100;
     final nonDeduct = interest - deductAmt;
-    final taxSaving = deductAmt * (_taxRate / 100);
+    final taxSaving = deductAmt * (taxRate / 100);
     final monthly = taxSaving / 12;
+
+    final isDirty = _showResults && (
+      _interestController.text != (_calcSnapshot['interest']?.toString() ?? '') ||
+      _taxYear != (_calcSnapshot['taxYear'] ?? 0.0) ||
+      _taxRate != (_calcSnapshot['taxRate'] ?? 0.0) ||
+      _propType != (_calcSnapshot['propType'] ?? '')
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,17 +227,15 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
                   weight: FontWeight.w800,
                   color: theme.getTextColor(context)),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDFA),
-                border: Border.all(color: const Color(0xFF5EEAD4)),
-                borderRadius: BorderRadius.circular(20),
-              ),
+            GestureDetector(
+              onTap: _reset,
               child: Text(
-                '2024 Restored',
+                'Reset ↺',
                 style: AppTextStyles.dmSans(
-                    size: 9, color: const Color(0xFF0F766E), weight: FontWeight.bold),
+                  size: 11,
+                  color: const Color(0xFFC0392B),
+                  weight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -270,6 +334,7 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
                     child: _buildHeroInputBox(
                       label: 'Annual Interest Paid (NZD)',
                       controller: _interestController,
+                      errorText: _errors['interest'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -323,7 +388,7 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
               const SizedBox(height: 12),
 
               ElevatedButton(
-                onPressed: () => setState(() => _showResults = true),
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),
                   foregroundColor: Colors.white,
@@ -343,118 +408,148 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
 
         // Results Card
         if (_showResults) ...[
-          Text(
-            'Your Deductibility Analysis',
-            style: AppTextStyles.playfair(
-                size: 12,
-                weight: FontWeight.w800,
-                color: theme.getTextColor(context)),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Deductibility Saving to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 12),
+          ],
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1.6,
-                  children: [
-                    _buildResultBox(
-                      label: 'Deductible Amount',
-                      val: CurrencyFormatter.format(deductAmt, currencyCode: 'NZD'),
-                      sub: '${effectivePct.toInt()}% of interest',
-                      valColor: const Color(0xFF1A6B4A),
-                    ),
-                    _buildResultBox(
-                      label: 'Tax Saving',
-                      val: CurrencyFormatter.format(taxSaving, currencyCode: 'NZD'),
-                      sub: 'Annual benefit',
-                      valColor: const Color(0xFF1A6B4A),
-                    ),
-                    _buildResultBox(
-                      label: 'Non-deductible',
-                      val: CurrencyFormatter.format(nonDeduct, currencyCode: 'NZD'),
-                      sub: 'Cannot claim',
-                      valColor: const Color(0xFFC0392B),
-                    ),
-                    _buildResultBox(
-                      label: 'Monthly Saving',
-                      val: CurrencyFormatter.format(monthly, currencyCode: 'NZD'),
-                      sub: 'Per month benefit',
-                      valColor: const Color(0xFFD4A017),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Year-by-Year comparison bar chart
                 Text(
-                  'Year-by-Year Deductibility Comparison',
-                  style: AppTextStyles.dmSans(
-                    size: 10.5,
-                    weight: FontWeight.bold,
-                    color: theme.getTextColor(context),
+                  'Your Deductibility Analysis',
+                  style: AppTextStyles.playfair(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
                   ),
-                ),
-                const SizedBox(height: 12),
-                _buildDeductCompareBar(
-                  label: 'FY25–26',
-                  pct: _propType == 'newbuild' ? 1.0 : 1.0,
-                  saving: interest * 1.0 * (_taxRate / 100),
-                  barColor: const Color(0xFF1A6B4A),
-                  theme: theme,
-                ),
-                const SizedBox(height: 8),
-                _buildDeductCompareBar(
-                  label: 'FY24–25',
-                  pct: _propType == 'newbuild' ? 1.0 : 0.8,
-                  saving: interest * (_propType == 'newbuild' ? 1.0 : 0.8) * (_taxRate / 100),
-                  barColor: const Color(0xFFD4A017),
-                  theme: theme,
-                ),
-                const SizedBox(height: 8),
-                _buildDeductCompareBar(
-                  label: 'FY23–24',
-                  pct: _propType == 'newbuild' ? 1.0 : 0.5,
-                  saving: interest * (_propType == 'newbuild' ? 1.0 : 0.5) * (_taxRate / 100),
-                  barColor: const Color(0xFF6EE7B7),
-                  textColor: const Color(0xFF0D3B2E),
-                  theme: theme,
-                ),
-                const SizedBox(height: 8),
-                _buildDeductCompareBar(
-                  label: 'FY22–23',
-                  pct: _propType == 'newbuild' ? 1.0 : 0.75,
-                  saving: interest * (_propType == 'newbuild' ? 1.0 : 0.75) * (_taxRate / 100),
-                  barColor: const Color(0xFF6EE7B7),
-                  textColor: const Color(0xFF0D3B2E),
-                  theme: theme,
-                ),
-                const SizedBox(height: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 1.6,
+                        children: [
+                          _buildResultBox(
+                            label: 'Deductible Amount',
+                            val: CurrencyFormatter.format(deductAmt, currencyCode: 'NZD'),
+                            sub: '${effectivePct.toInt()}% of interest',
+                            valColor: const Color(0xFF1A6B4A),
+                          ),
+                          _buildResultBox(
+                            label: 'Tax Saving',
+                            val: CurrencyFormatter.format(taxSaving, currencyCode: 'NZD'),
+                            sub: 'Annual benefit',
+                            valColor: const Color(0xFF1A6B4A),
+                          ),
+                          _buildResultBox(
+                            label: 'Non-deductible',
+                            val: CurrencyFormatter.format(nonDeduct, currencyCode: 'NZD'),
+                            sub: 'Cannot claim',
+                            valColor: const Color(0xFFC0392B),
+                          ),
+                          _buildResultBox(
+                            label: 'Monthly Saving',
+                            val: CurrencyFormatter.format(monthly, currencyCode: 'NZD'),
+                            sub: 'Per month benefit',
+                            valColor: const Color(0xFFD4A017),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
 
-                ElevatedButton.icon(
-                  onPressed: _saveCalculation,
-                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                  label: Text(
-                    'Save Deductibility Analysis',
-                    style: AppTextStyles.playfair(size: 12.5, color: Colors.white, weight: FontWeight.w800),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A6B4A),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    minimumSize: const Size(double.infinity, 42),
+                      // Year-by-Year comparison bar chart
+                      Text(
+                        'Year-by-Year Deductibility Comparison',
+                        style: AppTextStyles.dmSans(
+                          size: 10.5,
+                          weight: FontWeight.bold,
+                          color: theme.getTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDeductCompareBar(
+                        label: 'FY26 Restored',
+                        pct: propType == 'newbuild' ? 1.0 : 1.0,
+                        saving: interest * 1.0 * (taxRate / 100),
+                        barColor: const Color(0xFF1A6B4A),
+                        theme: theme,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildDeductCompareBar(
+                        label: 'FY25 Phase',
+                        pct: propType == 'newbuild' ? 1.0 : 0.8,
+                        saving: interest * (propType == 'newbuild' ? 1.0 : 0.8) * (taxRate / 100),
+                        barColor: const Color(0xFFD4A017),
+                        theme: theme,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildDeductCompareBar(
+                        label: 'FY24 Phase',
+                        pct: propType == 'newbuild' ? 1.0 : 0.5,
+                        saving: interest * (propType == 'newbuild' ? 1.0 : 0.5) * (taxRate / 100),
+                        barColor: const Color(0xFF6EE7B7),
+                        textColor: const Color(0xFF0D3B2E),
+                        theme: theme,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildDeductCompareBar(
+                        label: 'FY23 Phase',
+                        pct: propType == 'newbuild' ? 1.0 : 0.75,
+                        saving: interest * (propType == 'newbuild' ? 1.0 : 0.75) * (taxRate / 100),
+                        barColor: const Color(0xFF6EE7B7),
+                        textColor: const Color(0xFF0D3B2E),
+                        theme: theme,
+                      ),
+                      const SizedBox(height: 16),
+
+                      ElevatedButton.icon(
+                        onPressed: _saveCalculation,
+                        icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                        label: Text(
+                          'Save Deductibility Analysis',
+                          style: AppTextStyles.playfair(size: 12.5, color: Colors.white, weight: FontWeight.w800),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A6B4A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          minimumSize: const Size(double.infinity, 42),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -600,6 +695,7 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
   Widget _buildHeroInputBox({
     required String label,
     required TextEditingController controller,
+    String? errorText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,7 +709,7 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
           height: 38,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+            border: Border.all(color: errorText != null ? Colors.red : Colors.white.withValues(alpha: 0.22)),
             borderRadius: BorderRadius.circular(10),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -639,6 +735,10 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 2),
+          Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+        ],
       ],
     );
   }
@@ -727,7 +827,7 @@ class _NZInterestDeductibilityState extends ConsumerState<NZInterestDeductibilit
     return Row(
       children: [
         SizedBox(
-          width: 60,
+          width: 80,
           child: Text(
             label,
             style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.bold, color: theme.getMutedColor(context)),

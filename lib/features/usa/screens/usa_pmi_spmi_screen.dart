@@ -21,13 +21,16 @@ class USAPmiSpmiScreen extends ConsumerStatefulWidget {
 class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   double _loanAmount = 350000;
   double _spmiRate = 2.0;
   String _payMethod = 'cash'; // 'cash' or 'financed'
   double _mortgageRate = 6.75;
 
   bool _calculating = false;
-  bool _showResults = true;
+  bool _showResults = false;
   bool _isCalcDirty = false;
 
   @override
@@ -40,6 +43,11 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
       final method = inputs['PayMethod'];
       _payMethod = method == 1.0 ? 'financed' : 'cash';
       _mortgageRate = inputs['MtgRate'] ?? 6.75;
+      _calcSnapshot['LoanAmt'] = _loanAmount;
+      _calcSnapshot['SpmiRate'] = _spmiRate;
+      _calcSnapshot['PayMethod'] = _payMethod;
+      _calcSnapshot['MtgRate'] = _mortgageRate;
+      _showResults = true;
     }
   }
 
@@ -57,8 +65,9 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
       _spmiRate = 2.0;
       _payMethod = 'cash';
       _mortgageRate = 6.75;
-      _showResults = true;
+      _showResults = false;
       _isCalcDirty = false;
+      _calcSnapshot.clear();
     });
   }
 
@@ -69,23 +78,41 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
     await Future.delayed(const Duration(milliseconds: 300));
     setState(() {
       _calculating = false;
+      _calcSnapshot['LoanAmt'] = _loanAmount;
+      _calcSnapshot['SpmiRate'] = _spmiRate;
+      _calcSnapshot['PayMethod'] = _payMethod;
+      _calcSnapshot['MtgRate'] = _mortgageRate;
       _showResults = true;
       _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    final spmiAmount = _loanAmount * _spmiRate / 100;
-    final equivBpmiMonthly = (_loanAmount * 0.0075) / 12;
+    final loanAmt = _calcSnapshot['LoanAmt'] ?? _loanAmount;
+    final spmiRate = _calcSnapshot['SpmiRate'] ?? _spmiRate;
+    final payMethod = _calcSnapshot['PayMethod'] ?? _payMethod;
+    final mortgageRate = _calcSnapshot['MtgRate'] ?? _mortgageRate;
+
+    final spmiAmount = loanAmt * spmiRate / 100;
+    final equivBpmiMonthly = (loanAmt * 0.0075) / 12;
     final breakEvenMonths = spmiAmount / equivBpmiMonthly;
 
     double financedMonthlyAdd = 0.0;
-    if (_payMethod == 'financed') {
-      final newLoan = _loanAmount + spmiAmount;
-      final monthlyRate = _mortgageRate / 100 / 12;
+    if (payMethod == 'financed') {
+      final newLoan = loanAmt + spmiAmount;
+      final monthlyRate = mortgageRate / 100 / 12;
       const n = 360;
       final fullPmt = newLoan * (monthlyRate * pow(1 + monthlyRate, n)) / (pow(1 + monthlyRate, n) - 1);
-      final basePmt = _loanAmount * (monthlyRate * pow(1 + monthlyRate, n)) / (pow(1 + monthlyRate, n) - 1);
+      final basePmt = loanAmt * (monthlyRate * pow(1 + monthlyRate, n)) / (pow(1 + monthlyRate, n) - 1);
       financedMonthlyAdd = fullPmt - basePmt;
     }
 
@@ -156,10 +183,10 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
         country: 'USA',
         calcType: 'SPMI Single Premium PMI',
         inputs: {
-          'LoanAmt': _loanAmount,
-          'SpmiRate': _spmiRate,
-          'PayMethod': _payMethod == 'financed' ? 1.0 : 0.0,
-          'MtgRate': _mortgageRate,
+          'LoanAmt': loanAmt,
+          'SpmiRate': spmiRate,
+          'PayMethod': payMethod == 'financed' ? 1.0 : 0.0,
+          'MtgRate': mortgageRate,
         },
         results: {
           'Single Premium': spmiAmount,
@@ -196,20 +223,32 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
     final borderCol = _theme.getBorderColor(context);
     final bgCol = _theme.getBgColor(context);
 
-    // Calculations
-    final spmiAmount = _loanAmount * _spmiRate / 100;
-    final equivBpmiMonthly = (_loanAmount * 0.0075) / 12;
+    // Compute active calculation from snapshot or default to current values when not calculated yet
+    final double snapLoanAmount = _calcSnapshot['LoanAmt'] ?? _loanAmount;
+    final double snapSpmiRate = _calcSnapshot['SpmiRate'] ?? _spmiRate;
+    final String snapPayMethod = _calcSnapshot['PayMethod'] ?? _payMethod;
+    final double snapMortgageRate = _calcSnapshot['MtgRate'] ?? _mortgageRate;
+
+    final spmiAmount = snapLoanAmount * snapSpmiRate / 100;
+    final equivBpmiMonthly = (snapLoanAmount * 0.0075) / 12;
     final breakEvenMonths = spmiAmount / equivBpmiMonthly;
 
     double financedMonthlyAdd = 0.0;
-    if (_payMethod == 'financed') {
-      final newLoan = _loanAmount + spmiAmount;
-      final monthlyRate = _mortgageRate / 100 / 12;
+    if (snapPayMethod == 'financed') {
+      final newLoan = snapLoanAmount + spmiAmount;
+      final monthlyRate = snapMortgageRate / 100 / 12;
       const n = 360;
       final fullPmt = newLoan * (monthlyRate * pow(1 + monthlyRate, n)) / (pow(1 + monthlyRate, n) - 1);
-      final basePmt = _loanAmount * (monthlyRate * pow(1 + monthlyRate, n)) / (pow(1 + monthlyRate, n) - 1);
+      final basePmt = snapLoanAmount * (monthlyRate * pow(1 + monthlyRate, n)) / (pow(1 + monthlyRate, n) - 1);
       financedMonthlyAdd = fullPmt - basePmt;
     }
+
+    final isDirty = _showResults && (
+      _loanAmount != snapLoanAmount ||
+      _spmiRate != snapSpmiRate ||
+      _payMethod != snapPayMethod ||
+      _mortgageRate != snapMortgageRate
+    );
 
     // Rate strip values
     final rateStats = [
@@ -643,7 +682,7 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
                                   ),
                           ),
                         ),
-                        if (_showResults && !_isCalcDirty) ...[
+                        if (_showResults) ...[
                           const SizedBox(width: 10),
                           ElevatedButton(
                             onPressed: _saveCalculation,
@@ -667,9 +706,38 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
               ),
 
               // Result Hero Card
-              if (_showResults && !_isCalcDirty) ...[
+              if (_showResults) ...[
+                if (isDirty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Calculate again to update results.',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              color: const Color(0xFFB45309),
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 Container(
+                  key: _resultsKey,
                   margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
@@ -701,7 +769,7 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${_spmiRate.toStringAsFixed(1)}% of ${CurrencyFormatter.format(_loanAmount, symbol: r'$')} loan · Paid once, no monthly PMI',
+                        '${snapSpmiRate.toStringAsFixed(1)}% of ${CurrencyFormatter.format(snapLoanAmount, symbol: r'$')} loan · Paid once, no monthly PMI',
                         style: AppTextStyles.dmSans(size: 10, color: Colors.white.withValues(alpha: 0.7)),
                       ),
                       const SizedBox(height: 14),
@@ -711,7 +779,7 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
                           const SizedBox(width: 8),
                           _buildResultBox('Break-Even Point', '~${breakEvenMonths.round()} mo'),
                           const SizedBox(width: 8),
-                          _buildResultBox('If Financed: +Monthly', _payMethod == 'financed' ? '+${CurrencyFormatter.format(financedMonthlyAdd, symbol: r'$')}/mo' : 'N/A (cash)'),
+                          _buildResultBox('If Financed: +Monthly', snapPayMethod == 'financed' ? '+${CurrencyFormatter.format(financedMonthlyAdd, symbol: r'$')}/mo' : 'N/A (cash)'),
                         ],
                       )
                     ],
@@ -743,7 +811,7 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
                         width: 108,
                         child: CustomPaint(
                           painter: _SpmiDonutPainter(
-                            spmiPct: _spmiRate,
+                            spmiPct: snapSpmiRate,
                             textColor: textCol,
                             mutedColor: mutedCol,
                           ),
@@ -754,11 +822,11 @@ class _USAPmiSpmiScreenState extends ConsumerState<USAPmiSpmiScreen> {
                       Expanded(
                         child: Column(
                           children: [
-                            _buildLegendRow('Base Loan Amount', _loanAmount, const Color(0xFF1B3F72)),
+                            _buildLegendRow('Base Loan Amount', snapLoanAmount, const Color(0xFF1B3F72)),
                             const SizedBox(height: 9),
                             _buildLegendRow('SPMI Premium', spmiAmount, const Color(0xFF6D28D9)),
                             const SizedBox(height: 9),
-                            _buildLegendRow('Total if Financed', _loanAmount + spmiAmount, const Color(0xFFD97706)),
+                            _buildLegendRow('Total if Financed', snapLoanAmount + spmiAmount, const Color(0xFFD97706)),
                           ],
                         ),
                       ),

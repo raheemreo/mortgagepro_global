@@ -24,6 +24,9 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
   int _termYears = 30;
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   void _reset() {
     setState(() {
@@ -32,11 +35,61 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
       _baseRate = 6.59;
       _termYears = 30;
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_propVal <= 0) {
+      errors['propVal'] = 'Enter valid property value';
+    }
+    if (_deposit < 0) {
+      errors['deposit'] = 'Deposit cannot be negative';
+    } else if (_deposit >= _propVal && _propVal > 0) {
+      errors['deposit'] = 'Deposit must be less than property value';
+    }
+    if (_baseRate <= 0 || _baseRate > 25) {
+      errors['baseRate'] = 'Enter base rate between 0.1% and 25%';
+    }
+    if (_termYears <= 0 || _termYears > 50) {
+      errors['termYears'] = 'Enter term between 1 and 50 years';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['propVal'] = _propVal;
+      _calcSnapshot['deposit'] = _deposit;
+      _calcSnapshot['baseRate'] = _baseRate;
+      _calcSnapshot['termYears'] = _termYears;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation(double lvr, double lemRate, double effRate,
       double extraMth, double loan) async {
+    final snapPropVal = _calcSnapshot['propVal'] ?? _propVal;
+    final snapDeposit = _calcSnapshot['deposit'] ?? _deposit;
+    final snapBaseRate = _calcSnapshot['baseRate'] ?? _baseRate;
+    final snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+
     final labelCtrl = TextEditingController(text: 'NZ LEM Analysis');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -100,17 +153,19 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
     );
 
     if (confirmed == true && mounted) {
-      final label = labelCtrl.text;
+      final label = labelCtrl.text.trim().isNotEmpty
+          ? labelCtrl.text.trim()
+          : 'LEM Analysis';
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'Low Equity Margin',
-        inputs: {
-          'propertyValue': _propVal,
-          'deposit': _deposit,
-          'baseRate': _baseRate,
-          'termYears': _termYears.toDouble(),
+        inputs: <String, double>{
+          'propertyValue': snapPropVal,
+          'deposit': snapDeposit,
+          'baseRate': snapBaseRate,
+          'termYears': snapTermYears.toDouble(),
         },
-        results: {
+        results: <String, double>{
           'lvr': lvr,
           'lemRate': lemRate,
           'effectiveRate': effRate,
@@ -149,9 +204,19 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final double rawPropVal = _propVal;
+    final double rawDeposit = _deposit;
+    final double rawBaseRate = _baseRate;
+    final int rawTermYears = _termYears;
+
+    final double propVal = _showResults ? (_calcSnapshot['propVal'] ?? rawPropVal) : rawPropVal;
+    final double deposit = _showResults ? (_calcSnapshot['deposit'] ?? rawDeposit) : rawDeposit;
+    final double baseRate = _showResults ? (_calcSnapshot['baseRate'] ?? rawBaseRate) : rawBaseRate;
+    final int termYears = _showResults ? (_calcSnapshot['termYears'] ?? rawTermYears) : rawTermYears;
+
     // Base calculations
-    final loan = max(0.0, _propVal - _deposit);
-    final lvr = _propVal > 0 ? (loan / _propVal) * 100 : 0.0;
+    final loan = max(0.0, propVal - deposit);
+    final lvr = propVal > 0 ? (loan / propVal) * 100 : 0.0;
 
     // LEM rules logic
     double lemRate = 0.0;
@@ -170,15 +235,22 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
       activeBand = 4;
     }
 
-    final effRate = _baseRate + lemRate;
-    final mthStd = _calculateMonthlyRepayment(loan, _baseRate, _termYears);
-    final mthLEM = _calculateMonthlyRepayment(loan, effRate, _termYears);
+    final effRate = baseRate + lemRate;
+    final mthStd = _calculateMonthlyRepayment(loan, baseRate, termYears);
+    final mthLEM = _calculateMonthlyRepayment(loan, effRate, termYears);
     final extraMth = max(0.0, mthLEM - mthStd);
 
     // Layout percentages for comparison bars
     final maxBar = max(1.0, mthLEM);
     final stdPct = (mthStd / maxBar).clamp(0.0, 1.0);
     final lemPct = (mthLEM / maxBar).clamp(0.0, 1.0);
+
+    final isDirty = _showResults && (
+      _propVal != (_calcSnapshot['propVal'] ?? 0.0) ||
+      _deposit != (_calcSnapshot['deposit'] ?? 0.0) ||
+      _baseRate != (_calcSnapshot['baseRate'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['termYears'] ?? 0)
+    );
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
@@ -269,6 +341,7 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
                       child: _buildHeroInputBox(
                         label: 'Property Value',
                         value: _propVal,
+                        errorText: _errors['propVal'],
                         onChanged: (val) => setState(() => _propVal = val),
                       ),
                     ),
@@ -277,6 +350,7 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
                       child: _buildHeroInputBox(
                         label: 'Deposit',
                         value: _deposit,
+                        errorText: _errors['deposit'],
                         onChanged: (val) => setState(() => _deposit = val),
                       ),
                     ),
@@ -291,6 +365,7 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
                       child: _buildHeroInputBox(
                         label: 'Base Interest Rate (%)',
                         value: _baseRate,
+                        errorText: _errors['baseRate'],
                         onChanged: (val) => setState(() => _baseRate = val),
                       ),
                     ),
@@ -355,17 +430,7 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
                 const SizedBox(height: 14),
 
                 ElevatedButton(
-                  onPressed: () {
-                    if (_propVal <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Please enter valid property value',
-                                style: AppTextStyles.dmSans())),
-                      );
-                      return;
-                    }
-                    setState(() => _showResults = true);
-                  },
+                  onPressed: _calculate,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0A0F0D),
                     foregroundColor: Colors.white,
@@ -383,216 +448,275 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
           ),
 
           if (_showResults) ...[
-            const SizedBox(height: 16),
-
-            // LEM Result Card
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: theme.getBorderColor(context)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  )
-                ],
+            if (isDirty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Text(
+                        'Inputs have changed. Tap Calculate LEM Cost to refresh results.',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ],
+            Container(
+              key: _resultsKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Low Equity Margin Analysis',
-                          style: AppTextStyles.playfair(
-                              size: 14,
-                              color: theme.getTextColor(context),
-                              weight: FontWeight.w800)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: lemRate > 0
-                              ? (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2))
-                              : (isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5)),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          lemRate > 0 ? 'LEM Applies' : 'No LEM',
-                          style: AppTextStyles.dmSans(
-                              size: 11,
-                              weight: FontWeight.w800,
-                          color: lemRate > 0
-                                  ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC0392B))
-                                  : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF065F46))),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
-                  // Large Added Rate display
-                  Center(
+                  // LEM Result Card
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('LEM ADDED TO YOUR RATE',
-                            style: AppTextStyles.dmSans(
-                                size: 10,
-                                color: theme.getMutedColor(context),
-                                weight: FontWeight.w600)),
-                        const SizedBox(height: 4),
-                        Text(
-                          lemRate > 0
-                              ? '+${lemRate.toStringAsFixed(2)}%'
-                              : '0.00% (No LEM)',
-                          style: AppTextStyles.playfair(
-                              size: 36,
-                              color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC0392B),
-                              weight: FontWeight.w800),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Low Equity Margin Analysis',
+                                style: AppTextStyles.playfair(
+                                    size: 14,
+                                    color: theme.getTextColor(context),
+                                    weight: FontWeight.w800)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: lemRate > 0
+                                    ? (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2))
+                                    : (isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5)),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                lemRate > 0 ? 'LEM Applies' : 'No LEM',
+                                style: AppTextStyles.dmSans(
+                                    size: 11,
+                                    weight: FontWeight.w800,
+                                color: lemRate > 0
+                                        ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC0392B))
+                                        : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF065F46))),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          lemRate > 0
-                              ? 'Effective rate: ${effRate.toStringAsFixed(2)}% (${_baseRate.toStringAsFixed(2)}% base + ${lemRate.toStringAsFixed(2)}% LEM)'
-                              : 'Your LVR of ${lvr.toStringAsFixed(1)}% is within standard 80% limit — no LEM!',
-                          style: AppTextStyles.dmSans(
-                              size: 11, color: theme.getMutedColor(context)),
-                          textAlign: TextAlign.center,
+                        const SizedBox(height: 14),
+
+                        // Large Added Rate display
+                        Center(
+                          child: Column(
+                            children: [
+                              Text('LEM ADDED TO YOUR RATE',
+                                  style: AppTextStyles.dmSans(
+                                      size: 10,
+                                      color: theme.getMutedColor(context),
+                                      weight: FontWeight.w600)),
+                              const SizedBox(height: 4),
+                              Text(
+                                lemRate > 0
+                                    ? '+${lemRate.toStringAsFixed(2)}%'
+                                    : '0.00% (No LEM)',
+                                style: AppTextStyles.playfair(
+                                    size: 36,
+                                    color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC0392B),
+                                    weight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                lemRate > 0
+                                    ? 'Effective rate: ${effRate.toStringAsFixed(2)}% (${baseRate.toStringAsFixed(2)}% base + ${lemRate.toStringAsFixed(2)}% LEM)'
+                                    : 'Your LVR of ${lvr.toStringAsFixed(1)}% is within standard 80% limit — no LEM!',
+                                style: AppTextStyles.dmSans(
+                                    size: 11, color: theme.getMutedColor(context)),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Stats row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildResultStatBox(
+                                  'Your LVR', '${lvr.toStringAsFixed(1)}%',
+                                  isRed: lvr > 80, isGreen: lvr <= 80),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildResultStatBox(
+                                  'Effective Rate', '${effRate.toStringAsFixed(2)}%',
+                                  isRed: lemRate > 0),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildResultStatBox(
+                                  'Extra Monthly',
+                                  extraMth > 0
+                                      ? '+${CurrencyFormatter.compact(extraMth, symbol: 'NZ\$')}/mo'
+                                      : 'Nil',
+                                  isRed: extraMth > 0),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Payment comparison bar chart
+                        Text('Monthly Payment Comparison',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                weight: FontWeight.w800,
+                                color: theme.getTextColor(context))),
+                        const SizedBox(height: 8),
+                        _buildComparisonBar(
+                            'Standard Monthly Repayment', mthStd, stdPct, theme),
+                        const SizedBox(height: 10),
+                        _buildComparisonBar('With LEM Added Repayment', mthLEM,
+                            lemPct, theme,
+                            barColor: isDark ? const Color(0xFFEF4444) : const Color(0xFFC0392B)),
+                        const Divider(height: 24),
+
+                        // Key facts
+                        _buildGuideItem(
+                            'Estimated loan amount',
+                            CurrencyFormatter.format(loan, currencyCode: 'NZD'),
+                            theme),
+                        const SizedBox(height: 6),
+                        _buildGuideItem(
+                            'Monthly penalty cost',
+                            '${CurrencyFormatter.format(extraMth, currencyCode: 'NZD')}/month',
+                            theme),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Save Analysis Banner
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('💾 Save This Scenario',
+                                  style: AppTextStyles.dmSans(
+                                      size: 12,
+                                      weight: FontWeight.w800,
+                                      color: theme.getTextColor(context))),
+                              const SizedBox(height: 2),
+                              Text('Keep details in your profile',
+                                  style: AppTextStyles.dmSans(
+                                      size: 9.5,
+                                      color: theme.getMutedColor(context))),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => _saveCalculation(
+                              lvr, lemRate, effRate, extraMth, loan),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFC0392B),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                          ),
+                          child: Text('Save ›',
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  color: Colors.white,
+                                  weight: FontWeight.w800)),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Stats row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildResultStatBox(
-                            'Your LVR', '${lvr.toStringAsFixed(1)}%',
-                            isRed: lvr > 80, isGreen: lvr <= 80),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildResultStatBox(
-                            'Effective Rate', '${effRate.toStringAsFixed(2)}%',
-                            isRed: lemRate > 0),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildResultStatBox(
-                            'Extra Monthly',
-                            extraMth > 0
-                                ? '+${CurrencyFormatter.compact(extraMth, symbol: 'NZ\$')}/mo'
-                                : 'Nil',
-                            isRed: extraMth > 0),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-
-                  // Payment comparison bar chart
-                  Text('Monthly Payment Comparison',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          weight: FontWeight.w800,
-                          color: theme.getTextColor(context))),
-                  const SizedBox(height: 10),
-                  _buildComparisonBar('Without LEM', mthStd, stdPct,
-                      const [Color(0xFF1A6B4A), Color(0xFF059669)]),
-                  const SizedBox(height: 8),
-                  _buildComparisonBar('With LEM', mthLEM, lemPct,
-                      const [Color(0xFFC0392B), Color(0xFFE57373)]),
-                  const SizedBox(height: 18),
-
-                  // LEM Rate Bands List
-                  Text('LEM Rate Bands (NZ Banks)',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          weight: FontWeight.w800,
-                          color: theme.getTextColor(context))),
-                  const SizedBox(height: 8),
-                  _buildBandListRow(
-                      '85.01% – 90% LVR',
-                      'Highest LEM tier · Limited lender options',
-                      '+1.50%',
-                      activeBand == 1),
-                  _buildBandListRow(
-                      '82.51% – 85% LVR',
-                      'High LEM tier · Most lenders apply',
-                      '+1.00%',
-                      activeBand == 2),
-                  _buildBandListRow(
-                      '80.01% – 82.5% LVR',
-                      'Standard LEM entry · Rate margin added',
-                      '+0.50%',
-                      activeBand == 3),
-                  _buildBandListRow('≤80% LVR', 'No LEM · Standard rates apply',
-                      '+0.00%', activeBand == 4),
                 ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Save calculation button
-            ElevatedButton.icon(
-              onPressed: () =>
-                  _saveCalculation(lvr, lemRate, effRate, extraMth, loan),
-              icon: const Text('💾', style: TextStyle(fontSize: 14)),
-              label: Text('Save This Calculation',
-                  style: AppTextStyles.dmSans(
-                      size: 13, weight: FontWeight.w800, color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1A6B4A),
-                minimumSize: const Size(double.infinity, 44),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ],
           const SizedBox(height: 18),
 
-          // LEM Explanation Card
-          Text('What is LEM?',
+          // NZ Bank LEM Brackets Info
+          Text('Typical NZ Bank LEM Brackets',
               style: AppTextStyles.playfair(
                   size: 14,
                   color: theme.getTextColor(context),
                   weight: FontWeight.w800)),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [const Color(0xFF7F1D1D).withValues(alpha: 0.3), const Color(0xFF7F1D1D).withValues(alpha: 0.15)]
-                    : const [Color(0xFFFEE2E2), Color(0xFFFEF2F2)],
-              ),
-              border: Border.all(color: isDark ? const Color(0xFF991B1B) : const Color(0xFFFECACA)),
-              borderRadius: BorderRadius.circular(16),
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: theme.getBorderColor(context)),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('🔍 Low Equity Margin Explained',
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC0392B))),
-                const SizedBox(height: 10),
-                _buildExplainRow('What is LEM?', 'Rate premium for >80% LVR'),
-                _buildExplainRow(
-                    'Why charged?', 'Higher default risk to lender'),
-                _buildExplainRow('When removed?', 'When LVR drops below 80%'),
-                _buildExplainRow('ANZ LEM range', '0.50% – 1.50% p.a.'),
-                _buildExplainRow('ASB LEM range', '0.50% – 1.50% p.a.'),
-                _buildExplainRow('Westpac LEM', '0.50% – 1.25% p.a.'),
-                _buildExplainRow('Kiwibank LEM', '0.50% – 1.00% p.a.'),
-                _buildExplainRow(
-                    'Vs LMI (Australia)', 'NZ uses rate margin, not insurance'),
+                _buildBandRow('🟢 Safe Band', '≤ 80% LVR', '0.00% LEM',
+                    'Base rate applies', theme,
+                    active: activeBand == 4),
+                const Divider(height: 16),
+                _buildBandRow('🟡 Band 1', '80.01% – 82.50% LVR', '+0.50% LEM',
+                    'Likely margin added', theme,
+                    active: activeBand == 3),
+                const Divider(height: 16),
+                _buildBandRow('🟠 Band 2', '82.51% – 85.00% LVR', '+1.00% LEM',
+                    'Likely margin added', theme,
+                    active: activeBand == 2),
+                const Divider(height: 16),
+                _buildBandRow('🔴 Band 3', '85.01% – 90.00% LVR', '+1.50% LEM',
+                    'Significant margin added', theme,
+                    active: activeBand == 1),
               ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Informational Tip
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '💡 Tip: Low Equity Margin is usually removed automatically by banks once your LVR drops below 80% due to capital gains or principal repayments. Re-evaluate with your bank annually.',
+              style: AppTextStyles.dmSans(
+                  size: 9.5, color: const Color(0xFF1E3A8A), height: 1.35),
             ),
           ),
         ],
@@ -607,7 +731,7 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
         Text(label.toUpperCase(),
             style: AppTextStyles.dmSans(
                 size: 8,
-                color: Colors.white54,
+                color: Colors.white60,
                 weight: FontWeight.w600,
                 letterSpacing: 0.3)),
         const SizedBox(height: 2),
@@ -618,9 +742,7 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
                 color: isGold ? const Color(0xFFF5D060) : Colors.white)),
         const SizedBox(height: 1),
         Text(subtitle,
-            style: AppTextStyles.dmSans(size: 7.5, color: Colors.white38),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis),
+            style: AppTextStyles.dmSans(size: 7.5, color: Colors.white38)),
       ],
     );
   }
@@ -637,13 +759,14 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
     required String label,
     required double value,
     required ValueChanged<double> onChanged,
+    String? errorText,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+        border: Border.all(color: errorText != null ? Colors.red : Colors.white.withValues(alpha: 0.22)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -654,7 +777,7 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
           const SizedBox(height: 2),
           TextFormField(
             key: ValueKey(value),
-            initialValue: value.toStringAsFixed(value == _baseRate ? 2 : 0),
+            initialValue: value.toString(),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: AppTextStyles.playfair(
                 size: 14, color: Colors.white, weight: FontWeight.w800),
@@ -668,17 +791,20 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
               onChanged(d);
             },
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildResultStatBox(String label, String value,
-      {bool isGreen = false, bool isRed = false}) {
+      {bool isRed = false, bool isGreen = false}) {
     final theme = widget.theme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(11),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
         color: theme.getBgColor(context),
         borderRadius: BorderRadius.circular(12),
@@ -686,160 +812,140 @@ class _NZLowEquityMarginState extends ConsumerState<NZLowEquityMargin> {
       ),
       child: Column(
         children: [
-          Text(label.toUpperCase(),
+          Text(label,
               style: AppTextStyles.dmSans(
-                  size: 8,
+                  size: 8.5,
                   color: theme.getMutedColor(context),
-                  weight: FontWeight.w700),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 3),
+                  weight: FontWeight.w600)),
+          const SizedBox(height: 4),
           Text(
             value,
             style: AppTextStyles.dmSans(
-              size: 13,
+              size: 12,
               weight: FontWeight.w800,
-              color: isGreen
-                  ? (isDark ? const Color(0xFF34D399) : const Color(0xFF059669))
-                  : isRed
-                      ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC0392B))
+              color: isRed
+                  ? const Color(0xFFC0392B)
+                  : isGreen
+                      ? const Color(0xFF1A6B4A)
                       : theme.getTextColor(context),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildComparisonBar(
-      String name, double val, double widthPct, List<Color> colors) {
-    final theme = widget.theme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
+  Widget _buildComparisonBar(String label, double val, double pct, CountryTheme theme,
+      {Color barColor = const Color(0xFF1A6B4A)}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 80,
-          child: Text(name,
-              style: AppTextStyles.dmSans(
-                  size: 10,
-                  color: theme.getMutedColor(context),
-                  weight: FontWeight.w700),
-              textAlign: TextAlign.right),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label,
+                style: AppTextStyles.dmSans(
+                    size: 9.5, color: theme.getMutedColor(context), weight: FontWeight.w600)),
+            Text('${CurrencyFormatter.format(val, currencyCode: 'NZD')}/mo',
+                style: AppTextStyles.dmSans(
+                    size: 11, color: theme.getTextColor(context), weight: FontWeight.w800)),
+          ],
         ),
-        const SizedBox(width: 9),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Stack(
-                children: [
-                  Container(
-                    height: 22,
-                    decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF1F5F2),
-                        borderRadius: BorderRadius.circular(6)),
-                  ),
-                  Container(
-                    width: constraints.maxWidth * widthPct,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: colors),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    alignment: Alignment.centerLeft,
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Text(
-                      CurrencyFormatter.format(val, currencyCode: 'NZD'),
-                      style: AppTextStyles.dmSans(
-                          size: 10,
-                          weight: FontWeight.w800,
-                          color: Colors.white),
-                    ),
-                  ),
-                ],
-              );
-            },
+        const SizedBox(height: 5),
+        Container(
+          height: 10,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: theme.getBgColor(context),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          alignment: Alignment.centerLeft,
+          child: FractionallySizedBox(
+            widthFactor: pct,
+            child: Container(
+              decoration: BoxDecoration(
+                color: barColor,
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBandListRow(
-      String title, String desc, String rate, bool isActive) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 7),
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-      decoration: BoxDecoration(
-        color: isActive
-            ? (isDark ? const Color(0xFF7C2D12) : const Color(0xFFFFF7ED))
-            : widget.theme.getBgColor(context),
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(
-            color: isActive
-                ? (isDark ? const Color(0xFFEA580C) : const Color(0xFFC0392B))
-                : Colors.transparent,
-            width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: isActive
-                  ? (isDark ? const Color(0xFFEA580C) : const Color(0xFFC0392B))
-                  : Colors.grey.withValues(alpha: 0.5),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: AppTextStyles.dmSans(
-                        size: 11.5,
-                        weight: FontWeight.w800,
-                        color: widget.theme.getTextColor(context))),
-                const SizedBox(height: 1),
-                Text(desc,
-                    style: AppTextStyles.dmSans(
-                        size: 9, color: widget.theme.getMutedColor(context))),
-              ],
-            ),
-          ),
-          Text(rate,
-              style: AppTextStyles.dmSans(
-                  size: 12,
-                  weight: FontWeight.w800,
-                  color: widget.theme.getTextColor(context))),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExplainRow(String label, String value) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0x1EC0392B))),
-      ),
+  Widget _buildGuideItem(String label, String value, CountryTheme theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
               style: AppTextStyles.dmSans(
-                  size: 11, color: isDark ? Colors.white70 : const Color(0xFF922B21))),
+                  size: 10, color: theme.getMutedColor(context))),
           Text(value,
               style: AppTextStyles.dmSans(
-                  size: 11.5,
-                  weight: FontWeight.w800,
-                  color: isDark ? Colors.white : const Color(0xFF922B21))),
+                  size: 10.5, color: theme.getTextColor(context), weight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBandRow(
+      String label, String band, String margin, String status, CountryTheme theme,
+      {bool active = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      decoration: BoxDecoration(
+        color: active
+            ? const Color(0xFFFEF3C7)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: active ? const Color(0xFF92400E) : theme.getTextColor(context),
+                ),
+              ),
+              Text(
+                status,
+                style: AppTextStyles.dmSans(
+                  size: 8.5,
+                  color: active ? const Color(0xFFB45309) : theme.getMutedColor(context),
+                ),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                band,
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: active ? const Color(0xFF92400E) : theme.getTextColor(context),
+                ),
+              ),
+              Text(
+                margin,
+                style: AppTextStyles.dmSans(
+                  size: 9.5,
+                  weight: FontWeight.bold,
+                  color: active ? const Color(0xFFC0392B) : const Color(0xFF1A6B4A),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

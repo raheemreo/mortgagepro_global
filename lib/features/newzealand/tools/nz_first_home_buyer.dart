@@ -25,7 +25,10 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
   String _region = 'christchurch'; // auckland | wellington | christchurch | hamilton | tauranga | other
   String _propType = 'new'; // new | existing
 
-  bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -44,16 +47,73 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
     'other': {'new': 650000, 'existing': 550000},
   };
 
+  void _reset() {
+    setState(() {
+      _incomeController.text = '110000';
+      _priceController.text = '580000';
+      _buyers = 2;
+      _ksYears = 5;
+      _region = 'christchurch';
+      _propType = 'new';
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final double income = double.tryParse(_incomeController.text) ?? 0.0;
+    final double price = double.tryParse(_priceController.text) ?? 0.0;
+
+    if (income <= 0) {
+      errors['income'] = 'Enter valid annual income';
+    }
+    if (price <= 0) {
+      errors['price'] = 'Enter valid purchase price';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['buyers'] = _buyers;
+      _calcSnapshot['ksYears'] = _ksYears;
+      _calcSnapshot['region'] = _region;
+      _calcSnapshot['propType'] = _propType;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation() async {
-    final double income = double.tryParse(_incomeController.text) ?? 110000;
-    final double price = double.tryParse(_priceController.text) ?? 580000;
+    final snapIncome = _calcSnapshot['income'] ?? (double.tryParse(_incomeController.text) ?? 110000.0);
+    final snapPrice = _calcSnapshot['price'] ?? (double.tryParse(_priceController.text) ?? 580000.0);
+    final snapBuyers = _calcSnapshot['buyers'] ?? _buyers;
+    final snapKsYears = _calcSnapshot['ksYears'] ?? _ksYears;
+    final snapRegion = _calcSnapshot['region'] ?? _region;
+    final snapPropType = _calcSnapshot['propType'] ?? _propType;
 
-    final incomeCap = _buyers >= 2 ? 150000.0 : 95000.0;
-    final priceCap = _caps[_region]?[_propType] ?? 550000.0;
+    final incomeCap = snapBuyers >= 2 ? 150000.0 : 95000.0;
+    final priceCap = _caps[snapRegion]?[snapPropType] ?? 550000.0;
 
-    final ksOk = _ksYears >= 3;
-    final incOk = income <= incomeCap;
-    final priceOk = price <= priceCap;
+    final ksOk = snapKsYears >= 3;
+    final incOk = snapIncome <= incomeCap;
+    final priceOk = snapPrice <= priceCap;
     final all3 = ksOk && incOk && priceOk;
 
     final labelCtrl = TextEditingController(text: 'NZ FHB Eligibility');
@@ -71,7 +131,7 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Income: ${CurrencyFormatter.compact(income, symbol: 'NZ\$')} · Price: ${CurrencyFormatter.compact(price, symbol: 'NZ\$')} · ${all3 ? "Eligible" : "Not eligible"}',
+              'Income: ${CurrencyFormatter.compact(snapIncome, symbol: 'NZ\$')} · Price: ${CurrencyFormatter.compact(snapPrice, symbol: 'NZ\$')} · ${all3 ? "Eligible" : "Not eligible"}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -124,11 +184,11 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
         country: 'New Zealand',
         calcType: 'First Home Buyer',
         inputs: {
-          'income': income,
-          'buyers': _buyers.toDouble(),
-          'ksYears': _ksYears.toDouble(),
-          'price': price,
-          'propType': _propType == 'new' ? 1.0 : 0.0,
+          'income': snapIncome,
+          'buyers': snapBuyers.toDouble(),
+          'ksYears': snapKsYears.toDouble(),
+          'price': snapPrice,
+          'propType': snapPropType == 'new' ? 1.0 : 0.0,
         },
         results: {
           'eligible': all3 ? 1.0 : 0.0,
@@ -159,15 +219,22 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double income = double.tryParse(_incomeController.text) ?? 110000;
-    final double price = double.tryParse(_priceController.text) ?? 580000;
+    // Snapshot variables if results are shown, otherwise live inputs
+    final double rawIncome = double.tryParse(_incomeController.text) ?? 110000.0;
+    final double rawPrice = double.tryParse(_priceController.text) ?? 580000.0;
+    final int buyers = _showResults ? (_calcSnapshot['buyers'] ?? _buyers) : _buyers;
+    final int ksYears = _showResults ? (_calcSnapshot['ksYears'] ?? _ksYears) : _ksYears;
+    final String region = _showResults ? (_calcSnapshot['region'] ?? _region) : _region;
+    final String propType = _showResults ? (_calcSnapshot['propType'] ?? _propType) : _propType;
+    final double income = _showResults ? (_calcSnapshot['income'] ?? rawIncome) : rawIncome;
+    final double price = _showResults ? (_calcSnapshot['price'] ?? rawPrice) : rawPrice;
 
-    final incomeCap = _buyers >= 2 ? 150000.0 : 95000.0;
-    final priceCap = _caps[_region]?[_propType] ?? 550000.0;
-    final double grantAmt = _propType == 'new' ? 10000.0 : 5000.0;
-    final double jointGrant = _buyers >= 2 ? grantAmt * 2 : grantAmt;
+    final incomeCap = buyers >= 2 ? 150000.0 : 95000.0;
+    final priceCap = _caps[region]?[propType] ?? 550000.0;
+    final double grantAmt = propType == 'new' ? 10000.0 : 5000.0;
+    final double jointGrant = buyers >= 2 ? grantAmt * 2 : grantAmt;
 
-    final ksOk = _ksYears >= 3;
+    final ksOk = ksYears >= 3;
     final incOk = income <= incomeCap;
     final priceOk = price <= priceCap;
     final all3 = ksOk && incOk && priceOk;
@@ -176,7 +243,7 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
     int score = 0;
     if (ksOk) {
       score += 35;
-    } else if (_ksYears > 0) {
+    } else if (ksYears > 0) {
       score += 15;
     }
     if (incOk) {
@@ -202,562 +269,53 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
             ? const Color(0xFFF5D060)
             : const Color(0xFFEF4444);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title Banner matching HTML
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Eligibility Score',
-              style: AppTextStyles.playfair(
-                size: 15,
-                weight: FontWeight.w800,
-                color: theme.getTextColor(context),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                border: Border.all(color: const Color(0xFF6EE7B7)),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '2025 Kāinga Ora',
-                style: AppTextStyles.dmSans(
-                  size: 9,
-                  color: const Color(0xFF065F46),
-                  weight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
+    final isDirty = _showResults && (
+      (double.tryParse(_incomeController.text) ?? 0.0) != (_calcSnapshot['income'] ?? 0.0) ||
+      (double.tryParse(_priceController.text) ?? 0.0) != (_calcSnapshot['price'] ?? 0.0) ||
+      _buyers != (_calcSnapshot['buyers'] ?? 0) ||
+      _ksYears != (_calcSnapshot['ksYears'] ?? 0) ||
+      _region != (_calcSnapshot['region'] ?? '') ||
+      _propType != (_calcSnapshot['propType'] ?? '')
+    );
 
-        // Score Hero Box
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'FIRST HOME BUYER ELIGIBILITY · KĀINGA ORA 2025',
-                  style: AppTextStyles.dmSans(
-                    size: 8,
-                    color: Colors.white70,
-                    weight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Circular score chart
-              SizedBox(
-                height: 90,
-                width: 90,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      height: 80,
-                      width: 80,
-                      child: CircularProgressIndicator(
-                        value: score / 100,
-                        strokeWidth: 8,
-                        backgroundColor: Colors.white.withValues(alpha: 0.1),
-                        valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                      ),
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '$score',
-                          style: AppTextStyles.playfair(
-                            size: 24,
-                            weight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          '/ 100',
-                          style: AppTextStyles.dmSans(
-                            size: 8,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                verdictText,
-                style: AppTextStyles.playfair(
-                  size: 14,
-                  weight: FontWeight.w800,
-                  color: statusColor,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildScoreBox(
-                      'KiwiSaver',
-                      ksOk ? '✓ $_ksYears+ yrs' : '✗ < 3 yrs',
-                      ksOk ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildScoreBox(
-                      'Income',
-                      incOk ? '✓ Within' : '✗ Exceeds',
-                      incOk ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildScoreBox(
-                      'Price Cap',
-                      priceOk ? '✓ Within' : '✗ Exceeds',
-                      priceOk ? const Color(0xFF6EE7B7) : const Color(0xFFF5D060),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Inputs Card
-        Text(
-          'Your Details',
-          style: AppTextStyles.playfair(
-            size: 12,
-            weight: FontWeight.w800,
-            color: theme.getTextColor(context),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Text('🏡 ', style: TextStyle(fontSize: 16)),
-                  Text(
-                    'Tell Us About You',
-                    style: AppTextStyles.playfair(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('ANNUAL INCOME',
-                            style: AppTextStyles.dmSans(
-                                size: 8,
-                                weight: FontWeight.w800,
-                                color: theme.getMutedColor(context))),
-                        const SizedBox(height: 6),
-                        _buildInputBox(_incomeController),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('BUYERS',
-                            style: AppTextStyles.dmSans(
-                                size: 8,
-                                weight: FontWeight.w800,
-                                color: theme.getMutedColor(context))),
-                        const SizedBox(height: 6),
-                        Container(
-                          height: 44,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: theme.getBgColor(context),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<int>(
-                              value: _buyers,
-                              isExpanded: true,
-                              dropdownColor: theme.getCardColor(context),
-                              items: const [
-                                DropdownMenuItem(
-                                    value: 1, child: Text('Single')),
-                                DropdownMenuItem(
-                                    value: 2, child: Text('Couple / 2+')),
-                              ],
-                              onChanged: (val) =>
-                                  setState(() => _buyers = val ?? 2),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('KIWISAVER MEMBERSHIP',
-                      style: AppTextStyles.dmSans(
-                          size: 8,
-                          weight: FontWeight.w800,
-                          color: theme.getMutedColor(context))),
-                  const SizedBox(height: 6),
-                  Container(
-                    height: 44,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: theme.getBgColor(context),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<int>(
-                        value: _ksYears,
-                        isExpanded: true,
-                        dropdownColor: theme.getCardColor(context),
-                        items: const [
-                          DropdownMenuItem(
-                              value: 0, child: Text('Less than 3 years')),
-                          DropdownMenuItem(
-                              value: 3, child: Text('3–4 years')),
-                          DropdownMenuItem(value: 5, child: Text('5+ years')),
-                        ],
-                        onChanged: (val) =>
-                            setState(() => _ksYears = val ?? 5),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('PROPERTY REGION',
-                      style: AppTextStyles.dmSans(
-                          size: 8,
-                          weight: FontWeight.w800,
-                          color: theme.getMutedColor(context))),
-                  const SizedBox(height: 6),
-                  Container(
-                    height: 44,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: theme.getBgColor(context),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _region,
-                        isExpanded: true,
-                        dropdownColor: theme.getCardColor(context),
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'auckland', child: Text('Auckland')),
-                          DropdownMenuItem(
-                              value: 'wellington', child: Text('Wellington')),
-                          DropdownMenuItem(
-                              value: 'christchurch', child: Text('Christchurch')),
-                          DropdownMenuItem(
-                              value: 'hamilton', child: Text('Hamilton')),
-                          DropdownMenuItem(
-                              value: 'tauranga', child: Text('Tauranga')),
-                          DropdownMenuItem(
-                              value: 'other', child: Text('Other NZ')),
-                        ],
-                        onChanged: (val) =>
-                            setState(() => _region = val ?? 'other'),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('PROPERTY TYPE',
-                      style: AppTextStyles.dmSans(
-                          size: 8,
-                          weight: FontWeight.w800,
-                          color: theme.getMutedColor(context))),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _propType = 'new'),
-                          child: Container(
-                            height: 44,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: _propType == 'new'
-                                  ? const Color(0xFFFEF2F2)
-                                  : theme.getBgColor(context),
-                              border: Border.all(
-                                color: _propType == 'new'
-                                    ? const Color(0xFFC0392B)
-                                    : theme.getBorderColor(context),
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('🏗️ New Build',
-                                    style: AppTextStyles.dmSans(
-                                        size: 11,
-                                        weight: FontWeight.bold,
-                                        color: _propType == 'new'
-                                            ? const Color(0xFFC0392B)
-                                            : theme.getTextColor(context))),
-                                Text('Off-plan / new',
-                                    style: AppTextStyles.dmSans(
-                                        size: 8,
-                                        color: _propType == 'new'
-                                            ? const Color(0xFF991B1B)
-                                            : theme.getMutedColor(context))),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _propType = 'existing'),
-                          child: Container(
-                            height: 44,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: _propType == 'existing'
-                                  ? const Color(0xFFFEF2F2)
-                                  : theme.getBgColor(context),
-                              border: Border.all(
-                                color: _propType == 'existing'
-                                    ? const Color(0xFFC0392B)
-                                    : theme.getBorderColor(context),
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('🏠 Existing',
-                                    style: AppTextStyles.dmSans(
-                                        size: 11,
-                                        weight: FontWeight.bold,
-                                        color: _propType == 'existing'
-                                            ? const Color(0xFFC0392B)
-                                            : theme.getTextColor(context))),
-                                Text('Established home',
-                                    style: AppTextStyles.dmSans(
-                                        size: 8,
-                                        color: _propType == 'existing'
-                                            ? const Color(0xFF991B1B)
-                                            : theme.getMutedColor(context))),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('PURCHASE PRICE',
-                      style: AppTextStyles.dmSans(
-                          size: 8,
-                          weight: FontWeight.w800,
-                          color: theme.getMutedColor(context))),
-                  const SizedBox(height: 6),
-                  _buildInputBox(_priceController),
-                ],
-              ),
-              const SizedBox(height: 14),
-              ElevatedButton(
-                onPressed: () => setState(() => _showResults = true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFC0392B),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 44),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                ),
-                child: Text('🏡 Check My Eligibility',
-                    style: AppTextStyles.playfair(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: Colors.white)),
-              ),
-            ],
-          ),
-        ),
-
-        // Eligibility Checklist
-        if (_showResults) ...[
-          const SizedBox(height: 20),
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title Banner matching HTML
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Eligibility Criteria',
+                'Eligibility Score',
                 style: AppTextStyles.playfair(
-                  size: 12,
+                  size: 15,
                   weight: FontWeight.w800,
                   color: theme.getTextColor(context),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
-                  border: Border.all(color: const Color(0xFFFCA5A5)),
+                  color: const Color(0xFFECFDF5),
+                  border: Border.all(color: const Color(0xFF6EE7B7)),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Must Pass All',
+                  '2025 Kāinga Ora',
                   style: AppTextStyles.dmSans(
-                    size: 8,
-                    color: const Color(0xFFC0392B),
+                    size: 9,
+                    color: const Color(0xFF065F46),
                     weight: FontWeight.bold,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '📋 Checklist',
-                  style: AppTextStyles.playfair(
-                    size: 13,
-                    weight: FontWeight.w800,
-                    color: theme.getTextColor(context),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildChecklistItem(
-                  '🥝',
-                  'KiwiSaver Membership',
-                  'Must be member for 3+ years. Yours: ${ksOk ? "$_ksYears+ yrs" : "Less than 3 yrs"}',
-                  ksOk ? 'pass' : 'fail',
-                  ksOk ? 'Pass' : 'Fail',
-                ),
-                _buildChecklistItem(
-                  '💰',
-                  'Income Threshold',
-                  '${_buyers >= 2 ? "Joint" : "Single"} cap: ${CurrencyFormatter.compact(incomeCap, symbol: 'NZ\$')}. Yours: ${CurrencyFormatter.compact(income, symbol: 'NZ\$')}',
-                  incOk ? 'pass' : 'fail',
-                  incOk ? 'Pass' : 'Exceeds',
-                ),
-                _buildChecklistItem(
-                  '🏷️',
-                  'Price Cap Compliance',
-                  '${_region.substring(0, 1).toUpperCase() + _region.substring(1)} $_propType cap: ${CurrencyFormatter.compact(priceCap, symbol: 'NZ\$')}. Yours: ${CurrencyFormatter.compact(price, symbol: 'NZ\$')}',
-                  priceOk ? 'pass' : 'fail',
-                  priceOk ? 'Pass' : 'Exceeds',
-                ),
-                _buildChecklistItem(
-                  '🏠',
-                  'First-Home Requirement',
-                  'Must not previously own property in NZ or abroad',
-                  'warn',
-                  'Confirm',
-                ),
-                _buildChecklistItem(
-                  '🌏',
-                  'NZ Citizenship / Residency',
-                  'NZ citizen, permanent resident or resident visa holder',
-                  'warn',
-                  'Confirm',
-                ),
-                _buildChecklistItem(
-                  '🏗️',
-                  'Intend to Live In',
-                  'Must be your principal place of residence for at least 6 months',
-                  'warn',
-                  'Confirm',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
 
-          // Available Grants
-          Text(
-            'Available Grants & Assistance',
-            style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
+          // Inputs Card
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
@@ -768,127 +326,682 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '💰 What You Could Access',
-                  style: AppTextStyles.playfair(
-                    size: 13,
-                    weight: FontWeight.w800,
-                    color: theme.getTextColor(context),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildGrantItem(
-                  all3 ? '🎁' : '⏸️',
-                  'KiwiSaver HomeStart Grant',
-                  '${_propType == 'new' ? 'New build' : 'Existing'} · ${_buyers >= 2 ? 'Per applicant' : 'Single buyer'}',
-                  all3 ? CurrencyFormatter.compact(grantAmt, symbol: 'NZ\$') : 'Not eligible',
-                  all3 ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
-                ),
-                if (_buyers >= 2)
-                  _buildGrantItem(
-                    all3 ? '👫' : '⏸️',
-                    'Joint Grant (Both Buyers)',
-                    'Both qualify as FHB',
-                    all3 ? CurrencyFormatter.compact(jointGrant, symbol: 'NZ\$') : 'Not eligible',
-                    all3 ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
-                  ),
-                _buildGrantItem(
-                  '🥝',
-                  'KiwiSaver Withdrawal',
-                  'All contributions + returns (minus \$1,000)',
-                  ksOk ? 'Eligible' : 'Not yet',
-                  const Color(0xFFF0FDFA),
-                ),
-                _buildGrantItem(
-                  '🏠',
-                  'First Home Partner',
-                  'Kāinga Ora co-ownership scheme',
-                  'Check Eligibility',
-                  const Color(0xFFEFF6FF),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Tell Us About You',
+                      style: AppTextStyles.playfair(
+                        size: 13,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _reset,
+                      child: Text(
+                        'Reset ↺',
+                        style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: const Color(0xFFC0392B),
+                          weight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 14),
-                ElevatedButton(
-                  onPressed: _saveCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A6B4A),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('💾 ', style: TextStyle(fontSize: 14)),
-                      Text('Save Calculation Details',
-                          style: AppTextStyles.playfair(
-                              size: 12,
-                              weight: FontWeight.w800,
-                              color: Colors.white)),
-                    ],
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('ANNUAL INCOME',
+                              style: AppTextStyles.dmSans(
+                                  size: 8,
+                                  weight: FontWeight.w800,
+                                  color: theme.getMutedColor(context))),
+                          const SizedBox(height: 6),
+                          _buildInputBox(_incomeController, errorText: _errors['income']),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('BUYERS',
+                              style: AppTextStyles.dmSans(
+                                  size: 8,
+                                  weight: FontWeight.w800,
+                                  color: theme.getMutedColor(context))),
+                          const SizedBox(height: 6),
+                          Container(
+                            height: 44,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: theme.getBgColor(context),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: theme.getBorderColor(context)),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<int>(
+                                value: _buyers,
+                                isExpanded: true,
+                                dropdownColor: theme.getCardColor(context),
+                                items: const [
+                                  DropdownMenuItem(
+                                      value: 1, child: Text('Single')),
+                                  DropdownMenuItem(
+                                      value: 2, child: Text('Couple / 2+')),
+                                ],
+                                onChanged: (val) =>
+                                    setState(() => _buyers = val ?? 2),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
-        const SizedBox(height: 20),
-
-        // Info Banner
-        Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFEF2F2), Color(0xFFFECACA)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: const Color(0xFFFCA5A5)),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '⚠️ 2025 FHB Price Caps (Kāinga Ora)',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF991B1B),
+                const SizedBox(height: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('KIWISAVER MEMBERSHIP',
+                        style: AppTextStyles.dmSans(
+                            size: 8,
+                            weight: FontWeight.w800,
+                            color: theme.getMutedColor(context))),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: theme.getBgColor(context),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.getBorderColor(context)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _ksYears,
+                          isExpanded: true,
+                          dropdownColor: theme.getCardColor(context),
+                          items: const [
+                            DropdownMenuItem(
+                                value: 0, child: Text('Less than 3 years')),
+                            DropdownMenuItem(
+                                value: 3, child: Text('3–4 years')),
+                            DropdownMenuItem(value: 5, child: Text('5+ years')),
+                          ],
+                          onChanged: (val) =>
+                              setState(() => _ksYears = val ?? 5),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 6),
-              ...[
-                'Auckland new build: up to \$875,000',
-                'Auckland existing: up to \$650,000',
-                'Wellington new build: up to \$750,000',
-                'Wellington existing: up to \$650,000',
-                'Christchurch new build: up to \$650,000',
-                'Single income cap: \$95,000 gross; joint: \$150,000'
-              ].map((text) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('PROPERTY REGION',
+                        style: AppTextStyles.dmSans(
+                            size: 8,
+                            weight: FontWeight.w800,
+                            color: theme.getMutedColor(context))),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: theme.getBgColor(context),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.getBorderColor(context)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _region,
+                          isExpanded: true,
+                          dropdownColor: theme.getCardColor(context),
+                          items: const [
+                            DropdownMenuItem(
+                                value: 'auckland', child: Text('Auckland')),
+                            DropdownMenuItem(
+                                value: 'wellington', child: Text('Wellington')),
+                            DropdownMenuItem(
+                                value: 'christchurch', child: Text('Christchurch')),
+                            DropdownMenuItem(
+                                value: 'hamilton', child: Text('Hamilton')),
+                            DropdownMenuItem(
+                                value: 'tauranga', child: Text('Tauranga')),
+                            DropdownMenuItem(
+                                value: 'other', child: Text('Other NZ')),
+                          ],
+                          onChanged: (val) =>
+                              setState(() => _region = val ?? 'other'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('PROPERTY TYPE',
+                        style: AppTextStyles.dmSans(
+                            size: 8,
+                            weight: FontWeight.w800,
+                            color: theme.getMutedColor(context))),
+                    const SizedBox(height: 6),
+                    Row(
                       children: [
-                        const Text('• ',
-                            style: TextStyle(
-                                fontSize: 9, color: Color(0xFFB91C1C))),
                         Expanded(
-                          child: Text(
-                            text,
-                            style: AppTextStyles.dmSans(
-                              size: 9.5,
-                              color: const Color(0xFFB91C1C),
+                          child: GestureDetector(
+                            onTap: () => setState(() => _propType = 'new'),
+                            child: Container(
+                              height: 44,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: _propType == 'new'
+                                    ? const Color(0xFFFEF2F2)
+                                    : theme.getBgColor(context),
+                                border: Border.all(
+                                  color: _propType == 'new'
+                                      ? const Color(0xFFC0392B)
+                                      : theme.getBorderColor(context),
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text('🏗️ New Build',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11,
+                                          weight: FontWeight.bold,
+                                          color: _propType == 'new'
+                                              ? const Color(0xFFC0392B)
+                                              : theme.getTextColor(context))),
+                                  Text('Off-plan / new',
+                                      style: AppTextStyles.dmSans(
+                                          size: 8,
+                                          color: _propType == 'new'
+                                              ? const Color(0xFF991B1B)
+                                              : theme.getMutedColor(context))),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _propType = 'existing'),
+                            child: Container(
+                              height: 44,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: _propType == 'existing'
+                                    ? const Color(0xFFFEF2F2)
+                                    : theme.getBgColor(context),
+                                border: Border.all(
+                                  color: _propType == 'existing'
+                                      ? const Color(0xFFC0392B)
+                                      : theme.getBorderColor(context),
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text('🏠 Existing',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11,
+                                          weight: FontWeight.bold,
+                                          color: _propType == 'existing'
+                                              ? const Color(0xFFC0392B)
+                                              : theme.getTextColor(context))),
+                                  Text('Established home',
+                                      style: AppTextStyles.dmSans(
+                                          size: 8,
+                                          color: _propType == 'existing'
+                                              ? const Color(0xFF991B1B)
+                                              : theme.getMutedColor(context))),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                  )),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('PURCHASE PRICE',
+                        style: AppTextStyles.dmSans(
+                            size: 8,
+                            weight: FontWeight.w800,
+                            color: theme.getMutedColor(context))),
+                    const SizedBox(height: 6),
+                    _buildInputBox(_priceController, errorText: _errors['price']),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                ElevatedButton(
+                  onPressed: _calculate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC0392B),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 44),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                  ),
+                  child: Text('🏡 Check My Eligibility',
+                      style: AppTextStyles.playfair(
+                          size: 13,
+                          weight: FontWeight.w800,
+                          color: Colors.white)),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+
+          if (_showResults) ...[
+            if (isDirty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Text(
+                        'Inputs have changed. Tap Check My Eligibility to refresh results.',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            Container(
+              key: _resultsKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 16),
+                  // Score Hero Box
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'FIRST HOME BUYER ELIGIBILITY · KĀINGA ORA 2025',
+                            style: AppTextStyles.dmSans(
+                              size: 8,
+                              color: Colors.white70,
+                              weight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Circular score chart
+                        SizedBox(
+                          height: 90,
+                          width: 90,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              SizedBox(
+                                height: 80,
+                                width: 80,
+                                child: CircularProgressIndicator(
+                                  value: score / 100,
+                                  strokeWidth: 8,
+                                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                                ),
+                              ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '$score',
+                                    style: AppTextStyles.playfair(
+                                      size: 24,
+                                      weight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    '/ 100',
+                                    style: AppTextStyles.dmSans(
+                                      size: 8,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          verdictText,
+                          style: AppTextStyles.playfair(
+                            size: 14,
+                            weight: FontWeight.w800,
+                            color: statusColor,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildScoreBox(
+                                'KiwiSaver',
+                                ksOk ? '✓ $ksYears+ yrs' : '✗ < 3 yrs',
+                                ksOk ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildScoreBox(
+                                'Income',
+                                incOk ? '✓ Within' : '✗ Exceeds',
+                                incOk ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildScoreBox(
+                                'Price Cap',
+                                priceOk ? '✓ Within' : '✗ Exceeds',
+                                priceOk ? const Color(0xFF6EE7B7) : const Color(0xFFF5D060),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Eligibility Criteria',
+                        style: AppTextStyles.playfair(
+                          size: 12,
+                          weight: FontWeight.w800,
+                          color: theme.getTextColor(context),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          border: Border.all(color: const Color(0xFFFCA5A5)),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Must Pass All',
+                          style: AppTextStyles.dmSans(
+                            size: 8,
+                            color: const Color(0xFFC0392B),
+                            weight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '📋 Checklist',
+                          style: AppTextStyles.playfair(
+                            size: 13,
+                            weight: FontWeight.w800,
+                            color: theme.getTextColor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildChecklistItem(
+                          '🥝',
+                          'KiwiSaver Membership',
+                          'Must be member for 3+ years. Yours: ${ksOk ? "$ksYears+ yrs" : "Less than 3 yrs"}',
+                          ksOk ? 'pass' : 'fail',
+                          ksOk ? 'Pass' : 'Fail',
+                        ),
+                        _buildChecklistItem(
+                          '💰',
+                          'Income Threshold',
+                          '${buyers >= 2 ? "Joint" : "Single"} cap: ${CurrencyFormatter.compact(incomeCap, symbol: 'NZ\$')}. Yours: ${CurrencyFormatter.compact(income, symbol: 'NZ\$')}',
+                          incOk ? 'pass' : 'fail',
+                          incOk ? 'Pass' : 'Exceeds',
+                        ),
+                        _buildChecklistItem(
+                          '🏷️',
+                          'Price Cap Compliance',
+                          '${region.substring(0, 1).toUpperCase() + region.substring(1)} $propType cap: ${CurrencyFormatter.compact(priceCap, symbol: 'NZ\$')}. Yours: ${CurrencyFormatter.compact(price, symbol: 'NZ\$')}',
+                          priceOk ? 'pass' : 'fail',
+                          priceOk ? 'Pass' : 'Exceeds',
+                        ),
+                        _buildChecklistItem(
+                          '🏠',
+                          'First-Home Requirement',
+                          'Must not previously own property in NZ or abroad',
+                          'warn',
+                          'Confirm',
+                        ),
+                        _buildChecklistItem(
+                          '🌏',
+                          'NZ Citizenship / Residency',
+                          'NZ citizen, permanent resident or resident visa holder',
+                          'warn',
+                          'Confirm',
+                        ),
+                        _buildChecklistItem(
+                          '🏗️',
+                          'Intend to Live In',
+                          'Must be your principal place of residence for at least 6 months',
+                          'warn',
+                          'Confirm',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Available Grants
+                  Text(
+                    'Available Grants & Assistance',
+                    style: AppTextStyles.playfair(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '💰 What You Could Access',
+                          style: AppTextStyles.playfair(
+                            size: 13,
+                            weight: FontWeight.w800,
+                            color: theme.getTextColor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildGrantItem(
+                          all3 ? '🎁' : '⏸️',
+                          'KiwiSaver HomeStart Grant',
+                          '${propType == 'new' ? 'New build' : 'Existing'} · ${buyers >= 2 ? 'Per applicant' : 'Single buyer'}',
+                          all3 ? CurrencyFormatter.compact(grantAmt, symbol: 'NZ\$') : 'Not eligible',
+                          all3 ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
+                        ),
+                        if (buyers >= 2)
+                          _buildGrantItem(
+                            all3 ? '👫' : '⏸️',
+                            'Joint Grant (Both Buyers)',
+                            'Both qualify as FHB',
+                            all3 ? CurrencyFormatter.compact(jointGrant, symbol: 'NZ\$') : 'Not eligible',
+                            all3 ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
+                          ),
+                        _buildGrantItem(
+                          '🥝',
+                          'KiwiSaver Withdrawal',
+                          'All contributions + returns (minus \$1,000)',
+                          ksOk ? 'Eligible' : 'Not yet',
+                          const Color(0xFFF0FDFA),
+                        ),
+                        _buildGrantItem(
+                          '🏠',
+                          'First Home Partner',
+                          'Kāinga Ora co-ownership scheme',
+                          'Check Eligibility',
+                          const Color(0xFFEFF6FF),
+                        ),
+                        const SizedBox(height: 14),
+                        ElevatedButton(
+                          onPressed: _saveCalculation,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A6B4A),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 44),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('💾 ', style: TextStyle(fontSize: 14)),
+                              Text('Save Calculation Details',
+                                  style: AppTextStyles.playfair(
+                                      size: 12,
+                                      weight: FontWeight.w800,
+                                      color: Colors.white)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+
+          // Info Banner
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFEF2F2), Color(0xFFFECACA)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: const Color(0xFFFCA5A5)),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '⚠️ 2025 FHB Price Caps (Kāinga Ora)',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF991B1B),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ...[
+                  'Auckland new build: up to \$875,000',
+                  'Auckland existing: up to \$650,000',
+                  'Wellington new build: up to \$750,000',
+                  'Wellington existing: up to \$650,000',
+                  'Christchurch new build: up to \$650,000',
+                  'Single income cap: \$95,000 gross; joint: \$150,000'
+                ].map((text) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('• ',
+                              style: TextStyle(
+                                  fontSize: 9, color: Color(0xFFB91C1C))),
+                          Expanded(
+                            child: Text(
+                              text,
+                              style: AppTextStyles.dmSans(
+                                size: 9.5,
+                                color: const Color(0xFFB91C1C),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -925,24 +1038,42 @@ class _NZFirstHomeBuyerState extends ConsumerState<NZFirstHomeBuyer> {
     );
   }
 
-  Widget _buildInputBox(TextEditingController controller) {
+  Widget _buildInputBox(TextEditingController controller, {String? errorText}) {
     final theme = widget.theme;
     return Container(
-      height: 44,
+      height: errorText != null ? 58 : 44,
       decoration: BoxDecoration(
         color: theme.getBgColor(context),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: errorText != null ? Colors.red : theme.getBorderColor(context)),
       ),
-      child: TextField(
-        controller: controller,
-        keyboardType: TextInputType.number,
-        style: AppTextStyles.dmSans(
-            size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: InputBorder.none,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                style: AppTextStyles.dmSans(
+                    size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            if (errorText != null)
+              Text(
+                errorText,
+                style: AppTextStyles.dmSans(size: 7, color: Colors.red, weight: FontWeight.bold),
+              ),
+          ],
         ),
-        onChanged: (_) => setState(() {}),
       ),
     );
   }

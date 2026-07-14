@@ -18,47 +18,131 @@ class NZDtiCalculator extends ConsumerStatefulWidget {
 }
 
 class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
-  double _borrower1Income = 95000;
-  double _borrower2Income = 70000;
+  double _borrower1Income = 110000;
+  double _borrower2Income = 90000;
   double _otherIncome = 0;
-  String _borrowerType = 'owner'; // 'owner' or 'investor'
-  double _newLoanAmt = 680000;
+  String _borrowerType = 'owner'; // 'owner', 'investor'
 
+  // Debts
   double _existingMortgage = 0;
-  double _carLoan = 18000;
-  double _creditCardLimits = 12000;
+  double _carLoan = 12000;
+  double _creditCardLimits = 15000;
   double _studentLoan = 0;
   double _otherDebts = 0;
 
+  double _newLoanAmt = 850000;
+
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   void _reset() {
     setState(() {
-      _borrower1Income = 95000;
-      _borrower2Income = 70000;
+      _borrower1Income = 110000;
+      _borrower2Income = 90000;
       _otherIncome = 0;
       _borrowerType = 'owner';
-      _newLoanAmt = 680000;
       _existingMortgage = 0;
-      _carLoan = 18000;
-      _creditCardLimits = 12000;
+      _carLoan = 12000;
+      _creditCardLimits = 15000;
       _studentLoan = 0;
       _otherDebts = 0;
+      _newLoanAmt = 850000;
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final totalIncome = _borrower1Income + _borrower2Income + _otherIncome;
+
+    if (_borrower1Income < 0) errors['b1'] = 'Income cannot be negative';
+    if (_borrower2Income < 0) errors['b2'] = 'Income cannot be negative';
+    if (_otherIncome < 0) errors['otherInc'] = 'Income cannot be negative';
+    if (totalIncome <= 0) {
+      errors['totalIncome'] = 'Combined gross annual income must be greater than 0';
+    }
+
+    if (_existingMortgage < 0) errors['existingMortgage'] = 'Cannot be negative';
+    if (_carLoan < 0) errors['carLoan'] = 'Cannot be negative';
+    if (_creditCardLimits < 0) errors['creditCardLimits'] = 'Cannot be negative';
+    if (_studentLoan < 0) errors['studentLoan'] = 'Cannot be negative';
+    if (_otherDebts < 0) errors['otherDebts'] = 'Cannot be negative';
+
+    if (_newLoanAmt <= 0) {
+      errors['newLoanAmt'] = 'Enter valid proposed new loan amount';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['borrower1Income'] = _borrower1Income;
+      _calcSnapshot['borrower2Income'] = _borrower2Income;
+      _calcSnapshot['otherIncome'] = _otherIncome;
+      _calcSnapshot['borrowerType'] = _borrowerType;
+      _calcSnapshot['existingMortgage'] = _existingMortgage;
+      _calcSnapshot['carLoan'] = _carLoan;
+      _calcSnapshot['creditCardLimits'] = _creditCardLimits;
+      _calcSnapshot['studentLoan'] = _studentLoan;
+      _calcSnapshot['otherDebts'] = _otherDebts;
+      _calcSnapshot['newLoanAmt'] = _newLoanAmt;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    final totalIncome = _borrower1Income + _borrower2Income + _otherIncome;
-    final totalDebt = _existingMortgage +
-        _carLoan +
-        _creditCardLimits +
-        _studentLoan +
-        _otherDebts +
-        _newLoanAmt;
+    final double snapB1 = _calcSnapshot['borrower1Income'] ?? _borrower1Income;
+    final double snapB2 = _calcSnapshot['borrower2Income'] ?? _borrower2Income;
+    final double snapOtherInc = _calcSnapshot['otherIncome'] ?? _otherIncome;
+    final String snapType = _calcSnapshot['borrowerType'] ?? _borrowerType;
+    final double snapExistMort = _calcSnapshot['existingMortgage'] ?? _existingMortgage;
+    final double snapCar = _calcSnapshot['carLoan'] ?? _carLoan;
+    final double snapCc = _calcSnapshot['creditCardLimits'] ?? _creditCardLimits;
+    final double snapSl = _calcSnapshot['studentLoan'] ?? _studentLoan;
+    final double snapOtherD = _calcSnapshot['otherDebts'] ?? _otherDebts;
+    final double snapNewL = _calcSnapshot['newLoanAmt'] ?? _newLoanAmt;
+
+    final totalIncome = snapB1 + snapB2 + snapOtherInc;
+    final existingDebt = snapExistMort + snapCar + snapCc + snapSl + snapOtherD;
+    final totalDebt = existingDebt + snapNewL;
     final dti = totalIncome > 0 ? totalDebt / totalIncome : 0.0;
 
-    final labelCtrl = TextEditingController(text: 'NZ DTI Snapshot');
+    final inputs = <String, double>{
+      'borrower1Income': snapB1,
+      'borrower2Income': snapB2,
+      'otherIncome': snapOtherInc,
+      'borrowerType': snapType == 'owner' ? 0.0 : 1.0,
+      'existingMortgage': snapExistMort,
+      'carLoan': snapCar,
+      'creditCardLimits': snapCc,
+      'studentLoan': snapSl,
+      'otherDebts': snapOtherD,
+      'newLoanAmt': snapNewL,
+    };
+    final results = <String, double>{
+      'totalIncome': totalIncome,
+      'totalDebt': totalDebt,
+      'dti': dti,
+    };
+
+    final labelCtrl = TextEditingController(text: 'NZ DTI Assessment');
     final confirmed = await showDialog<bool>(
       context: context,
       routeSettings: const RouteSettings(name: '/dialog/nz_dti_calculator/save'),
@@ -73,9 +157,10 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving: DTI Ratio ${dti.toStringAsFixed(1)}x for ${CurrencyFormatter.compact(totalIncome, symbol: "NZ\$")} income',
-                style: AppTextStyles.dmSans(
-                    size: 11, color: widget.theme.getMutedColor(context))),
+              'DTI Ratio: ${dti.toStringAsFixed(1)}× · Total Debt: ${CurrencyFormatter.compact(totalDebt, symbol: 'NZ\$')}',
+              style: AppTextStyles.dmSans(
+                  size: 11, color: widget.theme.getMutedColor(context)),
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: labelCtrl,
@@ -83,7 +168,7 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
               style: AppTextStyles.dmSans(
                   size: 13, color: widget.theme.getTextColor(context)),
               decoration: InputDecoration(
-                hintText: 'Label (e.g. Joint Application)',
+                hintText: 'Label (e.g. FHB DTI assessment)',
                 hintStyle: AppTextStyles.dmSans(size: 13, color: Colors.grey),
                 filled: true,
                 fillColor: widget.theme.getBgColor(context),
@@ -119,27 +204,13 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
     if (confirmed == true && mounted) {
       final label = labelCtrl.text.trim().isNotEmpty
           ? labelCtrl.text.trim()
-          : 'DTI Calculator';
+          : 'DTI Assessment';
+
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'DTI Calculator',
-        inputs: {
-          'borrower1Income': _borrower1Income,
-          'borrower2Income': _borrower2Income,
-          'otherIncome': _otherIncome,
-          'newLoan': _newLoanAmt,
-          'existingMortgage': _existingMortgage,
-          'carLoan': _carLoan,
-          'creditCards': _creditCardLimits,
-          'studentLoan': _studentLoan,
-          'otherDebts': _otherDebts,
-          'borrowerType': _borrowerType == 'owner' ? 0.0 : 1.0,
-        },
-        results: {
-          'dti': dti,
-          'totalIncome': totalIncome,
-          'totalDebt': totalDebt,
-        },
+        inputs: inputs,
+        results: results,
         label: label,
         currencyCode: 'NZD',
       );
@@ -165,16 +236,34 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final double rawB1 = _borrower1Income;
+    final double rawB2 = _borrower2Income;
+    final double rawOther = _otherIncome;
+    final String rawType = _borrowerType;
+    final double rawExistMort = _existingMortgage;
+    final double rawCar = _carLoan;
+    final double rawCc = _creditCardLimits;
+    final double rawSl = _studentLoan;
+    final double rawOtherD = _otherDebts;
+    final double rawNewL = _newLoanAmt;
+
+    final double b1 = _showResults ? (_calcSnapshot['borrower1Income'] ?? rawB1) : rawB1;
+    final double b2 = _showResults ? (_calcSnapshot['borrower2Income'] ?? rawB2) : rawB2;
+    final double otherInc = _showResults ? (_calcSnapshot['otherIncome'] ?? rawOther) : rawOther;
+    final String bType = _showResults ? (_calcSnapshot['borrowerType'] ?? rawType) : rawType;
+    final double existMort = _showResults ? (_calcSnapshot['existingMortgage'] ?? rawExistMort) : rawExistMort;
+    final double car = _showResults ? (_calcSnapshot['carLoan'] ?? rawCar) : rawCar;
+    final double cc = _showResults ? (_calcSnapshot['creditCardLimits'] ?? rawCc) : rawCc;
+    final double studentL = _showResults ? (_calcSnapshot['studentLoan'] ?? rawSl) : rawSl;
+    final double otherD = _showResults ? (_calcSnapshot['otherDebts'] ?? rawOtherD) : rawOtherD;
+    final double newL = _showResults ? (_calcSnapshot['newLoanAmt'] ?? rawNewL) : rawNewL;
+
     // Calculations
-    final totalIncome = _borrower1Income + _borrower2Income + _otherIncome;
-    final existingDebt = _existingMortgage +
-        _carLoan +
-        _creditCardLimits +
-        _studentLoan +
-        _otherDebts;
-    final totalDebt = existingDebt + _newLoanAmt;
+    final totalIncome = b1 + b2 + otherInc;
+    final existingDebt = existMort + car + cc + studentL + otherD;
+    final totalDebt = existingDebt + newL;
     final dti = totalIncome > 0 ? totalDebt / totalIncome : 0.0;
-    final cap = _borrowerType == 'owner' ? 6 : 7;
+    final cap = bType == 'owner' ? 6 : 7;
 
     final maxBorrow6 = (totalIncome * 6) - existingDebt;
     final maxBorrow7 = (totalIncome * 7) - existingDebt;
@@ -199,6 +288,19 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
       statusText = '❌ Exceeds all NZ DTI caps';
       statusColor = const Color(0xFFFCA5A5);
     }
+
+    final isDirty = _showResults && (
+      _borrower1Income != (_calcSnapshot['borrower1Income'] ?? 0.0) ||
+      _borrower2Income != (_calcSnapshot['borrower2Income'] ?? 0.0) ||
+      _otherIncome != (_calcSnapshot['otherIncome'] ?? 0.0) ||
+      _borrowerType != (_calcSnapshot['borrowerType'] ?? '') ||
+      _existingMortgage != (_calcSnapshot['existingMortgage'] ?? 0.0) ||
+      _carLoan != (_calcSnapshot['carLoan'] ?? 0.0) ||
+      _creditCardLimits != (_calcSnapshot['creditCardLimits'] ?? 0.0) ||
+      _studentLoan != (_calcSnapshot['studentLoan'] ?? 0.0) ||
+      _otherDebts != (_calcSnapshot['otherDebts'] ?? 0.0) ||
+      _newLoanAmt != (_calcSnapshot['newLoanAmt'] ?? 0.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,6 +343,16 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
           ),
         ),
         const SizedBox(height: 14),
+
+        if (_errors['totalIncome'] != null) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            child: Text(_errors['totalIncome']!, style: AppTextStyles.dmSans(size: 11, color: Colors.red, weight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 10),
+        ],
 
         // Input Card
         Container(
@@ -294,6 +406,7 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
                       label: 'Borrower 1 Income (Yr)',
                       prefix: 'NZD \$',
                       value: _borrower1Income,
+                      errorText: _errors['b1'],
                       onChanged: (val) =>
                           setState(() => _borrower1Income = val),
                     ),
@@ -304,6 +417,7 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
                       label: 'Borrower 2 Income (Yr)',
                       prefix: 'NZD \$',
                       value: _borrower2Income,
+                      errorText: _errors['b2'],
                       onChanged: (val) =>
                           setState(() => _borrower2Income = val),
                     ),
@@ -319,6 +433,7 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
                       label: 'Other Annual Income',
                       prefix: 'NZD \$',
                       value: _otherIncome,
+                      errorText: _errors['otherInc'],
                       onChanged: (val) => setState(() => _otherIncome = val),
                     ),
                   ),
@@ -388,19 +503,19 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
                       color: theme.getMutedColor(context))),
               const SizedBox(height: 8),
 
-              _buildDebtItem('🏠', 'Existing Mortgage', _existingMortgage,
+              _buildDebtItem('🏠', 'Existing Mortgage', _existingMortgage, _errors['existingMortgage'],
                   (v) => setState(() => _existingMortgage = v)),
               const SizedBox(height: 6),
-              _buildDebtItem('🚗', 'Car Loan Balance', _carLoan,
+              _buildDebtItem('🚗', 'Car Loan Balance', _carLoan, _errors['carLoan'],
                   (v) => setState(() => _carLoan = v)),
               const SizedBox(height: 6),
-              _buildDebtItem('💳', 'Credit Card Limits', _creditCardLimits,
+              _buildDebtItem('💳', 'Credit Card Limits', _creditCardLimits, _errors['creditCardLimits'],
                   (v) => setState(() => _creditCardLimits = v)),
               const SizedBox(height: 6),
-              _buildDebtItem('📚', 'Student Loan (NZ)', _studentLoan,
+              _buildDebtItem('📚', 'Student Loan (NZ)', _studentLoan, _errors['studentLoan'],
                   (v) => setState(() => _studentLoan = v)),
               const SizedBox(height: 6),
-              _buildDebtItem('💰', 'Other Debts', _otherDebts,
+              _buildDebtItem('💰', 'Other Debts', _otherDebts, _errors['otherDebts'],
                   (v) => setState(() => _otherDebts = v)),
 
               const SizedBox(height: 12),
@@ -408,23 +523,14 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
                 label: 'New Proposed Loan Amount',
                 prefix: 'NZD \$',
                 value: _newLoanAmt,
+                errorText: _errors['newLoanAmt'],
                 onChanged: (val) => setState(() => _newLoanAmt = val),
               ),
 
               const SizedBox(height: 14),
               // Calculate Button
               ElevatedButton(
-                onPressed: () {
-                  if (totalIncome <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text('Please enter valid income details',
-                              style: AppTextStyles.dmSans())),
-                    );
-                    return;
-                  }
-                  setState(() => _showResults = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),
                   foregroundColor: Colors.white,
@@ -445,196 +551,226 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
 
         // Results
         if (_showResults) ...[
-          const SizedBox(height: 20),
-          Text('Your DTI Result',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-
-          // Needle gauge card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              children: [
-                Text('Debt-to-Income Ratio',
-                    style: AppTextStyles.dmSans(
-                        size: 10,
-                        color: Colors.white60,
-                        weight: FontWeight.w700)),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: 200,
-                  height: 110,
-                  child: CustomPaint(
-                    painter: _NZDtiGaugePainter(dti: dti),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate DTI Ratio to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text('${dti.toStringAsFixed(1)}×',
-                    style: AppTextStyles.playfair(
-                        size: 30,
-                        color: const Color(0xFFF5D060),
-                        weight: FontWeight.w800)),
-                Text(statusText,
-                    style: AppTextStyles.dmSans(
-                        size: 12, weight: FontWeight.w800, color: statusColor)),
-                const SizedBox(height: 2),
-                Text(
-                  '${CurrencyFormatter.compact(totalDebt, symbol: "NZ\$")} debt / ${CurrencyFormatter.compact(totalIncome, symbol: "NZ\$")} income',
-                  style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildGaugeSummary('Total Debt',
-                        CurrencyFormatter.compact(totalDebt, symbol: 'NZ\$')),
-                    _buildGaugeSummary('Gross Income',
-                        CurrencyFormatter.compact(totalIncome, symbol: 'NZ\$')),
-                    _buildGaugeSummary(
-                        'Max Borrow',
-                        CurrencyFormatter.compact(totalIncome * cap,
-                            symbol: 'NZ\$')),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-
-          // Max borrowing card
-          const SizedBox(height: 14),
+          ],
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF115E59).withValues(alpha: 0.3)
-                  : const Color(0xFFF0FDFA),
-              border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF0D9488)
-                      : const Color(0xFF5EEAD4)),
-              borderRadius: BorderRadius.circular(16),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('🏠 Maximum Borrowing Capacity (NZD)',
-                    style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: isDark
-                            ? const Color(0xFF2DD4BF)
-                            : const Color(0xFF0F766E))),
+                const SizedBox(height: 20),
+                Text('Your DTI Result',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
                 const SizedBox(height: 10),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 2.2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  children: [
-                    _buildMaxBorrowBox('At 6x (Owner-Occ)', maxBorrow6),
-                    _buildMaxBorrowBox('At 7x (Investor)', maxBorrow7),
-                    _buildMaxBorrowBox('At 5x (Bank Strict)', maxBorrow5),
-                    _buildMaxBorrowBox('Remaining at ${cap}x', remaining,
-                        isSpecial: true),
-                  ],
-                ),
-              ],
-            ),
-          ),
 
-          // DTI Bands list
-          const SizedBox(height: 20),
-          Text('DTI Bands Guide',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              children: [
-                _buildBandRow('0–4×', 'Excellent', 'Easy approval, best rates',
-                    '✅ Strong', const Color(0xFF1A6B4A), dti < 4, theme),
-                _buildBandRow(
-                    '4–5×',
-                    'Good',
-                    'Standard NZ bank approval',
-                    '✅ OK',
-                    const Color(0xFF65A30D),
-                    dti >= 4 && dti < 5,
-                    theme),
-                _buildBandRow(
-                    '5–6×',
-                    'Caution',
-                    'Near RBNZ owner-occ cap',
-                    '⚠️ Border',
-                    const Color(0xFFD97706),
-                    dti >= 5 && dti < 6,
-                    theme),
-                _buildBandRow(
-                    '6–7×',
-                    'Over Limit',
-                    'Exceeds owner-occ cap (6×)',
-                    '❌ Limit',
-                    const Color(0xFFC0392B),
-                    dti >= 6 && dti < 7,
-                    theme),
-                _buildBandRow('7×+', 'Declined', 'Exceeds all NZ DTI caps',
-                    '❌ Declined', const Color(0xFF0A0F0D), dti >= 7, theme),
-              ],
-            ),
-          ),
-
-          // Save Calculation Card
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('💾 Save DTI assessment',
-                        style: AppTextStyles.dmSans(
-                            size: 11,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context))),
-                    Text('Income & debt snapshot saved',
-                        style: AppTextStyles.dmSans(
-                            size: 9, color: theme.getMutedColor(context))),
-                  ],
-                ),
-                ElevatedButton(
-                  onPressed: _saveCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                // Needle gauge card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text('Save',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          color: Colors.white,
-                          weight: FontWeight.w800)),
+                  child: Column(
+                    children: [
+                      Text('Debt-to-Income Ratio',
+                          style: AppTextStyles.dmSans(
+                              size: 10,
+                              color: Colors.white60,
+                              weight: FontWeight.w700)),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: 200,
+                        height: 110,
+                        child: CustomPaint(
+                          painter: _NZDtiGaugePainter(dti: dti),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text('${dti.toStringAsFixed(1)}×',
+                          style: AppTextStyles.playfair(
+                              size: 30,
+                              color: const Color(0xFFF5D060),
+                              weight: FontWeight.w800)),
+                      Text(statusText,
+                          style: AppTextStyles.dmSans(
+                              size: 12, weight: FontWeight.w800, color: statusColor)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${CurrencyFormatter.compact(totalDebt, symbol: "NZ\$")} debt / ${CurrencyFormatter.compact(totalIncome, symbol: "NZ\$")} income',
+                        style: AppTextStyles.dmSans(size: 9.5, color: Colors.white54),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildGaugeSummary('Total Debt',
+                              CurrencyFormatter.compact(totalDebt, symbol: 'NZ\$')),
+                          _buildGaugeSummary('Gross Income',
+                              CurrencyFormatter.compact(totalIncome, symbol: 'NZ\$')),
+                          _buildGaugeSummary(
+                              'Max Borrow',
+                              CurrencyFormatter.compact(totalIncome * cap,
+                                  symbol: 'NZ\$')),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Max borrowing card
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF115E59).withValues(alpha: 0.3)
+                        : const Color(0xFFF0FDFA),
+                    border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF0D9488)
+                            : const Color(0xFF5EEAD4)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('🏠 Maximum Borrowing Capacity (NZD)',
+                          style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: isDark
+                                  ? const Color(0xFF2DD4BF)
+                                  : const Color(0xFF0F766E))),
+                      const SizedBox(height: 10),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.2,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        children: [
+                          _buildMaxBorrowBox('At 6x (Owner-Occ)', maxBorrow6),
+                          _buildMaxBorrowBox('At 7x (Investor)', maxBorrow7),
+                          _buildMaxBorrowBox('At 5x (Bank Strict)', maxBorrow5),
+                          _buildMaxBorrowBox('Remaining at ${cap}x', remaining,
+                              isSpecial: true),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // DTI Bands list
+                const SizedBox(height: 20),
+                Text('DTI Bands Guide',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildBandRow('0–4×', 'Excellent', 'Easy approval, best rates',
+                          '✅ Strong', const Color(0xFF1A6B4A), dti < 4, theme),
+                      _buildBandRow(
+                          '4–5×',
+                          'Good',
+                          'Standard NZ bank approval',
+                          '✅ OK',
+                          const Color(0xFF65A30D),
+                          dti >= 4 && dti < 5,
+                          theme),
+                      _buildBandRow(
+                          '5–6×',
+                          'Caution',
+                          'Near RBNZ owner-occ cap',
+                          '⚠️ Border',
+                          const Color(0xFFD97706),
+                          dti >= 5 && dti < 6,
+                          theme),
+                      _buildBandRow(
+                          '6–7×',
+                          'Over Limit',
+                          'Exceeds owner-occ cap (6×)',
+                          '❌ Limit',
+                          const Color(0xFFC0392B),
+                          dti >= 6 && dti < 7,
+                          theme),
+                      _buildBandRow('7×+', 'Declined', 'Exceeds all NZ DTI caps',
+                          '❌ Declined', const Color(0xFF0A0F0D), dti >= 7, theme),
+                    ],
+                  ),
+                ),
+
+                // Save Calculation Card
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('💾 Save DTI assessment',
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context))),
+                          Text('Income & debt snapshot saved',
+                              style: AppTextStyles.dmSans(
+                                  size: 9, color: theme.getMutedColor(context))),
+                        ],
+                      ),
+                      ElevatedButton(
+                        onPressed: _saveCalculation,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D9488),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text('Save',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: Colors.white,
+                                weight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -649,6 +785,7 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
     required String prefix,
     required double value,
     required ValueChanged<double> onChanged,
+    String? errorText,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -658,9 +795,11 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
             ? Colors.white.withValues(alpha: 0.05)
             : const Color(0xFFEDF5F2),
         border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : const Color(0x150D3B2E)),
+            color: errorText != null
+                ? Colors.red
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : const Color(0x150D3B2E))),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -685,6 +824,7 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
                         weight: FontWeight.w700)),
               Expanded(
                 child: TextFormField(
+                  key: ValueKey(value),
                   initialValue: value.toInt().toString(),
                   keyboardType: TextInputType.number,
                   style: AppTextStyles.playfair(
@@ -704,65 +844,80 @@ class _NZDtiCalculatorState extends ConsumerState<NZDtiCalculator> {
               ),
             ],
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildDebtItem(
-      String icon, String label, double value, ValueChanged<double> onChanged) {
+      String icon, String label, double value, String? errorText, ValueChanged<double> onChanged) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFEDF5F2),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(label,
-                style: AppTextStyles.dmSans(
-                    size: 11,
-                    weight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF0A0F0D))),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : const Color(0xFFEDF5F2),
+            border: errorText != null ? Border.all(color: Colors.red) : null,
+            borderRadius: BorderRadius.circular(10),
           ),
-          SizedBox(
-            width: 80,
-            child: TextFormField(
-              initialValue: value.toInt().toString(),
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.right,
-              style: AppTextStyles.dmSans(
-                  size: 11,
-                  color: isDark
-                      ? const Color(0xFFFCA5A5)
-                      : const Color(0xFFC0392B),
-                  weight: FontWeight.w700),
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-                border: InputBorder.none,
-                prefixText: '\$ ',
-                prefixStyle: TextStyle(
-                    color: isDark
-                        ? const Color(0xFFFCA5A5)
-                        : const Color(0xFFC0392B),
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold),
+          child: Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 14)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(label,
+                    style: AppTextStyles.dmSans(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF0A0F0D))),
               ),
-              onChanged: (val) {
-                final d = double.tryParse(val) ?? 0.0;
-                onChanged(d);
-              },
-            ),
+              SizedBox(
+                width: 80,
+                child: TextFormField(
+                  key: ValueKey(value),
+                  initialValue: value.toInt().toString(),
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.right,
+                  style: AppTextStyles.dmSans(
+                      size: 11,
+                      color: isDark
+                          ? const Color(0xFFFCA5A5)
+                          : const Color(0xFFC0392B),
+                      weight: FontWeight.w700),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                    prefixText: '\$ ',
+                    prefixStyle: TextStyle(
+                        color: isDark
+                            ? const Color(0xFFFCA5A5)
+                            : const Color(0xFFC0392B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  onChanged: (val) {
+                    final d = double.tryParse(val) ?? 0.0;
+                    onChanged(d);
+                  },
+                ),
+              ),
+            ],
           ),
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 2),
+          Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
         ],
-      ),
+      ],
     );
   }
 

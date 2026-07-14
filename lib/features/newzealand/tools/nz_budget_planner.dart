@@ -30,7 +30,10 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
   final _debtController = TextEditingController(text: '0');
   final _otherController = TextEditingController(text: '150');
 
-  final bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -45,6 +48,82 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
     _debtController.dispose();
     _otherController.dispose();
     super.dispose();
+  }
+
+  void _reset() {
+    setState(() {
+      _incomeController.text = '5500';
+      _income2Controller.text = '0';
+      _housingController.text = '2100';
+      _foodController.text = '900';
+      _transportController.text = '450';
+      _utilitiesController.text = '280';
+      _entertainController.text = '300';
+      _healthController.text = '200';
+      _debtController.text = '0';
+      _otherController.text = '150';
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final inc1 = double.tryParse(_incomeController.text) ?? 0.0;
+    final inc2 = double.tryParse(_income2Controller.text) ?? 0.0;
+    final housing = double.tryParse(_housingController.text) ?? 0.0;
+    final food = double.tryParse(_foodController.text) ?? 0.0;
+    final transport = double.tryParse(_transportController.text) ?? 0.0;
+    final utilities = double.tryParse(_utilitiesController.text) ?? 0.0;
+    final entertain = double.tryParse(_entertainController.text) ?? 0.0;
+    final health = double.tryParse(_healthController.text) ?? 0.0;
+    final debt = double.tryParse(_debtController.text) ?? 0.0;
+    final other = double.tryParse(_otherController.text) ?? 0.0;
+
+    if (inc1 <= 0 && inc2 <= 0) {
+      errors['income'] = 'Enter income for at least one earner';
+    }
+    if (inc1 < 0) errors['inc1'] = 'Income cannot be negative';
+    if (inc2 < 0) errors['inc2'] = 'Income cannot be negative';
+    if (housing < 0) errors['housing'] = 'Cannot be negative';
+    if (food < 0) errors['food'] = 'Cannot be negative';
+    if (transport < 0) errors['transport'] = 'Cannot be negative';
+    if (utilities < 0) errors['utilities'] = 'Cannot be negative';
+    if (entertain < 0) errors['entertain'] = 'Cannot be negative';
+    if (health < 0) errors['health'] = 'Cannot be negative';
+    if (debt < 0) errors['debt'] = 'Cannot be negative';
+    if (other < 0) errors['other'] = 'Cannot be negative';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['income1'] = inc1;
+      _calcSnapshot['income2'] = inc2;
+      _calcSnapshot['housing'] = housing;
+      _calcSnapshot['food'] = food;
+      _calcSnapshot['transport'] = transport;
+      _calcSnapshot['utilities'] = utilities;
+      _calcSnapshot['entertain'] = entertain;
+      _calcSnapshot['health'] = health;
+      _calcSnapshot['debt'] = debt;
+      _calcSnapshot['other'] = other;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalculation(
@@ -121,16 +200,16 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
         country: 'New Zealand',
         calcType: 'Budget Planner',
         inputs: {
-          'income1': double.tryParse(_incomeController.text) ?? 5500,
-          'income2': double.tryParse(_income2Controller.text) ?? 0,
-          'housing': double.tryParse(_housingController.text) ?? 2100,
-          'food': double.tryParse(_foodController.text) ?? 900,
-          'transport': double.tryParse(_transportController.text) ?? 450,
-          'utilities': double.tryParse(_utilitiesController.text) ?? 280,
-          'entertain': double.tryParse(_entertainController.text) ?? 300,
-          'health': double.tryParse(_healthController.text) ?? 200,
-          'debt': double.tryParse(_debtController.text) ?? 0,
-          'other': double.tryParse(_otherController.text) ?? 150,
+          'income1': _calcSnapshot['income1'] ?? 5500.0,
+          'income2': _calcSnapshot['income2'] ?? 0.0,
+          'housing': _calcSnapshot['housing'] ?? 2100.0,
+          'food': _calcSnapshot['food'] ?? 900.0,
+          'transport': _calcSnapshot['transport'] ?? 450.0,
+          'utilities': _calcSnapshot['utilities'] ?? 280.0,
+          'entertain': _calcSnapshot['entertain'] ?? 300.0,
+          'health': _calcSnapshot['health'] ?? 200.0,
+          'debt': _calcSnapshot['debt'] ?? 0.0,
+          'other': _calcSnapshot['other'] ?? 150.0,
         },
         results: {
           'totalIncome': totalInc,
@@ -158,24 +237,33 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double inc = double.tryParse(_incomeController.text) ?? 5500;
-    final double inc2 = double.tryParse(_income2Controller.text) ?? 0;
+    final double rawInc = double.tryParse(_incomeController.text) ?? 5500;
+    final double rawInc2 = double.tryParse(_income2Controller.text) ?? 0;
+    final double rawHousing = double.tryParse(_housingController.text) ?? 2100;
+    final double rawFood = double.tryParse(_foodController.text) ?? 900;
+    final double rawTransport = double.tryParse(_transportController.text) ?? 450;
+    final double rawUtilities = double.tryParse(_utilitiesController.text) ?? 280;
+    final double rawEntertain = double.tryParse(_entertainController.text) ?? 300;
+    final double rawHealth = double.tryParse(_healthController.text) ?? 200;
+    final double rawDebt = double.tryParse(_debtController.text) ?? 0;
+    final double rawOther = double.tryParse(_otherController.text) ?? 150;
+
+    final double inc = _showResults ? (_calcSnapshot['income1'] ?? rawInc) : rawInc;
+    final double inc2 = _showResults ? (_calcSnapshot['income2'] ?? rawInc2) : rawInc2;
     final double totalInc = inc + inc2;
 
-    final double housing = double.tryParse(_housingController.text) ?? 2100;
-    final double food = double.tryParse(_foodController.text) ?? 900;
-    final double transport = double.tryParse(_transportController.text) ?? 450;
-    final double utilities = double.tryParse(_utilitiesController.text) ?? 280;
-    final double entertain = double.tryParse(_entertainController.text) ?? 300;
-    final double health = double.tryParse(_healthController.text) ?? 200;
-    final double debt = double.tryParse(_debtController.text) ?? 0;
-    final double other = double.tryParse(_otherController.text) ?? 150;
+    final double housing = _showResults ? (_calcSnapshot['housing'] ?? rawHousing) : rawHousing;
+    final double food = _showResults ? (_calcSnapshot['food'] ?? rawFood) : rawFood;
+    final double transport = _showResults ? (_calcSnapshot['transport'] ?? rawTransport) : rawTransport;
+    final double utilities = _showResults ? (_calcSnapshot['utilities'] ?? rawUtilities) : rawUtilities;
+    final double entertain = _showResults ? (_calcSnapshot['entertain'] ?? rawEntertain) : rawEntertain;
+    final double health = _showResults ? (_calcSnapshot['health'] ?? rawHealth) : rawHealth;
+    final double debt = _showResults ? (_calcSnapshot['debt'] ?? rawDebt) : rawDebt;
+    final double other = _showResults ? (_calcSnapshot['other'] ?? rawOther) : rawOther;
 
     final double totalExpenses = housing + food + transport + utilities + entertain + health + debt + other;
     final double surplus = totalInc - totalExpenses;
@@ -189,6 +277,19 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
         : housingPct > 30
             ? const Color(0xFFD4A017)
             : const Color(0xFF1A6B4A);
+
+    final isDirty = _showResults && (
+      _incomeController.text != (_calcSnapshot['income1']?.toString() ?? '') ||
+      _income2Controller.text != (_calcSnapshot['income2']?.toString() ?? '') ||
+      _housingController.text != (_calcSnapshot['housing']?.toString() ?? '') ||
+      _foodController.text != (_calcSnapshot['food']?.toString() ?? '') ||
+      _transportController.text != (_calcSnapshot['transport']?.toString() ?? '') ||
+      _utilitiesController.text != (_calcSnapshot['utilities']?.toString() ?? '') ||
+      _entertainController.text != (_calcSnapshot['entertain']?.toString() ?? '') ||
+      _healthController.text != (_calcSnapshot['health']?.toString() ?? '') ||
+      _debtController.text != (_calcSnapshot['debt']?.toString() ?? '') ||
+      _otherController.text != (_calcSnapshot['other']?.toString() ?? '')
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,18 +306,13 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                 color: theme.getTextColor(context),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                border: Border.all(color: const Color(0xFFA7F3D0)),
-                borderRadius: BorderRadius.circular(20),
-              ),
+            GestureDetector(
+              onTap: _reset,
               child: Text(
-                'NZ 2025',
+                'Reset ↺',
                 style: AppTextStyles.dmSans(
-                  size: 9,
-                  color: const Color(0xFF065F46),
+                  size: 11,
+                  color: const Color(0xFFC0392B),
                   weight: FontWeight.bold,
                 ),
               ),
@@ -224,6 +320,16 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
           ],
         ),
         const SizedBox(height: 10),
+
+        if (_errors['income'] != null) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            child: Text(_errors['income']!, style: AppTextStyles.dmSans(size: 11, color: Colors.red, weight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 10),
+        ],
 
         // Main input card
         Container(
@@ -284,7 +390,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['inc1'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(11),
                           ),
                           child: TextField(
@@ -315,7 +421,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['inc2'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(11),
                           ),
                           child: TextField(
@@ -359,7 +465,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['housing'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextField(
@@ -385,7 +491,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['food'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextField(
@@ -416,7 +522,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['transport'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextField(
@@ -442,7 +548,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['utilities'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextField(
@@ -473,7 +579,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['entertain'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextField(
@@ -499,7 +605,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['health'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextField(
@@ -530,7 +636,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['debt'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextField(
@@ -556,7 +662,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.09),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                            border: Border.all(color: _errors['other'] != null ? Colors.red : Colors.white.withValues(alpha: 0.18)),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextField(
@@ -572,6 +678,22 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+
+              ElevatedButton(
+                onPressed: _calculate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A6B4A),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  minimumSize: const Size(double.infinity, 44),
+                ),
+                child: Text(
+                  '📊 Calculate Budget',
+                  style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                ),
+              ),
             ],
           ),
         ),
@@ -579,170 +701,200 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
 
         // Results Card
         if (_showResults) ...[
-          Text(
-            'Your Budget Analysis',
-            style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context),
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Budget to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 12),
+          ],
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
+            key: _resultsKey,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Housing cost gauge dial
-                Column(
-                  children: [
-                    Text('Housing Cost as % of Income', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context))),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${housingPct.round()}%',
-                      style: AppTextStyles.playfair(size: 38, weight: FontWeight.w800, color: statusColor),
-                    ),
-                    Text('NZ guideline: keep below 30–35%', style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context))),
-                    if (housingPct > 30)
-                      Container(
-                        margin: const EdgeInsets.only(top: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(color: const Color(0xFFFFFBEB), border: Border.all(color: const Color(0xFFFDE68A)), borderRadius: BorderRadius.circular(10)),
-                        child: Text(
-                          '⚠️ Your housing costs exceed the recommended 30% threshold. Consider refinancing or reducing discretionary spending to ease cash flow pressure.',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF92400E), height: 1.4),
-                        ),
-                      ),
-                  ],
+                Text(
+                  'Your Budget Analysis',
+                  style: AppTextStyles.playfair(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    color: theme.getTextColor(context),
+                  ),
                 ),
-                const SizedBox(height: 18),
-
-                // Donut and Legend Row
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: 110,
-                      width: 110,
-                      child: CustomPaint(
-                        painter: _NZBudgetDonutPainter(
-                          housing: housing,
-                          lifestyle: lifestyle,
-                          essentials: essentials,
-                          surplus: max(0.0, surplus),
-                          total: totalInc,
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('Net', style: AppTextStyles.playfair(size: 11, weight: FontWeight.bold, color: theme.getTextColor(context))),
-                              Text(
-                                surplus >= 0
-                                    ? '+${CurrencyFormatter.compact(surplus, symbol: '\$')}'
-                                    : '-${CurrencyFormatter.compact(surplus.abs(), symbol: '\$')}',
-                                style: AppTextStyles.playfair(
-                                  size: 12,
-                                  weight: FontWeight.bold,
-                                  color: surplus >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          _buildLegendRow(const Color(0xFFC0392B), 'Housing', CurrencyFormatter.compact(housing, symbol: 'NZ\$')),
-                          _buildLegendRow(const Color(0xFFD4A017), 'Lifestyle', CurrencyFormatter.compact(lifestyle, symbol: 'NZ\$')),
-                          _buildLegendRow(const Color(0xFF0D9488), 'Essentials', CurrencyFormatter.compact(essentials, symbol: 'NZ\$')),
-                          _buildLegendRow(const Color(0xFF1A6B4A), 'Surplus', CurrencyFormatter.compact(surplus, symbol: 'NZ\$')),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Category list bars
-                Column(
-                  children: [
-                    _buildCategoryRow('🏠', 'Housing / Mortgage', housing, totalInc, const Color(0xFFC0392B)),
-                    _buildCategoryRow('🛒', 'Food & Groceries', food, totalInc, const Color(0xFFD97706)),
-                    _buildCategoryRow('🚗', 'Transport', transport, totalInc, const Color(0xFF0D9488)),
-                    _buildCategoryRow('💡', 'Utilities & Power', utilities, totalInc, const Color(0xFF0EA5E9)),
-                    _buildCategoryRow('🎉', 'Entertainment', entertain, totalInc, const Color(0xFF6D28D9)),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Surplus/deficit status card
+                const SizedBox(height: 8),
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: surplus >= 0 ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
-                    border: Border.all(color: surplus >= 0 ? const Color(0xFF6EE7B7) : const Color(0xFFFECACA)),
-                    borderRadius: BorderRadius.circular(14),
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
                   ),
                   child: Column(
                     children: [
-                      Text(
-                        surplus >= 0 ? '✅ Budget Surplus' : '⚠️ Budget Deficit',
-                        style: AppTextStyles.dmSans(
-                          size: 12,
-                          weight: FontWeight.bold,
-                          color: surplus >= 0 ? const Color(0xFF065F46) : const Color(0xFFC0392B),
+                      // Housing cost gauge dial
+                      Column(
+                        children: [
+                          Text('Housing Cost as % of Income', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context))),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${housingPct.round()}%',
+                            style: AppTextStyles.playfair(size: 38, weight: FontWeight.w800, color: statusColor),
+                          ),
+                          Text('NZ guideline: keep below 30–35%', style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context))),
+                          if (housingPct > 30)
+                            Container(
+                              margin: const EdgeInsets.only(top: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(color: const Color(0xFFFFFBEB), border: Border.all(color: const Color(0xFFFDE68A)), borderRadius: BorderRadius.circular(10)),
+                              child: Text(
+                                '⚠️ Your housing costs exceed the recommended 30% threshold. Consider refinancing or reducing discretionary spending to ease cash flow pressure.',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF92400E), height: 1.4),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Donut and Legend Row
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            height: 110,
+                            width: 110,
+                            child: CustomPaint(
+                              painter: _NZBudgetDonutPainter(
+                                housing: housing,
+                                lifestyle: lifestyle,
+                                essentials: essentials,
+                                surplus: max(0.0, surplus),
+                                total: totalInc,
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('Net', style: AppTextStyles.playfair(size: 11, weight: FontWeight.bold, color: theme.getTextColor(context))),
+                                    Text(
+                                      surplus >= 0
+                                          ? '+${CurrencyFormatter.compact(surplus, symbol: '\$')}'
+                                          : '-${CurrencyFormatter.compact(surplus.abs(), symbol: '\$')}',
+                                      style: AppTextStyles.playfair(
+                                        size: 12,
+                                        weight: FontWeight.bold,
+                                        color: surplus >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildLegendRow(const Color(0xFFC0392B), 'Housing', CurrencyFormatter.compact(housing, symbol: 'NZ\$')),
+                                _buildLegendRow(const Color(0xFFD4A017), 'Lifestyle', CurrencyFormatter.compact(lifestyle, symbol: 'NZ\$')),
+                                _buildLegendRow(const Color(0xFF0D9488), 'Essentials', CurrencyFormatter.compact(essentials, symbol: 'NZ\$')),
+                                _buildLegendRow(const Color(0xFF1A6B4A), 'Surplus', CurrencyFormatter.compact(surplus, symbol: 'NZ\$')),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Category list bars
+                      Column(
+                        children: [
+                          _buildCategoryRow('🏠', 'Housing / Mortgage', housing, totalInc, const Color(0xFFC0392B)),
+                          _buildCategoryRow('🛒', 'Food & Groceries', food, totalInc, const Color(0xFFD97706)),
+                          _buildCategoryRow('🚗', 'Transport', transport, totalInc, const Color(0xFF0D9488)),
+                          _buildCategoryRow('💡', 'Utilities & Power', utilities, totalInc, const Color(0xFF0EA5E9)),
+                          _buildCategoryRow('🎉', 'Entertainment', entertain, totalInc, const Color(0xFF6D28D9)),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Surplus/deficit status card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: surplus >= 0 ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                          border: Border.all(color: surplus >= 0 ? const Color(0xFF6EE7B7) : const Color(0xFFFECACA)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              surplus >= 0 ? '✅ Budget Surplus' : '⚠️ Budget Deficit',
+                              style: AppTextStyles.dmSans(
+                                size: 12,
+                                weight: FontWeight.bold,
+                                color: surplus >= 0 ? const Color(0xFF065F46) : const Color(0xFFC0392B),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              surplus >= 0
+                                  ? '+${CurrencyFormatter.compact(surplus, symbol: 'NZ\$')}'
+                                  : '-${CurrencyFormatter.compact(surplus.abs(), symbol: 'NZ\$')}',
+                              style: AppTextStyles.playfair(
+                                size: 28,
+                                weight: FontWeight.w800,
+                                color: surplus >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              surplus >= 0
+                                  ? 'You have money left over each month. Direct this to KiwiSaver, extra mortgage payments, or an emergency savings account.'
+                                  : 'Your expenses exceed income by ${CurrencyFormatter.compact(surplus.abs(), symbol: 'NZ\$')} per month. Review housing costs and discretionary lifestyle spending urgently.',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.dmSans(
+                                size: 9.5,
+                                color: surplus >= 0 ? const Color(0xFF047857) : const Color(0xFFC0392B),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        surplus >= 0
-                            ? '+${CurrencyFormatter.compact(surplus, symbol: 'NZ\$')}'
-                            : '-${CurrencyFormatter.compact(surplus.abs(), symbol: 'NZ\$')}',
-                        style: AppTextStyles.playfair(
-                          size: 28,
-                          weight: FontWeight.w800,
-                          color: surplus >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
+                      const SizedBox(height: 14),
+
+                      ElevatedButton.icon(
+                        onPressed: () => _saveCalculation(totalInc, totalExpenses, surplus, housingPct),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: theme.primaryColor,
+                          side: BorderSide(color: theme.primaryColor, width: 1.5),
+                          minimumSize: const Size(double.infinity, 44),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        surplus >= 0
-                            ? 'You have money left over each month. Direct this to KiwiSaver, extra mortgage payments, or an emergency savings account.'
-                            : 'Your expenses exceed income by ${CurrencyFormatter.compact(surplus.abs(), symbol: 'NZ\$')} per month. Review housing costs and discretionary lifestyle spending urgently.',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.dmSans(
-                          size: 9.5,
-                          color: surplus >= 0 ? const Color(0xFF047857) : const Color(0xFFC0392B),
-                        ),
+                        icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                        label: Text('Save Budget Analysis',
+                            style: AppTextStyles.playfair(
+                                size: 13, weight: FontWeight.w800, color: theme.primaryColor)),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 14),
-
-                ElevatedButton.icon(
-                  onPressed: () => _saveCalculation(totalInc, totalExpenses, surplus, housingPct),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: theme.primaryColor,
-                    side: BorderSide(color: theme.primaryColor, width: 1.5),
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                  label: Text('Save Budget Analysis',
-                      style: AppTextStyles.playfair(
-                          size: 13, weight: FontWeight.w800, color: theme.primaryColor)),
                 ),
               ],
             ),
@@ -833,7 +985,7 @@ class _NZBudgetPlannerState extends ConsumerState<NZBudgetPlanner> {
                     color: const Color(0xFFF1F5F2),
                     child: FractionallySizedBox(
                       alignment: Alignment.centerLeft,
-                      widthFactor: pct,
+                      widthFactor: pct.clamp(0.0, 1.0),
                       child: Container(color: color),
                     ),
                   ),
@@ -913,7 +1065,6 @@ class _NZBudgetDonutPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = min(size.width, size.height) / 2 - 9;
 
-    // Track
     final trackPaint = Paint()
       ..color = const Color(0xFFE8F0EC)
       ..style = PaintingStyle.stroke

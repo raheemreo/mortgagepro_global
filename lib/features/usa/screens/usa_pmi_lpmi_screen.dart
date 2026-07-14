@@ -21,13 +21,16 @@ class USAPmiLpmiScreen extends ConsumerStatefulWidget {
 class _USAPmiLpmiScreenState extends ConsumerState<USAPmiLpmiScreen> {
   static const _theme = CountryThemes.usa;
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   double _loanAmount = 380000;
   double _bpmiMonthly = 216;
   double _rateIncrease = 0.375;
   int _stayYears = 10;
 
   bool _calculating = false;
-  bool _showResults = true;
+  bool _showResults = false;
   bool _isCalcDirty = false;
 
   @override
@@ -39,6 +42,11 @@ class _USAPmiLpmiScreenState extends ConsumerState<USAPmiLpmiScreen> {
       _bpmiMonthly = inputs['BpmiMonthly'] ?? 216;
       _rateIncrease = inputs['RateIncrease'] ?? 0.375;
       _stayYears = (inputs['StayYears'] ?? 10.0).toInt();
+      _calcSnapshot['LoanAmt'] = _loanAmount;
+      _calcSnapshot['BpmiMonthly'] = _bpmiMonthly;
+      _calcSnapshot['RateIncrease'] = _rateIncrease;
+      _calcSnapshot['StayYears'] = _stayYears;
+      _showResults = true;
     }
   }
 
@@ -56,8 +64,9 @@ class _USAPmiLpmiScreenState extends ConsumerState<USAPmiLpmiScreen> {
       _bpmiMonthly = 216;
       _rateIncrease = 0.375;
       _stayYears = 10;
-      _showResults = true;
+      _showResults = false;
       _isCalcDirty = false;
+      _calcSnapshot.clear();
     });
   }
 
@@ -68,17 +77,35 @@ class _USAPmiLpmiScreenState extends ConsumerState<USAPmiLpmiScreen> {
     await Future.delayed(const Duration(milliseconds: 300));
     setState(() {
       _calculating = false;
+      _calcSnapshot['LoanAmt'] = _loanAmount;
+      _calcSnapshot['BpmiMonthly'] = _bpmiMonthly;
+      _calcSnapshot['RateIncrease'] = _rateIncrease;
+      _calcSnapshot['StayYears'] = _stayYears;
       _showResults = true;
       _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    final lpmiMonthlyExtra = (_loanAmount * (_rateIncrease / 100)) / 12;
+    final double loanAmt = _calcSnapshot['LoanAmt'] as double? ?? _loanAmount;
+    final double bpmiMonthly = _calcSnapshot['BpmiMonthly'] as double? ?? _bpmiMonthly;
+    final double rateIncrease = _calcSnapshot['RateIncrease'] as double? ?? _rateIncrease;
+    final int stayYears = _calcSnapshot['StayYears'] as int? ?? _stayYears;
+
+    final lpmiMonthlyExtra = (loanAmt * (rateIncrease / 100)) / 12;
     const bpmiCancelMonths = 84;
-    final bpmiMonthsActive = min(_stayYears * 12, bpmiCancelMonths);
-    final bpmiTotalCost = _bpmiMonthly * bpmiMonthsActive;
-    final lpmiTotalCost = lpmiMonthlyExtra * _stayYears * 12;
+    final bpmiMonthsActive = min(stayYears * 12, bpmiCancelMonths);
+    final bpmiTotalCost = bpmiMonthly * bpmiMonthsActive;
+    final lpmiTotalCost = lpmiMonthlyExtra * stayYears * 12;
     final recommendation = bpmiTotalCost < lpmiTotalCost ? 'BPMI Wins' : 'LPMI Wins';
 
     final labelCtrl = TextEditingController(text: 'LPMI Lender-Paid PMI');
@@ -187,23 +214,35 @@ class _USAPmiLpmiScreenState extends ConsumerState<USAPmiLpmiScreen> {
     final borderCol = _theme.getBorderColor(context);
     final bgCol = _theme.getBgColor(context);
 
-    // Compute active calculation
-    final lpmiMonthlyExtra = (_loanAmount * (_rateIncrease / 100)) / 12;
+    // Compute active calculation from snapshot or default to current values when not calculated yet
+    final double snapLoanAmount = _calcSnapshot['LoanAmt'] ?? _loanAmount;
+    final double snapBpmiMonthly = _calcSnapshot['BpmiMonthly'] ?? _bpmiMonthly;
+    final double snapRateIncrease = _calcSnapshot['RateIncrease'] ?? _rateIncrease;
+    final int snapStayYears = _calcSnapshot['StayYears'] ?? _stayYears;
+
+    final lpmiMonthlyExtra = (snapLoanAmount * (snapRateIncrease / 100)) / 12;
     const bpmiCancelMonths = 84;
-    final bpmiMonthsActive = min(_stayYears * 12, bpmiCancelMonths);
-    final bpmiTotalCost = _bpmiMonthly * bpmiMonthsActive;
-    final lpmiTotalCost = lpmiMonthlyExtra * _stayYears * 12;
+    final bpmiMonthsActive = min(snapStayYears * 12, bpmiCancelMonths);
+    final bpmiTotalCost = snapBpmiMonthly * bpmiMonthsActive;
+    final lpmiTotalCost = lpmiMonthlyExtra * snapStayYears * 12;
     final bpmiWins = bpmiTotalCost < lpmiTotalCost;
 
     // Chart Year Calculations
-    final y3bpmi = _bpmiMonthly * 36;
+    final y3bpmi = snapBpmiMonthly * 36;
     final y3lpmi = lpmiMonthlyExtra * 36;
 
-    final y7bpmi = _bpmiMonthly * 84;
+    final y7bpmi = snapBpmiMonthly * 84;
     final y7lpmi = lpmiMonthlyExtra * 84;
 
-    final y15bpmi = _bpmiMonthly * 84; // assumes cancelled
+    final y15bpmi = snapBpmiMonthly * 84; // assumes cancelled
     final y15lpmi = lpmiMonthlyExtra * 180;
+
+    final isDirty = _showResults && (
+      _loanAmount != snapLoanAmount ||
+      _bpmiMonthly != snapBpmiMonthly ||
+      _rateIncrease != snapRateIncrease ||
+      _stayYears != snapStayYears
+    );
 
     // Rate strip values
     final rateStats = [
@@ -746,7 +785,7 @@ class _USAPmiLpmiScreenState extends ConsumerState<USAPmiLpmiScreen> {
                                   ),
                           ),
                         ),
-                        if (_showResults && !_isCalcDirty) ...[
+                        if (_showResults) ...[
                           const SizedBox(width: 10),
                           ElevatedButton(
                             onPressed: _saveCalculation,
@@ -770,9 +809,38 @@ class _USAPmiLpmiScreenState extends ConsumerState<USAPmiLpmiScreen> {
               ),
 
               // Result Hero Card
-              if (_showResults && !_isCalcDirty) ...[
+              if (_showResults) ...[
+                if (isDirty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Calculate again to update results.',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              color: const Color(0xFFB45309),
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 Container(
+                  key: _resultsKey,
                   margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(

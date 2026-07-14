@@ -28,6 +28,9 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
   String _repayType = 'PI';
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   final List<Map<String, dynamic>> _banks = [
     {'name': 'Kiwibank', 'icon': '🥝', 'rate': 5.55},
@@ -48,8 +51,8 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
       _rate = (saved['rate'] as num?)?.toDouble() ?? 5.59;
       _termYears = (saved['term'] as num?)?.toInt() ?? 30;
       _repayType = saved['repayType'] as String? ?? 'PI';
-      _showResults = saved['showResults'] as bool? ?? true;
     }
+    _showResults = false;
   }
 
   void _persistInputs() {
@@ -71,23 +74,76 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
       _termYears = 30;
       _repayType = 'PI';
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
     });
     _persistInputs();
   }
 
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_propVal <= 0) {
+      errors['propVal'] = 'Enter valid property value';
+    }
+    if (_deposit < 0) {
+      errors['deposit'] = 'Deposit cannot be negative';
+    } else if (_deposit >= _propVal && _propVal > 0) {
+      errors['deposit'] = 'Deposit must be less than property value';
+    }
+    if (_rate <= 0 || _rate > 25) {
+      errors['rate'] = 'Enter rate between 0.1% and 25%';
+    }
+    if (_termYears <= 0 || _termYears > 50) {
+      errors['term'] = 'Enter term between 1 and 50 years';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['propVal'] = _propVal;
+      _calcSnapshot['deposit'] = _deposit;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['term'] = _termYears;
+      _calcSnapshot['repayType'] = _repayType;
+      _showResults = true;
+    });
+    _persistInputs();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation() async {
-    final loanAmt = _propVal - _deposit;
+    final snapPropVal = _calcSnapshot['propVal'] ?? _propVal;
+    final snapDeposit = _calcSnapshot['deposit'] ?? _deposit;
+    final snapRate = _calcSnapshot['rate'] ?? _rate;
+    final snapTerm = _calcSnapshot['term'] ?? _termYears;
+    final snapRepayType = _calcSnapshot['repayType'] ?? _repayType;
+
+    final loanAmt = snapPropVal - snapDeposit;
     if (loanAmt <= 0) return;
 
-    final lvr = (loanAmt / _propVal) * 100;
-    final monthlyRate = _rate / 100 / 12;
-    final n = _termYears * 12;
+    final lvr = (loanAmt / snapPropVal) * 100;
+    final monthlyRate = snapRate / 100 / 12;
+    final n = snapTerm * 12;
 
     double monthly;
     double totalInterest;
     double totalPaid;
 
-    if (_repayType == 'PI') {
+    if (snapRepayType == 'PI') {
       if (monthlyRate == 0) {
         monthly = loanAmt / n;
       } else {
@@ -118,7 +174,7 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving: ${CurrencyFormatter.compact(loanAmt, symbol: 'NZ\$')} loan @ $_rate% → ${CurrencyFormatter.compact(monthly, symbol: 'NZ\$')}/mo',
+                'Saving: ${CurrencyFormatter.compact(loanAmt, symbol: 'NZ\$')} loan @ $snapRate% → ${CurrencyFormatter.compact(monthly, symbol: 'NZ\$')}/mo',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -168,14 +224,14 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'Mortgage Calc',
-        inputs: {
-          'propertyValue': _propVal,
-          'deposit': _deposit,
-          'rate': _rate,
-          'termYears': _termYears.toDouble(),
-          'repayType': _repayType == 'PI' ? 0.0 : 1.0,
+        inputs: <String, double>{
+          'propertyValue': snapPropVal,
+          'deposit': snapDeposit,
+          'rate': snapRate,
+          'termYears': snapTerm.toDouble(),
+          'repayType': snapRepayType == 'PI' ? 0.0 : 1.0,
         },
-        results: {
+        results: <String, double>{
           'monthly': monthly,
           'totalInterest': totalInterest,
           'totalRepaid': totalPaid,
@@ -204,7 +260,6 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Live NZ rates
     final nzRates = ref.watch(nzRatesProvider).valueOrNull;
@@ -226,17 +281,29 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
       _banks[4]['rate'] = nzRates?.westpac1yr  ?? 5.65;
     }
 
+    final double rawPropVal = _propVal;
+    final double rawDeposit = _deposit;
+    final double rawRate = _rate;
+    final int rawTerm = _termYears;
+    final String rawRepayType = _repayType;
+
+    final double propVal = _showResults ? (_calcSnapshot['propVal'] ?? rawPropVal) : rawPropVal;
+    final double deposit = _showResults ? (_calcSnapshot['deposit'] ?? rawDeposit) : rawDeposit;
+    final double rate = _showResults ? (_calcSnapshot['rate'] ?? rawRate) : rawRate;
+    final int termYears = _showResults ? (_calcSnapshot['term'] ?? rawTerm) : rawTerm;
+    final String repayType = _showResults ? (_calcSnapshot['repayType'] ?? rawRepayType) : rawRepayType;
+
     // Calculations
-    final loanAmt = _propVal - _deposit;
-    final lvr = _propVal > 0 ? (loanAmt / _propVal) * 100 : 0.0;
-    final monthlyRate = _rate / 100 / 12;
-    final n = _termYears * 12;
+    final loanAmt = propVal - deposit;
+    final lvr = propVal > 0 ? (loanAmt / propVal) * 100 : 0.0;
+    final monthlyRate = rate / 100 / 12;
+    final n = termYears * 12;
 
     double monthly;
     double totalInterest;
     double totalPaid;
 
-    if (_repayType == 'PI') {
+    if (repayType == 'PI') {
       if (monthlyRate == 0) {
         monthly = loanAmt / n;
       } else {
@@ -259,6 +326,14 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
     final donutTotal = loanAmt + totalInterest;
     final principalPct = donutTotal > 0 ? loanAmt / donutTotal : 0.0;
     final interestPct = donutTotal > 0 ? totalInterest / donutTotal : 0.0;
+
+    final isDirty = _showResults && (
+      _propVal != (_calcSnapshot['propVal'] ?? 0.0) ||
+      _deposit != (_calcSnapshot['deposit'] ?? 0.0) ||
+      _rate != (_calcSnapshot['rate'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['term'] ?? 0) ||
+      _repayType != (_calcSnapshot['repayType'] ?? '')
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,9 +391,9 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                       label: 'Property Value',
                       prefix: 'NZD \$',
                       value: _propVal,
+                      errorText: _errors['propVal'],
                       onChanged: (val) => setState(() {
                         _propVal = val;
-                        _persistInputs();
                       }),
                     ),
                   ),
@@ -328,9 +403,9 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                       label: 'Deposit',
                       prefix: 'NZD \$',
                       value: _deposit,
+                      errorText: _errors['deposit'],
                       onChanged: (val) => setState(() {
                         _deposit = val;
-                        _persistInputs();
                       }),
                     ),
                   ),
@@ -346,9 +421,9 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                       prefix: '',
                       value: _rate,
                       isPercent: true,
+                      errorText: _errors['rate'],
                       onChanged: (val) => setState(() {
                         _rate = val;
-                        _persistInputs();
                       }),
                     ),
                   ),
@@ -359,9 +434,9 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                       prefix: '',
                       value: _termYears.toDouble(),
                       isInteger: true,
+                      errorText: _errors['term'],
                       onChanged: (val) => setState(() {
                         _termYears = val.toInt();
-                        _persistInputs();
                       }),
                     ),
                   ),
@@ -396,6 +471,7 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
 
               // Repayment Type Dropdown
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.08),
@@ -419,7 +495,6 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                       if (val != null) {
                         setState(() {
                           _repayType = val;
-                          _persistInputs();
                         });
                       }
                     },
@@ -430,21 +505,7 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
 
               // Calculate Button
               ElevatedButton(
-                onPressed: () {
-                  if (loanAmt <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text(
-                              'Deposit must be less than property value',
-                              style: AppTextStyles.dmSans())),
-                    );
-                    return;
-                  }
-                  setState(() {
-                    _showResults = true;
-                    _persistInputs();
-                  });
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),
                   foregroundColor: Colors.white,
@@ -466,331 +527,274 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
 
         // Results Section
         if (_showResults) ...[
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Results',
-                  style: AppTextStyles.playfair(
-                      size: 15, color: theme.getTextColor(context))),
-              Text(
-                'LVR: ${lvr.toStringAsFixed(1)}% ${lvr > 80 ? "⚠️ High" : "✅ OK"}',
-                style: AppTextStyles.dmSans(
-                  size: 11,
-                  weight: FontWeight.w700,
-                  color: lvr > 80
-                      ? const Color(0xFFC0392B)
-                      : const Color(0xFF1A6B4A),
-                ),
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Monthly Repayment Hero
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.getBorderColor(context)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
-            child: Column(
-              children: [
-                Text('Monthly Repayment',
-                    style: AppTextStyles.dmSans(
-                        size: 11,
-                        color: theme.getMutedColor(context),
-                        weight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text(CurrencyFormatter.format(monthly, currencyCode: 'NZD'),
-                    style: AppTextStyles.playfair(
-                        size: 38,
-                        color: theme.getTextColor(context),
-                        weight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text(
-                  'Fortnightly: ${CurrencyFormatter.format(fortnightly, currencyCode: "NZD")} · Weekly: ${CurrencyFormatter.format(weekly, currencyCode: "NZD")}',
-                  style: AppTextStyles.dmSans(
-                      size: 10, color: theme.getMutedColor(context)),
-                ),
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 12),
-
-                // Grid Summary
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 3,
-                  childAspectRatio: 1.4,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  children: [
-                    _buildSummaryBox(
-                        'Loan Amount',
-                        CurrencyFormatter.compact(loanAmt, symbol: 'NZ\$'),
-                        Colors.blue),
-                    _buildSummaryBox(
-                        'Total Interest',
-                        CurrencyFormatter.compact(totalInterest,
-                            symbol: 'NZ\$'),
-                        const Color(0xFFC0392B)),
-                    _buildSummaryBox(
-                        'Total Repaid',
-                        CurrencyFormatter.compact(totalPaid, symbol: 'NZ\$'),
-                        theme.getTextColor(context)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Save Calculation Card
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('💾 Save this calculation',
-                        style: AppTextStyles.dmSans(
-                            size: 12,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context))),
-                    Text('Store to your NZ loan portfolio',
-                        style: AppTextStyles.dmSans(
-                            size: 10, color: theme.getMutedColor(context))),
-                  ],
-                ),
-                ElevatedButton(
-                  onPressed: _saveCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: Text('Save',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          color: Colors.white,
-                          weight: FontWeight.w800)),
-                ),
-              ],
-            ),
-          ),
-
-          // Cost Breakdown Donut Chart
-          const SizedBox(height: 20),
-          Text('Cost Breakdown',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: CustomPaint(
-                    painter: _NZDonutPainter(
-                      principalPct: principalPct,
-                      interestPct: interestPct,
-                      lvr: lvr,
-                      isDark: isDark,
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate NZ Mortgage to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    children: [
-                      _buildLegendRow('Principal', loanAmt, principalPct,
-                          const Color(0xFF1A6B4A)),
-                      const SizedBox(height: 8),
-                      _buildLegendRow('Total Interest', totalInterest,
-                          interestPct, const Color(0xFFC0392B)),
-                      const SizedBox(height: 8),
-                      _buildLegendRow('Deposit', _deposit, _deposit / _propVal,
-                          const Color(0xFFF5D060)),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-
-          // Freq compare bar chart
-          const SizedBox(height: 20),
-          Text('Payment Frequency Options',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
+          ],
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildFreqBar('Monthly', monthly, 1.0,
-                    const [Color(0xFF1A6B4A), Color(0xFF0D9488)]),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Results',
+                        style: AppTextStyles.playfair(
+                            size: 15, color: theme.getTextColor(context))),
+                    Text(
+                      'LVR: ${lvr.toStringAsFixed(1)}% ${lvr > 80 ? "⚠️ High" : "✅ OK"}',
+                      style: AppTextStyles.dmSans(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: lvr > 80
+                            ? const Color(0xFFC0392B)
+                            : const Color(0xFF1A6B4A),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 10),
-                _buildFreqBar('Fortnightly', fortnightly, 0.92,
-                    const [Color(0xFF0D9488), Color(0xFF0EA5E9)]),
-                const SizedBox(height: 10),
-                _buildFreqBar('Weekly', weekly, 0.46,
-                    const [Color(0xFF0EA5E9), Color(0xFF6D28D9)]),
-                const SizedBox(height: 14),
+
+                // Monthly Repayment Hero
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF115E59).withValues(alpha: 0.3)
-                        : const Color(0xFFF0FDFA),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: isDark
-                            ? const Color(0xFF0D9488)
-                            : const Color(0xFF5EEAD4)),
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      )
+                    ],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('💡 Fortnightly saves interest',
-                          style: AppTextStyles.dmSans(
-                              size: 11,
-                              weight: FontWeight.w800,
-                              color: isDark
-                                  ? const Color(0xFF2DD4BF)
-                                  : const Color(0xFF0F766E))),
-                      const SizedBox(height: 2),
                       Text(
-                        'Paying fortnightly (26 × half-monthly) makes ~1 extra month/yr, saving thousands in interest over the loan term.',
+                        repayType == 'PI'
+                            ? 'MONTHLY PRINCIPAL & INTEREST'
+                            : 'MONTHLY INTEREST ONLY PAYMENT',
                         style: AppTextStyles.dmSans(
-                            size: 9.5,
-                            color: isDark
-                                ? Colors.white70
-                                : const Color(0xFF0D9488)),
+                          size: 9.5,
+                          color: theme.getMutedColor(context),
+                          weight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(CurrencyFormatter.format(monthly, currencyCode: 'NZD'),
+                          style: AppTextStyles.playfair(
+                              size: 32,
+                              color: const Color(0xFF1A6B4A),
+                              weight: FontWeight.w800)),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildFreqCol('Weekly', weekly, theme),
+                          Container(
+                              height: 24,
+                              width: 1,
+                              color: theme.getBorderColor(context)),
+                          _buildFreqCol('Fortnightly', fortnightly, theme),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
+                const SizedBox(height: 14),
 
-          // Lender Comparison
-          const SizedBox(height: 20),
-          Text('Lender Comparison',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('NZ Bank Rates · 1-yr Fixed${isLive ? " 🟢 Live" : " (2025 Est.)"}',
-                    style: AppTextStyles.dmSans(
-                        size: 11,
-                        weight: FontWeight.w700,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 12),
-                ..._banks.map((b) {
-                  final rateVal = b['rate'] as double;
-                  final cheapestRate = (_banks.map((b) => b['rate'] as double).reduce((a, b) => a < b ? a : b));
-                  final m = _calculateBankMonthly(
-                      loanAmt, rateVal, _termYears, _repayType);
-                  final cheapest = _calculateBankMonthly(
-                      loanAmt, cheapestRate, _termYears, _repayType);
-                  final diff = m - cheapest;
-                  return Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      border: Border(
-                          bottom:
-                              BorderSide(color: theme.getBorderColor(context))),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
+                // Stats breakdown
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildBreakdownRow('Loan Amount', loanAmt, theme),
+                      const Divider(height: 20),
+                      _buildBreakdownRow('Total Interest Paid', totalInterest, theme),
+                      const Divider(height: 20),
+                      _buildBreakdownRow('Total Cost of Loan', totalPaid, theme),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Donut Chart Visual
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: CustomPaint(
+                          painter: _NZMortgageDonutPainter(
+                              pPct: principalPct, iPct: interestPct),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                    color: rateVal == 6.55
-                                        ? const Color(0xFF1A6B4A)
-                                        : const Color(0xFFC0C8C1),
-                                    shape: BoxShape.circle)),
-                            const SizedBox(width: 8),
-                            Text('${b['icon']} ${b['name']}',
-                                style: AppTextStyles.dmSans(
-                                    size: 11.5,
-                                    weight: FontWeight.w800,
-                                    color: theme.getTextColor(context))),
-                            const SizedBox(width: 6),
-                            Text('${rateVal.toStringAsFixed(2)}% p.a.',
-                                style: AppTextStyles.dmSans(
-                                    size: 10,
-                                    color: theme.getMutedColor(context))),
+                            _buildLegendItem('Principal', principalPct,
+                                const Color(0xFF1A6B4A), theme),
+                            const SizedBox(height: 6),
+                            _buildLegendItem('Total Interest', interestPct,
+                                const Color(0xFFD4A017), theme),
                           ],
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Real estate list / Save Report Card
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('💾 Save this comparison',
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context))),
+                          Text('Keep record in your portfolio',
+                              style: AppTextStyles.dmSans(
+                                  size: 9, color: theme.getMutedColor(context))),
+                        ],
+                      ),
+                      ElevatedButton(
+                        onPressed: _saveCalculation,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D9488),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                        ),
+                        child: Text('Save',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: Colors.white,
+                                weight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Bank comparison table
+                Text('Estimated NZ Bank Comparison',
+                    style: AppTextStyles.playfair(
+                        size: 14, color: theme.getTextColor(context))),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    children: _banks.map((b) {
+                      final bRate = b['rate'] as double;
+                      final bPmt = _calcMonthlyPmt(loanAmt, bRate, termYears, repayType);
+                      final diff = bPmt - monthly;
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(
+                                  color: theme.getBorderColor(context),
+                                  width: b == _banks.last ? 0 : 1)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('\$${m.toStringAsFixed(0)}/mo',
-                                style: AppTextStyles.dmSans(
-                                    size: 12,
-                                    weight: FontWeight.w800,
-                                    color: const Color(0xFF1A6B4A))),
-                            Text(
-                                diff == 0
-                                    ? 'Cheapest'
-                                    : '+\$${diff.toStringAsFixed(0)}/mo',
-                                style: AppTextStyles.dmSans(
-                                    size: 9,
-                                    weight: FontWeight.w700,
-                                    color: diff == 0
-                                        ? const Color(0xFF1A6B4A)
-                                        : const Color(0xFFC0392B))),
+                            Row(
+                              children: [
+                                Text(b['icon'] as String,
+                                    style: const TextStyle(fontSize: 18)),
+                                const SizedBox(width: 10),
+                                Text(b['name'] as String,
+                                    style: AppTextStyles.dmSans(
+                                        size: 12,
+                                        weight: FontWeight.w700,
+                                        color: theme.getTextColor(context))),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                    '${CurrencyFormatter.compact(bPmt, symbol: "NZ\$")}/mo',
+                                    style: AppTextStyles.dmSans(
+                                        size: 12,
+                                        weight: FontWeight.w800,
+                                        color: theme.getTextColor(context))),
+                                Text(
+                                  '${bRate.toStringAsFixed(2)}% · ${diff == 0 ? "current" : (diff > 0 ? "+${CurrencyFormatter.compact(diff)}/mo" : "${CurrencyFormatter.compact(diff)}/mo")}',
+                                  style: AppTextStyles.dmSans(
+                                      size: 9,
+                                      color: diff > 0
+                                          ? const Color(0xFFC0392B)
+                                          : (diff < 0
+                                              ? const Color(0xFF1A6B4A)
+                                              : theme.getMutedColor(context)),
+                                      weight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
-                    ),
-                  );
-                }),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ],
             ),
           ),
@@ -799,38 +803,17 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
     );
   }
 
-  double _calculateBankMonthly(
-      double loan, double rate, int years, String type) {
-    final r = rate / 100 / 12;
-    final n = years * 12;
-    if (type == 'IO') return loan * r;
-    if (r == 0) return loan / n;
-    return loan * (r * pow(1 + r, n)) / (pow(1 + r, n) - 1);
-  }
-
-  Widget _buildRatePill(String label, double rateVal) {
-    final active = _rate == rateVal;
-    return GestureDetector(
-      onTap: () => setState(() => _rate = rateVal),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: active
-              ? const Color(0xFF0D3B2E)
-              : Colors.white.withValues(alpha: 0.1),
-          border: Border.all(
-              color: active
-                  ? const Color(0xFF1A6B4A)
-                  : Colors.white.withValues(alpha: 0.15)),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(label,
-            style: AppTextStyles.dmSans(
-                size: 11,
-                weight: FontWeight.w700,
-                color: active ? Colors.white : Colors.white70)),
-      ),
-    );
+  double _calcMonthlyPmt(double loanAmt, double rRate, int term, String type) {
+    final monthlyRate = rRate / 100 / 12;
+    final n = term * 12;
+    if (type == 'PI') {
+      if (monthlyRate == 0) return loanAmt / n;
+      return loanAmt *
+          (monthlyRate * pow(1 + monthlyRate, n)) /
+          (pow(1 + monthlyRate, n) - 1);
+    } else {
+      return loanAmt * monthlyRate;
+    }
   }
 
   Widget _buildInputBox({
@@ -840,12 +823,13 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
     bool isPercent = false,
     bool isInteger = false,
     required ValueChanged<double> onChanged,
+    String? errorText,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        border: Border.all(color: errorText != null ? Colors.red : Colors.white.withValues(alpha: 0.15)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -867,6 +851,7 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                         weight: FontWeight.w700)),
               Expanded(
                 child: TextFormField(
+                  key: ValueKey(value),
                   initialValue:
                       isInteger ? value.toInt().toString() : value.toString(),
                   keyboardType: TextInputType.number,
@@ -891,205 +876,150 @@ class _NZMortgageCalcState extends ConsumerState<NZMortgageCalc> {
                         weight: FontWeight.w700)),
             ],
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildSummaryBox(String label, String value, Color color) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFEDF5F2),
-        border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.transparent),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(label,
-              style: AppTextStyles.dmSans(
-                  size: 8,
-                  color: isDark ? Colors.white70 : const Color(0xFF4A6358),
-                  weight: FontWeight.w600),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 2),
-          Text(value,
-              style: AppTextStyles.playfair(
-                  size: 12, color: color, weight: FontWeight.w800),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLegendRow(String label, double val, double pct, Color color) {
-    final theme = widget.theme;
-    return Row(
-      children: [
-        Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-                color: color, borderRadius: BorderRadius.circular(2))),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(label,
-              style: AppTextStyles.dmSans(
-                  size: 11,
-                  color: theme.getMutedColor(context),
-                  weight: FontWeight.w600)),
+  Widget _buildRatePill(String label, double rateVal) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _rate = rateVal;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.07),
+          border: Border.all(
+              color: _rate == rateVal
+                  ? const Color(0xFFF5D060)
+                  : Colors.white.withValues(alpha: 0.12)),
+          borderRadius: BorderRadius.circular(20),
         ),
-        Text(
-          '${CurrencyFormatter.compact(val, symbol: 'NZ\$')} (${(pct * 100).toStringAsFixed(0)}%)',
+        child: Text(
+          label,
           style: AppTextStyles.dmSans(
-              size: 11,
-              color: theme.getTextColor(context),
-              weight: FontWeight.w700),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFreqBar(
-      String label, double val, double widthPct, List<Color> colors) {
-    final theme = widget.theme;
-    return Row(
-      children: [
-        SizedBox(
-            width: 60,
-            child: Text(label,
-                style: AppTextStyles.dmSans(
-                    size: 10,
-                    color: theme.getMutedColor(context),
-                    weight: FontWeight.w700))),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Stack(
-                children: [
-                  Container(
-                    height: 14,
-                    decoration: BoxDecoration(
-                        color: theme.getBgColor(context),
-                        borderRadius: BorderRadius.circular(6)),
-                  ),
-                  Container(
-                    width: constraints.maxWidth * widthPct,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: colors),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                ],
-              );
-            },
+            size: 9,
+            color: _rate == rateVal ? const Color(0xFFF5D060) : Colors.white70,
+            weight: FontWeight.w700,
           ),
         ),
-        const SizedBox(width: 8),
+      ),
+    );
+  }
+
+  Widget _buildFreqCol(String freq, double val, CountryTheme theme) {
+    return Column(
+      children: [
+        Text(freq,
+            style: AppTextStyles.dmSans(
+                size: 9,
+                color: theme.getMutedColor(context),
+                weight: FontWeight.w600)),
+        const SizedBox(height: 2),
         Text(CurrencyFormatter.format(val, currencyCode: 'NZD'),
             style: AppTextStyles.dmSans(
-                size: 11,
+                size: 13,
                 color: theme.getTextColor(context),
                 weight: FontWeight.w800)),
       ],
     );
   }
+
+  Widget _buildBreakdownRow(String label, double val, CountryTheme theme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label,
+            style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.getMutedColor(context),
+                weight: FontWeight.w600)),
+        Text(CurrencyFormatter.format(val, currencyCode: 'NZD'),
+            style: AppTextStyles.dmSans(
+                size: 12,
+                color: theme.getTextColor(context),
+                weight: FontWeight.w800)),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(
+      String label, double pct, Color color, CountryTheme theme) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$label (${(pct * 100).toStringAsFixed(0)}%)',
+          style: AppTextStyles.dmSans(
+            size: 11,
+            color: theme.getTextColor(context),
+            weight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-class _NZDonutPainter extends CustomPainter {
-  final double principalPct;
-  final double interestPct;
-  final double lvr;
-  final bool isDark;
+class _NZMortgageDonutPainter extends CustomPainter {
+  final double pPct;
+  final double iPct;
 
-  _NZDonutPainter({
-    required this.principalPct,
-    required this.interestPct,
-    required this.lvr,
-    required this.isDark,
-  });
+  _NZMortgageDonutPainter({required this.pPct, required this.iPct});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = min(size.width, size.height) / 2 - 8;
-    const strokeWidth = 14.0;
+    final radius = min(size.width, size.height) / 2;
+    const strokeWidth = 10.0;
 
-    final paintBg = Paint()
-      ..color =
-          isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFEDF5F2)
+    final paintP = Paint()
+      ..color = const Color(0xFF1A6B4A)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 
-    canvas.drawCircle(center, radius, paintBg);
+    final paintI = Paint()
+      ..color = const Color(0xFFD4A017)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
 
-    double startAngle = -pi / 2;
+    final pAngle = pPct * 2 * pi;
+    final iAngle = iPct * 2 * pi;
 
-    // Draw Principal Segment
-    if (principalPct > 0) {
-      final sweepAngle = principalPct * 2 * pi;
-      final paintP = Paint()
-        ..color = const Color(0xFF1A6B4A)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
-      canvas.drawArc(Rect.fromCircle(center: center, radius: radius),
-          startAngle, sweepAngle, false, paintP);
-      startAngle += sweepAngle;
-    }
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
+      -pi / 2,
+      pAngle,
+      false,
+      paintP,
+    );
 
-    // Draw Interest Segment
-    if (interestPct > 0) {
-      final sweepAngle = interestPct * 2 * pi;
-      final paintI = Paint()
-        ..color = const Color(0xFFC0392B)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
-      canvas.drawArc(Rect.fromCircle(center: center, radius: radius),
-          startAngle, sweepAngle, false, paintI);
-    }
-
-    // Draw central LVR text
-    final textPainterLVR = TextPainter(
-      text: TextSpan(
-          text: 'LVR',
-          style: TextStyle(
-              color: isDark ? Colors.white70 : const Color(0xFF0A0F0D),
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Palatino')),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    textPainterLVR.paint(canvas, center - Offset(textPainterLVR.width / 2, 12));
-
-    final textPainterPct = TextPainter(
-      text: TextSpan(
-          text: '${lvr.toStringAsFixed(0)}%',
-          style: TextStyle(
-              color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF1A6B4A),
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Palatino')),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    textPainterPct.paint(canvas, center - Offset(textPainterPct.width / 2, -2));
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
+      -pi / 2 + pAngle,
+      iAngle,
+      false,
+      paintI,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _NZDonutPainter oldDelegate) =>
-      oldDelegate.principalPct != principalPct ||
-      oldDelegate.interestPct != interestPct ||
-      oldDelegate.lvr != lvr ||
-      oldDelegate.isDark != isDark;
+  bool shouldRepaint(covariant _NZMortgageDonutPainter oldDelegate) {
+    return oldDelegate.pPct != pPct || oldDelegate.iPct != iPct;
+  }
 }

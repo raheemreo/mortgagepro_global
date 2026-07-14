@@ -50,6 +50,9 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
     }
   };
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   @override
   void initState() {
     super.initState();
@@ -77,10 +80,21 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
       } else {
         _recommendedProgram = '❌ Over Limits for Both Programs';
       }
+      _calcSnapshot['income'] = double.tryParse(_incomeController.text) ?? 0.0;
+      _calcSnapshot['hhSize'] = _selectedHhSize;
+      _calcSnapshot['region'] = _selectedRegion;
       _showRecommenderResult = true;
-    } else {
-      _recommendProgram(showFeedback: false);
     }
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _incomeController.text = '65000';
+      _selectedHhSize = 4;
+      _selectedRegion = 'standard';
+      _showRecommenderResult = false;
+      _calcSnapshot.clear();
+    });
   }
 
   @override
@@ -116,6 +130,9 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
       _recDirectLimit = directLimit;
       _recGuarLimit = guarLimit;
       _recIndex = recommendedIndex;
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['hhSize'] = _selectedHhSize;
+      _calcSnapshot['region'] = _selectedRegion;
       _showRecommenderResult = true;
     });
 
@@ -129,10 +146,22 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
         ),
       );
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
-    final income = double.tryParse(_incomeController.text) ?? 0.0;
+    final income = _calcSnapshot['income'] ?? (double.tryParse(_incomeController.text) ?? 0.0);
+    final hhSize = _calcSnapshot['hhSize'] ?? _selectedHhSize;
+    final region = _calcSnapshot['region'] ?? _selectedRegion;
 
     final calc = SavedCalc.create(
       country: 'USA',
@@ -141,8 +170,8 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
       currencyCode: 'USD',
       inputs: {
         'income': income,
-        'hhSize': _selectedHhSize.toDouble(),
-        'region': _selectedRegion == 'standard' ? 0.0 : 1.0,
+        'hhSize': hhSize.toDouble(),
+        'region': region == 'standard' ? 0.0 : 1.0,
       },
       results: {
         'DirectLimit': _recDirectLimit,
@@ -256,12 +285,22 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
 
     // Check if the current inputs are already saved
     final savedList = ref.watch(savedProvider);
-    final currentIncome = double.tryParse(_incomeController.text) ?? 0.0;
+    final snapIncome = _calcSnapshot['income'] ?? 0.0;
+    final snapHhSize = _calcSnapshot['hhSize'] ?? 0;
+    final snapRegion = _calcSnapshot['region'] ?? '';
+
     final isCurrentCalcSaved = savedList.any((calc) =>
         calc.calcType == 'USDA 502 Direct vs Guaranteed' &&
-        calc.inputs['income'] == currentIncome &&
-        calc.inputs['hhSize'] == _selectedHhSize.toDouble() &&
-        (calc.inputs['region'] == 0.0 ? 'standard' : 'high') == _selectedRegion);
+        calc.inputs['income'] == snapIncome &&
+        calc.inputs['hhSize'] == snapHhSize.toDouble() &&
+        (calc.inputs['region'] == 0.0 ? 'standard' : 'high') == snapRegion);
+
+    final currentIncome = double.tryParse(_incomeController.text) ?? 0.0;
+    final isDirty = _showRecommenderResult && (
+      currentIncome != snapIncome ||
+      _selectedHhSize != snapHhSize ||
+      _selectedRegion != snapRegion
+    );
 
     return Scaffold(
       backgroundColor: bgCol,
@@ -556,29 +595,77 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
                         borderCol: borderCol,
                       ),
                       const SizedBox(height: 14),
-                      GestureDetector(
-                        onTap: () => _recommendProgram(showFeedback: true),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF15803D), Color(0xFF166534)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => _recommendProgram(showFeedback: true),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF15803D), Color(0xFF166534)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(11),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '🌾 Find My USDA Program',
+                                  style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                                ),
+                              ),
                             ),
-                            borderRadius: BorderRadius.circular(11),
                           ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '🌾 Find My USDA Program',
-                            style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: _resetInputs,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                              decoration: BoxDecoration(
+                                color: cardBg,
+                                border: Border.all(color: borderCol),
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              child: Text(
+                                'Reset',
+                                style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.w800),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
 
                       // Recommender Result Display inside the card
                       if (_showRecommenderResult) ...[
+                        if (isDirty) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFBEB),
+                              border: Border.all(color: const Color(0xFFFCD34D)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Text('⚠️', style: TextStyle(fontSize: 16)),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Find program again to update.',
+                                    style: AppTextStyles.dmSans(
+                                      size: 11,
+                                      color: const Color(0xFFB45309),
+                                      weight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         _buildRecommenderResultCard(isDark, isCurrentCalcSaved),
                       ],
@@ -1095,7 +1182,8 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
 
   // Recommender Output box with dynamic background color styling
   Widget _buildRecommenderResultCard(bool isDark, bool isSaved) {
-    final income = double.tryParse(_incomeController.text) ?? 0.0;
+    final income = _calcSnapshot['income'] ?? 0.0;
+    final hhSize = _calcSnapshot['hhSize'] ?? _selectedHhSize;
 
     // Gradients, borders, and text colors based on eligibility status index
     Gradient cardGrad;
@@ -1117,7 +1205,7 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
 
       rows = [
         _buildRecResultRow('Your Income', '\$${CurrencyFormatter.format(income)}', subTextCol, border),
-        _buildRecResultRow('Direct Limit ($_selectedHhSize-person)', '\$${CurrencyFormatter.format(_recDirectLimit)}', subTextCol, border),
+        _buildRecResultRow('Direct Limit ($hhSize-person)', '\$${CurrencyFormatter.format(_recDirectLimit)}', subTextCol, border),
         _buildRecResultRow('Also Qualifies for Guaranteed', '✅ Yes', subTextCol, border),
         _buildRecResultRow('Recommended Rate', 'As low as 1% (subsidized)', subTextCol, border),
       ];
@@ -1134,7 +1222,7 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
 
       rows = [
         _buildRecResultRow('Your Income', '\$${CurrencyFormatter.format(income)}', subTextCol, border),
-        _buildRecResultRow('Guaranteed Limit ($_selectedHhSize-person)', '\$${CurrencyFormatter.format(_recGuarLimit)}', subTextCol, border),
+        _buildRecResultRow('Guaranteed Limit ($hhSize-person)', '\$${CurrencyFormatter.format(_recGuarLimit)}', subTextCol, border),
         _buildRecResultRow('Direct Program', '❌ Over income cap', subTextCol, border),
         _buildRecResultRow('Typical Rate', '~6.35% (market)', subTextCol, border),
       ];
@@ -1151,12 +1239,13 @@ class _USAUsda502DirectVsGuaranteedScreenState extends ConsumerState<USAUsda502D
 
       rows = [
         _buildRecResultRow('Your Income', '\$${CurrencyFormatter.format(income)}', subTextCol, border),
-        _buildRecResultRow('Guaranteed Limit ($_selectedHhSize-person)', '\$${CurrencyFormatter.format(_recGuarLimit)}', subTextCol, border),
+        _buildRecResultRow('Guaranteed Limit ($hhSize-person)', '\$${CurrencyFormatter.format(_recGuarLimit)}', subTextCol, border),
         _buildRecResultRow('Income Over Limit', '\$${CurrencyFormatter.format(income - _recGuarLimit)}', subTextCol, border),
       ];
     }
 
     return Container(
+      key: _resultsKey,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: cardGrad,

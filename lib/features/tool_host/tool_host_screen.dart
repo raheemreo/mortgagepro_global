@@ -93,7 +93,6 @@ import '../newzealand/tools/nz_kiwisaver_balance.dart';
 import '../newzealand/tools/nz_employer_contrib.dart';
 import '../newzealand/tools/nz_rental_yield.dart';
 import '../newzealand/tools/nz_ring_fencing.dart';
-import '../newzealand/tools/nz_bright_line.dart';
 import '../newzealand/tools/nz_investment_property.dart';
 import '../newzealand/tools/nz_interest_deductibility.dart';
 import '../newzealand/tools/nz_nzx_investor_calc.dart';
@@ -117,7 +116,6 @@ import '../newzealand/tools/nz_reinz_hpi.dart';
 import '../newzealand/tools/nz_overseas_investment_act.dart';
 import '../newzealand/tools/nz_healthy_homes.dart';
 import '../newzealand/tools/nz_moneyhub_mortgage.dart';
-import '../newzealand/tools/nz_property_market_report.dart';
 
 // India Tools
 import '../india/tools/in_emi_calculator.dart';
@@ -414,8 +412,6 @@ class _ToolHostScreenState extends ConsumerState<ToolHostScreen> {
         return 'Employer Contribution';
       case 'ringfencing':
         return 'Ring-Fencing Rules';
-      case 'brightline':
-        return 'Bright-Line Test';
       case 'investmentproperty':
         return 'Investment Property';
       case 'interestdeductibility':
@@ -452,8 +448,6 @@ class _ToolHostScreenState extends ConsumerState<ToolHostScreen> {
         return 'KiwiSaver Withdrawal';
       case 'allregions':
         return 'NZ House Prices';
-      case 'property_market_report':
-        return 'NZ Property Market Report';
       case 'kaingaora':
         return 'Kāinga Ora Eligibility';
       case 'reinz_hpi':
@@ -878,8 +872,6 @@ class _ToolHostScreenState extends ConsumerState<ToolHostScreen> {
           return NZRentalYieldCalc(theme: _theme);
         case 'ringfencing':
           return NZRingFencingRules(theme: _theme);
-        case 'brightline':
-          return NZBrightLineTest(theme: _theme);
         case 'investmentproperty':
           return NZInvestmentProperty(theme: _theme);
         case 'interestdeductibility':
@@ -916,8 +908,6 @@ class _ToolHostScreenState extends ConsumerState<ToolHostScreen> {
           return NZKiwiSaverWithdrawal(theme: _theme);
         case 'allregions':
           return NZAllRegions(theme: _theme);
-        case 'property_market_report':
-          return NZPropertyMarketReport(theme: _theme);
         case 'kaingaora':
           return NZKaingaOra(theme: _theme);
         case 'reinz_hpi':

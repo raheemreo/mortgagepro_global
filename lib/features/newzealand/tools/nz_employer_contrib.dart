@@ -19,11 +19,15 @@ class NZEmployerContrib extends ConsumerStatefulWidget {
 
 class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
   final _salaryController = TextEditingController(text: '75000');
+  int _payFreq = 26; // 52 = weekly, 26 = fortnightly, 12 = monthly
+  int _empExtra = 0; // 0 = 3%, 1 = 4%, 2 = 5%
+  double _contribRate = 3.0; // 3, 4, 6, 8, 10
+  double _taxRate = 17.5; // marginal ESCT tax rate
 
-  int _payFreq = 26; // 52 (weekly) | 26 (fortnightly) | 12 (monthly)
-  int _empExtra = 0; // 0 (3%) | 1 (4%) | 2 (5%)
-  double _contribRate = 4.0; // 3, 4, 6, 8, 10
-  double _taxRate = 30.0; // 10.5 | 17.5 | 30 | 33 | 39
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -31,27 +35,92 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _salaryController.text = '75000';
+      _payFreq = 26;
+      _empExtra = 0;
+      _contribRate = 3.0;
+      _taxRate = 17.5;
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
 
+  void _calculate() {
+    final errors = <String, String>{};
+    final salary = double.tryParse(_salaryController.text) ?? 0.0;
+
+    if (salary <= 0) {
+      errors['salary'] = 'Enter valid annual gross salary';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['salary'] = salary;
+      _calcSnapshot['payFreq'] = _payFreq;
+      _calcSnapshot['empExtra'] = _empExtra;
+      _calcSnapshot['contribRate'] = _contribRate;
+      _calcSnapshot['taxRate'] = _taxRate;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
 
   void _saveCalculation() async {
-    final double salary = double.tryParse(_salaryController.text) ?? 75000;
-    final esct = _taxRate / 100;
-    final empRate = 0.03 + (_empExtra / 100);
+    final double snapSalary = _calcSnapshot['salary'] ?? (double.tryParse(_salaryController.text) ?? 75000.0);
+    final double snapTaxRate = _calcSnapshot['taxRate'] ?? _taxRate;
+    final int snapEmpExtra = _calcSnapshot['empExtra'] ?? _empExtra;
+    final double snapContribRate = _calcSnapshot['contribRate'] ?? _contribRate;
 
-    final annualYou = salary * (_contribRate / 100);
-    final annualEmpGross = salary * empRate;
+    final esct = snapTaxRate / 100;
+    final empRate = 0.03 + (snapEmpExtra / 100);
+
+    final annualYou = snapSalary * (snapContribRate / 100);
+    final annualEmpGross = snapSalary * empRate;
     final annualEmpNet = annualEmpGross * (1 - esct);
     final annualGovt = min(annualYou * 0.5, 521.43);
     final annualTotal = annualYou + annualEmpNet + annualGovt;
+    final annualESCT = annualEmpGross - annualEmpNet;
+    final empFree = annualEmpNet + annualGovt;
 
-    final labelCtrl = TextEditingController(text: 'NZ Employer Match');
+    final inputs = <String, double>{
+      'salary': snapSalary,
+      'payFreq': (_calcSnapshot['payFreq'] ?? _payFreq).toDouble(),
+      'empExtra': snapEmpExtra.toDouble(),
+      'contribRate': snapContribRate,
+      'taxRate': snapTaxRate,
+    };
+    final results = <String, double>{
+      'annualTotal': annualTotal,
+      'employerFree': empFree,
+      'annualYou': annualYou,
+      'annualESCT': annualESCT,
+    };
+
+    final labelCtrl = TextEditingController(text: 'NZ KiwiSaver Match');
     final confirmed = await showDialog<bool>(
       context: context,
       routeSettings: const RouteSettings(name: '/dialog/nz_employer_contrib/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('💾 Save Calculation',
+        title: Text('💾 Save KiwiSaver Details',
             style: AppTextStyles.playfair(
                 size: 16, color: widget.theme.getTextColor(context))),
         content: Column(
@@ -59,7 +128,7 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Total Annual Match ${CurrencyFormatter.compact(annualTotal, symbol: 'NZ\$')} · Salary: ${CurrencyFormatter.compact(salary, symbol: 'NZ\$')}',
+              'Total KiwiSaver: ${CurrencyFormatter.compact(annualTotal, symbol: 'NZ\$')}/yr · Free money: ${CurrencyFormatter.compact(empFree, symbol: 'NZ\$')}/yr',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -70,7 +139,7 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
               style: AppTextStyles.dmSans(
                   size: 13, color: widget.theme.getTextColor(context)),
               decoration: InputDecoration(
-                hintText: 'Label (e.g. Current Job Match)',
+                hintText: 'Label (e.g. My KiwiSaver Match)',
                 hintStyle: AppTextStyles.dmSans(size: 13, color: Colors.grey),
                 filled: true,
                 fillColor: widget.theme.getBgColor(context),
@@ -106,23 +175,13 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
     if (confirmed == true && mounted) {
       final label = labelCtrl.text.trim().isNotEmpty
           ? labelCtrl.text.trim()
-          : 'Employer Contrib';
+          : 'KiwiSaver Match';
+
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'Employer Contrib',
-        inputs: {
-          'salary': salary,
-          'payFreq': _payFreq.toDouble(),
-          'empExtra': _empExtra.toDouble(),
-          'contribRate': _contribRate,
-          'taxRate': _taxRate,
-        },
-        results: {
-          'annualTotal': annualTotal,
-          'annualYou': annualYou,
-          'annualEmpNet': annualEmpNet,
-          'annualGovt': annualGovt,
-        },
+        inputs: inputs,
+        results: results,
         label: label,
         currencyCode: 'NZD',
       );
@@ -132,7 +191,7 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Employer match calculation saved!',
+            content: Text('✅ Savings profile saved!',
                 style: AppTextStyles.dmSans(
                     color: Colors.white, weight: FontWeight.w700)),
             backgroundColor: const Color(0xFF1A6B4A),
@@ -147,11 +206,22 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double salary = double.tryParse(_salaryController.text) ?? 75000;
-    final esct = _taxRate / 100;
-    final empRate = 0.03 + (_empExtra / 100);
+    final double rawSalary = double.tryParse(_salaryController.text) ?? 75000;
+    final int rawPayFreq = _payFreq;
+    final int rawEmpExtra = _empExtra;
+    final double rawContribRate = _contribRate;
+    final double rawTaxRate = _taxRate;
 
-    final annualYou = salary * (_contribRate / 100);
+    final double salary = _showResults ? (_calcSnapshot['salary'] ?? rawSalary) : rawSalary;
+    final int payFreq = _showResults ? (_calcSnapshot['payFreq'] ?? rawPayFreq) : rawPayFreq;
+    final int empExtra = _showResults ? (_calcSnapshot['empExtra'] ?? rawEmpExtra) : rawEmpExtra;
+    final double contribRate = _showResults ? (_calcSnapshot['contribRate'] ?? rawContribRate) : rawContribRate;
+    final double taxRate = _showResults ? (_calcSnapshot['taxRate'] ?? rawTaxRate) : rawTaxRate;
+
+    final esct = taxRate / 100;
+    final empRate = 0.03 + (empExtra / 100);
+
+    final annualYou = salary * (contribRate / 100);
     final annualEmpGross = salary * empRate;
     final annualEmpNet = annualEmpGross * (1 - esct);
     final annualGovt = min(annualYou * 0.5, 521.43);
@@ -160,9 +230,9 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
     final empFree = annualEmpNet + annualGovt;
 
     // Per pay calculations
-    final perPayYou = annualYou / _payFreq;
-    final perPayEmpNet = annualEmpNet / _payFreq;
-    final perPayGovt = annualGovt / _payFreq;
+    final perPayYou = annualYou / payFreq;
+    final perPayEmpNet = annualEmpNet / payFreq;
+    final perPayGovt = annualGovt / payFreq;
     final perPayTotal = perPayYou + perPayEmpNet + perPayGovt;
 
     // Monthly calculations
@@ -170,6 +240,14 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
     final monthlyEmpNet = annualEmpNet / 12;
     final monthlyGovt = annualGovt / 12;
     final monthlyTotal = annualTotal / 12;
+
+    final isDirty = _showResults && (
+      _salaryController.text != (_calcSnapshot['salary']?.toString() ?? '') ||
+      _payFreq != (_calcSnapshot['payFreq'] ?? 0) ||
+      _empExtra != (_calcSnapshot['empExtra'] ?? 0) ||
+      _contribRate != (_calcSnapshot['contribRate'] ?? 0.0) ||
+      _taxRate != (_calcSnapshot['taxRate'] ?? 0.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,92 +263,20 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
                   weight: FontWeight.w800,
                   color: theme.getTextColor(context)),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
-                border: Border.all(color: const Color(0xFFF59E0B)),
-                borderRadius: BorderRadius.circular(20),
-              ),
+            GestureDetector(
+              onTap: _reset,
               child: Text(
-                'IRD 2025 Rules',
+                'Reset ↺',
                 style: AppTextStyles.dmSans(
-                    size: 9, color: const Color(0xFF92400E), weight: FontWeight.bold),
+                  size: 11,
+                  color: const Color(0xFFC0392B),
+                  weight: FontWeight.bold,
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 10),
-
-        // Summary Hero grid
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'KIWISAVER EMPLOYER MATCH · ANNUAL TOTALS',
-                style: AppTextStyles.dmSans(
-                  size: 8,
-                  color: Colors.white70,
-                  weight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 12),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 1.6,
-                children: [
-                  _buildHeroGridBox(
-                    label: 'Total Into KiwiSaver',
-                    val: CurrencyFormatter.format(annualTotal, currencyCode: 'NZD'),
-                    valColor: const Color(0xFFF5D060),
-                    sub: 'Per year (all sources)',
-                  ),
-                  _buildHeroGridBox(
-                    label: 'Employer "Free Money"',
-                    val: CurrencyFormatter.format(empFree, currencyCode: 'NZD'),
-                    valColor: const Color(0xFF5EEAD4),
-                    sub: '3% match + Govt',
-                  ),
-                  _buildHeroGridBox(
-                    label: 'Your Weekly Contrib',
-                    val: CurrencyFormatter.format(annualYou / 52, currencyCode: 'NZD'),
-                    valColor: Colors.white,
-                    sub: 'From your pay',
-                  ),
-                  _buildHeroGridBox(
-                    label: 'Employer ESCT Tax',
-                    val: CurrencyFormatter.format(annualESCT, currencyCode: 'NZD'),
-                    valColor: const Color(0xFFFCA5A5),
-                    sub: 'Deducted before deposit',
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
 
         // Details Inputs
         Text(
@@ -304,6 +310,7 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
               _buildTextInput(
                 label: 'Annual Gross Salary (NZD)',
                 controller: _salaryController,
+                errorText: _errors['salary'],
               ),
               const SizedBox(height: 12),
 
@@ -370,7 +377,7 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
               // ESCT Tax Dropdown
               _buildDropdown(
@@ -388,7 +395,7 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
 
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _saveCalculation,
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD4A017),
                   foregroundColor: Colors.white,
@@ -406,266 +413,385 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
         ),
         const SizedBox(height: 20),
 
-        // Per-Pay Breakdown table
-        Text(
-          'Per-Pay Breakdown',
-          style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context)),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '📊 Contribution Split',
-                style: AppTextStyles.dmSans(
-                  size: 12,
-                  weight: FontWeight.bold,
-                  color: theme.getTextColor(context),
-                ),
+        // Results Card
+        if (_showResults) ...[
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              const SizedBox(height: 12),
-
-              // Header Row
-              Row(
+              child: Row(
                 children: [
-                  Expanded(flex: 2, child: Text('Source', style: _hStyle(theme, context))),
-                  Expanded(child: Text('Per Pay', style: _hStyle(theme, context), textAlign: TextAlign.right)),
-                  Expanded(child: Text('Monthly', style: _hStyle(theme, context), textAlign: TextAlign.right)),
-                  Expanded(child: Text('Annual', style: _hStyle(theme, context), textAlign: TextAlign.right)),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Employer Match to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 8),
-              const Divider(height: 1),
-
-              // Row 1: You
-              _buildTableRow(
-                title: '👤 You',
-                sub: '${_contribRate.toInt()}% of salary',
-                v1: CurrencyFormatter.compact(perPayYou, symbol: 'NZ\$'),
-                v2: CurrencyFormatter.compact(monthlyYou, symbol: 'NZ\$'),
-                v3: CurrencyFormatter.compact(annualYou, symbol: 'NZ\$'),
-                vColor: const Color(0xFF0D9488),
-              ),
-              const Divider(height: 1),
-
-              // Row 2: Employer
-              _buildTableRow(
-                title: '🏢 Employer',
-                sub: '${(empRate * 100).toInt()}% match (net ESCT)',
-                v1: CurrencyFormatter.compact(perPayEmpNet, symbol: 'NZ\$'),
-                v2: CurrencyFormatter.compact(monthlyEmpNet, symbol: 'NZ\$'),
-                v3: CurrencyFormatter.compact(annualEmpNet, symbol: 'NZ\$'),
-                vColor: const Color(0xFFD4A017),
-              ),
-              const Divider(height: 1),
-
-              // Row 3: Govt
-              _buildTableRow(
-                title: '🏛️ Govt Contrib',
-                sub: '50c/\$1 up to \$521',
-                v1: CurrencyFormatter.compact(perPayGovt, symbol: 'NZ\$'),
-                v2: CurrencyFormatter.compact(monthlyGovt, symbol: 'NZ\$'),
-                v3: CurrencyFormatter.compact(annualGovt, symbol: 'NZ\$'),
-                vColor: const Color(0xFF1A6B4A),
-              ),
-              const Divider(height: 1),
-
-              // Row 4: Total (highlighted)
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                margin: const EdgeInsets.only(top: 4),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFF0FDFA), Color(0xFFECFDF5)],
+            ),
+            const SizedBox(height: 12),
+          ],
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Summary Hero grid
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF5EEAD4)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'KIWISAVER EMPLOYER MATCH · ANNUAL TOTALS',
+                        style: AppTextStyles.dmSans(
+                          size: 8,
+                          color: Colors.white70,
+                          weight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        childAspectRatio: 1.6,
                         children: [
-                          Text('✅ Total',
-                              style: AppTextStyles.dmSans(
-                                  size: 11, weight: FontWeight.bold, color: const Color(0xFF0F766E))),
-                          Text('All sources',
-                              style: AppTextStyles.dmSans(size: 8, color: const Color(0xFF0D9488))),
+                          _buildHeroGridBox(
+                            label: 'Total Into KiwiSaver',
+                            val: CurrencyFormatter.format(annualTotal, currencyCode: 'NZD'),
+                            valColor: const Color(0xFFF5D060),
+                            sub: 'Per year (all sources)',
+                          ),
+                          _buildHeroGridBox(
+                            label: 'Employer "Free Money"',
+                            val: CurrencyFormatter.format(empFree, currencyCode: 'NZD'),
+                            valColor: const Color(0xFF5EEAD4),
+                            sub: '3% match + Govt',
+                          ),
+                          _buildHeroGridBox(
+                            label: 'Your Weekly Contrib',
+                            val: CurrencyFormatter.format(annualYou / 52, currencyCode: 'NZD'),
+                            valColor: Colors.white,
+                            sub: 'From your pay',
+                          ),
+                          _buildHeroGridBox(
+                            label: 'Employer ESCT Tax',
+                            val: CurrencyFormatter.format(annualESCT, currencyCode: 'NZD'),
+                            valColor: const Color(0xFFFCA5A5),
+                            sub: 'Deducted before deposit',
+                          ),
                         ],
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        CurrencyFormatter.compact(perPayTotal, symbol: 'NZ\$'),
-                        style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: const Color(0xFF0F766E)),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        CurrencyFormatter.compact(monthlyTotal, symbol: 'NZ\$'),
-                        style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: const Color(0xFF0F766E)),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        CurrencyFormatter.compact(annualTotal, symbol: 'NZ\$'),
-                        style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: const Color(0xFF0F766E)),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Donut & Bar Charts Card
-        Text(
-          'Contribution Split',
-          style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context)),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Annual Mix',
-                style: AppTextStyles.dmSans(
-                  size: 12,
-                  weight: FontWeight.bold,
-                  color: theme.getTextColor(context),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Row with Donut chart and Legend
-              Row(
-                children: [
-                  SizedBox(
-                    width: 110,
-                    height: 110,
-                    child: CustomPaint(
-                      painter: _NZEmployerDonutPainter(
-                        you: annualYou,
-                        emp: annualEmpNet,
-                        govt: annualGovt,
-                        theme: theme,
-                      ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _buildLegendItem(
-                          dotColor: const Color(0xFF5EEAD4),
-                          label: 'You',
-                          val: '${CurrencyFormatter.compact(annualYou, symbol: 'NZ\$')}/yr (${(annualYou / annualTotal * 100).round()}%)',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildLegendItem(
-                          dotColor: const Color(0xFFF5D060),
-                          label: 'Employer',
-                          val: '${CurrencyFormatter.compact(annualEmpNet, symbol: 'NZ\$')}/yr (${(annualEmpNet / annualTotal * 100).round()}%)',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildLegendItem(
-                          dotColor: const Color(0xFF6EE7B7),
-                          label: 'Government',
-                          val: '${CurrencyFormatter.compact(annualGovt, symbol: 'NZ\$')}/yr (${(annualGovt / annualTotal * 100).round()}%)',
-                        ),
-                      ],
-                    ),
+                ),
+                const SizedBox(height: 20),
+
+                // Per-Pay Breakdown table
+                Text(
+                  'Per-Pay Breakdown',
+                  style: AppTextStyles.playfair(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📊 Contribution Split',
+                        style: AppTextStyles.dmSans(
+                          size: 12,
+                          weight: FontWeight.bold,
+                          color: theme.getTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
 
-              // Annual track bars
-              _buildProgressTrack(
-                label: '🧑 You',
-                val: '${CurrencyFormatter.compact(annualYou, symbol: 'NZ\$')} / yr',
-                pct: annualYou / annualTotal,
-                color: const Color(0xFF5EEAD4),
-              ),
-              const SizedBox(height: 10),
-              _buildProgressTrack(
-                label: '🏢 Employer',
-                val: '${CurrencyFormatter.compact(annualEmpNet, symbol: 'NZ\$')} / yr',
-                pct: annualEmpNet / annualTotal,
-                color: const Color(0xFFF5D060),
-              ),
-              const SizedBox(height: 10),
-              _buildProgressTrack(
-                label: '🏛️ Government',
-                val: '${CurrencyFormatter.compact(annualGovt, symbol: 'NZ\$')} / yr',
-                pct: annualGovt / annualTotal,
-                color: const Color(0xFF6EE7B7),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
+                      // Header Row
+                      Row(
+                        children: [
+                          Expanded(flex: 2, child: Text('Source', style: _hStyle(theme, context))),
+                          Expanded(child: Text('Per Pay', style: _hStyle(theme, context), textAlign: TextAlign.right)),
+                          Expanded(child: Text('Monthly', style: _hStyle(theme, context), textAlign: TextAlign.right)),
+                          Expanded(child: Text('Annual', style: _hStyle(theme, context), textAlign: TextAlign.right)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Divider(height: 1),
 
-        // ESCT Warning Alert
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
+                      // Row 1: You
+                      _buildTableRow(
+                        title: '👤 You',
+                        sub: '${contribRate.toInt()}% of salary',
+                        v1: CurrencyFormatter.compact(perPayYou, symbol: 'NZ\$'),
+                        v2: CurrencyFormatter.compact(monthlyYou, symbol: 'NZ\$'),
+                        v3: CurrencyFormatter.compact(annualYou, symbol: 'NZ\$'),
+                        vColor: const Color(0xFF0D9488),
+                      ),
+                      const Divider(height: 1),
+
+                      // Row 2: Employer
+                      _buildTableRow(
+                        title: '🏢 Employer',
+                        sub: '${(empRate * 100).toInt()}% match (net ESCT)',
+                        v1: CurrencyFormatter.compact(perPayEmpNet, symbol: 'NZ\$'),
+                        v2: CurrencyFormatter.compact(monthlyEmpNet, symbol: 'NZ\$'),
+                        v3: CurrencyFormatter.compact(annualEmpNet, symbol: 'NZ\$'),
+                        vColor: const Color(0xFFD4A017),
+                      ),
+                      const Divider(height: 1),
+
+                      // Row 3: Govt
+                      _buildTableRow(
+                        title: '🏛️ Govt Contrib',
+                        sub: '50c/\$1 up to \$521',
+                        v1: CurrencyFormatter.compact(perPayGovt, symbol: 'NZ\$'),
+                        v2: CurrencyFormatter.compact(monthlyGovt, symbol: 'NZ\$'),
+                        v3: CurrencyFormatter.compact(annualGovt, symbol: 'NZ\$'),
+                        vColor: const Color(0xFF1A6B4A),
+                      ),
+                      const Divider(height: 1),
+
+                      // Row 4: Total (highlighted)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        margin: const EdgeInsets.only(top: 4),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFF0FDFA), Color(0xFFECFDF5)],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF5EEAD4)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('✅ Total',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11, weight: FontWeight.bold, color: const Color(0xFF0F766E))),
+                                  Text('All sources',
+                                      style: AppTextStyles.dmSans(size: 8, color: const Color(0xFF0D9488))),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                CurrencyFormatter.compact(perPayTotal, symbol: 'NZ\$'),
+                                style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: const Color(0xFF0F766E)),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                CurrencyFormatter.compact(monthlyTotal, symbol: 'NZ\$'),
+                                style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: const Color(0xFF0F766E)),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                CurrencyFormatter.compact(annualTotal, symbol: 'NZ\$'),
+                                style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: const Color(0xFF0F766E)),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Donut & Bar Charts Card
+                Text(
+                  'Contribution Split',
+                  style: AppTextStyles.playfair(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Annual Mix',
+                        style: AppTextStyles.dmSans(
+                          size: 12,
+                          weight: FontWeight.bold,
+                          color: theme.getTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Row with Donut chart and Legend
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 110,
+                            height: 110,
+                            child: CustomPaint(
+                              painter: _NZEmployerDonutPainter(
+                                you: annualYou,
+                                emp: annualEmpNet,
+                                govt: annualGovt,
+                                theme: theme,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildLegendItem(
+                                  dotColor: const Color(0xFF5EEAD4),
+                                  label: 'You',
+                                  val: '${CurrencyFormatter.compact(annualYou, symbol: 'NZ\$')}/yr (${(annualYou / annualTotal * 100).round()}%)',
+                                ),
+                                const SizedBox(height: 8),
+                                _buildLegendItem(
+                                  dotColor: const Color(0xFFF5D060),
+                                  label: 'Employer',
+                                  val: '${CurrencyFormatter.compact(annualEmpNet, symbol: 'NZ\$')}/yr (${(annualEmpNet / annualTotal * 100).round()}%)',
+                                ),
+                                const SizedBox(height: 8),
+                                _buildLegendItem(
+                                  dotColor: const Color(0xFF6EE7B7),
+                                  label: 'Government',
+                                  val: '${CurrencyFormatter.compact(annualGovt, symbol: 'NZ\$')}/yr (${(annualGovt / annualTotal * 100).round()}%)',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Annual track bars
+                      _buildProgressTrack(
+                        label: '🧑 You',
+                        val: '${CurrencyFormatter.compact(annualYou, symbol: 'NZ\$')} / yr',
+                        pct: annualYou / annualTotal,
+                        color: const Color(0xFF5EEAD4),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildProgressTrack(
+                        label: '🏢 Employer',
+                        val: '${CurrencyFormatter.compact(annualEmpNet, symbol: 'NZ\$')} / yr',
+                        pct: annualEmpNet / annualTotal,
+                        color: const Color(0xFFF5D060),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildProgressTrack(
+                        label: '🏛️ Government',
+                        val: '${CurrencyFormatter.compact(annualGovt, symbol: 'NZ\$')} / yr',
+                        pct: annualGovt / annualTotal,
+                        color: const Color(0xFF6EE7B7),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // ESCT Warning Alert
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFF59E0B)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '⚠️ ESCT Tax Alert',
+                        style: AppTextStyles.dmSans(
+                          size: 11,
+                          weight: FontWeight.bold,
+                          color: const Color(0xFF92400E),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Your employer contributes ${CurrencyFormatter.compact(annualEmpGross, symbol: 'NZ\$')}/yr gross, but after ESCT (${taxRate.toStringAsFixed(1)}%), only ${CurrencyFormatter.compact(annualEmpNet, symbol: 'NZ\$')}/yr actually reaches your KiwiSaver. That\'s ${CurrencyFormatter.compact(annualESCT, symbol: 'NZ\$')}/yr in tax deducted by the employer before deposit.',
+                        style: AppTextStyles.dmSans(
+                          size: 9.5,
+                          color: const Color(0xFFB45309),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Save Snap Button
+                ElevatedButton.icon(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: theme.primaryColor,
+                    side: BorderSide(color: theme.primaryColor, width: 1.5),
+                    minimumSize: const Size(double.infinity, 44),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                  label: Text('Save KiwiSaver Details',
+                      style: AppTextStyles.playfair(
+                          size: 13, weight: FontWeight.w800, color: theme.primaryColor)),
+                ),
+              ],
             ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFF59E0B)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '⚠️ ESCT Tax Alert',
-                style: AppTextStyles.dmSans(
-                  size: 11,
-                  weight: FontWeight.bold,
-                  color: const Color(0xFF92400E),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Your employer contributes ${CurrencyFormatter.compact(annualEmpGross, symbol: 'NZ\$')}/yr gross, but after ESCT (${_taxRate.toStringAsFixed(1)}%), only ${CurrencyFormatter.compact(annualEmpNet, symbol: 'NZ\$')}/yr actually reaches your KiwiSaver. That\'s ${CurrencyFormatter.compact(annualESCT, symbol: 'NZ\$')}/yr in tax deducted by the employer before deposit.',
-                style: AppTextStyles.dmSans(
-                  size: 9.5,
-                  color: const Color(0xFFB45309),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+        ],
 
         // IRD Rules List card
         Container(
@@ -739,7 +865,7 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
     );
   }
 
-  Widget _buildTextInput({required String label, required TextEditingController controller}) {
+  Widget _buildTextInput({required String label, required TextEditingController controller, String? errorText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -756,7 +882,7 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
           height: 40,
           decoration: BoxDecoration(
             color: widget.theme.getBgColor(context),
-            border: Border.all(color: widget.theme.getBorderColor(context)),
+            border: Border.all(color: errorText != null ? Colors.red : widget.theme.getBorderColor(context)),
             borderRadius: BorderRadius.circular(10),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -776,6 +902,10 @@ class _NZEmployerContribState extends ConsumerState<NZEmployerContrib> {
             onChanged: (_) => setState(() {}),
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 2),
+          Text(errorText, style: AppTextStyles.dmSans(size: 9, color: Colors.red, weight: FontWeight.bold)),
+        ],
       ],
     );
   }

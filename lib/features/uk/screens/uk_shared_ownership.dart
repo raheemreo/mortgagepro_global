@@ -25,6 +25,10 @@ class _UKSharedOwnershipState extends ConsumerState<UKSharedOwnership> {
   double _term = 25;
   double _rate = 4.75;
 
+  bool _showResults = false;
+  final Map<String, double> _calcSnapshot = {};
+  final _resultsKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +39,12 @@ class _UKSharedOwnershipState extends ConsumerState<UKSharedOwnership> {
       _currentShare = inputs['currentShare'] ?? 25;
       _term = inputs['term'] ?? 25;
       _rate = inputs['rate'] ?? 4.75;
+      _calcSnapshot['propVal'] = _propVal;
+      _calcSnapshot['income'] = _income;
+      _calcSnapshot['currentShare'] = _currentShare;
+      _calcSnapshot['term'] = _term;
+      _calcSnapshot['rate'] = _rate;
+      _showResults = true;
     }
   }
 
@@ -49,30 +59,69 @@ class _UKSharedOwnershipState extends ConsumerState<UKSharedOwnership> {
     return val * 0.05;
   }
 
+  void _calculate() {
+    setState(() {
+      _calcSnapshot['propVal'] = _propVal;
+      _calcSnapshot['income'] = _income;
+      _calcSnapshot['currentShare'] = _currentShare;
+      _calcSnapshot['term'] = _term;
+      _calcSnapshot['rate'] = _rate;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _propVal = 280000;
+      _income = 52000;
+      _currentShare = 25;
+      _term = 25;
+      _rate = 4.75;
+      _calcSnapshot.clear();
+      _showResults = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final double propValVal = _showResults ? (_calcSnapshot['propVal'] ?? _propVal) : _propVal;
+    final double incomeVal = _showResults ? (_calcSnapshot['income'] ?? _income) : _income;
+    final double shareValPct = _showResults ? (_calcSnapshot['currentShare'] ?? _currentShare) : _currentShare;
+    final double termVal = _showResults ? (_calcSnapshot['term'] ?? _term) : _term;
+    final double rateVal = _showResults ? (_calcSnapshot['rate'] ?? _rate) : _rate;
+
     // Shared Ownership Calculations
-    final shareVal = _propVal * _currentShare / 100;
+    final shareVal = propValVal * shareValPct / 100;
     final deposit = shareVal * 0.10; // 10% deposit typical
     final loanAmt = shareVal - deposit;
-    final monthlyRate = _rate / 100 / 12;
-    final n = _term * 12;
+    final monthlyRate = rateVal / 100 / 12;
+    final n = termVal * 12;
     final mortPayment = _pmt(monthlyRate, n, loanAmt);
-    final unsoldVal = _propVal * (1 - _currentShare / 100);
+    final unsoldVal = propValVal * (1 - shareValPct / 100);
     final rent = unsoldVal * 0.0275 / 12; // 2.75% rent p.a.
     const serviceCharge = 150.0;
     final totalMonthly = mortPayment + rent + serviceCharge;
 
     // Affordability
-    final pctIncome = totalMonthly / (_income / 12) * 100;
-    final eligible = _income <= 80000 && pctIncome <= 45;
+    final pctIncome = totalMonthly / (incomeVal / 12) * 100;
+    final eligible = incomeVal <= 80000 && pctIncome <= 45;
 
     // Staircase
     final List<Map<String, dynamic>> staircaseOptions = [
-      {'pct': _currentShare + 10, 'label': '+10% staircase'},
-      {'pct': _currentShare + 25, 'label': '+25% staircase'},
+      {'pct': shareValPct + 10, 'label': '+10% staircase'},
+      {'pct': shareValPct + 25, 'label': '+25% staircase'},
       {'pct': 100.0, 'label': 'Full ownership'},
-    ].where((s) => (s['pct'] as double) > _currentShare && (s['pct'] as double) <= 100).toList();
+    ].where((s) => (s['pct'] as double) > shareValPct && (s['pct'] as double) <= 100).toList();
 
     // Upfront costs
     final sdlt = _calcSDLT(shareVal);
@@ -86,6 +135,14 @@ class _UKSharedOwnershipState extends ConsumerState<UKSharedOwnership> {
     final textThemeColor = isDark ? Colors.white : const Color(0xFF0D0D2B);
     final borderCol = widget.theme.getBorderColor(context);
 
+    final isDirty = _showResults && (
+      _propVal != (_calcSnapshot['propVal'] ?? 0.0) ||
+      _income != (_calcSnapshot['income'] ?? 0.0) ||
+      _currentShare != (_calcSnapshot['currentShare'] ?? 0.0) ||
+      _term != (_calcSnapshot['term'] ?? 0.0) ||
+      _rate != (_calcSnapshot['rate'] ?? 0.0)
+    );
+
     return Scaffold(
       backgroundColor: widget.theme.getBgColor(context),
       appBar: AppBar(
@@ -93,39 +150,40 @@ class _UKSharedOwnershipState extends ConsumerState<UKSharedOwnership> {
         backgroundColor: widget.theme.primaryColor,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save, color: Colors.white),
-            onPressed: () async {
-              final calc = SavedCalc.create(
-                country: 'UK',
-                calcType: 'Shared Ownership',
-                inputs: {
-                  'propVal': _propVal,
-                  'income': _income,
-                  'currentShare': _currentShare,
-                  'term': _term,
-                  'rate': _rate,
-                },
-                results: {
-                  'Share Value': shareVal,
-                  'Deposit': deposit,
-                  'Mortgage Payment': mortPayment,
-                  'Rent Payment': rent,
-                  'Total Monthly': totalMonthly,
-                },
-                label: '${_currentShare.toInt()}% share of ${CurrencyFormatter.compact(_propVal, symbol: '£')}',
-                currencyCode: 'GBP',
-              );
-              final messenger = ScaffoldMessenger.of(context);
-              await ref.read(savedProvider.notifier).save(calc);
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text('✓ Shared Ownership calculation saved'),
-                  backgroundColor: Color(0xFF0D9488),
-                ),
-              );
-            },
-          )
+          if (_showResults)
+            IconButton(
+              icon: const Icon(Icons.save, color: Colors.white),
+              onPressed: () async {
+                final calc = SavedCalc.create(
+                  country: 'UK',
+                  calcType: 'Shared Ownership',
+                  inputs: {
+                    'propVal': propValVal,
+                    'income': incomeVal,
+                    'currentShare': shareValPct,
+                    'term': termVal,
+                    'rate': rateVal,
+                  },
+                  results: {
+                    'Share Value': shareVal,
+                    'Deposit': deposit,
+                    'Mortgage Payment': mortPayment,
+                    'Rent Payment': rent,
+                    'Total Monthly': totalMonthly,
+                  },
+                  label: '${shareValPct.toInt()}% share of ${CurrencyFormatter.compact(propValVal, symbol: '£')}',
+                  currencyCode: 'GBP',
+                );
+                final messenger = ScaffoldMessenger.of(context);
+                await ref.read(savedProvider.notifier).save(calc);
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('✓ Shared Ownership calculation saved'),
+                    backgroundColor: Color(0xFF0D9488),
+                  ),
+                );
+              },
+            )
         ],
       ),
       body: SingleChildScrollView(
@@ -154,7 +212,7 @@ class _UKSharedOwnershipState extends ConsumerState<UKSharedOwnership> {
               ),
             ),
             const SizedBox(height: 16),
- 
+
             // Info Notice
             Container(
               padding: const EdgeInsets.all(14),
@@ -191,14 +249,30 @@ class _UKSharedOwnershipState extends ConsumerState<UKSharedOwnership> {
             ),
             const SizedBox(height: 16),
 
-            Text(
-              'YOUR DETAILS',
-              style: AppTextStyles.dmSans(
-                size: 11,
-                weight: FontWeight.w700,
-                color: widget.theme.getMutedColor(context),
-                letterSpacing: 1.0,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'YOUR DETAILS',
+                  style: AppTextStyles.dmSans(
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: widget.theme.getMutedColor(context),
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _reset,
+                  child: Text(
+                    'Reset',
+                    style: AppTextStyles.dmSans(
+                      size: 11,
+                      weight: FontWeight.bold,
+                      color: widget.theme.primaryColor,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
 
@@ -235,287 +309,334 @@ class _UKSharedOwnershipState extends ConsumerState<UKSharedOwnership> {
                   const SizedBox(height: 12),
                   _sliderGroup('Mortgage Term', _term, 10, 35, ' yrs', (v) => setState(() => _term = v)),
                   _sliderGroup('Mortgage Rate', _rate, 2.0, 8.0, '%', (v) => setState(() => _rate = v), isDecimal: true),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: widget.theme.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: _calculate,
+                      child: Text(
+                        'Calculate Costs',
+                        style: AppTextStyles.dmSans(size: 14, color: Colors.white, weight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
 
-            // Result Hero Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'MONTHLY TOTAL COST',
-                    style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w700, color: Colors.white60, letterSpacing: 0.7),
+            if (_showResults) ...[
+              if (isDirty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${CurrencyFormatter.format(totalMonthly, symbol: '£').split('.').first}/mo',
-                    style: AppTextStyles.dmSans(size: 34, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
-                  ),
-                  Text(
-                    'Mortgage repayment + rent on unsold share',
-                    style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 12),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 2.1,
+                  child: Row(
                     children: [
-                      _heroGridBox('Share Value', CurrencyFormatter.format(shareVal, symbol: '£').split('.').first, const Color(0xFFFFD700)),
-                      _heroGridBox('Deposit (10%)', CurrencyFormatter.format(deposit, symbol: '£').split('.').first, Colors.white),
-                      _heroGridBox('Mortgage/mo', CurrencyFormatter.format(mortPayment, symbol: '£').split('.').first, const Color(0xFF90EE90)),
-                      _heroGridBox('Rent/mo', CurrencyFormatter.format(rent, symbol: '£').split('.').first, const Color(0xFFFF8A9A)),
-                      _heroGridBox('Service Charge', '£150', Colors.white),
-                      _heroGridBox('Affordability', eligible ? '✔ Eligible' : '⚠ Review', eligible ? const Color(0xFF90EE90) : const Color(0xFFFF8A9A)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Cost Distribution Donut
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(17),
-                border: Border.all(color: borderCol),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Monthly Cost Breakdown',
-                    style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 110,
-                        height: 110,
-                        child: Stack(
-                          children: [
-                            CustomPaint(
-                              size: const Size(110, 110),
-                              painter: _SharedOwnershipDonutPainter(
-                                mortPayment: mortPayment,
-                                rentPayment: rent,
-                                serviceCharge: serviceCharge,
-                                isDark: isDark,
-                              ),
-                            ),
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    CurrencyFormatter.format(totalMonthly, symbol: '£').split('.').first,
-                                    style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
-                                  ),
-                                    Text(
-                                      'per month',
-                                      style: AppTextStyles.dmSans(size: 8, color: widget.theme.getMutedColor(context), weight: FontWeight.w700),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 20),
+                      const Text('⚠️ ', style: TextStyle(fontSize: 14)),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _legendItem(isDark ? const Color(0xFF93C5FD) : const Color(0xFF1a1a5e), 'Mortgage', mortPayment),
-                            const SizedBox(height: 6),
-                            _legendItem(isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E), 'Rent', rent),
-                            const SizedBox(height: 6),
-                            _legendItem(isDark ? const Color(0xFFFFD700) : const Color(0xFFD97706), 'Service Charge', serviceCharge),
-                            const SizedBox(height: 6),
-                            _legendPctItem(const Color(0xFFE0E7FF), '% of Income', pctIncome),
-                          ],
+                        child: Text(
+                          'Inputs have changed. Tap Calculate Costs to refresh results.',
+                          style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Staircasing Plan Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)]),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Staircasing Plan 📈',
-                    style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
-                  ),
-                  Text(
-                    'Cost to buy additional shares (at current value)',
-                    style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
-                  ),
-                  const SizedBox(height: 12),
-                  if (staircaseOptions.isEmpty)
-                    Text('You own 100% full ownership.', style: AppTextStyles.dmSans(size: 11, color: Colors.white70))
-                  else
-                    ...staircaseOptions.map((opt) {
-                      final target = opt['pct'] as double;
-                      final addPct = target - _currentShare;
-                      final cost = _propVal * addPct / 100;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(12)),
-                              alignment: Alignment.center,
-                              child: Text('${target.toInt()}%', style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: const Color(0xFFFFD700))),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(opt['label'] as String, style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w700, color: Colors.white)),
-                                  const SizedBox(height: 2),
-                                  Text('Covers ${addPct.toInt()}% at current ${CurrencyFormatter.compact(_propVal, symbol: '£')} valuation', style: AppTextStyles.dmSans(size: 10, color: Colors.white54)),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              CurrencyFormatter.format(cost, symbol: '£').split('.').first,
-                              style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: const Color(0xFF90EE90)),
-                            ),
-                          ],
+                ),
+              Container(
+                key: _resultsKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Result Hero Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      );
-                    }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Upfront costs card
-            Text(
-              'UPFRONT COSTS',
-              style: AppTextStyles.dmSans(
-                size: 11,
-                weight: FontWeight.w700,
-                color: widget.theme.getMutedColor(context),
-                letterSpacing: 1.0,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: borderCol),
-              ),
-              child: Column(
-                children: [
-                  _upfrontRow('Deposit (10%)', deposit, 'On your ${_currentShare.toInt()}% share'),
-                  _upfrontRow('Stamp Duty (SDLT)', sdlt, 'On share value (FTB relief applied)', isRed: true),
-                  _upfrontRow('Legal / Conveyancing', legalFees, 'Estimated solicitor fees', isRed: true),
-                  _upfrontRow('Survey Fee', surveyFee, 'HomeBuyer Report (RICS)', isRed: true),
-                  _upfrontRow('Mortgage Arrangement Fee', mortgageFee, 'Typical lender fee', isRed: true),
-                  const Divider(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Total Upfront', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: widget.theme.primaryColor)),
-                          Text('Cash needed at completion', style: AppTextStyles.dmSans(size: 10, color: widget.theme.getMutedColor(context))),
+                          Text(
+                            'MONTHLY TOTAL COST',
+                            style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w700, color: Colors.white60, letterSpacing: 0.7),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${CurrencyFormatter.format(totalMonthly, symbol: '£').split('.').first}/mo',
+                            style: AppTextStyles.dmSans(size: 34, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
+                          ),
+                          Text(
+                            'Mortgage repayment + rent on unsold share',
+                            style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
+                          ),
+                          const SizedBox(height: 12),
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 2.1,
+                            children: [
+                              _heroGridBox('Share Value', CurrencyFormatter.format(shareVal, symbol: '£').split('.').first, const Color(0xFFFFD700)),
+                              _heroGridBox('Deposit (10%)', CurrencyFormatter.format(deposit, symbol: '£').split('.').first, Colors.white),
+                              _heroGridBox('Mortgage/mo', CurrencyFormatter.format(mortPayment, symbol: '£').split('.').first, const Color(0xFF90EE90)),
+                              _heroGridBox('Rent/mo', CurrencyFormatter.format(rent, symbol: '£').split('.').first, const Color(0xFFFF8A9A)),
+                              _heroGridBox('Service Charge', '£150', Colors.white),
+                              _heroGridBox('Affordability', eligible ? '✔ Eligible' : '⚠ Review', eligible ? const Color(0xFF90EE90) : const Color(0xFFFF8A9A)),
+                            ],
+                          ),
                         ],
                       ),
-                      Text(
-                        CurrencyFormatter.format(totalUpfront, symbol: '£').split('.').first,
-                        style: AppTextStyles.dmSans(size: 16, weight: FontWeight.w800, color: widget.theme.primaryColor),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
+                    ),
+                    const SizedBox(height: 12),
 
-            // Eligibility Card
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: borderCol),
+                    // Cost Distribution Donut
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(17),
+                        border: Border.all(color: borderCol),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Monthly Cost Breakdown',
+                            style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 110,
+                                height: 110,
+                                child: Stack(
+                                  children: [
+                                    CustomPaint(
+                                      size: const Size(110, 110),
+                                      painter: _SharedOwnershipDonutPainter(
+                                        mortPayment: mortPayment,
+                                        rentPayment: rent,
+                                        serviceCharge: serviceCharge,
+                                        isDark: isDark,
+                                      ),
+                                    ),
+                                    Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            CurrencyFormatter.format(totalMonthly, symbol: '£').split('.').first,
+                                            style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
+                                          ),
+                                          Text(
+                                            'per month',
+                                            style: AppTextStyles.dmSans(size: 8, color: widget.theme.getMutedColor(context), weight: FontWeight.w700),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _legendItem(isDark ? const Color(0xFF93C5FD) : const Color(0xFF1a1a5e), 'Mortgage', mortPayment),
+                                    const SizedBox(height: 6),
+                                    _legendItem(isDark ? const Color(0xFFFCA5A5) : const Color(0xFFC8102E), 'Rent', rent),
+                                    const SizedBox(height: 6),
+                                    _legendItem(isDark ? const Color(0xFFFFD700) : const Color(0xFFD97706), 'Service Charge', serviceCharge),
+                                    const SizedBox(height: 6),
+                                    _legendPctItem(const Color(0xFFE0E7FF), '% of Income', pctIncome),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Staircasing Plan Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)]),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Staircasing Plan 📈',
+                            style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
+                          ),
+                          Text(
+                            'Cost to buy additional shares (at current value)',
+                            style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
+                          ),
+                          const SizedBox(height: 12),
+                          if (staircaseOptions.isEmpty)
+                            Text('You own 100% full ownership.', style: AppTextStyles.dmSans(size: 11, color: Colors.white70))
+                          else
+                            ...staircaseOptions.map((opt) {
+                              final target = opt['pct'] as double;
+                              final addPct = target - shareValPct;
+                              final cost = propValVal * addPct / 100;
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(12)),
+                                      alignment: Alignment.center,
+                                      child: Text('${target.toInt()}%', style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: const Color(0xFFFFD700))),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(opt['label'] as String, style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w700, color: Colors.white)),
+                                          const SizedBox(height: 2),
+                                          Text('Covers ${addPct.toInt()}% at current ${CurrencyFormatter.compact(propValVal, symbol: '£')} valuation', style: AppTextStyles.dmSans(size: 10, color: Colors.white54)),
+                                        ],
+                                      ),
+                                    ),
+                                    Text(
+                                      CurrencyFormatter.format(cost, symbol: '£').split('.').first,
+                                      style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: const Color(0xFF90EE90)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Upfront costs card
+                    Text(
+                      'UPFRONT COSTS',
+                      style: AppTextStyles.dmSans(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: widget.theme.getMutedColor(context),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: borderCol),
+                      ),
+                      child: Column(
+                        children: [
+                          _upfrontRow('Deposit (10%)', deposit, 'On your ${shareValPct.toInt()}% share'),
+                          _upfrontRow('Stamp Duty (SDLT)', sdlt, 'On share value (FTB relief applied)', isRed: true),
+                          _upfrontRow('Legal / Conveyancing', legalFees, 'Estimated solicitor fees', isRed: true),
+                          _upfrontRow('Survey Fee', surveyFee, 'HomeBuyer Report (RICS)', isRed: true),
+                          _upfrontRow('Mortgage Arrangement Fee', mortgageFee, 'Typical lender fee', isRed: true),
+                          const Divider(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Total Upfront', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: widget.theme.primaryColor)),
+                                  Text('Cash needed at completion', style: AppTextStyles.dmSans(size: 10, color: widget.theme.getMutedColor(context))),
+                                ],
+                              ),
+                              Text(
+                                CurrencyFormatter.format(totalUpfront, symbol: '£').split('.').first,
+                                style: AppTextStyles.dmSans(size: 16, weight: FontWeight.w800, color: widget.theme.primaryColor),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Eligibility Card
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: borderCol),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Can you apply? 🔍',
+                            style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
+                          ),
+                          const SizedBox(height: 12),
+                          _eligibilityRow(
+                            eligible: incomeVal <= 80000,
+                            text: 'Household income: ${CurrencyFormatter.format(incomeVal, symbol: '£').split('.').first} — ${incomeVal <= 80000 ? 'within' : 'EXCEEDS'} the £80,000 cap (£90,000 in London).',
+                          ),
+                          const SizedBox(height: 8),
+                          _eligibilityRow(
+                            eligible: true,
+                            text: 'First-time buyer or previous shared owner required (or no longer able to afford current home).',
+                          ),
+                          const SizedBox(height: 8),
+                          _eligibilityRow(
+                            eligible: true,
+                            text: 'Must not own another home at time of purchase.',
+                          ),
+                          const SizedBox(height: 8),
+                          _eligibilityRow(
+                            eligible: propValVal <= 600000,
+                            text: 'Property value: ${CurrencyFormatter.format(propValVal, symbol: '£').split('.').first} — ${propValVal <= 600000 ? 'within typical' : 'above'} the affordable housing threshold.',
+                          ),
+                          const SizedBox(height: 8),
+                          _eligibilityRow(
+                            eligible: true,
+                            text: 'Lease requirement: minimum 80 years remaining on lease recommended before purchasing.',
+                            isWarning: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Can you apply? 🔍',
-                    style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: textThemeColor).copyWith(fontFamily: 'Georgia'),
-                  ),
-                  const SizedBox(height: 12),
-                  _eligibilityRow(
-                    eligible: _income <= 80000,
-                    text: 'Household income: ${CurrencyFormatter.format(_income, symbol: '£').split('.').first} — ${_income <= 80000 ? 'within' : 'EXCEEDS'} the £80,000 cap (£90,000 in London).',
-                  ),
-                  const SizedBox(height: 8),
-                  _eligibilityRow(
-                    eligible: true,
-                    text: 'First-time buyer or previous shared owner required (or no longer able to afford current home).',
-                  ),
-                  const SizedBox(height: 8),
-                  _eligibilityRow(
-                    eligible: true,
-                    text: 'Must not own another home at time of purchase.',
-                  ),
-                  const SizedBox(height: 8),
-                  _eligibilityRow(
-                    eligible: _propVal <= 600000,
-                    text: 'Property value: ${CurrencyFormatter.format(_propVal, symbol: '£').split('.').first} — ${_propVal <= 600000 ? 'within typical' : 'above'} the affordable housing threshold.',
-                  ),
-                  const SizedBox(height: 8),
-                  _eligibilityRow(
-                    eligible: true,
-                    text: 'Lease requirement: minimum 80 years remaining on lease recommended before purchasing.',
-                    isWarning: true,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
+            ],
           ],
         ),
       ),

@@ -17,8 +17,7 @@ class AUFirstHomeGrant extends ConsumerStatefulWidget {
 }
 
 class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
-  int _activeTab =
-      0; // 0 = Eligibility, 1 = All States, 2 = Schemes, 3 = Checklist
+  int _activeTab = 0; // 0 = Eligibility, 1 = All States, 2 = Schemes, 3 = Checklist
 
   // Eligibility Inputs
   String _selectedState = 'NSW';
@@ -26,7 +25,11 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
   double _depositVal = 65000;
   String _propType = 'new'; // 'new', 'established', 'vacant'
   bool _ownedBefore = false; // false = Never, true = Yes
-  bool _showEligibilityResult = true;
+  bool _showEligibilityResult = false;
+
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   // Checklist state (tracks selected index checkboxes)
   final Set<String> _checkedItems = {};
@@ -37,8 +40,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
       'amount': 10000.0,
       'cap': 600000.0,
       'propType': 'new',
-      'note':
-          'New homes only. Cap \$600K for new builds, \$750K for off-the-plan.',
+      'note': 'New homes only. Cap \$600K for new builds, \$750K for off-the-plan.',
       'extra': 'Stamp duty exemption <\$800K for FHB.'
     },
     'VIC': {
@@ -86,8 +88,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
       'amount': 0.0,
       'cap': 0.0,
       'propType': 'any',
-      'note':
-          'ACT has abolished FHOG but offers generous stamp duty concessions.',
+      'note': 'ACT has abolished FHOG but offers generous stamp duty concessions.',
       'extra': 'Home Buyer Concession Scheme — no duty <\$1M.'
     },
     'NT': {
@@ -100,25 +101,78 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
     }
   };
 
+  void _reset() {
+    setState(() {
+      _selectedState = 'NSW';
+      _propVal = 650000;
+      _depositVal = 65000;
+      _propType = 'new';
+      _ownedBefore = false;
+      _showEligibilityResult = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+      _checkedItems.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_propVal <= 0) {
+      errors['propertyValue'] = 'Enter valid property value';
+    }
+    if (_depositVal < 0) {
+      errors['deposit'] = 'Deposit cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['selectedState'] = _selectedState;
+      _calcSnapshot['propVal'] = _propVal;
+      _calcSnapshot['depositVal'] = _depositVal;
+      _calcSnapshot['propType'] = _propType;
+      _calcSnapshot['ownedBefore'] = _ownedBefore;
+      _showEligibilityResult = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveResult() async {
-    final g = _grantsData[_selectedState];
+    final String snapState = _calcSnapshot['selectedState'] ?? _selectedState;
+    final double snapPropVal = _calcSnapshot['propVal'] ?? _propVal;
+    final double snapDepositVal = _calcSnapshot['depositVal'] ?? _depositVal;
+    final String snapPropType = _calcSnapshot['propType'] ?? _propType;
+    final bool snapOwnedBefore = _calcSnapshot['ownedBefore'] ?? _ownedBefore;
+
+    final g = _grantsData[snapState];
     bool isEligible = false;
     double grantAmt = 0;
 
-    if (!_ownedBefore) {
-      if (_propType == 'new' && _propVal <= g['cap'] && g['amount'] > 0) {
+    if (!snapOwnedBefore) {
+      if (snapPropType == 'new' && snapPropVal <= g['cap'] && g['amount'] > 0) {
         isEligible = true;
         grantAmt = g['amount'];
-      } else if (_propType == 'established' &&
-          g['amount'] > 0 &&
-          g['propType'] == 'any') {
+      } else if (snapPropType == 'established' && g['amount'] > 0 && g['propType'] == 'any') {
         isEligible = true;
         grantAmt = g['amount'];
       }
     }
 
-    final labelCtrl =
-        TextEditingController(text: 'FHB Grant - $_selectedState');
+    final labelCtrl = TextEditingController(text: 'FHB Grant - $snapState');
     final confirmed = await showDialog<bool>(
       context: context,
       routeSettings: const RouteSettings(name: '/dialog/au_first_home_grant'),
@@ -126,30 +180,24 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('💾 Save FHB Grant Result',
-            style: AppTextStyles.playfair(
-                size: 16, color: widget.theme.getTextColor(context))),
+            style: AppTextStyles.playfair(size: 16, color: widget.theme.getTextColor(context))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-                'Saving: FHOG eligibility in $_selectedState. Est Grant: \$${CurrencyFormatter.compact(grantAmt, symbol: 'AU\$')}',
-                style: AppTextStyles.dmSans(
-                    size: 11, color: widget.theme.getMutedColor(context))),
+            Text('Saving: FHOG eligibility in $snapState. Est Grant: \$${CurrencyFormatter.compact(grantAmt, symbol: 'AU\$')}',
+                style: AppTextStyles.dmSans(size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
             TextField(
               controller: labelCtrl,
               autofocus: true,
-              style: AppTextStyles.dmSans(
-                  size: 13, color: widget.theme.getTextColor(context)),
+              style: AppTextStyles.dmSans(size: 13, color: widget.theme.getTextColor(context)),
               decoration: InputDecoration(
                 hintText: 'Label (e.g. My NSW Grant)',
                 hintStyle: AppTextStyles.dmSans(size: 13, color: Colors.grey),
                 filled: true,
                 fillColor: widget.theme.getBgColor(context),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
             ),
           ],
@@ -157,56 +205,49 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel',
-                style: AppTextStyles.dmSans(
-                    size: 12, color: Colors.grey, weight: FontWeight.w700)),
+            child: Text('Cancel', style: AppTextStyles.dmSans(size: 12, color: Colors.grey, weight: FontWeight.w700)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF002868),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('Save',
-                style: AppTextStyles.dmSans(
-                    size: 12, color: Colors.white, weight: FontWeight.w700)),
+            child: Text('Save', style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w700)),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      final label = labelCtrl.text.trim().isNotEmpty
-          ? labelCtrl.text.trim()
-          : 'FHB Grant';
+      final label = labelCtrl.text.trim().isNotEmpty ? labelCtrl.text.trim() : 'FHB Grant';
       final calc = SavedCalc.create(
         country: 'Australia',
         calcType: 'First Home Owner Grant',
         inputs: {
-          'propertyValue': _propVal,
-          'deposit': _depositVal,
-          'stateIndex': _selectedState == 'NSW'
+          'propertyValue': snapPropVal,
+          'deposit': snapDepositVal,
+          'stateIndex': snapState == 'NSW'
               ? 0.0
-              : _selectedState == 'VIC'
+              : snapState == 'VIC'
                   ? 1.0
-                  : _selectedState == 'QLD'
+                  : snapState == 'QLD'
                       ? 2.0
-                      : _selectedState == 'WA'
+                      : snapState == 'WA'
                           ? 3.0
-                          : _selectedState == 'SA'
+                          : snapState == 'SA'
                               ? 4.0
-                              : _selectedState == 'TAS'
+                              : snapState == 'TAS'
                                   ? 5.0
-                                  : _selectedState == 'ACT'
+                                  : snapState == 'ACT'
                                       ? 6.0
                                       : 7.0,
-          'propertyTypeIndex': _propType == 'new'
+          'propertyTypeIndex': snapPropType == 'new'
               ? 0.0
-              : _propType == 'established'
+              : snapPropType == 'established'
                   ? 1.0
                   : 2.0,
-          'ownedBefore': _ownedBefore ? 1.0 : 0.0,
+          'ownedBefore': snapOwnedBefore ? 1.0 : 0.0,
         },
         results: {
           'eligible': isEligible ? 1.0 : 0.0,
@@ -221,9 +262,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Calculation saved!',
-                style: AppTextStyles.dmSans(
-                    color: Colors.white, weight: FontWeight.w700)),
+            content: Text('✅ Calculation saved!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
             backgroundColor: const Color(0xFF002868),
             behavior: SnackBarBehavior.floating,
           ),
@@ -283,9 +322,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
           style: AppTextStyles.dmSans(
             size: 10,
             weight: FontWeight.w800,
-            color: active
-                ? Colors.white
-                : widget.theme.getTextColor(context).withValues(alpha: 0.55),
+            color: active ? Colors.white : widget.theme.getTextColor(context).withValues(alpha: 0.55),
           ),
         ),
       ),
@@ -294,48 +331,49 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
 
   // ─── TAB 1: ELIGIBILITY CHECKER ────────────────────────────────────
   Widget _buildEligibilityTab(CountryTheme theme) {
-    final g = _grantsData[_selectedState];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final String snapState = _showEligibilityResult ? (_calcSnapshot['selectedState'] ?? _selectedState) : _selectedState;
+    final double snapPropVal = _showEligibilityResult ? (_calcSnapshot['propVal'] ?? _propVal) : _propVal;
+    final double snapDepositVal = _showEligibilityResult ? (_calcSnapshot['depositVal'] ?? _depositVal) : _depositVal;
+    final String snapPropType = _showEligibilityResult ? (_calcSnapshot['propType'] ?? _propType) : _propType;
+    final bool snapOwnedBefore = _showEligibilityResult ? (_calcSnapshot['ownedBefore'] ?? _ownedBefore) : _ownedBefore;
+
+    final g = _grantsData[snapState];
     bool isEligible = false;
     String reason = '';
     double grantAmt = 0;
 
-    if (_ownedBefore) {
-      reason =
-          'You have previously owned property in Australia. FHOG requires all buyers to be purchasing their first home.';
+    if (snapOwnedBefore) {
+      reason = 'You have previously owned property in Australia. FHOG requires all buyers to be purchasing their first home.';
     } else {
-      if (_propType == 'new' && _propVal <= g['cap'] && g['amount'] > 0) {
+      if (snapPropType == 'new' && snapPropVal <= g['cap'] && g['amount'] > 0) {
         isEligible = true;
         grantAmt = g['amount'];
-      } else if (_propType == 'new' && g['amount'] > 0) {
-        reason =
-            'Property value exceeds the cap of ${CurrencyFormatter.format(g['cap'], currencyCode: 'AUD')} for this state.';
-      } else if (_propType == 'established' &&
-          g['amount'] > 0 &&
-          g['propType'] == 'any') {
+      } else if (snapPropType == 'new' && g['amount'] > 0) {
+        reason = 'Property value exceeds the cap of ${CurrencyFormatter.format(g['cap'], currencyCode: 'AUD')} for this state.';
+      } else if (snapPropType == 'established' && g['amount'] > 0 && g['propType'] == 'any') {
         isEligible = true;
         grantAmt = g['amount'];
-      } else if (_propType == 'established' && g['amount'] > 0) {
-        reason =
-            '$_selectedState FHOG applies to new homes only. No FHOG for established properties.';
-      } else if (_selectedState == 'ACT') {
-        reason =
-            'ACT has abolished FHOG but you may qualify for stamp duty concessions.';
+      } else if (snapPropType == 'established' && g['amount'] > 0) {
+        reason = '$snapState FHOG applies to new homes only. No FHOG for established properties.';
+      } else if (snapState == 'ACT') {
+        reason = 'ACT has abolished FHOG but you may qualify for stamp duty concessions.';
       }
     }
 
     // Determine LMI risk
-    final lvr =
-        _propVal > 0 ? ((_propVal - _depositVal) / _propVal * 100) : 0.0;
-    final fhbgEligible = _propVal <= 900000 && lvr >= 80;
+    final lvr = snapPropVal > 0 ? ((snapPropVal - snapDepositVal) / snapPropVal * 100) : 0.0;
+    final fhbgEligible = snapPropVal <= 900000 && lvr >= 80;
 
     // Package benefits
     double stampDutyConcession = 0;
-    if (!_ownedBefore) {
-      if (_selectedState == 'NSW' && _propVal < 800000) {
+    if (!snapOwnedBefore) {
+      if (snapState == 'NSW' && snapPropVal < 800000) {
         stampDutyConcession = 28000;
-      } else if (_selectedState == 'ACT' && _propVal < 1000000) {
+      } else if (snapState == 'ACT' && snapPropVal < 1000000) {
         stampDutyConcession = 40000;
-      } else if (_selectedState == 'VIC' && _propVal < 750000) {
+      } else if (snapState == 'VIC' && snapPropVal < 750000) {
         stampDutyConcession = 15000;
       } else {
         stampDutyConcession = 5000;
@@ -344,10 +382,15 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
 
     final lmiSavings = fhbgEligible ? 18000.0 : 0.0;
     const superSavings = 50000.0; // Max FHSS release
-    final totalPotentialSavings = (isEligible ? grantAmt : 0) +
-        stampDutyConcession +
-        lmiSavings +
-        superSavings;
+    final totalPotentialSavings = (isEligible ? grantAmt : 0) + stampDutyConcession + lmiSavings + superSavings;
+
+    final isDirty = _showEligibilityResult && (
+      _selectedState != (_calcSnapshot['selectedState'] ?? '') ||
+      _propVal != (_calcSnapshot['propVal'] ?? 0.0) ||
+      _depositVal != (_calcSnapshot['depositVal'] ?? 0.0) ||
+      _propType != (_calcSnapshot['propType'] ?? '') ||
+      _ownedBefore != (_calcSnapshot['ownedBefore'] ?? false)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,12 +405,25 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('SELECT STATE / TERRITORY',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: theme.getMutedColor(context),
-                      weight: FontWeight.w800,
-                      letterSpacing: 0.5)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('SELECT STATE / TERRITORY',
+                      style: AppTextStyles.dmSans(
+                          size: 9,
+                          color: theme.getMutedColor(context),
+                          weight: FontWeight.w800,
+                          letterSpacing: 0.5)),
+                  GestureDetector(
+                    onTap: _reset,
+                    child: Text('Reset ↺',
+                        style: AppTextStyles.dmSans(
+                            size: 11,
+                            color: isDark ? const Color(0xFFFFD700) : theme.primaryColor,
+                            weight: FontWeight.w700)),
+                  ),
+                ],
+              ),
               const SizedBox(height: 10),
 
               // States buttons grid
@@ -378,20 +434,14 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
                 childAspectRatio: 1.8,
                 mainAxisSpacing: 6,
                 crossAxisSpacing: 6,
-                children: ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']
-                    .map((st) {
+                children: ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'].map((st) {
                   final active = st == _selectedState;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedState = st),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: active
-                            ? theme.primaryColor
-                            : theme.getBgColor(context),
-                        border: Border.all(
-                            color: active
-                                ? theme.primaryColor
-                                : theme.getBorderColor(context)),
+                        color: active ? theme.primaryColor : theme.getBgColor(context),
+                        border: Border.all(color: active ? theme.primaryColor : theme.getBorderColor(context)),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       alignment: Alignment.center,
@@ -400,9 +450,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
                         style: AppTextStyles.dmSans(
                           size: 11,
                           weight: FontWeight.w700,
-                          color: active
-                              ? Colors.white
-                              : theme.getTextColor(context),
+                          color: active ? Colors.white : theme.getTextColor(context),
                         ),
                       ),
                     ),
@@ -417,6 +465,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
                     child: _buildInputField(
                       label: 'Property Value (AUD)',
                       value: _propVal,
+                      errorText: _errors['propertyValue'],
                       onChanged: (val) => setState(() => _propVal = val),
                     ),
                   ),
@@ -425,6 +474,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
                     child: _buildInputField(
                       label: 'Deposit Saved',
                       value: _depositVal,
+                      errorText: _errors['deposit'],
                       onChanged: (val) => setState(() => _depositVal = val),
                     ),
                   ),
@@ -441,23 +491,11 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Expanded(
-                      child: _buildToggleTab(
-                          'New Build 🏗️',
-                          _propType == 'new',
-                          () => setState(() => _propType = 'new'))),
+                  Expanded(child: _buildToggleTab('New Build 🏗️', _propType == 'new', () => setState(() => _propType = 'new'))),
                   const SizedBox(width: 4),
-                  Expanded(
-                      child: _buildToggleTab(
-                          'Established 🏘️',
-                          _propType == 'established',
-                          () => setState(() => _propType = 'established'))),
+                  Expanded(child: _buildToggleTab('Established 🏘️', _propType == 'established', () => setState(() => _propType == 'established'))),
                   const SizedBox(width: 4),
-                  Expanded(
-                      child: _buildToggleTab(
-                          'Vacant Land 🌱',
-                          _propType == 'vacant',
-                          () => setState(() => _propType = 'vacant'))),
+                  Expanded(child: _buildToggleTab('Vacant Land 🌱', _propType == 'vacant', () => setState(() => _propType == 'vacant'))),
                 ],
               ),
               const SizedBox(height: 12),
@@ -471,26 +509,19 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Expanded(
-                      child: _buildToggleTab('Never', !_ownedBefore,
-                          () => setState(() => _ownedBefore = false))),
+                  Expanded(child: _buildToggleTab('Never', !_ownedBefore, () => setState(() => _ownedBefore = false))),
                   const SizedBox(width: 8),
-                  Expanded(
-                      child: _buildToggleTab('Yes', _ownedBefore,
-                          () => setState(() => _ownedBefore = true))),
+                  Expanded(child: _buildToggleTab('Yes', _ownedBefore, () => setState(() => _ownedBefore = true))),
                 ],
               ),
               const SizedBox(height: 16),
 
               ElevatedButton(
-                onPressed: () {
-                  setState(() => _showEligibilityResult = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryColor,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   minimumSize: const Size(double.infinity, 44),
                 ),
@@ -504,183 +535,169 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
           ),
         ),
         if (_showEligibilityResult) ...[
-          const SizedBox(height: 16),
-
-          // Eligibility Result Card
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: _ownedBefore
-                  ? const Color(0xFFFFF1F2)
-                  : isEligible
-                      ? const Color(0xFFF0FDF4)
-                      : const Color(0xFFFFF7ED),
-              border: Border.all(
-                  color: _ownedBefore
-                      ? const Color(0xFFFDA4AF)
-                      : isEligible
-                          ? const Color(0xFF4ADE80)
-                          : const Color(0xFFFB923C),
-                  width: 2),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                        _ownedBefore
-                            ? '❌'
-                            : isEligible
-                                ? '✅'
-                                : '⚠️',
-                        style: const TextStyle(fontSize: 28)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              _ownedBefore
-                                  ? 'Not Eligible'
-                                  : isEligible
-                                      ? 'Eligible for FHOG!'
-                                      : 'Check State Eligibility',
-                              style: AppTextStyles.playfair(
-                                  size: 16,
-                                  weight: FontWeight.w900,
-                                  color: _ownedBefore
-                                      ? const Color(0xFF9F1239)
-                                      : isEligible
-                                          ? const Color(0xFF166534)
-                                          : const Color(0xFF9A3412))),
-                          Text(
-                              _ownedBefore
-                                  ? 'Prior property ownership detected.'
-                                  : '$_selectedState — ${g['name']}',
-                              style: AppTextStyles.dmSans(
-                                  size: 11,
-                                  color: _ownedBefore
-                                      ? const Color(0xFFBE123C)
-                                      : isEligible
-                                          ? const Color(0xFF15803D)
-                                          : const Color(0xFFC2410C))),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Text(
-                    _ownedBefore
-                        ? '\$0'
-                        : isEligible
-                            ? CurrencyFormatter.format(grantAmt,
-                                currencyCode: 'AUD')
-                            : 'See Concessions',
-                    style: AppTextStyles.playfair(
-                        size: 30,
-                        weight: FontWeight.w900,
-                        color: _ownedBefore
-                            ? const Color(0xFF9F1239)
-                            : isEligible
-                                ? const Color(0xFF166534)
-                                : const Color(0xFF9A3412))),
-                const SizedBox(height: 4),
-                Text(
-                    _ownedBefore
-                        ? reason
-                        : isEligible
-                            ? g['note']
-                            : reason,
-                    style: AppTextStyles.dmSans(
-                        size: 10.5,
-                        color: _ownedBefore
-                            ? const Color(0xFFBE123C)
-                            : isEligible
-                                ? const Color(0xFF15803D)
-                                : const Color(0xFFC2410C))),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: _saveResult,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.8),
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    minimumSize: const Size(double.infinity, 36),
-                  ),
-                  child: Text('💾 Save This Result',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          weight: FontWeight.w800,
-                          color: Colors.black)),
-                ),
-              ],
-            ),
-          ),
-
-          // Total benefit package card
-          if (!_ownedBefore) ...[
-            const SizedBox(height: 16),
+          if (isDirty) ...[
+            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: theme.getBorderColor(context)),
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text('💰 Total Potential Benefit Package',
-                      style: AppTextStyles.dmSans(
-                          size: 12,
-                          weight: FontWeight.w800,
-                          color: theme.getTextColor(context))),
-                  const SizedBox(height: 14),
-                  _buildTimelineBar('FHOG Grant', isEligible ? grantAmt : 0,
-                      totalPotentialSavings, theme.primaryColor),
-                  _buildTimelineBar(
-                      'Stamp Duty Concession',
-                      stampDutyConcession,
-                      totalPotentialSavings,
-                      const Color(0xFF002868)),
-                  _buildTimelineBar('FHBG LMI Savings', lmiSavings,
-                      totalPotentialSavings, const Color(0xFFD97706)),
-                  _buildTimelineBar('FHSS Super Savings (Max)', superSavings,
-                      totalPotentialSavings, const Color(0xFF0F766E)),
-                  const Divider(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Est. Total Potential Savings',
-                          style: AppTextStyles.dmSans(
-                              size: 12,
-                              weight: FontWeight.bold,
-                              color: theme.getTextColor(context))),
-                      Text(
-                          CurrencyFormatter.format(totalPotentialSavings,
-                              currencyCode: 'AUD'),
-                          style: AppTextStyles.playfair(
-                              size: 18,
-                              weight: FontWeight.w900,
-                              color: theme.primaryColor)),
-                    ],
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Check My Eligibility to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
             ),
           ],
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+
+                // Eligibility Result Card
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: snapOwnedBefore
+                        ? const Color(0xFFFFF1F2)
+                        : isEligible
+                            ? const Color(0xFFF0FDF4)
+                            : const Color(0xFFFFF7ED),
+                    border: Border.all(
+                        color: snapOwnedBefore
+                            ? const Color(0xFFFDA4AF)
+                            : isEligible
+                                ? const Color(0xFF4ADE80)
+                                : const Color(0xFFFB923C),
+                        width: 2),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(snapOwnedBefore ? '❌' : isEligible ? '✅' : '⚠️', style: const TextStyle(fontSize: 28)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                    snapOwnedBefore
+                                        ? 'Not Eligible'
+                                        : isEligible
+                                            ? 'Eligible for FHOG!'
+                                            : 'Check State Eligibility',
+                                    style: AppTextStyles.playfair(
+                                        size: 16,
+                                        weight: FontWeight.w900,
+                                        color: snapOwnedBefore
+                                            ? const Color(0xFF9F1239)
+                                            : isEligible
+                                                ? const Color(0xFF166534)
+                                                : const Color(0xFF9A3412))),
+                                Text(snapOwnedBefore ? 'Prior property ownership detected.' : '$snapState — ${g['name']}',
+                                    style: AppTextStyles.dmSans(
+                                        size: 11,
+                                        color: snapOwnedBefore
+                                            ? const Color(0xFFBE123C)
+                                            : isEligible
+                                                ? const Color(0xFF15803D)
+                                                : const Color(0xFFC2410C))),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Text(snapOwnedBefore ? '\$0' : isEligible ? CurrencyFormatter.format(grantAmt, currencyCode: 'AUD') : 'See Concessions',
+                          style: AppTextStyles.playfair(
+                              size: 30,
+                              weight: FontWeight.w900,
+                              color: snapOwnedBefore
+                                  ? const Color(0xFF9F1239)
+                                  : isEligible
+                                      ? const Color(0xFF166534)
+                                      : const Color(0xFF9A3412))),
+                      const SizedBox(height: 4),
+                      Text(snapOwnedBefore ? reason : isEligible ? g['note'] : reason,
+                          style: AppTextStyles.dmSans(
+                              size: 10.5,
+                              color: snapOwnedBefore
+                                  ? const Color(0xFFBE123C)
+                                  : isEligible
+                                      ? const Color(0xFF15803D)
+                                      : const Color(0xFFC2410C))),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _saveResult,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          minimumSize: const Size(double.infinity, 36),
+                        ),
+                        child: Text('💾 Save This Result',
+                            style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: Colors.black)),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Total benefit package card
+                if (!snapOwnedBefore) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('💰 Total Potential Benefit Package',
+                            style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                        const SizedBox(height: 14),
+                        _buildTimelineBar('FHOG Grant', isEligible ? grantAmt : 0, totalPotentialSavings, theme.primaryColor),
+                        _buildTimelineBar('Stamp Duty Concession', stampDutyConcession, totalPotentialSavings, const Color(0xFF002868)),
+                        _buildTimelineBar('FHBG LMI Savings', lmiSavings, totalPotentialSavings, const Color(0xFFD97706)),
+                        _buildTimelineBar('FHSS Super Savings (Max)', superSavings, totalPotentialSavings, const Color(0xFF0F766E)),
+                        const Divider(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Est. Total Potential Savings', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: theme.getTextColor(context))),
+                            Text(CurrencyFormatter.format(totalPotentialSavings, currencyCode: 'AUD'),
+                                style: AppTextStyles.playfair(size: 18, weight: FontWeight.w900, color: theme.primaryColor)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ],
     );
   }
 
-  Widget _buildTimelineBar(
-      String label, double val, double maxVal, Color color) {
+  Widget _buildTimelineBar(String label, double val, double maxVal, Color color) {
     if (val <= 0) return const SizedBox.shrink();
     final pct = maxVal > 0 ? (val / maxVal).clamp(0.0, 1.0) : 0.0;
     return Padding(
@@ -691,16 +708,8 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label,
-                  style: AppTextStyles.dmSans(
-                      size: 10.5,
-                      weight: FontWeight.bold,
-                      color: widget.theme.getTextColor(context))),
-              Text(CurrencyFormatter.format(val, currencyCode: 'AUD'),
-                  style: AppTextStyles.dmSans(
-                      size: 11,
-                      weight: FontWeight.w900,
-                      color: widget.theme.getTextColor(context))),
+              Text(label, style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: widget.theme.getTextColor(context))),
+              Text(CurrencyFormatter.format(val, currencyCode: 'AUD'), style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w900, color: widget.theme.getTextColor(context))),
             ],
           ),
           const SizedBox(height: 4),
@@ -714,12 +723,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
             alignment: Alignment.centerLeft,
             child: FractionallySizedBox(
               widthFactor: pct,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-              ),
+              child: Container(decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(5))),
             ),
           ),
         ],
@@ -753,61 +757,33 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('🏛️ $st — ${g['name']}',
-                      style: AppTextStyles.playfair(
-                          size: 13,
-                          weight: FontWeight.bold,
-                          color: theme.getTextColor(context))),
-                  Text(
-                      amt > 0
-                          ? CurrencyFormatter.format(amt, currencyCode: 'AUD')
-                          : 'Concession Only',
-                      style: AppTextStyles.playfair(
-                          size: 15,
-                          weight: FontWeight.w900,
-                          color: theme.primaryColor)),
+                      style: AppTextStyles.playfair(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context))),
+                  Text(amt > 0 ? CurrencyFormatter.format(amt, currencyCode: 'AUD') : 'Concession Only',
+                      style: AppTextStyles.playfair(size: 15, weight: FontWeight.w900, color: theme.primaryColor)),
                 ],
               ),
               const SizedBox(height: 6),
-              Text(
-                  'Value Cap: ${cap > 0 ? CurrencyFormatter.format(cap, currencyCode: 'AUD') : 'No Cap (Stamp Duty Limit Only)'}',
-                  style: AppTextStyles.dmSans(
-                      size: 11,
-                      weight: FontWeight.bold,
-                      color: theme.getTextColor(context))),
+              Text('Value Cap: ${cap > 0 ? CurrencyFormatter.format(cap, currencyCode: 'AUD') : 'No Cap (Stamp Duty Limit Only)'}',
+                  style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: theme.getTextColor(context))),
               const SizedBox(height: 4),
-              Text(g['note'],
-                  style: AppTextStyles.dmSans(
-                      size: 10.5,
-                      color:
-                          theme.getTextColor(context).withValues(alpha: 0.75))),
+              Text(g['note'], style: AppTextStyles.dmSans(size: 10.5, color: theme.getTextColor(context).withValues(alpha: 0.75))),
               if (g['extra'].isNotEmpty) ...[
                 const SizedBox(height: 6),
-                Text('+ ${g['extra']}',
-                    style: AppTextStyles.dmSans(
-                        size: 10.5,
-                        color: const Color(0xFF002868),
-                        weight: FontWeight.bold)),
+                Text('+ ${g['extra']}', style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFF002868), weight: FontWeight.bold)),
               ],
               const SizedBox(height: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
-                  color: propType == 'new'
-                      ? const Color(0xFFF0FDF4)
-                      : const Color(0xFFFFF7ED),
+                  color: propType == 'new' ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  propType == 'new'
-                      ? 'New Homes Only'
-                      : 'All Properties (New & Established)',
+                  propType == 'new' ? 'New Homes Only' : 'All Properties (New & Established)',
                   style: AppTextStyles.dmSans(
                     size: 9,
                     weight: FontWeight.w800,
-                    color: propType == 'new'
-                        ? const Color(0xFF166534)
-                        : const Color(0xFFC2410C),
+                    color: propType == 'new' ? const Color(0xFF166534) : const Color(0xFFC2410C),
                   ),
                 ),
               ),
@@ -850,8 +826,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
             'Places (2024–25)': '10,000 regional places',
             'Price Cap (Reg. NSW/VIC)': '\$750,000 (NSW), \$700,000 (VIC)',
             'Price Cap (Other Reg.)': '\$550,000 – \$600,000',
-            'Regional Residency Req.':
-                'Must have lived/worked in region for 12 months',
+            'Regional Residency Req.': 'Must have lived/worked in region for 12 months',
           },
           badgeText: 'Regional Capital & Towns Only',
           badgeColor: const Color(0xFFF0FDF4),
@@ -865,8 +840,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
           details: {
             'Max Withdraw Limit': '\$50,000 per person',
             'Annual Concession Cap': '\$15,000 per financial year',
-            'Tax Rate on Contributions':
-                '15% (compared to marginal income tax rate)',
+            'Tax Rate on Contributions': '15% (compared to marginal income tax rate)',
             'Est. Tax Saving': 'Up to \$15,000 combined benefit',
             'Joint Buyers Eligible': 'Yes (up to \$100,000 combined)',
           },
@@ -931,15 +905,8 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: AppTextStyles.playfair(
-                            size: 13.5,
-                            weight: FontWeight.bold,
-                            color: widget.theme.getTextColor(context))),
-                    Text(sub,
-                        style: AppTextStyles.dmSans(
-                            size: 10,
-                            color: widget.theme.getMutedColor(context))),
+                    Text(title, style: AppTextStyles.playfair(size: 13.5, weight: FontWeight.bold, color: widget.theme.getTextColor(context))),
+                    Text(sub, style: AppTextStyles.dmSans(size: 10, color: widget.theme.getMutedColor(context))),
                   ],
                 ),
               ),
@@ -951,35 +918,16 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(e.key,
-                        style: AppTextStyles.dmSans(
-                            size: 10.5,
-                            color: widget.theme
-                                .getTextColor(context)
-                                .withValues(alpha: 0.7))),
-                    Text(e.value,
-                        style: AppTextStyles.dmSans(
-                            size: 10.5,
-                            weight: FontWeight.bold,
-                            color: widget.theme.getTextColor(context))),
+                    Text(e.key, style: AppTextStyles.dmSans(size: 10.5, color: widget.theme.getTextColor(context).withValues(alpha: 0.7))),
+                    Text(e.value, style: AppTextStyles.dmSans(size: 10.5, weight: FontWeight.bold, color: widget.theme.getTextColor(context))),
                   ],
                 ),
               )),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-            decoration: BoxDecoration(
-              color: badgeColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              badgeText,
-              style: AppTextStyles.dmSans(
-                size: 9,
-                weight: FontWeight.w800,
-                color: badgeTextColor,
-              ),
-            ),
+            decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(20)),
+            child: Text(badgeText, style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: badgeTextColor)),
           ),
         ],
       ),
@@ -1020,19 +968,16 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildChecklistSection(
-            'First Home Owner Grant (FHOG)', fhogItems, 'fhog'),
+        _buildChecklistSection('First Home Owner Grant (FHOG)', fhogItems, 'fhog'),
         const SizedBox(height: 14),
-        _buildChecklistSection(
-            'First Home Guarantee (FHBG)', fhbgItems, 'fhbg'),
+        _buildChecklistSection('First Home Guarantee (FHBG)', fhbgItems, 'fhbg'),
         const SizedBox(height: 14),
         _buildChecklistSection('Super Saver Scheme (FHSS)', fhssItems, 'fhss'),
       ],
     );
   }
 
-  Widget _buildChecklistSection(
-      String title, List<String> items, String prefix) {
+  Widget _buildChecklistSection(String title, List<String> items, String prefix) {
     final theme = widget.theme;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1044,11 +989,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: AppTextStyles.playfair(
-                  size: 13.5,
-                  weight: FontWeight.bold,
-                  color: theme.getTextColor(context))),
+          Text(title, style: AppTextStyles.playfair(size: 13.5, weight: FontWeight.bold, color: theme.getTextColor(context))),
           const SizedBox(height: 10),
           ...items.asMap().entries.map((entry) {
             final idx = entry.key;
@@ -1075,22 +1016,12 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
                       width: 20,
                       height: 20,
                       decoration: BoxDecoration(
-                        color:
-                            checked ? theme.primaryColor : Colors.transparent,
-                        border: Border.all(
-                            color: checked
-                                ? theme.primaryColor
-                                : theme
-                                    .getTextColor(context)
-                                    .withValues(alpha: 0.3),
-                            width: 2),
+                        color: checked ? theme.primaryColor : Colors.transparent,
+                        border: Border.all(color: checked ? theme.primaryColor : theme.getTextColor(context).withValues(alpha: 0.3), width: 2),
                         borderRadius: BorderRadius.circular(5),
                       ),
                       alignment: Alignment.center,
-                      child: checked
-                          ? const Icon(Icons.check,
-                              size: 14, color: Colors.white)
-                          : null,
+                      child: checked ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -1098,14 +1029,9 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
                         text,
                         style: AppTextStyles.dmSans(
                           size: 11,
-                          color: checked
-                              ? theme
-                                  .getTextColor(context)
-                                  .withValues(alpha: 0.5)
-                              : theme.getTextColor(context),
+                          color: checked ? theme.getTextColor(context).withValues(alpha: 0.5) : theme.getTextColor(context),
                         ).copyWith(
-                          decoration:
-                              checked ? TextDecoration.lineThrough : null,
+                          decoration: checked ? TextDecoration.lineThrough : null,
                         ),
                       ),
                     ),
@@ -1123,6 +1049,7 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
   Widget _buildInputField({
     required String label,
     required double value,
+    String? errorText,
     required ValueChanged<double> onChanged,
   }) {
     final theme = widget.theme;
@@ -1140,29 +1067,19 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context)),
+            border: Border.all(color: errorText != null ? Colors.red : theme.getBorderColor(context)),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
-              Text('\$ ',
-                  style: AppTextStyles.dmSans(
-                      size: 13.5,
-                      color: theme.primaryColor,
-                      weight: FontWeight.w700)),
+              Text('\$ ', style: AppTextStyles.dmSans(size: 13.5, color: theme.primaryColor, weight: FontWeight.w700)),
               Expanded(
                 child: TextFormField(
                   key: ValueKey(value),
                   initialValue: value.toInt().toString(),
                   keyboardType: TextInputType.number,
-                  style: AppTextStyles.dmSans(
-                      size: 13.5,
-                      color: theme.getTextColor(context),
-                      weight: FontWeight.w800),
-                  decoration: const InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero),
+                  style: AppTextStyles.dmSans(size: 13.5, color: theme.getTextColor(context), weight: FontWeight.w800),
+                  decoration: const InputDecoration(isDense: true, border: InputBorder.none, contentPadding: EdgeInsets.zero),
                   onChanged: (val) {
                     final d = double.tryParse(val) ?? 0.0;
                     onChanged(d);
@@ -1172,6 +1089,10 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(errorText, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+        ],
       ],
     );
   }
@@ -1182,13 +1103,8 @@ class _AUFirstHomeGrantState extends ConsumerState<AUFirstHomeGrant> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: active
-              ? const Color(0xFF002868)
-              : widget.theme.getBgColor(context),
-          border: Border.all(
-              color: active
-                  ? const Color(0xFF002868)
-                  : widget.theme.getBorderColor(context)),
+          color: active ? const Color(0xFF002868) : widget.theme.getBgColor(context),
+          border: Border.all(color: active ? const Color(0xFF002868) : widget.theme.getBorderColor(context)),
           borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,

@@ -26,10 +26,10 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
   final _rateController = TextEditingController(text: '4.75');
   final _extraController = TextEditingController(text: '0');
 
-  double _loan = 250000;
-  double _term = 25;
-  double _rate = 4.75;
-  double _extra = 0;
+  bool _showResults = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   String _viewMode = 'year'; // year, month
 
@@ -42,8 +42,8 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
       _termController.text = (inputs['term'] ?? 25.0).toString().replaceAll(RegExp(r'\.0$'), '');
       _rateController.text = (inputs['rate'] ?? 4.75).toString();
       _extraController.text = (inputs['extra'] ?? 0.0).toStringAsFixed(0);
+      _calculate();
     }
-    _calculateValues();
   }
 
   @override
@@ -55,12 +55,62 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
     super.dispose();
   }
 
-  void _calculateValues() {
+  double _val(TextEditingController c, double defaultVal) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    final loan = double.tryParse(_loanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (loan <= 0) errors['loan'] = 'Enter valid mortgage amount';
+
+    final term = double.tryParse(_termController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (term <= 0 || term > 50) errors['term'] = 'Enter term (1 - 50 years)';
+
+    final rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (rate <= 0 || rate > 25) errors['rate'] = 'Enter interest rate (0.1% - 25%)';
+
+    final extra = double.tryParse(_extraController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (extra < 0) errors['extra'] = 'Enter valid extra payment';
+
     setState(() {
-      _loan = double.tryParse(_loanController.text) ?? 0;
-      _term = double.tryParse(_termController.text) ?? 25;
-      _rate = double.tryParse(_rateController.text) ?? 0;
-      _extra = double.tryParse(_extraController.text) ?? 0;
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_loanController] = loan;
+      _calcSnapshot[_termController] = term;
+      _calcSnapshot[_rateController] = rate;
+      _calcSnapshot[_extraController] = extra;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _loanController.text = '250000';
+      _termController.text = '25';
+      _rateController.text = '4.75';
+      _extraController.text = '0';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
     });
   }
 
@@ -71,16 +121,21 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
 
   @override
   Widget build(BuildContext context) {
-    final rMo = _rate / 100 / 12;
-    final totalMonths = (_term * 12).toInt();
-    final basePmt = _pmt(rMo, totalMonths.toDouble(), _loan);
-    final totalPmt = basePmt + _extra;
+    final double loanVal = _val(_loanController, 250000);
+    final double termVal = _val(_termController, 25);
+    final double rateVal = _val(_rateController, 4.75);
+    final double extraVal = _val(_extraController, 0);
+
+    final rMo = rateVal / 100 / 12;
+    final totalMonths = (termVal * 12).toInt();
+    final basePmt = _pmt(rMo, totalMonths.toDouble(), loanVal);
+    final totalPmt = basePmt + extraVal;
 
     // Generate schedule
     final List<Map<String, dynamic>> yearlyData = [];
     final List<Map<String, dynamic>> monthlyData = [];
 
-    double bal = _loan;
+    double bal = loanVal;
     double totalInt = 0;
     double totalPrin = 0;
     int? halfwayYr;
@@ -123,19 +178,19 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
         'balance': bal,
       });
 
-      if (halfwayYr == null && bal <= _loan / 2) halfwayYr = yr;
-      if (_extra > 0 && extraEndYr == null && bal <= 0.01) extraEndYr = yr;
+      if (halfwayYr == null && bal <= loanVal / 2) halfwayYr = yr;
+      if (extraVal > 0 && extraEndYr == null && bal <= 0.01) extraEndYr = yr;
 
-      if (ms75 == null && bal <= _loan * 0.75) ms75 = {'yr': yr, 'val': bal};
-      if (ms50 == null && bal <= _loan * 0.5) ms50 = {'yr': yr, 'val': bal};
-      if (ms25 == null && bal <= _loan * 0.25) ms25 = {'yr': yr, 'val': bal};
-      if (ms10 == null && bal <= _loan * 0.1) ms10 = {'yr': yr, 'val': bal};
+      if (ms75 == null && bal <= loanVal * 0.75) ms75 = {'yr': yr, 'val': bal};
+      if (ms50 == null && bal <= loanVal * 0.5) ms50 = {'yr': yr, 'val': bal};
+      if (ms25 == null && bal <= loanVal * 0.25) ms25 = {'yr': yr, 'val': bal};
+      if (ms10 == null && bal <= loanVal * 0.1) ms10 = {'yr': yr, 'val': bal};
     }
 
     final totalRepaid = totalPrin + totalInt;
     final intRatio = totalRepaid > 0 ? (totalInt / totalRepaid * 100) : 0.0;
     final actualTermYrs = yearlyData.length;
-    final termSavedYrs = _extra > 0 ? (_term - actualTermYrs).clamp(0.0, _term) : 0.0;
+    final termSavedYrs = extraVal > 0 ? (termVal - actualTermYrs).clamp(0.0, termVal) : 0.0;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = widget.theme.getCardColor(context);
@@ -148,6 +203,13 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
     final fixed2yr = ukRates?.fixed2yr.value ?? 4.75;
     final fixed5yr = ukRates?.fixed5yr.value ?? 4.35;
     final isLive   = ukRates?.isLive == true;
+
+    final isDirty = _showResults && (
+      (double.tryParse(_loanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_loanController] ?? 0.0) ||
+      (double.tryParse(_termController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_termController] ?? 0.0) ||
+      (double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_rateController] ?? 0.0) ||
+      (double.tryParse(_extraController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_extraController] ?? 0.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,30 +224,44 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
           ),
           child: Row(
             children: [
-              Expanded(child: _rateCell('Avg Mortgage', '25 yr', 'UK typical', textThemeColor)),
+              Expanded(child: _rateCell('BoE Base', '${boeBase.toStringAsFixed(2)}%${isLive ? ' 🟢' : ''}', 'Official Rate', textThemeColor)),
               _divider(),
-              Expanded(child: _rateCell('2-Yr Fixed', '${fixed2yr.toStringAsFixed(2)}%', isLive ? 'Live 🟢' : 'Best buy', Colors.redAccent)),
+              Expanded(child: _rateCell('2-Yr Fixed', '${fixed2yr.toStringAsFixed(2)}%', 'Typical fixed', textThemeColor)),
               _divider(),
-              Expanded(child: _rateCell('5-Yr Fixed', '${fixed5yr.toStringAsFixed(2)}%', 'Best buy', textThemeColor)),
-              _divider(),
-              Expanded(child: _rateCell('BoE Base', '${boeBase.toStringAsFixed(2)}%', isLive ? 'Live 🟢' : 'Current', isDark ? Colors.amber : const Color(0xFFD97706))),
+              Expanded(child: _rateCell('5-Yr Fixed', '${fixed5yr.toStringAsFixed(2)}%', 'Longer term', textThemeColor)),
             ],
           ),
         ),
         const SizedBox(height: 16),
 
-        Text(
-          'MORTGAGE DETAILS',
-          style: AppTextStyles.dmSans(
-            size: 11,
-            weight: FontWeight.w700,
-            color: widget.theme.getMutedColor(context),
-            letterSpacing: 1.0,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'MORTGAGE DETAILS',
+              style: AppTextStyles.dmSans(
+                size: 11,
+                weight: FontWeight.w700,
+                color: widget.theme.getMutedColor(context),
+                letterSpacing: 1.0,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: widget.theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
-        // Inputs Card
+        // Mortgage inputs card
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -195,371 +271,425 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
           ),
           child: Column(
             children: [
-              Row(
-                children: [
-                  Expanded(child: _inputField(label: 'Loan Amount (£)', controller: _loanController)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _inputField(label: 'Term (years)', controller: _termController)),
-                ],
-              ),
+              _inputField(label: 'Mortgage Amount (£)', controller: _loanController, errorText: _errors['loan']),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _inputField(label: 'Interest Rate (%)', controller: _rateController)),
+                  Expanded(child: _inputField(label: 'Term (Years)', controller: _termController, errorText: _errors['term'])),
                   const SizedBox(width: 10),
-                  Expanded(child: _inputField(label: 'Extra Monthly (£)', controller: _extraController)),
+                  Expanded(child: _inputField(label: 'Interest Rate (%)', controller: _rateController, errorText: _errors['rate'])),
                 ],
+              ),
+              const SizedBox(height: 12),
+              _inputField(label: 'Monthly Extra Payment (£) (Optional)', controller: _extraController, errorText: _errors['extra']),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: widget.theme.primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _calculate,
+                  child: Text(
+                    'Calculate Schedule',
+                    style: AppTextStyles.dmSans(size: 14, color: Colors.white, weight: FontWeight.bold),
+                  ),
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
 
-        // Result Hero
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
+        if (_showResults) ...[
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ESTIMATED MONTHLY REPAYMENT',
-                style: AppTextStyles.dmSans(
-                  size: 10,
-                  weight: FontWeight.w700,
-                  color: Colors.white.withValues(alpha: 0.5),
-                  letterSpacing: 0.6,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Row(
                 children: [
-                  Text(
-                    CurrencyFormatter.format(totalPmt, symbol: '£').split('.').first,
-                    style: AppTextStyles.dmSans(
-                      size: 38,
-                      weight: FontWeight.w800,
-                      color: const Color(0xFFFFD700),
-                    ).copyWith(fontFamily: 'Georgia'),
-                  ),
-                  GestureDetector(
-                    onTap: () async {
-                      final calc = SavedCalc.create(
-                        country: 'UK',
-                        calcType: 'Amortization',
-                        inputs: {
-                          'loan': _loan,
-                          'term': _term,
-                          'rate': _rate,
-                          'extra': _extra,
-                        },
-                        results: {
-                          'Monthly Payment': totalPmt,
-                          'Total Repaid': totalRepaid,
-                          'Total Interest': totalInt,
-                          'Term Saved Yrs': termSavedYrs,
-                        },
-                        label: '${CurrencyFormatter.compact(_loan, symbol: '£')} @ ${_rate.toStringAsFixed(2)}% · ${totalPmt.toStringAsFixed(0)}/mo',
-                        currencyCode: 'GBP',
-                      );
-                      final messenger = ScaffoldMessenger.of(context);
-                      await ref.read(savedProvider.notifier).save(calc);
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('✓ Amortization calculation saved'),
-                          backgroundColor: Color(0xFF0D9488),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.save, color: Colors.white, size: 14),
-                          const SizedBox(width: 4),
-                          Text('Save', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: Colors.white)),
-                        ],
-                      ),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Schedule to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Base: ${CurrencyFormatter.format(basePmt, symbol: '£').split('.').first} + ${CurrencyFormatter.format(_extra, symbol: '£').split('.').first}/mo overpayment',
-                style: AppTextStyles.dmSans(size: 11, color: Colors.white.withValues(alpha: 0.7)),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Total Interest: ${CurrencyFormatter.format(totalInt, symbol: '£').split('.').first} (${intRatio.toStringAsFixed(0)}% of total cost)',
-                  style: AppTextStyles.dmSans(
-                    size: 11,
-                    weight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Metrics Grid
-        ResultPanel(
-          primaryColor: widget.theme.primaryColor,
-          rows: [
-            ResultRow(label: 'Total Repaid', value: totalRepaid, currencyCode: 'GBP'),
-            ResultRow(label: 'Total Interest', value: totalInt, currencyCode: 'GBP', isHighlighted: true),
-            ResultRow(label: 'Half-way Point', value: halfwayYr != null ? halfwayYr.toDouble() : 0, isPercent: false, isYears: true),
-            ResultRow(label: 'Interest-Free After', value: _extra > 0 ? termSavedYrs : 0.0, isPercent: false, isYears: true),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Chart Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderCol),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Balance · Principal · Interest Over Time',
-                style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor),
-              ),
-              Text(
-                'Annual view — outstanding balance & cumulative costs',
-                style: AppTextStyles.dmSans(size: 9.5, color: widget.theme.getMutedColor(context)),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 160,
-                width: double.infinity,
-                child: CustomPaint(
-                  painter: AmortizationChartPainter(
-                    yearlyData: yearlyData,
-                    loan: _loan,
-                    isDark: isDark,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _legendItem(isDark ? Colors.white : const Color(0xFF0D0D2B), 'Balance'),
-                  const SizedBox(width: 12),
-                  _legendItem(const Color(0xFF059669), 'Principal paid'),
-                  const SizedBox(width: 12),
-                  _legendItem(const Color(0xFFC8102E), 'Interest paid'),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Milestones
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: isDark ? [const Color(0xFF1E1B4B), const Color(0xFF121230)] : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)]),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? const Color(0xFF4338CA).withValues(alpha: 0.5) : const Color(0xFFA5B4FC)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '🏁 Balance Milestones',
-                style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF1E1B4B)),
-              ),
-              const SizedBox(height: 12),
-              _milestoneRow('75% remaining', ms75),
-              _milestoneRow('50% remaining', ms50),
-              _milestoneRow('25% remaining', ms25),
-              _milestoneRow('10% remaining', ms10),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Table Toggle Button
-        Row(
-          children: [
-            Expanded(
-              child: _tabButton(
-                label: '📅 Annual View',
-                active: _viewMode == 'year',
-                onTap: () => setState(() => _viewMode = 'year'),
-              ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _tabButton(
-                label: '📆 Monthly View',
-                active: _viewMode == 'month',
-                onTap: () => setState(() => _viewMode = 'month'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-
-        // Table
-        Container(
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderCol),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                color: const Color(0xFF0D0D2B),
-                child: Row(
-                  children: [
-                    Expanded(flex: 1, child: Text(_viewMode == 'year' ? 'Yr' : 'Mo', style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w700, color: Colors.white70))),
-                    Expanded(flex: 2, child: Text('Payment', style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w700, color: Colors.white70))),
-                    Expanded(flex: 2, child: Text('Principal', style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w700, color: Colors.white70))),
-                    Expanded(flex: 2, child: Text('Interest', style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w700, color: Colors.white70))),
-                    Expanded(flex: 2, child: Text('Balance', style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w700, color: Colors.white70))),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 260,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _viewMode == 'year' ? yearlyData.length : monthlyData.length,
-                  itemBuilder: (context, index) {
-                    final row = _viewMode == 'year' ? yearlyData[index] : monthlyData[index];
-                    final stepLabel = _viewMode == 'year' ? row['yr'].toString() : row['mo'].toString();
-                    final payment = row['payment'] as double;
-                    final principal = row['principal'] as double;
-                    final interest = row['interest'] as double;
-                    final balance = row['balance'] as double;
-
-                    return Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: index % 2 == 0 ? (isDark ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFFAFAFA)) : Colors.transparent,
-                        border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.black12, width: 0.5)),
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Result Hero Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
                       ),
-                      child: Row(
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        extraVal > 0 ? 'MONTHLY PAYMENT WITH OVERPAYMENT' : 'ESTIMATED MONTHLY PAYMENT',
+                        style: AppTextStyles.dmSans(
+                          size: 10,
+                          weight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(flex: 1, child: Text(stepLabel, style: AppTextStyles.dmSans(size: 10.5, color: textThemeColor, weight: FontWeight.w700))),
-                          Expanded(flex: 2, child: Text(CurrencyFormatter.format(payment, symbol: '£').split('.').first, style: AppTextStyles.dmSans(size: 10.5, color: textThemeColor, weight: FontWeight.w600))),
-                          Expanded(flex: 2, child: Text(CurrencyFormatter.format(principal, symbol: '£').split('.').first, style: AppTextStyles.dmSans(size: 10.5, color: textThemeColor))),
-                          Expanded(flex: 2, child: Text(CurrencyFormatter.format(interest, symbol: '£').split('.').first, style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFFC8102E)))),
-                          Expanded(flex: 2, child: Text(CurrencyFormatter.format(balance, symbol: '£').split('.').first, style: AppTextStyles.dmSans(size: 10.5, color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF1A1A6B), weight: FontWeight.w800))),
+                          Text(
+                            CurrencyFormatter.format(totalPmt, symbol: '£').split('.').first,
+                            style: AppTextStyles.dmSans(
+                              size: 34,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFFFFD700),
+                            ).copyWith(fontFamily: 'Georgia'),
+                          ),
+                          GestureDetector(
+                            onTap: () async {
+                              final calc = SavedCalc.create(
+                                country: 'UK',
+                                calcType: 'Amortization',
+                                inputs: {
+                                  'loan': loanVal,
+                                  'term': termVal,
+                                  'rate': rateVal,
+                                  'extra': extraVal,
+                                },
+                                results: {
+                                  'Base Pmt': basePmt,
+                                  'Total Pmt': totalPmt,
+                                  'Total Interest': totalInt,
+                                  'Years Saved': termSavedYrs,
+                                },
+                                label: '${CurrencyFormatter.compact(loanVal, symbol: '£')} over ${termVal.toInt()}yrs @ ${rateVal.toStringAsFixed(2)}%',
+                                currencyCode: 'GBP',
+                              );
+                              final messenger = ScaffoldMessenger.of(context);
+                              await ref.read(savedProvider.notifier).save(calc);
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text('✓ Amortization schedule saved'),
+                                  backgroundColor: Color(0xFF0D9488),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.save, color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text('Save', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: Colors.white)),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                    );
+                      if (extraVal > 0) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Saves ${termSavedYrs.toStringAsFixed(1)} years off mortgage term · Paid off in $actualTermYrs years',
+                          style: AppTextStyles.dmSans(size: 11, color: const Color(0xFF90EE90)),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Metrics Grid
+                ResultPanel(
+                  primaryColor: widget.theme.primaryColor,
+                  rows: [
+                    ResultRow(label: 'Total Paid', value: totalRepaid, currencyCode: 'GBP'),
+                    ResultRow(label: 'Total Interest', value: totalInt, currencyCode: 'GBP'),
+                    ResultRow(label: 'Interest Ratio', value: intRatio / 100, isPercent: true, isHighlighted: true),
+                    if (extraVal > 0) ResultRow(label: 'Years Saved', value: termSavedYrs, isPercent: false),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Milestone timelines
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mortgage Milestones 🏁',
+                        style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor),
+                      ),
+                      const SizedBox(height: 12),
+                      _milestoneItem('75% Balance Left', ms75 != null ? 'Year ${ms75['yr']}' : '—', isDark),
+                      const Divider(height: 16, thickness: 0.5),
+                      _milestoneItem('Halfway Paid (50% left)', halfwayYr != null ? 'Year $halfwayYr' : '—', isDark),
+                      const Divider(height: 16, thickness: 0.5),
+                      _milestoneItem('25% Balance Left', ms25 != null ? 'Year ${ms25['yr']}' : '—', isDark),
+                      const Divider(height: 16, thickness: 0.5),
+                      _milestoneItem('Fully Paid Off (10% left → 0)', ms10 != null ? 'Year ${ms10['yr']}' : '—', isDark),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Chart Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Amortization Balance Over Time',
+                        style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: textThemeColor),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 180,
+                        width: double.infinity,
+                        child: CustomPaint(
+                          painter: AmortizationChartPainter(
+                            yearlyData: yearlyData,
+                            loan: loanVal,
+                            isDark: isDark,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _legendDot(color: isDark ? Colors.white : const Color(0xFF0D0D2B), label: 'Balance'),
+                          const SizedBox(width: 14),
+                          _legendDot(color: const Color(0xFF059669), label: 'Principal'),
+                          const SizedBox(width: 14),
+                          _legendDot(color: const Color(0xFFC8102E), label: 'Interest'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Table View Toggles
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'AMORTIZATION SCHEDULE',
+                      style: AppTextStyles.dmSans(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: widget.theme.getMutedColor(context),
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        _tabTextButton(label: 'Yearly', active: _viewMode == 'year', onTap: () => setState(() => _viewMode = 'year')),
+                        const SizedBox(width: 8),
+                        _tabTextButton(label: 'Monthly', active: _viewMode == 'month', onTap: () => setState(() => _viewMode = 'month')),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Schedule list
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _viewMode == 'year' ? yearlyData.length : monthlyData.length.clamp(0, 120), // Cap monthly at 10 yrs to prevent lag
+                  itemBuilder: (context, index) {
+                    if (_viewMode == 'year') {
+                      final d = yearlyData[index];
+                      return _tableRow(
+                        title: 'Year ${d['yr']}',
+                        principal: d['principal'] as double,
+                        interest: d['interest'] as double,
+                        balance: d['balance'] as double,
+                        isDark: isDark,
+                      );
+                    } else {
+                      final d = monthlyData[index];
+                      return _tableRow(
+                        title: 'Month ${d['mo']}',
+                        principal: d['principal'] as double,
+                        interest: d['interest'] as double,
+                        balance: d['balance'] as double,
+                        isDark: isDark,
+                      );
+                    }
                   },
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _legendItem(Color color, String label) {
-    return Row(
-      children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
-        const SizedBox(width: 4),
-        Text(label, style: AppTextStyles.dmSans(size: 9.5, color: widget.theme.getMutedColor(context))),
-      ],
-    );
-  }
-
-  Widget _milestoneRow(String label, Map<String, dynamic>? data) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w700, color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4338CA))),
-          Row(
-            children: [
-              Text(
-                data != null ? 'Year ${data['yr']}' : '—',
-                style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF6366F1)),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                data != null ? CurrencyFormatter.format(data['val'], symbol: '£').split('.').first : '—',
-                style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: isDark ? const Color(0xFFFFD700) : const Color(0xFF0D0D2B)),
-              ),
-            ],
+                if (_viewMode == 'month' && monthlyData.length > 120)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Center(
+                      child: Text(
+                        'Showing first 120 months. Switch to Yearly view for full term.',
+                        style: AppTextStyles.dmSans(size: 10.5, color: widget.theme.getMutedColor(context)),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _legendDot({required Color color, required String label}) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: AppTextStyles.dmSans(size: 9.5, color: widget.theme.getMutedColor(context), weight: FontWeight.w700),
+        ),
+      ],
+    );
+  }
+
+  Widget _milestoneItem(String title, String val, bool isDark) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w600, color: widget.theme.getTextColor(context))),
+        Text(
+          val,
+          style: AppTextStyles.dmSans(
+            size: 12,
+            weight: FontWeight.w800,
+            color: isDark ? const Color(0xFF93C5FD) : widget.theme.primaryColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _tabTextButton({required String label, required bool active, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        label,
+        style: AppTextStyles.dmSans(
+          size: 11,
+          weight: FontWeight.bold,
+          color: active ? widget.theme.primaryColor : Colors.grey,
+        ),
       ),
     );
   }
 
-  Widget _tabButton({required String label, required bool active, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: active
-              ? const Color(0xFF0D0D2B)
-              : (Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF5F5F8)),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: active ? const Color(0xFF0D0D2B) : Colors.grey.withValues(alpha: 0.2),
+  Widget _tableRow({required String title, required double principal, required double interest, required double balance, required bool isDark}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              title,
+              style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: widget.theme.getTextColor(context)),
+            ),
           ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: AppTextStyles.dmSans(
-            size: 11.5,
-            weight: FontWeight.w800,
-            color: active ? const Color(0xFFFFD700) : widget.theme.getMutedColor(context),
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Prin: ${CurrencyFormatter.format(principal, symbol: '£').split('.').first}',
+                  style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFF059669), weight: FontWeight.w700),
+                ),
+                Text(
+                  'Int: ${CurrencyFormatter.format(interest, symbol: '£').split('.').first}',
+                  style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFFC8102E), weight: FontWeight.w700),
+                ),
+              ],
+            ),
           ),
-        ),
+          Expanded(
+            flex: 3,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    CurrencyFormatter.format(balance, symbol: '£').split('.').first,
+                    style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: widget.theme.getTextColor(context)),
+                  ),
+                  Text(
+                    'Balance',
+                    style: AppTextStyles.dmSans(size: 8.5, color: widget.theme.getMutedColor(context)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -592,7 +722,7 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
     );
   }
 
-  Widget _inputField({required String label, required TextEditingController controller}) {
+  Widget _inputField({required String label, required TextEditingController controller, String? errorText}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,7 +740,9 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
         TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onChanged: (v) => _calculateValues(),
+          onChanged: (v) {
+            setState(() {});
+          },
           style: AppTextStyles.dmSans(
             size: 13,
             weight: FontWeight.w700,
@@ -623,10 +755,18 @@ class _UKAmortizationState extends ConsumerState<UKAmortization> {
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
+              borderSide: errorText != null ? const BorderSide(color: Colors.red, width: 1.5) : BorderSide.none,
             ),
+            enabledBorder: errorText != null ? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ) : null,
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(errorText, style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500)),
+        ],
       ],
     );
   }

@@ -57,6 +57,10 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
   String _freq = 'biweekly'; // weekly, biweekly, monthly
   bool _hasCalculated = false;
 
+  final _resultsKey = GlobalKey();
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +76,14 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
       _rateController.text = _rate.toString();
       _downPct = _homePrice > 0 ? (_downAmt / _homePrice * 100) : 10.0;
       _hasCalculated = saved['hasCalculated'] as bool? ?? true;
+      if (_hasCalculated) {
+        _calcSnapshot['price'] = _homePrice;
+        _calcSnapshot['down'] = _downAmt;
+        _calcSnapshot['rate'] = _rate;
+        _calcSnapshot['amort'] = _amort;
+        _calcSnapshot['freq'] = _freq;
+        _calcSnapshot['downPct'] = _downPct;
+      }
     } else if (widget.savedCalc != null) {
       final inputs = widget.savedCalc!.inputs;
       _homePrice = inputs['price'] ?? 650000.0;
@@ -90,17 +102,15 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
       _rateController.text = _rate.toString();
       _downPct = _homePrice > 0 ? (_downAmt / _homePrice * 100) : 10.0;
       _hasCalculated = true;
+      _calcSnapshot['price'] = _homePrice;
+      _calcSnapshot['down'] = _downAmt;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['amort'] = _amort;
+      _calcSnapshot['freq'] = _freq;
+      _calcSnapshot['downPct'] = _downPct;
     } else {
       _syncDown('pct');
     }
-  }
-
-  @override
-  void dispose() {
-    _priceController.dispose();
-    _downController.dispose();
-    _rateController.dispose();
-    super.dispose();
   }
 
   void _persistInputs() {
@@ -116,33 +126,115 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
 
   void _syncDown(String from) {
     setState(() {
-      _homePrice = double.tryParse(_priceController.text) ?? 0;
+      _homePrice = double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
       if (from == 'pct') {
         _downAmt = (_homePrice * _downPct / 100).roundToDouble();
         _downController.text = _downAmt.toStringAsFixed(0);
       } else {
-        _downAmt = double.tryParse(_downController.text) ?? 0;
+        _downAmt = double.tryParse(_downController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
         _downPct = _homePrice > 0 ? (_downAmt / _homePrice * 100) : 0;
       }
-      _rate = double.tryParse(_rateController.text) ?? 4.99;
+      _rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 4.99;
+    });
+    _persistInputs();
+  }
+
+  double _val(String key, double fallback) {
+    if (_hasCalculated && _calcSnapshot.containsKey(key)) {
+      final val = _calcSnapshot[key];
+      if (val is num) return val.toDouble();
+    }
+    return fallback;
+  }
+
+  String _valStr(String key, String fallback) {
+    if (_hasCalculated && _calcSnapshot.containsKey(key)) {
+      return _calcSnapshot[key]?.toString() ?? fallback;
+    }
+    return fallback;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final price = double.tryParse(_priceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (price <= 0) errors['price'] = 'Enter a valid purchase price';
+
+    final down = double.tryParse(_downController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final minD = _calculateMinDownPayment(price);
+    if (down < minD) {
+      errors['down'] = 'Min. down payment required is CA\$${minD.toStringAsFixed(0)}';
+    }
+
+    final rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (rate <= 0 || rate > 25) errors['rate'] = 'Enter interest rate (0.1% - 25%)';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['down'] = down;
+      _calcSnapshot['rate'] = rate;
+      _calcSnapshot['amort'] = _amort;
+      _calcSnapshot['freq'] = _freq;
+      _calcSnapshot['downPct'] = price > 0 ? (down / price * 100) : 10.0;
+      _hasCalculated = true;
+    });
+    _persistInputs();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _priceController.text = '650000';
+      _downController.text = '65000';
+      _rateController.text = '4.99';
+      _homePrice = 650000;
+      _downAmt = 65000;
+      _downPct = 10.0;
+      _rate = 4.99;
+      _amort = 25;
+      _freq = 'biweekly';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _hasCalculated = false;
     });
     _persistInputs();
   }
 
   void _saveCalculation() async {
-    final double baseLoan = _homePrice - _downAmt;
-    final double cmhc = baseLoan * _cmhcRate(_downPct);
+    final double priceVal = _val('price', _homePrice);
+    final double downVal = _val('down', _downAmt);
+    final double rateVal = _val('rate', _rate);
+    final int amortVal = _val('amort', _amort.toDouble()).toInt();
+    final String freqVal = _valStr('freq', _freq);
+    final double downPctVal = _val('downPct', _downPct);
+
+    final double baseLoan = priceVal - downVal;
+    final double cmhc = baseLoan * _cmhcRate(downPctVal);
     final double loan = baseLoan + cmhc;
-    final double ea = math.pow(1 + _rate / 200, 2) - 1;
-    final double r = _freq == 'monthly'
+    final double ea = math.pow(1 + rateVal / 200, 2) - 1;
+    final double r = freqVal == 'monthly'
         ? ea / 12
-        : _freq == 'biweekly'
+        : freqVal == 'biweekly'
             ? ea / 26
             : ea / 52;
-    final double n = _amort *
-        (_freq == 'monthly'
+    final double n = amortVal *
+        (freqVal == 'monthly'
             ? 12
-            : _freq == 'biweekly'
+            : freqVal == 'biweekly'
                 ? 26
                 : 52);
     final double pmt = loan * r / (1 - math.pow(1 + r, -n));
@@ -162,7 +254,7 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Price ${CurrencyFormatter.compact(_homePrice, symbol: 'CA\$')} · Payment: ${CurrencyFormatter.compact(pmt, symbol: 'CA\$')}/${_freq == 'monthly' ? 'mo' : _freq == 'biweekly' ? 'bi-wk' : 'wk'}',
+              'Saving: Price ${CurrencyFormatter.compact(priceVal, symbol: 'CA\$')} · Payment: ${CurrencyFormatter.compact(pmt, symbol: 'CA\$')}/${freqVal == 'monthly' ? 'mo' : freqVal == 'biweekly' ? 'bi-wk' : 'wk'}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -214,13 +306,13 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
         country: 'Canada',
         calcType: 'Mortgage Calc',
         inputs: {
-          'price': _homePrice,
-          'down': _downAmt,
-          'rate': _rate,
-          'amort': _amort.toDouble(),
-          'freq': _freq == 'weekly'
+          'price': priceVal,
+          'down': downVal,
+          'rate': rateVal,
+          'amort': amortVal.toDouble(),
+          'freq': freqVal == 'weekly'
               ? 0.0
-              : _freq == 'biweekly'
+              : freqVal == 'biweekly'
                   ? 1.0
                   : 2.0,
         },
@@ -229,7 +321,7 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
           'Loan Amount': loan,
           'CMHC Premium': cmhc,
           'Total Interest': (pmt * n) - loan,
-          'Total Cost': (pmt * n) + _downAmt,
+          'Total Cost': (pmt * n) + downVal,
         },
         label: label,
         currencyCode: 'CAD',
@@ -264,35 +356,43 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
     final liveVar = ratesAsync.valueOrNull?.rateVariable ?? 5.95;
     final liveStress = ratesAsync.valueOrNull?.stressTestRate ?? 7.00;
 
-    // Calculation math
-    final double minDown = _calculateMinDownPayment(_homePrice);
-    final bool isDownWarning = _downAmt < minDown;
+    // Active calculations check down warning
+    final double minDownActive = _calculateMinDownPayment(_homePrice);
+    final bool isDownWarningActive = _downAmt < minDownActive;
 
-    final double baseLoan = _homePrice - _downAmt;
-    final double cmhc = baseLoan * _cmhcRate(_downPct);
+    // Frozen snapshot calculations
+    final double priceVal = _val('price', _homePrice);
+    final double downVal = _val('down', _downAmt);
+    final double rateVal = _val('rate', _rate);
+    final int amortVal = _val('amort', _amort.toDouble()).toInt();
+    final String freqVal = _valStr('freq', _freq);
+    final double downPctVal = _val('downPct', _downPct);
+
+    final double baseLoan = priceVal - downVal;
+    final double cmhc = baseLoan * _cmhcRate(downPctVal);
     final double loan = baseLoan + cmhc;
-    final double ea = math.pow(1 + _rate / 200, 2) - 1;
+    final double ea = math.pow(1 + rateVal / 200, 2) - 1;
 
     double pmt = 0;
     double periods = 0;
     String freqLabel = 'Bi-Weekly';
     String freqSub = 'Every 2 weeks';
 
-    if (_freq == 'monthly') {
+    if (freqVal == 'monthly') {
       final double r = ea / 12;
-      periods = _amort * 12;
+      periods = amortVal * 12;
       pmt = loan * r / (1 - math.pow(1 + r, -periods));
       freqLabel = 'Monthly';
       freqSub = 'Every month';
-    } else if (_freq == 'biweekly') {
+    } else if (freqVal == 'biweekly') {
       final double r = ea / 26;
-      periods = _amort * 26;
+      periods = amortVal * 26;
       pmt = loan * r / (1 - math.pow(1 + r, -periods));
       freqLabel = 'Bi-Weekly';
       freqSub = 'Every 2 weeks';
     } else {
       final double r = ea / 52;
-      periods = _amort * 52;
+      periods = amortVal * 52;
       pmt = loan * r / (1 - math.pow(1 + r, -periods));
       freqLabel = 'Weekly';
       freqSub = 'Every week';
@@ -300,17 +400,25 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
 
     final double totalPaid = pmt * periods;
     final double totalInterest = totalPaid - baseLoan - cmhc;
-    final double totalCost = totalPaid + _downAmt;
+    final double totalCost = totalPaid + downVal;
 
     // Monthly housing summary
-    final double moEquiv = _freq == 'monthly'
+    final double moEquiv = freqVal == 'monthly'
         ? pmt
-        : _freq == 'biweekly'
+        : freqVal == 'biweekly'
             ? pmt * 26 / 12
             : pmt * 52 / 12;
 
     // Visual breakdown segments
-    final double bkTotal = baseLoan + totalInterest + cmhc + _downAmt;
+    final double bkTotal = baseLoan + totalInterest + cmhc + downVal;
+
+    final isDirty = _hasCalculated && (
+      _homePrice != (_calcSnapshot['price'] ?? 0.0) ||
+      _downAmt != (_calcSnapshot['down'] ?? 0.0) ||
+      _rate != (_calcSnapshot['rate'] ?? 0.0) ||
+      _amort != (_calcSnapshot['amort'] ?? 0) ||
+      _freq != (_calcSnapshot['freq'] ?? '')
+    );
 
     // Fetch saved calcs
     final savedList = ref
@@ -347,14 +455,30 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
         ),
         const SizedBox(height: 16),
 
-        Text(
-          'LOAN DETAILS',
-          style: AppTextStyles.dmSans(
-            size: 11,
-            weight: FontWeight.w700,
-            color: theme.getMutedColor(context),
-            letterSpacing: 1.0,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'LOAN DETAILS',
+              style: AppTextStyles.dmSans(
+                size: 11,
+                weight: FontWeight.w700,
+                color: theme.getMutedColor(context),
+                letterSpacing: 1.0,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.bold,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -374,9 +498,9 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
               _buildRowField(
                 prefix: 'CA\$',
                 controller: _priceController,
+                errorText: _errors['price'],
                 onChanged: (v) {
                   _syncDown('pct');
-                  setState(() => _hasCalculated = false);
                 },
               ),
               _buildSlider(
@@ -389,7 +513,6 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
                     _homePrice = v;
                     _priceController.text = v.toStringAsFixed(0);
                     _syncDown('pct');
-                    _hasCalculated = false;
                   });
                 },
               ),
@@ -412,9 +535,9 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
               _buildRowField(
                 prefix: 'CA\$',
                 controller: _downController,
+                errorText: _errors['down'],
                 onChanged: (v) {
                   _syncDown('amt');
-                  setState(() => _hasCalculated = false);
                 },
               ),
               _buildSlider(
@@ -426,15 +549,14 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
                   setState(() {
                     _downPct = v;
                     _syncDown('pct');
-                    _hasCalculated = false;
                   });
                 },
               ),
-              if (isDownWarning)
+              if (isDownWarningActive && _errors['down'] == null)
                 Padding(
                   padding: const EdgeInsets.only(top: 4, bottom: 4),
                   child: Text(
-                    '⚠️ Min down payment required: CA\$${minDown.toStringAsFixed(0)}',
+                    '⚠️ Min down payment required: CA\$${minDownActive.toStringAsFixed(0)}',
                     style: AppTextStyles.dmSans(
                         size: 10,
                         color: const Color(0xFFC8102E),
@@ -448,10 +570,10 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
               _buildRowField(
                 suffix: '% / yr',
                 controller: _rateController,
+                errorText: _errors['rate'],
                 onChanged: (v) {
                   setState(() {
-                    _rate = double.tryParse(v) ?? 4.99;
-                    _hasCalculated = false;
+                    _rate = double.tryParse(v.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 4.99;
                   });
                 },
               ),
@@ -470,8 +592,6 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
                         active: active,
                         onTap: () => setState(() {
                           _amort = yr;
-                          _hasCalculated = false;
-                          _persistInputs();
                         }),
                       ),
                     ),
@@ -503,10 +623,7 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(13)),
                   ),
-                  onPressed: () {
-                    _syncDown('amt');
-                    setState(() => _hasCalculated = true);
-                  },
+                  onPressed: _calculate,
                   child: Text(
                     '🍁 Calculate Payment',
                     style: AppTextStyles.dmSans(
@@ -520,234 +637,263 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
         const SizedBox(height: 20),
 
         if (_hasCalculated) ...[
-          // Your Result Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'YOUR RESULT',
-                style: AppTextStyles.dmSans(
-                  size: 11,
-                  weight: FontWeight.w700,
-                  color: theme.getMutedColor(context),
-                  letterSpacing: 1.0,
-                ),
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              GestureDetector(
-                onTap: _saveCalculation,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A5C35),
-                    borderRadius: BorderRadius.circular(20),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
                   ),
-                  child: Row(
+                ],
+              ),
+            ),
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Your Result Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'YOUR RESULT',
+                      style: AppTextStyles.dmSans(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: theme.getMutedColor(context),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _saveCalculation,
+                      child: Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A5C35),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.bookmark_border,
+                                color: Colors.white, size: 12),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Save',
+                              style: AppTextStyles.dmSans(
+                                  size: 10,
+                                  weight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Main Result Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.bookmark_border,
-                          color: Colors.white, size: 12),
-                      const SizedBox(width: 4),
                       Text(
-                        'Save',
+                        'Estimated $freqLabel Payment',
                         style: AppTextStyles.dmSans(
                             size: 10,
-                            weight: FontWeight.bold,
-                            color: Colors.white),
+                            weight: FontWeight.w700,
+                            color: Colors.white60,
+                            letterSpacing: 0.7),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            'CA\$ ',
+                            style: AppTextStyles.dmSans(
+                                size: 18,
+                                weight: FontWeight.w600,
+                                color: Colors.white),
+                          ),
+                          Text(
+                            CurrencyFormatter.format(pmt, symbol: '')
+                                .split('.')
+                                .first,
+                            style: AppTextStyles.playfair(
+                                size: 38,
+                                weight: FontWeight.w800,
+                                color: Colors.white),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '$freqSub · $amortVal-year amortization',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
+                      ),
+                      if (downPctVal < 20.0) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFF59E0B)),
+                          ),
+                          child: Text(
+                            '⚠️ CMHC Insurance Required (<20% down)',
+                            style: AppTextStyles.dmSans(
+                              size: 9.5,
+                              weight: FontWeight.bold,
+                              color: const Color(0xFF92400E),
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.1,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        children: [
+                          _resBox('Loan Amount',
+                              CurrencyFormatter.format(loan, symbol: 'CA\$')),
+                          _resBox(
+                              'CMHC Premium',
+                              cmhc > 0
+                                  ? CurrencyFormatter.format(cmhc, symbol: 'CA\$')
+                                  : 'None',
+                              isGreen: cmhc == 0),
+                          _resBox('Total Interest',
+                              CurrencyFormatter.format(totalInterest, symbol: 'CA\$'),
+                              isWarn: true),
+                          _resBox('Total Cost',
+                              CurrencyFormatter.format(totalCost, symbol: 'CA\$')),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+                const SizedBox(height: 20),
 
-          // Main Result Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+                // Monthly Cost Summary Card
                 Text(
-                  'Estimated $freqLabel Payment',
+                  'MONTHLY COST SUMMARY',
                   style: AppTextStyles.dmSans(
-                      size: 10,
-                      weight: FontWeight.w700,
-                      color: Colors.white60,
-                      letterSpacing: 0.7),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      'CA\$ ',
-                      style: AppTextStyles.dmSans(
-                          size: 18,
-                          weight: FontWeight.w600,
-                          color: Colors.white),
-                    ),
-                    Text(
-                      CurrencyFormatter.format(pmt, symbol: '')
-                          .split('.')
-                          .first,
-                      style: AppTextStyles.playfair(
-                          size: 38,
-                          weight: FontWeight.w800,
-                          color: Colors.white),
-                    ),
-                  ],
-                ),
-                Text(
-                  '$freqSub · $_amort-year amortization',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white54),
-                ),
-                if (_downPct < 20.0) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFF59E0B)),
-                    ),
-                    child: Text(
-                      '⚠️ CMHC Insurance Required (<20% down)',
-                      style: AppTextStyles.dmSans(
-                        size: 9.5,
-                        weight: FontWeight.bold,
-                        color: const Color(0xFF92400E),
-                      ),
-                    ),
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 1.0,
                   ),
-                ],
-                const SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 2.1,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  children: [
-                    _resBox('Loan Amount',
-                        CurrencyFormatter.format(loan, symbol: 'CA\$')),
-                    _resBox(
-                        'CMHC Premium',
-                        cmhc > 0
-                            ? CurrencyFormatter.format(cmhc, symbol: 'CA\$')
-                            : 'None',
-                        isGreen: cmhc == 0),
-                    _resBox('Total Interest',
-                        CurrencyFormatter.format(totalInterest, symbol: 'CA\$'),
-                        isWarn: true),
-                    _resBox('Total Cost',
-                        CurrencyFormatter.format(totalCost, symbol: 'CA\$')),
-                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'What You Actually Pay Each Month',
+                        style: AppTextStyles.playfair(
+                            size: 13, weight: FontWeight.bold, color: textThemeColor),
+                      ),
+                      const SizedBox(height: 12),
+                      _monthlyCostRow('Mortgage payment (equiv)',
+                          CurrencyFormatter.format(moEquiv, symbol: 'CA\$'),
+                          isBig: true),
+                      const Divider(height: 18, thickness: 0.5),
+                      _monthlyCostRow('Estimated property tax', '~CA\$400'),
+                      const Divider(height: 18, thickness: 0.5),
+                      _monthlyCostRow('Estimated heating', '~CA\$150'),
+                      const Divider(height: 18, thickness: 0.5),
+                      _monthlyCostRow(
+                          'Total housing cost (GDS)',
+                          CurrencyFormatter.format(moEquiv + 400 + 150,
+                              symbol: 'CA\$'),
+                          isRed: true),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
 
-          // Monthly Cost Summary Card
-          Text(
-            'MONTHLY COST SUMMARY',
-            style: AppTextStyles.dmSans(
-              size: 11,
-              weight: FontWeight.w700,
-              color: theme.getMutedColor(context),
-              letterSpacing: 1.0,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+                // Payment Breakdown Stacked Bar
                 Text(
-                  'What You Actually Pay Each Month',
-                  style: AppTextStyles.playfair(
-                      size: 13, weight: FontWeight.bold, color: textThemeColor),
+                  'PAYMENT BREAKDOWN',
+                  style: AppTextStyles.dmSans(
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 1.0,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                _monthlyCostRow('Mortgage payment (equiv)',
-                    CurrencyFormatter.format(moEquiv, symbol: 'CA\$'),
-                    isBig: true),
-                const Divider(height: 18, thickness: 0.5),
-                _monthlyCostRow('Estimated property tax', '~CA\$400'),
-                const Divider(height: 18, thickness: 0.5),
-                _monthlyCostRow('Estimated heating', '~CA\$150'),
-                const Divider(height: 18, thickness: 0.5),
-                _monthlyCostRow(
-                    'Total housing cost (GDS)',
-                    CurrencyFormatter.format(moEquiv + 400 + 150,
-                        symbol: 'CA\$'),
-                    isRed: true),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildStackedBar(
+                          baseLoan, totalInterest, cmhc, downVal, bkTotal),
+                      const SizedBox(height: 14),
+                      _breakdownRow(const Color(0xFF1A5C35), 'Principal', baseLoan,
+                          baseLoan / bkTotal * 100),
+                      _breakdownRow(const Color(0xFFC8102E), 'Total Interest',
+                          totalInterest, totalInterest / bkTotal * 100),
+                      _breakdownRow(const Color(0xFFF59E0B), 'CMHC Insurance', cmhc,
+                          cmhc / bkTotal * 100),
+                      _breakdownRow(const Color(0xFF4A7C5F), 'Down Payment', downVal,
+                          downVal / bkTotal * 100),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-
-          // Payment Breakdown Stacked Bar
-          Text(
-            'PAYMENT BREAKDOWN',
-            style: AppTextStyles.dmSans(
-              size: 11,
-              weight: FontWeight.w700,
-              color: theme.getMutedColor(context),
-              letterSpacing: 1.0,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderCol),
-            ),
-            child: Column(
-              children: [
-                _buildStackedBar(
-                    baseLoan, totalInterest, cmhc, _downAmt, bkTotal),
-                const SizedBox(height: 14),
-                _breakdownRow(const Color(0xFF1A5C35), 'Principal', baseLoan,
-                    baseLoan / bkTotal * 100),
-                _breakdownRow(const Color(0xFFC8102E), 'Total Interest',
-                    totalInterest, totalInterest / bkTotal * 100),
-                _breakdownRow(const Color(0xFFF59E0B), 'CMHC Insurance', cmhc,
-                    cmhc / bkTotal * 100),
-                _breakdownRow(const Color(0xFF4A7C5F), 'Down Payment', _downAmt,
-                    _downAmt / bkTotal * 100),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
         ],
 
         // Saved Calculations section
@@ -767,8 +913,8 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
               GestureDetector(
                 onTap: () async {
                   final confirmed = await showDialog<bool>(
-      context: context,
-      routeSettings: const RouteSettings(name: '/dialog/ca_mortgage_calc/save'),
+                    context: context,
+                    routeSettings: const RouteSettings(name: '/dialog/ca_mortgage_calc/save'),
                     builder: (context) => AlertDialog(
                       backgroundColor: cardBg,
                       title: Text('Clear All Saved',
@@ -959,59 +1105,78 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
     String? prefix,
     String? suffix,
     required TextEditingController controller,
+    String? errorText,
     required ValueChanged<String> onChanged,
   }) {
     final theme = widget.theme;
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.getBgColor(context),
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: theme.getBorderColor(context), width: 1.5),
-      ),
-      child: Row(
-        children: [
-          if (prefix != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 11),
-              child: Text(
-                prefix,
-                style: AppTextStyles.dmSans(
-                    size: 13,
-                    weight: FontWeight.bold,
-                    color: theme.primaryColor),
-              ),
-            ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              style: AppTextStyles.dmSans(
-                  size: 15,
-                  weight: FontWeight.bold,
-                  color: theme.getTextColor(context)),
-              onChanged: onChanged,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                isDense: true,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: theme.getBgColor(context),
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
             ),
           ),
-          if (suffix != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 11),
-              child: Text(
-                suffix,
-                style: AppTextStyles.dmSans(
-                    size: 11,
-                    weight: FontWeight.bold,
-                    color: theme.getMutedColor(context)),
+          child: Row(
+            children: [
+              if (prefix != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 11),
+                  child: Text(
+                    prefix,
+                    style: AppTextStyles.dmSans(
+                        size: 13,
+                        weight: FontWeight.bold,
+                        color: theme.primaryColor),
+                  ),
+                ),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: AppTextStyles.dmSans(
+                      size: 15,
+                      weight: FontWeight.bold,
+                      color: theme.getTextColor(context)),
+                  onChanged: (val) {
+                    onChanged(val);
+                    setState(() {});
+                  },
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    isDense: true,
+                  ),
+                ),
               ),
-            ),
+              if (suffix != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 11),
+                  child: Text(
+                    suffix,
+                    style: AppTextStyles.dmSans(
+                        size: 11,
+                        weight: FontWeight.bold,
+                        color: theme.getMutedColor(context)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500),
+          ),
         ],
-      ),
+      ],
     );
   }
 
@@ -1037,7 +1202,10 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
         min: min,
         max: max,
         divisions: divisions,
-        onChanged: onChanged,
+        onChanged: (val) {
+          onChanged(val);
+          setState(() {});
+        },
       ),
     );
   }
@@ -1048,7 +1216,10 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
       required VoidCallback onTap}) {
     final theme = widget.theme;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        onTap();
+        setState(() {});
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
@@ -1089,8 +1260,6 @@ class _CAMortgageCalcState extends ConsumerState<CAMortgageCalc> {
           active: active,
           onTap: () => setState(() {
             _freq = value;
-            _hasCalculated = false;
-            _persistInputs();
           }),
         ),
       ),

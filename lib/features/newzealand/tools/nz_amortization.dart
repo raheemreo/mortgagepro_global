@@ -30,6 +30,9 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
   int _selectedYearIndex = 1; // 1-indexed year
 
   List<_AmortMonth> _schedule = [];
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   void _reset() {
     setState(() {
@@ -42,6 +45,8 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
       _isMonthlyView = false;
       _selectedYearIndex = 1;
       _schedule = [];
+      _calcSnapshot.clear();
+      _errors.clear();
     });
   }
 
@@ -64,14 +69,58 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
     }
     setState(() {
       _schedule = sched;
+      _calcSnapshot['loanAmt'] = _loanAmt;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['startYear'] = _startYear;
       _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_loanAmt <= 0) {
+      errors['loanAmt'] = 'Enter valid loan amount';
+    }
+    if (_rate <= 0 || _rate > 25) {
+      errors['rate'] = 'Enter interest rate between 0.1% and 25%';
+    }
+    if (_termYears <= 0 || _termYears > 50) {
+      errors['term'] = 'Enter term between 1 and 50 years';
+    }
+    if (_startYear <= 0 || _startYear > 2100) {
+      errors['startYear'] = 'Enter a valid start year';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    _buildSchedule();
+  }
+
   void _saveCalculation() async {
+    final double snapLoanAmt = _calcSnapshot['loanAmt'] ?? _loanAmt;
+    final double snapRate = _calcSnapshot['rate'] ?? _rate;
+    final int snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final int snapStartYear = _calcSnapshot['startYear'] ?? _startYear;
+
     if (_schedule.isEmpty) return;
     final monthly = _schedule.first.pmt;
-    final totalPaid = monthly * _termYears * 12;
+    final totalPaid = monthly * snapTermYears * 12;
 
     final labelCtrl = TextEditingController(text: 'NZ Amortization Plan');
     final confirmed = await showDialog<bool>(
@@ -88,7 +137,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving: ${CurrencyFormatter.compact(_loanAmt, symbol: "NZ\$")} schedule @ $_rate% for $_termYears yrs',
+                'Saving: ${CurrencyFormatter.compact(snapLoanAmt, symbol: "NZ\$")} schedule @ $snapRate% for $snapTermYears yrs',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -139,15 +188,15 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
         country: 'New Zealand',
         calcType: 'Amortization',
         inputs: {
-          'loanAmount': _loanAmt,
-          'rate': _rate,
-          'termYears': _termYears.toDouble(),
-          'startYear': _startYear.toDouble(),
+          'loanAmount': snapLoanAmt,
+          'rate': snapRate,
+          'termYears': snapTermYears.toDouble(),
+          'startYear': snapStartYear.toDouble(),
         },
         results: {
           'monthly': monthly,
           'totalPaid': totalPaid,
-          'totalInterest': totalPaid - _loanAmt,
+          'totalInterest': totalPaid - snapLoanAmt,
         },
         label: label,
         currencyCode: 'NZD',
@@ -182,6 +231,10 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
       });
     }
 
+    final double snapLoanAmt = _showResults ? (_calcSnapshot['loanAmt'] ?? _loanAmt) : _loanAmt;
+    final int snapTerm = _showResults ? (_calcSnapshot['termYears'] ?? _termYears) : _termYears;
+    final int snapStart = _showResults ? (_calcSnapshot['startYear'] ?? _startYear) : _startYear;
+
     // Derived summary details
     double monthly = 0;
     double totalPaid = 0;
@@ -191,15 +244,22 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
     int half50 = 0;
     int half75 = 0;
 
-    if (_schedule.isNotEmpty) {
+    if (_showResults && _schedule.isNotEmpty) {
       monthly = _schedule.first.pmt;
-      totalPaid = monthly * _termYears * 12;
-      totalInt = totalPaid - _loanAmt;
+      totalPaid = monthly * snapTerm * 12;
+      totalInt = totalPaid - snapLoanAmt;
 
-      half25 = _schedule.indexWhere((m) => m.bal <= _loanAmt * 0.75) + 1;
-      half50 = _schedule.indexWhere((m) => m.bal <= _loanAmt * 0.50) + 1;
-      half75 = _schedule.indexWhere((m) => m.bal <= _loanAmt * 0.25) + 1;
+      half25 = _schedule.indexWhere((m) => m.bal <= snapLoanAmt * 0.75) + 1;
+      half50 = _schedule.indexWhere((m) => m.bal <= snapLoanAmt * 0.50) + 1;
+      half75 = _schedule.indexWhere((m) => m.bal <= snapLoanAmt * 0.25) + 1;
     }
+
+    final isDirty = _showResults && (
+      _loanAmt != (_calcSnapshot['loanAmt'] ?? 0.0) ||
+      _rate != (_calcSnapshot['rate'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['termYears'] ?? 0) ||
+      _startYear != (_calcSnapshot['startYear'] ?? 0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,6 +316,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
                       label: 'Loan Amount',
                       prefix: 'NZD \$',
                       value: _loanAmt,
+                      errorText: _errors['loanAmt'],
                       onChanged: (val) => setState(() => _loanAmt = val),
                     ),
                   ),
@@ -266,6 +327,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
                       prefix: '',
                       value: _rate,
                       isPercent: true,
+                      errorText: _errors['rate'],
                       onChanged: (val) => setState(() => _rate = val),
                     ),
                   ),
@@ -281,6 +343,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
                       prefix: '',
                       value: _termYears.toDouble(),
                       isInteger: true,
+                      errorText: _errors['term'],
                       onChanged: (val) =>
                           setState(() => _termYears = val.toInt()),
                     ),
@@ -292,6 +355,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
                       prefix: '',
                       value: _startYear.toDouble(),
                       isInteger: true,
+                      errorText: _errors['startYear'],
                       onChanged: (val) =>
                           setState(() => _startYear = val.toInt()),
                     ),
@@ -302,10 +366,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
 
               // Generate Button
               ElevatedButton(
-                onPressed: () {
-                  if (_loanAmt <= 0) return;
-                  _buildSchedule();
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),
                   foregroundColor: Colors.white,
@@ -326,270 +387,300 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
 
         // Results Summary
         if (_showResults && _schedule.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          Text('Summary',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-
-          // Summary grid
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(18),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Generate Schedule to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              childAspectRatio: 2.2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              children: [
-                _buildSummaryBox(
-                    'Monthly Payment',
-                    CurrencyFormatter.format(monthly, currencyCode: 'NZD'),
-                    const Color(0xFF6EE7B7)),
-                _buildSummaryBox(
-                    'Total Repaid',
-                    CurrencyFormatter.compact(totalPaid, symbol: 'NZ\$'),
-                    const Color(0xFFF5D060)),
-                _buildSummaryBox(
-                    'Total Interest',
-                    CurrencyFormatter.compact(totalInt, symbol: 'NZ\$'),
-                    const Color(0xFFFCA5A5)),
-                _buildSummaryBox('Loan Paid Off', '${_startYear + _termYears}',
-                    Colors.white),
-              ],
-            ),
-          ),
-
-          // Area Chart Card
-          const SizedBox(height: 20),
-          Text('Balance Reduction Over Time',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
+          ],
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Amortization Balance Trajectory',
-                    style: AppTextStyles.dmSans(
-                        size: 11,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 140,
-                  width: double.infinity,
-                  child: CustomPaint(
-                    painter: _NZAmortizationAreaPainter(
-                      schedule: _schedule,
-                      loanAmount: _loanAmt,
-                      termYears: _termYears,
+                const SizedBox(height: 20),
+                Text('Summary',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
+
+                // Summary grid
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
                     ),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    childAspectRatio: 2.2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    children: [
+                      _buildSummaryBox(
+                          'Monthly Payment',
+                          CurrencyFormatter.format(monthly, currencyCode: 'NZD'),
+                          const Color(0xFF6EE7B7)),
+                      _buildSummaryBox(
+                          'Total Repaid',
+                          CurrencyFormatter.compact(totalPaid, symbol: 'NZ\$'),
+                          const Color(0xFFF5D060)),
+                      _buildSummaryBox(
+                          'Total Interest',
+                          CurrencyFormatter.compact(totalInt, symbol: 'NZ\$'),
+                          const Color(0xFFFCA5A5)),
+                      _buildSummaryBox('Loan Paid Off', '${snapStart + snapTerm}',
+                          Colors.white),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Row(
+
+                // Area Chart Card
+                const SizedBox(height: 20),
+                Text('Balance Reduction Over Time',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Amortization Balance Trajectory',
+                          style: AppTextStyles.dmSans(
+                              size: 11,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 140,
+                        width: double.infinity,
+                        child: CustomPaint(
+                          painter: _NZAmortizationAreaPainter(
+                            schedule: _schedule,
+                            loanAmount: snapLoanAmt,
+                            termYears: snapTerm,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildDot(
+                              'Principal Remaining', const Color(0xFF1A6B4A), theme),
+                          const SizedBox(width: 14),
+                          _buildDot(
+                              'Cumulative Interest', const Color(0xFFC0392B), theme),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Milestones
+                const SizedBox(height: 20),
+                Text('Key Milestones',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.45,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                   children: [
-                    _buildDot(
-                        'Principal Remaining', const Color(0xFF1A6B4A), theme),
-                    const SizedBox(width: 14),
-                    _buildDot(
-                        'Cumulative Interest', const Color(0xFFC0392B), theme),
+                    _buildMilestoneCard(
+                        '🎯',
+                        '25% Paid Off',
+                        '${CurrencyFormatter.compact(snapLoanAmt * 0.25, symbol: "NZ\$")} equity',
+                        half25 > 0 ? 'Month $half25' : 'N/A',
+                        theme),
+                    _buildMilestoneCard(
+                        '🏆',
+                        '50% Paid Off',
+                        '${CurrencyFormatter.compact(snapLoanAmt * 0.50, symbol: "NZ\$")} equity',
+                        half50 > 0 ? 'Month $half50' : 'N/A',
+                        theme),
+                    _buildMilestoneCard(
+                        '🌟',
+                        '75% Paid Off',
+                        '${CurrencyFormatter.compact(snapLoanAmt * 0.75, symbol: "NZ\$")} equity',
+                        half75 > 0 ? 'Month $half75' : 'N/A',
+                        theme),
+                    _buildMilestoneCard(
+                        '🎉',
+                        'Fully Paid',
+                        '${CurrencyFormatter.compact(totalPaid, symbol: "NZ\$")} total',
+                        'Year ${snapStart + snapTerm}',
+                        theme),
                   ],
                 ),
-              ],
-            ),
-          ),
 
-          // Milestones
-          const SizedBox(height: 20),
-          Text('Key Milestones',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            childAspectRatio: 1.45,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            children: [
-              _buildMilestoneCard(
-                  '🎯',
-                  '25% Paid Off',
-                  '${CurrencyFormatter.compact(_loanAmt * 0.25, symbol: "NZ\$")} equity',
-                  half25 > 0 ? 'Month $half25' : 'N/A',
-                  theme),
-              _buildMilestoneCard(
-                  '🏆',
-                  '50% Paid Off',
-                  '${CurrencyFormatter.compact(_loanAmt * 0.50, symbol: "NZ\$")} equity',
-                  half50 > 0 ? 'Month $half50' : 'N/A',
-                  theme),
-              _buildMilestoneCard(
-                  '🌟',
-                  '75% Paid Off',
-                  '${CurrencyFormatter.compact(_loanAmt * 0.75, symbol: "NZ\$")} equity',
-                  half75 > 0 ? 'Month $half75' : 'N/A',
-                  theme),
-              _buildMilestoneCard(
-                  '🎉',
-                  'Fully Paid',
-                  '${CurrencyFormatter.compact(totalPaid, symbol: "NZ\$")} total',
-                  'Year ${_startYear + _termYears}',
-                  theme),
-            ],
-          ),
-
-          // Year-by-Year Schedule Header
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Schedule Details',
-                  style: AppTextStyles.playfair(
-                      size: 15, color: theme.getTextColor(context))),
-              GestureDetector(
-                onTap: () => setState(() => _isMonthlyView = !_isMonthlyView),
-                child: Text(_isMonthlyView ? 'Yearly View →' : 'Monthly View →',
-                    style: AppTextStyles.dmSans(
-                        size: 11,
-                        weight: FontWeight.w700,
-                        color: const Color(0xFF1A6B4A))),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Monthly view tabs
-          if (_isMonthlyView) ...[
-            SizedBox(
-              height: 38,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _termYears,
-                separatorBuilder: (_, __) => const SizedBox(width: 6),
-                itemBuilder: (_, idx) {
-                  final yrLabel = _startYear + idx;
-                  final active = _selectedYearIndex == (idx + 1);
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedYearIndex = idx + 1),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: active
-                            ? const Color(0xFF0D3B2E)
-                            : theme.getCardColor(context),
-                        border: Border.all(
-                            color: active
-                                ? const Color(0xFF1A6B4A)
-                                : theme.getBorderColor(context)),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text('$yrLabel',
+                // Year-by-Year Schedule Header
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Schedule Details',
+                        style: AppTextStyles.playfair(
+                            size: 15, color: theme.getTextColor(context))),
+                    GestureDetector(
+                      onTap: () => setState(() => _isMonthlyView = !_isMonthlyView),
+                      child: Text(_isMonthlyView ? 'Yearly View →' : 'Monthly View →',
                           style: AppTextStyles.dmSans(
                               size: 11,
                               weight: FontWeight.w700,
-                              color: active
-                                  ? Colors.white
-                                  : theme.getTextColor(context))),
+                              color: const Color(0xFF1A6B4A))),
                     ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-
-          // Table
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              children: [
-                _buildTableHeader(),
-                const Divider(),
-                _buildTableRows(theme),
-                if (!_isMonthlyView) ...[
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () =>
-                        setState(() => _showAllYears = !_showAllYears),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.getBgColor(context),
-                      foregroundColor: theme.getTextColor(context),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                        _showAllYears
-                            ? '📋 Collapse Schedule'
-                            : '📋 View All Years',
-                        style: AppTextStyles.dmSans(
-                            size: 11, weight: FontWeight.w700)),
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          // Save Schedule
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('💾 Save schedule',
-                        style: AppTextStyles.dmSans(
-                            size: 11,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context))),
-                    Text('Full amortization saved to portfolio',
-                        style: AppTextStyles.dmSans(
-                            size: 9, color: theme.getMutedColor(context))),
                   ],
                 ),
-                ElevatedButton(
-                  onPressed: _saveCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                const SizedBox(height: 10),
+
+                // Monthly view tabs
+                if (_isMonthlyView) ...[
+                  SizedBox(
+                    height: 38,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: snapTerm,
+                      separatorBuilder: (_, __) => const SizedBox(width: 6),
+                      itemBuilder: (_, idx) {
+                        final yrLabel = snapStart + idx;
+                        final active = _selectedYearIndex == (idx + 1);
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedYearIndex = idx + 1),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: active
+                                  ? const Color(0xFF0D3B2E)
+                                  : theme.getCardColor(context),
+                              border: Border.all(
+                                  color: active
+                                      ? const Color(0xFF1A6B4A)
+                                      : theme.getBorderColor(context)),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('$yrLabel',
+                                style: AppTextStyles.dmSans(
+                                    size: 11,
+                                    weight: FontWeight.w700,
+                                    color: active
+                                        ? Colors.white
+                                        : theme.getTextColor(context))),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  child: Text('Save',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          color: Colors.white,
-                          weight: FontWeight.w800)),
+                  const SizedBox(height: 10),
+                ],
+
+                // Table
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildTableHeader(),
+                      const Divider(),
+                      _buildTableRows(theme, snapStart, snapTerm),
+                      if (!_isMonthlyView) ...[
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () =>
+                              setState(() => _showAllYears = !_showAllYears),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.getBgColor(context),
+                            foregroundColor: theme.getTextColor(context),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                              _showAllYears
+                                  ? '📋 Collapse Schedule'
+                                  : '📋 View All Years',
+                              style: AppTextStyles.dmSans(
+                                  size: 11, weight: FontWeight.w700)),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Save Schedule
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('💾 Save schedule',
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context))),
+                          Text('Full amortization saved to portfolio',
+                              style: AppTextStyles.dmSans(
+                                  size: 9, color: theme.getMutedColor(context))),
+                        ],
+                      ),
+                      ElevatedButton(
+                        onPressed: _saveCalculation,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D9488),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text('Save',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: Colors.white,
+                                weight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -605,6 +696,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
     required double value,
     bool isPercent = false,
     bool isInteger = false,
+    String? errorText,
     required ValueChanged<double> onChanged,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -615,9 +707,9 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
             ? Colors.white.withValues(alpha: 0.05)
             : const Color(0xFFEDF5F2),
         border: Border.all(
-            color: isDark
+            color: errorText != null ? Colors.red : (isDark
                 ? Colors.white.withValues(alpha: 0.1)
-                : const Color(0x150D3B2E)),
+                : const Color(0x150D3B2E))),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -642,6 +734,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
                         weight: FontWeight.w700)),
               Expanded(
                 child: TextFormField(
+                  key: ValueKey(value),
                   initialValue:
                       isInteger ? value.toInt().toString() : value.toString(),
                   keyboardType: TextInputType.number,
@@ -669,6 +762,10 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
                         weight: FontWeight.w700)),
             ],
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText, style: AppTextStyles.dmSans(size: 9, color: Colors.red, weight: FontWeight.bold)),
+          ],
         ],
       ),
     );
@@ -791,7 +888,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
     );
   }
 
-  Widget _buildTableRows(CountryTheme theme) {
+  Widget _buildTableRows(CountryTheme theme, int snapStart, int snapTerm) {
     List<Widget> rows = [];
     if (_isMonthlyView) {
       final int startIdx = (_selectedYearIndex - 1) * 12;
@@ -808,11 +905,8 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
           theme,
         ));
       }
-      if (yearMonths.length > 6) {
-        // Just show a scroll hint if needed, but since it's only 12 rows, we can output all 12.
-      }
     } else {
-      final int limit = _showAllYears ? _termYears : min(10, _termYears);
+      final int limit = _showAllYears ? snapTerm : min(10, snapTerm);
       for (int y = 1; y <= limit; y++) {
         final int fromIdx = (y - 1) * 12;
         final int toIdx = min(y * 12, _schedule.length);
@@ -825,7 +919,7 @@ class _NZAmortizationState extends ConsumerState<NZAmortization> {
         final endBalance = yearMonths.last.bal;
 
         rows.add(_buildTableRow(
-          '${_startYear + y - 1}',
+          '${snapStart + y - 1}',
           CurrencyFormatter.compact(totalPrin, symbol: ''),
           CurrencyFormatter.compact(totalInterest, symbol: ''),
           CurrencyFormatter.compact(endBalance, symbol: ''),
@@ -905,17 +999,15 @@ class _NZAmortizationAreaPainter extends CustomPainter {
     final H = size.height;
     const pad = 15.0;
 
-    // Filter points to draw (e.g. 50 points max to prevent overload)
     final int step = max(1, (schedule.length / 50).floor());
     List<_AmortMonth> pts = [];
     for (int i = 0; i < schedule.length; i += step) {
       pts.add(schedule[i]);
     }
-    if (pts.last.mo != schedule.last.mo) {
+    if (pts.isEmpty || pts.last.mo != schedule.last.mo) {
       pts.add(schedule.last);
     }
 
-    // Cumulative interest calculations
     double cumIntSum = 0;
     final List<double> cumInterest = [];
     for (var m in schedule) {
@@ -924,7 +1016,6 @@ class _NZAmortizationAreaPainter extends CustomPainter {
     }
     final double maxInt = cumInterest.last;
 
-    // Build path points
     final Path balPath = Path();
     final Path intPath = Path();
 
@@ -945,7 +1036,6 @@ class _NZAmortizationAreaPainter extends CustomPainter {
       }
     }
 
-    // Draw Principal Remaining Fill & Stroke
     final Paint fillBal = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
@@ -969,7 +1059,6 @@ class _NZAmortizationAreaPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round;
     canvas.drawPath(balPath, strokeBal);
 
-    // Draw Cumulative Interest Fill & Stroke
     final Paint fillInt = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
@@ -993,13 +1082,11 @@ class _NZAmortizationAreaPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round;
     canvas.drawPath(intPath, strokeInt);
 
-    // Baseline axis
     final Paint baseline = Paint()
       ..color = Colors.grey.withValues(alpha: 0.3)
       ..strokeWidth = 1.0;
     canvas.drawLine(Offset(pad, H - pad), Offset(W - pad, H - pad), baseline);
 
-    // Labels
     final tpYear1 = TextPainter(
       text: const TextSpan(
           text: 'Year 1', style: TextStyle(color: Colors.grey, fontSize: 8)),

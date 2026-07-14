@@ -38,7 +38,10 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
   final _nzxDivController = TextEditingController(text: '450');
   final _imputeController = TextEditingController(text: '190');
 
-  bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -54,41 +57,222 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _openValController.text = '50000';
+      _closeValController.text = '58000';
+      _divsController.text = '1200';
+      _fifRate = 30.0;
+
+      _pieInvestController.text = '25000';
+      _pieReturnController.text = '7.5';
+      _piePirRate = 17.5;
+      _pieMarginalRate = 30.0;
+
+      _buyPriceController.text = '10000';
+      _sellPriceController.text = '13500';
+      _nzxDivController.text = '450';
+      _imputeController.text = '190';
+
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_currentTab == 'fif') {
+      final double open = double.tryParse(_openValController.text) ?? 0.0;
+      final double close = double.tryParse(_closeValController.text) ?? 0.0;
+      final double divs = double.tryParse(_divsController.text) ?? 0.0;
+
+      if (open <= 0) {
+        errors['openVal'] = 'Enter valid opening value';
+      }
+      if (close < 0) {
+        errors['closeVal'] = 'Closing value cannot be negative';
+      }
+      if (divs < 0) {
+        errors['divs'] = 'Dividends cannot be negative';
+      }
+    } else if (_currentTab == 'pie') {
+      final double invest = double.tryParse(_pieInvestController.text) ?? 0.0;
+      final double ret = double.tryParse(_pieReturnController.text) ?? 0.0;
+
+      if (invest <= 0) {
+        errors['pieInvest'] = 'Enter valid investment amount';
+      }
+      if (ret < 0) {
+        errors['pieReturn'] = 'Return rate cannot be negative';
+      }
+    } else {
+      final double buy = double.tryParse(_buyPriceController.text) ?? 0.0;
+      final double sell = double.tryParse(_sellPriceController.text) ?? 0.0;
+      final double div = double.tryParse(_nzxDivController.text) ?? 0.0;
+      final double imp = double.tryParse(_imputeController.text) ?? 0.0;
+
+      if (buy <= 0) {
+        errors['buyPrice'] = 'Enter valid buy price';
+      }
+      if (sell < 0) {
+        errors['sellPrice'] = 'Current value cannot be negative';
+      }
+      if (div < 0) {
+        errors['nzxDiv'] = 'Dividends cannot be negative';
+      }
+      if (imp < 0) {
+        errors['impute'] = 'Imputation credits cannot be negative';
+      }
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['tab'] = _currentTab;
+      if (_currentTab == 'fif') {
+        _calcSnapshot['openVal'] = double.tryParse(_openValController.text) ?? 50000.0;
+        _calcSnapshot['closeVal'] = double.tryParse(_closeValController.text) ?? 58000.0;
+        _calcSnapshot['divs'] = double.tryParse(_divsController.text) ?? 1200.0;
+        _calcSnapshot['fifRate'] = _fifRate;
+      } else if (_currentTab == 'pie') {
+        _calcSnapshot['pieInvest'] = double.tryParse(_pieInvestController.text) ?? 25000.0;
+        _calcSnapshot['pieReturn'] = double.tryParse(_pieReturnController.text) ?? 7.5;
+        _calcSnapshot['piePirRate'] = _piePirRate;
+        _calcSnapshot['pieMarginalRate'] = _pieMarginalRate;
+      } else {
+        _calcSnapshot['buyPrice'] = double.tryParse(_buyPriceController.text) ?? 10000.0;
+        _calcSnapshot['sellPrice'] = double.tryParse(_sellPriceController.text) ?? 13500.0;
+        _calcSnapshot['nzxDiv'] = double.tryParse(_nzxDivController.text) ?? 450.0;
+        _calcSnapshot['impute'] = double.tryParse(_imputeController.text) ?? 190.0;
+      }
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation() async {
+    final snapTab = _calcSnapshot['tab'] ?? _currentTab;
     final titleCtrl = TextEditingController(
-      text: _currentTab == 'fif'
+      text: snapTab == 'fif'
           ? 'NZ FIF Tax Calculation'
-          : _currentTab == 'pie'
+          : snapTab == 'pie'
               ? 'NZ PIE Fund Saving'
               : 'NZX Share Dividend Tax',
     );
 
     final String detailsText;
-    if (_currentTab == 'fif') {
-      final double open = double.tryParse(_openValController.text) ?? 50000;
-      final double close = double.tryParse(_closeValController.text) ?? 58000;
-      final double divs = double.tryParse(_divsController.text) ?? 1200;
+    final SavedCalc calc;
+
+    if (snapTab == 'fif') {
+      final double open = _calcSnapshot['openVal'] ?? (double.tryParse(_openValController.text) ?? 50000.0);
+      final double close = _calcSnapshot['closeVal'] ?? (double.tryParse(_closeValController.text) ?? 58000.0);
+      final double divs = _calcSnapshot['divs'] ?? (double.tryParse(_divsController.text) ?? 1200.0);
+      final double snapFifRate = _calcSnapshot['fifRate'] ?? _fifRate;
+
       final double fdrIncome = open * 0.05;
       final double cvIncome = max(0.0, close - open) + divs;
-      final double fdrTax = fdrIncome * _fifRate / 100;
-      final double cvTax = cvIncome * _fifRate / 100;
+      final double fdrTax = fdrIncome * snapFifRate / 100;
+      final double cvTax = cvIncome * snapFifRate / 100;
       final double bestTax = min(fdrTax, cvTax);
       detailsText = 'FIF Opening: ${CurrencyFormatter.compact(open, symbol: 'NZ\$')} · Tax Owed: ${CurrencyFormatter.compact(bestTax, symbol: 'NZ\$')}';
-    } else if (_currentTab == 'pie') {
-      final double invest = double.tryParse(_pieInvestController.text) ?? 25000;
-      final double ret = double.tryParse(_pieReturnController.text) ?? 7.5;
+
+      calc = SavedCalc.create(
+        country: 'New Zealand',
+        calcType: 'NZX Investor Calc',
+        inputs: {
+          'tabIndex': 0.0,
+          'openVal': open,
+          'closeVal': close,
+          'divs': divs,
+          'taxRate': snapFifRate,
+        },
+        results: {
+          'fdrIncome': fdrIncome,
+          'cvIncome': cvIncome,
+          'fdrTax': fdrTax,
+          'cvTax': cvTax,
+          'taxLiability': bestTax,
+        },
+        label: titleCtrl.text.trim(),
+        currencyCode: 'NZD',
+      );
+    } else if (snapTab == 'pie') {
+      final double invest = _calcSnapshot['pieInvest'] ?? (double.tryParse(_pieInvestController.text) ?? 25000.0);
+      final double ret = _calcSnapshot['pieReturn'] ?? (double.tryParse(_pieReturnController.text) ?? 7.5);
+      final double snapPirRate = _calcSnapshot['piePirRate'] ?? _piePirRate;
+      final double snapMarginalRate = _calcSnapshot['pieMarginalRate'] ?? _pieMarginalRate;
+
       final double returnAmt = invest * ret / 100;
-      final double pieTax = returnAmt * _piePirRate / 100;
-      final double margTax = returnAmt * _pieMarginalRate / 100;
+      final double pieTax = returnAmt * snapPirRate / 100;
+      final double margTax = returnAmt * snapMarginalRate / 100;
       final double saving = margTax - pieTax;
       detailsText = 'PIE Invest: ${CurrencyFormatter.compact(invest, symbol: 'NZ\$')} · Tax Saving: ${CurrencyFormatter.compact(saving, symbol: 'NZ\$')}';
+
+      calc = SavedCalc.create(
+        country: 'New Zealand',
+        calcType: 'NZX Investor Calc',
+        inputs: {
+          'tabIndex': 1.0,
+          'pieInvest': invest,
+          'pieReturn': ret,
+          'piePirRate': snapPirRate,
+          'pieMarginalRate': snapMarginalRate,
+        },
+        results: {
+          'annualReturn': returnAmt,
+          'pieTax': pieTax,
+          'marginalTax': margTax,
+          'taxSaving': saving,
+        },
+        label: titleCtrl.text.trim(),
+        currencyCode: 'NZD',
+      );
     } else {
-      final double sell = double.tryParse(_sellPriceController.text) ?? 13500;
-      final double div = double.tryParse(_nzxDivController.text) ?? 450;
-      final double imp = double.tryParse(_imputeController.text) ?? 190;
+      final double buy = _calcSnapshot['buyPrice'] ?? (double.tryParse(_buyPriceController.text) ?? 10000.0);
+      final double sell = _calcSnapshot['sellPrice'] ?? (double.tryParse(_sellPriceController.text) ?? 13500.0);
+      final double div = _calcSnapshot['nzxDiv'] ?? (double.tryParse(_nzxDivController.text) ?? 450.0);
+      final double imp = _calcSnapshot['impute'] ?? (double.tryParse(_imputeController.text) ?? 190.0);
+
+      final double gain = sell - buy;
       final double grossDiv = div + imp;
       final double taxOnDiv = max(0.0, grossDiv * 0.30 - imp);
+      final double netDiv = div - taxOnDiv;
       detailsText = 'Current Value: ${CurrencyFormatter.compact(sell, symbol: 'NZ\$')} · Div Tax: ${CurrencyFormatter.compact(taxOnDiv, symbol: 'NZ\$')}';
+
+      calc = SavedCalc.create(
+        country: 'New Zealand',
+        calcType: 'NZX Investor Calc',
+        inputs: {
+          'tabIndex': 2.0,
+          'buyPrice': buy,
+          'sellPrice': sell,
+          'nzxDiv': div,
+          'imputeCredits': imp,
+        },
+        results: {
+          'capitalGain': gain,
+          'grossDividend': grossDiv,
+          'taxOnDiv': taxOnDiv,
+          'netDividend': netDiv,
+        },
+        label: titleCtrl.text.trim(),
+        currencyCode: 'NZD',
+      );
     }
 
     final confirmed = await showDialog<bool>(
@@ -151,101 +335,7 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
     );
 
     if (confirmed == true && mounted) {
-      final label = titleCtrl.text.trim().isNotEmpty
-          ? titleCtrl.text.trim()
-          : 'NZX Investor Calc';
-
-      final SavedCalc calc;
-      if (_currentTab == 'fif') {
-        final double open = double.tryParse(_openValController.text) ?? 50000;
-        final double close = double.tryParse(_closeValController.text) ?? 58000;
-        final double divs = double.tryParse(_divsController.text) ?? 1200;
-        final double fdrIncome = open * 0.05;
-        final double cvIncome = max(0.0, close - open) + divs;
-        final double fdrTax = fdrIncome * _fifRate / 100;
-        final double cvTax = cvIncome * _fifRate / 100;
-        final double bestTax = min(fdrTax, cvTax);
-
-        calc = SavedCalc.create(
-          country: 'New Zealand',
-          calcType: 'NZX Investor Calc',
-          inputs: {
-            'tabIndex': 0.0,
-            'openVal': open,
-            'closeVal': close,
-            'divs': divs,
-            'taxRate': _fifRate,
-          },
-          results: {
-            'fdrIncome': fdrIncome,
-            'cvIncome': cvIncome,
-            'fdrTax': fdrTax,
-            'cvTax': cvTax,
-            'taxLiability': bestTax,
-          },
-          label: label,
-          currencyCode: 'NZD',
-        );
-      } else if (_currentTab == 'pie') {
-        final double invest = double.tryParse(_pieInvestController.text) ?? 25000;
-        final double ret = double.tryParse(_pieReturnController.text) ?? 7.5;
-        final double returnAmt = invest * ret / 100;
-        final double pieTax = returnAmt * _piePirRate / 100;
-        final double margTax = returnAmt * _pieMarginalRate / 100;
-        final double saving = margTax - pieTax;
-
-        calc = SavedCalc.create(
-          country: 'New Zealand',
-          calcType: 'NZX Investor Calc',
-          inputs: {
-            'tabIndex': 1.0,
-            'pieInvest': invest,
-            'pieReturn': ret,
-            'piePirRate': _piePirRate,
-            'pieMarginalRate': _pieMarginalRate,
-          },
-          results: {
-            'annualReturn': returnAmt,
-            'pieTax': pieTax,
-            'marginalTax': margTax,
-            'taxSaving': saving,
-          },
-          label: label,
-          currencyCode: 'NZD',
-        );
-      } else {
-        final double buy = double.tryParse(_buyPriceController.text) ?? 10000;
-        final double sell = double.tryParse(_sellPriceController.text) ?? 13500;
-        final double div = double.tryParse(_nzxDivController.text) ?? 450;
-        final double imp = double.tryParse(_imputeController.text) ?? 190;
-        final double gain = sell - buy;
-        final double grossDiv = div + imp;
-        final double taxOnDiv = max(0.0, grossDiv * 0.30 - imp);
-        final double netDiv = div - taxOnDiv;
-
-        calc = SavedCalc.create(
-          country: 'New Zealand',
-          calcType: 'NZX Investor Calc',
-          inputs: {
-            'tabIndex': 2.0,
-            'buyPrice': buy,
-            'sellPrice': sell,
-            'nzxDiv': div,
-            'imputeCredits': imp,
-          },
-          results: {
-            'capitalGain': gain,
-            'grossDividend': grossDiv,
-            'taxOnDiv': taxOnDiv,
-            'netDividend': netDiv,
-          },
-          label: label,
-          currencyCode: 'NZD',
-        );
-      }
-
       await ref.read(savedProvider.notifier).save(calc);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -265,6 +355,28 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final isDirty = _showResults && (
+      _currentTab != (_calcSnapshot['tab'] ?? '') ||
+      (_currentTab == 'fif' && (
+        (double.tryParse(_openValController.text) ?? 0.0) != (_calcSnapshot['openVal'] ?? 0.0) ||
+        (double.tryParse(_closeValController.text) ?? 0.0) != (_calcSnapshot['closeVal'] ?? 0.0) ||
+        (double.tryParse(_divsController.text) ?? 0.0) != (_calcSnapshot['divs'] ?? 0.0) ||
+        _fifRate != (_calcSnapshot['fifRate'] ?? 0.0)
+      )) ||
+      (_currentTab == 'pie' && (
+        (double.tryParse(_pieInvestController.text) ?? 0.0) != (_calcSnapshot['pieInvest'] ?? 0.0) ||
+        (double.tryParse(_pieReturnController.text) ?? 0.0) != (_calcSnapshot['pieReturn'] ?? 0.0) ||
+        _piePirRate != (_calcSnapshot['piePirRate'] ?? 0.0) ||
+        _pieMarginalRate != (_calcSnapshot['pieMarginalRate'] ?? 0.0)
+      )) ||
+      (_currentTab == 'nzx' && (
+        (double.tryParse(_buyPriceController.text) ?? 0.0) != (_calcSnapshot['buyPrice'] ?? 0.0) ||
+        (double.tryParse(_sellPriceController.text) ?? 0.0) != (_calcSnapshot['sellPrice'] ?? 0.0) ||
+        (double.tryParse(_nzxDivController.text) ?? 0.0) != (_calcSnapshot['nzxDiv'] ?? 0.0) ||
+        (double.tryParse(_imputeController.text) ?? 0.0) != (_calcSnapshot['impute'] ?? 0.0)
+      ))
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -280,21 +392,37 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
                 color: theme.getTextColor(context),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF),
-                border: Border.all(color: isDark ? const Color(0xFF3B82F6) : const Color(0xFF93C5FD)),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'IRD Rates',
-                style: AppTextStyles.dmSans(
-                  size: 9,
-                  color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
-                  weight: FontWeight.bold,
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: _reset,
+                  child: Text(
+                    'Reset ↺',
+                    style: AppTextStyles.dmSans(
+                      size: 11,
+                      weight: FontWeight.w600,
+                      color: theme.primaryColor,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF),
+                    border: Border.all(color: isDark ? const Color(0xFF3B82F6) : const Color(0xFF93C5FD)),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'IRD Rates',
+                    style: AppTextStyles.dmSans(
+                      size: 9,
+                      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+                      weight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -396,9 +524,9 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
 
               const SizedBox(height: 12),
 
-              // Calculate Trigger Button (re-runs setstate to refresh outputs)
+              // Calculate Trigger Button
               ElevatedButton(
-                onPressed: () => setState(() => _showResults = true),
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0EA5E9),
                   foregroundColor: Colors.white,
@@ -425,8 +553,33 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
 
         // Results Card Section
         if (_showResults) ...[
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Tax Liability to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
-          _buildResultsCard(),
+          Container(
+            key: _resultsKey,
+            child: _buildResultsCard(),
+          ),
         ],
 
         // Tax Rules Guide matching HTML list
@@ -658,7 +811,6 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
     return GestureDetector(
       onTap: () => setState(() {
         _currentTab = tabId;
-        _showResults = true; // Auto recalculate with defaults on tab swap
       }),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
@@ -688,11 +840,13 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
     return Column(
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _buildHeroInputBox(
                 label: 'Opening Market Value (NZD)',
                 controller: _openValController,
+                errorText: _errors['openVal'],
               ),
             ),
             const SizedBox(width: 8),
@@ -700,17 +854,20 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
               child: _buildHeroInputBox(
                 label: 'Closing Market Value (NZD)',
                 controller: _closeValController,
+                errorText: _errors['closeVal'],
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _buildHeroInputBox(
                 label: 'Dividends Received (NZD)',
                 controller: _divsController,
+                errorText: _errors['divs'],
               ),
             ),
             const SizedBox(width: 8),
@@ -759,11 +916,13 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
     return Column(
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _buildHeroInputBox(
                 label: 'PIE Fund Investment (NZD)',
                 controller: _pieInvestController,
+                errorText: _errors['pieInvest'],
               ),
             ),
             const SizedBox(width: 8),
@@ -771,12 +930,14 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
               child: _buildHeroInputBox(
                 label: 'Annual Return Rate (%)',
                 controller: _pieReturnController,
+                errorText: _errors['pieReturn'],
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _buildHeroDropdown<double>(
@@ -843,11 +1004,13 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
     return Column(
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _buildHeroInputBox(
                 label: 'Shares Bought Price (NZD)',
                 controller: _buyPriceController,
+                errorText: _errors['buyPrice'],
               ),
             ),
             const SizedBox(width: 8),
@@ -855,17 +1018,20 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
               child: _buildHeroInputBox(
                 label: 'Current Value (NZD)',
                 controller: _sellPriceController,
+                errorText: _errors['sellPrice'],
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _buildHeroInputBox(
                 label: 'NZX Dividends (NZD)',
                 controller: _nzxDivController,
+                errorText: _errors['nzxDiv'],
               ),
             ),
             const SizedBox(width: 8),
@@ -873,6 +1039,7 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
               child: _buildHeroInputBox(
                 label: 'Imputation Credits (NZD)',
                 controller: _imputeController,
+                errorText: _errors['impute'],
               ),
             ),
           ],
@@ -885,6 +1052,7 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
   Widget _buildHeroInputBox({
     required String label,
     required TextEditingController controller,
+    String? errorText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -896,25 +1064,38 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
         ),
         const SizedBox(height: 4),
         Container(
-          height: 38,
+          height: errorText != null ? 52 : 38,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+            border: Border.all(color: errorText != null ? Colors.red : Colors.white.withValues(alpha: 0.22)),
             borderRadius: BorderRadius.circular(10),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           alignment: Alignment.center,
-          child: TextField(
-            controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: AppTextStyles.playfair(
-                size: 13, color: Colors.white, weight: FontWeight.w800),
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            onChanged: (_) => setState(() {}),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: AppTextStyles.playfair(
+                      size: 13, color: Colors.white, weight: FontWeight.w800),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              if (errorText != null)
+                Text(
+                  errorText,
+                  style: AppTextStyles.dmSans(size: 7, color: Colors.red[300], weight: FontWeight.bold),
+                ),
+            ],
           ),
         ),
       ],
@@ -967,16 +1148,18 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
   Widget _buildResultsCard() {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final snapTab = _calcSnapshot['tab'] ?? _currentTab;
 
-    if (_currentTab == 'fif') {
-      final double open = double.tryParse(_openValController.text) ?? 50000;
-      final double close = double.tryParse(_closeValController.text) ?? 58000;
-      final double divs = double.tryParse(_divsController.text) ?? 1200;
+    if (snapTab == 'fif') {
+      final double open = _calcSnapshot['openVal'] ?? 50000.0;
+      final double close = _calcSnapshot['closeVal'] ?? 58000.0;
+      final double divs = _calcSnapshot['divs'] ?? 1200.0;
+      final double snapFifRate = _calcSnapshot['fifRate'] ?? 30.0;
 
       final double fdrIncome = open * 0.05;
       final double cvIncome = max(0.0, close - open) + divs;
-      final double fdrTax = fdrIncome * _fifRate / 100;
-      final double cvTax = cvIncome * _fifRate / 100;
+      final double fdrTax = fdrIncome * snapFifRate / 100;
+      final double cvTax = cvIncome * snapFifRate / 100;
       final bool fdrBest = fdrTax < cvTax;
       final String bestMethod = fdrBest ? 'FDR' : 'CV';
       final double diff = (fdrTax - cvTax).abs();
@@ -1009,9 +1192,9 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
               childAspectRatio: 1.45,
               children: [
                 _buildResBox('FDR Deemed Income', fdrIncome, '5% of opening value', const Color(0xFF0EA5E9)),
-                _buildResBox('FDR Tax Liability', fdrTax, 'At your $_fifRate% rate', const Color(0xFFC0392B)),
+                _buildResBox('FDR Tax Liability', fdrTax, 'At your $snapFifRate% rate', const Color(0xFFC0392B)),
                 _buildResBox('CV Actual Income', cvIncome, 'Gain + dividends', const Color(0xFF0EA5E9)),
-                _buildResBox('CV Tax Liability', cvTax, 'At your $_fifRate% rate', const Color(0xFFC0392B)),
+                _buildResBox('CV Tax Liability', cvTax, 'At your $snapFifRate% rate', const Color(0xFFC0392B)),
               ],
             ),
             const SizedBox(height: 16),
@@ -1063,7 +1246,7 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
 
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _saveCalculation,
+              onPressed: () => _saveCalculation(),
               icon: const Text('💾', style: TextStyle(fontSize: 14)),
               label: Text(
                 'Save This Calculation',
@@ -1082,13 +1265,15 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
           ],
         ),
       );
-    } else if (_currentTab == 'pie') {
-      final double invest = double.tryParse(_pieInvestController.text) ?? 25000;
-      final double ret = double.tryParse(_pieReturnController.text) ?? 7.5;
+    } else if (snapTab == 'pie') {
+      final double invest = _calcSnapshot['pieInvest'] ?? 25000.0;
+      final double ret = _calcSnapshot['pieReturn'] ?? 7.5;
+      final double snapPirRate = _calcSnapshot['piePirRate'] ?? 17.5;
+      final double snapMarginalRate = _calcSnapshot['pieMarginalRate'] ?? 30.0;
 
       final double returnAmt = invest * ret / 100;
-      final double pieTax = returnAmt * _piePirRate / 100;
-      final double margTax = returnAmt * _pieMarginalRate / 100;
+      final double pieTax = returnAmt * snapPirRate / 100;
+      final double margTax = returnAmt * snapMarginalRate / 100;
       final double saving = margTax - pieTax;
 
       return Container(
@@ -1119,14 +1304,14 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
               childAspectRatio: 1.45,
               children: [
                 _buildResBox('Annual Return', returnAmt, '$ret% on ${CurrencyFormatter.compact(invest, symbol: 'NZ\$')}', const Color(0xFF1A6B4A)),
-                _buildResBox('PIE Tax (PIR)', pieTax, '$_piePirRate% PIR rate', const Color(0xFFC0392B)),
-                _buildResBox('Marginal Tax (direct)', margTax, '$_pieMarginalRate% marginal rate', const Color(0xFFC0392B)),
+                _buildResBox('PIE Tax (PIR)', pieTax, '$snapPirRate% PIR rate', const Color(0xFFC0392B)),
+                _buildResBox('Marginal Tax (direct)', margTax, '$snapMarginalRate% marginal rate', const Color(0xFFC0392B)),
                 _buildResBox('PIE Tax Saving', saving, 'Annual benefit', const Color(0xFF1A6B4A)),
               ],
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _saveCalculation,
+              onPressed: () => _saveCalculation(),
               icon: const Text('💾', style: TextStyle(fontSize: 14)),
               label: Text(
                 'Save This Calculation',
@@ -1146,10 +1331,10 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
         ),
       );
     } else {
-      final double buy = double.tryParse(_buyPriceController.text) ?? 10000;
-      final double sell = double.tryParse(_sellPriceController.text) ?? 13500;
-      final double div = double.tryParse(_nzxDivController.text) ?? 450;
-      final double imp = double.tryParse(_imputeController.text) ?? 190;
+      final double buy = _calcSnapshot['buyPrice'] ?? 10000.0;
+      final double sell = _calcSnapshot['sellPrice'] ?? 13500.0;
+      final double div = _calcSnapshot['nzxDiv'] ?? 450.0;
+      final double imp = _calcSnapshot['impute'] ?? 190.0;
 
       final double gain = sell - buy;
       final double grossDiv = div + imp;
@@ -1191,7 +1376,7 @@ class _NZNZXInvestorCalcState extends ConsumerState<NZNZXInvestorCalc> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _saveCalculation,
+              onPressed: () => _saveCalculation(),
               icon: const Text('💾', style: TextStyle(fontSize: 14)),
               label: Text(
                 'Save This Calculation',

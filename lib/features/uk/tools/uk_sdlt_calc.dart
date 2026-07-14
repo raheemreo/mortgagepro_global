@@ -27,6 +27,9 @@ class _UKMortgageCalcSheetState extends State<UKMortgageCalcSheet> {
   late int _term;
   double _rate = 4.75;
 
+  bool _showResults = false;
+  final Map<String, double> _calcSnapshot = {};
+
   @override
   void initState() {
     super.initState();
@@ -35,22 +38,34 @@ class _UKMortgageCalcSheetState extends State<UKMortgageCalcSheet> {
     _term = widget.termYears;
   }
 
-  double _calculatePmt() {
-    final loan = _price * (1 - _depPct / 100);
-    final rMo = _rate / 100 / 12;
-    final nMo = _term * 12;
+  double _calculatePmt(double price, double depPct, double rate, double term) {
+    final loan = price * (1 - depPct / 100);
+    final rMo = rate / 100 / 12;
+    final nMo = term * 12;
     if (rMo == 0) return loan / nMo;
     return loan * (rMo * math.pow(1 + rMo, nMo)) / (math.pow(1 + rMo, nMo) - 1);
   }
 
   @override
   Widget build(BuildContext context) {
-    final pmt = _calculatePmt();
-    final loan = _price * (1 - _depPct / 100);
-    final depVal = _price * _depPct / 100;
+    final double activePrice = _showResults ? (_calcSnapshot['price'] ?? _price) : _price;
+    final double activeDepPct = _showResults ? (_calcSnapshot['depPct'] ?? _depPct) : _depPct;
+    final double activeRate = _showResults ? (_calcSnapshot['rate'] ?? _rate) : _rate;
+    final double activeTerm = _showResults ? (_calcSnapshot['term'] ?? _term.toDouble()) : _term.toDouble();
+
+    final pmt = _calculatePmt(activePrice, activeDepPct, activeRate, activeTerm);
+    final loan = activePrice * (1 - activeDepPct / 100);
+    final depVal = activePrice * activeDepPct / 100;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0F1224) : Colors.white;
     final textCol = isDark ? Colors.white : const Color(0xFF0D0D2B);
+
+    final isDirty = _showResults && (
+      _price != (_calcSnapshot['price'] ?? 0.0) ||
+      _depPct != (_calcSnapshot['depPct'] ?? 0.0) ||
+      _rate != (_calcSnapshot['rate'] ?? 0.0) ||
+      _term.toDouble() != (_calcSnapshot['term'] ?? 0.0)
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -88,36 +103,89 @@ class _UKMortgageCalcSheetState extends State<UKMortgageCalcSheet> {
               ],
             ),
             const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF14145A), Color(0xFF1A1A6B)]),
-                borderRadius: BorderRadius.circular(20),
+
+            if (_showResults) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFF14145A), Color(0xFF1A1A6B)]),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ESTIMATED MONTHLY PAYMENT', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(
+                      CurrencyFormatter.format(pmt, symbol: '£'),
+                      style: AppTextStyles.dmSans(size: 32, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Loan Amount: ${CurrencyFormatter.format(loan, symbol: '£')} · Deposit: ${CurrencyFormatter.format(depVal, symbol: '£')} (${activeDepPct.toInt()}%)',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.white60),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('ESTIMATED MONTHLY PAYMENT', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
-                  const SizedBox(height: 4),
-                  Text(
-                    CurrencyFormatter.format(pmt, symbol: '£'),
-                    style: AppTextStyles.dmSans(size: 32, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Loan Amount: ${CurrencyFormatter.format(loan, symbol: '£')} · Deposit: ${CurrencyFormatter.format(depVal, symbol: '£')} (${_depPct.toInt()}%)',
-                    style: AppTextStyles.dmSans(size: 11, color: Colors.white60),
-                  ),
-                ],
+              const SizedBox(height: 12),
+            ],
+
+            if (isDirty) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Text(
+                        'Inputs have changed. Tap Calculate Estimate to refresh.',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 18),
+            ],
+
             _sliderGroup('Property Price', _price, 10000, 1500000, '£', (v) => setState(() => _price = v)),
             _sliderGroup('Deposit Percentage', _depPct, 5, 95, '%', (v) => setState(() => _depPct = v)),
             _sliderGroup('Interest Rate', _rate, 1, 15, '%', (v) => setState(() => _rate = v), isDecimal: true),
             _sliderGroup('Term (Years)', _term.toDouble(), 5, 35, ' yrs', (v) => setState(() => _term = v.toInt())),
             const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF14145A),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _calcSnapshot['price'] = _price;
+                    _calcSnapshot['depPct'] = _depPct;
+                    _calcSnapshot['rate'] = _rate;
+                    _calcSnapshot['term'] = _term.toDouble();
+                    _showResults = true;
+                  });
+                },
+                child: Text(
+                  _showResults ? 'Recalculate Estimate' : 'Calculate Estimate',
+                  style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -169,16 +237,19 @@ class _UKSDLTCalcSheetState extends State<UKSDLTCalcSheet> {
   late double _price;
   String _buyerType = 'ftb'; // ftb, std, surcharge
 
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+
   @override
   void initState() {
     super.initState();
     _price = widget.propertyValue;
   }
 
-  double _calculateSDLT() {
+  double _calculateSDLT(double price, String buyerType) {
     double total = 0;
-    double surcharge = _buyerType == 'surcharge' ? 3.0 : 0.0;
-    List<Map<String, dynamic>> bands = _buyerType == 'ftb' && _price <= 500000 ? [
+    double surcharge = buyerType == 'surcharge' ? 3.0 : 0.0;
+    List<Map<String, dynamic>> bands = buyerType == 'ftb' && price <= 500000 ? [
       {'from': 0.0, 'to': 300000.0, 'rate': 0.0},
       {'from': 300000.0, 'to': 500000.0, 'rate': 5.0},
     ] : [
@@ -191,9 +262,9 @@ class _UKSDLTCalcSheetState extends State<UKSDLTCalcSheet> {
     for (var b in bands) {
       final from = b['from'] as double;
       final to = b['to'] as double;
-      if (_price <= from) break;
+      if (price <= from) break;
 
-      final taxable = math.min(_price, to) - from;
+      final taxable = math.min(price, to) - from;
       final rate = (b['rate'] as double) + surcharge;
       total += (taxable * rate / 100);
     }
@@ -202,11 +273,19 @@ class _UKSDLTCalcSheetState extends State<UKSDLTCalcSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final sdlt = _calculateSDLT();
-    final eff = _price > 0 ? (sdlt / _price * 100) : 0.0;
+    final double activePrice = _showResults ? (_calcSnapshot['price'] ?? _price) : _price;
+    final String activeBuyerType = _showResults ? (_calcSnapshot['buyerType'] ?? _buyerType) : _buyerType;
+
+    final sdlt = _calculateSDLT(activePrice, activeBuyerType);
+    final eff = activePrice > 0 ? (sdlt / activePrice * 100) : 0.0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0F1224) : Colors.white;
     final textCol = isDark ? Colors.white : const Color(0xFF0D0D2B);
+
+    final isDirty = _showResults && (
+      _price != (_calcSnapshot['price'] ?? 0.0) ||
+      _buyerType != (_calcSnapshot['buyerType'] ?? '')
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -243,31 +322,58 @@ class _UKSDLTCalcSheetState extends State<UKSDLTCalcSheet> {
             ],
           ),
           const SizedBox(height: 14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFFC8102E), Color(0xFF8B0A1E)]),
-              borderRadius: BorderRadius.circular(20),
+
+          if (_showResults) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFFC8102E), Color(0xFF8B0A1E)]),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('ESTIMATED STAMP DUTY', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(
+                    CurrencyFormatter.format(sdlt, symbol: '£'),
+                    style: AppTextStyles.dmSans(size: 32, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Effective Rate: ${eff.toStringAsFixed(2)}% · Property Value: ${CurrencyFormatter.format(activePrice, symbol: '£')}',
+                    style: AppTextStyles.dmSans(size: 11, color: Colors.white60),
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('ESTIMATED STAMP DUTY', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(
-                  CurrencyFormatter.format(sdlt, symbol: '£'),
-                  style: AppTextStyles.dmSans(size: 32, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Effective Rate: ${eff.toStringAsFixed(2)}% · Property Value: ${CurrencyFormatter.format(_price, symbol: '£')}',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white60),
-                ),
-              ],
+            const SizedBox(height: 12),
+          ],
+
+          if (isDirty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Estimate to refresh.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 18),
+          ],
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -298,6 +404,30 @@ class _UKSDLTCalcSheetState extends State<UKSDLTCalcSheet> {
             ],
           ),
           const SizedBox(height: 20),
+
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC8102E),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                setState(() {
+                  _calcSnapshot['price'] = _price;
+                  _calcSnapshot['buyerType'] = _buyerType;
+                  _showResults = true;
+                });
+              },
+              child: Text(
+                _showResults ? 'Recalculate Estimate' : 'Calculate Estimate',
+                style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
         ],
       ),
     );

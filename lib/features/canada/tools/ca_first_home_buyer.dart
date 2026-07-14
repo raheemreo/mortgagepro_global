@@ -26,7 +26,11 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
   bool _showFhsaDetails = false;
   bool _showHbpDetails = false;
   bool _showRebateDetails = false;
-  bool _hasCalculated = true; // Show results initially with default values
+
+  final _resultsKey = GlobalKey();
+  bool _showResults = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
 
   @override
   void dispose() {
@@ -35,6 +39,78 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
     _savingsController.dispose();
     _cobuyController.dispose();
     super.dispose();
+  }
+
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    double defaultVal = 0.0;
+    if (c == _fhsaController) {
+      defaultVal = 32000.0;
+    } else if (c == _hbpController) {
+      defaultVal = 40000.0;
+    } else if (c == _savingsController) {
+      defaultVal = 25000.0;
+    } else if (c == _cobuyController) {
+      defaultVal = 0.0;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final fhsa = double.tryParse(_fhsaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (fhsa < 0) errors['fhsa'] = 'Enter a valid amount';
+
+    final hbp = double.tryParse(_hbpController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (hbp < 0) {
+      errors['hbp'] = 'Enter a valid amount';
+    } else if (hbp > 60000) {
+      errors['hbp'] = 'HBP limit is CA\$60,000 per person';
+    }
+
+    final savings = double.tryParse(_savingsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (savings < 0) errors['savings'] = 'Enter a valid amount';
+
+    final cobuy = double.tryParse(_cobuyController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (cobuy < 0) errors['cobuy'] = 'Enter a valid amount';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_fhsaController] = fhsa;
+      _calcSnapshot[_hbpController] = hbp;
+      _calcSnapshot[_savingsController] = savings;
+      _calcSnapshot[_cobuyController] = cobuy;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _fhsaController.text = '32000';
+      _hbpController.text = '40000';
+      _savingsController.text = '25000';
+      _cobuyController.text = '0';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
   }
 
   void _saveScenario(double total, double maxHomePrice, bool isCmhc, double pctOf700k) async {
@@ -102,10 +178,10 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
           ? labelCtrl.text.trim()
           : 'First-Home Savings';
 
-      final fhsa = double.tryParse(_fhsaController.text) ?? 0;
-      final hbp = double.tryParse(_hbpController.text) ?? 0;
-      final sav = double.tryParse(_savingsController.text) ?? 0;
-      final co = double.tryParse(_cobuyController.text) ?? 0;
+      final fhsa = _val(_fhsaController);
+      final hbp = _val(_hbpController);
+      final sav = _val(_savingsController);
+      final co = _val(_cobuyController);
 
       final calc = SavedCalc.create(
         country: 'Canada',
@@ -147,10 +223,10 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
     final theme = widget.theme;
 
     // Read input values
-    final double fhsa = double.tryParse(_fhsaController.text) ?? 0;
-    final double hbp = double.tryParse(_hbpController.text) ?? 0;
-    final double sav = double.tryParse(_savingsController.text) ?? 0;
-    final double co = double.tryParse(_cobuyController.text) ?? 0;
+    final double fhsa = _val(_fhsaController);
+    final double hbp = _val(_hbpController);
+    final double sav = _val(_savingsController);
+    final double co = _val(_cobuyController);
 
     // Max HBP is officially $60,000 per person
     final double cappedHbp = hbp.clamp(0, 60000);
@@ -166,7 +242,6 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
     final live5yr = ratesAsync.valueOrNull?.rate5yrFixed ?? 4.99;
     final isLive = ratesAsync.valueOrNull?.isLive == true;
 
-
     final double loanAmt = (maxHomePrice - totalDown).clamp(0, double.infinity);
     final double biweeklyPmt = loanAmt > 0 && live5yr > 0
         ? () {
@@ -175,6 +250,13 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
             return loanAmt * r / (1 - (1 / ((1 + r) * n)));
           }()
         : 0.0;
+
+    final isDirty = _showResults && (
+      (double.tryParse(_fhsaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_fhsaController] ?? 0.0) ||
+      (double.tryParse(_hbpController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_hbpController] ?? 0.0) ||
+      (double.tryParse(_savingsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_savingsController] ?? 0.0) ||
+      (double.tryParse(_cobuyController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_cobuyController] ?? 0.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,14 +359,30 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
         const SizedBox(height: 20),
 
         // Down Payment Calculator Section
-        Text(
-          'MAX DOWN PAYMENT CALCULATOR',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'MAX DOWN PAYMENT CALCULATOR',
+              style: AppTextStyles.dmSans(
+                size: 10,
+                weight: FontWeight.bold,
+                color: theme.getMutedColor(context),
+                letterSpacing: 0.6,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.w600,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -297,24 +395,20 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
           ),
           child: Column(
             children: [
-              _buildCalcField('FHSA balance', 'Contributions + growth', _fhsaController),
+              _buildCalcField('FHSA balance', 'Contributions + growth', _fhsaController, _errors['fhsa']),
               const Divider(height: 20, thickness: 0.5),
-              _buildCalcField('RRSP HBP withdrawal', 'Up to \$60K per person', _hbpController),
+              _buildCalcField('RRSP HBP withdrawal', 'Up to \$60K per person', _hbpController, _errors['hbp']),
               const Divider(height: 20, thickness: 0.5),
-              _buildCalcField('Personal savings', 'Non-registered savings', _savingsController),
+              _buildCalcField('Personal savings', 'Non-registered savings', _savingsController, _errors['savings']),
               const Divider(height: 20, thickness: 0.5),
-              _buildCalcField('Co-buyer FHSA/HBP', 'Spouse/partner (optional)', _cobuyController),
+              _buildCalcField('Co-buyer FHSA/HBP', 'Spouse/partner (optional)', _cobuyController, _errors['cobuy']),
             ],
           ),
         ),
         const SizedBox(height: 12),
 
         ElevatedButton(
-          onPressed: () {
-            setState(() {
-              _hasCalculated = true;
-            });
-          },
+          onPressed: _calculate,
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.primaryColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -328,233 +422,262 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
         ),
         const SizedBox(height: 16),
 
-        if (_hasCalculated) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'YOUR CALCULATOR RESULT',
-                style: AppTextStyles.dmSans(
-                  size: 10,
-                  weight: FontWeight.bold,
-                  color: theme.getMutedColor(context),
-                  letterSpacing: 0.6,
-                ),
+        if (_showResults) ...[
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              GestureDetector(
-                onTap: () => _saveScenario(totalDown, maxHomePrice, isCmhcRequired, pctOf700k),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: theme.primaryColor,
-                    borderRadius: BorderRadius.circular(20),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      const Text('💾', style: TextStyle(fontSize: 10)),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Save',
-                        style: AppTextStyles.dmSans(
-                          size: 10,
-                          weight: FontWeight.bold,
-                          color: Colors.white,
+                ],
+              ),
+            ),
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'YOUR CALCULATOR RESULT',
+                      style: AppTextStyles.dmSans(
+                        size: 10,
+                        weight: FontWeight.bold,
+                        color: theme.getMutedColor(context),
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _saveScenario(totalDown, maxHomePrice, isCmhcRequired, pctOf700k),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'TOTAL AVAILABLE DOWN PAYMENT',
-                  style: AppTextStyles.dmSans(
-                    size: 9,
-                    color: Colors.white60,
-                    weight: FontWeight.bold,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      'CA\$',
-                      style: AppTextStyles.dmSans(
-                        size: 18,
-                        weight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      CurrencyFormatter.compact(totalDown, symbol: ''),
-                      style: AppTextStyles.playfair(
-                        size: 36,
-                        weight: FontWeight.w800,
-                        color: const Color(0xFF6EDFA0),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Divider(color: Colors.white12),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _resultMiniBox('Affordable Home (5% down)', maxHomePrice),
-                    const SizedBox(width: 8),
-                    _resultMiniBox('CMHC Needed? (700K baseline)', null, customString: isCmhcRequired ? '✓ Yes' : '✗ No (≥20%)'),
-                    const SizedBox(width: 8),
-                    _resultMiniBox('Down Pymt % (on 700K)', null, customString: '${pctOf700k.toStringAsFixed(1)}%'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Live rate payment context card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.primaryColor.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '📊 Est. Payment at Live Rate',
-                      style: AppTextStyles.dmSans(
-                        size: 11.5,
-                        weight: FontWeight.bold,
-                        color: theme.getTextColor(context),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isLive
-                            ? const Color(0xFFDCF4E8)
-                            : theme.getBgColor(context),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        isLive ? '🟢 Live BoC' : 'Estimated',
-                        style: AppTextStyles.dmSans(
-                          size: 8.5,
-                          weight: FontWeight.bold,
-                          color: isLive
-                              ? const Color(0xFF1A5C35)
-                              : theme.getMutedColor(context),
+                        child: Row(
+                          children: [
+                            const Text('💾', style: TextStyle(fontSize: 10)),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Save',
+                              style: AppTextStyles.dmSans(
+                                size: 10,
+                                weight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '5-Yr Fixed Rate',
-                      style: AppTextStyles.dmSans(
-                        size: 11,
-                        color: theme.getMutedColor(context),
-                      ),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    Text(
-                      '${live5yr.toStringAsFixed(2)}%',
-                      style: AppTextStyles.dmSans(
-                        size: 13,
-                        weight: FontWeight.bold,
-                        color: theme.primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'TOTAL AVAILABLE DOWN PAYMENT',
+                        style: AppTextStyles.dmSans(
+                          size: 9,
+                          color: Colors.white60,
+                          weight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            'CA\$',
+                            style: AppTextStyles.dmSans(
+                              size: 18,
+                              weight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            CurrencyFormatter.compact(totalDown, symbol: ''),
+                            style: AppTextStyles.playfair(
+                              size: 36,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFF6EDFA0),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(color: Colors.white12),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _resultMiniBox('Affordable Home (5% down)', maxHomePrice),
+                          const SizedBox(width: 8),
+                          _resultMiniBox('CMHC Needed? (700K baseline)', null, customString: isCmhcRequired ? '✓ Yes' : '✗ No (≥20%)'),
+                          const SizedBox(width: 8),
+                          _resultMiniBox('Down Pymt % (on 700K)', null, customString: '${pctOf700k.toStringAsFixed(1)}%'),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Loan Amount',
-                      style: AppTextStyles.dmSans(
-                        size: 11,
-                        color: theme.getMutedColor(context),
+                const SizedBox(height: 20),
+                // Live rate payment context card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '📊 Est. Payment at Live Rate',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              weight: FontWeight.bold,
+                              color: theme.getTextColor(context),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isLive
+                                  ? const Color(0xFFDCF4E8)
+                                  : theme.getBgColor(context),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              isLive ? '🟢 Live BoC' : 'Estimated',
+                              style: AppTextStyles.dmSans(
+                                size: 8.5,
+                                weight: FontWeight.bold,
+                                color: isLive
+                                    ? const Color(0xFF1A5C35)
+                                    : theme.getMutedColor(context),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Text(
-                      loanAmt > 0
-                          ? 'CA\$${(loanAmt / 1000).toStringAsFixed(0)}K'
-                          : 'CA\$0',
-                      style: AppTextStyles.dmSans(
-                        size: 13,
-                        weight: FontWeight.bold,
-                        color: theme.getTextColor(context),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '5-Yr Fixed Rate',
+                            style: AppTextStyles.dmSans(
+                              size: 11,
+                              color: theme.getMutedColor(context),
+                            ),
+                          ),
+                          Text(
+                            '${live5yr.toStringAsFixed(2)}%',
+                            style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.bold,
+                              color: theme.primaryColor,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Loan Amount',
+                            style: AppTextStyles.dmSans(
+                              size: 11,
+                              color: theme.getMutedColor(context),
+                            ),
+                          ),
+                          Text(
+                            loanAmt > 0
+                                ? 'CA\$${(loanAmt / 1000).toStringAsFixed(0)}K'
+                                : 'CA\$0',
+                            style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.bold,
+                              color: theme.getTextColor(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      const Divider(height: 1, thickness: 0.4),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Est. Bi-Weekly Payment',
+                            style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.bold,
+                              color: theme.getTextColor(context),
+                            ),
+                          ),
+                          Text(
+                            biweeklyPmt > 0
+                                ? 'CA\$${biweeklyPmt.toStringAsFixed(0)}/bi-wk'
+                                : '—',
+                            style: AppTextStyles.playfair(
+                              size: 16,
+                              weight: FontWeight.w800,
+                              color: theme.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 6),
-                const Divider(height: 1, thickness: 0.4),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Est. Bi-Weekly Payment',
-                      style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.bold,
-                        color: theme.getTextColor(context),
-                      ),
-                    ),
-                    Text(
-                      biweeklyPmt > 0
-                          ? 'CA\$${biweeklyPmt.toStringAsFixed(0)}/bi-wk'
-                          : '—',
-                      style: AppTextStyles.playfair(
-                        size: 16,
-                        weight: FontWeight.w800,
-                        color: theme.primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-          const SizedBox(height: 20),
         ],
 
         // Optimal Strategy Timeline
@@ -591,69 +714,83 @@ class _CAFirstHomeBuyerState extends ConsumerState<CAFirstHomeBuyer> {
     );
   }
 
-  Widget _buildCalcField(String label, String sub, TextEditingController ctrl) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildCalcField(String label, String sub, TextEditingController ctrl, String? errorText) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: AppTextStyles.dmSans(
-                size: 13,
-                weight: FontWeight.bold,
-                color: widget.theme.getTextColor(context),
-              ),
-            ),
-            Text(
-              sub,
-              style: AppTextStyles.dmSans(
-                size: 10,
-                color: widget.theme.getMutedColor(context),
-              ),
-            ),
-          ],
-        ),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'CA\$',
-              style: AppTextStyles.dmSans(
-                size: 12,
-                weight: FontWeight.bold,
-                color: widget.theme.getMutedColor(context),
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.dmSans(
+                    size: 13,
+                    weight: FontWeight.bold,
+                    color: widget.theme.getTextColor(context),
+                  ),
+                ),
+                Text(
+                  sub,
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    color: widget.theme.getMutedColor(context),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
-            Container(
-              width: 100,
-              height: 38,
-              decoration: BoxDecoration(
-                color: widget.theme.getBgColor(context),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: widget.theme.getBorderColor(context)),
-              ),
-              child: TextField(
-                controller: ctrl,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.right,
-                style: AppTextStyles.dmSans(
-                  size: 13,
-                  weight: FontWeight.bold,
-                  color: widget.theme.getTextColor(context),
+            Row(
+              children: [
+                Text(
+                  'CA\$',
+                  style: AppTextStyles.dmSans(
+                    size: 12,
+                    weight: FontWeight.bold,
+                    color: widget.theme.getMutedColor(context),
+                  ),
                 ),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                const SizedBox(width: 6),
+                Container(
+                  width: 100,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: widget.theme.getBgColor(context),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: errorText != null ? Colors.red : widget.theme.getBorderColor(context),
+                    ),
+                  ),
+                  child: TextField(
+                    controller: ctrl,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.right,
+                    style: AppTextStyles.dmSans(
+                      size: 13,
+                      weight: FontWeight.bold,
+                      color: widget.theme.getTextColor(context),
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                    onChanged: (val) {
+                      setState(() {});
+                    },
+                  ),
                 ),
-                onChanged: (val) {
-                  setState(() {});
-                },
-              ),
+              ],
             ),
           ],
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500),
+          ),
+        ],
       ],
     );
   }

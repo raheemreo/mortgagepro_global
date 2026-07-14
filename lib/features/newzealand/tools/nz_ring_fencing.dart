@@ -22,7 +22,10 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
   final _interestController = TextEditingController(text: '34500');
   final _taxRateController = TextEditingController(text: '33');
 
-  bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -33,11 +36,68 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _incomeController.text = '31200';
+      _expensesController.text = '10000';
+      _interestController.text = '34500';
+      _taxRateController.text = '33';
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final double inc = double.tryParse(_incomeController.text) ?? 0.0;
+    final double exp = double.tryParse(_expensesController.text) ?? 0.0;
+    final double interest = double.tryParse(_interestController.text) ?? 0.0;
+    final double tax = double.tryParse(_taxRateController.text) ?? 33.0;
+
+    if (inc < 0) {
+      errors['income'] = 'Income cannot be negative';
+    }
+    if (exp < 0) {
+      errors['expenses'] = 'Expenses cannot be negative';
+    }
+    if (interest < 0) {
+      errors['interest'] = 'Interest cannot be negative';
+    }
+    if (tax < 0 || tax > 100) {
+      errors['taxRate'] = 'Enter tax rate between 0 and 100%';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['income'] = inc;
+      _calcSnapshot['expenses'] = exp;
+      _calcSnapshot['interest'] = interest;
+      _calcSnapshot['taxRate'] = tax;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation() async {
-    final double inc = double.tryParse(_incomeController.text) ?? 0;
-    final double exp = double.tryParse(_expensesController.text) ?? 0;
-    final double interest = double.tryParse(_interestController.text) ?? 0;
-    final double tax = double.tryParse(_taxRateController.text) ?? 33;
+    final double inc = _calcSnapshot['income'] ?? (double.tryParse(_incomeController.text) ?? 31200.0);
+    final double exp = _calcSnapshot['expenses'] ?? (double.tryParse(_expensesController.text) ?? 10000.0);
+    final double interest = _calcSnapshot['interest'] ?? (double.tryParse(_interestController.text) ?? 34500.0);
+    final double tax = _calcSnapshot['taxRate'] ?? (double.tryParse(_taxRateController.text) ?? 33.0);
 
     final netResult = inc - exp - interest;
     final ringFenced = netResult < 0 ? netResult.abs() : 0.0;
@@ -143,14 +203,30 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double inc = double.tryParse(_incomeController.text) ?? 0;
-    final double exp = double.tryParse(_expensesController.text) ?? 0;
-    final double interest = double.tryParse(_interestController.text) ?? 0;
-    final double tax = double.tryParse(_taxRateController.text) ?? 33;
+    // Snapshot variables if results are shown, otherwise live inputs
+    final double inc = _showResults
+        ? (_calcSnapshot['income'] ?? 0.0)
+        : (double.tryParse(_incomeController.text) ?? 0.0);
+    final double exp = _showResults
+        ? (_calcSnapshot['expenses'] ?? 0.0)
+        : (double.tryParse(_expensesController.text) ?? 0.0);
+    final double interest = _showResults
+        ? (_calcSnapshot['interest'] ?? 0.0)
+        : (double.tryParse(_interestController.text) ?? 0.0);
+    final double tax = _showResults
+        ? (_calcSnapshot['taxRate'] ?? 33.0)
+        : (double.tryParse(_taxRateController.text) ?? 33.0);
 
     final netResult = inc - exp - interest;
     final ringFenced = netResult < 0 ? netResult.abs() : 0.0;
     final taxLost = ringFenced * (tax / 100);
+
+    final isDirty = _showResults && (
+      (double.tryParse(_incomeController.text) ?? 0.0) != (_calcSnapshot['income'] ?? 0.0) ||
+      (double.tryParse(_expensesController.text) ?? 0.0) != (_calcSnapshot['expenses'] ?? 0.0) ||
+      (double.tryParse(_interestController.text) ?? 0.0) != (_calcSnapshot['interest'] ?? 0.0) ||
+      (double.tryParse(_taxRateController.text) ?? 33.0) != (_calcSnapshot['taxRate'] ?? 33.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,14 +280,30 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'RENTAL LOSS RING-FENCING · IRD INCOME TAX ACT 2007',
-                style: AppTextStyles.dmSans(
-                  size: 8.5,
-                  color: Colors.white70,
-                  weight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'RENTAL LOSS RING-FENCING · IRD INCOME TAX ACT 2007',
+                    style: AppTextStyles.dmSans(
+                      size: 8.5,
+                      color: Colors.white70,
+                      weight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _reset,
+                    child: Text(
+                      'Reset ↺',
+                      style: AppTextStyles.dmSans(
+                        size: 11,
+                        color: const Color(0xFFFCA5A5),
+                        weight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               RichText(
@@ -229,21 +321,25 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
               _buildHeroInputBox(
                 label: 'Annual Rental Income',
                 controller: _incomeController,
+                errorText: _errors['income'],
               ),
               const SizedBox(height: 8),
 
               _buildHeroInputBox(
                 label: 'Annual Rental Expenses (excl. interest)',
                 controller: _expensesController,
+                errorText: _errors['expenses'],
               ),
               const SizedBox(height: 8),
 
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _buildHeroInputBox(
                       label: 'Mortgage Interest (rental property)',
                       controller: _interestController,
+                      errorText: _errors['interest'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -252,6 +348,7 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
                       label: 'Your Personal Tax Rate',
                       controller: _taxRateController,
                       suffix: '%',
+                      errorText: _errors['taxRate'],
                     ),
                   ),
                 ],
@@ -259,7 +356,7 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
               const SizedBox(height: 12),
 
               ElevatedButton(
-                onPressed: () => setState(() => _showResults = true),
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFC0392B),
                   foregroundColor: Colors.white,
@@ -277,207 +374,237 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
         ),
         const SizedBox(height: 20),
 
-        // Result Card
         if (_showResults) ...[
-          Text(
-            'Ring-Fencing Result',
-            style: AppTextStyles.playfair(
-                size: 12,
-                weight: FontWeight.w800,
-                color: theme.getTextColor(context)),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Check Ring-Fencing Impact to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 16),
+          ],
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Verdict Banner
+                // Result Card
+                Text(
+                  'Ring-Fencing Result',
+                  style: AppTextStyles.playfair(
+                      size: 12,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context)),
+                ),
+                const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    gradient: netResult < 0
-                        ? const LinearGradient(colors: [Color(0xFFFEF2F2), Color(0xFFFECACA)])
-                        : const LinearGradient(colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)]),
-                    border: Border.all(
-                      color: netResult < 0 ? const Color(0xFFFCA5A5) : const Color(0xFF6EE7B7),
-                    ),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        netResult < 0 ? '🚫' : '✅',
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              netResult < 0
-                                  ? 'Loss Ring-Fenced — Cannot Offset Income'
-                                  : 'Rental Profit — No Ring-Fencing Needed',
-                              style: AppTextStyles.dmSans(
-                                  size: 11, weight: FontWeight.bold, color: const Color(0xFF0A0F0D)),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              netResult < 0
-                                  ? 'Your rental loss of ${CurrencyFormatter.format(ringFenced, currencyCode: 'NZD')} is ring-fenced. It can only offset future rental profits, not your salary.'
-                                  : 'Your rental portfolio shows a profit of ${CurrencyFormatter.format(netResult, currencyCode: 'NZD')}. This is taxable income.',
-                              style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF4A6358)),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                _buildCostRow(
-                  dotColor: const Color(0xFF1A6B4A),
-                  label: 'Rental Income',
-                  note: 'Annual rent received',
-                  val: CurrencyFormatter.format(inc, currencyCode: 'NZD'),
-                  isPositive: true,
-                ),
-                const Divider(height: 16),
-                _buildCostRow(
-                  dotColor: const Color(0xFFC0392B),
-                  label: 'Expenses (excl. interest)',
-                  note: 'Rates, insurance, maintenance, PM',
-                  val: '–${CurrencyFormatter.format(exp, currencyCode: 'NZD')}',
-                  isPositive: false,
-                ),
-                const Divider(height: 16),
-                _buildCostRow(
-                  dotColor: const Color(0xFFD4A017),
-                  label: 'Deductible Interest',
-                  note: '100% from 1 Apr 2025',
-                  val: '–${CurrencyFormatter.format(interest, currencyCode: 'NZD')}',
-                  isPositive: false,
-                ),
-                const Divider(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Net Rental Result',
-                      style: AppTextStyles.dmSans(
-                        size: 11.5,
-                        weight: FontWeight.bold,
-                        color: theme.getTextColor(context),
-                      ),
-                    ),
-                    Text(
-                      (netResult < 0 ? '–' : '') + CurrencyFormatter.format(netResult.abs(), currencyCode: 'NZD'),
-                      style: AppTextStyles.playfair(
-                        size: 15,
-                        weight: FontWeight.w800,
-                        color: netResult >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 16),
-                _buildCostRow(
-                  dotColor: const Color(0xFF6D28D9),
-                  label: 'Amount Ring-Fenced',
-                  note: 'Cannot offset other income',
-                  val: CurrencyFormatter.format(ringFenced, currencyCode: 'NZD'),
-                  isPositive: false,
-                  customColor: const Color(0xFFD97706),
-                ),
-                const Divider(height: 16),
-                _buildCostRow(
-                  dotColor: const Color(0xFF334155),
-                  label: 'Tax Saving Lost',
-                  note: 'At your personal rate',
-                  val: '–${CurrencyFormatter.format(taxLost, currencyCode: 'NZD')}',
-                  isPositive: false,
-                ),
-                const Divider(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Carried Forward Loss',
-                          style: AppTextStyles.dmSans(
-                              size: 10.5,
-                              weight: FontWeight.bold,
-                              color: theme.getTextColor(context)),
-                        ),
-                        Text(
-                          'Usable against future rental profits',
-                          style: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context)),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      CurrencyFormatter.format(ringFenced, currencyCode: 'NZD'),
-                      style: AppTextStyles.playfair(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: const Color(0xFF0D9488),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.getBgColor(context),
-                    borderRadius: BorderRadius.circular(11),
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'What this means for you',
-                        style: AppTextStyles.dmSans(
-                            size: 9.5,
-                            weight: FontWeight.bold,
-                            color: theme.getTextColor(context)),
+                      // Verdict Banner
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: netResult < 0
+                              ? const LinearGradient(colors: [Color(0xFFFEF2F2), Color(0xFFFECACA)])
+                              : const LinearGradient(colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)]),
+                          border: Border.all(
+                            color: netResult < 0 ? const Color(0xFFFCA5A5) : const Color(0xFF6EE7B7),
+                          ),
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              netResult < 0 ? '🚫' : '✅',
+                              style: const TextStyle(fontSize: 24),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    netResult < 0
+                                        ? 'Loss Ring-Fenced — Cannot Offset Income'
+                                        : 'Rental Profit — No Ring-Fencing Needed',
+                                    style: AppTextStyles.dmSans(
+                                        size: 11, weight: FontWeight.bold, color: const Color(0xFF0A0F0D)),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    netResult < 0
+                                        ? 'Your rental loss of ${CurrencyFormatter.format(ringFenced, currencyCode: 'NZD')} is ring-fenced. It can only offset future rental profits, not your salary.'
+                                        : 'Your rental portfolio shows a profit of ${CurrencyFormatter.format(netResult, currencyCode: 'NZD')}. This is taxable income.',
+                                    style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF4A6358)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        netResult < 0
-                            ? 'Under ring-fencing, you cannot use your ${CurrencyFormatter.compact(ringFenced, symbol: 'NZ\$')} rental loss to reduce your salary tax. The loss is carried forward and can be used when the property turns profitable or when you sell.'
-                            : 'Your rental property is profitable (${CurrencyFormatter.compact(netResult, symbol: 'NZ\$')}). This profit is added to your taxable income at your marginal tax rate of ${tax.toInt()}%.',
-                        style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context)),
+                      const SizedBox(height: 16),
+
+                      _buildCostRow(
+                        dotColor: const Color(0xFF1A6B4A),
+                        label: 'Rental Income',
+                        note: 'Annual rent received',
+                        val: CurrencyFormatter.format(inc, currencyCode: 'NZD'),
+                        isPositive: true,
+                      ),
+                      const Divider(height: 16),
+                      _buildCostRow(
+                        dotColor: const Color(0xFFC0392B),
+                        label: 'Expenses (excl. interest)',
+                        note: 'Rates, insurance, maintenance, PM',
+                        val: '–${CurrencyFormatter.format(exp, currencyCode: 'NZD')}',
+                        isPositive: false,
+                      ),
+                      const Divider(height: 16),
+                      _buildCostRow(
+                        dotColor: const Color(0xFFD4A017),
+                        label: 'Deductible Interest',
+                        note: '100% from 1 Apr 2025',
+                        val: '–${CurrencyFormatter.format(interest, currencyCode: 'NZD')}',
+                        isPositive: false,
+                      ),
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Net Rental Result',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              weight: FontWeight.bold,
+                              color: theme.getTextColor(context),
+                            ),
+                          ),
+                          Text(
+                            (netResult < 0 ? '–' : '') + CurrencyFormatter.format(netResult.abs(), currencyCode: 'NZD'),
+                            style: AppTextStyles.playfair(
+                              size: 15,
+                              weight: FontWeight.w800,
+                              color: netResult >= 0 ? const Color(0xFF1A6B4A) : const Color(0xFFC0392B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 16),
+                      _buildCostRow(
+                        dotColor: const Color(0xFF6D28D9),
+                        label: 'Amount Ring-Fenced',
+                        note: 'Cannot offset other income',
+                        val: CurrencyFormatter.format(ringFenced, currencyCode: 'NZD'),
+                        isPositive: false,
+                        customColor: const Color(0xFFD97706),
+                      ),
+                      const Divider(height: 16),
+                      _buildCostRow(
+                        dotColor: const Color(0xFF334155),
+                        label: 'Tax Saving Lost',
+                        note: 'At your personal rate',
+                        val: '–${CurrencyFormatter.format(taxLost, currencyCode: 'NZD')}',
+                        isPositive: false,
+                      ),
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Carried Forward Loss',
+                                style: AppTextStyles.dmSans(
+                                    size: 10.5,
+                                    weight: FontWeight.bold,
+                                    color: theme.getTextColor(context)),
+                              ),
+                              Text(
+                                'Usable against future rental profits',
+                                style: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context)),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            CurrencyFormatter.format(ringFenced, currencyCode: 'NZD'),
+                            style: AppTextStyles.playfair(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFF0D9488),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.getBgColor(context),
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'What this means for you',
+                              style: AppTextStyles.dmSans(
+                                  size: 9.5,
+                                  weight: FontWeight.bold,
+                                  color: theme.getTextColor(context)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              netResult < 0
+                                  ? 'Under ring-fencing, you cannot use your ${CurrencyFormatter.compact(ringFenced, symbol: 'NZ\$')} rental loss to reduce your salary tax. The loss is carried forward and can be used when the property turns profitable or when you sell.'
+                                  : 'Your rental property is profitable (${CurrencyFormatter.compact(netResult, symbol: 'NZ\$')}). This profit is added to your taxable income at your marginal tax rate of ${tax.toInt()}%.',
+                              style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      ElevatedButton.icon(
+                        onPressed: _saveCalculation,
+                        icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                        label: Text(
+                          'Save Ring-Fencing Assessment',
+                          style: AppTextStyles.playfair(size: 12.5, color: Colors.white, weight: FontWeight.w800),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A6B4A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          minimumSize: const Size(double.infinity, 42),
+                        ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                ElevatedButton.icon(
-                  onPressed: _saveCalculation,
-                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                  label: Text(
-                    'Save Ring-Fencing Assessment',
-                    style: AppTextStyles.playfair(size: 12.5, color: Colors.white, weight: FontWeight.w800),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A6B4A),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    minimumSize: const Size(double.infinity, 42),
                   ),
                 ),
               ],
@@ -581,6 +708,7 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
     required String label,
     required TextEditingController controller,
     String suffix = '',
+    String? errorText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -591,37 +719,51 @@ class _NZRingFencingRulesState extends ConsumerState<NZRingFencingRules> {
         ),
         const SizedBox(height: 4),
         Container(
-          height: 38,
+          height: errorText != null ? 52 : 38,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+            border: Border.all(color: errorText != null ? Colors.red : Colors.white.withValues(alpha: 0.22)),
             borderRadius: BorderRadius.circular(10),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (suffix.isEmpty)
-                Text(
-                  'NZ\$ ',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white60, weight: FontWeight.bold),
-                ),
               Expanded(
-                child: TextField(
-                  controller: controller,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: (_) => setState(() {}),
+                child: Row(
+                  children: [
+                    if (suffix.isEmpty)
+                      Text(
+                        'NZ\$ ',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.white60, weight: FontWeight.bold),
+                      ),
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    if (suffix.isNotEmpty)
+                      Text(
+                        suffix,
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.white60, weight: FontWeight.bold),
+                      ),
+                  ],
                 ),
               ),
-              if (suffix.isNotEmpty)
+              if (errorText != null)
                 Text(
-                  suffix,
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white60, weight: FontWeight.bold),
+                  errorText,
+                  style: AppTextStyles.dmSans(size: 7, color: Colors.red[300], weight: FontWeight.bold),
                 ),
             ],
           ),

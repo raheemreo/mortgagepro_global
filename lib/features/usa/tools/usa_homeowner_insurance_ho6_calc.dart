@@ -18,12 +18,15 @@ class USAHomeownerInsuranceHo6Calc extends ConsumerStatefulWidget {
 }
 
 class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsuranceHo6Calc> {
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   double _interiorValue = 80000;
   double _personalPropertyValue = 40000;
   double _deductible = 1000;
   String _riskLevel = 'medium';
 
-  bool _showResults = true;
+  bool _showResults = false;
   bool _isCalcDirty = false;
   bool _calculating = false;
 
@@ -51,6 +54,10 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
       _deductible = inputs['Deductible'] ?? 1000.0;
       final code = inputs['RiskLevelCode'] ?? 1.0;
       _riskLevel = code == 0.0 ? 'low' : code == 1.0 ? 'medium' : code == 2.0 ? 'high' : 'fl';
+      _calcSnapshot['InteriorValue'] = _interiorValue;
+      _calcSnapshot['PersonalPropertyValue'] = _personalPropertyValue;
+      _calcSnapshot['Deductible'] = _deductible;
+      _calcSnapshot['RiskLevel'] = _riskLevel;
       _showResults = true;
       _isCalcDirty = false;
     }
@@ -70,8 +77,9 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
       _personalPropertyValue = 40000;
       _deductible = 1000;
       _riskLevel = 'medium';
-      _showResults = true;
+      _showResults = false;
       _isCalcDirty = false;
+      _calcSnapshot.clear();
     });
   }
 
@@ -80,18 +88,37 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
       _calculating = true;
     });
     await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
     setState(() {
       _calculating = false;
+      _calcSnapshot['InteriorValue'] = _interiorValue;
+      _calcSnapshot['PersonalPropertyValue'] = _personalPropertyValue;
+      _calcSnapshot['Deductible'] = _deductible;
+      _calcSnapshot['RiskLevel'] = _riskLevel;
       _showResults = true;
       _isCalcDirty = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation() async {
-    double total = _interiorValue + _personalPropertyValue;
+    final double interiorValue = _calcSnapshot['InteriorValue'] ?? _interiorValue;
+    final double personalPropertyValue = _calcSnapshot['PersonalPropertyValue'] ?? _personalPropertyValue;
+    final double deductible = _calcSnapshot['Deductible'] ?? _deductible;
+    final String riskLevel = _calcSnapshot['RiskLevel'] ?? _riskLevel;
+
+    double total = interiorValue + personalPropertyValue;
     double rate = 0.0040;
-    final riskMult = _riskMultipliers[_riskLevel] ?? 1.0;
-    final dedDisc = _deductibleDiscounts[_deductible] ?? 0.0;
+    final riskMult = _riskMultipliers[riskLevel] ?? 1.0;
+    final dedDisc = _deductibleDiscounts[deductible] ?? 0.0;
     double annual = total * rate * riskMult * (1 + dedDisc);
     annual = (annual / 10).round() * 10.0;
     annual = annual < 150 ? 150 : annual;
@@ -112,7 +139,7 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving: Annual: ${CurrencyFormatter.compact(annual, symbol: r'$')}/yr · Interior: ${CurrencyFormatter.compact(_interiorValue, symbol: r'$')}',
+              'Saving: Annual: ${CurrencyFormatter.compact(annual, symbol: r'$')}/yr · Interior: ${CurrencyFormatter.compact(interiorValue, symbol: r'$')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -164,16 +191,16 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
         country: 'USA',
         calcType: 'HO-6 Condo',
         inputs: {
-          'InteriorValue': _interiorValue,
-          'PersonalPropertyValue': _personalPropertyValue,
-          'Deductible': _deductible,
-          'RiskLevelCode': _riskLevel == 'low' ? 0.0 : _riskLevel == 'medium' ? 1.0 : _riskLevel == 'high' ? 2.0 : 3.0,
+          'InteriorValue': interiorValue,
+          'PersonalPropertyValue': personalPropertyValue,
+          'Deductible': deductible,
+          'RiskLevelCode': riskLevel == 'low' ? 0.0 : riskLevel == 'medium' ? 1.0 : riskLevel == 'high' ? 2.0 : 3.0,
         },
         results: {
           'Annual Premium': annual,
           'Monthly Premium': monthly,
-          'Interior Limit': _interiorValue,
-          'Personal Prop Limit': _personalPropertyValue,
+          'Interior Limit': interiorValue,
+          'Personal Prop Limit': personalPropertyValue,
         },
         label: label,
         currencyCode: 'USD',
@@ -205,16 +232,28 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
     final mutedColor = theme.getMutedColor(context);
     final borderColor = theme.getBorderColor(context);
 
+    final double snapInteriorValue = _calcSnapshot['InteriorValue'] ?? _interiorValue;
+    final double snapPersonalPropertyValue = _calcSnapshot['PersonalPropertyValue'] ?? _personalPropertyValue;
+    final double snapDeductible = _calcSnapshot['Deductible'] ?? _deductible;
+    final String snapRiskLevel = _calcSnapshot['RiskLevel'] ?? _riskLevel;
+
     // Compute active calculation
-    double total = _interiorValue + _personalPropertyValue;
+    double total = snapInteriorValue + snapPersonalPropertyValue;
     double rate = 0.0040;
-    final riskMult = _riskMultipliers[_riskLevel] ?? 1.0;
-    final dedDisc = _deductibleDiscounts[_deductible] ?? 0.0;
+    final riskMult = _riskMultipliers[snapRiskLevel] ?? 1.0;
+    final dedDisc = _deductibleDiscounts[snapDeductible] ?? 0.0;
     double annualPremium = total * rate * riskMult * (1 + dedDisc);
     annualPremium = (annualPremium / 10).round() * 10.0;
     annualPremium = annualPremium < 150 ? 150 : annualPremium;
     final monthlyPremium = (annualPremium / 12).round();
-    final lou = (_interiorValue * 0.30).roundToDouble();
+    final lou = (snapInteriorValue * 0.30).roundToDouble();
+
+    final isDirty = _showResults && (
+      _interiorValue != snapInteriorValue ||
+      _personalPropertyValue != snapPersonalPropertyValue ||
+      _deductible != snapDeductible ||
+      _riskLevel != snapRiskLevel
+    );
 
     final riskLabels = {
       'low': 'Low-risk state',
@@ -299,68 +338,130 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
           ),
         ),
 
-        // Result Hero Panel
-        Text(
-          'HO-6 Estimator',
-          style: AppTextStyles.playfair(
-              size: 13, weight: FontWeight.w700, color: textColor),
-        ),
-        const SizedBox(height: 8),
-
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1B3F72), Color(0xFF0B1D3A)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        // Results section or placeholder
+        if (!_showResults) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              border: Border.all(color: borderColor),
+              borderRadius: BorderRadius.circular(16),
             ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1B3F72).withValues(alpha: 0.25),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
-              )
-            ],
+            child: Column(
+              children: [
+                const Text('📊', style: TextStyle(fontSize: 28)),
+                const SizedBox(height: 8),
+                Text(
+                  'View HO-6 Condo Premium Estimate',
+                  style: AppTextStyles.playfair(size: 13, color: textColor, weight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Adjust parameters below and tap "Calculate HO-6 Premium" to estimate your rates.',
+                  style: AppTextStyles.dmSans(size: 10.5, color: mutedColor),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ANNUAL HO-6 PREMIUM ESTIMATE',
-                style: AppTextStyles.dmSans(
-                    size: 8,
-                    weight: FontWeight.w700,
-                    color: Colors.white70,
-                    letterSpacing: 0.6),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                CurrencyFormatter.format(annualPremium, symbol: r'$'),
-                style: AppTextStyles.playfair(
-                    size: 32, weight: FontWeight.w800, color: Colors.white),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'HO-6 · ${CurrencyFormatter.compact(_interiorValue, symbol: r'$')} interior value · ${riskLabels[_riskLevel] ?? ''} · ${CurrencyFormatter.compact(_deductible, symbol: r'$')} ded',
-                style: AppTextStyles.dmSans(
-                    size: 9.5, color: Colors.white.withValues(alpha: 0.8)),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _buildHeroBottomBox('Monthly', CurrencyFormatter.format(monthlyPremium.toDouble(), symbol: r'$')),
-                  const SizedBox(width: 8),
-                  _buildHeroBottomBox('Deductible', CurrencyFormatter.format(_deductible, symbol: r'$')),
-                  const SizedBox(width: 8),
-                  _buildHeroBottomBox('Interior Value', '\$${(_interiorValue / 1000).round()}K'),
+        ] else ...[
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isDirty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Inputs have changed. Calculate again to update results.',
+                            style: AppTextStyles.dmSans(
+                              size: 11.5,
+                              color: const Color(0xFFB45309),
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-              )
-            ],
+                Text(
+                  'HO-6 Estimator',
+                  style: AppTextStyles.playfair(
+                      size: 13, weight: FontWeight.w700, color: textColor),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1B3F72), Color(0xFF0B1D3A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1B3F72).withValues(alpha: 0.25),
+                        blurRadius: 15,
+                        offset: const Offset(0, 6),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ANNUAL HO-6 PREMIUM ESTIMATE',
+                        style: AppTextStyles.dmSans(
+                            size: 8,
+                            weight: FontWeight.w700,
+                            color: Colors.white70,
+                            letterSpacing: 0.6),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        CurrencyFormatter.format(annualPremium, symbol: r'$'),
+                        style: AppTextStyles.playfair(
+                            size: 32, weight: FontWeight.w800, color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'HO-6 · ${CurrencyFormatter.compact(snapInteriorValue, symbol: r'$')} interior value · ${riskLabels[snapRiskLevel] ?? ''} · ${CurrencyFormatter.compact(snapDeductible, symbol: r'$')} ded',
+                        style: AppTextStyles.dmSans(
+                            size: 9.5, color: Colors.white.withValues(alpha: 0.8)),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          _buildHeroBottomBox('Monthly', CurrencyFormatter.format(monthlyPremium.toDouble(), symbol: r'$')),
+                          const SizedBox(width: 8),
+                          _buildHeroBottomBox('Deductible', CurrencyFormatter.format(snapDeductible, symbol: r'$')),
+                          const SizedBox(width: 8),
+                          _buildHeroBottomBox('Interior Value', '\$${(snapInteriorValue / 1000).round()}K'),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
 
         const SizedBox(height: 20),
 
@@ -541,7 +642,7 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
                             ),
                     ),
                   ),
-                  if (_showResults && !_isCalcDirty) ...[
+                  if (_showResults && !isDirty) ...[
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: _saveCalculation,
@@ -566,7 +667,7 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
 
         const SizedBox(height: 20),
 
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults && !isDirty) ...[
           // Walls-in diagram using CustomPainter
           Text(
             'Walls-In Coverage Diagram',
@@ -741,7 +842,7 @@ class _USAHomeownerInsuranceHo6CalcState extends ConsumerState<USAHomeownerInsur
         const SizedBox(height: 20),
 
         // Coverage Limits at a Glance bars
-        if (_showResults && !_isCalcDirty) ...[
+        if (_showResults && !isDirty) ...[
           Text(
             'HO-6 Coverage Limits',
             style: AppTextStyles.playfair(

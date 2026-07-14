@@ -26,6 +26,11 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
   final _amortController = TextEditingController(text: '25');
   final _rateController = TextEditingController(text: '4.99');
 
+  final _resultsKey = GlobalKey();
+  bool _showResults = false;
+  final Map<dynamic, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+
   static const List<Map<String, dynamic>> _cities = [
     {'name': 'Toronto, ON', 'emoji': '🏙️', 'price': 1110000.0},
     {'name': 'Vancouver, BC', 'emoji': '🌊', 'price': 1190000.0},
@@ -83,12 +88,87 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
     return (lo / 1000).floor() * 1000.0;
   }
 
+  double _val(TextEditingController c) {
+    if (_showResults && _calcSnapshot.containsKey(c)) {
+      return _calcSnapshot[c]!;
+    }
+    double defaultVal = 0.0;
+    if (c == _incomeController) {
+      defaultVal = 130000.0;
+    } else if (c == _downController) {
+      defaultVal = 80000.0;
+    } else if (c == _debtsController) {
+      defaultVal = 500.0;
+    } else if (c == _amortController) {
+      defaultVal = 25.0;
+    } else if (c == _rateController) {
+      defaultVal = 4.99;
+    }
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final income = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (income <= 0) errors['income'] = 'Enter a valid annual income';
+    
+    final down = double.tryParse(_downController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (down < 0) errors['down'] = 'Enter a valid down payment';
+    
+    final debts = double.tryParse(_debtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (debts < 0) errors['debts'] = 'Enter a valid debt amount';
+    
+    final amort = double.tryParse(_amortController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (amort <= 0 || amort > 35) errors['amort'] = 'Enter amortization (1-35 years)';
+    
+    final rate = double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (rate <= 0 || rate > 25) errors['rate'] = 'Enter interest rate (0.1% - 25%)';
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot[_incomeController] = income;
+      _calcSnapshot[_downController] = down;
+      _calcSnapshot[_debtsController] = debts;
+      _calcSnapshot[_amortController] = amort;
+      _calcSnapshot[_rateController] = rate;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _resetInputs() {
+    setState(() {
+      _incomeController.text = '130000';
+      _downController.text = '80000';
+      _debtsController.text = '500';
+      _amortController.text = '25';
+      _rateController.text = '4.99';
+      _calcSnapshot.clear();
+      _errors.clear();
+      _showResults = false;
+    });
+  }
+
   void _saveCalculation() async {
-    final double income = double.tryParse(_incomeController.text) ?? 130000;
-    final double down = double.tryParse(_downController.text) ?? 80000;
-    final double debts = double.tryParse(_debtsController.text) ?? 500;
-    final double amort = double.tryParse(_amortController.text) ?? 25;
-    final double rate = double.tryParse(_rateController.text) ?? 4.99;
+    final double income = _val(_incomeController);
+    final double down = _val(_downController);
+    final double debts = _val(_debtsController);
+    final double amort = _val(_amortController);
+    final double rate = _val(_rateController);
     final double stressRate = CMHCCalculator.stressTestRate(rate);
 
     final double maxP = _maxAffordable(income, debts, stressRate, amort, down);
@@ -205,11 +285,11 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
       _rateInitialized = true;
     }
 
-    final double income = double.tryParse(_incomeController.text) ?? 130000;
-    final double down = double.tryParse(_downController.text) ?? 80000;
-    final double debts = double.tryParse(_debtsController.text) ?? 500;
-    final double amort = double.tryParse(_amortController.text) ?? 25;
-    final double rate = double.tryParse(_rateController.text) ?? 4.99;
+    final double income = _val(_incomeController);
+    final double down = _val(_downController);
+    final double debts = _val(_debtsController);
+    final double amort = _val(_amortController);
+    final double rate = _val(_rateController);
     final double stressRate = CMHCCalculator.stressTestRate(rate);
 
     final double maxP = _maxAffordable(income, debts, stressRate, amort, down);
@@ -221,6 +301,16 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
     final double ds = down - md;
 
     final double meterPct = (maxP / 1500000).clamp(0.01, 1.0);
+
+    final double currentIncome = double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 130000.0;
+
+    final isDirty = _showResults && (
+      (double.tryParse(_incomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_incomeController] ?? 0.0) ||
+      (double.tryParse(_downController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_downController] ?? 0.0) ||
+      (double.tryParse(_debtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_debtsController] ?? 0.0) ||
+      (double.tryParse(_amortController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_amortController] ?? 0.0) ||
+      (double.tryParse(_rateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_rateController] ?? 0.0)
+    );
 
     // Filter saved calcs locally
     final saved = ref.watch(savedProvider);
@@ -234,14 +324,30 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section label
-        Text(
-          'YOUR FINANCES',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'YOUR FINANCES',
+              style: AppTextStyles.dmSans(
+                size: 10,
+                weight: FontWeight.bold,
+                color: theme.getMutedColor(context),
+                letterSpacing: 0.6,
+              ),
+            ),
+            GestureDetector(
+              onTap: _resetInputs,
+              child: Text(
+                'Reset',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.w600,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -255,10 +361,10 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
           ),
           child: Column(
             children: [
-              _buildInputField('Annual Household Income', _incomeController, prefix: 'CA\$', suffix: '/yr'),
+              _buildInputField('Annual Household Income', _incomeController, prefix: 'CA\$', suffix: '/yr', errorText: _errors['income']),
               const SizedBox(height: 8),
               Slider(
-                value: income.clamp(40000, 500000),
+                value: currentIncome.clamp(40000, 500000),
                 min: 40000,
                 max: 500000,
                 activeColor: theme.primaryColor,
@@ -270,18 +376,18 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
                 },
               ),
               const SizedBox(height: 12),
-              _buildInputField('Down Payment Saved', _downController, prefix: 'CA\$'),
+              _buildInputField('Down Payment Saved', _downController, prefix: 'CA\$', errorText: _errors['down']),
               const SizedBox(height: 12),
-              _buildInputField('Monthly Debts', _debtsController, prefix: 'CA\$', suffix: '/mo'),
+              _buildInputField('Monthly Debts', _debtsController, prefix: 'CA\$', suffix: '/mo', errorText: _errors['debts']),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Amortization', _amortController, suffix: 'yrs'),
+                    child: _buildInputField('Amortization', _amortController, suffix: 'yrs', errorText: _errors['amort']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Interest Rate', _rateController, suffix: '%'),
+                    child: _buildInputField('Interest Rate', _rateController, suffix: '%', errorText: _errors['rate']),
                   ),
                 ],
               ),
@@ -290,7 +396,7 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => setState(() {}),
+                      onPressed: _calculate,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFC8102E),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -302,314 +408,347 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _saveCalculation,
-                    child: Container(
-                      width: 50,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: theme.primaryColor,
-                        borderRadius: BorderRadius.circular(12),
+                  if (_showResults) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: _saveCalculation,
+                      child: Container(
+                        width: 50,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text('💾', style: TextStyle(fontSize: 18)),
                       ),
-                      alignment: Alignment.center,
-                      child: const Text('💾', style: TextStyle(fontSize: 18)),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        if (_showResults) ...[
+          if (isDirty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Result Card
-        Text(
-          'MAXIMUM AFFORDABLE PRICE',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'MAXIMUM HOME PRICE (STRESS-TESTED)',
-                style: AppTextStyles.dmSans(
-                  size: 9,
-                  color: Colors.white60,
-                  weight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                CurrencyFormatter.format(maxP, symbol: 'CA\$'),
-                style: AppTextStyles.playfair(
-                  size: 34,
-                  weight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Qualified at ${stressRate.toStringAsFixed(2)}% stress rate · ${amort.toInt()}-yr amort',
-                style: AppTextStyles.dmSans(
-                  size: 10.5,
-                  color: Colors.white60,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Divider(color: Colors.white12),
-              const SizedBox(height: 12),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                childAspectRatio: 2.2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                children: [
-                  _resBox('Contract Payment/mo', CurrencyFormatter.format(cPmt, symbol: 'CA\$'), const Color(0xFF6EDFA0)),
-                  _resBox('Stress Payment/mo', CurrencyFormatter.format(sPmt, symbol: 'CA\$'), const Color(0xFFFF8A9A)),
-                  _resBox('Min Down Required', CurrencyFormatter.format(md, symbol: 'CA\$'), Colors.white),
-                  _resBox(
-                    ds >= 0 ? 'Your Down Surplus' : 'Your Down Deficit',
-                    ds >= 0 ? CurrencyFormatter.format(ds, symbol: 'CA\$') : 'Need ${CurrencyFormatter.format(-ds, symbol: 'CA\$')}',
-                    ds >= 0 ? const Color(0xFF6EDFA0) : const Color(0xFFFF8A9A),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Buying Power Meter
-        Text(
-          'BUYING POWER METER',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Your Affordability vs. National Average',
-                  style: AppTextStyles.playfair(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(7),
-                child: SizedBox(
-                  height: 14,
-                  child: LinearProgressIndicator(
-                    value: meterPct,
-                    backgroundColor: theme.getBgColor(context),
-                    valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Result Card
+                Text(
+                  'MAXIMUM AFFORDABLE PRICE',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
                   ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('CA\$0', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
-                  Text('\$500K', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
-                  Text('\$1M', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
-                  Text('\$1.5M+', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Your max ${CurrencyFormatter.compact(maxP, symbol: 'CA\$')} · National avg CA\$703K',
-                style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // City Comparison
-        Text(
-          'CANADIAN CITY COMPARISON (MAY 2025)',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _cities.length,
-            itemBuilder: (context, idx) {
-              final c = _cities[idx];
-              final double cPrice = c['price'];
-              final bool canAfford = maxP >= cPrice;
-              final double pct = (maxP / cPrice) * 100;
-              final double fillPct = (maxP / cPrice).clamp(0.01, 1.0);
-
-              final barColor = canAfford
-                  ? const Color(0xFF1A5C35)
-                  : (pct > 80 ? const Color(0xFFF59E0B) : const Color(0xFFC8102E));
-
-              final statusText = canAfford
-                  ? '✓ Afford'
-                  : (pct > 80 ? 'Close' : '✗ Over');
-
-              final statusColor = canAfford
-                  ? const Color(0xFFDCF4E8)
-                  : (pct > 80 ? const Color(0xFFFEF3C7) : const Color(0xFFFFE4E8));
-
-              final statusTextCol = canAfford
-                  ? const Color(0xFF1A5C35)
-                  : (pct > 80 ? const Color(0xFF92400E) : const Color(0xFFC8102E));
-
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: theme.getBorderColor(context), width: idx == _cities.length - 1 ? 0 : 0.5)),
-                ),
-                child: Row(
-                  children: [
-                    Text(c['emoji'], style: const TextStyle(fontSize: 20)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A2E1A), Color(0xFF1A5C35)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'MAXIMUM HOME PRICE (STRESS-TESTED)',
+                        style: AppTextStyles.dmSans(
+                          size: 9,
+                          color: Colors.white60,
+                          weight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        CurrencyFormatter.format(maxP, symbol: 'CA\$'),
+                        style: AppTextStyles.playfair(
+                          size: 34,
+                          weight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Qualified at ${stressRate.toStringAsFixed(2)}% stress rate · ${amort.toInt()}-yr amort',
+                        style: AppTextStyles.dmSans(
+                          size: 10.5,
+                          color: Colors.white60,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(color: Colors.white12),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.2,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(c['name'], style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.bold, color: theme.getTextColor(context))),
-                              Text(
-                                '${(cPrice / 1000000).toStringAsFixed(2)}M avg · ${pct.round()}% of budget',
-                                style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(3),
-                            child: SizedBox(
-                              height: 6,
-                              child: LinearProgressIndicator(
-                                value: fillPct,
-                                backgroundColor: theme.getBgColor(context),
-                                valueColor: AlwaysStoppedAnimation<Color>(barColor),
-                              ),
-                            ),
+                          _resBox('Contract Payment/mo', CurrencyFormatter.format(cPmt, symbol: 'CA\$'), const Color(0xFF6EDFA0)),
+                          _resBox('Stress Payment/mo', CurrencyFormatter.format(sPmt, symbol: 'CA\$'), const Color(0xFFFF8A9A)),
+                          _resBox('Min Down Required', CurrencyFormatter.format(md, symbol: 'CA\$'), Colors.white),
+                          _resBox(
+                            ds >= 0 ? 'Your Down Surplus' : 'Your Down Deficit',
+                            ds >= 0 ? CurrencyFormatter.format(ds, symbol: 'CA\$') : 'Need ${CurrencyFormatter.format(-ds, symbol: 'CA\$')}',
+                            ds >= 0 ? const Color(0xFF6EDFA0) : const Color(0xFFFF8A9A),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        statusText,
-                        style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.bold, color: statusTextCol),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-        // Down Payment Rules Table
-        Text(
-          'MINIMUM DOWN PAYMENT RULES',
-          style: AppTextStyles.dmSans(
-            size: 10,
-            weight: FontWeight.bold,
-            color: theme.getMutedColor(context),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                color: theme.getBgColor(context),
-                child: Row(
-                  children: [
-                    Expanded(child: Text('Purchase Price', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: theme.getMutedColor(context)))),
-                    Expanded(child: Text('Min. Down', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: theme.getMutedColor(context)))),
-                    Expanded(child: Text('Min. Amount', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: theme.getMutedColor(context)))),
-                  ],
+                // Buying Power Meter
+                Text(
+                  'BUYING POWER METER',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
                 ),
-              ),
-              _ruleRow('Up to CA\$500K', '5%', 'CA\$25,000', isBold: true),
-              const Divider(height: 1, thickness: 0.5),
-              _ruleRow('CA\$500K–\$999K', '5%+10%', 'CA\$25K–\$74.9K'),
-              const Divider(height: 1, thickness: 0.5),
-              _ruleRow('CA\$1M–\$1.5M', '20%', 'CA\$200K+'),
-              const Divider(height: 1, thickness: 0.5),
-              _ruleRow('Over CA\$1.5M', '20%+', 'No CMHC'),
-            ],
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Your Affordability vs. National Average',
+                          style: AppTextStyles.playfair(size: 13, weight: FontWeight.bold, color: theme.getTextColor(context)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(7),
+                        child: SizedBox(
+                          height: 14,
+                          child: LinearProgressIndicator(
+                            value: meterPct,
+                            backgroundColor: theme.getBgColor(context),
+                            valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('CA\$0', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
+                          Text('\$500K', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
+                          Text('\$1M', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
+                          Text('\$1.5M+', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Your max ${CurrencyFormatter.compact(maxP, symbol: 'CA\$')} · National avg CA\$703K',
+                        style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context), weight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // City Comparison
+                Text(
+                  'CANADIAN CITY COMPARISON (MAY 2025)',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _cities.length,
+                    itemBuilder: (context, idx) {
+                      final c = _cities[idx];
+                      final double cPrice = c['price'];
+                      final bool canAfford = maxP >= cPrice;
+                      final double pct = (maxP / cPrice) * 100;
+                      final double fillPct = (maxP / cPrice).clamp(0.01, 1.0);
+
+                      final barColor = canAfford
+                          ? const Color(0xFF1A5C35)
+                          : (pct > 80 ? const Color(0xFFF59E0B) : const Color(0xFFC8102E));
+
+                      final statusText = canAfford
+                          ? '✓ Afford'
+                          : (pct > 80 ? 'Close' : '✗ Over');
+
+                      final statusColor = canAfford
+                          ? const Color(0xFFDCF4E8)
+                          : (pct > 80 ? const Color(0xFFFEF3C7) : const Color(0xFFFFE4E8));
+
+                      final statusTextCol = canAfford
+                          ? const Color(0xFF1A5C35)
+                          : (pct > 80 ? const Color(0xFF92400E) : const Color(0xFFC8102E));
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          border: Border(bottom: BorderSide(color: theme.getBorderColor(context), width: idx == _cities.length - 1 ? 0 : 0.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(c['emoji'], style: const TextStyle(fontSize: 20)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(c['name'], style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.bold, color: theme.getTextColor(context))),
+                                      Text(
+                                        '${(cPrice / 1000000).toStringAsFixed(2)}M avg · ${pct.round()}% of budget',
+                                        style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context)),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(3),
+                                    child: SizedBox(
+                                      height: 6,
+                                      child: LinearProgressIndicator(
+                                        value: fillPct,
+                                        backgroundColor: theme.getBgColor(context),
+                                        valueColor: AlwaysStoppedAnimation<Color>(barColor),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                statusText,
+                                style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.bold, color: statusTextCol),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Down Payment Rules Table
+                Text(
+                  'MINIMUM DOWN PAYMENT RULES',
+                  style: AppTextStyles.dmSans(
+                    size: 10,
+                    weight: FontWeight.bold,
+                    color: theme.getMutedColor(context),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        color: theme.getBgColor(context),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text('Purchase Price', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: theme.getMutedColor(context)))),
+                            Expanded(child: Text('Min. Down', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: theme.getMutedColor(context)))),
+                            Expanded(child: Text('Min. Amount', style: AppTextStyles.dmSans(size: 9, weight: FontWeight.bold, color: theme.getMutedColor(context)))),
+                          ],
+                        ),
+                      ),
+                      _ruleRow('Up to CA\$500K', '5%', 'CA\$25,000', isBold: true),
+                      const Divider(height: 1, thickness: 0.5),
+                      _ruleRow('CA\$500K–\$999K', '5%+10%', 'CA\$25K–\$74.9K'),
+                      const Divider(height: 1, thickness: 0.5),
+                      _ruleRow('CA\$1M–\$1.5M', '20%', 'CA\$200K+'),
+                      const Divider(height: 1, thickness: 0.5),
+                      _ruleRow('Over CA\$1.5M', '20%+', 'No CMHC'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
+        ],
 
         // Local saved calcs
         if (localSaved.isNotEmpty) ...[
@@ -674,7 +813,7 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? prefix, String? suffix}) {
+  Widget _buildInputField(String label, TextEditingController controller, {String? prefix, String? suffix, String? errorText}) {
     final theme = widget.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -693,7 +832,10 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
             borderRadius: BorderRadius.circular(11),
-            border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+            border: Border.all(
+              color: errorText != null ? Colors.red : theme.getBorderColor(context),
+              width: 1.5,
+            ),
           ),
           child: Row(
             children: [
@@ -727,6 +869,13 @@ class _CAAffordabilityState extends ConsumerState<CAAffordability> {
             ],
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            errorText,
+            style: AppTextStyles.dmSans(size: 10, color: Colors.red, weight: FontWeight.w500),
+          ),
+        ],
       ],
     );
   }

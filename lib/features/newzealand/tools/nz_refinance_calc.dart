@@ -32,7 +32,10 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
   final _cashbackController = TextEditingController(text: '3000');
   final _legalController = TextEditingController(text: '1500');
 
-  final bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -56,6 +59,99 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
     return P * mr * pow(1 + mr, months) / (pow(1 + mr, months) - 1);
   }
 
+  void _reset() {
+    setState(() {
+      _curBalController.text = '520000';
+      _curRateController.text = '7.29';
+      _curTermMosController.text = '18';
+      _curLoanTermController.text = '24';
+      _newRateController.text = '6.59';
+      _newTermController.text = '24';
+      _wsFixedController.text = '5.80';
+      _wsCurrentController.text = '4.90';
+      _cashbackController.text = '3000';
+      _legalController.text = '1500';
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final double curBal = double.tryParse(_curBalController.text) ?? 0.0;
+    final double curRate = double.tryParse(_curRateController.text) ?? 0.0;
+    final int curTermMos = int.tryParse(_curTermMosController.text) ?? 0;
+    final int curLoanTerm = int.tryParse(_curLoanTermController.text) ?? 0;
+    final double newRate = double.tryParse(_newRateController.text) ?? 0.0;
+    final int newTerm = int.tryParse(_newTermController.text) ?? 0;
+    final double wsFixed = double.tryParse(_wsFixedController.text) ?? 0.0;
+    final double wsCurrent = double.tryParse(_wsCurrentController.text) ?? 0.0;
+    final double cashback = double.tryParse(_cashbackController.text) ?? 0.0;
+    final double legal = double.tryParse(_legalController.text) ?? 0.0;
+
+    if (curBal <= 0) {
+      errors['curBal'] = 'Enter valid current balance';
+    }
+    if (curRate < 0) {
+      errors['curRate'] = 'Current rate cannot be negative';
+    }
+    if (curTermMos < 0) {
+      errors['curTermMos'] = 'Term months cannot be negative';
+    }
+    if (curLoanTerm <= 0) {
+      errors['curLoanTerm'] = 'Enter valid current loan term';
+    }
+    if (newRate < 0) {
+      errors['newRate'] = 'New rate cannot be negative';
+    }
+    if (newTerm <= 0) {
+      errors['newTerm'] = 'Enter valid new term';
+    }
+    if (wsFixed < 0) {
+      errors['wsFixed'] = 'Wholesale rate cannot be negative';
+    }
+    if (wsCurrent < 0) {
+      errors['wsCurrent'] = 'Wholesale rate cannot be negative';
+    }
+    if (cashback < 0) {
+      errors['cashback'] = 'Cashback cannot be negative';
+    }
+    if (legal < 0) {
+      errors['legal'] = 'Legal costs cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['curBal'] = curBal;
+      _calcSnapshot['curRate'] = curRate;
+      _calcSnapshot['curTermMos'] = curTermMos;
+      _calcSnapshot['curLoanTerm'] = curLoanTerm;
+      _calcSnapshot['newRate'] = newRate;
+      _calcSnapshot['newTerm'] = newTerm;
+      _calcSnapshot['wsFixed'] = wsFixed;
+      _calcSnapshot['wsCurrent'] = wsCurrent;
+      _calcSnapshot['cashback'] = cashback;
+      _calcSnapshot['legal'] = legal;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation(
     double breakFee,
     double netCost,
@@ -65,6 +161,11 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
     double totalIntSaved,
     double breakEvenMonths,
   ) async {
+    final double curBal = _calcSnapshot['curBal'] ?? (double.tryParse(_curBalController.text) ?? 520000.0);
+    final double curRate = _calcSnapshot['curRate'] ?? (double.tryParse(_curRateController.text) ?? 7.29);
+    final int curTermMos = _calcSnapshot['curTermMos'] ?? (int.tryParse(_curTermMosController.text) ?? 18);
+    final double newRate = _calcSnapshot['newRate'] ?? (double.tryParse(_newRateController.text) ?? 6.59);
+
     final labelCtrl = TextEditingController(text: 'NZ Refinance Calculator');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -133,10 +234,10 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
         country: 'New Zealand',
         calcType: 'Refinance Calc',
         inputs: {
-          'balance': double.tryParse(_curBalController.text) ?? 520000,
-          'curRate': double.tryParse(_curRateController.text) ?? 7.29,
-          'curTermMos': double.tryParse(_curTermMosController.text) ?? 18,
-          'newRate': double.tryParse(_newRateController.text) ?? 6.59,
+          'balance': curBal,
+          'curRate': curRate,
+          'curTermMos': curTermMos.toDouble(),
+          'newRate': newRate,
         },
         results: {
           'breakFee': breakFee,
@@ -167,27 +268,46 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
     }
   }
 
-  Widget _buildInputBox(TextEditingController controller, {String? hint}) {
+  Widget _buildInputBox(TextEditingController controller, {String? hint, String? errorText}) {
     final theme = widget.theme;
     return Container(
-      height: 44,
+      height: errorText != null ? 58 : 44,
       decoration: BoxDecoration(
         color: theme.getBgColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.getBorderColor(context)),
+        border: Border.all(color: errorText != null ? Colors.red : theme.getBorderColor(context)),
       ),
-      child: TextField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style: AppTextStyles.dmSans(
-            size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: InputBorder.none,
-        ),
-        onChanged: (_) => setState(() {}),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: AppTextStyles.dmSans(
+                  size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                contentPadding: EdgeInsets.zero,
+                isDense: true,
+                border: InputBorder.none,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+          if (errorText != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                errorText,
+                style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -196,18 +316,38 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double curBal = double.tryParse(_curBalController.text) ?? 520000;
-    final double curRate = double.tryParse(_curRateController.text) ?? 7.29;
-    final int curTermMos = int.tryParse(_curTermMosController.text) ?? 18;
-    final int curLoanTerm = int.tryParse(_curLoanTermController.text) ?? 24;
+    final double curBal = _showResults
+        ? (_calcSnapshot['curBal'] ?? 0.0)
+        : (double.tryParse(_curBalController.text) ?? 0.0);
+    final double curRate = _showResults
+        ? (_calcSnapshot['curRate'] ?? 0.0)
+        : (double.tryParse(_curRateController.text) ?? 0.0);
+    final int curTermMos = _showResults
+        ? (_calcSnapshot['curTermMos'] ?? 0)
+        : (int.tryParse(_curTermMosController.text) ?? 0);
+    final int curLoanTerm = _showResults
+        ? (_calcSnapshot['curLoanTerm'] ?? 0)
+        : (int.tryParse(_curLoanTermController.text) ?? 0);
 
-    final double newRate = double.tryParse(_newRateController.text) ?? 6.59;
-    final int newTerm = int.tryParse(_newTermController.text) ?? 24;
+    final double newRate = _showResults
+        ? (_calcSnapshot['newRate'] ?? 0.0)
+        : (double.tryParse(_newRateController.text) ?? 0.0);
+    final int newTerm = _showResults
+        ? (_calcSnapshot['newTerm'] ?? 0)
+        : (int.tryParse(_newTermController.text) ?? 0);
 
-    final double wsFixed = double.tryParse(_wsFixedController.text) ?? 5.80;
-    final double wsCurrent = double.tryParse(_wsCurrentController.text) ?? 4.90;
-    final double cashback = double.tryParse(_cashbackController.text) ?? 3000;
-    final double legal = double.tryParse(_legalController.text) ?? 1500;
+    final double wsFixed = _showResults
+        ? (_calcSnapshot['wsFixed'] ?? 0.0)
+        : (double.tryParse(_wsFixedController.text) ?? 0.0);
+    final double wsCurrent = _showResults
+        ? (_calcSnapshot['wsCurrent'] ?? 0.0)
+        : (double.tryParse(_wsCurrentController.text) ?? 0.0);
+    final double cashback = _showResults
+        ? (_calcSnapshot['cashback'] ?? 0.0)
+        : (double.tryParse(_cashbackController.text) ?? 0.0);
+    final double legal = _showResults
+        ? (_calcSnapshot['legal'] ?? 0.0)
+        : (double.tryParse(_legalController.text) ?? 0.0);
 
     // Wholesale rate diff break fee formula
     final double rateDiff = (wsFixed - wsCurrent) / 100;
@@ -223,6 +363,19 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
     final double totalIntOld = (oldPmt * curLoanTerm * 12) - curBal;
     final double totalIntNew = (newPmt * newTerm * 12) - curBal;
     final double totalIntSaved = totalIntOld - totalIntNew - breakFee - legal + cashback;
+
+    final isDirty = _showResults && (
+      (double.tryParse(_curBalController.text) ?? 0.0) != (_calcSnapshot['curBal'] ?? 0.0) ||
+      (double.tryParse(_curRateController.text) ?? 0.0) != (_calcSnapshot['curRate'] ?? 0.0) ||
+      (int.tryParse(_curTermMosController.text) ?? 0) != (_calcSnapshot['curTermMos'] ?? 0) ||
+      (int.tryParse(_curLoanTermController.text) ?? 0) != (_calcSnapshot['curLoanTerm'] ?? 0) ||
+      (double.tryParse(_newRateController.text) ?? 0.0) != (_calcSnapshot['newRate'] ?? 0.0) ||
+      (int.tryParse(_newTermController.text) ?? 0) != (_calcSnapshot['newTerm'] ?? 0) ||
+      (double.tryParse(_wsFixedController.text) ?? 0.0) != (_calcSnapshot['wsFixed'] ?? 0.0) ||
+      (double.tryParse(_wsCurrentController.text) ?? 0.0) != (_calcSnapshot['wsCurrent'] ?? 0.0) ||
+      (double.tryParse(_cashbackController.text) ?? 0.0) != (_calcSnapshot['cashback'] ?? 0.0) ||
+      (double.tryParse(_legalController.text) ?? 0.0) != (_calcSnapshot['legal'] ?? 0.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,20 +451,36 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
         const SizedBox(height: 16),
 
         // Calculator Inputs Card
-        Text(
-          'Your Refinance Details',
-          style: AppTextStyles.playfair(
-            size: 12,
-            weight: FontWeight.w800,
-            color: theme.getTextColor(context),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Your Refinance Details',
+              style: AppTextStyles.playfair(
+                size: 12,
+                weight: FontWeight.w800,
+                color: theme.getTextColor(context),
+              ),
+            ),
+            GestureDetector(
+              onTap: _reset,
+              child: Text(
+                'Reset ↺',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  color: const Color(0xFFC0392B),
+                  weight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(color: theme.getBorderColor(context)),
           ),
           child: Column(
@@ -328,6 +497,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
               const SizedBox(height: 12),
 
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -335,7 +505,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('REMAINING BALANCE (NZD)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_curBalController),
+                        _buildInputBox(_curBalController, errorText: _errors['curBal']),
                       ],
                     ),
                   ),
@@ -346,7 +516,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('CURRENT FIXED RATE (%)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_curRateController),
+                        _buildInputBox(_curRateController, errorText: _errors['curRate']),
                       ],
                     ),
                   ),
@@ -355,6 +525,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
               const SizedBox(height: 12),
 
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -362,7 +533,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('REMAINING FIXED TERM (MOS)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_curTermMosController),
+                        _buildInputBox(_curTermMosController, errorText: _errors['curTermMos']),
                       ],
                     ),
                   ),
@@ -373,7 +544,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('REMAINING LOAN TERM (YRS)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_curLoanTermController),
+                        _buildInputBox(_curLoanTermController, errorText: _errors['curLoanTerm']),
                       ],
                     ),
                   ),
@@ -392,6 +563,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
               const SizedBox(height: 12),
 
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -399,7 +571,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('NEW RATE (%)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_newRateController),
+                        _buildInputBox(_newRateController, errorText: _errors['newRate']),
                       ],
                     ),
                   ),
@@ -410,7 +582,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('NEW TERM (YRS)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_newTermController),
+                        _buildInputBox(_newTermController, errorText: _errors['newTerm']),
                       ],
                     ),
                   ),
@@ -419,6 +591,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
               const SizedBox(height: 12),
 
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -426,7 +599,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('WHOLESALE RATE WHEN LOCKED (%)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_wsFixedController),
+                        _buildInputBox(_wsFixedController, errorText: _errors['wsFixed']),
                       ],
                     ),
                   ),
@@ -437,7 +610,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('CURRENT WHOLESALE RATE (%)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_wsCurrentController),
+                        _buildInputBox(_wsCurrentController, errorText: _errors['wsCurrent']),
                       ],
                     ),
                   ),
@@ -446,6 +619,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
               const SizedBox(height: 12),
 
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -453,7 +627,7 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('CASHBACK INCENTIVE (NZD)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_cashbackController),
+                        _buildInputBox(_cashbackController, errorText: _errors['cashback']),
                       ],
                     ),
                   ),
@@ -464,11 +638,26 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
                       children: [
                         Text('LEGAL / ADMIN COSTS (NZD)', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_legalController),
+                        _buildInputBox(_legalController, errorText: _errors['legal']),
                       ],
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _calculate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFC0392B),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  minimumSize: const Size(double.infinity, 44),
+                ),
+                child: Text(
+                  'Calculate Refinance Analysis',
+                  style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                ),
               ),
             ],
           ),
@@ -477,100 +666,130 @@ class _NZRefinanceCalcState extends ConsumerState<NZRefinanceCalc> {
 
         // Results Card
         if (_showResults) ...[
-          Text(
-            'Refinance Analysis',
-            style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A0F0D), Color(0xFF0F5D4A)],
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Refinance Analysis to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 16),
+          ],
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'REFINANCE SUMMARY',
-                  style: AppTextStyles.dmSans(
-                      size: 8, weight: FontWeight.w800, color: Colors.white54, letterSpacing: 0.5),
-                ),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.7,
-                  children: [
-                    _buildResultBox('Estimated Break Fee', CurrencyFormatter.compact(breakFee, symbol: 'NZ\$'), 'Wholesale diff formula', const Color(0xFFF5D060)),
-                    _buildResultBox('Net Cost to Refinance', CurrencyFormatter.compact(netCost, symbol: 'NZ\$'), 'Fees - Cashback', Colors.white),
-                    _buildResultBox('Old Monthly Payment', CurrencyFormatter.compact(oldPmt, symbol: 'NZ\$'), 'Current mortgage', Colors.white),
-                    _buildResultBox('New Monthly Payment', CurrencyFormatter.compact(newPmt, symbol: 'NZ\$'), 'After refinance', const Color(0xFF6EE7B7)),
-                    _buildResultBox('Monthly Saving', CurrencyFormatter.compact(max(0, monthlySaving), symbol: 'NZ\$'), 'Per month cash gain', const Color(0xFF6EE7B7)),
-                    _buildResultBox('Total Interest Saved', CurrencyFormatter.compact(max(0, totalIntSaved), symbol: 'NZ\$'), 'Over loan life', const Color(0xFF6EE7B7)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Break-even timeline
-                Text(
-                  'BREAK-EVEN POINT',
-                  style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: Colors.white60),
+                  'Refinance Analysis',
+                  style: AppTextStyles.playfair(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    color: theme.getTextColor(context),
+                  ),
                 ),
                 const SizedBox(height: 8),
-                _buildBreakEvenTimeline(breakEvenMonths),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A0F0D), Color(0xFF0F5D4A)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'REFINANCE SUMMARY',
+                        style: AppTextStyles.dmSans(
+                            size: 8, weight: FontWeight.w800, color: Colors.white54, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.7,
+                        children: [
+                          _buildResultBox('Estimated Break Fee', CurrencyFormatter.compact(breakFee, symbol: 'NZ\$'), 'Wholesale diff formula', const Color(0xFFF5D060)),
+                          _buildResultBox('Net Cost to Refinance', CurrencyFormatter.compact(netCost, symbol: 'NZ\$'), 'Fees - Cashback', Colors.white),
+                          _buildResultBox('Old Monthly Payment', CurrencyFormatter.compact(oldPmt, symbol: 'NZ\$'), 'Current mortgage', Colors.white),
+                          _buildResultBox('New Monthly Payment', CurrencyFormatter.compact(newPmt, symbol: 'NZ\$'), 'After refinance', const Color(0xFF6EE7B7)),
+                          _buildResultBox('Monthly Saving', CurrencyFormatter.compact(max(0, monthlySaving), symbol: 'NZ\$'), 'Per month cash gain', const Color(0xFF6EE7B7)),
+                          _buildResultBox('Total Interest Saved', CurrencyFormatter.compact(max(0, totalIntSaved), symbol: 'NZ\$'), 'Over loan life', const Color(0xFF6EE7B7)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Break-even timeline
+                      Text(
+                        'BREAK-EVEN POINT',
+                        style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: Colors.white60),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildBreakEvenTimeline(breakEvenMonths),
+                      const SizedBox(height: 20),
+
+                      // Horizontal Timeline bars
+                      Text(
+                        'REFINANCING SAVINGS TIMELINE',
+                        style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: Colors.white60),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildTimelineBar('Break Fee', breakFee, const Color(0xFFFCA5A5)),
+                      _buildTimelineBar('Legal Costs', legal, const Color(0xFFFCD34D)),
+                      _buildTimelineBar('Lender Cashback', cashback, const Color(0xFF6EE7B7)),
+                      _buildTimelineBar('Monthly Saving', monthlySaving, const Color(0xFF67E8F9)),
+                      _buildTimelineBar('Annual Saving', monthlySaving * 12, const Color(0xFF6EE7B7)),
+                      _buildTimelineBar('Net Lifetime Savings', max(0, totalIntSaved), const Color(0xFF86EFAC)),
+                      const SizedBox(height: 18),
+
+                      ElevatedButton.icon(
+                        onPressed: () => _saveCalculation(
+                          breakFee,
+                          netCost,
+                          oldPmt,
+                          newPmt,
+                          monthlySaving,
+                          totalIntSaved,
+                          breakEvenMonths,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white30),
+                          minimumSize: const Size(double.infinity, 44),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                        ),
+                        icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                        label: Text(
+                          'Save Refinance Analysis',
+                          style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 20),
-
-                // Horizontal Timeline bars
-                Text(
-                  'REFINANCING SAVINGS TIMELINE',
-                  style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: Colors.white60),
-                ),
-                const SizedBox(height: 10),
-                _buildTimelineBar('Break Fee', breakFee, const Color(0xFFFCA5A5)),
-                _buildTimelineBar('Legal Costs', legal, const Color(0xFFFCD34D)),
-                _buildTimelineBar('Lender Cashback', cashback, const Color(0xFF6EE7B7)),
-                _buildTimelineBar('Monthly Saving', monthlySaving, const Color(0xFF67E8F9)),
-                _buildTimelineBar('Annual Saving', monthlySaving * 12, const Color(0xFF6EE7B7)),
-                _buildTimelineBar('Net Lifetime Savings', max(0, totalIntSaved), const Color(0xFF86EFAC)),
-                const SizedBox(height: 18),
-
-                ElevatedButton.icon(
-                  onPressed: () => _saveCalculation(
-                    breakFee,
-                    netCost,
-                    oldPmt,
-                    newPmt,
-                    monthlySaving,
-                    totalIntSaved,
-                    breakEvenMonths,
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.1),
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white30),
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                  ),
-                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                  label: Text(
-                    'Save Refinance Analysis',
-                    style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: Colors.white),
-                  ),
-                ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
         ],
 
         // Bank Rates Comparison

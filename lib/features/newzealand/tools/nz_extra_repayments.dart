@@ -18,41 +18,119 @@ class NZExtraRepayments extends ConsumerStatefulWidget {
 }
 
 class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
-  double _balance = 650000;
-  double _rate = 6.59;
+  double _balance = 550000;
+  double _rate = 6.89;
   int _termYears = 25;
-  double _extraAmt = 500;
+  double _extraAmt = 350;
   String _extraFreq = 'monthly'; // 'weekly', 'fortnightly', 'monthly', 'lump'
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
+
+  double _calcMonthly(double P, double rateVal, int monthsVal) {
+    if (monthsVal <= 0) return 0;
+    if (rateVal <= 0) return P / monthsVal;
+    final r = rateVal / 12 / 100;
+    return P * r * pow(1 + r, monthsVal) / (pow(1 + r, monthsVal) - 1);
+  }
 
   void _reset() {
     setState(() {
-      _balance = 650000;
-      _rate = 6.59;
+      _balance = 550000;
+      _rate = 6.89;
       _termYears = 25;
-      _extraAmt = 500;
+      _extraAmt = 350;
       _extraFreq = 'monthly';
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
     });
   }
 
-  double _calcMonthly(double P, double annualRate, int months) {
-    final r = annualRate / 100 / 12;
-    if (r == 0) return P / months;
-    return P * r * pow(1 + r, months) / (pow(1 + r, months) - 1);
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_balance <= 0) {
+      errors['balance'] = 'Enter valid loan balance';
+    }
+    if (_rate <= 0 || _rate > 25) {
+      errors['rate'] = 'Enter rate between 0.1% and 25%';
+    }
+    if (_termYears <= 0 || _termYears > 50) {
+      errors['term'] = 'Enter term between 1 and 50 years';
+    }
+    if (_extraAmt < 0) {
+      errors['extraAmt'] = 'Extra amount cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['balance'] = _balance;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['extraAmt'] = _extraAmt;
+      _calcSnapshot['extraFreq'] = _extraFreq;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
-  void _saveCalculation(double savedVal, int monthsSaved, double newPmt,
-      double totalIntSavedPct) async {
-    final labelCtrl = TextEditingController(text: 'NZ Extra Pay Plan');
+  void _saveCalculation(
+    double saved,
+    int monthsSaved,
+    double newMonthly,
+    double pct,
+  ) async {
+    final snapBalance = _calcSnapshot['balance'] ?? _balance;
+    final snapRate = _calcSnapshot['rate'] ?? _rate;
+    final snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final snapExtraAmt = _calcSnapshot['extraAmt'] ?? _extraAmt;
+    final snapExtraFreq = _calcSnapshot['extraFreq'] ?? _extraFreq;
+
+    final inputs = <String, double>{
+      'balance': snapBalance,
+      'rate': snapRate,
+      'termYears': snapTermYears.toDouble(),
+      'extraAmt': snapExtraAmt,
+      'extraFreq': snapExtraFreq == 'weekly'
+          ? 0.0
+          : snapExtraFreq == 'fortnightly'
+              ? 1.0
+              : snapExtraFreq == 'monthly'
+                  ? 2.0
+                  : 3.0,
+    };
+    final results = <String, double>{
+      'interestSaved': saved,
+      'monthsSaved': monthsSaved.toDouble(),
+      'newMonthly': newMonthly,
+      'percentSaved': pct,
+    };
+
+    final labelCtrl = TextEditingController(text: 'NZ Extra Repayments');
     final confirmed = await showDialog<bool>(
       context: context,
-      routeSettings: const RouteSettings(name: '/dialog/nz_extra_repayments'),
+      routeSettings: const RouteSettings(name: '/dialog/nz_extra_repayments/save'),
       builder: (context) => AlertDialog(
         backgroundColor: widget.theme.getCardColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('💾 Save Repayment Plan',
+        title: Text('💾 Save Comparison',
             style: AppTextStyles.playfair(
                 size: 16, color: widget.theme.getTextColor(context))),
         content: Column(
@@ -60,9 +138,10 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving: Extra repayments plan of ${CurrencyFormatter.compact(_extraAmt, symbol: "NZ\$")} $_extraFreq',
-                style: AppTextStyles.dmSans(
-                    size: 11, color: widget.theme.getMutedColor(context))),
+              'Saved: ${CurrencyFormatter.compact(saved, symbol: 'NZ\$')} · Shorter by: ${_formatPeriod(monthsSaved)}',
+              style: AppTextStyles.dmSans(
+                  size: 11, color: widget.theme.getMutedColor(context)),
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: labelCtrl,
@@ -70,7 +149,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
               style: AppTextStyles.dmSans(
                   size: 13, color: widget.theme.getTextColor(context)),
               decoration: InputDecoration(
-                hintText: 'Label (e.g. Accelerated Payoff)',
+                hintText: 'Label (e.g. My Mortgage Payoff)',
                 hintStyle: AppTextStyles.dmSans(size: 13, color: Colors.grey),
                 filled: true,
                 fillColor: widget.theme.getBgColor(context),
@@ -107,28 +186,12 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
       final label = labelCtrl.text.trim().isNotEmpty
           ? labelCtrl.text.trim()
           : 'Extra Repayments';
+
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'Extra Repayments',
-        inputs: {
-          'balance': _balance,
-          'rate': _rate,
-          'term': _termYears.toDouble(),
-          'extraAmount': _extraAmt,
-          'frequency': _extraFreq == 'weekly'
-              ? 0.0
-              : _extraFreq == 'fortnightly'
-                  ? 1.0
-                  : _extraFreq == 'monthly'
-                      ? 2.0
-                      : 3.0,
-        },
-        results: {
-          'interestSaved': savedVal,
-          'monthsSaved': monthsSaved.toDouble(),
-          'newMonthlyPayment': newPmt,
-          'interestSavedPct': totalIntSavedPct,
-        },
+        inputs: inputs,
+        results: results,
         label: label,
         currencyCode: 'NZD',
       );
@@ -138,7 +201,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Repayment plan saved!',
+            content: Text('✅ Calculation saved!',
                 style: AppTextStyles.dmSans(
                     color: Colors.white, weight: FontWeight.w700)),
             backgroundColor: const Color(0xFF1A6B4A),
@@ -153,27 +216,39 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
+    final double rawBalance = _balance;
+    final double rawRate = _rate;
+    final int rawTermYears = _termYears;
+    final double rawExtraAmt = _extraAmt;
+    final String rawExtraFreq = _extraFreq;
+
+    final double balance = _showResults ? (_calcSnapshot['balance'] ?? rawBalance) : rawBalance;
+    final double rate = _showResults ? (_calcSnapshot['rate'] ?? rawRate) : rawRate;
+    final int termYears = _showResults ? (_calcSnapshot['termYears'] ?? rawTermYears) : rawTermYears;
+    final double extraAmt = _showResults ? (_calcSnapshot['extraAmt'] ?? rawExtraAmt) : rawExtraAmt;
+    final String extraFreq = _showResults ? (_calcSnapshot['extraFreq'] ?? rawExtraFreq) : rawExtraFreq;
+
     // Calculations
-    final termMonths = _termYears * 12;
+    final termMonths = termYears * 12;
     double extraMonthly = 0;
-    if (_extraFreq == 'weekly') {
-      extraMonthly = _extraAmt * 52 / 12;
-    } else if (_extraFreq == 'fortnightly') {
-      extraMonthly = _extraAmt * 26 / 12;
-    } else if (_extraFreq == 'monthly') {
-      extraMonthly = _extraAmt;
-    } else if (_extraFreq == 'lump') {
-      extraMonthly = _extraAmt / termMonths;
+    if (extraFreq == 'weekly') {
+      extraMonthly = extraAmt * 52 / 12;
+    } else if (extraFreq == 'fortnightly') {
+      extraMonthly = extraAmt * 26 / 12;
+    } else if (extraFreq == 'monthly') {
+      extraMonthly = extraAmt;
+    } else if (extraFreq == 'lump') {
+      extraMonthly = extraAmt / termMonths;
     }
 
-    final origMonthly = _calcMonthly(_balance, _rate, termMonths);
-    final origInterest = origMonthly * termMonths - _balance;
+    final origMonthly = _calcMonthly(balance, rate, termMonths);
+    final origInterest = origMonthly * termMonths - balance;
 
     // Simulating amortization with extra payments
-    double bal = _balance;
+    double bal = balance;
     double totInt = 0;
     int months = 0;
-    final r = _rate / 100 / 12;
+    final r = rate / 100 / 12;
 
     while (bal > 0.01 && months < termMonths * 2) {
       final intCharge = bal * r;
@@ -186,6 +261,14 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
     final saved = max(0.0, origInterest - totInt);
     final monthsSaved = termMonths - months;
     final pct = origInterest > 0 ? (saved / origInterest * 100) : 0.0;
+
+    final isDirty = _showResults && (
+      _balance != (_calcSnapshot['balance'] ?? 0.0) ||
+      _rate != (_calcSnapshot['rate'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['termYears'] ?? 0) ||
+      _extraAmt != (_calcSnapshot['extraAmt'] ?? 0.0) ||
+      _extraFreq != (_calcSnapshot['extraFreq'] ?? '')
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,6 +325,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
                       label: 'Loan Balance',
                       prefix: 'NZD \$',
                       value: _balance,
+                      errorText: _errors['balance'],
                       onChanged: (val) => setState(() => _balance = val),
                     ),
                   ),
@@ -252,6 +336,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
                       prefix: '',
                       value: _rate,
                       isPercent: true,
+                      errorText: _errors['rate'],
                       onChanged: (val) => setState(() => _rate = val),
                     ),
                   ),
@@ -267,6 +352,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
                       prefix: '',
                       value: _termYears.toDouble(),
                       isInteger: true,
+                      errorText: _errors['term'],
                       onChanged: (val) =>
                           setState(() => _termYears = val.toInt()),
                     ),
@@ -277,6 +363,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
                       label: 'Extra Repayment Amount',
                       prefix: 'NZD \$',
                       value: _extraAmt,
+                      errorText: _errors['extraAmt'],
                       onChanged: (val) => setState(() => _extraAmt = val),
                     ),
                   ),
@@ -294,6 +381,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
                           weight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Container(
+                    width: double.infinity,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -335,10 +423,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
               const SizedBox(height: 14),
               // Calculate Button
               ElevatedButton(
-                onPressed: () {
-                  if (_balance <= 0) return;
-                  setState(() => _showResults = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),
                   foregroundColor: Colors.white,
@@ -359,212 +444,242 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
 
         // Results Section
         if (_showResults) ...[
-          const SizedBox(height: 20),
-          Text('Interest Savings Results',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-
-          // Hero Save Card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Interest Savings to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ],
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Total Interest Saved · NZD',
-                    style:
-                        AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
-                const SizedBox(height: 4),
-                Text(CurrencyFormatter.format(saved, currencyCode: 'NZD'),
+                const SizedBox(height: 20),
+                Text('Interest Savings Results',
                     style: AppTextStyles.playfair(
-                        size: 32,
-                        color: const Color(0xFFF5D060),
-                        weight: FontWeight.w800)),
-                Text(
-                  'Saves ${_formatPeriod(monthsSaved)} off your loan',
-                  style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
-                ),
-                const SizedBox(height: 14),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 3,
-                  childAspectRatio: 1.4,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  children: [
-                    _buildHeroBox('New Payoff', _formatPeriod(months)),
-                    _buildHeroBox(
-                        'Monthly Save',
-                        CurrencyFormatter.compact(saved / _termYears,
-                            symbol: 'NZ\$')),
-                    _buildHeroBox(
-                        'Total Savings', '${pct.toStringAsFixed(0)}% less'),
-                  ],
-                ),
-              ],
-            ),
-          ),
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
 
-          // Progress Ring Segment
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 76,
-                  height: 76,
-                  child: CustomPaint(
-                    painter: _NZExtraProgressRingPainter(pct: pct / 100.0),
+                // Hero Save Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Interest Reduction',
-                          style: AppTextStyles.dmSans(
-                              size: 13,
-                              weight: FontWeight.w800,
-                              color: theme.getTextColor(context))),
+                      Text('Total Interest Saved · NZD',
+                          style:
+                              AppTextStyles.dmSans(size: 9.5, color: Colors.white54)),
                       const SizedBox(height: 4),
+                      Text(CurrencyFormatter.format(saved, currencyCode: 'NZD'),
+                          style: AppTextStyles.playfair(
+                              size: 32,
+                              color: const Color(0xFFF5D060),
+                              weight: FontWeight.w800)),
                       Text(
-                        'Your extra repayments eliminate ${pct.toStringAsFixed(0)}% of total interest — a guaranteed ${_rate.toStringAsFixed(2)}% return on every dollar.',
-                        style: AppTextStyles.dmSans(
-                            size: 9.5, color: theme.getMutedColor(context)),
+                        'Saves ${_formatPeriod(monthsSaved)} off your loan',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 14),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 3,
+                        childAspectRatio: 1.4,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        children: [
+                          _buildHeroBox('New Payoff', _formatPeriod(months)),
+                          _buildHeroBox(
+                              'Monthly Save',
+                              CurrencyFormatter.compact(saved / termYears,
+                                  symbol: 'NZ\$')),
+                          _buildHeroBox(
+                              'Total Savings', '${pct.toStringAsFixed(0)}% less'),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
 
-          // Bar chart comparison
-          const SizedBox(height: 20),
-          Text('Repayment Comparison',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Loan Duration & Interest Cost',
-                    style: AppTextStyles.dmSans(
-                        size: 11,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context))),
+                // Progress Ring Segment
                 const SizedBox(height: 14),
-
-                // Interest Cost row
-                _buildBarCompareRow('Interest Cost', origInterest, totInt,
-                    (v) => CurrencyFormatter.compact(v, symbol: 'NZ\$'), theme),
-                const SizedBox(height: 14),
-                // Duration row
-                _buildBarCompareRow('Loan Duration', termMonths.toDouble(),
-                    months.toDouble(), (v) => _formatPeriod(v.toInt()), theme),
-
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    _buildDot('Original Loan', const Color(0xFF0D3B2E), theme),
-                    const SizedBox(width: 14),
-                    _buildDot('With Extra Repayments', const Color(0xFF0D9488),
-                        theme),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Savings boxes
-          const SizedBox(height: 14),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            childAspectRatio: 1.45,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            children: [
-              _buildSavingsBox('📅', 'Years Shorter',
-                  _formatPeriod(monthsSaved), 'Loan term cut', theme),
-              _buildSavingsBox(
-                  '💰',
-                  'Interest Saved',
-                  CurrencyFormatter.compact(saved, symbol: 'NZ\$'),
-                  'Total NZD',
-                  theme),
-              _buildSavingsBox(
-                  '🏦',
-                  'New Monthly',
-                  CurrencyFormatter.compact(origMonthly + extraMonthly,
-                      symbol: 'NZ\$'),
-                  'P&I payment',
-                  theme),
-              _buildSavingsBox('📈', 'ROI of Extra',
-                  '${_rate.toStringAsFixed(2)}%', 'Guaranteed return', theme),
-            ],
-          ),
-
-          // Save report
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('💾 Save this comparison',
-                        style: AppTextStyles.dmSans(
-                            size: 11,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context))),
-                    Text('Accelerated payoff saved to portfolio',
-                        style: AppTextStyles.dmSans(
-                            size: 9, color: theme.getMutedColor(context))),
-                  ],
-                ),
-                ElevatedButton(
-                  onPressed: () => _saveCalculation(
-                      saved, monthsSaved, origMonthly + extraMonthly, pct),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
                   ),
-                  child: Text('Save',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          color: Colors.white,
-                          weight: FontWeight.w800)),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 76,
+                        height: 76,
+                        child: CustomPaint(
+                          painter: _NZExtraProgressRingPainter(pct: pct / 100.0),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Interest Reduction',
+                                style: AppTextStyles.dmSans(
+                                    size: 13,
+                                    weight: FontWeight.w800,
+                                    color: theme.getTextColor(context))),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Your extra repayments eliminate ${pct.toStringAsFixed(0)}% of total interest — a guaranteed $rate% return on every dollar.',
+                              style: AppTextStyles.dmSans(
+                                  size: 9.5, color: theme.getMutedColor(context)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Bar chart comparison
+                const SizedBox(height: 20),
+                Text('Repayment Comparison',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Loan Duration & Interest Cost',
+                          style: AppTextStyles.dmSans(
+                              size: 11,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 14),
+
+                      // Interest Cost row
+                      _buildBarCompareRow('Interest Cost', origInterest, totInt,
+                          (v) => CurrencyFormatter.compact(v, symbol: 'NZ\$'), theme),
+                      const SizedBox(height: 14),
+                      // Duration row
+                      _buildBarCompareRow('Loan Duration', termMonths.toDouble(),
+                          months.toDouble(), (v) => _formatPeriod(v.toInt()), theme),
+
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          _buildDot('Original Loan', const Color(0xFF0D3B2E), theme),
+                          const SizedBox(width: 14),
+                          _buildDot('With Extra Repayments', const Color(0xFF0D9488),
+                              theme),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Savings boxes
+                const SizedBox(height: 14),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.45,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  children: [
+                    _buildSavingsBox('📅', 'Years Shorter',
+                        _formatPeriod(monthsSaved), 'Loan term cut', theme),
+                    _buildSavingsBox(
+                        '💰',
+                        'Interest Saved',
+                        CurrencyFormatter.compact(saved, symbol: 'NZ\$'),
+                        'Total NZD',
+                        theme),
+                    _buildSavingsBox(
+                        '🏦',
+                        'New Monthly',
+                        CurrencyFormatter.compact(origMonthly + extraMonthly,
+                            symbol: 'NZ\$'),
+                        'P&I payment',
+                        theme),
+                    _buildSavingsBox('📈', 'ROI of Extra',
+                        '${rate.toStringAsFixed(2)}%', 'Guaranteed return', theme),
+                  ],
+                ),
+
+                // Save report
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('💾 Save this comparison',
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context))),
+                          Text('Accelerated payoff saved to portfolio',
+                              style: AppTextStyles.dmSans(
+                                  size: 9, color: theme.getMutedColor(context))),
+                        ],
+                      ),
+                      ElevatedButton(
+                        onPressed: () => _saveCalculation(
+                            saved, monthsSaved, origMonthly + extraMonthly, pct),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D9488),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text('Save',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: Colors.white,
+                                weight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -581,12 +696,13 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
     bool isPercent = false,
     bool isInteger = false,
     required ValueChanged<double> onChanged,
+    String? errorText,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFEDF5F2),
-        border: Border.all(color: const Color(0x150D3B2E)),
+        border: Border.all(color: errorText != null ? Colors.red : const Color(0x150D3B2E)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -610,6 +726,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
                         weight: FontWeight.w700)),
               Expanded(
                 child: TextFormField(
+                  key: ValueKey(value),
                   initialValue:
                       isInteger ? value.toInt().toString() : value.toString(),
                   keyboardType: TextInputType.number,
@@ -636,6 +753,10 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
                         weight: FontWeight.w700)),
             ],
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+          ],
         ],
       ),
     );
@@ -720,7 +841,7 @@ class _NZExtraRepaymentsState extends ConsumerState<NZExtraRepayments> {
                                     size: 8.5,
                                     color: Colors.white,
                                     weight: FontWeight.w800)),
-                          ),
+                           ),
                         ],
                       );
                     },

@@ -238,12 +238,6 @@ class WorkflowContinuationCard extends StatelessWidget {
         reusedFields: 'Uses your property price',
       ),
       _WorkflowEntry(
-        toolId: 'brightline',
-        emoji: '📋',
-        label: 'Bright-Line Test',
-        reusedFields: 'Uses your property price',
-      ),
-      _WorkflowEntry(
         toolId: 'refinancecalc',
         emoji: '🔄',
         label: 'Refinance',

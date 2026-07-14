@@ -26,7 +26,10 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
   final _monthlyExpController = TextEditingController(text: '4500');
 
   double _drawn = 20000.0;
-  final bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   @override
   void dispose() {
@@ -39,6 +42,77 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _homeValController.text = '850000';
+      _mortgageBalController.text = '420000';
+      _rcLimitController.text = '50000';
+      _rcRateController.text = '8.70';
+      _monthlySalaryController.text = '8000';
+      _monthlyExpController.text = '4500';
+      _drawn = 20000.0;
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final double homeVal = double.tryParse(_homeValController.text) ?? 0.0;
+    final double mortBal = double.tryParse(_mortgageBalController.text) ?? 0.0;
+    final double limit = double.tryParse(_rcLimitController.text) ?? 0.0;
+    final double rate = double.tryParse(_rcRateController.text) ?? 0.0;
+    final double salary = double.tryParse(_monthlySalaryController.text) ?? 0.0;
+    final double expenses = double.tryParse(_monthlyExpController.text) ?? 0.0;
+
+    if (homeVal <= 0) {
+      errors['homeVal'] = 'Enter valid home value';
+    }
+    if (mortBal < 0) {
+      errors['mortBal'] = 'Mortgage balance cannot be negative';
+    }
+    if (limit <= 0) {
+      errors['rcLimit'] = 'Enter valid revolving limit';
+    }
+    if (rate < 0) {
+      errors['rcRate'] = 'Interest rate cannot be negative';
+    }
+    if (salary < 0) {
+      errors['salary'] = 'Income cannot be negative';
+    }
+    if (expenses < 0) {
+      errors['expenses'] = 'Expenses cannot be negative';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['homeVal'] = homeVal;
+      _calcSnapshot['mortBal'] = mortBal;
+      _calcSnapshot['rcLimit'] = limit;
+      _calcSnapshot['rcRate'] = rate;
+      _calcSnapshot['drawn'] = _drawn > limit ? limit : _drawn;
+      _calcSnapshot['salary'] = salary;
+      _calcSnapshot['expenses'] = expenses;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation(
     double dailyInt,
     double monthlyInt,
@@ -47,12 +121,13 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
     double maxEquity,
     double netSurplus,
   ) async {
-    final double homeVal = double.tryParse(_homeValController.text) ?? 850000;
-    final double mortBal = double.tryParse(_mortgageBalController.text) ?? 420000;
-    final double limit = double.tryParse(_rcLimitController.text) ?? 50000;
-    final double rate = (double.tryParse(_rcRateController.text) ?? 8.70) / 100;
-    final double salary = double.tryParse(_monthlySalaryController.text) ?? 8000;
-    final double expenses = double.tryParse(_monthlyExpController.text) ?? 4500;
+    final double homeVal = _calcSnapshot['homeVal'] ?? (double.tryParse(_homeValController.text) ?? 850000.0);
+    final double mortBal = _calcSnapshot['mortBal'] ?? (double.tryParse(_mortgageBalController.text) ?? 420000.0);
+    final double limit = _calcSnapshot['rcLimit'] ?? (double.tryParse(_rcLimitController.text) ?? 50000.0);
+    final double rate = (_calcSnapshot['rcRate'] ?? (double.tryParse(_rcRateController.text) ?? 8.70)) / 100;
+    final double snapDrawn = _calcSnapshot['drawn'] ?? _drawn;
+    final double salary = _calcSnapshot['salary'] ?? (double.tryParse(_monthlySalaryController.text) ?? 8000.0);
+    final double expenses = _calcSnapshot['expenses'] ?? (double.tryParse(_monthlyExpController.text) ?? 4500.0);
 
     final labelCtrl = TextEditingController(text: 'NZ Revolving Credit');
     final confirmed = await showDialog<bool>(
@@ -69,7 +144,7 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Limit: ${CurrencyFormatter.compact(limit, symbol: 'NZ\$')} · Drawn: ${CurrencyFormatter.compact(_drawn, symbol: 'NZ\$')} · Monthly Cost: ${CurrencyFormatter.compact(monthlyInt, symbol: 'NZ\$')}',
+              'Limit: ${CurrencyFormatter.compact(limit, symbol: 'NZ\$')} · Drawn: ${CurrencyFormatter.compact(snapDrawn, symbol: 'NZ\$')} · Monthly Cost: ${CurrencyFormatter.compact(monthlyInt, symbol: 'NZ\$')}',
               style: AppTextStyles.dmSans(
                   size: 11, color: widget.theme.getMutedColor(context)),
             ),
@@ -126,7 +201,7 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
           'mortBal': mortBal,
           'rcLimit': limit,
           'rcRate': rate * 100,
-          'drawn': _drawn,
+          'drawn': snapDrawn,
           'salary': salary,
           'expenses': expenses,
         },
@@ -158,25 +233,44 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
     }
   }
 
-  Widget _buildInputBox(TextEditingController controller) {
+  Widget _buildInputBox(TextEditingController controller, {String? errorText}) {
     final theme = widget.theme;
     return Container(
-      height: 44,
+      height: errorText != null ? 58 : 44,
       decoration: BoxDecoration(
         color: theme.getBgColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.getBorderColor(context)),
+        border: Border.all(color: errorText != null ? Colors.red : theme.getBorderColor(context)),
       ),
-      child: TextField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style: AppTextStyles.dmSans(
-            size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: InputBorder.none,
-        ),
-        onChanged: (_) => setState(() {}),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: AppTextStyles.dmSans(
+                  size: 14, weight: FontWeight.w700, color: theme.getTextColor(context)),
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.zero,
+                isDense: true,
+                border: InputBorder.none,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+          if (errorText != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                errorText,
+                style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -185,27 +279,54 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double homeVal = double.tryParse(_homeValController.text) ?? 850000;
-    final double mortBal = double.tryParse(_mortgageBalController.text) ?? 420000;
-    final double limit = double.tryParse(_rcLimitController.text) ?? 50000;
-    final double rate = (double.tryParse(_rcRateController.text) ?? 8.70) / 100;
-    final double salary = double.tryParse(_monthlySalaryController.text) ?? 8000;
-    final double expenses = double.tryParse(_monthlyExpController.text) ?? 4500;
+    // Read parameters from snapshot if results are shown, else live controllers
+    final double homeVal = _showResults
+        ? (_calcSnapshot['homeVal'] ?? 0.0)
+        : (double.tryParse(_homeValController.text) ?? 0.0);
+    final double mortBal = _showResults
+        ? (_calcSnapshot['mortBal'] ?? 0.0)
+        : (double.tryParse(_mortgageBalController.text) ?? 0.0);
+    final double limit = _showResults
+        ? (_calcSnapshot['rcLimit'] ?? 0.0)
+        : (double.tryParse(_rcLimitController.text) ?? 0.0);
+    final double rate = (_showResults
+        ? (_calcSnapshot['rcRate'] ?? 8.70)
+        : (double.tryParse(_rcRateController.text) ?? 8.70)) / 100;
+    final double snapDrawn = _showResults
+        ? (_calcSnapshot['drawn'] ?? 0.0)
+        : _drawn;
+    final double salary = _showResults
+        ? (_calcSnapshot['salary'] ?? 0.0)
+        : (double.tryParse(_monthlySalaryController.text) ?? 0.0);
+    final double expenses = _showResults
+        ? (_calcSnapshot['expenses'] ?? 0.0)
+        : (double.tryParse(_monthlyExpController.text) ?? 0.0);
 
     // Adjust _drawn bounds based on limit
-    if (_drawn > limit) {
-      _drawn = limit;
+    final double currentLimit = double.tryParse(_rcLimitController.text) ?? 50000.0;
+    if (_drawn > currentLimit) {
+      _drawn = currentLimit;
     }
 
-    final double dailyInt = _drawn * rate / 365;
-    final double monthlyInt = _drawn * rate / 12;
-    final double annualInt = _drawn * rate;
-    final double available = limit - _drawn;
+    final double dailyInt = snapDrawn * rate / 365;
+    final double monthlyInt = snapDrawn * rate / 12;
+    final double annualInt = snapDrawn * rate;
+    final double available = limit - snapDrawn;
     final double maxEquity = homeVal * 0.80 - mortBal;
     final double netSurplus = salary - expenses - monthlyInt;
-    final double pct = limit > 0 ? _drawn / limit : 0.0;
+    final double pct = limit > 0 ? snapDrawn / limit : 0.0;
 
     final double monthlyParkSaving = salary * rate / 12;
+
+    final isDirty = _showResults && (
+      (double.tryParse(_homeValController.text) ?? 0.0) != (_calcSnapshot['homeVal'] ?? 0.0) ||
+      (double.tryParse(_mortgageBalController.text) ?? 0.0) != (_calcSnapshot['mortBal'] ?? 0.0) ||
+      (double.tryParse(_rcLimitController.text) ?? 0.0) != (_calcSnapshot['rcLimit'] ?? 0.0) ||
+      (double.tryParse(_rcRateController.text) ?? 0.0) != (_calcSnapshot['rcRate'] ?? 0.0) ||
+      (double.tryParse(_monthlySalaryController.text) ?? 0.0) != (_calcSnapshot['salary'] ?? 0.0) ||
+      (double.tryParse(_monthlyExpController.text) ?? 0.0) != (_calcSnapshot['expenses'] ?? 0.0) ||
+      _drawn != (_calcSnapshot['drawn'] ?? 0.0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,13 +415,29 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
         const SizedBox(height: 16),
 
         // Calculator Inputs
-        Text(
-          'Revolving Credit Setup',
-          style: AppTextStyles.playfair(
-            size: 12,
-            weight: FontWeight.w800,
-            color: theme.getTextColor(context),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Revolving Credit Setup',
+              style: AppTextStyles.playfair(
+                size: 12,
+                weight: FontWeight.w800,
+                color: theme.getTextColor(context),
+              ),
+            ),
+            GestureDetector(
+              onTap: _reset,
+              child: Text(
+                'Reset ↺',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  color: const Color(0xFF0D9488),
+                  weight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
@@ -326,17 +463,18 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
                   style: AppTextStyles.dmSans(
                       size: 8, weight: FontWeight.w800, color: theme.getMutedColor(context))),
               const SizedBox(height: 6),
-              _buildInputBox(_homeValController),
+              _buildInputBox(_homeValController, errorText: _errors['homeVal']),
               const SizedBox(height: 12),
 
               Text('OUTSTANDING MORTGAGE BALANCE (NZD)',
                   style: AppTextStyles.dmSans(
                       size: 8, weight: FontWeight.w800, color: theme.getMutedColor(context))),
               const SizedBox(height: 6),
-              _buildInputBox(_mortgageBalController),
+              _buildInputBox(_mortgageBalController, errorText: _errors['mortBal']),
               const SizedBox(height: 12),
 
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -348,7 +486,7 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
                                 weight: FontWeight.w800,
                                 color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_rcLimitController),
+                        _buildInputBox(_rcLimitController, errorText: _errors['rcLimit']),
                       ],
                     ),
                   ),
@@ -363,7 +501,7 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
                                 weight: FontWeight.w800,
                                 color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_rcRateController),
+                        _buildInputBox(_rcRateController, errorText: _errors['rcRate']),
                       ],
                     ),
                   ),
@@ -392,7 +530,7 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
               Slider(
                 value: _drawn,
                 min: 0,
-                max: limit > 0 ? limit : 100000,
+                max: currentLimit > 0 ? currentLimit : 100000,
                 activeColor: const Color(0xFF0D9488),
                 inactiveColor: const Color(0xFFE8F0EC),
                 onChanged: (val) => setState(() => _drawn = val),
@@ -400,6 +538,7 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
               const SizedBox(height: 12),
 
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -411,7 +550,7 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
                                 weight: FontWeight.w800,
                                 color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_monthlySalaryController),
+                        _buildInputBox(_monthlySalaryController, errorText: _errors['salary']),
                       ],
                     ),
                   ),
@@ -426,11 +565,26 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
                                 weight: FontWeight.w800,
                                 color: theme.getMutedColor(context))),
                         const SizedBox(height: 6),
-                        _buildInputBox(_monthlyExpController),
+                        _buildInputBox(_monthlyExpController, errorText: _errors['expenses']),
                       ],
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _calculate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D9488),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  minimumSize: const Size(double.infinity, 44),
+                ),
+                child: Text(
+                  'Calculate Revolving Credit',
+                  style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                ),
               ),
             ],
           ),
@@ -439,190 +593,220 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
 
         // Results Analysis
         if (_showResults) ...[
-          Text(
-            'Facility Analysis',
-            style: AppTextStyles.playfair(
-              size: 12,
-              weight: FontWeight.w800,
-              color: theme.getTextColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              borderRadius: BorderRadius.circular(20),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Revolving Credit to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'YOUR REVOLVING CREDIT ANALYSIS',
-                  style: AppTextStyles.dmSans(
-                      size: 8, weight: FontWeight.w800, color: Colors.white54, letterSpacing: 0.5),
-                ),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.7,
-                  children: [
-                    _buildResultBox('Daily Interest Cost', CurrencyFormatter.format(dailyInt, decimalDigits: 2, symbol: 'NZ\$'), 'On drawn amount', true),
-                    _buildResultBox('Monthly Interest', CurrencyFormatter.compact(monthlyInt, symbol: 'NZ\$'), 'At current draw', false),
-                    _buildResultBox('Available to Draw', CurrencyFormatter.compact(available, symbol: 'NZ\$'), 'Remaining facility', false),
-                    _buildResultBox('Usable Equity', CurrencyFormatter.compact(max(0, maxEquity), symbol: 'NZ\$'), '80% LVR limit', false),
-                    _buildResultBox('Net Monthly Surplus', CurrencyFormatter.compact(netSurplus, symbol: 'NZ\$'), 'Income - Exp - Int', false),
-                    _buildResultBox('Annual Interest', CurrencyFormatter.compact(annualInt, symbol: 'NZ\$'), 'Full year cost', false),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Donut Chart
-                Center(
-                  child: SizedBox(
-                    height: 140,
-                    width: 140,
-                    child: CustomPaint(
-                      painter: _NZRevolvingCreditDonutPainter(percent: pct),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${(pct * 100).round()}%',
-                              style: AppTextStyles.playfair(
-                                  size: 20, weight: FontWeight.w800, color: Colors.white),
-                            ),
-                            Text(
-                              'Facility Used',
-                              style: AppTextStyles.dmSans(size: 8, color: Colors.white54),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Legend
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildLegendItem(const Color(0xFF0D9488), 'Drawn'),
-                    const SizedBox(width: 14),
-                    _buildLegendItem(const Color(0xFFF5D060), 'Available'),
-                    const SizedBox(width: 14),
-                    _buildLegendItem(Colors.white12, 'Unencumbered'),
-                  ],
-                ),
-                const SizedBox(height: 18),
-
-                // Parking savings banner
-                if (salary > 0)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFECFDF5).withValues(alpha: 0.1),
-                      border: Border.all(color: const Color(0xFF6EE7B7).withValues(alpha: 0.3)),
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: Row(
-                      children: [
-                        const Text('💡', style: TextStyle(fontSize: 20)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Parking salary saves ${CurrencyFormatter.compact(monthlyParkSaving, symbol: 'NZ\$')}/mo',
-                                style: AppTextStyles.dmSans(
-                                    size: 11.5, weight: FontWeight.w800, color: const Color(0xFF6EE7B7)),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Credit your full salary to RC to minimise daily balance & interest',
-                                style: AppTextStyles.dmSans(size: 9, color: Colors.white70),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 14),
-
-                ElevatedButton.icon(
-                  onPressed: () => _saveCalculation(dailyInt, monthlyInt, annualInt, available, maxEquity, netSurplus),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.1),
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white30),
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                  ),
-                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                  label: Text(
-                    'Save Calculation',
-                    style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Interest Scenario Table
+            const SizedBox(height: 16),
+          ],
           Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '📅 Interest Scenario Table',
+                  'Facility Analysis',
                   style: AppTextStyles.playfair(
-                    size: 13,
+                    size: 12,
                     weight: FontWeight.w800,
                     color: theme.getTextColor(context),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Table(
-                  columnWidths: const {
-                    0: FlexColumnWidth(1.2),
-                    1: FlexColumnWidth(1.1),
-                    2: FlexColumnWidth(1.1),
-                    3: FlexColumnWidth(1.0),
-                  },
-                  children: [
-                    TableRow(
-                      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: theme.getBorderColor(context)))),
-                      children: [
-                        _tableHeader('Amount Drawn'),
-                        _tableHeader('Monthly Int.'),
-                        _tableHeader('Annual Cost'),
-                        _tableHeader('vs Salary %'),
-                      ],
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
                     ),
-                    ..._generateTableRows(limit, rate, salary, theme),
-                  ],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'YOUR REVOLVING CREDIT ANALYSIS',
+                        style: AppTextStyles.dmSans(
+                            size: 8, weight: FontWeight.w800, color: Colors.white54, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.7,
+                        children: [
+                          _buildResultBox('Daily Interest Cost', CurrencyFormatter.format(dailyInt, decimalDigits: 2, symbol: 'NZ\$'), 'On drawn amount', true),
+                          _buildResultBox('Monthly Interest', CurrencyFormatter.compact(monthlyInt, symbol: 'NZ\$'), 'At current draw', false),
+                          _buildResultBox('Available to Draw', CurrencyFormatter.compact(available, symbol: 'NZ\$'), 'Remaining facility', false),
+                          _buildResultBox('Usable Equity', CurrencyFormatter.compact(max(0, maxEquity), symbol: 'NZ\$'), '80% LVR limit', false),
+                          _buildResultBox('Net Monthly Surplus', CurrencyFormatter.compact(netSurplus, symbol: 'NZ\$'), 'Income - Exp - Int', false),
+                          _buildResultBox('Annual Interest', CurrencyFormatter.compact(annualInt, symbol: 'NZ\$'), 'Full year cost', false),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Donut Chart
+                      Center(
+                        child: SizedBox(
+                          height: 140,
+                          width: 140,
+                          child: CustomPaint(
+                            painter: _NZRevolvingCreditDonutPainter(percent: pct),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${(pct * 100).round()}%',
+                                    style: AppTextStyles.playfair(
+                                        size: 20, weight: FontWeight.w800, color: Colors.white),
+                                  ),
+                                  Text(
+                                    'Facility Used',
+                                    style: AppTextStyles.dmSans(size: 8, color: Colors.white54),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Legend
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildLegendItem(const Color(0xFF0D9488), 'Drawn'),
+                          const SizedBox(width: 14),
+                          _buildLegendItem(const Color(0xFFF5D060), 'Available'),
+                          const SizedBox(width: 14),
+                          _buildLegendItem(Colors.white12, 'Unencumbered'),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Parking savings banner
+                      if (salary > 0)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5).withValues(alpha: 0.1),
+                            border: Border.all(color: const Color(0xFF6EE7B7).withValues(alpha: 0.3)),
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Row(
+                            children: [
+                              const Text('💡', style: TextStyle(fontSize: 20)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Parking salary saves ${CurrencyFormatter.compact(monthlyParkSaving, symbol: 'NZ\$')}/mo',
+                                      style: AppTextStyles.dmSans(
+                                          size: 11.5, weight: FontWeight.w800, color: const Color(0xFF6EE7B7)),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Credit your full salary to RC to minimise daily balance & interest',
+                                      style: AppTextStyles.dmSans(size: 9, color: Colors.white70),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 14),
+
+                      ElevatedButton.icon(
+                        onPressed: () => _saveCalculation(dailyInt, monthlyInt, annualInt, available, maxEquity, netSurplus),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white30),
+                          minimumSize: const Size(double.infinity, 44),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                        ),
+                        icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                        label: Text(
+                          'Save Calculation',
+                          style: AppTextStyles.playfair(size: 13, weight: FontWeight.w800, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 20),
+
+                // Interest Scenario Table
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📅 Interest Scenario Table',
+                        style: AppTextStyles.playfair(
+                          size: 13,
+                          weight: FontWeight.w800,
+                          color: theme.getTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Table(
+                        columnWidths: const {
+                          0: FlexColumnWidth(1.2),
+                          1: FlexColumnWidth(1.1),
+                          2: FlexColumnWidth(1.1),
+                          3: FlexColumnWidth(1.0),
+                        },
+                        children: [
+                          TableRow(
+                            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: theme.getBorderColor(context)))),
+                            children: [
+                              _tableHeader('Amount Drawn'),
+                              _tableHeader('Monthly Int.'),
+                              _tableHeader('Annual Cost'),
+                              _tableHeader('vs Salary %'),
+                            ],
+                          ),
+                          ..._generateTableRows(limit, rate, salary, theme),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-          const SizedBox(height: 20),
         ],
 
         // How NZ Revolving Credit works
@@ -827,59 +1011,35 @@ class _NZRevolvingCreditState extends ConsumerState<NZRevolvingCredit> {
 
 class _NZRevolvingCreditDonutPainter extends CustomPainter {
   final double percent;
-
-  _NZRevolvingCreditDonutPainter({required this.percent});
+  const _NZRevolvingCreditDonutPainter({required this.percent});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = min(size.width, size.height) / 2 - 12;
+    final double radius = size.width / 2;
+    final center = Offset(radius, radius);
+    const double strokeW = 12.0;
+    final double ringRadius = radius - strokeW / 2;
 
-    // Track Paint
-    final trackPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
+    final basePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.1)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 22.0;
+      ..strokeWidth = strokeW;
 
-    canvas.drawCircle(center, radius, trackPaint);
+    canvas.drawCircle(center, ringRadius, basePaint);
 
-    // Drawn Arc Paint (Teal)
-    final drawnPaint = Paint()
+    final rect = Rect.fromCircle(center: center, radius: ringRadius);
+
+    final fillPaint = Paint()
       ..color = const Color(0xFF0D9488)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 22.0
+      ..strokeWidth = strokeW
       ..strokeCap = StrokeCap.round;
 
-    final double drawnSweep = percent * 2 * pi;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -pi / 2,
-      drawnSweep,
-      false,
-      drawnPaint,
-    );
-
-    // Available Arc Paint (Gold)
-    if (percent < 1.0) {
-      final availPaint = Paint()
-        ..color = const Color(0xFFF5D060)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 22.0
-        ..strokeCap = StrokeCap.round;
-
-      final double availSweep = (1 - percent) * 2 * pi;
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -pi / 2 + drawnSweep,
-        availSweep,
-        false,
-        availPaint,
-      );
-    }
+    final sweepAngle = (percent.clamp(0.0, 1.0)) * 2 * pi;
+    canvas.drawArc(rect, -pi / 2, sweepAngle, false, fillPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _NZRevolvingCreditDonutPainter oldDelegate) {
-    return oldDelegate.percent != percent;
-  }
+  bool shouldRepaint(covariant _NZRevolvingCreditDonutPainter oldDelegate) =>
+      oldDelegate.percent != percent;
 }

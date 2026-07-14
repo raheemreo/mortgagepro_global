@@ -22,6 +22,9 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
   String _buyerType = 'owner'; // 'owner', 'investor', 'newbuild'
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   void _reset() {
     setState(() {
@@ -29,11 +32,53 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
       _deposit = 170000;
       _buyerType = 'owner';
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_propVal <= 0) {
+      errors['propVal'] = 'Enter valid property value';
+    }
+    if (_deposit < 0) {
+      errors['deposit'] = 'Deposit cannot be negative';
+    } else if (_deposit >= _propVal && _propVal > 0) {
+      errors['deposit'] = 'Deposit must be less than property value';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['propVal'] = _propVal;
+      _calcSnapshot['deposit'] = _deposit;
+      _calcSnapshot['buyerType'] = _buyerType;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
   void _saveCalculation(
       double loan, double lvr, double depPct, double gap, String status) async {
+    final snapPropVal = _calcSnapshot['propVal'] ?? _propVal;
+    final snapDeposit = _calcSnapshot['deposit'] ?? _deposit;
+    final snapBuyerType = _calcSnapshot['buyerType'] ?? _buyerType;
+
     final labelCtrl = TextEditingController(text: 'NZ LVR Band Analysis');
     final confirmed = await showDialog<bool>(
       context: context,
@@ -51,7 +96,7 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Saving: LVR of ${lvr.toStringAsFixed(1)}% ($status) for a ${CurrencyFormatter.compact(_propVal, symbol: 'NZ\$')} property.',
+                'Saving: LVR of ${lvr.toStringAsFixed(1)}% ($status) for a ${CurrencyFormatter.compact(snapPropVal, symbol: 'NZ\$')} property.',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context)),
               ),
@@ -97,20 +142,22 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
     );
 
     if (confirmed == true && mounted) {
-      final label = labelCtrl.text;
+      final label = labelCtrl.text.trim().isNotEmpty
+          ? labelCtrl.text.trim()
+          : 'LVR Band Analysis';
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'LVR Band Tool',
-        inputs: {
-          'propertyValue': _propVal,
-          'deposit': _deposit,
-          'buyerType': _buyerType == 'owner'
+        inputs: <String, double>{
+          'propertyValue': snapPropVal,
+          'deposit': snapDeposit,
+          'buyerType': snapBuyerType == 'owner'
               ? 0.0
-              : _buyerType == 'investor'
+              : snapBuyerType == 'investor'
                   ? 1.0
                   : 2.0,
         },
-        results: {
+        results: <String, double>{
           'loan': loan,
           'lvr': lvr,
           'depositPct': depPct,
@@ -140,14 +187,22 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    // Calculations
-    final loan = _propVal - _deposit;
-    final lvr = _propVal > 0 ? (loan / _propVal) * 100 : 0.0;
-    final depPct = _propVal > 0 ? (_deposit / _propVal) * 100 : 0.0;
+    final double rawPropVal = _propVal;
+    final double rawDeposit = _deposit;
+    final String rawBuyerType = _buyerType;
 
-    double limit = _buyerType == 'investor'
+    final double propVal = _showResults ? (_calcSnapshot['propVal'] ?? rawPropVal) : rawPropVal;
+    final double deposit = _showResults ? (_calcSnapshot['deposit'] ?? rawDeposit) : rawDeposit;
+    final String buyerType = _showResults ? (_calcSnapshot['buyerType'] ?? rawBuyerType) : rawBuyerType;
+
+    // Calculations
+    final loan = propVal - deposit;
+    final lvr = propVal > 0 ? (loan / propVal) * 100 : 0.0;
+    final depPct = propVal > 0 ? (deposit / propVal) * 100 : 0.0;
+
+    double limit = buyerType == 'investor'
         ? 65.0
-        : _buyerType == 'newbuild'
+        : buyerType == 'newbuild'
             ? 90.0
             : 80.0;
     double gap = limit - lvr;
@@ -159,7 +214,7 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
     Color pillFg;
     String subText = '';
 
-    if (_buyerType == 'investor') {
+    if (buyerType == 'investor') {
       if (lvr <= 65) {
         status = 'WITHIN LIMIT';
         statusColor = const Color(0xFF1A6B4A);
@@ -173,7 +228,7 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
         pillFg = const Color(0xFFC0392B);
         subText = '🚫 Exceeds RBNZ investor LVR limit of 65%';
       }
-    } else if (_buyerType == 'newbuild') {
+    } else if (buyerType == 'newbuild') {
       if (lvr <= 90) {
         status = 'WITHIN LIMIT';
         statusColor = const Color(0xFF1A6B4A);
@@ -208,6 +263,12 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
         subText = '🚫 Exceeds RBNZ owner-occupier high-LVR speed limit';
       }
     }
+
+    final isDirty = _showResults && (
+      _propVal != (_calcSnapshot['propVal'] ?? 0.0) ||
+      _deposit != (_calcSnapshot['deposit'] ?? 0.0) ||
+      _buyerType != (_calcSnapshot['buyerType'] ?? '')
+    );
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
@@ -267,10 +328,10 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('NZ Loan-to-Value Band · Te Tatau LVR',
-                        style: AppTextStyles.dmSans(
-                            size: 9.5,
-                            color: Colors.white54,
-                            weight: FontWeight.w600)),
+                    style: AppTextStyles.dmSans(
+                        size: 9.5,
+                        color: Colors.white54,
+                        weight: FontWeight.w600)),
                     GestureDetector(
                       onTap: _reset,
                       child: Text('Reset ↺',
@@ -296,6 +357,7 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
                       child: _buildHeroInputBox(
                         label: 'Property Value',
                         value: _propVal,
+                        errorText: _errors['propVal'],
                         onChanged: (val) => setState(() => _propVal = val),
                       ),
                     ),
@@ -304,6 +366,7 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
                       child: _buildHeroInputBox(
                         label: 'Deposit / Equity',
                         value: _deposit,
+                        errorText: _errors['deposit'],
                         onChanged: (val) => setState(() => _deposit = val),
                       ),
                     ),
@@ -385,7 +448,7 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
                                   color: Colors.white.withValues(alpha: 0.1)),
                             ),
                             child: Text(
-                              CurrencyFormatter.compact(loan, symbol: 'NZ\$'),
+                              CurrencyFormatter.compact(propVal - deposit, symbol: 'NZ\$'),
                               style: AppTextStyles.playfair(
                                   size: 14,
                                   color: Colors.white70,
@@ -400,17 +463,7 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
                 const SizedBox(height: 14),
 
                 ElevatedButton(
-                  onPressed: () {
-                    if (_propVal <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Please enter valid property value',
-                                style: AppTextStyles.dmSans())),
-                      );
-                      return;
-                    }
-                    setState(() => _showResults = true);
-                  },
+                  onPressed: _calculate,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD97706),
                     foregroundColor: Colors.white,
@@ -430,239 +483,220 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
           ),
 
           if (_showResults) ...[
-            const SizedBox(height: 16),
-
-            // LVR Result Band Card
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: theme.getBorderColor(context)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  )
-                ],
+            if (isDirty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Text(
+                        'Inputs have changed. Tap Calculate LVR Band to refresh results.',
+                        style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ],
+            Container(
+              key: _resultsKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${_buyerType == 'investor' ? 'Investor' : 'Owner-Occ'} LVR Analysis',
-                        style: AppTextStyles.playfair(
-                            size: 14,
-                            color: theme.getTextColor(context),
-                            weight: FontWeight.w800),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                            color: pillBg,
-                            borderRadius: BorderRadius.circular(20)),
-                        child: Text(
-                          status,
-                          style: AppTextStyles.dmSans(
-                              size: 11, weight: FontWeight.w800, color: pillFg),
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 16),
 
-                  // Horizontal gauge bar
-                  Text('Loan-to-Value Ratio',
-                      style: AppTextStyles.dmSans(
-                          size: 11, color: theme.getMutedColor(context)),
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${lvr.toStringAsFixed(1)}%',
-                    style: AppTextStyles.playfair(
-                        size: 32,
-                        color: theme.getTextColor(context),
-                        weight: FontWeight.w800),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Stacked track
+                  // LVR Result Band Card
                   Container(
-                    height: 16,
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                        color: const Color(0xFFE5E7EB),
-                        borderRadius: BorderRadius.circular(8)),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            return Container(
-                              width: constraints.maxWidth *
-                                  (lvr.clamp(0.0, 100.0) / 100),
-                              height: double.infinity,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${buyerType == 'investor' ? 'Investor' : 'Owner-Occ'} LVR Analysis',
+                              style: AppTextStyles.playfair(
+                                  size: 14,
+                                  color: theme.getTextColor(context),
+                                  weight: FontWeight.w800),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: statusColor == const Color(0xFF1A6B4A)
-                                      ? [
-                                          const Color(0xFF059669),
-                                          const Color(0xFF34D399)
-                                        ]
-                                      : statusColor == const Color(0xFFD97706)
-                                          ? [
-                                              const Color(0xFFD97706),
-                                              const Color(0xFFFBBF24)
-                                            ]
-                                          : [
-                                              const Color(0xFFC0392B),
-                                              const Color(0xFFF87171)
-                                            ],
-                                ),
+                                  color: pillBg,
+                                  borderRadius: BorderRadius.circular(20)),
+                              child: Text(
+                                status,
+                                style: AppTextStyles.dmSans(
+                                    size: 11, weight: FontWeight.w800, color: pillFg),
                               ),
-                            );
-                          },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Horizontal gauge bar
+                        Text('Loan-to-Value Ratio',
+                            style: AppTextStyles.dmSans(
+                                size: 11, color: theme.getMutedColor(context)),
+                            textAlign: TextAlign.center),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${lvr.toStringAsFixed(1)}%',
+                          style: AppTextStyles.playfair(
+                              size: 32,
+                              color: theme.getTextColor(context),
+                              weight: FontWeight.w800),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Stacked track
+                        Container(
+                          height: 16,
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFE5E7EB),
+                              borderRadius: BorderRadius.circular(8)),
+                          child: FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: (lvr / 100).clamp(0.0, 1.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  color: statusColor,
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('LVR standard limit: ${limit.toInt()}%',
+                                style: AppTextStyles.dmSans(
+                                    size: 10,
+                                    color: theme.getMutedColor(context),
+                                    weight: FontWeight.bold)),
+                            Text(
+                              gap >= 0
+                                  ? '${gap.toStringAsFixed(1)}% Headroom'
+                                  : '${(-gap).toStringAsFixed(1)}% Exceeded',
+                              style: AppTextStyles.dmSans(
+                                  size: 10,
+                                  color: gap >= 0
+                                      ? const Color(0xFF1A6B4A)
+                                      : const Color(0xFFC0392B),
+                                  weight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 24),
+
+                        // Breakdown lists
+                        _buildRow('Total Loan Needed',
+                            CurrencyFormatter.format(loan, currencyCode: 'NZD'), theme),
+                        const SizedBox(height: 8),
+                        _buildRow('Required Deposit ($depPct%)',
+                            CurrencyFormatter.format(deposit, currencyCode: 'NZD'), theme),
+                        const SizedBox(height: 8),
+                        _buildRow('Status Details', subText, theme, isBold: true),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Save Calculation Banner
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: theme.getCardColor(context),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: theme.getBorderColor(context)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('💾 Save This Scenario',
+                                  style: AppTextStyles.dmSans(
+                                      size: 12,
+                                      weight: FontWeight.w800,
+                                      color: theme.getTextColor(context))),
+                              const SizedBox(height: 2),
+                              Text('Store to your LVR limits comparison',
+                                  style: AppTextStyles.dmSans(
+                                      size: 9.5,
+                                      color: theme.getMutedColor(context))),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => _saveCalculation(
+                              loan, lvr, depPct, gap, status),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD97706),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                          ),
+                          child: Text('Save ›',
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  color: Colors.white,
+                                  weight: FontWeight.w800)),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 6),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('0%',
-                          style: AppTextStyles.dmSans(
-                              size: 8.5, color: theme.getMutedColor(context))),
-                      Text('65% (Investor)',
-                          style: AppTextStyles.dmSans(
-                              size: 8.5, color: theme.getMutedColor(context))),
-                      Text('80% (Owner)',
-                          style: AppTextStyles.dmSans(
-                              size: 8.5, color: theme.getMutedColor(context))),
-                      Text('100%',
-                          style: AppTextStyles.dmSans(
-                              size: 8.5, color: theme.getMutedColor(context))),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(subText,
-                      style: AppTextStyles.dmSans(
-                          size: 10, color: theme.getMutedColor(context)),
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
-
-                  // Stats row (3 metric columns)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatBox('Loan Amount',
-                            CurrencyFormatter.compact(loan, symbol: 'NZ\$')),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildStatBox(
-                            'Deposit %', '${depPct.toStringAsFixed(1)}%',
-                            isGreen: depPct >= 20),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildStatBox('Gap to Limit',
-                            '${gap >= 0 ? "+" : ""}${gap.toStringAsFixed(1)}%',
-                            isGreen: gap >= 0, isRed: gap < 0),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Band explanations highlight list
-                  _buildBandRow(
-                    title: '✅ Standard Band',
-                    desc: 'Owner-Occ ≤80% LVR · Full lender access',
-                    tag: '≤80%',
-                    isActive: lvr <= 80,
-                    colorType: 'green',
-                  ),
-                  const SizedBox(height: 7),
-                  _buildBandRow(
-                    title: '⚠️ Low-Equity Band',
-                    desc: '80–90% LVR · Low Equity Margin applies',
-                    tag: '80–90%',
-                    isActive: lvr > 80 && lvr <= 90,
-                    colorType: 'amber',
-                  ),
-                  const SizedBox(height: 7),
-                  _buildBandRow(
-                    title: '🚫 Above Limit',
-                    desc: 'Owner-Occ >90% · Investor >65% — RBNZ restricted',
-                    tag: '>90%',
-                    isActive: lvr > 90,
-                    colorType: 'red',
-                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-
-            // Save Calculation Button
-            ElevatedButton.icon(
-              onPressed: () => _saveCalculation(loan, lvr, depPct, gap, status),
-              icon: const Text('💾', style: TextStyle(fontSize: 14)),
-              label: Text('Save This Calculation',
-                  style: AppTextStyles.dmSans(
-                      size: 13, weight: FontWeight.w800, color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1A6B4A),
-                minimumSize: const Size(double.infinity, 44),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-              ),
-            ),
           ],
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
 
-          // RBNZ Rules card
-          Text('RBNZ LVR Rules 2025',
+          // Informational Content on NZ LVR Bands
+          Text('Understanding LVR Bands in NZ',
               style: AppTextStyles.playfair(
                   size: 14,
                   color: theme.getTextColor(context),
                   weight: FontWeight.w800)),
           const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
-              ),
-              border: Border.all(color: const Color(0xFFF59E0B)),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('⚠️ Current RBNZ LVR Restrictions',
-                    style: AppTextStyles.dmSans(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: const Color(0xFF92400E))),
-                const SizedBox(height: 10),
-                _buildRuleRow(
-                    'Owner-Occupier Max LVR', '80%', '20% min deposit'),
-                _buildRuleRow('Investor Max LVR', '65%', '35% min deposit'),
-                _buildRuleRow('New Build Exemption', '90%', 'Special rules'),
-                _buildRuleDetailRow(
-                    'High-LVR Speed Limit (Owner)', '15% of lending'),
-                _buildRuleDetailRow(
-                    'High-LVR Speed Limit (Investor)', '5% of lending'),
-                _buildRuleDetailRow('Last RBNZ Review', 'Feb 2025'),
-              ],
-            ),
-          ),
+          _buildInfoPill('🟢 Under 65% LVR (Safe Zone)',
+              'Standard pricing applies. Banks highly welcome these low-risk loans. Standard investor limit met.', theme),
+          const SizedBox(height: 8),
+          _buildInfoPill('🟡 65% to 80% LVR (Standard Band)',
+              'Standard owner-occupier pricing. Investors require special exemptions (like a new build) to borrow in this band.', theme),
+          const SizedBox(height: 8),
+          _buildInfoPill('🟠 80% to 90% LVR (Low Equity Band)',
+              'Low Equity Margin (LEM) or Low Equity Premium (LEP) applies. This adds +0.25% to +1.50% to your interest rate or a 1% upfront fee.', theme),
+          const SizedBox(height: 8),
+          _buildInfoPill('🔴 Above 90% LVR (Exceeds Limit)',
+              'Extremely rare. Typically restricted to Kāinga Ora First Home Loans or specialist non-bank lenders.', theme),
         ],
       ),
     );
@@ -686,9 +720,7 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
                 color: isGold ? const Color(0xFFF5D060) : Colors.white)),
         const SizedBox(height: 1),
         Text(subtitle,
-            style: AppTextStyles.dmSans(size: 7.5, color: Colors.white38),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis),
+            style: AppTextStyles.dmSans(size: 7.5, color: Colors.white38)),
       ],
     );
   }
@@ -705,13 +737,14 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
     required String label,
     required double value,
     required ValueChanged<double> onChanged,
+    String? errorText,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: errorText != null ? Colors.red : Colors.white.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -722,8 +755,8 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
           const SizedBox(height: 2),
           TextFormField(
             key: ValueKey(value),
-            initialValue: value.toStringAsFixed(0),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            initialValue: value.toInt().toString(),
+            keyboardType: TextInputType.number,
             style: AppTextStyles.playfair(
                 size: 14, color: Colors.white, weight: FontWeight.w800),
             decoration: const InputDecoration(
@@ -736,186 +769,53 @@ class _NZLvrBandToolState extends ConsumerState<NZLvrBandTool> {
               onChanged(d);
             },
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildStatBox(String label, String value,
-      {bool isGreen = false, bool isRed = false}) {
-    final theme = widget.theme;
+  Widget _buildRow(String label, String value, CountryTheme theme, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label,
+            style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.getMutedColor(context),
+                weight: FontWeight.w600)),
+        Text(value,
+            style: AppTextStyles.dmSans(
+                size: 11,
+                color: theme.getTextColor(context),
+                weight: isBold ? FontWeight.w800 : FontWeight.w700)),
+      ],
+    );
+  }
+
+  Widget _buildInfoPill(String title, String desc, CountryTheme theme) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.getBgColor(context),
+        color: theme.getCardColor(context),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.getBorderColor(context)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(),
+          Text(title,
               style: AppTextStyles.dmSans(
-                  size: 8,
-                  color: theme.getMutedColor(context),
-                  weight: FontWeight.w700),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: AppTextStyles.dmSans(
-              size: 13,
-              weight: FontWeight.w800,
-              color: isGreen
-                  ? const Color(0xFF059669)
-                  : isRed
-                      ? const Color(0xFFC0392B)
-                      : theme.getTextColor(context),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBandRow({
-    required String title,
-    required String desc,
-    required String tag,
-    required bool isActive,
-    required String colorType,
-  }) {
-    Color bg;
-    Color fg;
-    Color border;
-    Color tagBg;
-    Color tagFg;
-
-    if (colorType == 'green') {
-      bg = const Color(0xFFECFDF5);
-      fg = const Color(0xFF065F46);
-      border = isActive ? const Color(0xFF059669) : Colors.transparent;
-      tagBg = const Color(0xFFD1FAE5);
-      tagFg = const Color(0xFF065F46);
-    } else if (colorType == 'amber') {
-      bg = const Color(0xFFFFF7ED);
-      fg = const Color(0xFFC2410C);
-      border = isActive ? const Color(0xFFD97706) : Colors.transparent;
-      tagBg = const Color(0xFFFDE68A);
-      tagFg = const Color(0xFF92400E);
-    } else {
-      bg = const Color(0xFFFEF2F2);
-      fg = const Color(0xFFC0392B);
-      border = isActive ? const Color(0xFFC0392B) : Colors.transparent;
-      tagBg = const Color(0xFFFEE2E2);
-      tagFg = const Color(0xFFC0392B);
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: border, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: colorType == 'green'
-                  ? const Color(0xFF059669)
-                  : colorType == 'amber'
-                      ? const Color(0xFFD97706)
-                      : const Color(0xFFC0392B),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: AppTextStyles.dmSans(
-                        size: 11.5, weight: FontWeight.w800, color: fg)),
-                const SizedBox(height: 1),
-                Text(desc,
-                    style: AppTextStyles.dmSans(
-                        size: 9, color: const Color(0xFF4A6358))),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-                color: tagBg, borderRadius: BorderRadius.circular(20)),
-            child: Text(tag,
-                style: AppTextStyles.dmSans(
-                    size: 9.5, weight: FontWeight.w800, color: tagFg)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRuleRow(String label, String value, String pill) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0x1E92400E))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: AppTextStyles.dmSans(
-                  size: 11, color: const Color(0xFF92400E))),
-          Row(
-            children: [
-              Text(value,
-                  style: AppTextStyles.dmSans(
-                      size: 11.5,
-                      weight: FontWeight.w800,
-                      color: const Color(0xFF92400E))),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                    color: const Color(0xFFD97706),
-                    borderRadius: BorderRadius.circular(20)),
-                child: Text(pill,
-                    style: AppTextStyles.dmSans(
-                        size: 9, weight: FontWeight.w800, color: Colors.white)),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRuleDetailRow(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0x1E92400E))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: AppTextStyles.dmSans(
-                  size: 11, color: const Color(0xFF92400E))),
-          Text(value,
-              style: AppTextStyles.dmSans(
-                  size: 11.5,
+                  size: 11,
                   weight: FontWeight.w800,
-                  color: const Color(0xFF92400E))),
+                  color: theme.getTextColor(context))),
+          const SizedBox(height: 2),
+          Text(desc,
+              style: AppTextStyles.dmSans(
+                  size: 9.5, color: theme.getMutedColor(context), height: 1.35)),
         ],
       ),
     );

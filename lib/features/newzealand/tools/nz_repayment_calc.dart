@@ -24,6 +24,9 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
   int _ioPeriod = 5;
 
   bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   void _reset() {
     setState(() {
@@ -32,6 +35,8 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
       _termYears = 30;
       _ioPeriod = 5;
       _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
     });
   }
 
@@ -58,14 +63,60 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
     return max(0.0, loan - bal);
   }
 
+  void _calculate() {
+    final errors = <String, String>{};
+
+    if (_loanAmt <= 0) {
+      errors['loanAmt'] = 'Enter valid loan amount';
+    }
+    if (_rate <= 0 || _rate > 25) {
+      errors['rate'] = 'Enter rate between 0.1% and 25%';
+    }
+    if (_termYears <= 0 || _termYears > 50) {
+      errors['termYears'] = 'Enter term between 1 and 50 years';
+    }
+    if (_ioPeriod < 0 || _ioPeriod >= _termYears) {
+      errors['ioPeriod'] = 'IO period must be less than term years';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['loanAmt'] = _loanAmt;
+      _calcSnapshot['rate'] = _rate;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['ioPeriod'] = _ioPeriod;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation() async {
-    final piMonthly = _calcPI(_loanAmt, _rate, _termYears);
-    final ioMonthly = _calcIO(_loanAmt, _rate);
-    final piTotal = piMonthly * _termYears * 12;
-    final remainTerm = _termYears - _ioPeriod;
-    final piAfterIO = _calcPI(_loanAmt, _rate, remainTerm);
+    final snapLoanAmt = _calcSnapshot['loanAmt'] ?? _loanAmt;
+    final snapRate = _calcSnapshot['rate'] ?? _rate;
+    final snapTermYears = _calcSnapshot['termYears'] ?? _termYears;
+    final snapIoPeriod = _calcSnapshot['ioPeriod'] ?? _ioPeriod;
+
+    final piMonthly = _calcPI(snapLoanAmt, snapRate, snapTermYears);
+    final ioMonthly = _calcIO(snapLoanAmt, snapRate);
+    final piTotal = piMonthly * snapTermYears * 12;
+    final remainTerm = snapTermYears - snapIoPeriod;
+    final piAfterIO = _calcPI(snapLoanAmt, snapRate, remainTerm);
     final ioTotal =
-        (ioMonthly * _ioPeriod * 12) + (piAfterIO * remainTerm * 12);
+        (ioMonthly * snapIoPeriod * 12) + (piAfterIO * remainTerm * 12);
 
     final labelCtrl = TextEditingController(text: 'NZ Repayment Plan');
     final confirmed = await showDialog<bool>(
@@ -82,7 +133,7 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving: ${CurrencyFormatter.compact(_loanAmt, symbol: 'NZ\$')} loan comparison @ $_rate%',
+                'Saving: ${CurrencyFormatter.compact(snapLoanAmt, symbol: 'NZ\$')} loan comparison @ $snapRate%',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -132,13 +183,13 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
       final calc = SavedCalc.create(
         country: 'New Zealand',
         calcType: 'Repayment Calc',
-        inputs: {
-          'loanAmount': _loanAmt,
-          'rate': _rate,
-          'termYears': _termYears.toDouble(),
-          'ioPeriod': _ioPeriod.toDouble(),
+        inputs: <String, double>{
+          'loanAmount': snapLoanAmt,
+          'rate': snapRate,
+          'termYears': snapTermYears.toDouble(),
+          'ioPeriod': snapIoPeriod.toDouble(),
         },
-        results: {
+        results: <String, double>{
           'piMonthly': piMonthly,
           'ioMonthly': ioMonthly,
           'piTotalPaid': piTotal,
@@ -168,29 +219,44 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    // Calculations
-    final piMonthly = _calcPI(_loanAmt, _rate, _termYears);
-    final ioMonthly = _calcIO(_loanAmt, _rate);
-    final piTotal = piMonthly * _termYears * 12;
-    final piInt = piTotal - _loanAmt;
+    final double rawLoanAmt = _loanAmt;
+    final double rawRate = _rate;
+    final int rawTerm = _termYears;
+    final int rawIoPeriod = _ioPeriod;
 
-    final ioTotalInt = ioMonthly * _ioPeriod * 12;
-    final remainTerm = _termYears - _ioPeriod;
-    final piAfterIO = _calcPI(_loanAmt, _rate, remainTerm);
+    final double loanAmt = _showResults ? (_calcSnapshot['loanAmt'] ?? rawLoanAmt) : rawLoanAmt;
+    final double rate = _showResults ? (_calcSnapshot['rate'] ?? rawRate) : rawRate;
+    final int termYears = _showResults ? (_calcSnapshot['termYears'] ?? rawTerm) : rawTerm;
+    final int ioPeriod = _showResults ? (_calcSnapshot['ioPeriod'] ?? rawIoPeriod) : rawIoPeriod;
+
+    // Calculations
+    final piMonthly = _calcPI(loanAmt, rate, termYears);
+    final ioMonthly = _calcIO(loanAmt, rate);
+    final piTotal = piMonthly * termYears * 12;
+    final piInt = piTotal - loanAmt;
+
+    final ioTotalInt = ioMonthly * ioPeriod * 12;
+    final remainTerm = termYears - ioPeriod;
+    final piAfterIO = _calcPI(loanAmt, rate, remainTerm);
     final ioTotal = ioTotalInt + (piAfterIO * remainTerm * 12);
-    final ioInt = ioTotal - _loanAmt;
+    final ioInt = ioTotal - loanAmt;
 
     final savings = ioTotal - piTotal;
     final eq5PI =
-        _getEquityAtYear(_loanAmt, _rate, _termYears, min(5, _termYears));
-
-    final curYear = DateTime.now().year;
+        _getEquityAtYear(loanAmt, rate, termYears, min(5, termYears));
 
     // Stacked bars pct
-    final piPrinPct = piTotal > 0 ? _loanAmt / piTotal : 0.0;
+    final piPrinPct = piTotal > 0 ? loanAmt / piTotal : 0.0;
     final piIntPct = piTotal > 0 ? piInt / piTotal : 0.0;
-    final ioPrinPct = ioTotal > 0 ? _loanAmt / ioTotal : 0.0;
+    final ioPrinPct = ioTotal > 0 ? loanAmt / ioTotal : 0.0;
     final ioIntPct = ioTotal > 0 ? ioInt / ioTotal : 0.0;
+
+    final isDirty = _showResults && (
+      _loanAmt != (_calcSnapshot['loanAmt'] ?? 0.0) ||
+      _rate != (_calcSnapshot['rate'] ?? 0.0) ||
+      _termYears != (_calcSnapshot['termYears'] ?? 0) ||
+      _ioPeriod != (_calcSnapshot['ioPeriod'] ?? 0)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,6 +313,7 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
                       label: 'Loan Amount',
                       prefix: 'NZD \$',
                       value: _loanAmt,
+                      errorText: _errors['loanAmt'],
                       onChanged: (val) => setState(() => _loanAmt = val),
                     ),
                   ),
@@ -257,6 +324,7 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
                       prefix: '',
                       value: _rate,
                       isPercent: true,
+                      errorText: _errors['rate'],
                       onChanged: (val) => setState(() => _rate = val),
                     ),
                   ),
@@ -272,6 +340,7 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
                       prefix: '',
                       value: _termYears.toDouble(),
                       isInteger: true,
+                      errorText: _errors['termYears'],
                       onChanged: (val) =>
                           setState(() => _termYears = val.toInt()),
                     ),
@@ -283,6 +352,7 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
                       prefix: '',
                       value: _ioPeriod.toDouble(),
                       isInteger: true,
+                      errorText: _errors['ioPeriod'],
                       onChanged: (val) =>
                           setState(() => _ioPeriod = val.toInt()),
                     ),
@@ -293,18 +363,7 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
 
               // Calculate Button
               ElevatedButton(
-                onPressed: () {
-                  if (_loanAmt <= 0) return;
-                  if (_ioPeriod >= _termYears) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text('IO Period must be less than full term',
-                              style: AppTextStyles.dmSans())),
-                    );
-                    return;
-                  }
-                  setState(() => _showResults = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A6B4A),
                   foregroundColor: Colors.white,
@@ -325,275 +384,241 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
 
         // Results Section
         if (_showResults) ...[
-          const SizedBox(height: 20),
-          Text('Side-by-Side Comparison',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-
-          // P&I vs IO panels
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('PRINCIPAL & INTEREST',
-                          style: AppTextStyles.dmSans(
-                              size: 8,
-                              color: Colors.white54,
-                              weight: FontWeight.w800)),
-                      Text('P&I · Recommended',
-                          style: AppTextStyles.dmSans(
-                              size: 10,
-                              color: Colors.white,
-                              weight: FontWeight.w700)),
-                      const SizedBox(height: 10),
-                      Text(
-                          CurrencyFormatter.format(piMonthly,
-                              currencyCode: 'NZD'),
-                          style: AppTextStyles.playfair(
-                              size: 20,
-                              color: const Color(0xFFF5D060),
-                              weight: FontWeight.w800)),
-                      Text('/month',
-                          style: AppTextStyles.dmSans(
-                              size: 8, color: Colors.white54)),
-                      const SizedBox(height: 10),
-                      _buildMiniRow('Total Interest',
-                          CurrencyFormatter.compact(piInt, symbol: 'NZ\$')),
-                      _buildMiniRow('Total Paid',
-                          CurrencyFormatter.compact(piTotal, symbol: 'NZ\$')),
-                      _buildMiniRow('Equity @ 5yr',
-                          CurrencyFormatter.compact(eq5PI, symbol: 'NZ\$')),
-                    ],
-                  ),
-                ),
+          if (isDirty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFC0392B), Color(0xFF922B21)],
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Compare Repayment Types to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
-                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('INTEREST ONLY',
-                          style: AppTextStyles.dmSans(
-                              size: 8,
-                              color: Colors.white54,
-                              weight: FontWeight.w800)),
-                      Text('IO · Investors',
-                          style: AppTextStyles.dmSans(
-                              size: 10,
-                              color: Colors.white,
-                              weight: FontWeight.w700)),
-                      const SizedBox(height: 10),
-                      Text(
-                          CurrencyFormatter.format(ioMonthly,
-                              currencyCode: 'NZD'),
-                          style: AppTextStyles.playfair(
-                              size: 20,
-                              color: const Color(0xFFF5D060),
-                              weight: FontWeight.w800)),
-                      Text('/month (IO period)',
-                          style: AppTextStyles.dmSans(
-                              size: 8, color: Colors.white54)),
-                      const SizedBox(height: 10),
-                      _buildMiniRow('Total Interest',
-                          CurrencyFormatter.compact(ioInt, symbol: 'NZ\$')),
-                      _buildMiniRow('Total Paid',
-                          CurrencyFormatter.compact(ioTotal, symbol: 'NZ\$')),
-                      _buildMiniRow('Equity @ 5yr', 'NZ\$0'),
-                    ],
-                  ),
-                ),
+                ],
               ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // Stacked Bar Visual
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
             ),
+          ],
+          Container(
+            key: _resultsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Total Cost Breakdown',
-                    style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: theme.getTextColor(context))),
-                const SizedBox(height: 12),
-                _buildStackedBarRow(
-                    'P&I — Full Term', piTotal, piPrinPct, piIntPct, theme),
-                const SizedBox(height: 12),
-                _buildStackedBarRow(
-                    'IO then P&I', ioTotal, ioPrinPct, ioIntPct, theme),
+                const SizedBox(height: 20),
+                Text('Side-by-Side Comparison',
+                    style: AppTextStyles.playfair(
+                        size: 15, color: theme.getTextColor(context))),
                 const SizedBox(height: 10),
+
+                // P&I vs IO panels
                 Row(
                   children: [
-                    _buildDot('Principal', const Color(0xFF1A6B4A), theme),
-                    const SizedBox(width: 14),
-                    _buildDot('Interest', const Color(0xFFC0392B), theme),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0A0F0D), Color(0xFF0D3B2E)],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('PRINCIPAL & INTEREST',
+                                style: AppTextStyles.dmSans(
+                                    size: 8,
+                                    color: Colors.white54,
+                                    weight: FontWeight.w800)),
+                            Text('P&I · Recommended',
+                                style: AppTextStyles.dmSans(
+                                    size: 10,
+                                    color: Colors.white,
+                                    weight: FontWeight.w700)),
+                            const SizedBox(height: 10),
+                            Text(
+                                CurrencyFormatter.format(piMonthly,
+                                    currencyCode: 'NZD'),
+                                style: AppTextStyles.playfair(
+                                    size: 20,
+                                    color: const Color(0xFFF5D060),
+                                    weight: FontWeight.w800)),
+                            Text('/month',
+                                style: AppTextStyles.dmSans(
+                                    size: 8, color: Colors.white54)),
+                            const SizedBox(height: 10),
+                            _buildMiniRow('Total Interest',
+                                CurrencyFormatter.compact(piInt, symbol: 'NZ\$')),
+                            _buildMiniRow('Total Paid',
+                                CurrencyFormatter.compact(piTotal, symbol: 'NZ\$')),
+                            _buildMiniRow('Equity @ 5yr',
+                                CurrencyFormatter.compact(eq5PI, symbol: 'NZ\$')),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFC0392B), Color(0xFF922B21)],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('INTEREST ONLY',
+                                style: AppTextStyles.dmSans(
+                                    size: 8,
+                                    color: Colors.white54,
+                                    weight: FontWeight.w800)),
+                            Text('IO · Investors',
+                                style: AppTextStyles.dmSans(
+                                    size: 10,
+                                    color: Colors.white,
+                                    weight: FontWeight.w700)),
+                            const SizedBox(height: 10),
+                            Text(
+                                CurrencyFormatter.format(ioMonthly,
+                                    currencyCode: 'NZD'),
+                                style: AppTextStyles.playfair(
+                                    size: 20,
+                                    color: const Color(0xFFF5D060),
+                                    weight: FontWeight.w800)),
+                            Text('/month (IO period)',
+                                style: AppTextStyles.dmSans(
+                                    size: 8, color: Colors.white54)),
+                            const SizedBox(height: 10),
+                            _buildMiniRow('Total Interest',
+                                CurrencyFormatter.compact(ioInt, symbol: 'NZ\$')),
+                            _buildMiniRow('Total Paid',
+                                CurrencyFormatter.compact(ioTotal, symbol: 'NZ\$')),
+                            _buildMiniRow('Equity @ 5yr', 'NZ\$0'),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 12),
+
+                const SizedBox(height: 14),
+
+                // Stacked Bar Visual
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF86EFAC)),
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('💰 ', style: TextStyle(fontSize: 14)),
-                      Expanded(
-                        child: Text(
-                          'P&I saves ${CurrencyFormatter.format(savings, currencyCode: "NZD")} vs IO over full term',
+                      Text('Total Cost Breakdown',
                           style: AppTextStyles.dmSans(
-                              size: 11,
+                              size: 12,
                               weight: FontWeight.w800,
-                              color: const Color(0xFF15803D)),
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 12),
+                      _buildStackedBarRow(
+                          'P&I — Full Term', piTotal, piPrinPct, piIntPct, theme),
+                      const SizedBox(height: 12),
+                      _buildStackedBarRow(
+                          'IO then P&I', ioTotal, ioPrinPct, ioIntPct, theme),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          _buildDot('Principal', const Color(0xFF1A6B4A), theme),
+                          const SizedBox(width: 14),
+                          _buildDot('Interest', const Color(0xFFC0392B), theme),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Text('💰 ', style: TextStyle(fontSize: 14)),
+                            Expanded(
+                              child: Text(
+                                'P&I saves ${CurrencyFormatter.format(savings, currencyCode: "NZD")} vs IO over full term',
+                                style: AppTextStyles.dmSans(
+                                    size: 11,
+                                    weight: FontWeight.w800,
+                                    color: const Color(0xFF15803D)),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
 
-          // IO Warning Key Rules
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              border: Border.all(color: const Color(0xFFF59E0B)),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('⚠️ Interest Only — Key NZ Rules',
-                    style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: const Color(0xFF92400E))),
-                const SizedBox(height: 4),
-                Text(
-                  '• Max IO period: typically 5 years for NZ owner-occupiers (1–2 yrs for investors)\n'
-                  '• After IO period ends, P&I repayments increase significantly\n'
-                  '• No equity built during IO period — property value changes affect LVR\n'
-                  '• RBNZ LVR rules still apply: owner-occ 20% min deposit; investors 35%\n'
-                  '• IO common for property investors under ring-fencing rules (IRD 2019)',
-                  style: AppTextStyles.dmSans(
-                      size: 9.5, color: const Color(0xFFB45309), height: 1.5),
-                ),
-              ],
-            ),
-          ),
-
-          // IO Period Timeline
-          const SizedBox(height: 20),
-          Text('IO Period Timeline',
-              style: AppTextStyles.playfair(
-                  size: 15, color: theme.getTextColor(context))),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Column(
-              children: [
-                _buildTimelineItem(
-                    '1',
-                    'Now – Year $_ioPeriod (IO Period)',
-                    'Interest Only: ${CurrencyFormatter.format(ioMonthly, currencyCode: "NZD")}/month · No principal reduction',
-                    '$curYear – ${curYear + _ioPeriod}',
-                    const Color(0xFF1A6B4A),
-                    theme),
-                _buildTimelineDivider(),
-                _buildTimelineItem(
-                    '2',
-                    'Year $_ioPeriod – End (P&I)',
-                    'Repayment jumps to ${CurrencyFormatter.format(piAfterIO, currencyCode: "NZD")}/month (${CurrencyFormatter.format(piAfterIO - ioMonthly, currencyCode: "NZD")} more)',
-                    '${curYear + _ioPeriod} – ${curYear + _termYears}',
-                    const Color(0xFFC0392B),
-                    theme),
-                _buildTimelineDivider(),
-                _buildTimelineItem(
-                    '3',
-                    'Loan End',
-                    'Total repaid: ${CurrencyFormatter.format(ioTotal, currencyCode: "NZD")} · Extra vs P&I: ${CurrencyFormatter.format(savings, currencyCode: "NZD")}',
-                    '${curYear + _termYears}',
-                    const Color(0xFFF5D060),
-                    theme),
-              ],
-            ),
-          ),
-
-          // Save Button Bar
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.getBorderColor(context)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('💾 Save comparison',
-                        style: AppTextStyles.dmSans(
-                            size: 11,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context))),
-                    Text('P&I vs IO saved to portfolio',
-                        style: AppTextStyles.dmSans(
-                            size: 9, color: theme.getMutedColor(context))),
-                  ],
-                ),
-                ElevatedButton(
-                  onPressed: _saveCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                // IO Warning Key Rules
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    border: Border.all(color: const Color(0xFFF59E0B)),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Text('Save',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          color: Colors.white,
-                          weight: FontWeight.w800)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('⚠️ Interest Only — Key NZ Rules',
+                          style: AppTextStyles.dmSans(
+                              size: 11,
+                              weight: FontWeight.bold,
+                              color: const Color(0xFFB45309))),
+                      const SizedBox(height: 6),
+                      Text(
+                          '• RBNZ LVR Speed Limits restrict owner-occupiers from easily getting IO terms without 20%+ equity.\n'
+                          '• Repayments increase significantly after the IO period ends (e.g. 25 years left to pay principal vs 30).\n'
+                          '• Typically suitable for property investors matching rental receipts or short-term bridging scenarios.',
+                          style: AppTextStyles.dmSans(
+                              size: 9.5,
+                              color: const Color(0xFF92400E),
+                              height: 1.4)),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _saveCalculation,
+                    icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                    label: Text(
+                      'Save Repayment Plan Analysis',
+                      style: AppTextStyles.playfair(
+                          size: 12.5, color: Colors.white, weight: FontWeight.w800),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A6B4A),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -610,12 +635,14 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
     bool isPercent = false,
     bool isInteger = false,
     required ValueChanged<double> onChanged,
+    String? errorText,
   }) {
+    final theme = widget.theme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDF5F2),
-        border: Border.all(color: const Color(0x150D3B2E)),
+        color: theme.getBgColor(context),
+        border: Border.all(color: errorText != null ? Colors.red : theme.getBorderColor(context)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -624,7 +651,7 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
           Text(label,
               style: AppTextStyles.dmSans(
                   size: 8.5,
-                  color: const Color(0xFF4A6358),
+                  color: theme.getMutedColor(context),
                   weight: FontWeight.w600)),
           const SizedBox(height: 2),
           Row(
@@ -635,16 +662,17 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
                 Text('$prefix ',
                     style: AppTextStyles.dmSans(
                         size: 11,
-                        color: const Color(0xFF4A6358),
+                        color: theme.getMutedColor(context),
                         weight: FontWeight.w700)),
               Expanded(
                 child: TextFormField(
+                  key: ValueKey(value),
                   initialValue:
                       isInteger ? value.toInt().toString() : value.toString(),
                   keyboardType: TextInputType.number,
                   style: AppTextStyles.playfair(
                       size: 15,
-                      color: const Color(0xFF0A0F0D),
+                      color: theme.getTextColor(context),
                       weight: FontWeight.w800),
                   decoration: const InputDecoration(
                     isDense: true,
@@ -661,10 +689,14 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
                 Text('%',
                     style: AppTextStyles.dmSans(
                         size: 11,
-                        color: const Color(0xFF4A6358),
+                        color: theme.getMutedColor(context),
                         weight: FontWeight.w700)),
             ],
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 2),
+            Text(errorText, style: AppTextStyles.dmSans(size: 8, color: Colors.red, weight: FontWeight.bold)),
+          ],
         ],
       ),
     );
@@ -672,22 +704,23 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
 
   Widget _buildMiniRow(String label, String val) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
-              style: AppTextStyles.dmSans(size: 9, color: Colors.white70)),
+              style:
+                  AppTextStyles.dmSans(size: 8.5, color: Colors.white70)),
           Text(val,
               style: AppTextStyles.dmSans(
-                  size: 9.5, color: Colors.white, weight: FontWeight.w800)),
+                  size: 9, color: Colors.white, weight: FontWeight.w700)),
         ],
       ),
     );
   }
 
-  Widget _buildStackedBarRow(String label, double totalAmt, double prinPct,
-      double intPct, CountryTheme theme) {
+  Widget _buildStackedBarRow(String label, double total, double principalPct,
+      double interestPct, CountryTheme theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -697,46 +730,34 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
             Text(label,
                 style: AppTextStyles.dmSans(
                     size: 10,
+                    weight: FontWeight.w700,
+                    color: theme.getTextColor(context))),
+            Text(CurrencyFormatter.format(total, currencyCode: 'NZD'),
+                style: AppTextStyles.dmSans(
+                    size: 11,
                     weight: FontWeight.w800,
                     color: theme.getTextColor(context))),
-            Text('${CurrencyFormatter.compact(totalAmt, symbol: "NZ\$")} total',
-                style: AppTextStyles.dmSans(
-                    size: 10, color: theme.getMutedColor(context))),
           ],
         ),
-        const SizedBox(height: 4),
-        Container(
-          height: 20,
-          decoration: BoxDecoration(
-              color: theme.getBgColor(context),
-              borderRadius: BorderRadius.circular(8)),
-          child: Row(
-            children: [
-              if (prinPct > 0)
-                Expanded(
-                  flex: (prinPct * 100).toInt(),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                          colors: [Color(0xFF1A6B4A), Color(0xFF0D9488)]),
-                      borderRadius:
-                          BorderRadius.horizontal(left: Radius.circular(8)),
-                    ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: SizedBox(
+            height: 12,
+            child: Row(
+              children: [
+                if (principalPct > 0)
+                  Expanded(
+                    flex: (principalPct * 100).round(),
+                    child: Container(color: const Color(0xFF1A6B4A)),
                   ),
-                ),
-              if (intPct > 0)
-                Expanded(
-                  flex: (intPct * 100).toInt(),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                          colors: [Color(0xFFC0392B), Color(0xFFE74C3C)]),
-                      borderRadius:
-                          BorderRadius.horizontal(right: Radius.circular(8)),
-                    ),
+                if (interestPct > 0)
+                  Expanded(
+                    flex: (interestPct * 100).round(),
+                    child: Container(color: const Color(0xFFC0392B)),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -747,68 +768,15 @@ class _NZRepaymentCalcState extends ConsumerState<NZRepaymentCalc> {
     return Row(
       children: [
         Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-                color: color, borderRadius: BorderRadius.circular(3))),
-        const SizedBox(width: 5),
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
         Text(label,
             style: AppTextStyles.dmSans(
-                size: 9.5, color: theme.getMutedColor(context))),
+                size: 9, color: theme.getMutedColor(context))),
       ],
-    );
-  }
-
-  Widget _buildTimelineItem(String step, String title, String sub, String date,
-      Color color, CountryTheme theme) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 26,
-          height: 26,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          alignment: Alignment.center,
-          child: Text(step,
-              style: AppTextStyles.dmSans(
-                  size: 11, color: Colors.white, weight: FontWeight.w800)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(title,
-                      style: AppTextStyles.dmSans(
-                          size: 11.5,
-                          weight: FontWeight.w800,
-                          color: theme.getTextColor(context))),
-                  Text(date,
-                      style: AppTextStyles.dmSans(
-                          size: 9, color: theme.getMutedColor(context))),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(sub,
-                  style: AppTextStyles.dmSans(
-                      size: 9.5, color: theme.getMutedColor(context))),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimelineDivider() {
-    return Container(
-      width: 2,
-      height: 16,
-      color: const Color(0x150A0F0D),
-      margin: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
-      alignment: Alignment.centerLeft,
     );
   }
 }

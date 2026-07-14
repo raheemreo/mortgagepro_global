@@ -25,7 +25,10 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
   int _ksDuration = 3; // 0 (Under 3yrs), 3 (3-4yrs), 5 (5+yrs)
   String _region = 'chch'; // 'auckland', 'wellington', 'chch', 'other'
 
-  bool _showResults = true;
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
 
   final Map<String, double> _priceCaps = {
     'auckland': 875000,
@@ -46,24 +49,82 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _incomeController.text = '120000';
+      _propValueController.text = '750000';
+      _buyers = 2;
+      _propType = 'existing';
+      _ksDuration = 3;
+      _region = 'chch';
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final double income = double.tryParse(_incomeController.text) ?? 0.0;
+    final double propValue = double.tryParse(_propValueController.text) ?? 0.0;
+
+    if (income <= 0) {
+      errors['income'] = 'Enter valid gross household income';
+    }
+    if (propValue <= 0) {
+      errors['propValue'] = 'Enter valid property value';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['income'] = income;
+      _calcSnapshot['propValue'] = propValue;
+      _calcSnapshot['buyers'] = _buyers;
+      _calcSnapshot['propType'] = _propType;
+      _calcSnapshot['ksDuration'] = _ksDuration;
+      _calcSnapshot['region'] = _region;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveEligibility() async {
-    final income = double.tryParse(_incomeController.text) ?? 0;
-    final propValue = double.tryParse(_propValueController.text) ?? 0;
-    final incomeCap = _incomeCaps[_buyers] ?? 180000;
-    final priceCap = _priceCaps[_region] ?? 525000;
+    final income = _calcSnapshot['income'] ?? (double.tryParse(_incomeController.text) ?? 0.0);
+    final propValue = _calcSnapshot['propValue'] ?? (double.tryParse(_propValueController.text) ?? 0.0);
+    final snapBuyers = _calcSnapshot['buyers'] ?? _buyers;
+    final snapPropType = _calcSnapshot['propType'] ?? _propType;
+    final snapKsDuration = _calcSnapshot['ksDuration'] ?? _ksDuration;
+    final snapRegion = _calcSnapshot['region'] ?? _region;
+
+    final incomeCap = _incomeCaps[snapBuyers] ?? 180000;
+    final priceCap = _priceCaps[snapRegion] ?? 525000;
 
     final incomeOk = income <= incomeCap;
     final priceOk = propValue <= priceCap;
-    final ksOk = _ksDuration >= 3;
+    final ksOk = snapKsDuration >= 3;
     final eligible = incomeOk && priceOk && ksOk;
 
     int grantPerBuyer = 0;
-    if (_ksDuration >= 5) {
-      grantPerBuyer = _propType == 'new' ? 10000 : 5000;
-    } else if (_ksDuration >= 3) {
-      grantPerBuyer = _propType == 'new' ? 6000 : 3000;
+    if (snapKsDuration >= 5) {
+      grantPerBuyer = snapPropType == 'new' ? 10000 : 5000;
+    } else if (snapKsDuration >= 3) {
+      grantPerBuyer = snapPropType == 'new' ? 6000 : 3000;
     }
-    final grantTotal = grantPerBuyer * _buyers;
+    final grantTotal = grantPerBuyer * snapBuyers;
     final depositSupport = eligible ? grantTotal + 37500.0 : 0.0;
 
     final labelCtrl = TextEditingController(text: 'Kāinga Ora Eligibility');
@@ -134,15 +195,15 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
         calcType: 'Kāinga Ora Eligibility',
         inputs: {
           'income': income,
-          'buyers': _buyers.toDouble(),
-          'propType': _propType == 'new' ? 1.0 : 0.0,
-          'ksDuration': _ksDuration.toDouble(),
+          'buyers': snapBuyers.toDouble(),
+          'propType': snapPropType == 'new' ? 1.0 : 0.0,
+          'ksDuration': snapKsDuration.toDouble(),
           'propValue': propValue,
-          'region': _region == 'auckland'
+          'region': snapRegion == 'auckland'
               ? 0.0
-              : _region == 'wellington'
+              : snapRegion == 'wellington'
                   ? 1.0
-                  : _region == 'chch'
+                  : snapRegion == 'chch'
                       ? 2.0
                       : 3.0,
         },
@@ -176,30 +237,55 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final income = double.tryParse(_incomeController.text) ?? 0;
-    final propValue = double.tryParse(_propValueController.text) ?? 0;
+    final income = _showResults
+        ? (_calcSnapshot['income'] ?? 0.0)
+        : (double.tryParse(_incomeController.text) ?? 0.0);
+    final propValue = _showResults
+        ? (_calcSnapshot['propValue'] ?? 0.0)
+        : (double.tryParse(_propValueController.text) ?? 0.0);
+    final snapBuyers = _showResults
+        ? (_calcSnapshot['buyers'] ?? 2)
+        : _buyers;
+    final snapPropType = _showResults
+        ? (_calcSnapshot['propType'] ?? 'existing')
+        : _propType;
+    final snapKsDuration = _showResults
+        ? (_calcSnapshot['ksDuration'] ?? 3)
+        : _ksDuration;
+    final snapRegion = _showResults
+        ? (_calcSnapshot['region'] ?? 'chch')
+        : _region;
 
-    final incomeCap = _incomeCaps[_buyers] ?? 180000;
-    final priceCap = _priceCaps[_region] ?? 525000;
+    final incomeCap = _incomeCaps[snapBuyers] ?? 180000;
+    final priceCap = _priceCaps[snapRegion] ?? 525000;
 
     final incomeOk = income <= incomeCap;
     final priceOk = propValue <= priceCap;
-    final ksOk = _ksDuration >= 3;
+    final ksOk = snapKsDuration >= 3;
     final eligible = incomeOk && priceOk && ksOk;
 
     int grantPerBuyer = 0;
-    if (_ksDuration >= 5) {
-      grantPerBuyer = _propType == 'new' ? 10000 : 5000;
-    } else if (_ksDuration >= 3) {
-      grantPerBuyer = _propType == 'new' ? 6000 : 3000;
+    if (snapKsDuration >= 5) {
+      grantPerBuyer = snapPropType == 'new' ? 10000 : 5000;
+    } else if (snapKsDuration >= 3) {
+      grantPerBuyer = snapPropType == 'new' ? 6000 : 3000;
     }
-    final grantTotal = grantPerBuyer * _buyers;
+    final grantTotal = grantPerBuyer * snapBuyers;
     final depositSupport = eligible ? grantTotal + 37500.0 : 0.0;
 
     final cardColor = theme.getCardColor(context);
     final borderColor = theme.getBorderColor(context);
     final textCol = theme.getTextColor(context);
     final mutedCol = theme.getMutedColor(context);
+
+    final isDirty = _showResults && (
+      (double.tryParse(_incomeController.text) ?? 0.0) != (_calcSnapshot['income'] ?? 0.0) ||
+      (double.tryParse(_propValueController.text) ?? 0.0) != (_calcSnapshot['propValue'] ?? 0.0) ||
+      _buyers != (_calcSnapshot['buyers'] ?? 2) ||
+      _propType != (_calcSnapshot['propType'] ?? 'existing') ||
+      _ksDuration != (_calcSnapshot['ksDuration'] ?? 3) ||
+      _region != (_calcSnapshot['region'] ?? 'chch')
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,12 +391,15 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
                 color: textCol,
               ),
             ),
-            Text(
-              'Full Guide →',
-              style: AppTextStyles.dmSans(
-                size: 11,
-                weight: FontWeight.w600,
-                color: theme.primaryColor,
+            GestureDetector(
+              onTap: _reset,
+              child: Text(
+                'Reset ↺',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.w600,
+                  color: theme.primaryColor,
+                ),
               ),
             ),
           ],
@@ -340,11 +429,13 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
 
               // Row 1: Income and Buyers
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _buildInputBox(
                       label: 'Household Income (NZD)',
                       controller: _incomeController,
+                      errorText: _errors['income'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -365,6 +456,7 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
 
               // Row 2: Property Type and KS Duration
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _buildDropdown(
@@ -396,11 +488,13 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
 
               // Row 3: Property Value and Region
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _buildInputBox(
                       label: 'Property Value (NZD)',
                       controller: _propValueController,
+                      errorText: _errors['propValue'],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -422,7 +516,7 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
               const SizedBox(height: 14),
 
               ElevatedButton(
-                onPressed: () => setState(() => _showResults = true),
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryColor,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -434,82 +528,121 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
                   style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
                 ),
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
 
-              if (_showResults) ...[
-                const SizedBox(height: 14),
-                // Results banner
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: eligible
-                        ? const LinearGradient(colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)])
-                        : const LinearGradient(colors: [Color(0xFFFEF2F2), Color(0xFFFEE2E2)]),
-                    border: Border.all(
-                      color: eligible ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
-                      width: 1.5,
+        if (_showResults) ...[
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Check My Eligibility to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderColor),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        eligible ? '✅ You May Be Eligible!' : '❌ Not Currently Eligible',
-                        style: AppTextStyles.dmSans(
-                          size: 13,
-                          weight: FontWeight.w800,
-                          color: eligible ? const Color(0xFF065F46) : const Color(0xFFB91C1C),
+                      // Results banner
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: eligible
+                              ? const LinearGradient(colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)])
+                              : const LinearGradient(colors: [Color(0xFFFEF2F2), Color(0xFFFEE2E2)]),
+                          border: Border.all(
+                            color: eligible ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              eligible ? '✅ You May Be Eligible!' : '❌ Not Currently Eligible',
+                              style: AppTextStyles.dmSans(
+                                size: 13,
+                                weight: FontWeight.w800,
+                                color: eligible ? const Color(0xFF065F46) : const Color(0xFFB91C1C),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              eligible
+                                  ? 'Income of ${CurrencyFormatter.compact(income, symbol: "NZ\$")} is within the ${CurrencyFormatter.compact(incomeCap.toDouble(), symbol: "NZ\$")} cap. Property value is within regional cap. KiwiSaver requirement met.'
+                                  : _buildFailReason(incomeOk, priceOk, ksOk, income, incomeCap, propValue, priceCap),
+                              style: AppTextStyles.dmSans(
+                                size: 10,
+                                color: eligible ? const Color(0xFF047857) : const Color(0xFF991B1B),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        eligible
-                            ? 'Income of ${CurrencyFormatter.compact(income, symbol: "NZ\$")} is within the ${CurrencyFormatter.compact(incomeCap.toDouble(), symbol: "NZ\$")} cap. Property value is within regional cap. KiwiSaver requirement met.'
-                            : _buildFailReason(incomeOk, priceOk, ksOk, income, incomeCap, propValue, priceCap),
-                        style: AppTextStyles.dmSans(
-                          size: 10,
-                          color: eligible ? const Color(0xFF047857) : const Color(0xFF991B1B),
-                        ),
+                      const SizedBox(height: 12),
+                      // Result Grid
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        childAspectRatio: 1.6,
+                        children: [
+                          _buildResultBox('HomeStart Grant', CurrencyFormatter.compact(grantTotal.toDouble(), symbol: 'NZ\$'), 'per buyer'),
+                          _buildResultBox('KiwiSaver Withdrawal', eligible ? 'Eligible' : (ksOk ? 'Eligible' : 'Not yet'), 'min 3yrs contrib.'),
+                          _buildResultBox('FHP Equity Share', eligible ? 'Up to 25%' : 'N/A', 'Govt co-buys'),
+                          _buildResultBox('Est. Deposit Support', eligible ? '~${CurrencyFormatter.compact(depositSupport, symbol: "NZ\$")}' : 'Check again', 'combined boost'),
+                        ],
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Result Grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 1.6,
-                  children: [
-                    _buildResultBox('HomeStart Grant', CurrencyFormatter.compact(grantTotal.toDouble(), symbol: 'NZ\$'), 'per buyer'),
-                    _buildResultBox('KiwiSaver Withdrawal', eligible ? 'Eligible' : (ksOk ? 'Eligible' : 'Not yet'), 'min 3yrs contrib.'),
-                    _buildResultBox('FHP Equity Share', eligible ? 'Up to 25%' : 'N/A', 'Govt co-buys'),
-                    _buildResultBox('Est. Deposit Support', eligible ? '~${CurrencyFormatter.compact(depositSupport, symbol: "NZ\$")}' : 'Check again', 'combined boost'),
-                  ],
+                ElevatedButton.icon(
+                  onPressed: _saveEligibility,
+                  icon: const Text('📥', style: TextStyle(fontSize: 14)),
+                  label: Text(
+                    'Save Eligibility Result',
+                    style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D9488),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    minimumSize: const Size(double.infinity, 44),
+                  ),
                 ),
               ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Save Button
-        if (_showResults) ...[
-          ElevatedButton.icon(
-            onPressed: _saveEligibility,
-            icon: const Text('📥', style: TextStyle(fontSize: 14)),
-            label: Text(
-              'Save Eligibility Result',
-              style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D9488),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              minimumSize: const Size(double.infinity, 44),
             ),
           ),
           const SizedBox(height: 20),
@@ -854,7 +987,7 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
     );
   }
 
-  Widget _buildInputBox({required String label, required TextEditingController controller}) {
+  Widget _buildInputBox({required String label, required TextEditingController controller, String? errorText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -864,24 +997,37 @@ class _NZKaingaOraState extends ConsumerState<NZKaingaOra> {
         ),
         const SizedBox(height: 5),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 11),
-          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+          height: errorText != null ? 52 : 38,
           decoration: BoxDecoration(
             color: widget.theme.getBgColor(context),
-            border: Border.all(color: widget.theme.getBorderColor(context), width: 1.5),
+            border: Border.all(color: errorText != null ? Colors.red : widget.theme.getBorderColor(context), width: 1.5),
             borderRadius: BorderRadius.circular(10),
           ),
           alignment: Alignment.center,
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            style: AppTextStyles.playfair(size: 13, color: widget.theme.getTextColor(context), weight: FontWeight.w800),
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            onChanged: (_) => setState(() {}),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  style: AppTextStyles.playfair(size: 13, color: widget.theme.getTextColor(context), weight: FontWeight.w800),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              if (errorText != null)
+                Text(
+                  errorText,
+                  style: AppTextStyles.dmSans(size: 7, color: Colors.red, weight: FontWeight.bold),
+                ),
+            ],
           ),
         ),
       ],

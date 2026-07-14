@@ -65,6 +65,9 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
     },
   ];
 
+  final _resultsKey = GlobalKey();
+  final Map<String, dynamic> _calcSnapshot = {};
+
   @override
   void initState() {
     super.initState();
@@ -75,8 +78,11 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
       _newRateController.text = (inputs['newRate'] ?? 6.47).toStringAsFixed(2);
       _termYears = (inputs['termYears'] ?? 30.0).toInt();
       _closingPctController.text = (inputs['closingPct'] ?? 3.0).toStringAsFixed(1);
-      _calculate();
-    } else {
+      _calcSnapshot['curBalance'] = double.tryParse(_curBalanceController.text) ?? 0.0;
+      _calcSnapshot['curRate'] = double.tryParse(_curRateController.text) ?? 0.0;
+      _calcSnapshot['newRate'] = double.tryParse(_newRateController.text) ?? 0.0;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['closingPct'] = double.tryParse(_closingPctController.text) ?? 0.0;
       _calculate();
     }
   }
@@ -88,6 +94,18 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
     _newRateController.dispose();
     _closingPctController.dispose();
     super.dispose();
+  }
+
+  void _reset() {
+    setState(() {
+      _curBalanceController.text = '340000';
+      _curRateController.text = '7.25';
+      _newRateController.text = '6.47';
+      _termYears = 30;
+      _closingPctController.text = '3';
+      _calculated = false;
+      _calcSnapshot.clear();
+    });
   }
 
   double _pmtFor(double principal, double annualRatePercent, int months) {
@@ -114,6 +132,12 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
     final fiveYrSavings = (monthlySavings * 60) - closingCosts;
 
     setState(() {
+      _calcSnapshot['curBalance'] = balance;
+      _calcSnapshot['curRate'] = curRate;
+      _calcSnapshot['newRate'] = newRate;
+      _calcSnapshot['termYears'] = _termYears;
+      _calcSnapshot['closingPct'] = closingPct;
+
       _oldPI = oldPI;
       _newPI = newPI;
       _monthlySavings = monthlySavings;
@@ -124,15 +148,26 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
       _fiveYrSavings = fiveYrSavings;
       _calculated = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _saveCalc() {
     if (!_calculated) return;
 
-    final balance = double.tryParse(_curBalanceController.text) ?? 0.0;
-    final curRate = double.tryParse(_curRateController.text) ?? 0.0;
-    final newRate = double.tryParse(_newRateController.text) ?? 0.0;
-    final closingPct = double.tryParse(_closingPctController.text) ?? 0.0;
+    final balance = _calcSnapshot['curBalance'] ?? 340000.0;
+    final curRate = _calcSnapshot['curRate'] ?? 7.25;
+    final newRate = _calcSnapshot['newRate'] ?? 6.47;
+    final termYears = _calcSnapshot['termYears'] ?? 30;
+    final closingPct = _calcSnapshot['closingPct'] ?? 3.0;
 
     final calc = SavedCalc.create(
       country: 'USA',
@@ -143,7 +178,7 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
         'curBalance': balance,
         'curRate': curRate,
         'newRate': newRate,
-        'termYears': _termYears.toDouble(),
+        'termYears': termYears.toDouble(),
         'closingPct': closingPct,
       },
       results: {
@@ -171,6 +206,25 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
     final borderCol = _theme.getBorderColor(context);
     final bgCol = _theme.getBgColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final snapBalance = _calcSnapshot['curBalance'] ?? 0.0;
+    final snapCurRate = _calcSnapshot['curRate'] ?? 0.0;
+    final snapNewRate = _calcSnapshot['newRate'] ?? 0.0;
+    final snapTermYears = _calcSnapshot['termYears'] ?? 0;
+    final snapClosingPct = _calcSnapshot['closingPct'] ?? 0.0;
+
+    final currentBalance = double.tryParse(_curBalanceController.text) ?? 0.0;
+    final currentCurRate = double.tryParse(_curRateController.text) ?? 0.0;
+    final currentNewRate = double.tryParse(_newRateController.text) ?? 0.0;
+    final currentClosingPct = double.tryParse(_closingPctController.text) ?? 0.0;
+
+    final isDirty = _calculated && (
+      currentBalance != snapBalance ||
+      currentCurRate != snapCurRate ||
+      currentNewRate != snapNewRate ||
+      _termYears != snapTermYears ||
+      currentClosingPct != snapClosingPct
+    );
 
     return Scaffold(
       backgroundColor: bgCol,
@@ -306,10 +360,9 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
                                 DropdownMenuItem(value: 20, child: Text('20 Years')),
                                 DropdownMenuItem(value: 15, child: Text('15 Years')),
                               ],
-                              onChanged: (val) {
+                               onChanged: (val) {
                                 if (val != null) {
                                   setState(() => _termYears = val);
-                                  _calculate();
                                 }
                               },
                             ),
@@ -324,170 +377,275 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // Result Hero Card
-                if (_calculated) ...[
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0B1D3A), Color(0xFF0F766E)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                // Calculate & Reset Buttons Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _calculate,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F766E),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 2,
+                        ),
+                        child: Text(
+                          'Calculate fixed refi savings',
+                          style: AppTextStyles.playfair(size: 13.5, weight: FontWeight.w800),
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: _reset,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cardBg,
+                        foregroundColor: textCol,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(color: borderCol, width: 1.5),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Reset',
+                        style: AppTextStyles.playfair(size: 13.5, weight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Results section or placeholder
+                if (!_calculated) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      border: Border.all(color: borderCol),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('💵', style: TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'View Fixed Rate Refinance Savings',
+                          style: AppTextStyles.playfair(size: 13, color: textCol, weight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Enter your loan details above, then tap "Calculate fixed refi savings" to see monthly savings, break-even timeline, and detailed breakdown.',
+                          style: AppTextStyles.dmSans(size: 10.5, color: mutedCol),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
-                    child: Stack(
+                  ),
+                ] else ...[
+                  Container(
+                    key: _resultsKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('RECOUP BREAK-EVEN POINT',
-                                style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54, weight: FontWeight.w700, letterSpacing: 0.8)),
-                            const SizedBox(height: 6),
-                            Text(
-                              _breakEvenMonths.isInfinite ? '—' : '${_breakEvenMonths.ceil()} mo',
-                              style: AppTextStyles.playfair(size: 32, color: Colors.white, weight: FontWeight.w800),
+                        if (isDirty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFBEB),
+                              border: Border.all(color: const Color(0xFFFCD34D)),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(height: 2),
-                            Text('to recoup refinance costs',
-                                style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFFFCD34D), weight: FontWeight.w700)),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Monthly savings: \$${_monthlySavings.round().abs()} · Total refi cost: \$${_closingCosts.round()}',
-                              style: AppTextStyles.dmSans(size: 9.5, color: Colors.white70),
+                            child: Row(
+                              children: [
+                                const Text('⚠️', style: TextStyle(fontSize: 16)),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Inputs have changed. Calculate again to update results.',
+                                    style: AppTextStyles.dmSans(
+                                      size: 11.5,
+                                      color: const Color(0xFFB45309),
+                                      weight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: GestureDetector(
-                            onTap: _saveCalc,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                border: Border.all(color: Colors.white24),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
+                          ),
+                        ],
+
+                        // Result Hero Card
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0B1D3A), Color(0xFF0F766E)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
+                            ],
+                          ),
+                          child: Stack(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.bookmark_border, color: Colors.white, size: 12),
-                                  const SizedBox(width: 4),
-                                  Text('Save', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white, weight: FontWeight.w700)),
+                                  Text('RECOUP BREAK-EVEN POINT',
+                                      style: AppTextStyles.dmSans(size: 8.5, color: Colors.white54, weight: FontWeight.w700, letterSpacing: 0.8)),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _breakEvenMonths.isInfinite ? '—' : '${_breakEvenMonths.ceil()} mo',
+                                    style: AppTextStyles.playfair(size: 32, color: Colors.white, weight: FontWeight.w800),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text('to recoup refinance costs',
+                                      style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFFFCD34D), weight: FontWeight.w700)),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Monthly savings: \$${_monthlySavings.round().abs()} · Total refi cost: \$${_closingCosts.round()}',
+                                    style: AppTextStyles.dmSans(size: 9.5, color: Colors.white70),
+                                  ),
                                 ],
                               ),
-                            ),
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: GestureDetector(
+                                  onTap: _saveCalc,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                      border: Border.all(color: Colors.white24),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.bookmark_border, color: Colors.white, size: 12),
+                                        const SizedBox(width: 4),
+                                        Text('Save', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white, weight: FontWeight.w700)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+                        _buildSectionHeader('10-Year Cumulative Savings vs. Refi Cost'),
+
+                        // Chart Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            border: Border.all(color: borderCol),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('📊 Cumulative savings compared to initial refinance cost',
+                                  style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
+                              const SizedBox(height: 14),
+                              SizedBox(
+                                height: 120,
+                                width: double.infinity,
+                                child: CustomPaint(
+                                  painter: RefiBreakEvenChartPainter(
+                                    totalCost: _closingCosts,
+                                    monthlySavings: _monthlySavings,
+                                    isDark: isDark,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Now', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                                  Text('5 Yrs', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                                  Text('10 Yrs', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              const Divider(),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  _buildStatColumn('Break-Even', _breakEvenMonths.isInfinite ? 'N/A' : '${_breakEvenMonths.ceil()} mo', textCol, mutedCol),
+                                  _buildStatColumn('Total Refi Cost', '\$${_closingCosts.round()}', textCol, mutedCol),
+                                  _buildStatColumn('5-Yr Net Savings', '${_fiveYrSavings >= 0 ? '+' : '-'}\$${_fiveYrSavings.abs().round()}', textCol, mutedCol),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+                        _buildSectionHeader('Key Scenario Stats'),
+
+                        // Breakdown Grid
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 1.4,
+                          children: [
+                            _buildBreakdownCard('💵', 'New Fixed P&I', '\$${_newPI.round()}', 'Locked for fixed term', textCol, mutedCol),
+                            _buildBreakdownCard('📉', 'Current ARM P&I', '\$${_oldPI.round()}', 'At adjusted ARM rate', textCol, mutedCol),
+                            _buildBreakdownCard('💰', 'Monthly Savings', '\$${_monthlySavings.round()}', 'Right after refi', textCol, mutedCol),
+                            _buildBreakdownCard('💳', 'Est. Closing Costs', '\$${_closingCosts.round()}', '% of new loan balance', textCol, mutedCol),
+                            _buildBreakdownCard('📦', 'New Loan Amount', '\$${_newLoanAmt.round()}', 'Paid out of pocket', textCol, mutedCol),
+                            _buildBreakdownCard('📅', 'Rate Improvement', '${_rateDrop.toStringAsFixed(2)}%', 'ARM vs. New Fixed', _rateDrop < 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C), mutedCol),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+                        _buildSectionHeader('Refinance Cost Ranges (2026)'),
+
+                        // Cost Guide Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            border: Border.all(color: borderCol),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('💳 Typical Refinance Closing Costs',
+                                  style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
+                              const SizedBox(height: 12),
+                              _buildGuideRow('Closing Cost Range', '2%–6% of loan amount', textCol),
+                              _buildGuideRow('On a \$300,000 Refi', '~\$6,000–\$18,000', textCol),
+                              _buildGuideRow('No-Closing-Cost Option', 'Higher rate instead of fees', textCol),
+                              _buildGuideRow('Rule of Thumb to Refi Again', '≥ 0.5%–0.75% rate drop', textCol),
+                              _buildGuideRow('Current 30-Yr Refi Avg', '6.75% (Jun 2026)', textCol, isGold: true),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
                 ],
-
-                const SizedBox(height: 20),
-                _buildSectionHeader('10-Year Cumulative Savings vs. Refi Cost'),
-
-                // Chart Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('📊 Cumulative savings compared to initial refinance cost',
-                          style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        height: 120,
-                        width: double.infinity,
-                        child: CustomPaint(
-                          painter: RefiBreakEvenChartPainter(
-                            totalCost: _closingCosts,
-                            monthlySavings: _monthlySavings,
-                            isDark: isDark,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Now', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                          Text('5 Yrs', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                          Text('10 Yrs', style: AppTextStyles.dmSans(size: 8, color: mutedCol)),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatColumn('Break-Even', _breakEvenMonths.isInfinite ? 'N/A' : '${_breakEvenMonths.ceil()} mo', textCol, mutedCol),
-                          _buildStatColumn('Total Refi Cost', '\$${_closingCosts.round()}', textCol, mutedCol),
-                          _buildStatColumn('5-Yr Net Savings', '${_fiveYrSavings >= 0 ? '+' : '-'}\$${_fiveYrSavings.abs().round()}', textCol, mutedCol),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-                _buildSectionHeader('Key Scenario Stats'),
-
-                // Breakdown Grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.4,
-                  children: [
-                    _buildBreakdownCard('💵', 'New Fixed P&I', '\$${_newPI.round()}', 'Locked for fixed term', textCol, mutedCol),
-                    _buildBreakdownCard('📉', 'Current ARM P&I', '\$${_oldPI.round()}', 'At adjusted ARM rate', textCol, mutedCol),
-                    _buildBreakdownCard('💰', 'Monthly Savings', '\$${_monthlySavings.round()}', 'Right after refi', textCol, mutedCol),
-                    _buildBreakdownCard('💳', 'Est. Closing Costs', '\$${_closingCosts.round()}', '% of new loan balance', textCol, mutedCol),
-                    _buildBreakdownCard('📦', 'New Loan Amount', '\$${_newLoanAmt.round()}', 'Paid out of pocket', textCol, mutedCol),
-                    _buildBreakdownCard('📅', 'Rate Improvement', '${_rateDrop.toStringAsFixed(2)}%', 'ARM vs. New Fixed', _rateDrop < 0 ? const Color(0xFF15803D) : const Color(0xFFB91C1C), mutedCol),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-                _buildSectionHeader('Refinance Cost Ranges (2026)'),
-
-                // Cost Guide Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    border: Border.all(color: borderCol),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('💳 Typical Refinance Closing Costs',
-                          style: AppTextStyles.playfair(size: 11.5, color: textCol, weight: FontWeight.w800)),
-                      const SizedBox(height: 12),
-                      _buildGuideRow('Closing Cost Range', '2%–6% of loan amount', textCol),
-                      _buildGuideRow('On a \$300,000 Refi', '~\$6,000–\$18,000', textCol),
-                      _buildGuideRow('No-Closing-Cost Option', 'Higher rate instead of fees', textCol),
-                      _buildGuideRow('Rule of Thumb to Refi Again', '≥ 0.5%–0.75% rate drop', textCol),
-                      _buildGuideRow('Current 30-Yr Refi Avg', '6.75% (Jun 2026)', textCol, isGold: true),
-                    ],
-                  ),
-                ),
 
                 const SizedBox(height: 20),
                 _buildSectionHeader('Should You Refinance? Checklist'),
@@ -606,7 +764,7 @@ class _USARefinancingArmScreenState extends ConsumerState<USARefinancingArmScree
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (val) => _calculate(),
+            onChanged: (val) => setState(() {}),
             style: AppTextStyles.dmSans(
               size: 13,
               weight: FontWeight.w800,

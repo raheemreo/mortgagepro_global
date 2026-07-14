@@ -23,14 +23,67 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
   bool _limReport = true;
   bool _buildInspect = true;
 
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  Map<String, String?> _errors = {};
+  final _resultsKey = GlobalKey();
+
   @override
   void dispose() {
     _priceController.dispose();
     super.dispose();
   }
 
+  void _reset() {
+    setState(() {
+      _priceController.text = '750000';
+      _propType = 'existing';
+      _limReport = true;
+      _buildInspect = true;
+      _showResults = false;
+      _calcSnapshot.clear();
+      _errors.clear();
+    });
+  }
+
+  void _calculate() {
+    final errors = <String, String>{};
+    final double price = double.tryParse(_priceController.text) ?? 0.0;
+
+    if (price <= 0) {
+      errors['price'] = 'Enter valid purchase price';
+    }
+
+    setState(() {
+      _errors = errors;
+    });
+
+    if (errors.isNotEmpty) return;
+
+    setState(() {
+      _calcSnapshot['price'] = price;
+      _calcSnapshot['propType'] = _propType;
+      _calcSnapshot['limReport'] = _limReport;
+      _calcSnapshot['buildInspect'] = _buildInspect;
+      _showResults = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   void _saveCalculation(double total, double legal, double limCost, double bldCost) async {
-    final double price = double.tryParse(_priceController.text) ?? 750000;
+    final double price = _calcSnapshot['price'] ?? (double.tryParse(_priceController.text) ?? 750000.0);
+    final String snapPropType = _calcSnapshot['propType'] ?? _propType;
+    final bool snapLimReport = _calcSnapshot['limReport'] ?? _limReport;
+    final bool snapBuildInspect = _calcSnapshot['buildInspect'] ?? _buildInspect;
 
     final labelCtrl = TextEditingController(text: 'NZ Solicitor Costs');
     final confirmed = await showDialog<bool>(
@@ -98,10 +151,10 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
 
       // Map propType to double
       double propTypeVal = 0.0;
-      if (_propType == 'new') propTypeVal = 1.0;
-      if (_propType == 'unit') propTypeVal = 2.0;
-      if (_propType == 'leasehold') propTypeVal = 3.0;
-      if (_propType == 'auction') propTypeVal = 4.0;
+      if (snapPropType == 'new') propTypeVal = 1.0;
+      if (snapPropType == 'unit') propTypeVal = 2.0;
+      if (snapPropType == 'leasehold') propTypeVal = 3.0;
+      if (snapPropType == 'auction') propTypeVal = 4.0;
 
       final calc = SavedCalc.create(
         country: 'New Zealand',
@@ -109,8 +162,8 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
         inputs: {
           'price': price,
           'propType': propTypeVal,
-          'limReport': _limReport ? 1.0 : 0.0,
-          'buildInspect': _buildInspect ? 1.0 : 0.0,
+          'limReport': snapLimReport ? 1.0 : 0.0,
+          'buildInspect': snapBuildInspect ? 1.0 : 0.0,
         },
         results: {
           'legalBase': legal,
@@ -145,7 +198,12 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
 
-    final double price = double.tryParse(_priceController.text) ?? 750000;
+    // Snapshot variables if results are shown, otherwise live inputs
+    final double rawPrice = double.tryParse(_priceController.text) ?? 750000.0;
+    final double price = _showResults ? (_calcSnapshot['price'] ?? rawPrice) : rawPrice;
+    final String propType = _showResults ? (_calcSnapshot['propType'] ?? _propType) : _propType;
+    final bool limReport = _showResults ? (_calcSnapshot['limReport'] ?? _limReport) : _limReport;
+    final bool buildInspect = _showResults ? (_calcSnapshot['buildInspect'] ?? _buildInspect) : _buildInspect;
 
     // Base legal fee scaled by price
     double legal = 1600;
@@ -156,23 +214,30 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
     }
 
     // Property Type additions
-    if (_propType == 'leasehold') {
+    if (propType == 'leasehold') {
       legal += 600;
-    } else if (_propType == 'unit') {
+    } else if (propType == 'unit') {
       legal += 300;
-    } else if (_propType == 'auction') {
+    } else if (propType == 'auction') {
       legal += 350;
-    } else if (_propType == 'new') {
+    } else if (propType == 'new') {
       legal += 150;
     }
 
-    final double limCost = _limReport ? 400.0 : 0.0;
-    final double bldCost = _buildInspect ? 650.0 : 0.0;
+    final double limCost = limReport ? 400.0 : 0.0;
+    final double bldCost = buildInspect ? 650.0 : 0.0;
     const double titleCost = 100.0;
     const double bankCost = 300.0;
     const double disbCost = 200.0;
 
     final double total = legal + limCost + bldCost + titleCost + bankCost + disbCost;
+
+    final isDirty = _showResults && (
+      (double.tryParse(_priceController.text) ?? 0.0) != (_calcSnapshot['price'] ?? 0.0) ||
+      _propType != (_calcSnapshot['propType'] ?? '') ||
+      _limReport != (_calcSnapshot['limReport'] ?? false) ||
+      _buildInspect != (_calcSnapshot['buildInspect'] ?? false)
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,14 +295,30 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'SOLICITOR & CONVEYANCING ESTIMATOR',
-                style: AppTextStyles.dmSans(
-                  size: 8,
-                  color: Colors.white70,
-                  weight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'SOLICITOR & CONVEYANCING ESTIMATOR',
+                    style: AppTextStyles.dmSans(
+                      size: 8,
+                      color: Colors.white70,
+                      weight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _reset,
+                    child: Text(
+                      'Reset ↺',
+                      style: AppTextStyles.dmSans(
+                        size: 11,
+                        color: const Color(0xFFFDE68A),
+                        weight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 6),
               Text(
@@ -258,12 +339,13 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
                       color: Colors.white70)),
               const SizedBox(height: 6),
               Container(
-                height: 44,
+                height: _errors['price'] != null ? 58 : 44,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+                  border: Border.all(color: _errors['price'] != null ? Colors.red : Colors.white.withValues(alpha: 0.22)),
                 ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 child: Row(
                   children: [
                     Container(
@@ -276,18 +358,32 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
                               color: Colors.white70)),
                     ),
                     Expanded(
-                      child: TextField(
-                        controller: _priceController,
-                        keyboardType: TextInputType.number,
-                        style: AppTextStyles.dmSans(
-                            size: 14, weight: FontWeight.w700, color: Colors.white),
-                        decoration: const InputDecoration(
-                          hintText: '750,000',
-                          hintStyle: TextStyle(color: Colors.white38),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10),
-                        ),
-                        onChanged: (_) => setState(() {}),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _priceController,
+                              keyboardType: TextInputType.number,
+                              style: AppTextStyles.dmSans(
+                                  size: 14, weight: FontWeight.w700, color: Colors.white),
+                              decoration: const InputDecoration(
+                                hintText: '750,000',
+                                hintStyle: TextStyle(color: Colors.white38),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          if (_errors['price'] != null)
+                            Text(
+                              _errors['price']!,
+                              style: AppTextStyles.dmSans(size: 7, color: Colors.red[300], weight: FontWeight.bold),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -435,217 +531,260 @@ class _NZSolicitorCostsState extends ConsumerState<NZSolicitorCosts> {
                   ),
                 ],
               ),
+              const SizedBox(height: 14),
+              ElevatedButton(
+                onPressed: _calculate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0A0F0D),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                ),
+                child: Text('⚖️ Calculate Legal Costs', style: AppTextStyles.playfair(size: 12, weight: FontWeight.bold, color: Colors.white)),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
-        // Results Card
-        Text(
-          'Cost Breakdown',
-          style: AppTextStyles.playfair(
-            size: 12,
-            weight: FontWeight.w800,
-            color: theme.getTextColor(context),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+        if (_showResults) ...[
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Row(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'TOTAL ESTIMATED LEGAL COSTS',
-                        style: AppTextStyles.dmSans(
-                            size: 8,
-                            weight: FontWeight.w800,
-                            color: theme.getMutedColor(context)),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        textBaseline: TextBaseline.alphabetic,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        children: [
-                          Text('NZ\$',
-                              style: AppTextStyles.playfair(
-                                  size: 14,
-                                  weight: FontWeight.w700,
-                                  color: theme.primaryColor)),
-                          Text(
-                            CurrencyFormatter.compact(total, symbol: '').replaceAll('\$', ''),
-                            style: AppTextStyles.playfair(
-                                size: 28,
-                                weight: FontWeight.w800,
-                                color: theme.primaryColor),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'GST INCLUDED',
-                        style: AppTextStyles.dmSans(
-                            size: 8,
-                            weight: FontWeight.w800,
-                            color: theme.getMutedColor(context)),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '15% GST',
-                        style: AppTextStyles.dmSans(
-                            size: 12,
-                            weight: FontWeight.w800,
-                            color: theme.getMutedColor(context)),
-                      ),
-                    ],
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Calculate Legal Costs to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-
-              // Custom Waterfall chart
-              Text(
-                'COST DISTRIBUTION',
-                style: AppTextStyles.dmSans(
-                    size: 8,
+            ),
+            const SizedBox(height: 16),
+          ],
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Results Card
+                Text(
+                  'Cost Breakdown',
+                  style: AppTextStyles.playfair(
+                    size: 12,
                     weight: FontWeight.w800,
-                    color: theme.getMutedColor(context),
-                    letterSpacing: 0.5),
-              ),
-              const SizedBox(height: 10),
-              _buildWaterfallChart(
-                total,
-                legal,
-                limCost,
-                bldCost,
-                titleCost,
-                bankCost,
-                disbCost,
-              ),
-              const SizedBox(height: 20),
-
-              // Detailed cost rows
-              _buildCostRow(
-                color: const Color(0xFF1A6B4A),
-                title: 'Legal / Conveyancing',
-                sub: 'Solicitor fee + GST (incl.)',
-                amount: legal,
-                range: 'Range: \$1,500–\$2,500',
-              ),
-              _buildCostRow(
-                color: const Color(0xFFD4A017),
-                title: 'LIM Report',
-                sub: 'Land Information Memorandum',
-                amount: limCost,
-                range: 'Range: \$250–\$500',
-              ),
-              _buildCostRow(
-                color: const Color(0xFF0EA5E9),
-                title: 'Building Inspection',
-                sub: 'Pre-purchase structural report',
-                amount: bldCost,
-                range: 'Range: \$500–\$900',
-              ),
-              _buildCostRow(
-                color: const Color(0xFF6D28D9),
-                title: 'LINZ Title Search',
-                sub: 'Land Information NZ registration',
-                amount: titleCost,
-                range: 'Fixed ~\$100',
-              ),
-              _buildCostRow(
-                color: const Color(0xFFC0392B),
-                title: 'Mortgage / Bank Docs',
-                sub: 'Lender security documentation',
-                amount: bankCost,
-                range: 'Range: \$250–\$400',
-              ),
-              _buildCostRow(
-                color: const Color(0xFF334155),
-                title: 'Disbursements / Other',
-                sub: 'Couriers, searches, registration',
-                amount: disbCost,
-                range: '~\$150–\$250',
-              ),
-
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.getBgColor(context),
-                  borderRadius: BorderRadius.circular(12),
+                    color: theme.getTextColor(context),
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Total Estimated',
-                      style: AppTextStyles.dmSans(
-                          size: 12,
-                          weight: FontWeight.w800,
-                          color: theme.getTextColor(context)),
-                    ),
-                    Text(
-                      CurrencyFormatter.compact(total, symbol: 'NZ\$'),
-                      style: AppTextStyles.dmSans(
-                          size: 18,
-                          weight: FontWeight.w800,
-                          color: theme.primaryColor),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Budget extra 10–15% buffer · Costs vary by solicitor and complexity',
-                style: AppTextStyles.dmSans(
-                    size: 8, color: theme.getMutedColor(context)),
-              ),
-              const SizedBox(height: 14),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'TOTAL ESTIMATED LEGAL COSTS',
+                                style: AppTextStyles.dmSans(
+                                    size: 8,
+                                    weight: FontWeight.w800,
+                                    color: theme.getMutedColor(context)),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                textBaseline: TextBaseline.alphabetic,
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                children: [
+                                  Text('NZ\$',
+                                      style: AppTextStyles.playfair(
+                                          size: 14,
+                                          weight: FontWeight.w700,
+                                          color: theme.primaryColor)),
+                                  Text(
+                                    CurrencyFormatter.compact(total, symbol: '').replaceAll('\$', ''),
+                                    style: AppTextStyles.playfair(
+                                        size: 28,
+                                        weight: FontWeight.w800,
+                                        color: theme.primaryColor),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'GST INCLUDED',
+                                style: AppTextStyles.dmSans(
+                                    size: 8,
+                                    weight: FontWeight.w800,
+                                    color: theme.getMutedColor(context)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '15% GST',
+                                style: AppTextStyles.dmSans(
+                                    size: 12,
+                                    weight: FontWeight.w800,
+                                    color: theme.getMutedColor(context)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
 
-              ElevatedButton.icon(
-                onPressed: () => _saveCalculation(total, legal, limCost, bldCost),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.primaryColor,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 44),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
+                      // Custom Waterfall chart
+                      Text(
+                        'COST DISTRIBUTION',
+                        style: AppTextStyles.dmSans(
+                            size: 8,
+                            weight: FontWeight.w800,
+                            color: theme.getMutedColor(context),
+                            letterSpacing: 0.5),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildWaterfallChart(
+                        total,
+                        legal,
+                        limCost,
+                        bldCost,
+                        titleCost,
+                        bankCost,
+                        disbCost,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Detailed cost rows
+                      _buildCostRow(
+                        color: const Color(0xFF1A6B4A),
+                        title: 'Legal / Conveyancing',
+                        sub: 'Solicitor fee + GST (incl.)',
+                        amount: legal,
+                        range: 'Range: \$1,500–\$2,500',
+                      ),
+                      _buildCostRow(
+                        color: const Color(0xFFD4A017),
+                        title: 'LIM Report',
+                        sub: 'Land Information Memorandum',
+                        amount: limCost,
+                        range: 'Range: \$250–\$500',
+                      ),
+                      _buildCostRow(
+                        color: const Color(0xFF0EA5E9),
+                        title: 'Building Inspection',
+                        sub: 'Pre-purchase structural report',
+                        amount: bldCost,
+                        range: 'Range: \$500–\$900',
+                      ),
+                      _buildCostRow(
+                        color: const Color(0xFF6D28D9),
+                        title: 'LINZ Title Search',
+                        sub: 'Land Information NZ registration',
+                        amount: titleCost,
+                        range: 'Fixed ~\$100',
+                      ),
+                      _buildCostRow(
+                        color: const Color(0xFFC0392B),
+                        title: 'Mortgage / Bank Docs',
+                        sub: 'Lender security documentation',
+                        amount: bankCost,
+                        range: 'Range: \$250–\$400',
+                      ),
+                      _buildCostRow(
+                        color: const Color(0xFF334155),
+                        title: 'Disbursements / Other',
+                        sub: 'Couriers, searches, registration',
+                        amount: disbCost,
+                        range: '~\$150–\$250',
+                      ),
+
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.getBgColor(context),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Total Estimated',
+                              style: AppTextStyles.dmSans(
+                                  size: 12,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context)),
+                            ),
+                            Text(
+                              CurrencyFormatter.compact(total, symbol: 'NZ\$'),
+                              style: AppTextStyles.dmSans(
+                                  size: 18,
+                                  weight: FontWeight.w800,
+                                  color: theme.primaryColor),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Budget extra 10–15% buffer · Costs vary by solicitor and complexity',
+                        style: AppTextStyles.dmSans(
+                            size: 8, color: theme.getMutedColor(context)),
+                      ),
+                      const SizedBox(height: 14),
+
+                      ElevatedButton.icon(
+                        onPressed: () => _saveCalculation(total, legal, limCost, bldCost),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.primaryColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 44),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          elevation: 2,
+                        ),
+                        icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                        label: Text('Save Calculation',
+                            style: AppTextStyles.playfair(
+                                size: 13,
+                                weight: FontWeight.w800,
+                                color: Colors.white)),
+                      ),
+                    ],
+                  ),
                 ),
-                icon: const Text('💾', style: TextStyle(fontSize: 14)),
-                label: Text('Save Calculation',
-                    style: AppTextStyles.playfair(
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: Colors.white)),
-              ),
-            ],
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
+        ],
 
         // Info Section
         Text(

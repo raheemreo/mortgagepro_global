@@ -47,16 +47,54 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
     'draught':    ['chk-d1', 'chk-d2'],
   };
 
+  bool _showResults = false;
+  final Map<String, dynamic> _calcSnapshot = {};
+  final _resultsKey = GlobalKey();
+
   void _toggleChk(String id) {
     setState(() {
       _chkState[id] = !(_chkState[id] ?? false);
     });
   }
 
+  void _reset() {
+    setState(() {
+      _propType = 'House';
+      _buildYear = '1978–1999';
+      _region = 'Canterbury';
+      _chkState.addAll({
+        'chk-h1': false, 'chk-h2': true,  'chk-h3': true,
+        'chk-i1': true,  'chk-i2': true,  'chk-i3': true,
+        'chk-v1': true,  'chk-v2': true,
+        'chk-m1': false, 'chk-m2': false, 'chk-m3': false,
+        'chk-d1': true,  'chk-d2': true,
+      });
+      _expanded.updateAll((key, value) => false);
+      _showResults = false;
+      _calcSnapshot.clear();
+    });
+  }
+
   void _runFullCheck() {
     setState(() {
+      _calcSnapshot['propType'] = _propType;
+      _calcSnapshot['buildYear'] = _buildYear;
+      _calcSnapshot['region'] = _region;
+      _calcSnapshot['chkState'] = Map<String, bool>.from(_chkState);
+      _showResults = true;
       _expanded.updateAll((key, value) => true);
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_resultsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _resultsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('✅ Compliance check complete! Review each standard below.',
@@ -68,7 +106,14 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
   }
 
   void _saveReport() async {
-    final passed = _chkState.values.where((v) => v).length;
+    final Map<String, bool> snapChk = _calcSnapshot['chkState'] != null
+        ? Map<String, bool>.from(_calcSnapshot['chkState'])
+        : _chkState;
+    final String snapPropType = _calcSnapshot['propType'] ?? _propType;
+    final String snapBuildYear = _calcSnapshot['buildYear'] ?? _buildYear;
+    final String snapRegion = _calcSnapshot['region'] ?? _region;
+
+    final passed = snapChk.values.where((v) => v).length;
     final pct = (passed / 13 * 100).round();
 
     final labelCtrl = TextEditingController(text: 'Healthy Homes Report');
@@ -86,7 +131,7 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saving HHS Report:\nProperty: $_propType · Region: $_region\nCompliance Score: $pct%',
+              'Saving HHS Report:\nProperty: $snapPropType · Region: $snapRegion\nCompliance Score: $pct%',
               style: AppTextStyles.dmSans(
                   size: 11.5, color: widget.theme.getMutedColor(context)),
             ),
@@ -137,23 +182,23 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
         country: 'New Zealand',
         calcType: 'Healthy Homes Report',
         inputs: {
-          'propTypeIndex': _propType == 'House'
+          'propTypeIndex': snapPropType == 'House'
               ? 0.0
-              : (_propType == 'Apartment' ? 1.0 : (_propType == 'Unit' ? 2.0 : 3.0)),
-          'buildYearIndex': _buildYear == 'Pre-1978'
+              : (snapPropType == 'Apartment' ? 1.0 : (snapPropType == 'Unit' ? 2.0 : 3.0)),
+          'buildYearIndex': snapBuildYear == 'Pre-1978'
               ? 0.0
-              : (_buildYear == '1978–1999'
+              : (snapBuildYear == '1978–1999'
                   ? 1.0
-                  : (_buildYear == '2000–2007' ? 2.0 : 3.0)),
-          'regionIndex': _region == 'Auckland'
+                  : (snapBuildYear == '2000–2007' ? 2.0 : 3.0)),
+          'regionIndex': snapRegion == 'Auckland'
               ? 0.0
-              : (_region == 'Wellington'
+              : (snapRegion == 'Wellington'
                   ? 1.0
-                  : (_region == 'Canterbury' ? 2.0 : (_region == 'Otago' ? 3.0 : 4.0))),
+                  : (snapRegion == 'Canterbury' ? 2.0 : (snapRegion == 'Otago' ? 3.0 : 4.0))),
         },
         results: {
           'complianceScore': pct.toDouble(),
-          'passedStandardsCount': (_getSummaryStats()['pass'] ?? 0).toDouble(),
+          'passedStandardsCount': passed.toDouble(),
         },
         label: labelCtrl.text.trim(),
         currencyCode: 'NZD',
@@ -170,10 +215,10 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
     }
   }
 
-  Map<String, int> _getSummaryStats() {
+  Map<String, int> _getSummaryStats(Map<String, bool> chk) {
     int pass = 0, part = 0, fail = 0;
     _sectionItems.forEach((sec, items) {
-      final p = items.where((i) => _chkState[i] ?? false).length;
+      final p = items.where((i) => chk[i] ?? false).length;
       final t = items.length;
       if (p == t) {
         pass++;
@@ -186,6 +231,14 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
     return {'pass': pass, 'part': part, 'fail': fail};
   }
 
+  bool _isMapEqual(Map<String, bool> m1, Map<String, bool> m2) {
+    if (m1.length != m2.length) return false;
+    for (final key in m1.keys) {
+      if (m1[key] != m2[key]) return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
@@ -194,18 +247,26 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
     final textCol = theme.getTextColor(context);
     final borderCol = theme.getBorderColor(context);
 
-    // Compute compliance percentage
-    final passedItems = _chkState.values.where((v) => v).length;
-    final pct = (passedItems / 13 * 100).round();
+    // Compute stats from snapshot if results are shown, otherwise dummy/empty values
+    final snapChk = _showResults
+        ? Map<String, bool>.from(_calcSnapshot['chkState'] ?? {})
+        : _chkState;
+    final passedItems = snapChk.values.where((v) => v).length;
+    final pct = _showResults ? (passedItems / 13 * 100).round() : 0;
+    final summary = _getSummaryStats(snapChk);
 
-    final summary = _getSummaryStats();
-
-    // Map section checkmark fractions for radar chart
     final List<double> radarFractions = _sectionItems.keys.map((sec) {
       final items = _sectionItems[sec]!;
-      final p = items.where((i) => _chkState[i] ?? false).length;
+      final p = items.where((i) => snapChk[i] ?? false).length;
       return p / items.length;
     }).toList();
+
+    final isDirty = _showResults && (
+      _propType != (_calcSnapshot['propType'] ?? '') ||
+      _buildYear != (_calcSnapshot['buildYear'] ?? '') ||
+      _region != (_calcSnapshot['region'] ?? '') ||
+      !_isMapEqual(_chkState, Map<String, bool>.from(_calcSnapshot['chkState'] ?? {}))
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +292,23 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
         ),
 
         // Section property details
-        Text('Your Rental Property', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Your Rental Property', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+            GestureDetector(
+              onTap: _reset,
+              child: Text(
+                'Reset ↺',
+                style: AppTextStyles.dmSans(
+                  size: 11,
+                  weight: FontWeight.w600,
+                  color: theme.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
 
         // Property setup grid
@@ -315,15 +392,19 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
                         Text('Compliance Score', style: AppTextStyles.dmSans(size: 9, color: Colors.white54)),
                         Text('$pct%', style: AppTextStyles.dmSans(size: 28, weight: FontWeight.w800, color: const Color(0xFFF5D060))),
                         Text(
-                          pct == 100
-                              ? '✅ Fully Compliant'
-                              : (pct >= 60 ? '⚠ Partially Compliant' : '✗ Non-Compliant'),
+                          !_showResults
+                              ? 'Check Compliance'
+                              : (pct == 100
+                                  ? '✅ Fully Compliant'
+                                  : (pct >= 60 ? '⚠ Partially Compliant' : '✗ Non-Compliant')),
                           style: AppTextStyles.dmSans(
                             size: 11,
                             weight: FontWeight.bold,
-                            color: pct == 100
-                                ? const Color(0xFF6EE7B7)
-                                : (pct >= 60 ? const Color(0xFFF5D060) : const Color(0xFFFCA5A5)),
+                            color: !_showResults
+                                ? Colors.white70
+                                : (pct == 100
+                                    ? const Color(0xFF6EE7B7)
+                                    : (pct >= 60 ? const Color(0xFFF5D060) : const Color(0xFFFCA5A5))),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -344,37 +425,12 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
                 ),
                 child: Text('🏠 Run Full Compliance Check', style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800)),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: _saveReport,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4A017),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  minimumSize: const Size(double.infinity, 44),
-                ),
-                child: Text('💾 Save Compliance Report', style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800)),
-              ),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
-        // Compliance Summary
-        Text('Compliance Summary', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(child: _buildSummaryBox('${summary["pass"]}', 'Passing', theme.primaryColor)),
-            const SizedBox(width: 8),
-            Expanded(child: _buildSummaryBox('${summary["part"]}', 'In Progress', const Color(0xFFD4A017))),
-            const SizedBox(width: 8),
-            Expanded(child: _buildSummaryBox('${summary["fail"]}', 'Non-Compliant', const Color(0xFFC0392B))),
-          ],
-        ),
-        const SizedBox(height: 20),
-
-        // Standards checklist
+        // Standards checklist - always visible so user can interact
         Text('Five Standards Checklist', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
         const SizedBox(height: 10),
 
@@ -451,39 +507,97 @@ class _NZHealthyHomesState extends ConsumerState<NZHealthyHomes> {
         ),
         const SizedBox(height: 20),
 
-        // Compliance Radar Chart
-        Text('Your Property · Compliance Radar', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderCol),
-          ),
-          child: Column(
-            children: [
-              AspectRatio(
-                aspectRatio: 260 / 220,
-                child: CustomPaint(
-                  painter: _HealthyRadarPainter(fractions: radarFractions, isDark: isDark),
-                ),
+        if (_showResults) ...[
+          if (isDirty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Row(
                 children: [
-                  _buildRadarLegend('Compliant', theme.primaryColor),
-                  const SizedBox(width: 14),
-                  _buildRadarLegend('Partial', const Color(0xFFD4A017)),
-                  const SizedBox(width: 14),
-                  _buildRadarLegend('Non-Compliant', const Color(0xFFC0392B)),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs have changed. Tap Run Full Compliance Check to refresh results.',
+                      style: AppTextStyles.dmSans(size: 11, color: Colors.amber[800], weight: FontWeight.bold),
+                    ),
+                  ),
                 ],
               ),
-            ],
+            ),
+            const SizedBox(height: 16),
+          ],
+          Container(
+            key: _resultsKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Compliance Summary
+                Text('Compliance Summary', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(child: _buildSummaryBox('${summary["pass"]}', 'Passing', theme.primaryColor)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildSummaryBox('${summary["part"]}', 'In Progress', const Color(0xFFD4A017))),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildSummaryBox('${summary["fail"]}', 'Non-Compliant', const Color(0xFFC0392B))),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Compliance Radar Chart
+                Text('Your Property · Compliance Radar', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Column(
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 260 / 220,
+                        child: CustomPaint(
+                          painter: _HealthyRadarPainter(fractions: radarFractions, isDark: isDark),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildRadarLegend('Compliant', theme.primaryColor),
+                          const SizedBox(width: 14),
+                          _buildRadarLegend('Partial', const Color(0xFFD4A017)),
+                          const SizedBox(width: 14),
+                          _buildRadarLegend('Non-Compliant', const Color(0xFFC0392B)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _saveReport,
+                  icon: const Text('💾', style: TextStyle(fontSize: 14)),
+                  label: Text('Save Compliance Report', style: AppTextStyles.playfair(size: 13, color: Colors.white, weight: FontWeight.w800)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4A017),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    minimumSize: const Size(double.infinity, 44),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
+        ],
 
         // Penalty box
         Text('Non-Compliance Penalties', style: AppTextStyles.playfair(size: 15, weight: FontWeight.w800, color: textCol)),
