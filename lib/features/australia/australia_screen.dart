@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/country_themes.dart';
 import '../../shared/widgets/country_header.dart';
 import '../../shared/widgets/hero_calculator_card.dart';
+import '../../shared/widgets/hero_input_editor_sheet.dart';
 import '../../shared/widgets/tool_card.dart';
 import '../../shared/widgets/info_card.dart';
 import '../../shared/widgets/alert_banner.dart';
@@ -32,9 +33,9 @@ class AustraliaScreen extends StatefulWidget {
 class _AustraliaScreenState extends State<AustraliaScreen> {
   static const _theme = CountryThemes.australia;
 
-  final double _propValue = 750000;
-  final double _depositPct = 10;
-  final int _termYears = 30;
+  double _propValue = 750000;
+  double _depositPct = 10;
+  int _termYears = 30;
 
   final Map<String, GlobalKey> _cardKeys = {};
 
@@ -87,6 +88,47 @@ class _AustraliaScreenState extends State<AustraliaScreen> {
         depositPercent: _depositPct,
         termYears: _termYears,
         rate: 6.09,
+      ),
+    );
+  }
+
+  void _showInputEditor() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/australia/mortgage/inputs'),
+      builder: (_) => HeroInputEditorSheet(
+        title: '\uD83C\uDDE6\uD83C\uDDFA Adjust Mortgage Inputs',
+        primaryColor: _theme.primaryColor,
+        configs: [
+          HeroInputConfig(
+            label: 'PROPERTY VALUE',
+            value: _propValue,
+            min: 100000, max: 5000000, divisions: 98,
+            format: (v) => CurrencyFormatter.compact(v, symbol: 'AU\$'),
+          ),
+          HeroInputConfig(
+            label: 'DEPOSIT',
+            value: _depositPct,
+            min: 5, max: 50, divisions: 45,
+            format: (v) => '${v.toInt()}%',
+          ),
+          HeroInputConfig(
+            label: 'TERM',
+            value: _termYears.toDouble(),
+            min: 5, max: 30, divisions: 25,
+            format: (v) => '${v.toInt()} Years',
+          ),
+        ],
+        onApply: (values) {
+          setState(() {
+            _propValue = values[0];
+            _depositPct = values[1];
+            _termYears = values[2].toInt();
+          });
+          _calculate();
+        },
       ),
     );
   }
@@ -161,6 +203,7 @@ class _AustraliaScreenState extends State<AustraliaScreen> {
                         HeroInputBox(label: 'Term', value: '$_termYears yr'),
                       ],
                       onCalculate: _calculate,
+                      onInputTap: _showInputEditor,
                       buttonGradient: const LinearGradient(
                         colors: [Color(0xFF001F5C), Color(0xFF1E3A8A)],
                       ),

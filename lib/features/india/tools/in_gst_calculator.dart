@@ -293,13 +293,26 @@ class _INGSTCalculatorState extends ConsumerState<INGSTCalculator> {
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: const Color(0xFFFFF7EE), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFFE05F00).withValues(alpha: 0.1)
+                      : const Color(0xFFFFF7EE),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: const Color(0xFFE05F00).withValues(alpha: 0.2)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(currentSlab['title'] as String, style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: const Color(0xFFE05F00))),
+                    Text(currentSlab['title'] as String,
+                        style: AppTextStyles.dmSans(
+                            size: 11,
+                            weight: FontWeight.bold,
+                            color: const Color(0xFFE05F00))),
                     const SizedBox(height: 2),
-                    Text(currentSlab['desc'] as String, style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context))),
+                    Text(currentSlab['desc'] as String,
+                        style: AppTextStyles.dmSans(
+                            size: 9.5, color: theme.getMutedColor(context))),
                   ],
                 ),
               ),
@@ -336,7 +349,6 @@ class _INGSTCalculatorState extends ConsumerState<INGSTCalculator> {
         const SizedBox(height: 20),
 
         if (_calculated) ...[
-          const SizedBox(height: 20),
           // Warning banner if inputs changed
           if (_areInputsChanged())
             Container(

@@ -308,12 +308,22 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(e.value.name, style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
-                      Text(e.value.incomeLimit, style: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context))),
+                      Text(e.value.name,
+                          style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: isSelected ? const Color(0xFF07543A) : theme.getTextColor(context))),
+                      Text(e.value.incomeLimit,
+                          style: AppTextStyles.dmSans(
+                              size: 8.5,
+                              color: isSelected ? const Color(0xFF046A38) : theme.getMutedColor(context))),
                       const SizedBox(height: 4),
                       Text('₹${(e.value.subsidy / 100000).toStringAsFixed(2)}L',
                           style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: const Color(0xFFFF6B00))),
-                      Text('Max NPV Subsidy', style: AppTextStyles.dmSans(size: 8, color: theme.getMutedColor(context))),
+                      Text('Max NPV Subsidy',
+                          style: AppTextStyles.dmSans(
+                              size: 8,
+                              color: isSelected ? const Color(0xFF046A38) : theme.getMutedColor(context))),
                     ],
                   ),
                 ),

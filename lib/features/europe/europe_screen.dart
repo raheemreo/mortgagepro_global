@@ -7,6 +7,7 @@ import '../../app/theme/country_themes.dart';
 import '../../app/theme/text_styles.dart';
 import '../../shared/widgets/country_header.dart';
 import '../../shared/widgets/hero_calculator_card.dart';
+import '../../shared/widgets/hero_input_editor_sheet.dart';
 import '../../shared/widgets/info_card.dart';
 import '../../shared/widgets/alert_banner.dart';
 import '../../shared/widgets/bottom_nav.dart';
@@ -34,9 +35,9 @@ class EuropeScreen extends ConsumerStatefulWidget {
 
 class _EuropeScreenState extends ConsumerState<EuropeScreen> {
   static const _theme = CountryThemes.europe;
-  final double _propValue = 420000;
-  final double _depositPct = 20;
-  final int _termYears = 20;
+  double _propValue = 420000;
+  double _depositPct = 20;
+  int _termYears = 20;
   String _selectedCountry = 'DE';
 
   final Map<String, GlobalKey> _cardKeys = {};
@@ -128,6 +129,47 @@ class _EuropeScreenState extends ConsumerState<EuropeScreen> {
         termYears: _termYears,
         rate: _selectedRate,
         country: _selectedCountry,
+      ),
+    );
+  }
+
+  void _showInputEditor() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/europe/mortgage/inputs'),
+      builder: (_) => HeroInputEditorSheet(
+        title: '\uD83C\uDDEA\uD83C\uDDFA Adjust Mortgage Inputs',
+        primaryColor: _theme.primaryColor,
+        configs: [
+          HeroInputConfig(
+            label: 'PROPERTY VALUE',
+            value: _propValue,
+            min: 50000, max: 3000000, divisions: 59,
+            format: (v) => CurrencyFormatter.compact(v, symbol: '\u20AC'),
+          ),
+          HeroInputConfig(
+            label: 'DEPOSIT',
+            value: _depositPct,
+            min: 5, max: 50, divisions: 45,
+            format: (v) => '${v.toInt()}%',
+          ),
+          HeroInputConfig(
+            label: 'TERM',
+            value: _termYears.toDouble(),
+            min: 5, max: 30, divisions: 25,
+            format: (v) => '${v.toInt()} Years',
+          ),
+        ],
+        onApply: (values) {
+          setState(() {
+            _propValue = values[0];
+            _depositPct = values[1];
+            _termYears = values[2].toInt();
+          });
+          _calculate();
+        },
       ),
     );
   }
@@ -256,6 +298,7 @@ class _EuropeScreenState extends ConsumerState<EuropeScreen> {
                         HeroInputBox(label: 'Term', value: '$_termYears yr'),
                       ],
                       onCalculate: _calculate,
+                      onInputTap: _showInputEditor,
                       buttonGradient: const LinearGradient(
                         colors: [Color(0xFF003399), Color(0xFF1A0040)],
                       ),

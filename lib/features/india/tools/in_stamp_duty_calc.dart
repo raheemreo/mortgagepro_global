@@ -229,7 +229,9 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7EE),
+                  color: isDark
+                      ? theme.getCardColor(context)
+                      : const Color(0xFFFFF7EE),
                   border: Border.all(color: theme.getBorderColor(context)),
                   borderRadius: BorderRadius.circular(11),
                 ),
@@ -296,7 +298,6 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
         const SizedBox(height: 20),
 
         if (_calculated) ...[
-          const SizedBox(height: 20),
           // Warning banner if inputs changed
           if (_areInputsChanged())
             Container(

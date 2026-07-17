@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/country_themes.dart';
 import '../../shared/widgets/country_header.dart';
 import '../../shared/widgets/hero_calculator_card.dart';
+import '../../shared/widgets/hero_input_editor_sheet.dart';
 import '../../shared/widgets/tool_card.dart';
 import '../../shared/widgets/info_card.dart';
 import '../../shared/widgets/alert_banner.dart';
@@ -34,9 +35,9 @@ class CanadaScreen extends ConsumerStatefulWidget {
 
 class _CanadaScreenState extends ConsumerState<CanadaScreen> {
   static const _theme = CountryThemes.canada;
-  final double _homePrice = 650000;
-  final double _downPct = 10;
-  final int _termYears = 25;
+  double _homePrice = 650000;
+  double _downPct = 10;
+  int _termYears = 25;
 
   final Map<String, GlobalKey> _cardKeys = {};
 
@@ -76,6 +77,62 @@ class _CanadaScreenState extends ConsumerState<CanadaScreen> {
         }
       });
     }
+  }
+
+  void _calculate() {
+    final r5yrFixed = ref.read(canadaCalculatedRatesProvider).valueOrNull?.rate5yrFixed ?? 4.99;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/canada/mortgage/result'),
+      builder: (_) => CAMortgageCalcSheet(
+        homePrice: _homePrice,
+        downPercent: _downPct,
+        defaultContractRate: r5yrFixed,
+      ),
+    );
+  }
+
+  void _showInputEditor() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/canada/mortgage/inputs'),
+      builder: (_) => HeroInputEditorSheet(
+        title: '\uD83C\uDDE8\uD83C\uDDE6 Adjust Mortgage Inputs',
+        primaryColor: _theme.primaryColor,
+        configs: [
+          HeroInputConfig(
+            label: 'HOME PRICE',
+            value: _homePrice,
+            min: 100000, max: 3000000, divisions: 58,
+            format: (v) => CurrencyFormatter.compact(v, symbol: 'CA\$'),
+          ),
+          HeroInputConfig(
+            label: 'DOWN PAYMENT',
+            value: _downPct,
+            min: 5, max: 50, divisions: 45,
+            format: (v) => '${v.toInt()}%',
+          ),
+          HeroInputConfig(
+            label: 'AMORTIZATION',
+            value: _termYears.toDouble(),
+            min: 5, max: 30, divisions: 25,
+            format: (v) => '${v.toInt()} Years',
+          ),
+        ],
+        onApply: (values) {
+          setState(() {
+            _homePrice = values[0];
+            _downPct = values[1];
+            _termYears = values[2].toInt();
+          });
+          _calculate();
+        },
+      ),
+    );
   }
 
   @override
@@ -178,16 +235,8 @@ class _CanadaScreenState extends ConsumerState<CanadaScreen> {
                             value: '${_downPct.toInt()}%'),
                         HeroInputBox(label: 'Amort.', value: '$_termYears yr'),
                       ],
-                      onCalculate: () => showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        routeSettings: const RouteSettings(name: '/tool/canada/mortgage/result'),
-                        builder: (_) => CAMortgageCalcSheet(
-                            homePrice: _homePrice,
-                            downPercent: _downPct,
-                            defaultContractRate: r5yrFixed),
-                      ),
+                      onCalculate: _calculate,
+                      onInputTap: _showInputEditor,
                       buttonGradient: const LinearGradient(
                           colors: [Color(0xFFB20D28), Color(0xFF8B0A1E)]),
                     ),

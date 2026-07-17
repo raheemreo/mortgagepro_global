@@ -7,6 +7,7 @@ import '../../app/theme/country_themes.dart';
 import '../../app/theme/text_styles.dart';
 import '../../shared/widgets/country_header.dart';
 import '../../shared/widgets/hero_calculator_card.dart';
+import '../../shared/widgets/hero_input_editor_sheet.dart';
 import '../../shared/widgets/tool_card.dart';
 import '../../shared/widgets/info_card.dart';
 import '../../shared/widgets/alert_banner.dart';
@@ -77,9 +78,9 @@ class _USAScreenState extends ConsumerState<USAScreen> {
     }
   }
 
-  final double _homePrice = 450000;
-  final double _downPct = 20;
-  final int _termYears = 30;
+  double _homePrice = 450000;
+  double _downPct = 20;
+  int _termYears = 30;
   String? _resultText;
 
   void _calculate() {
@@ -108,6 +109,47 @@ class _USAScreenState extends ConsumerState<USAScreen> {
         downPercent: _downPct,
         termYears: _termYears,
         rate: rate30,
+      ),
+    );
+  }
+
+  void _showInputEditor() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/usa/mortgage/inputs'),
+      builder: (_) => HeroInputEditorSheet(
+        title: '\uD83C\uDDFA\uD83C\uDDF8 Adjust Mortgage Inputs',
+        primaryColor: _theme.primaryColor,
+        configs: [
+          HeroInputConfig(
+            label: 'HOME PRICE',
+            value: _homePrice,
+            min: 100000, max: 3000000, divisions: 58,
+            format: (v) => CurrencyFormatter.compact(v),
+          ),
+          HeroInputConfig(
+            label: 'DOWN PAYMENT',
+            value: _downPct,
+            min: 3, max: 50, divisions: 47,
+            format: (v) => '${v.toInt()}%',
+          ),
+          HeroInputConfig(
+            label: 'TERM',
+            value: _termYears.toDouble(),
+            min: 10, max: 30, divisions: 4,
+            format: (v) => '${v.toInt()} Years',
+          ),
+        ],
+        onApply: (values) {
+          setState(() {
+            _homePrice = values[0];
+            _downPct = values[1];
+            _termYears = values[2].toInt();
+          });
+          _calculate();
+        },
       ),
     );
   }
@@ -219,6 +261,7 @@ class _USAScreenState extends ConsumerState<USAScreen> {
                         HeroInputBox(label: 'Term', value: '$_termYears yr'),
                       ],
                       onCalculate: _calculate,
+                      onInputTap: _showInputEditor,
                       buttonGradient: const LinearGradient(
                         colors: [Color(0xFFB91C1C), Color(0xFF991B1B)],
                         begin: Alignment.centerLeft,

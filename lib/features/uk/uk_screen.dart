@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/country_themes.dart';
 import '../../shared/widgets/country_header.dart';
 import '../../shared/widgets/hero_calculator_card.dart';
+import '../../shared/widgets/hero_input_editor_sheet.dart';
 import '../../shared/widgets/tool_card.dart';
 import '../../shared/widgets/info_card.dart';
 import '../../shared/widgets/alert_banner.dart';
@@ -33,9 +34,9 @@ class UKScreen extends ConsumerStatefulWidget {
 class _UKScreenState extends ConsumerState<UKScreen> {
   static const _theme = CountryThemes.uk;
 
-  final double _propValue = 380000;
-  final double _depositPct = 15;
-  final int _termYears = 25;
+  double _propValue = 380000;
+  double _depositPct = 15;
+  int _termYears = 25;
 
   final Map<String, GlobalKey> _cardKeys = {};
 
@@ -99,6 +100,47 @@ class _UKScreenState extends ConsumerState<UKScreen> {
       routeSettings: const RouteSettings(name: '/tool/uk/stampduty/result'),
       builder: (_) => UKSDLTCalcSheet(
         propertyValue: _propValue,
+      ),
+    );
+  }
+
+  void _showInputEditor() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/uk/mortgage/inputs'),
+      builder: (_) => HeroInputEditorSheet(
+        title: '\uD83C\uDDEC\uD83C\uDDE7 Adjust Mortgage Inputs',
+        primaryColor: _theme.primaryColor,
+        configs: [
+          HeroInputConfig(
+            label: 'PROPERTY VALUE',
+            value: _propValue,
+            min: 50000, max: 3000000, divisions: 59,
+            format: (v) => CurrencyFormatter.compact(v, symbol: '\u00A3'),
+          ),
+          HeroInputConfig(
+            label: 'DEPOSIT',
+            value: _depositPct,
+            min: 5, max: 50, divisions: 45,
+            format: (v) => '${v.toInt()}%',
+          ),
+          HeroInputConfig(
+            label: 'TERM',
+            value: _termYears.toDouble(),
+            min: 5, max: 35, divisions: 30,
+            format: (v) => '${v.toInt()} Years',
+          ),
+        ],
+        onApply: (values) {
+          setState(() {
+            _propValue = values[0];
+            _depositPct = values[1];
+            _termYears = values[2].toInt();
+          });
+          _calculateMortgage();
+        },
       ),
     );
   }
@@ -212,6 +254,7 @@ class _UKScreenState extends ConsumerState<UKScreen> {
                         ),
                       ],
                       onCalculate: _calculateMortgage,
+                      onInputTap: _showInputEditor,
                       buttonGradient: const LinearGradient(
                         colors: [Color(0xFF0D0D2B), Color(0xFF1A1A5E)],
                       ),

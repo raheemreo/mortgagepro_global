@@ -6,6 +6,7 @@ import '../../app/theme/country_themes.dart';
 import '../../app/theme/text_styles.dart';
 import '../../shared/widgets/country_header.dart';
 import '../../shared/widgets/hero_calculator_card.dart';
+import '../../shared/widgets/hero_input_editor_sheet.dart';
 import '../../shared/widgets/tool_card.dart';
 import '../../shared/widgets/info_card.dart';
 import '../../shared/widgets/alert_banner.dart';
@@ -73,9 +74,9 @@ class _IndiaScreenState extends State<IndiaScreen> {
   }
 
   static const _theme = CountryThemes.india;
-  final double _loanAmount = 5000000;
-  final double _ratePercent = 8.50;
-  final int _termYears = 20;
+  double _loanAmount = 5000000;
+  double _ratePercent = 8.50;
+  int _termYears = 20;
 
   void _calculate() {
     showModalBottomSheet(
@@ -85,6 +86,47 @@ class _IndiaScreenState extends State<IndiaScreen> {
       routeSettings: const RouteSettings(name: '/tool/india/emi/result'),
       builder: (_) => _IndiaCalcSheet(
           loanAmount: _loanAmount, rate: _ratePercent, termYears: _termYears),
+    );
+  }
+
+  void _showInputEditor() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: '/tool/india/emi/inputs'),
+      builder: (_) => HeroInputEditorSheet(
+        title: '🇮🇳 Adjust Home Loan Inputs',
+        primaryColor: _theme.primaryColor,
+        configs: [
+          HeroInputConfig(
+            label: 'LOAN AMOUNT',
+            value: _loanAmount,
+            min: 500000, max: 50000000, divisions: 99,
+            format: (v) => CurrencyFormatter.compact(v, symbol: '\u20B9'),
+          ),
+          HeroInputConfig(
+            label: 'INTEREST RATE',
+            value: _ratePercent,
+            min: 5.0, max: 18.0, divisions: 130,
+            format: (v) => '${v.toStringAsFixed(2)}%',
+          ),
+          HeroInputConfig(
+            label: 'TENURE',
+            value: _termYears.toDouble(),
+            min: 1, max: 30, divisions: 29,
+            format: (v) => '${v.toInt()} Years',
+          ),
+        ],
+        onApply: (values) {
+          setState(() {
+            _loanAmount = values[0];
+            _ratePercent = values[1];
+            _termYears = values[2].toInt();
+          });
+          _calculate();
+        },
+      ),
     );
   }
 
@@ -159,6 +201,7 @@ class _IndiaScreenState extends State<IndiaScreen> {
                         HeroInputBox(label: 'Tenure', value: '$_termYears yr'),
                       ],
                       onCalculate: _calculate,
+                      onInputTap: _showInputEditor,
                       buttonGradient: LinearGradient(
                         colors: [
                           _theme.primaryColor,
@@ -177,8 +220,6 @@ class _IndiaScreenState extends State<IndiaScreen> {
                       moreColor: _theme.primaryColor,
                     ),
                     _RBIBanner(),
-
-
 
                     // Live Bank Home Loan Rates Scrollable
                     SectionLabel(
@@ -1005,34 +1046,10 @@ class _IndiaScreenState extends State<IndiaScreen> {
         '/tool/india/in_rbi_repo_rate_history'
       ),
       (
-        '🏠',
-        'PMAY – Housing for All',
-        'Urban & Rural · EWS/LIG/MIG subsidy guide',
-        '/tool/india/in_pmay_housing_for_all'
-      ),
-      (
         '📊',
         'NHB Residex — Property Index',
         'National Housing Bank city-level HPI',
         '/tool/india/in_nhb_residex'
-      ),
-      (
-        '💳',
-        'CIBIL / Experian Score Check',
-        'Free credit score · impact on rates',
-        '/tool/india/in_cibil'
-      ),
-      (
-        '📋',
-        'Section 80C / 24(b) Guide',
-        'Income tax deductions on home loan',
-        '/tool/india/in_80c_24b_guide'
-      ),
-      (
-        '🤖',
-        'India AI Mortgage Advisor',
-        'RBI · PMAY · RERA · tax guidance',
-        '/tool/india/in_india_ai_advisor'
       ),
     ];
     return items
@@ -1125,8 +1142,6 @@ class _RBIBanner extends StatelessWidget {
     );
   }
 }
-
-
 
 // ─── Live Bank Home Loan Rates Scroll ──────────────────────────────
 class _BankRatesScroll extends StatelessWidget {
