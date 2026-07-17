@@ -24,6 +24,24 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
   double _ccPayments = 2500;
   double _proposedEmi = 40000;
 
+  bool _hasCalculated = false;
+  double _calcSalary = 120000;
+  double _calcOtherIncome = 10000;
+  double _calcHomeEmi = 0;
+  double _calcCarEmi = 8000;
+  double _calcCcPayments = 2500;
+  double _calcProposedEmi = 40000;
+  final GlobalKey _resultsKey = GlobalKey();
+
+  bool _areInputsChanged() {
+    return _salary != _calcSalary ||
+        _otherIncome != _calcOtherIncome ||
+        _homeEmi != _calcHomeEmi ||
+        _carEmi != _calcCarEmi ||
+        _ccPayments != _calcCcPayments ||
+        _proposedEmi != _calcProposedEmi;
+  }
+
   void _reset() {
     setState(() {
       _salary = 120000;
@@ -32,6 +50,13 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
       _carEmi = 8000;
       _ccPayments = 2500;
       _proposedEmi = 40000;
+      _hasCalculated = false;
+      _calcSalary = 120000;
+      _calcOtherIncome = 10000;
+      _calcHomeEmi = 0;
+      _calcCarEmi = 8000;
+      _calcCcPayments = 2500;
+      _calcProposedEmi = 40000;
     });
   }
 
@@ -41,8 +66,8 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
   }
 
   void _saveCalculation() async {
-    final totalIncome = _salary + _otherIncome;
-    final totalOblig = _homeEmi + _carEmi + _ccPayments + _proposedEmi;
+    final totalIncome = _calcSalary + _calcOtherIncome;
+    final totalOblig = _calcHomeEmi + _calcCarEmi + _calcCcPayments + _calcProposedEmi;
     final foir = totalIncome > 0 ? (totalOblig / totalIncome * 100) : 0.0;
 
     final labelCtrl = TextEditingController(text: 'FOIR Ratio');
@@ -97,12 +122,12 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
         country: 'India',
         calcType: 'FOIR Calculator',
         inputs: {
-          'salary': _salary,
-          'otherIncome': _otherIncome,
-          'homeEmi': _homeEmi,
-          'carEmi': _carEmi,
-          'ccPayments': _ccPayments,
-          'proposedEmi': _proposedEmi,
+          'salary': _calcSalary,
+          'otherIncome': _calcOtherIncome,
+          'homeEmi': _calcHomeEmi,
+          'carEmi': _calcCarEmi,
+          'ccPayments': _calcCcPayments,
+          'proposedEmi': _calcProposedEmi,
         },
         results: {
           'foir': foir,
@@ -132,8 +157,15 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final totalIncome = _salary + _otherIncome;
-    final totalOblig = _homeEmi + _carEmi + _ccPayments + _proposedEmi;
+    final calcSalary = _calcSalary;
+    final calcOtherIncome = _calcOtherIncome;
+    final calcHomeEmi = _calcHomeEmi;
+    final calcCarEmi = _calcCarEmi;
+    final calcCcPayments = _calcCcPayments;
+    final calcProposedEmi = _calcProposedEmi;
+
+    final totalIncome = calcSalary + calcOtherIncome;
+    final totalOblig = calcHomeEmi + calcCarEmi + calcCcPayments + calcProposedEmi;
     final foir = totalIncome > 0 ? (totalOblig / totalIncome * 100) : 0.0;
     final disposable = totalIncome - totalOblig;
 
@@ -165,12 +197,12 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
     }
 
     final items = [
-      {'icon': '💰', 'lbl': 'Gross Monthly Salary', 'sub': 'Primary income', 'amt': _salary},
-      {'icon': '🏘️', 'lbl': 'Rental / Other Income', 'sub': 'Secondary income', 'amt': _otherIncome},
-      {'icon': '🏠', 'lbl': 'Existing Home Loan EMI', 'sub': 'Current obligation', 'amt': -_homeEmi},
-      {'icon': '🚗', 'lbl': 'Car / Personal Loan EMI', 'sub': 'Current obligation', 'amt': -_carEmi},
-      {'icon': '💳', 'lbl': 'Credit Card Payment', 'sub': 'Min. monthly payment', 'amt': -_ccPayments},
-      {'icon': '🏗️', 'lbl': 'Proposed Home Loan EMI', 'sub': 'New obligation', 'amt': -_proposedEmi},
+      {'icon': '💰', 'lbl': 'Gross Monthly Salary', 'sub': 'Primary income', 'amt': calcSalary},
+      {'icon': '🏘️', 'lbl': 'Rental / Other Income', 'sub': 'Secondary income', 'amt': calcOtherIncome},
+      {'icon': '🏠', 'lbl': 'Existing Home Loan EMI', 'sub': 'Current obligation', 'amt': -calcHomeEmi},
+      {'icon': '🚗', 'lbl': 'Car / Personal Loan EMI', 'sub': 'Current obligation', 'amt': -calcCarEmi},
+      {'icon': '💳', 'lbl': 'Credit Card Payment', 'sub': 'Min. monthly payment', 'amt': -calcCcPayments},
+      {'icon': '🏗️', 'lbl': 'Proposed Home Loan EMI', 'sub': 'New obligation', 'amt': -calcProposedEmi},
     ];
 
     return Column(
@@ -253,7 +285,16 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
               // Calculate Button
               ElevatedButton(
                 onPressed: () {
-                  setState(() {});
+                  setState(() {
+                    _hasCalculated = true;
+                    _calcSalary = _salary;
+                    _calcOtherIncome = _otherIncome;
+                    _calcHomeEmi = _homeEmi;
+                    _calcCarEmi = _carEmi;
+                    _calcCcPayments = _ccPayments;
+                    _calcProposedEmi = _proposedEmi;
+                  });
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('⚡ FOIR checked!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
@@ -262,6 +303,16 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_resultsKey.currentContext != null) {
+                      Scrollable.ensureVisible(
+                        _resultsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
@@ -281,204 +332,232 @@ class _INFOIRCalculatorState extends ConsumerState<INFOIRCalculator> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        if (_hasCalculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        // FOIR Gauge / Status Card
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            gradient: cardGradient,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            children: [
-              Text(
-                'YOUR FOIR (FIXED OBLIGATION TO INCOME RATIO)',
-                style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.5),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${foir.toStringAsFixed(1)}%',
-                style: AppTextStyles.dmSans(size: 52, weight: FontWeight.w800, color: statusColor),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                statusText,
-                style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.9)),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 14),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: Container(
-                  height: 12,
-                  color: Colors.white24,
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: (foir / 100).clamp(0.01, 1.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [const Color(0xFF22C55E), statusBgColor],
+          // FOIR Gauge / Status Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: cardGradient,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'YOUR FOIR (FIXED OBLIGATION TO INCOME RATIO)',
+                  style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.5),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${foir.toStringAsFixed(1)}%',
+                  style: AppTextStyles.dmSans(size: 52, weight: FontWeight.w800, color: statusColor),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  statusText,
+                  style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.9)),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 14),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    height: 12,
+                    color: Colors.white24,
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: (foir / 100).clamp(0.01, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [const Color(0xFF22C55E), statusBgColor],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  _buildFoirBox('Total Income', _fmt(totalIncome)),
-                  const SizedBox(width: 8),
-                  _buildFoirBox('Total Obligations', _fmt(totalOblig)),
-                  const SizedBox(width: 8),
-                  _buildFoirBox('Disposable', _fmt(disposable > 0 ? disposable : 0.0)),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // FOIR Zones Card
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 FOIR Zones — Banks\' View', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 14),
-              _buildZoneRow('Excellent Zone', 'High approval chance · Best rates offered', '≤35%', const Color(0xFF22C55E)),
-              const Divider(height: 16),
-              _buildZoneRow('Good Zone', 'Approved easily · Standard rates apply', '36–45%', const Color(0xFF16A34A)),
-              const Divider(height: 16),
-              _buildZoneRow('Borderline Zone', 'May get approval with extra documentation', '46–50%', const Color(0xFFD97706)),
-              const Divider(height: 16),
-              _buildZoneRow('Rejection Zone', 'Most banks will reject — reduce obligations', '>50%', const Color(0xFFDC2626)),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Obligation Breakdown
-        Text('Obligation Breakdown', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Column(
-          children: items.map((item) {
-            final amt = item['amt'] as double;
-            final isIncome = amt > 0;
-            final double pct = totalIncome > 0 ? (amt.abs() / totalIncome * 100) : 0.0;
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: theme.getBorderColor(context)),
-              ),
-              child: Row(
-                children: [
-                  Text(item['icon'] as String, style: const TextStyle(fontSize: 22)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item['lbl'] as String, style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
-                        Text(item['sub'] as String, style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context))),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        "${isIncome ? '+' : '-'} ₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(amt.abs())}",
-                        style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: isIncome ? const Color(0xFF046A38) : const Color(0xFFE05F00)),
-                      ),
-                      Text('${pct.toStringAsFixed(1)}% of income', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Save Bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [const Color(0xFF064E3B), const Color(0xFF047857)]
-                  : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(
-              color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7),
-              width: 1.5,
-            ),
-            borderRadius: BorderRadius.circular(17),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 20),
+                Row(
                   children: [
-                    Text(
-                      'Save FOIR Report',
-                      style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: isDark ? Colors.white : const Color(0xFF07543A),
+                    _buildFoirBox('Total Income', _fmt(totalIncome)),
+                    const SizedBox(width: 8),
+                    _buildFoirBox('Total Obligations', _fmt(totalOblig)),
+                    const SizedBox(width: 8),
+                    _buildFoirBox('Disposable', _fmt(disposable > 0 ? disposable : 0.0)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // FOIR Zones Card
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📊 FOIR Zones — Banks\' View', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 14),
+                _buildZoneRow('Excellent Zone', 'High approval chance · Best rates offered', '≤35%', const Color(0xFF22C55E)),
+                const Divider(height: 16),
+                _buildZoneRow('Good Zone', 'Approved easily · Standard rates apply', '36–45%', const Color(0xFF16A34A)),
+                const Divider(height: 16),
+                _buildZoneRow('Borderline Zone', 'May get approval with extra documentation', '46–50%', const Color(0xFFD97706)),
+                const Divider(height: 16),
+                _buildZoneRow('Rejection Zone', 'Most banks will reject — reduce obligations', '>50%', const Color(0xFFDC2626)),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Obligation Breakdown
+          Text('Obligation Breakdown', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          Column(
+            children: items.map((item) {
+              final amt = item['amt'] as double;
+              final isIncome = amt > 0;
+              final double pct = totalIncome > 0 ? (amt.abs() / totalIncome * 100) : 0.0;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.getCardColor(context),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.getBorderColor(context)),
+                ),
+                child: Row(
+                  children: [
+                    Text(item['icon'] as String, style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item['lbl'] as String, style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                          Text(item['sub'] as String, style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context))),
+                        ],
                       ),
                     ),
-                    Text(
-                      'Useful for bank loan application prep',
-                      style: AppTextStyles.dmSans(
-                        size: 9.5,
-                        color: isDark ? Colors.white70 : const Color(0xFF046A38),
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          "${isIncome ? '+' : '-'} ₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(amt.abs())}",
+                          style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: isIncome ? const Color(0xFF046A38) : const Color(0xFFE05F00)),
+                        ),
+                        Text('${pct.toStringAsFixed(1)}% of income', style: AppTextStyles.dmSans(size: 9, color: theme.getMutedColor(context))),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 0,
-                ),
-                child: Text('Save', style: AppTextStyles.dmSans(size: 10, color: Colors.white, weight: FontWeight.w800)),
-              ),
-            ],
+              );
+            }).toList(),
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Save Bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF064E3B), const Color(0xFF047857)]
+                    : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(
+                color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7),
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(17),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Save FOIR Report',
+                        style: AppTextStyles.dmSans(
+                          size: 12,
+                          weight: FontWeight.w800,
+                          color: isDark ? Colors.white : const Color(0xFF07543A),
+                        ),
+                      ),
+                      Text(
+                        'Useful for bank loan application prep',
+                        style: AppTextStyles.dmSans(
+                          size: 9.5,
+                          color: isDark ? Colors.white70 : const Color(0xFF046A38),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                  child: Text('Save', style: AppTextStyles.dmSans(size: 10, color: Colors.white, weight: FontWeight.w800)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

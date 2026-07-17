@@ -26,6 +26,16 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
   String _panAvail = 'yes';
   int _numSellers = 1;
 
+  bool _calculated = false;
+  double _calcSaleAmt = 7500000;
+  double _calcStampVal = 8000000;
+  String _calcPayMode = 'lump';
+  String _calcPanAvail = 'yes';
+  int _calcNumSellers = 1;
+
+  bool _saleAmtHasError = false;
+  bool _stampValHasError = false;
+
   // Text controllers
   late TextEditingController _saleAmtCtrl;
   late TextEditingController _stampValCtrl;
@@ -58,7 +68,50 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
       _payMode = 'lump';
       _panAvail = 'yes';
       _numSellers = 1;
+      _calculated = false;
+
+      _calcSaleAmt = 7500000;
+      _calcStampVal = 8000000;
+      _calcPayMode = 'lump';
+      _calcPanAvail = 'yes';
+      _calcNumSellers = 1;
+
+      _saleAmtHasError = false;
+      _stampValHasError = false;
     });
+  }
+
+  void _calculate() {
+    final saleVal = double.tryParse(_saleAmtCtrl.text) ?? 0.0;
+    final stampVal = double.tryParse(_stampValCtrl.text) ?? 0.0;
+
+    setState(() {
+      _saleAmtHasError = saleVal <= 0;
+      _stampValHasError = stampVal <= 0;
+    });
+
+    if (_saleAmtHasError || _stampValHasError) {
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcSaleAmt = _saleAmt;
+      _calcStampVal = _stampVal;
+      _calcPayMode = _payMode;
+      _calcPanAvail = _panAvail;
+      _calcNumSellers = _numSellers;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _saleAmt != _calcSaleAmt ||
+        _stampVal != _calcStampVal ||
+        _payMode != _calcPayMode ||
+        _panAvail != _calcPanAvail ||
+        _numSellers != _calcNumSellers;
   }
 
   String _fmt(double n) {
@@ -69,17 +122,17 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
   }
 
   void _saveCalculation() async {
-    final isExempt = _saleAmt < 5000000 && _stampVal < 5000000;
+    final isExempt = _calcSaleAmt < 5000000 && _calcStampVal < 5000000;
     double base = 0;
     double rate = 0;
     double totalTDS = 0;
     double perSeller = 0;
 
     if (!isExempt) {
-      base = max(_saleAmt, _stampVal);
-      rate = _panAvail == 'yes' ? 1.0 : 20.0;
+      base = max(_calcSaleAmt, _calcStampVal);
+      rate = _calcPanAvail == 'yes' ? 1.0 : 20.0;
       totalTDS = Compat.round(base * rate / 100).toDouble();
-      perSeller = Compat.round(totalTDS / _numSellers).toDouble();
+      perSeller = Compat.round(totalTDS / _calcNumSellers).toDouble();
     }
 
     final labelCtrl = TextEditingController(text: 'TDS on Property');
@@ -147,10 +200,10 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
         country: 'India',
         calcType: 'TDS on Property',
         inputs: {
-          'saleAmt': _saleAmt,
-          'stampVal': _stampVal,
-          'panAvail': _panAvail == 'yes' ? 1.0 : 0.0,
-          'numSellers': _numSellers.toDouble(),
+          'saleAmt': _calcSaleAmt,
+          'stampVal': _calcStampVal,
+          'panAvail': _calcPanAvail == 'yes' ? 1.0 : 0.0,
+          'numSellers': _calcNumSellers.toDouble(),
         },
         results: {
           'base': base,
@@ -201,14 +254,14 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
     double perSeller = 0;
     bool isExempt = true;
 
-    if (_saleAmt >= 5000000 || _stampVal >= 5000000) {
+    if (_calcSaleAmt >= 5000000 || _calcStampVal >= 5000000) {
       isExempt = false;
-      base = max(_saleAmt, _stampVal);
-      rate = _panAvail == 'yes' ? 1.0 : 20.0;
+      base = max(_calcSaleAmt, _calcStampVal);
+      rate = _calcPanAvail == 'yes' ? 1.0 : 20.0;
       totalTDS = Compat.round(base * rate / 100).toDouble();
-      perSeller = Compat.round(totalTDS / _numSellers).toDouble();
+      perSeller = Compat.round(totalTDS / _calcNumSellers).toDouble();
     } else {
-      base = _saleAmt;
+      base = _calcSaleAmt;
     }
 
     return Column(
@@ -313,6 +366,7 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
                 value: _saleAmt,
                 min: 500000,
                 max: 50000000,
+                hasError: _saleAmtHasError,
                 onChangedText: (val) {
                   setState(() {
                     _saleAmt = val;
@@ -334,6 +388,7 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
                 value: _stampVal,
                 min: 500000,
                 max: 50000000,
+                hasError: _stampValHasError,
                 onChangedText: (val) {
                   setState(() {
                     _stampVal = val;
@@ -496,7 +551,7 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
 
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _scrollToResults,
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
                   foregroundColor: Colors.white,
@@ -514,265 +569,293 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate TDS Liability to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        // Results Card (Always visible with real-time updates)
-        Container(
-          key: _resultsKey,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF334155), Color(0xFF1E293B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+          // Results Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF334155), Color(0xFF1E293B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
             ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('☸ TDS CALCULATION RESULT – SECTION 194-IA',
-                  style: AppTextStyles.dmSans(
-                      size: 8.5,
-                      color: Colors.white.withValues(alpha: 0.6),
-                      weight: FontWeight.w700,
-                      letterSpacing: 0.5)),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _resBox(
-                      'TDS Base Amount', _fmt(base), 'Higher of sale/stamp'),
-                  const SizedBox(width: 8),
-                  _resBox('TDS Rate', isExempt ? 'Nil' : '${rate.toInt()}%',
-                      'Section 194-IA'),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  _resBox('TDS Per Seller', isExempt ? '₹0' : _fmt(perSeller),
-                      'Divided equally'),
-                  const SizedBox(width: 8),
-                  _resBox('Deposit Deadline', isExempt ? 'N/A' : '30 Days',
-                      'Via Form 26QB'),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B00).withValues(alpha: 0.18),
-                  border: Border.all(
-                      color: const Color(0xFFFF6B00).withValues(alpha: 0.40)),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                alignment: Alignment.center,
-                child: Column(
-                  children: [
-                    Text('Total TDS to Deduct & Deposit',
-                        style: AppTextStyles.dmSans(
-                            size: 9.5, color: Colors.white70)),
-                    const SizedBox(height: 4),
-                    Text(
-                      isExempt ? '₹0 (No TDS)' : _fmt(totalTDS),
-                      style: AppTextStyles.playfair(
-                          size: 28,
-                          color: const Color(0xFFFFDEA0),
-                          weight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isExempt
-                          ? 'Property value below ₹50L threshold – TDS not applicable'
-                          : _panAvail == 'no'
-                              ? '⚠️ Higher TDS @ 20% due to missing PAN (Sec 206AA)'
-                              : 'Deposit on NSDL via Form 26QB within 30 days of payment',
-                      style: AppTextStyles.dmSans(
-                          size: 9, color: Colors.white70, height: 1.3),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Rate Reference Table
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('TDS Rate Reference 2025',
-                  style: AppTextStyles.playfair(
-                      size: 14,
-                      color: theme.getTextColor(context),
-                      weight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              _rateRow('Property Purchase (Sec 194-IA)', 'Above ₹50 Lakh', '1%',
-                  const Color(0xFFFF6B00)),
-              _rateRow('Property Purchase (No PAN)', 'Above ₹50 Lakh', '20%',
-                  Colors.red),
-              _rateRow('Rent Paid to Owner (Sec 194-IB)', 'Above ₹50k/mo',
-                  '10%', const Color(0xFFFF6B00)),
-              _rateRow('NRI Property Sale (LTCG)', 'Any amount', '12.5%',
-                  const Color(0xFFFF6B00)),
-              _rateRow('NRI STCG (Sec 195)', 'Any amount', '30%',
-                  const Color(0xFFFF6B00)),
-              _rateRow('Agricultural Land (Rural)', 'Any amount', 'Exempt',
-                  isDark ? const Color(0xFF86EFAC) : const Color(0xFF046A38)),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Timeline: Step-by-Step Deposit
-        Text('How to Deposit TDS – Step by Step',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 12),
-        _timelineItem(
-            1,
-            'Deduct TDS at the time of payment',
-            'Buyer deducts 1% of the sale consideration (or stamp duty value, whichever is higher) before paying the seller. Applicable only if total consideration exceeds ₹50 Lakh.',
-            'Required by Law'),
-        _timelineItem(
-            2,
-            'File Form 26QB online on NSDL',
-            'Go to tin.tin.nsdl.com → TDS on Property → Form 26QB. Enter buyer PAN, seller PAN, property details, and TDS amount. One Form 26QB per buyer-seller combination.',
-            'Within 30 Days of Payment'),
-        _timelineItem(
-            3,
-            'Pay TDS via challan 26QB',
-            'Pay online via Net Banking / debit card through NSDL. Authorised bank challan generated. Keep acknowledgement number.',
-            'Online Net Banking'),
-        _timelineItem(
-            4,
-            'Download Form 16B (TDS Certificate)',
-            'After 10–15 days of TDS deposit, download Form 16B from TRACES portal (tdscpc.gov.in) and issue it to the seller.',
-            'TRACES Portal'),
-        _timelineItem(
-            5,
-            'Seller claims TDS credit in ITR',
-            'Seller views TDS credit in Form 26AS / AIS and claims TDS refund or reduces tax payable in their Income Tax Return.',
-            'Seller Benefit'),
-
-        const SizedBox(height: 20),
-
-        // Penalty Warnings
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2D1212) : const Color(0xFFFEF2F2),
-            border: Border.all(
-                color:
-                    isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFCA5A5)),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('⚠️', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Interest for Late TDS Deposit – Sec 201(1A)',
-                      style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: isDark
-                            ? const Color(0xFFFCA5A5)
-                            : const Color(0xFF991B1B),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '1% per month from date TDS was deductible to actual deduction date, PLUS 1.5% per month from deduction to deposit date. Penalty under Sec 271C can be equal to TDS amount.',
-                      style: AppTextStyles.dmSans(
-                        size: 9.5,
-                        color: isDark
-                            ? const Color(0xFFFEE2E2)
-                            : const Color(0xFF7F1D1D),
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Save Calculation Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(
-                color:
-                    isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Save This Calculation',
-                        style: AppTextStyles.dmSans(
-                            size: 12,
-                            weight: FontWeight.w800,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF07543A))),
-                    Text('Keep a record of your TDS liability details',
-                        style: AppTextStyles.dmSans(
-                            size: 10,
-                            color: isDark
-                                ? Colors.white70
-                                : const Color(0xFF046A38))),
-                  ],
-                ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text('Save',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('☸ TDS CALCULATION RESULT – SECTION 194-IA',
                     style: AppTextStyles.dmSans(
-                        size: 11,
-                        color: Colors.white,
-                        weight: FontWeight.w700)),
-              ),
-            ],
+                        size: 8.5,
+                        color: Colors.white.withValues(alpha: 0.6),
+                        weight: FontWeight.w700,
+                        letterSpacing: 0.5)),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _resBox(
+                        'TDS Base Amount', _fmt(base), 'Higher of sale/stamp'),
+                    const SizedBox(width: 8),
+                    _resBox('TDS Rate', isExempt ? 'Nil' : '${rate.toInt()}%',
+                        'Section 194-IA'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _resBox('TDS Per Seller', isExempt ? '₹0' : _fmt(perSeller),
+                        'Divided equally'),
+                    const SizedBox(width: 8),
+                    _resBox('Deposit Deadline', isExempt ? 'N/A' : '30 Days',
+                        'Via Form 26QB'),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6B00).withValues(alpha: 0.18),
+                    border: Border.all(
+                        color: const Color(0xFFFF6B00).withValues(alpha: 0.40)),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  alignment: Alignment.center,
+                  child: Column(
+                    children: [
+                      Text('Total TDS to Deduct & Deposit',
+                          style: AppTextStyles.dmSans(
+                              size: 9.5, color: Colors.white70)),
+                      const SizedBox(height: 4),
+                      Text(
+                        isExempt ? '₹0 (No TDS)' : _fmt(totalTDS),
+                        style: AppTextStyles.playfair(
+                            size: 28,
+                            color: const Color(0xFFFFDEA0),
+                            weight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isExempt
+                            ? 'Property value below ₹50L threshold – TDS not applicable'
+                            : _calcPanAvail == 'no'
+                                ? '⚠️ Higher TDS @ 20% due to missing PAN (Sec 206AA)'
+                                : 'Deposit on NSDL via Form 26QB within 30 days of payment',
+                        style: AppTextStyles.dmSans(
+                            size: 9, color: Colors.white70, height: 1.3),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Rate Reference Table
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('TDS Rate Reference 2025',
+                    style: AppTextStyles.playfair(
+                        size: 14,
+                        color: theme.getTextColor(context),
+                        weight: FontWeight.w800)),
+                const SizedBox(height: 12),
+                _rateRow('Property Purchase (Sec 194-IA)', 'Above ₹50 Lakh', '1%',
+                    const Color(0xFFFF6B00)),
+                _rateRow('Property Purchase (No PAN)', 'Above ₹50 Lakh', '20%',
+                    Colors.red),
+                _rateRow('Rent Paid to Owner (Sec 194-IB)', 'Above ₹50k/mo',
+                    '10%', const Color(0xFFFF6B00)),
+                _rateRow('NRI Property Sale (LTCG)', 'Any amount', '12.5%',
+                    const Color(0xFFFF6B00)),
+                _rateRow('NRI STCG (Sec 195)', 'Any amount', '30%',
+                    const Color(0xFFFF6B00)),
+                _rateRow('Agricultural Land (Rural)', 'Any amount', 'Exempt',
+                    isDark ? const Color(0xFF86EFAC) : const Color(0xFF046A38)),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Timeline: Step-by-Step Deposit
+          Text('How to Deposit TDS – Step by Step',
+              style: AppTextStyles.playfair(
+                  size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 12),
+          _timelineItem(
+              1,
+              'Deduct TDS at the time of payment',
+              'Buyer deducts 1% of the sale consideration (or stamp duty value, whichever is higher) before paying the seller. Applicable only if total consideration exceeds ₹50 Lakh.',
+              'Required by Law'),
+          _timelineItem(
+              2,
+              'File Form 26QB online on NSDL',
+              'Go to tin.tin.nsdl.com → TDS on Property → Form 26QB. Enter buyer PAN, seller PAN, property details, and TDS amount. One Form 26QB per buyer-seller combination.',
+              'Within 30 Days of Payment'),
+          _timelineItem(
+              3,
+              'Pay TDS via challan 26QB',
+              'Pay online via Net Banking / debit card through NSDL. Authorised bank challan generated. Keep acknowledgement number.',
+              'Online Net Banking'),
+          _timelineItem(
+              4,
+              'Download Form 16B (TDS Certificate)',
+              'After 10–15 days of TDS deposit, download Form 16B from TRACES portal (tdscpc.gov.in) and issue it to the seller.',
+              'TRACES Portal'),
+          _timelineItem(
+              5,
+              'Seller claims TDS credit in ITR',
+              'Seller views TDS credit in Form 26AS / AIS and claims TDS refund or reduces tax payable in their Income Tax Return.',
+              'Seller Benefit'),
+
+          const SizedBox(height: 20),
+
+          // Penalty Warnings
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2D1212) : const Color(0xFFFEF2F2),
+              border: Border.all(
+                  color:
+                      isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFCA5A5)),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('⚠️', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Interest for Late TDS Deposit – Sec 201(1A)',
+                        style: AppTextStyles.dmSans(
+                          size: 12,
+                          weight: FontWeight.w800,
+                          color: isDark
+                              ? const Color(0xFFFCA5A5)
+                              : const Color(0xFF991B1B),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '1% per month from date TDS was deductible to actual deduction date, PLUS 1.5% per month from deduction to deposit date. Penalty under Sec 271C can be equal to TDS amount.',
+                        style: AppTextStyles.dmSans(
+                          size: 9.5,
+                          color: isDark
+                              ? const Color(0xFFFEE2E2)
+                              : const Color(0xFF7F1D1D),
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Save Calculation Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(
+                  color:
+                      isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save This Calculation',
+                          style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF07543A))),
+                      Text('Keep a record of your TDS liability details',
+                          style: AppTextStyles.dmSans(
+                              size: 10,
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: Colors.white,
+                          weight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -785,6 +868,7 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
     required double max,
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
+    bool hasError = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -807,7 +891,11 @@ class _INTDSOnPropertyState extends ConsumerState<INTDSOnProperty> {
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 1),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+            border: Border.all(
+                color: hasError
+                    ? Colors.red
+                    : Colors.white.withValues(alpha: 0.20),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextFormField(

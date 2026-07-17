@@ -92,27 +92,92 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
     'Rajasthan', 'Tamil Nadu', 'Telangana', 'Uttar Pradesh', 'West Bengal', 'Other'
   ];
 
+  // Error flags
+  bool _incomeError = false;
+  bool _loanAmtError = false;
+
+  // Frozen calculation inputs
+  String _calcCat = 'ews';
+  double _calcIncome = 250000;
+  double _calcLoanAmt = 1500000;
+  String _calcGender = 'male';
+  bool _calcNoHouse = true;
+  bool _calcNoPMAY = true;
+  bool _calcAadhaar = true;
+  bool _calcFirstHome = true;
+
   @override
   void initState() {
     super.initState();
     _incomeCtrl = TextEditingController(text: _income.toStringAsFixed(0));
     _loanAmtCtrl = TextEditingController(text: _loanAmt.toStringAsFixed(0));
+
+    _incomeCtrl.addListener(_onInputChanged);
+    _loanAmtCtrl.addListener(_onInputChanged);
   }
 
   @override
   void dispose() {
+    _incomeCtrl.removeListener(_onInputChanged);
+    _loanAmtCtrl.removeListener(_onInputChanged);
     _incomeCtrl.dispose();
     _loanAmtCtrl.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  void _onInputChanged() {
+    setState(() {});
+  }
+
+  bool _areInputsChanged() {
+    final incomeVal = double.tryParse(_incomeCtrl.text) ?? 0.0;
+    final loanVal = double.tryParse(_loanAmtCtrl.text) ?? 0.0;
+    return _selectedCat != _calcCat ||
+        incomeVal != _calcIncome ||
+        loanVal != _calcLoanAmt ||
+        _gender != _calcGender ||
+        _noHouse != _calcNoHouse ||
+        _noPMAY != _calcNoPMAY ||
+        _aadhaar != _calcAadhaar ||
+        _firstHome != _calcFirstHome;
+  }
+
+  void _reset() {
+    setState(() {
+      _selectedCat = 'ews';
+      _income = 250000;
+      _loanAmt = 1500000;
+      _selectedState = 'Maharashtra';
+      _gender = 'male';
+      _noHouse = true;
+      _noPMAY = true;
+      _aadhaar = true;
+      _firstHome = true;
+      _incomeCtrl.text = '250000';
+      _loanAmtCtrl.text = '1500000';
+      _calculated = false;
+
+      _incomeError = false;
+      _loanAmtError = false;
+
+      _calcCat = 'ews';
+      _calcIncome = 250000;
+      _calcLoanAmt = 1500000;
+      _calcGender = 'male';
+      _calcNoHouse = true;
+      _calcNoPMAY = true;
+      _calcAadhaar = true;
+      _calcFirstHome = true;
+    });
+  }
+
   void _saveEligibilityReport() async {
-    final d = _catData[_selectedCat]!;
-    final List<String> issues = _checkIssues(d);
+    final d = _catData[_calcCat]!;
+    final List<String> issues = _checkIssuesFor(_calcIncome, _calcLoanAmt, _calcNoHouse, _calcNoPMAY, _calcAadhaar, d);
     final bool eligible = issues.isEmpty;
     final double subsidyAmt = eligible ? d.subsidy : 0.0;
-    final double effectiveLoan = eligible ? ((_loanAmt - subsidyAmt) > 0 ? _loanAmt - subsidyAmt : 0.0) : _loanAmt;
+    final double effectiveLoan = eligible ? ((_calcLoanAmt - subsidyAmt) > 0 ? _calcLoanAmt - subsidyAmt : 0.0) : _calcLoanAmt;
 
     final labelCtrl = TextEditingController(text: 'PMAY Eligibility Report - ${d.name}');
 
@@ -201,15 +266,15 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
     }
   }
 
-  List<String> _checkIssues(_PmayCatData d) {
+  List<String> _checkIssuesFor(double income, double loanAmt, bool noHouse, bool noPMAY, bool aadhaar, _PmayCatData d) {
     final List<String> issues = [];
-    if (_income <= 0) issues.add('Enter your annual household income');
-    if (_loanAmt <= 0) issues.add('Enter your loan amount');
-    if (!_noHouse) issues.add('You must confirm no pucca house ownership');
-    if (!_noPMAY) issues.add('You must confirm no prior central housing benefits');
-    if (!_aadhaar) issues.add('Aadhaar bank link is mandatory');
-    if (_income > 0 && _income > d.incomeMax) {
-      issues.add('Income of ${_fmt(_income)} exceeds ${d.name} limit of ${_fmt(d.incomeMax)}');
+    if (income <= 0) issues.add('Enter your annual household income');
+    if (loanAmt <= 0) issues.add('Enter your loan amount');
+    if (!noHouse) issues.add('You must confirm no pucca house ownership');
+    if (!noPMAY) issues.add('You must confirm no prior central housing benefits');
+    if (!aadhaar) issues.add('Aadhaar bank link is mandatory');
+    if (income > 0 && income > d.incomeMax) {
+      issues.add('Income of ${_fmt(income)} exceeds ${d.name} limit of ${_fmt(d.incomeMax)}');
     }
     return issues;
   }
@@ -228,8 +293,46 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
 
   void _calculateEligibility() {
     setState(() {
-      _calculated = true;
+      _incomeError = false;
+      _loanAmtError = false;
     });
+
+    final incVal = double.tryParse(_incomeCtrl.text) ?? 0.0;
+    final loanVal = double.tryParse(_loanAmtCtrl.text) ?? 0.0;
+
+    bool hasErr = false;
+    if (incVal <= 0) {
+      setState(() => _incomeError = true);
+      hasErr = true;
+    }
+    if (loanVal <= 0) {
+      setState(() => _loanAmtError = true);
+      hasErr = true;
+    }
+
+    if (hasErr) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('⚠️ Please correct the invalid fields in red.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+          backgroundColor: Colors.red[800],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcCat = _selectedCat;
+      _calcIncome = incVal;
+      _calcLoanAmt = loanVal;
+      _calcGender = _gender;
+      _calcNoHouse = _noHouse;
+      _calcNoPMAY = _noPMAY;
+      _calcAadhaar = _aadhaar;
+      _calcFirstHome = _firstHome;
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = _resultPanelKey.currentContext;
       if (context != null) {
@@ -243,11 +346,11 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final d = _catData[_selectedCat]!;
-    final List<String> issues = _checkIssues(d);
+    final calcD = _catData[_calcCat]!;
+    final List<String> issues = _checkIssuesFor(_calcIncome, _calcLoanAmt, _calcNoHouse, _calcNoPMAY, _calcAadhaar, calcD);
     final bool eligible = issues.isEmpty;
-    final double subsidyAmt = eligible ? d.subsidy : 0.0;
-    final double effectiveLoan = eligible ? ((_loanAmt - subsidyAmt) > 0 ? _loanAmt - subsidyAmt : 0.0) : _loanAmt;
+    final double subsidyAmt = eligible ? calcD.subsidy : 0.0;
+    final double effectiveLoan = eligible ? ((_calcLoanAmt - subsidyAmt) > 0 ? _calcLoanAmt - subsidyAmt : 0.0) : _calcLoanAmt;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,10 +466,23 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.description, size: 16, color: Color(0xFF046A38)),
-                  const SizedBox(width: 8),
-                  Text('📋 Eligibility Details', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                  Row(
+                    children: [
+                      const Icon(Icons.description, size: 16, color: Color(0xFF046A38)),
+                      const SizedBox(width: 8),
+                      Text('📋 Eligibility Details', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: _reset,
+                    child: Text('Reset ↺',
+                        style: AppTextStyles.dmSans(
+                            size: 11,
+                            color: const Color(0xFF046A38),
+                            weight: FontWeight.w700)),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -379,6 +495,7 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
                 min: 50000,
                 max: 3000000, // up to 30 Lakhs
                 prefix: '₹ ',
+                hasError: _incomeError,
                 onChangedText: (v) {
                   setState(() {
                     _income = v;
@@ -401,6 +518,7 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
                 min: 100000,
                 max: 15000000, // up to 1.5 Cr
                 prefix: '₹ ',
+                hasError: _loanAmtError,
                 onChangedText: (v) {
                   setState(() {
                     _loanAmt = v;
@@ -526,10 +644,37 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
         ),
         const SizedBox(height: 20),
 
-        // Result Status Panel
-        if (_calculated)
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultPanelKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Check PMAY Eligibility to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultPanelKey, height: 0),
+
+          // Result Status Panel
           Container(
-            key: _resultPanelKey,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               gradient: eligible
@@ -559,13 +704,13 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  eligible ? 'You qualify for PMAY ${d.name}!' : 'Eligibility Issues Found',
+                  eligible ? 'You qualify for PMAY ${calcD.name}!' : 'Eligibility Issues Found',
                   style: AppTextStyles.playfair(size: 20, color: Colors.white, weight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   eligible
-                      ? 'CLSS @ ${d.clss}% interest subsidy up to ${d.maxArea} sqm carpet area. Subsidy credited directly.'
+                      ? 'CLSS @ ${calcD.clss}% interest subsidy up to ${calcD.maxArea} sqm carpet area. Subsidy credited directly.'
                       : issues.join(' · '),
                   style: AppTextStyles.dmSans(size: 10.5, color: Colors.white70, height: 1.45),
                 ),
@@ -580,10 +725,10 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
                     crossAxisSpacing: 9,
                     childAspectRatio: 1.6,
                     children: [
-                      _resultStatBox('Your Subsidy', _fmt(d.subsidy), 'NPV subsidy'),
+                      _resultStatBox('Your Subsidy', _fmt(calcD.subsidy), 'NPV subsidy'),
                       _resultStatBox('Effective Loan', _fmt(effectiveLoan), 'After subsidy credit'),
-                      _resultStatBox('CLSS Rate', '${d.clss}%', 'Interest subsidy'),
-                      _resultStatBox('Max Carpet Area', '${d.maxArea} sqm', '${d.name} limit'),
+                      _resultStatBox('CLSS Rate', '${calcD.clss}%', 'Interest subsidy'),
+                      _resultStatBox('Max Carpet Area', '${calcD.maxArea} sqm', '${calcD.name} limit'),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -606,51 +751,52 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
               ],
             ),
           ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-        // Subsidy Limit Slabs Bar Chart
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            border: Border.all(color: theme.getBorderColor(context)),
-            borderRadius: BorderRadius.circular(18),
+          // Subsidy Limit Slabs Bar Chart
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              border: Border.all(color: theme.getBorderColor(context)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📊 PMAY Subsidy by Category — 2025', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 14),
+                _subsidyBar('EWS (≤₹3L/yr)', 267280, 267280, '6.5% CLSS on ₹6L loan over 20 yrs'),
+                _subsidyBar('LIG (₹3L–₹6L/yr)', 267280, 267280, '6.5% CLSS on ₹6L loan over 20 yrs'),
+                _subsidyBar('MIG-I (₹6L–₹12L/yr)', 235068, 267280, '4.0% CLSS on ₹9L loan over 20 yrs', gradient: const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF10B981)])),
+                _subsidyBar('MIG-II (₹12L–₹18L/yr)', 230156, 267280, '3.0% CLSS on ₹12L loan over 20 yrs', gradient: const LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)])),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 PMAY Subsidy by Category — 2025', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 14),
-              _subsidyBar('EWS (≤₹3L/yr)', 267280, 267280, '6.5% CLSS on ₹6L loan over 20 yrs'),
-              _subsidyBar('LIG (₹3L–₹6L/yr)', 267280, 267280, '6.5% CLSS on ₹6L loan over 20 yrs'),
-              _subsidyBar('MIG-I (₹6L–₹12L/yr)', 235068, 267280, '4.0% CLSS on ₹9L loan over 20 yrs', gradient: const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF10B981)])),
-              _subsidyBar('MIG-II (₹12L–₹18L/yr)', 230156, 267280, '3.0% CLSS on ₹12L loan over 20 yrs', gradient: const LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)])),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-        // Stepper Application steps
-        Text('How to Apply — PMAY Urban 2.0', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 8),
+          // Stepper Application steps
+          Text('How to Apply — PMAY Urban 2.0', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 8),
 
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            border: Border.all(color: theme.getBorderColor(context)),
-            borderRadius: BorderRadius.circular(18),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              border: Border.all(color: theme.getBorderColor(context)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              children: [
+                _applyStep('1', 'Check Eligibility', 'Visit pmaymis.gov.in · Enter Aadhaar number · Verify beneficiary records'),
+                _applyStep('2', 'Apply Through Bank or ULB', 'Apply via Primary Lending Institution (PLI listing) or local Urban Local Body (ULB) office'),
+                _applyStep('3', 'Submit Documents', 'Aadhaar, income proof certificate, property registry papers, bank accounts'),
+                _applyStep('4', 'Subsidy Credited to Loan', 'HUDCO/NHB audits status and credits CLSS NPV directly to outstanding principal loan account'),
+                _applyStep('5', 'Track Application Status', 'Monitor milestones on PMAY portal using Aadhaar registry and tracking indices'),
+              ],
+            ),
           ),
-          child: Column(
-            children: [
-              _applyStep('1', 'Check Eligibility', 'Visit pmaymis.gov.in · Enter Aadhaar number · Verify beneficiary records'),
-              _applyStep('2', 'Apply Through Bank or ULB', 'Apply via Primary Lending Institution (PLI listing) or local Urban Local Body (ULB) office'),
-              _applyStep('3', 'Submit Documents', 'Aadhaar, income proof certificate, property registry papers, bank accounts'),
-              _applyStep('4', 'Subsidy Credited to Loan', 'HUDCO/NHB audits status and credits CLSS NPV directly to outstanding principal loan account'),
-              _applyStep('5', 'Track Application Status', 'Monitor milestones on PMAY portal using Aadhaar registry and tracking indices'),
-            ],
-          ),
-        ),
+        ],
       ],
     );
   }
@@ -719,6 +865,7 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
     String suffix = '',
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     return Column(
@@ -740,7 +887,10 @@ class _INPMAYEligibilityState extends ConsumerState<INPMAYEligibility> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
           decoration: BoxDecoration(
             color: theme.getBgColor(context),
-            border: Border.all(color: theme.getBorderColor(context)),
+            border: Border.all(
+              color: hasError ? Colors.red : theme.getBorderColor(context),
+              width: hasError ? 1.5 : 1.0,
+            ),
             borderRadius: BorderRadius.circular(10),
           ),
           child: TextFormField(

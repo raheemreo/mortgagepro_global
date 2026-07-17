@@ -25,6 +25,17 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
   int _durYears = 15;
   double _stepUpPercent = 0.0; // 0, 5, 10, 15
 
+  bool _calculated = false;
+  bool _calcIsLumpsum = false;
+  double _calcInvestmentAmount = 10000;
+  double _calcRoi = 12.0;
+  int _calcDurYears = 15;
+  double _calcStepUpPercent = 0.0;
+
+  bool _investmentHasError = false;
+  bool _roiHasError = false;
+  bool _durHasError = false;
+
   // Controllers
   late TextEditingController _investmentCtrl;
   late TextEditingController _roiCtrl;
@@ -95,7 +106,53 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
       _investmentCtrl.text = '10000';
       _roiCtrl.text = '12.0';
       _durCtrl.text = '15';
+
+      _calculated = false;
+      _calcIsLumpsum = false;
+      _calcInvestmentAmount = 10000;
+      _calcRoi = 12.0;
+      _calcDurYears = 15;
+      _calcStepUpPercent = 0.0;
+
+      _investmentHasError = false;
+      _roiHasError = false;
+      _durHasError = false;
     });
+  }
+
+  void _calculate() {
+    final investVal = double.tryParse(_investmentCtrl.text) ?? 0.0;
+    final roiVal = double.tryParse(_roiCtrl.text) ?? 0.0;
+    final durVal = int.tryParse(_durCtrl.text) ?? 0;
+
+    setState(() {
+      _investmentHasError = investVal <= 0;
+      _roiHasError = roiVal <= 0 || roiVal > 30;
+      _durHasError = durVal <= 0 || durVal > 50;
+    });
+
+    if (_investmentHasError || _roiHasError || _durHasError) {
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcIsLumpsum = _isLumpsum;
+      _calcInvestmentAmount = _investmentAmount;
+      _calcRoi = _roi;
+      _calcDurYears = _durYears;
+      _calcStepUpPercent = _stepUpPercent;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _isLumpsum != _calcIsLumpsum ||
+        _investmentAmount != _calcInvestmentAmount ||
+        _roi != _calcRoi ||
+        _durYears != _calcDurYears ||
+        _stepUpPercent != _calcStepUpPercent;
   }
 
   void _toggleMode(bool lumpsum) {
@@ -123,19 +180,19 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
   }
 
   Map<String, dynamic> _calculateSIP(
-      double sip, double ratePA, int months, double step) {
+      double sip, double ratePA, int months, double step, bool isLumpsum, int durYears) {
     final mRate = ratePA / 100 / 12;
     double corpus = 0;
     double invested = 0;
     double curSip = sip;
     final List<Map<String, double>> points = [];
 
-    if (_isLumpsum) {
+    if (isLumpsum) {
       final double annualRate = ratePA / 100;
       corpus = sip;
       invested = sip;
       points.add({'m': 0, 'corpus': corpus, 'invested': invested});
-      for (int y = 1; y <= _durYears; y++) {
+      for (int y = 1; y <= durYears; y++) {
         corpus = corpus * (1 + annualRate);
         points.add(
             {'m': y.toDouble() * 12, 'corpus': corpus, 'invested': invested});
@@ -177,7 +234,7 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving: Wealth ${_fmt(corpus)} · Mode: ${_isLumpsum ? "Lumpsum" : "SIP"}',
+                'Saving: Wealth ${_fmt(corpus)} · Mode: ${_calcIsLumpsum ? "Lumpsum" : "SIP"}',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -227,11 +284,11 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
         country: 'India',
         calcType: 'SIP Calculator',
         inputs: {
-          'sipAmount': _investmentAmount,
-          'rate': _roi,
-          'duration': _durYears.toDouble(),
-          'stepUp': _isLumpsum ? 0.0 : _stepUpPercent,
-          'isLumpsum': _isLumpsum ? 1.0 : 0.0,
+          'sipAmount': _calcInvestmentAmount,
+          'rate': _calcRoi,
+          'duration': _calcDurYears.toDouble(),
+          'stepUp': _calcIsLumpsum ? 0.0 : _calcStepUpPercent,
+          'isLumpsum': _calcIsLumpsum ? 1.0 : 0.0,
         },
         results: {
           'corpus': corpus,
@@ -275,7 +332,7 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final results =
-        _calculateSIP(_investmentAmount, _roi, _durYears * 12, _stepUpPercent);
+        _calculateSIP(_calcInvestmentAmount, _calcRoi, _calcDurYears * 12, _calcStepUpPercent, _calcIsLumpsum, _calcDurYears);
     final corpus = results['corpus'] as double;
     final invested = results['invested'] as double;
     final List<Map<String, double>> points =
@@ -285,16 +342,16 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
 
     // Return Scenario Comparison (Same parameters, different CAGR rates)
     final scenario8 = _calculateSIP(
-            _investmentAmount, 8, _durYears * 12, _stepUpPercent)['corpus']
+            _calcInvestmentAmount, 8, _calcDurYears * 12, _calcStepUpPercent, _calcIsLumpsum, _calcDurYears)['corpus']
         as double;
     final scenario12 = _calculateSIP(
-            _investmentAmount, 12, _durYears * 12, _stepUpPercent)['corpus']
+            _calcInvestmentAmount, 12, _calcDurYears * 12, _calcStepUpPercent, _calcIsLumpsum, _calcDurYears)['corpus']
         as double;
     final scenario15 = _calculateSIP(
-            _investmentAmount, 15, _durYears * 12, _stepUpPercent)['corpus']
+            _calcInvestmentAmount, 15, _calcDurYears * 12, _calcStepUpPercent, _calcIsLumpsum, _calcDurYears)['corpus']
         as double;
     final scenario18 = _calculateSIP(
-            _investmentAmount, 18, _durYears * 12, _stepUpPercent)['corpus']
+            _calcInvestmentAmount, 18, _calcDurYears * 12, _calcStepUpPercent, _calcIsLumpsum, _calcDurYears)['corpus']
         as double;
     final maxScenarioVal = scenario18;
 
@@ -446,6 +503,7 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
                 min: 500,
                 max: _isLumpsum ? 1000000 : 200000,
                 prefix: '₹ ',
+                hasError: _investmentHasError,
                 onChangedText: (val) {
                   setState(() {
                     _investmentAmount = val;
@@ -468,6 +526,7 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
                 min: 5.0,
                 max: 30.0,
                 suffix: '% p.a.',
+                hasError: _roiHasError,
                 onChangedText: (val) {
                   setState(() {
                     _roi = val;
@@ -490,6 +549,7 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
                 min: 1,
                 max: 40,
                 suffix: ' Years',
+                hasError: _durHasError,
                 onChangedText: (val) {
                   setState(() {
                     _durYears = val.toInt();
@@ -556,7 +616,7 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _scrollToResults,
+                      onPressed: _calculate,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF9333EA),
                         foregroundColor: Colors.white,
@@ -572,270 +632,305 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
                               weight: FontWeight.w800)),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 50,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () =>
-                          _saveCalculation(corpus, invested, returns),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0B1F48),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Icon(Icons.bookmark_border, size: 20),
-                    ),
-                  )
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Maturity Result Card (Purple Gradient)
-        Container(
-          key: _resultsKey,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6D28D9), Color(0xFF9333EA)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('TOTAL WEALTH CREATED',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: Colors.white70,
-                      weight: FontWeight.w700,
-                      letterSpacing: 0.8)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(corpus),
-                style: AppTextStyles.playfair(
-                    size: 32,
-                    color: const Color(0xFFF3E8FF),
-                    weight: FontWeight.w800),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _resultBox('Total Invested', _fmt(invested)),
-                  const SizedBox(width: 8),
-                  _resultBox('Returns Earned', _fmt(returns), isGreen: true),
-                  const SizedBox(width: 8),
-                  _resultBox(
-                      'Wealth Ratio', '${wealthRatio.toStringAsFixed(2)}x'),
-                  const SizedBox(width: 8),
-                  _resultBox('XIRR (approx)', '${_roi.toStringAsFixed(1)}%'),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Visual Composition Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('🥧 Composition & Wealth Progression',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-
-              // Donut Chart Row
-              Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CustomPaint(
-                      painter: _SIPDonutPainter(
-                        invested: invested,
-                        returns: returns,
-                        investedColor: const Color(0xFFFF6B00),
-                        returnsColor: const Color(0xFF9333EA),
-                        textColor: theme.getTextColor(context),
+                  if (_calculated) ...[
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 50,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () =>
+                            _saveCalculation(corpus, invested, returns),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0B1F48),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Icon(Icons.bookmark_border, size: 20),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(const Color(0xFFFF6B00), 'Total Invested',
-                            _fmt(invested)),
-                        const SizedBox(height: 12),
-                        _legendRow(const Color(0xFF9333EA), 'Returns Earned',
-                            _fmt(returns)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 16),
-
-              // Wealth Growth curve Area chart
-              Text('WEALTH GROWTH TIMELINE',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: theme.getMutedColor(context),
-                      weight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 140,
-                width: double.infinity,
-                child: CustomPaint(
-                  painter: _SIPAreaPainter(points: points),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _chartIndicatorDot(const Color(0xFF9333EA), 'SIP Corpus'),
-                  const SizedBox(width: 16),
-                  _chartIndicatorDot(
-                      const Color(0xFFFF6B00).withValues(alpha: 0.4),
-                      'Amount Invested'),
+                  ],
                 ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
-
-        // Scenario Comparison
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 Scenario Comparison',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 4),
-              Text(
-                'What ${_fmtShort(_investmentAmount)}${_isLumpsum ? " lumpsum" : "/mo SIP"} becomes in $_durYears years at different CAGR rates:',
-                style: AppTextStyles.dmSans(
-                    size: 9.5, color: theme.getMutedColor(context)),
-              ),
-              const SizedBox(height: 16),
-              _scenarioRow('8% Debt Fund', scenario8, maxScenarioVal,
-                  const Color(0xFF1A3A8F)),
-              const SizedBox(height: 10),
-              _scenarioRow('12% Moderate', scenario12, maxScenarioVal,
-                  const Color(0xFF046A38)),
-              const SizedBox(height: 10),
-              _scenarioRow('15% Growth', scenario15, maxScenarioVal,
-                  const Color(0xFFFF6B00)),
-              const SizedBox(height: 10),
-              _scenarioRow('18% Aggressive', scenario18, maxScenarioVal,
-                  const Color(0xFF9333EA)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Top Performing MFs
-        Text('Top Performing Mutual Funds 2025',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Column(
-          children: _funds.map((f) {
-            final fRate = f['rate'] as double;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: theme.getBorderColor(context)),
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF9333EA).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(f['icon'] as String,
-                        style: const TextStyle(fontSize: 18)),
-                  ),
-                  const SizedBox(width: 12),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(f['name'] as String,
-                            style: AppTextStyles.dmSans(
-                                size: 12,
-                                weight: FontWeight.w800,
-                                color: theme.getTextColor(context))),
-                        Text(f['cat'] as String,
-                            style: AppTextStyles.dmSans(
-                                size: 9.5,
-                                color: theme.getMutedColor(context))),
-                      ],
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('${fRate.toStringAsFixed(1)}%',
-                          style: AppTextStyles.dmSans(
-                              size: 15,
-                              weight: FontWeight.w800,
-                              color: const Color(0xFF9333EA))),
-                      Text('5-yr CAGR',
-                          style: AppTextStyles.dmSans(
-                              size: 8.5, color: theme.getMutedColor(context))),
-                    ],
                   ),
                 ],
               ),
-            );
-          }).toList(),
-        ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
+
+          // Maturity Result Card (Purple Gradient)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6D28D9), Color(0xFF9333EA)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('TOTAL WEALTH CREATED',
+                    style: AppTextStyles.dmSans(
+                        size: 9,
+                        color: Colors.white70,
+                        weight: FontWeight.w700,
+                        letterSpacing: 0.8)),
+                const SizedBox(height: 4),
+                Text(
+                  _fmt(corpus),
+                  style: AppTextStyles.playfair(
+                      size: 32,
+                      color: const Color(0xFFF3E8FF),
+                      weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _resultBox('Total Invested', _fmt(invested)),
+                    const SizedBox(width: 8),
+                    _resultBox('Returns Earned', _fmt(returns), isGreen: true),
+                    const SizedBox(width: 8),
+                    _resultBox(
+                        'Wealth Ratio', '${wealthRatio.toStringAsFixed(2)}x'),
+                    const SizedBox(width: 8),
+                    _resultBox('XIRR (approx)', '${_calcRoi.toStringAsFixed(1)}%'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Visual Composition Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('🥧 Composition & Wealth Progression',
+                    style: AppTextStyles.dmSans(
+                        size: 13,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+
+                // Donut Chart Row
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: CustomPaint(
+                        painter: _SIPDonutPainter(
+                          invested: invested,
+                          returns: returns,
+                          investedColor: const Color(0xFFFF6B00),
+                          returnsColor: const Color(0xFF9333EA),
+                          textColor: theme.getTextColor(context),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _legendRow(const Color(0xFFFF6B00), 'Total Invested',
+                              _fmt(invested)),
+                          const SizedBox(height: 12),
+                          _legendRow(const Color(0xFF9333EA), 'Returns Earned',
+                              _fmt(returns)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 16),
+
+                // Wealth Growth curve Area chart
+                Text('WEALTH GROWTH TIMELINE',
+                    style: AppTextStyles.dmSans(
+                        size: 9,
+                        color: theme.getMutedColor(context),
+                        weight: FontWeight.w800)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 140,
+                  width: double.infinity,
+                  child: CustomPaint(
+                    painter: _SIPAreaPainter(points: points),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _chartIndicatorDot(const Color(0xFF9333EA), 'SIP Corpus'),
+                    const SizedBox(width: 16),
+                    _chartIndicatorDot(
+                        const Color(0xFFFF6B00).withValues(alpha: 0.4),
+                        'Amount Invested'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Scenario Comparison
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📊 Scenario Comparison',
+                    style: AppTextStyles.dmSans(
+                        size: 13,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context))),
+                const SizedBox(height: 4),
+                Text(
+                  'What ${_fmtShort(_calcInvestmentAmount)}${_calcIsLumpsum ? " lumpsum" : "/mo SIP"} becomes in $_calcDurYears years at different CAGR rates:',
+                  style: AppTextStyles.dmSans(
+                      size: 9.5, color: theme.getMutedColor(context)),
+                ),
+                const SizedBox(height: 16),
+                _scenarioRow('8% Debt Fund', scenario8, maxScenarioVal,
+                    const Color(0xFF1A3A8F)),
+                const SizedBox(height: 10),
+                _scenarioRow('12% Moderate', scenario12, maxScenarioVal,
+                    const Color(0xFF046A38)),
+                const SizedBox(height: 10),
+                _scenarioRow('15% Growth', scenario15, maxScenarioVal,
+                    const Color(0xFFFF6B00)),
+                const SizedBox(height: 10),
+                _scenarioRow('18% Aggressive', scenario18, maxScenarioVal,
+                    const Color(0xFF9333EA)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Top Performing MFs
+          Text('Top Performing Mutual Funds 2025',
+              style: AppTextStyles.playfair(
+                  size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          Column(
+            children: _funds.map((f) {
+              final fRate = f['rate'] as double;
+              final fundWealth = _calculateSIP(
+                      _calcInvestmentAmount, fRate, _calcDurYears * 12, _calcStepUpPercent, _calcIsLumpsum, _calcDurYears)['corpus']
+                  as double;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.getCardColor(context),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.getBorderColor(context)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF9333EA).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(f['icon'] as String,
+                          style: const TextStyle(fontSize: 18)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(f['name'] as String,
+                              style: AppTextStyles.dmSans(
+                                  size: 12,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context))),
+                          Text(f['cat'] as String,
+                              style: AppTextStyles.dmSans(
+                                  size: 9.5,
+                                  color: theme.getMutedColor(context))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('${fRate.toStringAsFixed(1)}%',
+                            style: AppTextStyles.dmSans(
+                                size: 15,
+                                weight: FontWeight.w800,
+                                color: const Color(0xFF9333EA))),
+                        Text('Est: ${_fmtShort(fundWealth)}',
+                            style: AppTextStyles.dmSans(
+                                size: 8.5, color: theme.getMutedColor(context))),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
         const SizedBox(height: 20),
 
         // Saved Calculations Section
@@ -1004,6 +1099,7 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
     String suffix = '',
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     return Column(
@@ -1030,7 +1126,10 @@ class _INSIPCalculatorState extends ConsumerState<INSIPCalculator> {
           decoration: BoxDecoration(
             color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
             border: Border.all(
-                color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                color: hasError
+                    ? Colors.red
+                    : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextFormField(

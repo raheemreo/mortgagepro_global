@@ -9,6 +9,7 @@ import '../../../app/theme/text_styles.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
+import '../../../../widgets/ads/native_ad_widget.dart';
 
 class USAAutoLoanCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -1135,6 +1136,11 @@ class _USAAutoLoanCalcState extends ConsumerState<USAAutoLoanCalc> {
                 ),
 
                 const SizedBox(height: 12),
+                const NativeAdWidget(
+                  screenName: 'usa_auto_loan_calc',
+                  adType: 'mediumCard',
+                ),
+                const SizedBox(height: 32),
 
                 // Related tools
                 _buildSectionHeader('Related Tools', onReset: null),

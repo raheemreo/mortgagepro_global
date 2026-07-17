@@ -24,6 +24,17 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
   double _tenureYears = 5;
   double _procFeePercent = 1.5;
 
+  bool _calculated = false;
+  double _calcLoanAmount = 500000;
+  double _calcRoi = 11.45;
+  double _calcTenureYears = 5;
+  double _calcProcFeePercent = 1.5;
+
+  bool _loanAmountHasError = false;
+  bool _roiHasError = false;
+  bool _tenureHasError = false;
+  bool _procFeeHasError = false;
+
   // Controllers
   late TextEditingController _loanAmountCtrl;
   late TextEditingController _roiCtrl;
@@ -104,7 +115,54 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
       _roiCtrl.text = '11.45';
       _tenureCtrl.text = '5';
       _procFeeCtrl.text = '1.5';
+
+      _calculated = false;
+
+      _calcLoanAmount = 500000;
+      _calcRoi = 11.45;
+      _calcTenureYears = 5;
+      _calcProcFeePercent = 1.5;
+
+      _loanAmountHasError = false;
+      _roiHasError = false;
+      _tenureHasError = false;
+      _procFeeHasError = false;
     });
+  }
+
+  void _calculate() {
+    final loanVal = double.tryParse(_loanAmountCtrl.text) ?? 0.0;
+    final roiVal = double.tryParse(_roiCtrl.text) ?? 0.0;
+    final tenureVal = double.tryParse(_tenureCtrl.text) ?? 0.0;
+    final procVal = double.tryParse(_procFeeCtrl.text) ?? -1.0;
+
+    setState(() {
+      _loanAmountHasError = loanVal <= 0;
+      _roiHasError = roiVal <= 0 || roiVal > 50;
+      _tenureHasError = tenureVal <= 0 || tenureVal > 30;
+      _procFeeHasError = procVal < 0 || procVal > 20;
+    });
+
+    if (_loanAmountHasError || _roiHasError || _tenureHasError || _procFeeHasError) {
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcLoanAmount = _loanAmount;
+      _calcRoi = _roi;
+      _calcTenureYears = _tenureYears;
+      _calcProcFeePercent = _procFeePercent;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _loanAmount != _calcLoanAmount ||
+        _roi != _calcRoi ||
+        _tenureYears != _calcTenureYears ||
+        _procFeePercent != _calcProcFeePercent;
   }
 
   double _calcEMI(double p, double ratePA, int termMonths) {
@@ -128,10 +186,10 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
   }
 
   void _saveCalculation() async {
-    final emi = _calcEMI(_loanAmount, _roi, (_tenureYears * 12).toInt());
-    final totalPay = emi * _tenureYears * 12;
-    final totalInt = totalPay - _loanAmount;
-    final fee = _loanAmount * (_procFeePercent / 100);
+    final emi = _calcEMI(_calcLoanAmount, _calcRoi, (_calcTenureYears * 12).toInt());
+    final totalPay = emi * _calcTenureYears * 12;
+    final totalInt = totalPay - _calcLoanAmount;
+    final fee = _calcLoanAmount * (_calcProcFeePercent / 100);
 
     final labelCtrl = TextEditingController(text: 'Personal Loan EMI');
     final confirmed = await showDialog<bool>(
@@ -147,7 +205,7 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saving: EMI ${_fmt(emi)}/mo · Amount ${_fmt(_loanAmount)}',
+            Text('Saving: EMI ${_fmt(emi)}/mo · Amount ${_fmt(_calcLoanAmount)}',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -198,10 +256,10 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
         country: 'India',
         calcType: 'Personal Loan EMI',
         inputs: {
-          'loanAmount': _loanAmount,
-          'rate': _roi,
-          'termYears': _tenureYears,
-          'procFeePercent': _procFeePercent,
+          'loanAmount': _calcLoanAmount,
+          'rate': _calcRoi,
+          'termYears': _calcTenureYears,
+          'procFeePercent': _calcProcFeePercent,
         },
         results: {
           'emi': emi,
@@ -246,19 +304,19 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Reactively compute values
-    final emi = _calcEMI(_loanAmount, _roi, (_tenureYears * 12).toInt());
-    final totalPay = emi * _tenureYears * 12;
-    final totalInt = totalPay - _loanAmount;
-    final fee = _loanAmount * (_procFeePercent / 100);
-    final disbursed = _loanAmount - fee;
+    final emi = _calcEMI(_calcLoanAmount, _calcRoi, (_calcTenureYears * 12).toInt());
+    final totalPay = emi * _calcTenureYears * 12;
+    final totalInt = totalPay - _calcLoanAmount;
+    final fee = _calcLoanAmount * (_calcProcFeePercent / 100);
+    final disbursed = _calcLoanAmount - fee;
     final costPct =
-        _loanAmount > 0 ? ((totalInt + fee) / _loanAmount * 100) : 0.0;
+        _calcLoanAmount > 0 ? ((totalInt + fee) / _calcLoanAmount * 100) : 0.0;
     final intRatio = totalPay > 0 ? (totalInt / totalPay) : 0.0;
 
     // Year-wise schedule calculation
-    final listYears = _tenureYears.ceil();
-    final rMonthly = _roi / 1200;
-    double tempBal = _loanAmount;
+    final listYears = _calcTenureYears.ceil();
+    final rMonthly = _calcRoi / 1200;
+    double tempBal = _calcLoanAmount;
     final List<Map<String, double>> yearBreakdown = [];
     for (int y = 1; y <= listYears; y++) {
       double yInt = 0;
@@ -352,6 +410,7 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
                 min: 10000,
                 max: 5000000,
                 prefix: '₹ ',
+                hasError: _loanAmountHasError,
                 onChangedText: (val) {
                   setState(() {
                     _loanAmount = val;
@@ -374,6 +433,7 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
                 min: 8.0,
                 max: 30.0,
                 suffix: '% p.a.',
+                hasError: _roiHasError,
                 onChangedText: (val) {
                   setState(() {
                     _roi = val;
@@ -396,6 +456,7 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
                 min: 1,
                 max: 7,
                 suffix: ' Yrs',
+                hasError: _tenureHasError,
                 onChangedText: (val) {
                   setState(() {
                     _tenureYears = val;
@@ -418,6 +479,7 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
                 min: 0.0,
                 max: 5.0,
                 suffix: '% of Loan',
+                hasError: _procFeeHasError,
                 onChangedText: (val) {
                   setState(() {
                     _procFeePercent = val;
@@ -439,7 +501,7 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
               const SizedBox(height: 16),
 
               ElevatedButton(
-                onPressed: _scrollToResults,
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
                   foregroundColor: Colors.white,
@@ -456,453 +518,433 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-
-        // Result Hero Card
-        Container(
-          key: _resultsKey,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('MONTHLY EMI',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: Colors.white60,
-                      weight: FontWeight.w700,
-                      letterSpacing: 0.8)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(emi),
-                style: AppTextStyles.playfair(
-                    size: 34,
-                    color: const Color(0xFFFFDEA0),
-                    weight: FontWeight.w800),
-              ),
-              const SizedBox(height: 14),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 3,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 1.5,
-                children: [
-                  _resultBox('Principal', _fmt(_loanAmount)),
-                  _resultBox('Total Interest', _fmt(totalInt), isRed: true),
-                  _resultBox('Total Payable', _fmt(totalPay)),
-                  _resultBox('Processing Fee', _fmt(fee)),
-                  _resultBox('Net Disbursed', _fmt(disbursed), isGreen: true),
-                  _resultBox(
-                      'Cost of Credit', '${costPct.toStringAsFixed(1)}%'),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Visual Analysis
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 Composition & Year-wise Analysis',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-
-              // Donut Chart Row
-              Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CustomPaint(
-                      painter: _DonutChartPainter(
-                        v1: _loanAmount,
-                        v2: totalInt,
-                        v3: fee,
-                        c1: const Color(0xFF046A38),
-                        c2: const Color(0xFFFCA5A5),
-                        c3: const Color(0xFFFF6B00),
-                        centerLabel: '${(intRatio * 100).round()}%',
-                        textColor: theme.getTextColor(context),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(const Color(0xFF046A38), 'Principal',
-                            _fmt(_loanAmount)),
-                        const SizedBox(height: 8),
-                        _legendRow(const Color(0xFFFCA5A5), 'Total Interest',
-                            _fmt(totalInt)),
-                        const SizedBox(height: 8),
-                        _legendRow(const Color(0xFFFF6B00), 'Processing Fee',
-                            _fmt(fee)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 16),
-
-              // Year-wise principal vs interest paid stacked bar chart
-              Text('YEAR-WISE INTEREST VS PRINCIPAL',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: theme.getMutedColor(context),
-                      weight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 100,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: yearBreakdown.asMap().entries.map((entry) {
-                    final idx = entry.key;
-                    final val = entry.value;
-                    final prinVal = val['principal']!;
-                    final intVal = val['interest']!;
-                    final sumVal = prinVal + intVal;
-
-                    final totalH = sumVal / maxBarVal * 80;
-                    final intH = intVal / sumVal * totalH;
-                    final prinH = totalH - intH;
-
-                    return Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(
-                            width: 16,
-                            height: totalH,
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Column(
-                              children: [
-                                Container(
-                                  height: intH,
-                                  width: 16,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFFCA5A5),
-                                    borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(4)),
-                                  ),
-                                ),
-                                Container(
-                                  height: prinH,
-                                  width: 16,
-                                  color: const Color(0xFF046A38),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text('Y${idx + 1}',
-                              style: AppTextStyles.dmSans(
-                                  size: 8,
-                                  color: theme.getMutedColor(context))),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _chartIndicatorDot(const Color(0xFF046A38), 'Principal'),
-                  const SizedBox(width: 12),
-                  _chartIndicatorDot(const Color(0xFFFCA5A5), 'Interest'),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Amortization table (first 5 years)
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📅 Amortisation Schedule (First 5 Years)',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 12),
-              Table(
-                columnWidths: const {
-                  0: FlexColumnWidth(1.2),
-                  1: FlexColumnWidth(1.4),
-                  2: FlexColumnWidth(1.4),
-                  3: FlexColumnWidth(1.6),
-                },
-                children: [
-                  TableRow(
-                    children: [
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Text('Year',
-                              style: AppTextStyles.dmSans(
-                                  size: 9.5,
-                                  weight: FontWeight.w800,
-                                  color: theme.getMutedColor(context)))),
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Text('Principal',
-                              style: AppTextStyles.dmSans(
-                                  size: 9.5,
-                                  weight: FontWeight.w800,
-                                  color: theme.getMutedColor(context)),
-                              textAlign: TextAlign.right)),
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Text('Interest',
-                              style: AppTextStyles.dmSans(
-                                  size: 9.5,
-                                  weight: FontWeight.w800,
-                                  color: theme.getMutedColor(context)),
-                              textAlign: TextAlign.right)),
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Text('Balance',
-                              style: AppTextStyles.dmSans(
-                                  size: 9.5,
-                                  weight: FontWeight.w800,
-                                  color: theme.getMutedColor(context)),
-                              textAlign: TextAlign.right)),
-                    ],
-                  ),
-                  ...yearBreakdown.asMap().entries.take(5).map((entry) {
-                    final idx = entry.key;
-                    final val = entry.value;
-                    return TableRow(
-                      children: [
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text('Year ${idx + 1}',
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    weight: FontWeight.w700,
-                                    color: theme.getTextColor(context)))),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(_fmtShort(val['principal']!),
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    color: theme.getTextColor(context)),
-                                textAlign: TextAlign.right)),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(_fmtShort(val['interest']!),
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    color: theme.getTextColor(context)),
-                                textAlign: TextAlign.right)),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(_fmtShort(val['balance']!),
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    color: theme.getTextColor(context)),
-                                textAlign: TextAlign.right)),
-                      ],
-                    );
-                  }),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Prepayment Tip Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            border: Border.all(color: const Color(0xFFFDBA74)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('💡', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Prepay to Save Big',
-                        style: AppTextStyles.dmSans(
-                            size: 12,
-                            weight: FontWeight.w800,
-                            color: const Color(0xFF9A3412))),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Your ${_fmtShort(_loanAmount)} loan at ${_roi.toStringAsFixed(2)}% for ${_tenureYears.toStringAsFixed(0)} years costs ${_fmt(totalInt)} in interest. Consider part-prepayment after 12 EMIs — a lump payment of 20% in Year 1 can save approx 18% of total interest.',
-                      style: AppTextStyles.dmSans(
-                          size: 10,
-                          color: const Color(0xFFC2410C),
-                          height: 1.4),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Top Personal Loan Rates 2025
-        Text('Top Personal Loan Rates 2025',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Column(
-          children: _banks.map((b) {
-            final bRate = b['rate'] as double;
-            final bEmi =
-                _calcEMI(_loanAmount, bRate, (_tenureYears * 12).toInt());
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: theme.getBorderColor(context)),
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
               child: Row(
                 children: [
-                  Text(b['icon'] as String,
-                      style: const TextStyle(fontSize: 22)),
-                  const SizedBox(width: 10),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(b['name'] as String,
-                            style: AppTextStyles.dmSans(
-                                size: 12,
-                                weight: FontWeight.w800,
-                                color: theme.getTextColor(context))),
-                        Text(b['desc'] as String,
-                            style: AppTextStyles.dmSans(
-                                size: 9.5,
-                                color: theme.getMutedColor(context))),
-                      ],
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('${bRate.toStringAsFixed(2)}%',
-                          style: AppTextStyles.dmSans(
-                              size: 13,
-                              weight: FontWeight.w800,
-                              color: const Color(0xFFFF6B00))),
-                      Text('EMI ${_fmtShort(bEmi)}',
-                          style: AppTextStyles.dmSans(
-                              size: 9, color: theme.getMutedColor(context))),
-                    ],
                   ),
                 ],
               ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 16),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        // Save Calculation Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(
-                color:
-                    isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Result Hero Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('MONTHLY EMI',
+                    style: AppTextStyles.dmSans(
+                        size: 9,
+                        color: Colors.white60,
+                        weight: FontWeight.w700,
+                        letterSpacing: 0.8)),
+                const SizedBox(height: 4),
+                Text(
+                  _fmt(emi),
+                  style: AppTextStyles.playfair(
+                      size: 34,
+                      color: const Color(0xFFFFDEA0),
+                      weight: FontWeight.w800),
+                ),
+                Text('Equated Monthly Instalment for tenure',
+                    style: AppTextStyles.dmSans(size: 10, color: Colors.white60)),
+                const SizedBox(height: 14),
+                Row(
                   children: [
-                    Text('Save This Calculation',
+                    _resultBox('Principal Amount', _fmt(_calcLoanAmount)),
+                    const SizedBox(width: 8),
+                    _resultBox('Total Interest', _fmt(totalInt), isRed: true),
+                    const SizedBox(width: 8),
+                    _resultBox('Processing Fee', _fmt(fee)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Synced breakdown cards + donut
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Payment Outflow Summary',
+                    style: AppTextStyles.dmSans(
+                        size: 12,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        children: [
+                          _legendRow(const Color(0xFF0B1F48), 'Principal amount',
+                              _fmt(_calcLoanAmount)),
+                          const SizedBox(height: 12),
+                          _legendRow(const Color(0xFFFF6B00), 'Interest cost',
+                              _fmt(totalInt)),
+                          const SizedBox(height: 12),
+                          _legendRow(const Color(0xFF10B981), 'Upfront Charges',
+                              _fmt(fee)),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: SizedBox(
+                        height: 90,
+                        child: CustomPaint(
+                          painter: _DonutChartPainter(
+                            v1: _calcLoanAmount,
+                            v2: totalInt,
+                            v3: fee,
+                            c1: const Color(0xFF0B1F48),
+                            c2: const Color(0xFFFF6B00),
+                            c3: const Color(0xFF10B981),
+                            centerLabel: '${(intRatio * 100).toStringAsFixed(0)}%',
+                            textColor: theme.getTextColor(context),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Payment (Principal + Interest)',
+                        style: AppTextStyles.dmSans(
+                            size: 10, color: theme.getMutedColor(context))),
+                    Text(_fmt(totalPay),
                         style: AppTextStyles.dmSans(
                             size: 12,
                             weight: FontWeight.w800,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF07543A))),
-                    Text('Save details for future reference',
-                        style: AppTextStyles.dmSans(
-                            size: 10,
-                            color: isDark
-                                ? Colors.white70
-                                : const Color(0xFF046A38))),
+                            color: theme.getTextColor(context))),
                   ],
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Net Disbursed Amount',
+                        style: AppTextStyles.dmSans(
+                            size: 10, color: theme.getMutedColor(context))),
+                    Text(_fmt(disbursed),
+                        style: AppTextStyles.dmSans(
+                            size: 12,
+                            weight: FontWeight.w800,
+                            color: const Color(0xFF10B981))),
+                  ],
                 ),
-                child: Text('Save',
-                    style: AppTextStyles.dmSans(
-                        size: 11,
-                        color: Colors.white,
-                        weight: FontWeight.w700)),
-              ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Loan Cost Index (Fee+Interest %)',
+                        style: AppTextStyles.dmSans(
+                            size: 10, color: theme.getMutedColor(context))),
+                    Text('${costPct.toStringAsFixed(1)}%',
+                        style: AppTextStyles.dmSans(
+                            size: 12,
+                            weight: FontWeight.w800,
+                            color: const Color(0xFFFF6B00))),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Year-wise schedule timeline
+          Text('Yearly Amortization Schedule',
+              style: AppTextStyles.playfair(
+                  size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          Container(
+            height: 170,
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              border: Border.all(color: theme.getBorderColor(context)),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.all(16),
+              itemCount: yearBreakdown.length,
+              separatorBuilder: (c, i) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final d = yearBreakdown[index];
+                final yrSum = d['principal']! + d['interest']!;
+                final hPrin = yrSum > 0 ? (d['principal']! / maxBarVal * 90) : 0.0;
+                final hInt = yrSum > 0 ? (d['interest']! / maxBarVal * 90) : 0.0;
+
+                return Container(
+                  width: 82,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.getBgColor(context),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('Year ${index + 1}',
+                          style: AppTextStyles.dmSans(
+                              size: 10,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const Spacer(),
+                      Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          Container(
+                            width: 14,
+                            height: 90,
+                            color: Colors.transparent,
+                          ),
+                          Column(
+                            children: [
+                              Container(
+                                width: 14,
+                                height: hInt,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFF6B00),
+                                  borderRadius:
+                                      BorderRadius.vertical(top: Radius.circular(3)),
+                                ),
+                              ),
+                              Container(
+                                width: 14,
+                                height: hPrin,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF0B1F48),
+                                  borderRadius: BorderRadius.vertical(
+                                      bottom: Radius.circular(3)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text('Bal: ${_fmtShort(d['balance']!)}',
+                          style: AppTextStyles.dmSans(
+                              size: 8.5, color: theme.getMutedColor(context))),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _chartIndicatorDot(const Color(0xFF0B1F48), 'Principal Paid'),
+              const SizedBox(width: 16),
+              _chartIndicatorDot(const Color(0xFFFF6B00), 'Interest Paid'),
             ],
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Action Tip
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF6B00).withValues(alpha: 0.05),
+              border: Border.all(color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                const Text('💡', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Prepay to Save Big',
+                          style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFF9A3412))),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Your ${_fmtShort(_calcLoanAmount)} loan at ${_calcRoi.toStringAsFixed(2)}% for ${_calcTenureYears.toStringAsFixed(0)} years costs ${_fmt(totalInt)} in interest. Consider part-prepayment after 12 EMIs — a lump payment of 20% in Year 1 can save approx 18% of total interest.',
+                        style: AppTextStyles.dmSans(
+                            size: 10,
+                            color: const Color(0xFFC2410C),
+                            height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Top Personal Loan Rates 2025
+          Text('Top Personal Loan Rates 2025',
+              style: AppTextStyles.playfair(
+                  size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          Column(
+            children: _banks.map((b) {
+              final bRate = b['rate'] as double;
+              final bEmi =
+                  _calcEMI(_calcLoanAmount, bRate, (_calcTenureYears * 12).toInt());
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.getCardColor(context),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.getBorderColor(context)),
+                ),
+                child: Row(
+                  children: [
+                    Text(b['icon'] as String,
+                        style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(b['name'] as String,
+                              style: AppTextStyles.dmSans(
+                                  size: 12,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context))),
+                          Text(b['desc'] as String,
+                              style: AppTextStyles.dmSans(
+                                  size: 9.5,
+                                  color: theme.getMutedColor(context))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('${bRate.toStringAsFixed(2)}%',
+                            style: AppTextStyles.dmSans(
+                                size: 13,
+                                weight: FontWeight.w800,
+                                color: const Color(0xFFFF6B00))),
+                        Text('EMI ${_fmtShort(bEmi)}',
+                            style: AppTextStyles.dmSans(
+                                size: 9, color: theme.getMutedColor(context))),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+
+          // Save Calculation Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(
+                  color:
+                      isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save This Calculation',
+                          style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF07543A))),
+                      Text('Save details for future reference',
+                          style: AppTextStyles.dmSans(
+                              size: 10,
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: Colors.white,
+                          weight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -960,6 +1002,7 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
     String suffix = '',
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     return Column(
@@ -986,7 +1029,10 @@ class _INPersonalLoanEMIState extends ConsumerState<INPersonalLoanEMI> {
           decoration: BoxDecoration(
             color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
             border: Border.all(
-                color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                color: hasError
+                    ? Colors.red
+                    : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextFormField(

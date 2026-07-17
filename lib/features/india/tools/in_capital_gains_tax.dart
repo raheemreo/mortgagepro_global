@@ -45,6 +45,32 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
 
   bool _calculated = false;
 
+  // Frozen inputs
+  double _calcLSaleVal = 9500000;
+  double _calcLBuyVal = 4000000;
+  double _calcLImproveVal = 0;
+  int _calcLBuyYr = 2024;
+  String _calcLPurchaseDate = 'after';
+  String _calcActiveTab = 'ltcg';
+
+  double _calcSSaleVal = 6000000;
+  double _calcSBuyVal = 4500000;
+  double _calcSExpVal = 50000;
+  double _calcSIncomeVal = 1500000;
+  String _calcSRegime = 'new';
+
+  // Error flags
+  bool _lSaleHasError = false;
+  bool _lBuyHasError = false;
+  bool _lImproveHasError = false;
+
+  bool _sSaleHasError = false;
+  bool _sBuyHasError = false;
+  bool _sExpHasError = false;
+  bool _sIncomeHasError = false;
+
+  final GlobalKey _resultsKey = GlobalKey();
+
   final Map<int, int> _ciiData = const {
     2001: 100,
     2005: 117,
@@ -95,6 +121,9 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
         _lImproveVal = 0;
         _lBuyYr = 2024;
         _lPurchaseDate = 'after';
+        _lSaleHasError = false;
+        _lBuyHasError = false;
+        _lImproveHasError = false;
       } else {
         _sSaleCtrl.text = '6000000';
         _sBuyCtrl.text = '4500000';
@@ -105,6 +134,93 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
         _sExpVal = 50000;
         _sIncomeVal = 1500000;
         _sRegime = 'new';
+        _sSaleHasError = false;
+        _sBuyHasError = false;
+        _sExpHasError = false;
+        _sIncomeHasError = false;
+      }
+    });
+  }
+
+  void _calculate() {
+    if (_activeTab == 'ltcg') {
+      final sale = double.tryParse(_lSaleCtrl.text) ?? 0.0;
+      final buy = double.tryParse(_lBuyCtrl.text) ?? 0.0;
+      final improve = double.tryParse(_lImproveCtrl.text) ?? 0.0;
+
+      setState(() {
+        _lSaleHasError = sale <= 0;
+        _lBuyHasError = buy <= 0;
+        _lImproveHasError = improve < 0;
+      });
+
+      if (_lSaleHasError || _lBuyHasError || _lImproveHasError) {
+        return;
+      }
+
+      setState(() {
+        _calculated = true;
+        _calcLSaleVal = _lSaleVal;
+        _calcLBuyVal = _lBuyVal;
+        _calcLImproveVal = _lImproveVal;
+        _calcLBuyYr = _lBuyYr;
+        _calcLPurchaseDate = _lPurchaseDate;
+        _calcActiveTab = 'ltcg';
+      });
+    } else {
+      final sale = double.tryParse(_sSaleCtrl.text) ?? 0.0;
+      final buy = double.tryParse(_sBuyCtrl.text) ?? 0.0;
+      final exp = double.tryParse(_sExpCtrl.text) ?? 0.0;
+      final income = double.tryParse(_sIncomeCtrl.text) ?? 0.0;
+
+      setState(() {
+        _sSaleHasError = sale <= 0;
+        _sBuyHasError = buy <= 0;
+        _sExpHasError = exp < 0;
+        _sIncomeHasError = income < 0;
+      });
+
+      if (_sSaleHasError || _sBuyHasError || _sExpHasError || _sIncomeHasError) {
+        return;
+      }
+
+      setState(() {
+        _calculated = true;
+        _calcSSaleVal = _sSaleVal;
+        _calcSBuyVal = _sBuyVal;
+        _calcSExpVal = _sExpVal;
+        _calcSIncomeVal = _sIncomeVal;
+        _calcSRegime = _sRegime;
+        _calcActiveTab = 'stcg';
+      });
+    }
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    if (_calcActiveTab == 'ltcg') {
+      return _lSaleVal != _calcLSaleVal ||
+          _lBuyVal != _calcLBuyVal ||
+          _lImproveVal != _calcLImproveVal ||
+          _lBuyYr != _calcLBuyYr ||
+          _lPurchaseDate != _calcLPurchaseDate;
+    } else {
+      return _sSaleVal != _calcSSaleVal ||
+          _sBuyVal != _calcSBuyVal ||
+          _sExpVal != _calcSExpVal ||
+          _sIncomeVal != _calcSIncomeVal ||
+          _sRegime != _calcSRegime;
+    }
+  }
+
+  void _scrollToResults() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _resultsKey.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(context,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut);
       }
     });
   }
@@ -117,18 +233,18 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
   }
 
   void _saveCalculation() async {
-    final isLtcg = _activeTab == 'ltcg';
+    final isLtcg = _calcActiveTab == 'ltcg';
     double totalTax = 0;
     Map<String, double> results = {};
     Map<String, double> inputs = {};
 
     if (isLtcg) {
-      final sale = _lSaleVal;
-      final buy = _lBuyVal;
-      final improve = _lImproveVal;
+      final sale = _calcLSaleVal;
+      final buy = _calcLBuyVal;
+      final improve = _calcLImproveVal;
 
       const ciiSale = 363;
-      final ciiBuy = _ciiData[_lBuyYr] ?? 363;
+      final ciiBuy = _ciiData[_calcLBuyYr] ?? 363;
       final indexedCost = (buy + improve) * ciiSale / ciiBuy;
 
       final gainNoIndex = max(0.0, sale - (buy + improve));
@@ -137,7 +253,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
       final gainIndexed = max(0.0, sale - indexedCost);
       final taxIndexed = gainIndexed * 0.20;
 
-      final eligible = _lPurchaseDate == 'before';
+      final eligible = _calcLPurchaseDate == 'before';
 
       if (eligible && taxIndexed < taxNoIndex) {
         totalTax = taxIndexed.roundToDouble();
@@ -149,7 +265,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
         'salePrice': sale,
         'purchasePrice': buy,
         'improveCost': improve,
-        'buyYr': _lBuyYr.toDouble(),
+        'buyYr': _calcLBuyYr.toDouble(),
         'isEligibleIndexation': eligible ? 1.0 : 0.0,
       };
 
@@ -161,10 +277,10 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
         'totalTax': totalTax,
       };
     } else {
-      final sale = _sSaleVal;
-      final buy = _sBuyVal;
-      final exp = _sExpVal;
-      final income = _sIncomeVal;
+      final sale = _calcSSaleVal;
+      final buy = _calcSBuyVal;
+      final exp = _calcSExpVal;
+      final income = _calcSIncomeVal;
 
       final gain = max(0.0, sale - buy - exp);
       final totalIncome = income + gain;
@@ -295,12 +411,12 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // LTCG calculations
-    final lSale = _lSaleVal;
-    final lBuy = _lBuyVal;
-    final lImprove = _lImproveVal;
+    final lSale = _calcLSaleVal;
+    final lBuy = _calcLBuyVal;
+    final lImprove = _calcLImproveVal;
 
     const ciiSale = 363;
-    final ciiBuy = _ciiData[_lBuyYr] ?? 363;
+    final ciiBuy = _ciiData[_calcLBuyYr] ?? 363;
     final lIndexedCost = (lBuy + lImprove) * ciiSale / ciiBuy;
 
     final lGainNoIndex = max(0.0, lSale - (lBuy + lImprove));
@@ -309,7 +425,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
     final lGainIndexed = max(0.0, lSale - lIndexedCost);
     final lTaxIndexed = lGainIndexed * 0.20;
 
-    final lEligible = _lPurchaseDate == 'before';
+    final lEligible = _calcLPurchaseDate == 'before';
 
     double lBestTax = 0;
     String lBestSub = '';
@@ -325,10 +441,10 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
     }
 
     // STCG calculations
-    final sSale = _sSaleVal;
-    final sBuy = _sBuyVal;
-    final sExp = _sExpVal;
-    final sIncome = _sIncomeVal;
+    final sSale = _calcSSaleVal;
+    final sBuy = _calcSBuyVal;
+    final sExp = _calcSExpVal;
+    final sIncome = _calcSIncomeVal;
 
     final sGain = max(0.0, sSale - sBuy - sExp);
     final sTotalIncome = sIncome + sGain;
@@ -558,6 +674,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
                   value: _lSaleVal,
                   min: 500000,
                   max: 100000000,
+                  hasError: _lSaleHasError,
                   onChanged: (val) {
                     setState(() {
                       _lSaleVal = val;
@@ -572,6 +689,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
                   value: _lBuyVal,
                   min: 100000,
                   max: 50000000,
+                  hasError: _lBuyHasError,
                   onChanged: (val) {
                     setState(() {
                       _lBuyVal = val;
@@ -687,6 +805,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
                   value: _lImproveVal,
                   min: 0,
                   max: 10000000,
+                  hasError: _lImproveHasError,
                   onChanged: (val) {
                     setState(() {
                       _lImproveVal = val;
@@ -701,6 +820,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
                   value: _sSaleVal,
                   min: 500000,
                   max: 100000000,
+                  hasError: _sSaleHasError,
                   onChanged: (val) {
                     setState(() {
                       _sSaleVal = val;
@@ -715,6 +835,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
                   value: _sBuyVal,
                   min: 100000,
                   max: 50000000,
+                  hasError: _sBuyHasError,
                   onChanged: (val) {
                     setState(() {
                       _sBuyVal = val;
@@ -729,6 +850,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
                   value: _sExpVal,
                   min: 0,
                   max: 1000000,
+                  hasError: _sExpHasError,
                   onChanged: (val) {
                     setState(() {
                       _sExpVal = val;
@@ -743,6 +865,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
                   value: _sIncomeVal,
                   min: 0,
                   max: 10000000,
+                  hasError: _sIncomeHasError,
                   onChanged: (val) {
                     setState(() {
                       _sIncomeVal = val;
@@ -801,9 +924,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
 
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  setState(() => _calculated = true);
-                },
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
                   foregroundColor: Colors.white,
@@ -823,10 +944,35 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        if (_calculated && _activeTab == _calcActiveTab) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate ${_calcActiveTab == 'ltcg' ? 'LTCG' : 'STCG'} Tax to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        // Results Section - calculations updated reactively
-        if (_calculated) ...[
           if (_activeTab == 'ltcg') ...[
             Container(
               padding: const EdgeInsets.all(20),
@@ -1163,58 +1309,59 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
           ],
         ),
 
-        const SizedBox(height: 20),
-
-        // Save Calculation Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(
-                color:
-                    isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Save This Calculation',
-                        style: AppTextStyles.dmSans(
-                            size: 12,
-                            weight: FontWeight.w800,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF07543A))),
-                    Text('Keep a record of your capital gains tax details',
-                        style: AppTextStyles.dmSans(
-                            size: 10,
-                            color: isDark
-                                ? Colors.white70
-                                : const Color(0xFF046A38))),
-                  ],
+        if (_calculated && _activeTab == _calcActiveTab) ...[
+          const SizedBox(height: 20),
+          // Save Calculation Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(
+                  color:
+                      isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save This Calculation',
+                          style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF07543A))),
+                      Text('Keep a record of your capital gains tax details',
+                          style: AppTextStyles.dmSans(
+                              size: 10,
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF046A38))),
+                    ],
+                  ),
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: Colors.white,
+                          weight: FontWeight.w700)),
                 ),
-                child: Text('Save',
-                    style: AppTextStyles.dmSans(
-                        size: 11,
-                        color: Colors.white,
-                        weight: FontWeight.w700)),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -1226,6 +1373,7 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
     required double min,
     required double max,
     required ValueChanged<double> onChanged,
+    bool hasError = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1238,7 +1386,11 @@ class _INCapitalGainsTaxState extends ConsumerState<INCapitalGainsTax> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.11),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            border: Border.all(
+                color: hasError
+                    ? Colors.red
+                    : Colors.white.withValues(alpha: 0.18),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextFormField(

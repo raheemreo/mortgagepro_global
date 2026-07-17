@@ -24,6 +24,14 @@ class _INPMAYSubsidyState extends ConsumerState<INPMAYSubsidy> {
   int _tenure = 20;
   double _bankRate = 8.50;
 
+  bool _calculated = false;
+  double _calcLoanAmt = 2500000;
+  int _calcTenure = 20;
+  double _calcBankRate = 8.50;
+  String _calcSelCat = 'EWS';
+
+  final GlobalKey _resultPanelKey = GlobalKey();
+
   final Map<String, Map<String, dynamic>> _cats = const {
     'EWS': {'rate': 6.5, 'maxLoan': 600000.0, 'maxTenure': 20, 'label': 'EWS', 'maxNPV': 267280.0},
     'LIG': {'rate': 6.5, 'maxLoan': 600000.0, 'maxTenure': 20, 'label': 'LIG', 'maxNPV': 267280.0},
@@ -37,7 +45,37 @@ class _INPMAYSubsidyState extends ConsumerState<INPMAYSubsidy> {
       _loanAmt = 2500000;
       _tenure = 20;
       _bankRate = 8.50;
+      _calculated = false;
+
+      _calcLoanAmt = 2500000;
+      _calcTenure = 20;
+      _calcBankRate = 8.50;
+      _calcSelCat = 'EWS';
     });
+  }
+
+  void _calculate() {
+    setState(() {
+      _calculated = true;
+      _calcLoanAmt = _loanAmt;
+      _calcTenure = _tenure;
+      _calcBankRate = _bankRate;
+      _calcSelCat = _selCat;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _resultPanelKey.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(context, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+      }
+    });
+  }
+
+  bool _areInputsChanged() {
+    return _loanAmt != _calcLoanAmt ||
+        _tenure != _calcTenure ||
+        _bankRate != _calcBankRate ||
+        _selCat != _calcSelCat;
   }
 
   double _emi(double p, double r, int n) {
@@ -52,12 +90,12 @@ class _INPMAYSubsidyState extends ConsumerState<INPMAYSubsidy> {
   }
 
   void _saveCalculation() async {
-    final cat = _cats[_selCat]!;
-    final eligibleLoan = min(_loanAmt, cat['maxLoan'] as double);
+    final cat = _cats[_calcSelCat]!;
+    final eligibleLoan = min(_calcLoanAmt, cat['maxLoan'] as double);
     final subRate = cat['rate'] as double;
-    final mBefore = _bankRate / 1200;
-    final mSubsidised = (_bankRate - subRate) / 1200;
-    final nMonths = min(_tenure, cat['maxTenure'] as int) * 12;
+    final mBefore = _calcBankRate / 1200;
+    final mSubsidised = (_calcBankRate - subRate) / 1200;
+    final nMonths = min(_calcTenure, cat['maxTenure'] as int) * 12;
 
     final emiB = eligibleLoan * mBefore * pow(1 + mBefore, nMonths) / (pow(1 + mBefore, nMonths) - 1);
     final emiA = mSubsidised > 0
@@ -66,7 +104,7 @@ class _INPMAYSubsidyState extends ConsumerState<INPMAYSubsidy> {
 
     final maxNPV = cat['maxNPV'] as double;
     final finalSubsidy = min((emiB - emiA) * nMonths, maxNPV);
-    final netLoan = _loanAmt - finalSubsidy;
+    final netLoan = _calcLoanAmt - finalSubsidy;
 
     final labelCtrl = TextEditingController(text: 'PMAY Subsidy - ${cat['label']}');
     final confirmed = await showDialog<bool>(
@@ -120,10 +158,10 @@ class _INPMAYSubsidyState extends ConsumerState<INPMAYSubsidy> {
         country: 'India',
         calcType: 'PMAY Subsidy',
         inputs: {
-          'loanAmt': _loanAmt,
-          'tenure': _tenure.toDouble(),
-          'bankRate': _bankRate,
-          'catIndex': _cats.keys.toList().indexOf(_selCat).toDouble(),
+          'loanAmt': _calcLoanAmt,
+          'tenure': _calcTenure.toDouble(),
+          'bankRate': _calcBankRate,
+          'catIndex': _cats.keys.toList().indexOf(_calcSelCat).toDouble(),
         },
         results: {
           'subsidy': finalSubsidy,
@@ -152,12 +190,12 @@ class _INPMAYSubsidyState extends ConsumerState<INPMAYSubsidy> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final cat = _cats[_selCat]!;
-    final eligibleLoan = min(_loanAmt, cat['maxLoan'] as double);
+    final cat = _cats[_calcSelCat]!;
+    final eligibleLoan = min(_calcLoanAmt, cat['maxLoan'] as double);
     final subRate = cat['rate'] as double;
-    final mBefore = _bankRate / 1200;
-    final mSubsidised = (_bankRate - subRate) / 1200;
-    final nMonths = min(_tenure, cat['maxTenure'] as int) * 12;
+    final mBefore = _calcBankRate / 1200;
+    final mSubsidised = (_calcBankRate - subRate) / 1200;
+    final nMonths = min(_calcTenure, cat['maxTenure'] as int) * 12;
 
     final emiB = eligibleLoan * mBefore * pow(1 + mBefore, nMonths) / (pow(1 + mBefore, nMonths) - 1);
     final emiA = mSubsidised > 0
@@ -166,10 +204,10 @@ class _INPMAYSubsidyState extends ConsumerState<INPMAYSubsidy> {
 
     final maxNPV = cat['maxNPV'] as double;
     final finalSubsidy = min((emiB - emiA) * nMonths, maxNPV);
-    final netLoan = _loanAmt - finalSubsidy;
+    final netLoan = _calcLoanAmt - finalSubsidy;
 
-    final emiWithout = _emi(_loanAmt, _bankRate, _tenure * 12);
-    final emiWithSub = _emi(netLoan, _bankRate, _tenure * 12);
+    final emiWithout = _emi(_calcLoanAmt, _calcBankRate, _calcTenure * 12);
+    final emiWithSub = _emi(netLoan, _calcBankRate, _calcTenure * 12);
     final saving = emiWithout - emiWithSub;
     final savePct = emiWithout > 0 ? (saving / emiWithout) : 0.0;
 
@@ -249,126 +287,168 @@ class _INPMAYSubsidyState extends ConsumerState<INPMAYSubsidy> {
               _buildSliderRow('LOAN TENURE (YEARS)', _tenure.toDouble(), 5, 30, 25, (v) => setState(() => _tenure = v.toInt())),
               // Bank Rate Slider
               _buildSliderRow('BANK HOME LOAN RATE', _bankRate, 6.50, 14.00, 150, (v) => setState(() => _bankRate = v)),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Results Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ESTIMATED GOVT INTEREST SUBSIDY (NPV)', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(finalSubsidy),
-                style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _resultBox('Net Loan size', _fmt(netLoan)),
-                  const SizedBox(width: 8),
-                  _resultBox('EMI w/o Subsidy', '₹${Math.round(emiWithout).toLocaleString()}/mo'),
-                  const SizedBox(width: 8),
-                  _resultBox('EMI w/ Subsidy', '₹${Math.round(emiWithSub).toLocaleString()}/mo'),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Savings details
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 Monthly Savings Benefit', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('EMI Monthly Savings:', style: AppTextStyles.dmSans(size: 11.5, color: theme.getMutedColor(context))),
-                  Text('₹${Math.round(saving).toLocaleString()}/mo', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.bold, color: const Color(0xFF046A38))),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total Interest Saved (NPV):', style: AppTextStyles.dmSans(size: 11.5, color: theme.getMutedColor(context))),
-                  Text(_fmt(finalSubsidy), style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: theme.getTextColor(context))),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: Container(
-                  height: 6,
-                  color: Colors.grey[200],
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: savePct.clamp(0.0, 1.0),
-                    child: Container(color: const Color(0xFF046A38)),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: _calculate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE05F00),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
+                  child: Text('🏡 Calculate PMAY Subsidy', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800)),
                 ),
               ),
             ],
           ),
         ),
 
-        const SizedBox(height: 16),
-        // Save bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultPanelKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate PMAY Subsidy to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultPanelKey, height: 0),
+
+          // Results Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ESTIMATED GOVT INTEREST SUBSIDY (NPV)', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text(
+                  _fmt(finalSubsidy),
+                  style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                Row(
                   children: [
-                    Text('Save Subsidy Details', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
-                    Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    _resultBox('Net Loan size', _fmt(netLoan)),
+                    const SizedBox(width: 8),
+                    _resultBox('EMI w/o Subsidy', '₹${Math.round(emiWithout).toLocaleString()}/mo'),
+                    const SizedBox(width: 8),
+                    _resultBox('EMI w/ Subsidy', '₹${Math.round(emiWithSub).toLocaleString()}/mo'),
                   ],
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Savings details
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📊 Monthly Savings Benefit', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('EMI Monthly Savings:', style: AppTextStyles.dmSans(size: 11.5, color: theme.getMutedColor(context))),
+                    Text('₹${Math.round(saving).toLocaleString()}/mo', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.bold, color: const Color(0xFF046A38))),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Interest Saved (NPV):', style: AppTextStyles.dmSans(size: 11.5, color: theme.getMutedColor(context))),
+                    Text(_fmt(finalSubsidy), style: AppTextStyles.dmSans(size: 12, weight: FontWeight.bold, color: theme.getTextColor(context))),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: Container(
+                    height: 6,
+                    color: Colors.grey[200],
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: savePct.clamp(0.0, 1.0),
+                      child: Container(color: const Color(0xFF046A38)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          // Save bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save Subsidy Details', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
+                      Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

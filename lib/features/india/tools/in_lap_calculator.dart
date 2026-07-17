@@ -26,6 +26,19 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
   double _tenure = 12.0; // 1 to 15
   double _procFee = 1.0;
 
+  bool _calculated = false;
+  double _calcPropVal = 8000000.0;
+  double _calcLtv = 60.0;
+  String _calcPropType = 'residential';
+  double _calcRoi = 9.25;
+  double _calcTenure = 12.0;
+  double _calcProcFee = 1.0;
+
+  bool _propValHasError = false;
+  bool _roiHasError = false;
+  bool _tenureHasError = false;
+  bool _procFeeHasError = false;
+
   // Controllers
   late TextEditingController _propValCtrl;
   late TextEditingController _roiCtrl;
@@ -149,7 +162,59 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
       _roiCtrl.text = '9.25';
       _tenureCtrl.text = '12';
       _procFeeCtrl.text = '1.0';
+
+      _calculated = false;
+      _calcPropVal = 8000000.0;
+      _calcLtv = 60.0;
+      _calcPropType = 'residential';
+      _calcRoi = 9.25;
+      _calcTenure = 12.0;
+      _calcProcFee = 1.0;
+
+      _propValHasError = false;
+      _roiHasError = false;
+      _tenureHasError = false;
+      _procFeeHasError = false;
     });
+  }
+
+  void _calculate() {
+    final propValVal = double.tryParse(_propValCtrl.text) ?? 0.0;
+    final roiVal = double.tryParse(_roiCtrl.text) ?? 0.0;
+    final tenureVal = double.tryParse(_tenureCtrl.text) ?? 0.0;
+    final procFeeVal = double.tryParse(_procFeeCtrl.text) ?? 0.0;
+
+    setState(() {
+      _propValHasError = propValVal <= 0;
+      _roiHasError = roiVal <= 0;
+      _tenureHasError = tenureVal <= 0 || tenureVal > 15;
+      _procFeeHasError = procFeeVal < 0;
+    });
+
+    if (_propValHasError || _roiHasError || _tenureHasError || _procFeeHasError) {
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcPropVal = _propVal;
+      _calcLtv = _ltv;
+      _calcPropType = _propType;
+      _calcRoi = _roi;
+      _calcTenure = _tenure;
+      _calcProcFee = _procFee;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _propVal != _calcPropVal ||
+        _ltv != _calcLtv ||
+        _propType != _calcPropType ||
+        _roi != _calcRoi ||
+        _tenure != _calcTenure ||
+        _procFee != _calcProcFee;
   }
 
   double _calcEMI(double p, double ratePA, int termMonths) {
@@ -169,11 +234,11 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
   }
 
   void _saveCalculation() async {
-    final loan = _propVal * (_ltv / 100.0);
-    final emi = _calcEMI(loan, _roi, (_tenure * 12).toInt());
-    final totalPay = emi * _tenure * 12;
+    final loan = _calcPropVal * (_calcLtv / 100.0);
+    final emi = _calcEMI(loan, _calcRoi, (_calcTenure * 12).toInt());
+    final totalPay = emi * _calcTenure * 12;
     final totalInt = totalPay - loan;
-    final fee = loan * (_procFee / 100.0);
+    final fee = loan * (_calcProcFee / 100.0);
 
     final labelCtrl = TextEditingController(text: 'LAP Calculation');
     final confirmed = await showDialog<bool>(
@@ -240,11 +305,11 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
         country: 'India',
         calcType: 'LAP Calculator',
         inputs: {
-          'propVal': _propVal,
-          'ltv': _ltv,
-          'roi': _roi,
-          'tenure': _tenure,
-          'procFee': _procFee,
+          'propVal': _calcPropVal,
+          'ltv': _calcLtv,
+          'roi': _calcRoi,
+          'tenure': _calcTenure,
+          'procFee': _calcProcFee,
         },
         results: {
           'emi': emi,
@@ -290,20 +355,20 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Proactive calculations
-    final loan = _propVal * (_ltv / 100.0);
-    final emi = _calcEMI(loan, _roi, (_tenure * 12).toInt());
-    final totalPay = emi * _tenure * 12;
+    final loan = _calcPropVal * (_calcLtv / 100.0);
+    final emi = _calcEMI(loan, _calcRoi, (_calcTenure * 12).toInt());
+    final totalPay = emi * _calcTenure * 12;
     final totalInt = totalPay - loan;
-    final fee = loan * (_procFee / 100.0);
+    final fee = loan * (_calcProcFee / 100.0);
     final totalOutflow = totalPay + fee;
 
     final pPct = totalOutflow > 0 ? (loan / totalOutflow) : 0.0;
 
     // Yearly projections
-    final rMonthly = _roi / 1200;
+    final rMonthly = _calcRoi / 1200;
     double tempBal = loan;
     final List<Map<String, double>> yearBreakdown = [];
-    final totalYears = _tenure.ceil();
+    final totalYears = _calcTenure.ceil();
     for (int y = 1; y <= totalYears; y++) {
       double yInt = 0;
       double yPrin = 0;
@@ -393,6 +458,7 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
                 min: 1000000.0,
                 max: 100000000.0,
                 prefix: '₹ ',
+                hasError: _propValHasError,
                 onChangedText: (val) {
                   setState(() {
                     _propVal = val;
@@ -520,6 +586,7 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
                 min: 8.0,
                 max: 18.0,
                 suffix: '% p.a.',
+                hasError: _roiHasError,
                 onChangedText: (val) {
                   setState(() {
                     _roi = val;
@@ -542,6 +609,7 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
                 min: 1.0,
                 max: 15.0,
                 suffix: ' yrs',
+                hasError: _tenureHasError,
                 onChangedText: (val) {
                   setState(() {
                     _tenure = val;
@@ -564,6 +632,7 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
                 min: 0.0,
                 max: 3.0,
                 suffix: '%',
+                hasError: _procFeeHasError,
                 onChangedText: (val) {
                   setState(() {
                     _procFee = val;
@@ -579,7 +648,7 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
               const SizedBox(height: 20),
 
               ElevatedButton(
-                onPressed: _scrollToResults,
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
                   foregroundColor: Colors.white,
@@ -596,223 +665,253 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
             ],
           ),
         ),
-        const SizedBox(height: 20),
-
-        // Result panel
-        Container(
-          key: _resultsKey,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
                 children: [
-                  Text('📊 LAP Calculation Result',
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
                       style: AppTextStyles.dmSans(
-                          size: 13,
-                          weight: FontWeight.w800,
-                          color: theme.getTextColor(context))),
-                  ElevatedButton.icon(
-                    onPressed: _saveCalculation,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF046A38),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
                     ),
-                    icon: const Icon(Icons.save, size: 12, color: Colors.white),
-                    label: Text('Save',
-                        style: AppTextStyles.dmSans(
-                            size: 10,
-                            color: Colors.white,
-                            weight: FontWeight.w700)),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-              // Result grid
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 1.8,
-                children: [
-                  _resultBox('Monthly EMI', _fmt(emi),
-                      isHighlighted: true, context: context),
-                  _resultBox('Loan Amount', _fmt(loan), context: context),
-                  _resultBox('Total Interest', _fmt(totalInt),
-                      context: context),
-                  _resultBox('Total Outflow', _fmt(totalOutflow),
-                      context: context),
-                  _resultBox('Processing Fee', _fmt(fee), context: context),
-                  _resultBox('Interest to Loan Ratio',
-                      '${(totalInt / loan).toStringAsFixed(2)}x',
-                      context: context),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 12),
+          // Result panel
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('📊 LAP Calculation Result',
+                        style: AppTextStyles.dmSans(
+                            size: 13,
+                            weight: FontWeight.w800,
+                            color: theme.getTextColor(context))),
+                    ElevatedButton.icon(
+                      onPressed: _saveCalculation,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF046A38),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                      ),
+                      icon: const Icon(Icons.save, size: 12, color: Colors.white),
+                      label: Text('Save',
+                          style: AppTextStyles.dmSans(
+                              size: 10,
+                              color: Colors.white,
+                              weight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              // Donut Chart Composition
-              Text('🥧 Principal vs Interest Breakdown',
-                  style: AppTextStyles.dmSans(
-                      size: 10.5,
-                      color: theme.getMutedColor(context),
-                      weight: FontWeight.w800)),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 90,
-                    height: 90,
-                    child: CustomPaint(
-                      painter: _DonutChartPainter(
-                        v1: loan,
-                        v2: totalInt,
-                        v3: fee,
-                        c1: const Color(0xFF046A38),
-                        c2: const Color(0xFFFF6B00),
-                        c3: const Color(0xFF1A3A8F),
-                        centerLabel: '${(pPct * 100).round()}%',
-                        textColor: theme.getTextColor(context),
+                // Result grid
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.8,
+                  children: [
+                    _resultBox('Monthly EMI', _fmt(emi),
+                        isHighlighted: true, context: context),
+                    _resultBox('Loan Amount', _fmt(loan), context: context),
+                    _resultBox('Total Interest', _fmt(totalInt),
+                        context: context),
+                    _resultBox('Total Outflow', _fmt(totalOutflow),
+                        context: context),
+                    _resultBox('Processing Fee', _fmt(fee), context: context),
+                    _resultBox('Interest to Loan Ratio',
+                        '${(totalInt / loan).toStringAsFixed(2)}x',
+                        context: context),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 12),
+
+                // Donut Chart Composition
+                Text('🥧 Principal vs Interest Breakdown',
+                    style: AppTextStyles.dmSans(
+                        size: 10.5,
+                        color: theme.getMutedColor(context),
+                        weight: FontWeight.w800)),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 90,
+                      height: 90,
+                      child: CustomPaint(
+                        painter: _DonutChartPainter(
+                          v1: loan,
+                          v2: totalInt,
+                          v3: fee,
+                          c1: const Color(0xFF046A38),
+                          c2: const Color(0xFFFF6B00),
+                          c3: const Color(0xFF1A3A8F),
+                          centerLabel: '${(pPct * 100).round()}%',
+                          textColor: theme.getTextColor(context),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(
-                            const Color(0xFF046A38), 'Principal', _fmt(loan)),
-                        const SizedBox(height: 6),
-                        _legendRow(const Color(0xFFFF6B00), 'Interest',
-                            _fmt(totalInt)),
-                        const SizedBox(height: 6),
-                        _legendRow(const Color(0xFF1A3A8F), 'Fees', _fmt(fee)),
-                      ],
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _legendRow(
+                              const Color(0xFF046A38), 'Principal', _fmt(loan)),
+                          const SizedBox(height: 6),
+                          _legendRow(const Color(0xFFFF6B00), 'Interest',
+                              _fmt(totalInt)),
+                          const SizedBox(height: 6),
+                          _legendRow(const Color(0xFF1A3A8F), 'Fees', _fmt(fee)),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 12),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 12),
 
-              // Outstanding balance progression
-              Text('📅 Yearly Outstanding Balance',
-                  style: AppTextStyles.dmSans(
-                      size: 10.5,
-                      color: theme.getMutedColor(context),
-                      weight: FontWeight.w800)),
-              const SizedBox(height: 14),
-              Column(
-                children: yearBreakdown.asMap().entries.map((entry) {
-                  final yIdx = entry.key + 1;
-                  final yBal = entry.value['balance']!;
-                  final double barWidthPct = loan > 0 ? (yBal / loan) : 0.0;
+                // Outstanding balance progression
+                Text('📅 Yearly Outstanding Balance',
+                    style: AppTextStyles.dmSans(
+                        size: 10.5,
+                        color: theme.getMutedColor(context),
+                        weight: FontWeight.w800)),
+                const SizedBox(height: 14),
+                Column(
+                  children: yearBreakdown.asMap().entries.map((entry) {
+                    final yIdx = entry.key + 1;
+                    final yBal = entry.value['balance']!;
+                    final double barWidthPct = loan > 0 ? (yBal / loan) : 0.0;
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                            width: 36,
-                            child: Text('Yr $yIdx',
-                                style: AppTextStyles.dmSans(
-                                    size: 9.5,
-                                    color: theme.getMutedColor(context)))),
-                        Expanded(
-                          child: Container(
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF6B00)
-                                  .withValues(alpha: 0.06),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            alignment: Alignment.centerLeft,
-                            child: FractionallySizedBox(
-                              widthFactor: max(0.02, barWidthPct),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(colors: [
-                                    Color(0xFF1A3A8F),
-                                    Color(0xFFFF6B00)
-                                  ]),
-                                  borderRadius: BorderRadius.circular(5),
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                              width: 36,
+                              child: Text('Yr $yIdx',
+                                  style: AppTextStyles.dmSans(
+                                      size: 9.5,
+                                      color: theme.getMutedColor(context)))),
+                          Expanded(
+                            child: Container(
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF6B00)
+                                    .withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              alignment: Alignment.centerLeft,
+                              child: FractionallySizedBox(
+                                widthFactor: max(0.02, barWidthPct),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(colors: [
+                                      Color(0xFF1A3A8F),
+                                      Color(0xFFFF6B00)
+                                    ]),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(_fmtShort(yBal),
-                            style: AppTextStyles.dmSans(
-                                size: 9.5,
-                                color: theme.getTextColor(context),
-                                weight: FontWeight.w700)),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+                          const SizedBox(width: 8),
+                          Text(_fmtShort(yBal),
+                              style: AppTextStyles.dmSans(
+                                  size: 9.5,
+                                  color: theme.getTextColor(context),
+                                  weight: FontWeight.w700)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-        // Best LAP Rates
-        Text('Best LAP Rates — Banks 2025',
-            style: AppTextStyles.playfair(
-                size: 15,
-                color: theme.getTextColor(context),
-                weight: FontWeight.w800)),
-        const SizedBox(height: 10),
-        Column(
-          children: _banks
-              .map((b) => _bankItemRow(b['icon'], b['name'], b['desc'],
-                  '${b['rate']}%', b['ltv'], context))
-              .toList(),
-        ),
-        const SizedBox(height: 20),
-
-        // India LAP Guidelines Facts Card
-        Text('Key LAP Facts — India 2025',
-            style: AppTextStyles.playfair(
-                size: 15,
-                color: theme.getTextColor(context),
-                weight: FontWeight.w800)),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            children: _rules
-                .map((r) => _ruleRow(r['icon'], r['title'], r['desc'], context))
+          // Best LAP Rates
+          Text('Best LAP Rates — Banks 2025',
+              style: AppTextStyles.playfair(
+                  size: 15,
+                  color: theme.getTextColor(context),
+                  weight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          Column(
+            children: _banks
+                .map((b) => _bankItemRow(b['icon'], b['name'], b['desc'],
+                    '${b['rate']}%', b['ltv'], context))
                 .toList(),
           ),
-        ),
+          const SizedBox(height: 20),
+
+          // India LAP Guidelines Facts Card
+          Text('Key LAP Facts — India 2025',
+              style: AppTextStyles.playfair(
+                  size: 15,
+                  color: theme.getTextColor(context),
+                  weight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              children: _rules
+                  .map((r) => _ruleRow(r['icon'], r['title'], r['desc'], context))
+                  .toList(),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -1019,6 +1118,7 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
     required double max,
     String prefix = '',
     String suffix = '',
+    bool hasError = false,
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
   }) {
@@ -1047,7 +1147,10 @@ class _INLAPCalculatorState extends ConsumerState<INLAPCalculator> {
           decoration: BoxDecoration(
             color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
             border: Border.all(
-                color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                color: hasError
+                    ? Colors.red
+                    : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextFormField(

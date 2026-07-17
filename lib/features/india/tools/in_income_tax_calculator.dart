@@ -29,6 +29,24 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
   double _hra = 0;
   double _nps = 50000;
 
+  bool _calculated = false;
+  String _calcRegime = 'new';
+  double _calcGross = 1200000;
+  double _calcOtherIncome = 0;
+  double _calcD80c = 150000;
+  double _calcD80d = 25000;
+  double _calcHli = 0;
+  double _calcHra = 0;
+  double _calcNps = 50000;
+
+  bool _grossHasError = false;
+  bool _otherHasError = false;
+  bool _d80cHasError = false;
+  bool _d80dHasError = false;
+  bool _hliHasError = false;
+  bool _hraHasError = false;
+  bool _npsHasError = false;
+
   // Controllers
   late TextEditingController _grossCtrl;
   late TextEditingController _otherCtrl;
@@ -84,7 +102,80 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
       _hliCtrl.text = '0';
       _hraCtrl.text = '0';
       _npsCtrl.text = '50000';
+
+      _calculated = false;
+      _calcRegime = 'new';
+      _calcGross = 1200000;
+      _calcOtherIncome = 0;
+      _calcD80c = 150000;
+      _calcD80d = 25000;
+      _calcHli = 0;
+      _calcHra = 0;
+      _calcNps = 50000;
+
+      _grossHasError = false;
+      _otherHasError = false;
+      _d80cHasError = false;
+      _d80dHasError = false;
+      _hliHasError = false;
+      _hraHasError = false;
+      _npsHasError = false;
     });
+  }
+
+  void _calculate() {
+    final grossVal = double.tryParse(_grossCtrl.text) ?? 0.0;
+    final otherVal = double.tryParse(_otherCtrl.text) ?? 0.0;
+    final d80cVal = double.tryParse(_d80cCtrl.text) ?? 0.0;
+    final d80dVal = double.tryParse(_d80dCtrl.text) ?? 0.0;
+    final hliVal = double.tryParse(_hliCtrl.text) ?? 0.0;
+    final hraVal = double.tryParse(_hraCtrl.text) ?? 0.0;
+    final npsVal = double.tryParse(_npsCtrl.text) ?? 0.0;
+
+    setState(() {
+      _grossHasError = grossVal < 0;
+      _otherHasError = otherVal < 0;
+      _d80cHasError = d80cVal < 0 || d80cVal > 150000;
+      _d80dHasError = d80dVal < 0 || d80dVal > 100000;
+      _hliHasError = hliVal < 0;
+      _hraHasError = hraVal < 0;
+      _npsHasError = npsVal < 0 || npsVal > 50000;
+    });
+
+    if (_grossHasError ||
+        _otherHasError ||
+        _d80cHasError ||
+        _d80dHasError ||
+        _hliHasError ||
+        _hraHasError ||
+        _npsHasError) {
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcRegime = _regime;
+      _calcGross = _gross;
+      _calcOtherIncome = _otherIncome;
+      _calcD80c = _d80c;
+      _calcD80d = _d80d;
+      _calcHli = _hli;
+      _calcHra = _hra;
+      _calcNps = _nps;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _regime != _calcRegime ||
+        _gross != _calcGross ||
+        _otherIncome != _calcOtherIncome ||
+        _d80c != _calcD80c ||
+        _d80d != _calcD80d ||
+        _hli != _calcHli ||
+        _hra != _calcHra ||
+        _nps != _calcNps;
   }
 
   String _fmt(double n) {
@@ -193,7 +284,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving: Tax ${_fmt(usedTax)} · Regime ${_regime.toUpperCase()}',
+                'Saving: Tax ${_fmt(usedTax)} · Regime ${_calcRegime.toUpperCase()}',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -244,20 +335,20 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
         country: 'India',
         calcType: 'Income Tax Calculator',
         inputs: {
-          'gross': _gross,
-          'otherIncome': _otherIncome,
-          'regime': _regime == 'new' ? 1.0 : 0.0,
-          'd80c': _d80c,
-          'd80d': _d80d,
-          'hli': _hli,
-          'hra': _hra,
-          'nps': _nps,
+          'gross': _calcGross,
+          'otherIncome': _calcOtherIncome,
+          'regime': _calcRegime == 'new' ? 1.0 : 0.0,
+          'd80c': _calcD80c,
+          'd80d': _calcD80d,
+          'hli': _calcHli,
+          'hra': _calcHra,
+          'nps': _calcNps,
         },
         results: {
           'taxPayable': usedTax,
           'taxableIncome': usedTaxable,
           'effectiveRate':
-              _gross > 0 ? usedTax / (_gross + _otherIncome) * 100 : 0.0,
+              _calcGross > 0 ? usedTax / (_calcGross + _calcOtherIncome) * 100 : 0.0,
         },
         label: label,
         currencyCode: 'INR',
@@ -280,15 +371,15 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
   }
 
   Map<String, dynamic> _computeResults() {
-    final d80cLimit = min(_d80c, 150000.0);
-    final d80dLimit = min(_d80d, 25000.0);
-    final hliLimit = min(_hli, 200000.0);
-    final npsLimit = min(_nps, 50000.0);
+    final d80cLimit = min(_calcD80c, 150000.0);
+    final d80dLimit = min(_calcD80d, 25000.0);
+    final hliLimit = min(_calcHli, 200000.0);
+    final npsLimit = min(_calcNps, 50000.0);
 
     const stdNew = 75000.0;
     const stdOld = 50000.0;
 
-    final totalIncome = _gross + _otherIncome;
+    final totalIncome = _calcGross + _calcOtherIncome;
 
     final taxableNew = max(0.0, totalIncome - stdNew);
     final taxableOld = max(
@@ -298,7 +389,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
             d80cLimit -
             d80dLimit -
             hliLimit -
-            _hra -
+            _calcHra -
             npsLimit);
 
     final resNew = _calcNewTax(taxableNew);
@@ -310,12 +401,12 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
     final taxNew = _addCess(_addSurcharge(rawNew, taxableNew));
     final taxOld = _addCess(_addSurcharge(rawOld, taxableOld));
 
-    final usedTax = _regime == 'new' ? taxNew : taxOld;
-    final usedTaxable = _regime == 'new' ? taxableNew : taxableOld;
+    final usedTax = _calcRegime == 'new' ? taxNew : taxOld;
+    final usedTaxable = _calcRegime == 'new' ? taxableNew : taxableOld;
     final effRate = totalIncome > 0 ? usedTax / totalIncome * 100 : 0.0;
 
-    final deductions = _regime == 'old'
-        ? stdOld + d80cLimit + d80dLimit + hliLimit + _hra + npsLimit
+    final deductions = _calcRegime == 'old'
+        ? stdOld + d80cLimit + d80dLimit + hliLimit + _calcHra + npsLimit
         : stdNew;
 
     return {
@@ -327,9 +418,9 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
       'usedTaxable': usedTaxable,
       'effRate': effRate,
       'deductions': deductions,
-      'rawTax': _regime == 'new' ? rawNew : rawOld,
-      'cess': (_regime == 'new' ? rawNew : rawOld) * 0.04,
-      'details': _regime == 'new' ? resNew['details'] : resOld['details'],
+      'rawTax': _calcRegime == 'new' ? rawNew : rawOld,
+      'cess': (_calcRegime == 'new' ? rawNew : rawOld) * 0.04,
+      'details': _calcRegime == 'new' ? resNew['details'] : resOld['details'],
     };
   }
 
@@ -380,7 +471,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
       {'r': '30%', 'hi': 'Above ₹10L', 'pct': 100.0}
     ];
 
-    final activeSlabs = _regime == 'new' ? newSlabs : oldSlabs;
+    final activeSlabs = _calcRegime == 'new' ? newSlabs : oldSlabs;
     final List<Color> slabColors = [
       const Color(0xFF86EFAC),
       const Color(0xFFFCD34D),
@@ -533,6 +624,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
                 min: 0,
                 max: 5000000,
                 prefix: '₹ ',
+                hasError: _grossHasError,
                 onChangedText: (val) {
                   setState(() {
                     _gross = val;
@@ -555,6 +647,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
                 min: 0,
                 max: 1000000,
                 prefix: '₹ ',
+                hasError: _otherHasError,
                 onChangedText: (val) {
                   setState(() {
                     _otherIncome = val;
@@ -582,6 +675,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
                   min: 0,
                   max: 150000,
                   prefix: '₹ ',
+                  hasError: _d80cHasError,
                   onChangedText: (val) {
                     setState(() {
                       _d80c = val;
@@ -604,6 +698,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
                   min: 0,
                   max: 25000,
                   prefix: '₹ ',
+                  hasError: _d80dHasError,
                   onChangedText: (val) {
                     setState(() {
                       _d80d = val;
@@ -626,6 +721,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
                   min: 0,
                   max: 200000,
                   prefix: '₹ ',
+                  hasError: _hliHasError,
                   onChangedText: (val) {
                     setState(() {
                       _hli = val;
@@ -648,6 +744,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
                   min: 0,
                   max: 500000,
                   prefix: '₹ ',
+                  hasError: _hraHasError,
                   onChangedText: (val) {
                     setState(() {
                       _hra = val;
@@ -670,6 +767,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
                   min: 0,
                   max: 50000,
                   prefix: '₹ ',
+                  hasError: _npsHasError,
                   onChangedText: (val) {
                     setState(() {
                       _nps = val;
@@ -689,7 +787,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _scrollToResults,
+                      onPressed: _calculate,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF6B00),
                         foregroundColor: Colors.white,
@@ -705,22 +803,24 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
                               weight: FontWeight.w800)),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 50,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () => _saveCalculation(usedTax, usedTaxable),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0B1F48),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                  if (_calculated) ...[
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 50,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () => _saveCalculation(usedTax, usedTaxable),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0B1F48),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Icon(Icons.bookmark_border, size: 20),
                       ),
-                      child: const Icon(Icons.bookmark_border, size: 20),
                     ),
-                  )
+                  ],
                 ],
               ),
             ],
@@ -728,244 +828,276 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
         ),
         const SizedBox(height: 20),
 
-        // Result Card (Orange/Navy Gradient)
-        Container(
-          key: _resultsKey,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFFFF6B00)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${_regime.toUpperCase()} REGIME · FY 2025–26',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: Colors.white70,
-                      weight: FontWeight.w700,
-                      letterSpacing: 0.8)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(usedTax),
-                style: AppTextStyles.playfair(
-                    size: 32,
-                    color: const Color(0xFFFFDEA0),
-                    weight: FontWeight.w800),
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
-              const SizedBox(height: 14),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 2.2,
+              child: Row(
                 children: [
-                  _resultBox('Taxable Income', _fmt(usedTaxable)),
-                  _resultBox(
-                      'Effective Rate', '${effRate.toStringAsFixed(2)}%'),
-                  _resultBox('Monthly TDS', _fmt(usedTax / 12), isRed: true),
-                  _resultBox('In-Hand/Month',
-                      _fmt(((_gross + _otherIncome) - usedTax) / 12),
-                      isGreen: true),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        // Slab Progress Bars Card
-        Text(
-            'Tax Slab Breakdown (${_regime == 'new' ? 'New Regime' : 'Old Regime'})',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            children: List.generate(activeSlabs.length, (i) {
-              final slab = activeSlabs[i];
-              final double pct = slab['pct'];
-              final color = slabColors[i % slabColors.length];
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
+          // Result Card (Orange/Navy Gradient)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFFFF6B00)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${_calcRegime.toUpperCase()} REGIME · FY 2025–26',
+                    style: AppTextStyles.dmSans(
+                        size: 9,
+                        color: Colors.white70,
+                        weight: FontWeight.w700,
+                        letterSpacing: 0.8)),
+                const SizedBox(height: 4),
+                Text(
+                  _fmt(usedTax),
+                  style: AppTextStyles.playfair(
+                      size: 32,
+                      color: const Color(0xFFFFDEA0),
+                      weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 2.2,
                   children: [
-                    SizedBox(
-                      width: 100,
-                      child: Text(
-                        slab['hi'],
-                        style: AppTextStyles.dmSans(
-                          size: 10.5,
-                          weight: FontWeight.w600,
-                          color: theme.getTextColor(context),
+                    _resultBox('Taxable Income', _fmt(usedTaxable)),
+                    _resultBox(
+                        'Effective Rate', '${effRate.toStringAsFixed(2)}%'),
+                    _resultBox('Monthly TDS', _fmt(usedTax / 12), isRed: true),
+                    _resultBox('In-Hand/Month',
+                        _fmt(((_calcGross + _calcOtherIncome) - usedTax) / 12),
+                        isGreen: true),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Slab Progress Bars Card
+          Text(
+              'Tax Slab Breakdown (${_calcRegime == 'new' ? 'New Regime' : 'Old Regime'})',
+              style: AppTextStyles.playfair(
+                  size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              children: List.generate(activeSlabs.length, (i) {
+                final slab = activeSlabs[i];
+                final double pct = slab['pct'];
+                final color = slabColors[i % slabColors.length];
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: Text(
+                          slab['hi'],
+                          style: AppTextStyles.dmSans(
+                            size: 10.5,
+                            weight: FontWeight.w600,
+                            color: theme.getTextColor(context),
+                          ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: Container(
-                        height: 9,
-                        decoration: BoxDecoration(
-                          color:
-                              const Color(0xFFFF6B00).withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        alignment: Alignment.centerLeft,
-                        child: FractionallySizedBox(
-                          widthFactor: max(0.04, pct / 100.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(5),
+                      Expanded(
+                        child: Container(
+                          height: 9,
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFFFF6B00).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: max(0.04, pct / 100.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: color,
+                                borderRadius: BorderRadius.circular(5),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 35,
-                      child: Text(
-                        slab['r'],
-                        style: AppTextStyles.dmSans(
-                          size: 10.5,
-                          weight: FontWeight.w800,
-                          color: theme.getTextColor(context),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 35,
+                        child: Text(
+                          slab['r'],
+                          style: AppTextStyles.dmSans(
+                            size: 10.5,
+                            weight: FontWeight.w800,
+                            color: theme.getTextColor(context),
+                          ),
+                          textAlign: TextAlign.right,
                         ),
-                        textAlign: TextAlign.right,
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }),
+                    ],
+                  ),
+                );
+              }),
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Step-by-step Computation summary
-        Text('Detailed Tax Computation Summary',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
+          // Step-by-step Computation summary
+          Text('Detailed Tax Computation Summary',
+              style: AppTextStyles.playfair(
+                  size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              children: [
+                _summaryRow('Gross Salary/Business Income', _fmt(_calcGross)),
+                _summaryRow('Other Income', _fmt(_calcOtherIncome)),
+                _summaryRow('Total Deductions Claimed', '- ${_fmt(deductions)}',
+                    isGreen: true),
+                _summaryRow('Net Taxable Income', _fmt(usedTaxable)),
+                const Divider(),
+                ...details.map((d) => _summaryRow(
+                    'Slab ${d['range']} @ ${d['rate']}', _fmt(d['tax']))),
+                const Divider(),
+                _summaryRow('Basic Tax (Before Cess)', _fmt(rawTax)),
+                _summaryRow('Health & Education Cess (4%)', '+ ${_fmt(cess)}',
+                    isRed: true),
+                _summaryRow('Total Net Tax Payable', _fmt(usedTax),
+                    isBoldSaffron: true),
+              ],
+            ),
           ),
-          child: Column(
-            children: [
-              _summaryRow('Gross Salary/Business Income', _fmt(_gross)),
-              _summaryRow('Other Income', _fmt(_otherIncome)),
-              _summaryRow('Total Deductions Claimed', '- ${_fmt(deductions)}',
-                  isGreen: true),
-              _summaryRow('Net Taxable Income', _fmt(usedTaxable)),
-              const Divider(),
-              ...details.map((d) => _summaryRow(
-                  'Slab ${d['range']} @ ${d['rate']}', _fmt(d['tax']))),
-              const Divider(),
-              _summaryRow('Basic Tax (Before Cess)', _fmt(rawTax)),
-              _summaryRow('Health & Education Cess (4%)', '+ ${_fmt(cess)}',
-                  isRed: true),
-              _summaryRow('Total Net Tax Payable', _fmt(usedTax),
-                  isBoldSaffron: true),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Side-by-side Old vs New Tax Regime table
-        Text('Side-by-side Regime Comparison',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2)),
-            ],
-          ),
-          child: Column(
-            children: [
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                      colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)]),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          // Side-by-side Old vs New Tax Regime table
+          Text('Side-by-side Regime Comparison',
+              style: AppTextStyles.playfair(
+                  size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: theme.getBorderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                        colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)]),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                          flex: 3,
+                          child: Text('Detail',
+                              style: AppTextStyles.dmSans(
+                                  size: 9,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white70))),
+                      Expanded(
+                          flex: 3,
+                          child: Text('New Regime',
+                              style: AppTextStyles.dmSans(
+                                  size: 9,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white70),
+                              textAlign: TextAlign.center)),
+                      Expanded(
+                          flex: 3,
+                          child: Text('Old Regime',
+                              style: AppTextStyles.dmSans(
+                                  size: 9,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white70),
+                              textAlign: TextAlign.center)),
+                    ],
+                  ),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-                child: Row(
-                  children: [
-                    Expanded(
-                        flex: 3,
-                        child: Text('Detail',
-                            style: AppTextStyles.dmSans(
-                                size: 9,
-                                weight: FontWeight.w800,
-                                color: Colors.white70))),
-                    Expanded(
-                        flex: 3,
-                        child: Text('New Regime',
-                            style: AppTextStyles.dmSans(
-                                size: 9,
-                                weight: FontWeight.w800,
-                                color: Colors.white70),
-                            textAlign: TextAlign.center)),
-                    Expanded(
-                        flex: 3,
-                        child: Text('Old Regime',
-                            style: AppTextStyles.dmSans(
-                                size: 9,
-                                weight: FontWeight.w800,
-                                color: Colors.white70),
-                            textAlign: TextAlign.center)),
-                  ],
-                ),
-              ),
-              _compareRow('Taxable Inc', _fmt(taxableNew), _fmt(taxableOld)),
-              _compareRow('Tax + Cess', _fmt(taxNew), _fmt(taxOld),
-                  hlIndex: taxNew <= taxOld ? 1 : 2),
-              _compareRow(
-                  'Effective %',
-                  '${(taxableNew > 0 ? taxNew / (_gross + _otherIncome) * 100 : 0.0).toStringAsFixed(2)}%',
-                  '${(taxableOld > 0 ? taxOld / (_gross + _otherIncome) * 100 : 0.0).toStringAsFixed(2)}%'),
-              _compareRow('Monthly TDS', _fmt(taxNew / 12), _fmt(taxOld / 12)),
-              _compareRow(
-                  'Regime Savings',
-                  taxNew <= taxOld ? '+${_fmt(taxOld - taxNew)}' : '0',
-                  taxOld < taxNew ? '+${_fmt(taxNew - taxOld)}' : '0',
-                  hlIndex: taxNew <= taxOld ? 1 : 2),
-            ],
+                _compareRow('Taxable Inc', _fmt(taxableNew), _fmt(taxableOld)),
+                _compareRow('Tax + Cess', _fmt(taxNew), _fmt(taxOld),
+                    hlIndex: taxNew <= taxOld ? 1 : 2),
+                _compareRow(
+                    'Effective %',
+                    '${(taxableNew > 0 ? taxNew / (_calcGross + _calcOtherIncome) * 100 : 0.0).toStringAsFixed(2)}%',
+                    '${(taxableOld > 0 ? taxOld / (_calcGross + _calcOtherIncome) * 100 : 0.0).toStringAsFixed(2)}%'),
+                _compareRow('Monthly TDS', _fmt(taxNew / 12), _fmt(taxOld / 12)),
+                _compareRow(
+                    'Regime Savings',
+                    taxNew <= taxOld ? '+${_fmt(taxOld - taxNew)}' : '0',
+                    taxOld < taxNew ? '+${_fmt(taxNew - taxOld)}' : '0',
+                    hlIndex: taxNew <= taxOld ? 1 : 2),
+              ],
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: 20),
 
         // Saved Calculations Section
@@ -1130,6 +1262,7 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
     required double max,
     String prefix = '',
     String suffix = '',
+    bool hasError = false,
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
   }) {
@@ -1158,7 +1291,10 @@ class _INIncomeTaxCalculatorState extends ConsumerState<INIncomeTaxCalculator> {
           decoration: BoxDecoration(
             color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
             border: Border.all(
-                color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                color: hasError
+                    ? Colors.red
+                    : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextFormField(

@@ -22,9 +22,22 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
   String _acctType = 'nre'; // 'nre', 'nro', 'fcnr'
   String _compounding = 'quarterly'; // 'monthly', 'quarterly', 'half-yearly', 'yearly'
 
+  bool _calculated = false;
+  String _calcAcctType = 'nre';
+  String _calcCompounding = 'quarterly';
+  double _calcDeposit = 10.0;
+  double _calcRate = 7.10;
+  int _calcTenure = 3;
+
+  bool _depositHasError = false;
+  bool _rateHasError = false;
+  bool _tenureHasError = false;
+
   late TextEditingController _depositController;
   late TextEditingController _rateController;
   late TextEditingController _tenureController;
+
+  final GlobalKey _resultsKey = GlobalKey();
 
   @override
   void initState() {
@@ -42,9 +55,74 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
     super.dispose();
   }
 
-  double get _deposit => double.tryParse(_depositController.text) ?? 10.0;
-  double get _rate => double.tryParse(_rateController.text) ?? 7.10;
-  int get _tenure => int.tryParse(_tenureController.text) ?? 3;
+  void _calculate() {
+    final depositVal = double.tryParse(_depositController.text) ?? 0.0;
+    final rateVal = double.tryParse(_rateController.text) ?? 0.0;
+    final tenureVal = int.tryParse(_tenureController.text) ?? 0;
+
+    setState(() {
+      _depositHasError = depositVal <= 0;
+      _rateHasError = rateVal <= 0;
+      _tenureHasError = tenureVal <= 0;
+    });
+
+    if (_depositHasError || _rateHasError || _tenureHasError) return;
+
+    setState(() {
+      _calculated = true;
+      _calcAcctType = _acctType;
+      _calcCompounding = _compounding;
+      _calcDeposit = depositVal;
+      _calcRate = rateVal;
+      _calcTenure = tenureVal;
+    });
+
+    _scrollToResults();
+  }
+
+  void _scrollToResults() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _resultsKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut);
+      }
+    });
+  }
+
+  bool _areInputsChanged() {
+    final depositVal = double.tryParse(_depositController.text) ?? 0.0;
+    final rateVal = double.tryParse(_rateController.text) ?? 0.0;
+    final tenureVal = int.tryParse(_tenureController.text) ?? 0;
+
+    return _acctType != _calcAcctType ||
+        _compounding != _calcCompounding ||
+        depositVal != _calcDeposit ||
+        rateVal != _calcRate ||
+        tenureVal != _calcTenure;
+  }
+
+  void _reset() {
+    setState(() {
+      _acctType = 'nre';
+      _compounding = 'quarterly';
+      _depositController.text = '10.0';
+      _rateController.text = '7.10';
+      _tenureController.text = '3';
+
+      _calculated = false;
+      _calcAcctType = 'nre';
+      _calcCompounding = 'quarterly';
+      _calcDeposit = 10.0;
+      _calcRate = 7.10;
+      _calcTenure = 3;
+
+      _depositHasError = false;
+      _rateHasError = false;
+      _tenureHasError = false;
+    });
+  }
 
   void _selectAccountType(String type) {
     setState(() {
@@ -64,22 +142,22 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
   }
 
   void _saveFdCalculation() async {
-    final double p = _deposit * 100000;
-    final double r = _rate / 100;
-    final double t = _tenure.toDouble();
+    final double p = _calcDeposit * 100000;
+    final double r = _calcRate / 100;
+    final double t = _calcTenure.toDouble();
     int n = 4;
-    if (_compounding == 'monthly') n = 12;
-    if (_compounding == 'half-yearly') n = 2;
-    if (_compounding == 'yearly') n = 1;
+    if (_calcCompounding == 'monthly') n = 12;
+    if (_calcCompounding == 'half-yearly') n = 2;
+    if (_calcCompounding == 'yearly') n = 1;
 
     final double rawMaturity = p * pow(1 + (r / n), n * t);
     final double interest = rawMaturity - p;
-    final double tdsRate = (_acctType == 'nro') ? 0.312 : 0.0;
+    final double tdsRate = (_calcAcctType == 'nro') ? 0.312 : 0.0;
     final double tds = interest * tdsRate;
     final double netMaturity = rawMaturity - tds;
 
     final labelCtrl = TextEditingController(
-      text: '${_acctType.toUpperCase()} FD Maturity',
+      text: '${_calcAcctType.toUpperCase()} FD Maturity',
     );
 
     final confirmed = await showDialog<bool>(
@@ -133,11 +211,11 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
         country: 'India',
         calcType: 'NRE/NRO Account FD',
         inputs: {
-          'depositLakhs': _deposit,
-          'interestRate': _rate,
+          'depositLakhs': _calcDeposit,
+          'interestRate': _calcRate,
           'tenureYears': t,
-          'accountType': _acctType == 'nre' ? 0.0 : (_acctType == 'nro' ? 1.0 : 2.0),
-          'compoundingIndex': _compounding == 'monthly' ? 12.0 : (_compounding == 'quarterly' ? 4.0 : (_compounding == 'half-yearly' ? 2.0 : 1.0)),
+          'accountType': _calcAcctType == 'nre' ? 0.0 : (_calcAcctType == 'nro' ? 1.0 : 2.0),
+          'compoundingIndex': _calcCompounding == 'monthly' ? 12.0 : (_calcCompounding == 'quarterly' ? 4.0 : (_calcCompounding == 'half-yearly' ? 2.0 : 1.0)),
         },
         results: {
           'maturityRaw': rawMaturity,
@@ -168,18 +246,22 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final depositVal = double.tryParse(_depositController.text) ?? 10.0;
+    final rateVal = double.tryParse(_rateController.text) ?? 7.10;
+    final tenureVal = int.tryParse(_tenureController.text) ?? 3;
+
     // Compounding Math
-    final double p = _deposit * 100000;
-    final double r = _rate / 100;
-    final double t = _tenure.toDouble();
+    final double p = _calcDeposit * 100000;
+    final double r = _calcRate / 100;
+    final double t = _calcTenure.toDouble();
     int nComp = 4;
-    if (_compounding == 'monthly') nComp = 12;
-    if (_compounding == 'half-yearly') nComp = 2;
-    if (_compounding == 'yearly') nComp = 1;
+    if (_calcCompounding == 'monthly') nComp = 12;
+    if (_calcCompounding == 'half-yearly') nComp = 2;
+    if (_calcCompounding == 'yearly') nComp = 1;
 
     final double rawMaturity = p * pow(1 + (r / nComp), nComp * t);
     final double grossInt = rawMaturity - p;
-    final double tdsRate = (_acctType == 'nro') ? 0.312 : 0.0;
+    final double tdsRate = (_calcAcctType == 'nro') ? 0.312 : 0.0;
     final double tds = grossInt * tdsRate;
     final double netAmt = rawMaturity - tds;
 
@@ -341,7 +423,6 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
                 ],
               ),
               const SizedBox(height: 16),
-
               // Deposit Amount Sync Row
               _buildSyncSliderRow(
                 title: 'Deposit Amount (₹ Lakh)',
@@ -349,7 +430,8 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
                 min: 1.0,
                 max: 100.0,
                 divisions: 99,
-                displayValue: '₹${Compat.round(_deposit).toLocaleString()} Lakh',
+                displayValue: '₹${Compat.round(depositVal).toLocaleString()} Lakh',
+                hasError: _depositHasError,
               ),
               const SizedBox(height: 16),
 
@@ -367,11 +449,13 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
                           decoration: BoxDecoration(
                             color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFFFF8F0),
                             borderRadius: BorderRadius.circular(11),
-                            border: Border.all(color: theme.getBorderColor(context)),
+                            border: Border.all(
+                                color: _tenureHasError ? Colors.red : theme.getBorderColor(context),
+                                width: _tenureHasError ? 1.5 : 1.0),
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<int>(
-                              value: _tenure,
+                              value: tenureVal.clamp(1, 10),
                               isExpanded: true,
                               dropdownColor: theme.getCardColor(context),
                               style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w700, color: theme.getTextColor(context)),
@@ -441,123 +525,166 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
                 min: 5.0,
                 max: 10.0,
                 divisions: 100,
-                displayValue: '${_rate.toStringAsFixed(2)}%',
+                displayValue: '${rateVal.toStringAsFixed(2)}%',
+                hasError: _rateHasError,
               ),
               const SizedBox(height: 20),
 
-              // Calculate Returns Button
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {});
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('⚡ FD returns updated!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
-                      backgroundColor: const Color(0xFF046A38),
-                      duration: const Duration(milliseconds: 600),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF6B00),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                  elevation: 4,
-                  shadowColor: const Color(0xFFFF6B00).withValues(alpha: 0.4),
-                ),
-                child: Center(
-                  child: Text(
-                    '💱 Calculate FD Returns',
-                    style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // 6. Returns Summary Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('FD Maturity — ${_acctType.toUpperCase()} Account', style: AppTextStyles.dmSans(size: 10, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.7)),
-              const SizedBox(height: 16),
-
-              // Maturity Big Display
-              Center(
-                child: Column(
-                  children: [
-                    Text('Maturity Amount', style: AppTextStyles.dmSans(size: 11, color: Colors.white70)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '₹${Compat.round(netAmt).toLocaleString()}',
-                      style: AppTextStyles.playfair(size: 34, color: Colors.white, weight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Gross Interest: ₹${Compat.round(grossInt).toLocaleString()} • ${_acctType == 'nro' ? '31.2% TDS applied' : 'Tax-Free'}',
-                      style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // 4-grid returns summary
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                childAspectRatio: 1.8,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+              Row(
                 children: [
-                  _buildResultGridItem('Principal', _fmt(p), 'Deposit Amount'),
-                  _buildResultGridItem('Gross Interest', _fmt(grossInt), 'Raw Earnings'),
-                  _buildResultGridItem('TDS Deducted', tds > 0 ? _fmt(tds) : 'NIL (Tax-Free)', 'Indian Income Tax', isWarn: tds > 0),
-                  _buildResultGridItem('Net Take-Home', _fmt(netAmt), 'Principal + Net Interest', isOk: true),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _calculate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6B00),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 44),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 4,
+                      ),
+                      child: Text('💱 Calculate FD Returns',
+                          style: AppTextStyles.dmSans(
+                              size: 13,
+                              color: Colors.white,
+                              weight: FontWeight.w800)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 50,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: _reset,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0B1F48),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Icon(Icons.refresh, size: 20),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 16),
-
-              // Save button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _saveFdCalculation,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white12,
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white30, width: 1.5),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                  ),
-                  icon: const Icon(Icons.save, size: 16),
-                  label: Text('Save This Calculation', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800)),
-                ),
-              ),
             ],
           ),
         ),
+        const SizedBox(height: 20),
+
+        if (_calculated) ...[
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
+
+          // 6. Returns Summary Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('FD Maturity — ${_calcAcctType.toUpperCase()} Account', style: AppTextStyles.dmSans(size: 10, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.7)),
+                const SizedBox(height: 16),
+
+                // Maturity Big Display
+                Center(
+                  child: Column(
+                    children: [
+                      Text('Maturity Amount', style: AppTextStyles.dmSans(size: 11, color: Colors.white70)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '₹${Compat.round(netAmt).toLocaleString()}',
+                        style: AppTextStyles.playfair(size: 34, color: Colors.white, weight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Gross Interest: ₹${Compat.round(grossInt).toLocaleString()} • ${_calcAcctType == 'nro' ? '31.2% TDS applied' : 'Tax-Free'}',
+                        style: AppTextStyles.dmSans(size: 10, color: Colors.white60),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 4-grid returns summary
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.8,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  children: [
+                    _buildResultGridItem('Principal', _fmt(p), 'Deposit Amount'),
+                    _buildResultGridItem('Gross Interest', _fmt(grossInt), 'Raw Earnings'),
+                    _buildResultGridItem('TDS Deducted', tds > 0 ? _fmt(tds) : 'NIL (Tax-Free)', 'Indian Income Tax', isWarn: tds > 0),
+                    _buildResultGridItem('Net Take-Home', _fmt(netAmt), 'Principal + Net Interest', isOk: true),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Save button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _saveFdCalculation,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white12,
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white30, width: 1.5),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                    ),
+                    icon: const Icon(Icons.save, size: 16),
+                    label: Text('Save This Calculation', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         const SizedBox(height: 20),
 
@@ -785,6 +912,7 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
     required double max,
     required int divisions,
     required String displayValue,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     final currentVal = double.tryParse(controller.text) ?? min;
@@ -827,7 +955,11 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
                   divisions: divisions,
                   onChanged: (val) {
                     setState(() {
-                      controller.text = val.toStringAsFixed(0);
+                      if (divisions == 100) {
+                        controller.text = val.toStringAsFixed(2);
+                      } else {
+                        controller.text = val.toStringAsFixed(0);
+                      }
                     });
                   },
                 ),
@@ -847,11 +979,15 @@ class _INNRENROAccountState extends ConsumerState<INNRENROAccount> {
                   fillColor: theme.getBgColor(context),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.getBorderColor(context)),
+                    borderSide: BorderSide(
+                        color: hasError ? Colors.red : theme.getBorderColor(context),
+                        width: hasError ? 1.5 : 1.0),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.primaryColor),
+                    borderSide: BorderSide(
+                        color: hasError ? Colors.red : theme.primaryColor,
+                        width: hasError ? 1.5 : 1.0),
                   ),
                 ),
                 onSubmitted: (val) {

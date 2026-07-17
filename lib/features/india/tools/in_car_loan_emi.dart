@@ -24,6 +24,19 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
   late TextEditingController _tenureController;
   String _carType = 'new'; // 'new', 'used', 'ev'
 
+  bool _priceError = false;
+  bool _downError = false;
+  bool _rateError = false;
+  bool _tenureError = false;
+
+  bool _hasCalculated = false;
+  double _calcPrice = 1500000;
+  double _calcDownPct = 20;
+  double _calcRate = 8.75;
+  int _calcTenure = 5;
+  String _calcCarType = 'new';
+  final GlobalKey _resultsKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -31,15 +44,42 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
     _downController = TextEditingController(text: '20');
     _rateController = TextEditingController(text: '8.75');
     _tenureController = TextEditingController(text: '5');
+
+    _priceController.addListener(_onInputChanged);
+    _downController.addListener(_onInputChanged);
+    _rateController.addListener(_onInputChanged);
+    _tenureController.addListener(_onInputChanged);
   }
 
   @override
   void dispose() {
+    _priceController.removeListener(_onInputChanged);
+    _downController.removeListener(_onInputChanged);
+    _rateController.removeListener(_onInputChanged);
+    _tenureController.removeListener(_onInputChanged);
+
     _priceController.dispose();
     _downController.dispose();
     _rateController.dispose();
     _tenureController.dispose();
     super.dispose();
+  }
+
+  void _onInputChanged() {
+    setState(() {});
+  }
+
+  bool _areInputsChanged() {
+    final price = double.tryParse(_priceController.text.replaceAll(',', '')) ?? 0.0;
+    final dp = double.tryParse(_downController.text) ?? 0.0;
+    final rate = double.tryParse(_rateController.text) ?? 0.0;
+    final tenure = int.tryParse(_tenureController.text) ?? 1;
+
+    return price != _calcPrice ||
+        dp != _calcDownPct ||
+        rate != _calcRate ||
+        tenure != _calcTenure ||
+        _carType != _calcCarType;
   }
 
   void _reset() {
@@ -49,13 +89,22 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
       _rateController.text = '8.75';
       _tenureController.text = '5';
       _carType = 'new';
+
+      _hasCalculated = false;
+      _priceError = false;
+      _downError = false;
+      _rateError = false;
+      _tenureError = false;
+
+      _calcPrice = 1500000;
+      _calcDownPct = 20;
+      _calcRate = 8.75;
+      _calcTenure = 5;
+      _calcCarType = 'new';
     });
   }
 
   double get _price => double.tryParse(_priceController.text) ?? 1500000.0;
-  double get _downPct => double.tryParse(_downController.text) ?? 20.0;
-  double get _rate => double.tryParse(_rateController.text) ?? 8.75;
-  int get _tenure => int.tryParse(_tenureController.text) ?? 5;
 
   void _selectCarType(String type) {
     setState(() {
@@ -86,10 +135,10 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
   }
 
   void _saveCalculation() async {
-    final priceVal = _price;
-    final dpVal = _downPct;
-    final rateVal = _rate;
-    final tenureVal = _tenure;
+    final priceVal = _calcPrice;
+    final dpVal = _calcDownPct;
+    final rateVal = _calcRate;
+    final tenureVal = _calcTenure;
 
     final loan = priceVal * (1 - dpVal / 100);
     final n = tenureVal * 12;
@@ -153,7 +202,7 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
           'downPct': dpVal,
           'rate': rateVal,
           'tenure': tenureVal.toDouble(),
-          'carType': _carType == 'new' ? 0.0 : _carType == 'used' ? 1.0 : 2.0,
+          'carType': _calcCarType == 'new' ? 0.0 : _calcCarType == 'used' ? 1.0 : 2.0,
         },
         results: {
           'emi': emi,
@@ -184,15 +233,20 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final priceVal = _price;
-    final dpVal = _downPct;
-    final rateVal = _rate;
-    final tenureVal = _tenure;
+    final priceVal = double.tryParse(_priceController.text.replaceAll(',', '')) ?? 0.0;
+    final dpVal = double.tryParse(_downController.text) ?? 0.0;
+    final rateVal = double.tryParse(_rateController.text) ?? 0.0;
+    final tenureVal = int.tryParse(_tenureController.text) ?? 1;
 
-    final loan = priceVal * (1 - dpVal / 100);
-    final down = priceVal * (dpVal / 100);
-    final n = tenureVal * 12;
-    final emi = _calcEMI(loan, rateVal, n);
+    final calcPrice = _calcPrice;
+    final calcDownPct = _calcDownPct;
+    final calcRate = _calcRate;
+    final calcTenure = _calcTenure;
+
+    final loan = calcPrice * (1 - calcDownPct / 100);
+    final down = calcPrice * (calcDownPct / 100);
+    final n = calcTenure * 12;
+    final emi = _calcEMI(loan, calcRate, n);
     final total = emi * n;
     final interest = total - loan;
     final fee = loan * 0.005; // 0.5% standard fee
@@ -308,6 +362,7 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
                 max: 10000000,
                 divisions: 198,
                 displayValue: _fmt(priceVal),
+                hasError: _priceError,
               ),
               const SizedBox(height: 16),
 
@@ -319,6 +374,7 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
                 max: 50,
                 divisions: 40,
                 displayValue: '${dpVal.toStringAsFixed(0)}%',
+                hasError: _downError,
               ),
               const SizedBox(height: 16),
 
@@ -330,6 +386,7 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
                 max: 18,
                 divisions: 220,
                 displayValue: '${rateVal.toStringAsFixed(2)}%',
+                hasError: _rateError,
               ),
               const SizedBox(height: 16),
 
@@ -341,13 +398,63 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
                 max: 7,
                 divisions: 6,
                 displayValue: '$tenureVal yr',
+                hasError: _tenureError,
               ),
               const SizedBox(height: 20),
 
               // Calculate EMI Button
               ElevatedButton(
                 onPressed: () {
-                  setState(() {});
+                  setState(() {
+                    _priceError = false;
+                    _downError = false;
+                    _rateError = false;
+                    _tenureError = false;
+                  });
+
+                  final pValVal = double.tryParse(_priceController.text.replaceAll(',', ''));
+                  final dValVal = double.tryParse(_downController.text);
+                  final rValVal = double.tryParse(_rateController.text);
+                  final tValVal = int.tryParse(_tenureController.text);
+
+                  bool hasErr = false;
+                  if (pValVal == null || pValVal <= 0) {
+                    setState(() => _priceError = true);
+                    hasErr = true;
+                  }
+                  if (dValVal == null || dValVal < 0 || dValVal > 100) {
+                    setState(() => _downError = true);
+                    hasErr = true;
+                  }
+                  if (rValVal == null || rValVal <= 0 || rValVal > 100) {
+                    setState(() => _rateError = true);
+                    hasErr = true;
+                  }
+                  if (tValVal == null || tValVal <= 0 || tValVal > 40) {
+                    setState(() => _tenureError = true);
+                    hasErr = true;
+                  }
+
+                  if (hasErr) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('⚠️ Please correct the invalid fields in red.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                        backgroundColor: Colors.red[800],
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    _hasCalculated = true;
+                    _calcPrice = pValVal!;
+                    _calcDownPct = dValVal!;
+                    _calcRate = rValVal!;
+                    _calcTenure = tValVal!;
+                    _calcCarType = _carType;
+                  });
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('⚡ EMI calculation updated!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
@@ -356,6 +463,16 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_resultsKey.currentContext != null) {
+                      Scrollable.ensureVisible(
+                        _resultsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
@@ -380,188 +497,215 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
             ],
           ),
         ),
-
-        const SizedBox(height: 20),
-
-        // Results Card Grid (6 items)
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Car Loan Results', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white70, weight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                childAspectRatio: 1.6,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+        if (_hasCalculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
                 children: [
-                  _buildResultBox('Loan Amount', _fmt(loan), sub: '${(100 - dpVal).toStringAsFixed(0)}% financing'),
-                  _buildResultBox('Monthly EMI', _fmt(emi), sub: '$tenureVal-year tenure', highlight: true),
-                  _buildResultBox('Total Interest', _fmt(interest), sub: 'Cumulative cost'),
-                  _buildResultBox('Total Payable', _fmt(total), sub: 'Loan + interest', highlight: true),
-                  _buildResultBox('Down Payment', _fmt(down), sub: '${dpVal.toStringAsFixed(0)}% upfront'),
-                  _buildResultBox('Processing Fee', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(fee)}", sub: '~0.5% of loan'),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        const SizedBox(height: 20),
-
-        // Cost Breakup Donut Chart
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ],
+          // Results Card Grid (6 items)
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Car Loan Results', style: AppTextStyles.dmSans(size: 9.5, color: Colors.white70, weight: FontWeight.w800)),
+                const SizedBox(height: 12),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.6,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  children: [
+                    _buildResultBox('Loan Amount', _fmt(loan), sub: '${(100 - calcDownPct).toStringAsFixed(0)}% financing'),
+                    _buildResultBox('Monthly EMI', _fmt(emi), sub: '$calcTenure-year tenure', highlight: true),
+                    _buildResultBox('Total Interest', _fmt(interest), sub: 'Cumulative cost'),
+                    _buildResultBox('Total Payable', _fmt(total), sub: 'Loan + interest', highlight: true),
+                    _buildResultBox('Down Payment', _fmt(down), sub: '${calcDownPct.toStringAsFixed(0)}% upfront'),
+                    _buildResultBox('Processing Fee', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(fee)}", sub: '~0.5% of loan'),
+                  ],
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('💰 Cost Breakup', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 110,
-                    height: 110,
-                    child: CustomPaint(
-                      painter: _CarDonutPainter(
-                        pctPrincipal: pctLoan,
-                        pctInterest: pctInt,
-                        pctDown: pctDown,
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('EMI', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: const Color(0xFF0B1F48))),
-                            Text(_fmtShort(emi), style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF7A5C3A), weight: FontWeight.bold)),
-                          ],
+
+          const SizedBox(height: 20),
+
+          // Cost Breakup Donut Chart
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: theme.getBorderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('💰 Cost Breakup', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      height: 110,
+                      child: CustomPaint(
+                        painter: _CarDonutPainter(
+                          pctPrincipal: pctLoan,
+                          pctInterest: pctInt,
+                          pctDown: pctDown,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('EMI', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: const Color(0xFF0B1F48))),
+                              Text(_fmtShort(emi), style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF7A5C3A), weight: FontWeight.bold)),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _buildLegendRow('Principal', _fmtShort(loan), const Color(0xFF1A3A8F)),
-                        const SizedBox(height: 8),
-                        _buildLegendRow('Total Interest', _fmtShort(interest), const Color(0xFFFF6B00)),
-                        const SizedBox(height: 8),
-                        _buildLegendRow('Down Payment', _fmtShort(down), const Color(0xFF0D9488)),
-                      ],
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _buildLegendRow('Principal', _fmtShort(loan), const Color(0xFF1A3A8F)),
+                          const SizedBox(height: 8),
+                          _buildLegendRow('Total Interest', _fmtShort(interest), const Color(0xFFFF6B00)),
+                          const SizedBox(height: 8),
+                          _buildLegendRow('Down Payment', _fmtShort(down), const Color(0xFF0D9488)),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Bank Rate comparison
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Top Banks – Car Loan Rates 2025', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-              _buildBankBar('SBI', 8.75, [const Color(0xFF0B1F48), const Color(0xFF1A3A8F)]),
-              _buildBankBar('HDFC', 9.25, [const Color(0xFFFF6B00), const Color(0xFFFF9933)]),
-              _buildBankBar('ICICI', 9.00, [const Color(0xFF0D9488), const Color(0xFF0F766E)]),
-              _buildBankBar('Axis', 9.50, [const Color(0xFFF5A623), const Color(0xFFB45309)]),
-              _buildBankBar('Kotak', 9.25, [const Color(0xFF046A38), const Color(0xFF07543A)]),
-              _buildBankBar('Used Car Avg', 10.50, [const Color(0xFF9333EA), const Color(0xFF6D28D9)]),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Tips Card
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('💡', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'India Car Loan Tips: New cars: 85–90% financing available. Used cars (under 5 years): up to 80% LTV. EV loans — SBI Green Car Loan at 8.75%, HDFC at 8.50% for electric vehicles. CIBIL 750+ gets best rates. Processing fee: 0.5–1% of loan.',
-                  style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFF07543A), weight: FontWeight.w500),
+                  ],
                 ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Bank Rate comparison
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: theme.getBorderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Top Banks – Car Loan Rates 2025', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+                _buildBankBar('SBI', 8.75, [const Color(0xFF0B1F48), const Color(0xFF1A3A8F)]),
+                _buildBankBar('HDFC', 9.25, [const Color(0xFFFF6B00), const Color(0xFFFF9933)]),
+                _buildBankBar('ICICI', 9.00, [const Color(0xFF0D9488), const Color(0xFF0F766E)]),
+                _buildBankBar('Axis', 9.50, [const Color(0xFFF5A623), const Color(0xFFB45309)]),
+                _buildBankBar('Kotak', 9.25, [const Color(0xFF046A38), const Color(0xFF07543A)]),
+                _buildBankBar('Used Car Avg', 10.50, [const Color(0xFF9333EA), const Color(0xFF6D28D9)]),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Info Alert Tip Card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
+              border: Border.all(color: const Color(0xFF93C5FD), width: 1.5),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('💡', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Car Loan Rule: Unlike home loans, car loans are usually fixed interest or flat rate. Always verify if the bank offers reducing balance interest. Foreclosure charges of 2-5% apply for pre-closing car loans in India.',
+                    style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFF1E3A8A), weight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
 
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Save Button
-        ElevatedButton.icon(
-          onPressed: _saveCalculation,
-          icon: const Icon(Icons.save, size: 16, color: Colors.white),
-          label: Text('Save This Calculation', style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.w800)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF046A38),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          // Save Button
+          ElevatedButton.icon(
+            onPressed: _saveCalculation,
+            icon: const Icon(Icons.save, size: 16, color: Colors.white),
+            label: Text('Save This Calculation', style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.w800)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF046A38),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -646,6 +790,7 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
     required double max,
     required int divisions,
     required String displayValue,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     final currentVal = double.tryParse(controller.text) ?? min;
@@ -708,11 +853,17 @@ class _INCarLoanEMIState extends ConsumerState<INCarLoanEMI> {
                   fillColor: theme.getBgColor(context),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.getBorderColor(context)),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : theme.getBorderColor(context),
+                      width: hasError ? 1.5 : 1.0,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.primaryColor),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : theme.primaryColor,
+                      width: hasError ? 2.0 : 1.5,
+                    ),
                   ),
                 ),
                 onSubmitted: (val) {

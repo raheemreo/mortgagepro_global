@@ -22,7 +22,17 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
   double _loanAmountLakhs = 20; // In lakhs
   int _tenureYears = 20;
   double _bankRate = 8.50;
-  final bool _calculated = true;
+
+  bool _calculated = false;
+  String _calcSelCat = 'ews';
+  double _calcLoanAmountLakhs = 20;
+  int _calcTenureYears = 20;
+  double _calcBankRate = 8.50;
+
+  bool _loanHasError = false;
+  bool _rateHasError = false;
+
+  final GlobalKey _resultsKey = GlobalKey();
 
   final Map<String, _PmayCatData> _catData = {
     'ews': _PmayCatData(name: 'EWS', subRate: 6.5, maxLoan: 600000, subsidy: 267000, incomeLimit: '≤ ₹3 Lakh/yr'),
@@ -37,13 +47,68 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
     return p * mr * pow(1 + mr, nMonths) / (pow(1 + mr, nMonths) - 1);
   }
 
+  void _calculate() {
+    setState(() {
+      _loanHasError = _loanAmountLakhs <= 0;
+      _rateHasError = _bankRate <= 0 || _bankRate > 30;
+    });
+
+    if (_loanHasError || _rateHasError) return;
+
+    setState(() {
+      _calculated = true;
+      _calcSelCat = _selCat;
+      _calcLoanAmountLakhs = _loanAmountLakhs;
+      _calcTenureYears = _tenureYears;
+      _calcBankRate = _bankRate;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _selCat != _calcSelCat ||
+        _loanAmountLakhs != _calcLoanAmountLakhs ||
+        _tenureYears != _calcTenureYears ||
+        _bankRate != _calcBankRate;
+  }
+
+  void _scrollToResults() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _resultsKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut);
+      }
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _selCat = 'ews';
+      _loanAmountLakhs = 20;
+      _tenureYears = 20;
+      _bankRate = 8.50;
+
+      _calculated = false;
+      _calcSelCat = 'ews';
+      _calcLoanAmountLakhs = 20;
+      _calcTenureYears = 20;
+      _calcBankRate = 8.50;
+
+      _loanHasError = false;
+      _rateHasError = false;
+    });
+  }
+
   void _saveCalculation() async {
-    final d = _catData[_selCat]!;
-    final loan = _loanAmountLakhs * 100000;
-    final subLoan = min(loan, d.maxLoan);
-    final effRate = max(_bankRate - d.subRate, 1.0);
-    final normalEmi = _emi(loan, _bankRate, _tenureYears * 12);
-    final subEmi = _emi(subLoan, effRate, _tenureYears * 12) + _emi(max(loan - subLoan, 0.0), _bankRate, _tenureYears * 12);
+    final d = _catData[_calcSelCat]!;
+    final loan = _calcLoanAmountLakhs * 100000;
+    final subLoan = min(loan, d.maxLoan.toDouble());
+    final effRate = max(_calcBankRate - d.subRate, 1.0);
+    final normalEmi = _emi(loan, _calcBankRate, _calcTenureYears * 12);
+    final subEmi = _emi(subLoan, effRate, _calcTenureYears * 12) + _emi(max(loan - subLoan, 0.0), _calcBankRate, _calcTenureYears * 12);
     final saving = normalEmi - subEmi;
 
     final labelCtrl = TextEditingController(text: 'PMAY Housing for All (${d.name})');
@@ -99,9 +164,9 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
         calcType: 'PMAY - Housing for All',
         inputs: {
           'loanAmount': loan,
-          'tenureYears': _tenureYears.toDouble(),
-          'bankRate': _bankRate,
-          'catIndex': _catData.keys.toList().indexOf(_selCat).toDouble(),
+          'tenureYears': _calcTenureYears.toDouble(),
+          'bankRate': _calcBankRate,
+          'catIndex': _catData.keys.toList().indexOf(_calcSelCat).toDouble(),
         },
         results: {
           'subsidyNPV': d.subsidy.toDouble(),
@@ -132,15 +197,15 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Calculations
-    final d = _catData[_selCat]!;
-    final loan = _loanAmountLakhs * 100000;
-    final subLoan = min(loan, d.maxLoan);
-    final effRate = max(_bankRate - d.subRate, 1.0);
-    final normalEmi = _emi(loan, _bankRate, _tenureYears * 12);
-    final subEmi = _emi(subLoan, effRate, _tenureYears * 12) + _emi(max(loan - subLoan, 0.0), _bankRate, _tenureYears * 12);
+    // Calculations using frozen _calc* values
+    final d = _catData[_calcSelCat]!;
+    final loan = _calcLoanAmountLakhs * 100000;
+    final subLoan = min(loan, d.maxLoan.toDouble());
+    final effRate = max(_calcBankRate - d.subRate, 1.0);
+    final normalEmi = _emi(loan, _calcBankRate, _calcTenureYears * 12);
+    final subEmi = _emi(subLoan, effRate, _calcTenureYears * 12) + _emi(max(loan - subLoan, 0.0), _calcBankRate, _calcTenureYears * 12);
     final saving = normalEmi - subEmi;
-    final interestTotal = max(normalEmi * _tenureYears * 12 - loan, 1.0);
+    final interestTotal = max(normalEmi * _calcTenureYears * 12 - loan, 1.0);
     final double subPct = (min((d.subsidy / interestTotal) * 100, 80.0)).clamp(1.0, 99.0);
 
     final numFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
@@ -272,19 +337,90 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
             children: [
               Text('PMAY Subsidy Parameters', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
               const SizedBox(height: 16),
-              _buildSliderRow('LOAN AMOUNT (₹ LAKH)', _loanAmountLakhs, 5.0, 100.0, 95, (v) => setState(() => _loanAmountLakhs = v)),
+              _buildSliderRow('LOAN AMOUNT (₹ LAKH)', _loanAmountLakhs, 5.0, 100.0, 95,
+                  (v) => setState(() => _loanAmountLakhs = v),
+                  hasError: _loanHasError),
               const SizedBox(height: 12),
-              _buildSliderRow('LOAN TENURE (YEARS)', _tenureYears.toDouble(), 5.0, 30.0, 25, (v) => setState(() => _tenureYears = v.toInt())),
+              _buildSliderRow('LOAN TENURE (YEARS)', _tenureYears.toDouble(), 5.0, 30.0, 25,
+                  (v) => setState(() => _tenureYears = v.toInt())),
               const SizedBox(height: 12),
-              _buildSliderRow('BANK INTEREST RATE (%)', _bankRate, 6.00, 15.00, 180, (v) => setState(() => _bankRate = v)),
+              _buildSliderRow('BANK INTEREST RATE (%)', _bankRate, 6.00, 15.00, 180,
+                  (v) => setState(() => _bankRate = v),
+                  hasError: _rateHasError),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _calculate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF046A38),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 3,
+                      ),
+                      icon: const Icon(Icons.calculate, size: 16),
+                      label: Text('🏠 Calculate PMAY Subsidy',
+                          style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 50,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: _reset,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? Colors.white12 : const Color(0xFFF0FDF4),
+                        foregroundColor: theme.getTextColor(context),
+                        side: BorderSide(color: theme.getBorderColor(context)),
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Icon(Icons.refresh, size: 20),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
 
         const SizedBox(height: 16),
 
-        // Result Panel
+        // Result Panel — only shown after Calculate is tapped
         if (_calculated) ...[
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
+
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -431,7 +567,7 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
     );
   }
 
-  Widget _buildSliderRow(String title, double val, double min, double max, int div, ValueChanged<double> onChanged) {
+  Widget _buildSliderRow(String title, double val, double min, double max, int div, ValueChanged<double> onChanged, {bool hasError = false}) {
     final theme = widget.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -439,14 +575,14 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: AppTextStyles.dmSans(size: 8.5, color: theme.getMutedColor(context), weight: FontWeight.w800)),
+            Text(title, style: AppTextStyles.dmSans(size: 8.5, color: hasError ? Colors.red : theme.getMutedColor(context), weight: FontWeight.w800)),
             Text(
               title.contains('RATE')
                   ? '${val.toStringAsFixed(2)}%'
                   : title.contains('TENURE')
                       ? '${val.toInt()} Yrs'
                       : '₹${val.toStringAsFixed(1)} Lakh',
-              style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: theme.getTextColor(context)),
+              style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: hasError ? Colors.red : theme.getTextColor(context)),
             ),
           ],
         ),
@@ -455,8 +591,8 @@ class _INPMAYHousingForAllState extends ConsumerState<INPMAYHousingForAll> {
           min: min,
           max: max,
           divisions: div,
-          activeColor: const Color(0xFF046A38),
-          inactiveColor: const Color(0xFF046A38).withValues(alpha: 0.15),
+          activeColor: hasError ? Colors.red : const Color(0xFF046A38),
+          inactiveColor: (hasError ? Colors.red : const Color(0xFF046A38)).withValues(alpha: 0.15),
           onChanged: onChanged,
         ),
       ],

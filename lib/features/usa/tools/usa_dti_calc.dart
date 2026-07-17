@@ -10,6 +10,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 import '../../../providers/calculator_draft_provider.dart';
+import '../../../../widgets/ads/native_ad_widget.dart';
 import '../../../core/utils/mortgage_math.dart';
 
 class USADtiCalc extends ConsumerStatefulWidget {
@@ -122,7 +123,8 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
     } else if (c == _otherDebtsController) {
       defaultVal = 0.0;
     }
-    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? defaultVal;
+    return double.tryParse(c.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+        defaultVal;
   }
 
   void _resetInputs() {
@@ -148,24 +150,37 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
 
   void _loadSavedCalculation(SavedCalc calc) {
     setState(() {
-      _primaryIncomeController.text = (calc.inputs['PrimaryIncome'] ?? 7500.0).toStringAsFixed(0);
-      _coIncomeController.text = (calc.inputs['CoIncome'] ?? 0.0).toStringAsFixed(0);
-      _otherIncomeController.text = (calc.inputs['OtherIncome'] ?? 0.0).toStringAsFixed(0);
-      _piPaymentController.text = (calc.inputs['PiPayment'] ?? 1650.0).toStringAsFixed(0);
-      _propTaxController.text = (calc.inputs['PropTax'] ?? 375.0).toStringAsFixed(0);
-      _hoInsController.text = (calc.inputs['HoIns'] ?? 150.0).toStringAsFixed(0);
+      _primaryIncomeController.text =
+          (calc.inputs['PrimaryIncome'] ?? 7500.0).toStringAsFixed(0);
+      _coIncomeController.text =
+          (calc.inputs['CoIncome'] ?? 0.0).toStringAsFixed(0);
+      _otherIncomeController.text =
+          (calc.inputs['OtherIncome'] ?? 0.0).toStringAsFixed(0);
+      _piPaymentController.text =
+          (calc.inputs['PiPayment'] ?? 1650.0).toStringAsFixed(0);
+      _propTaxController.text =
+          (calc.inputs['PropTax'] ?? 375.0).toStringAsFixed(0);
+      _hoInsController.text =
+          (calc.inputs['HoIns'] ?? 150.0).toStringAsFixed(0);
       _pmiController.text = (calc.inputs['Pmi'] ?? 0.0).toStringAsFixed(0);
       _hoaController.text = (calc.inputs['Hoa'] ?? 0.0).toStringAsFixed(0);
-      _autoLoanController.text = (calc.inputs['AutoLoan'] ?? 450.0).toStringAsFixed(0);
-      _studentLoanController.text = (calc.inputs['StudentLoan'] ?? 200.0).toStringAsFixed(0);
-      _creditCardsController.text = (calc.inputs['CreditCards'] ?? 75.0).toStringAsFixed(0);
-      _personalLoanController.text = (calc.inputs['PersonalLoan'] ?? 0.0).toStringAsFixed(0);
-      _otherDebtsController.text = (calc.inputs['OtherDebts'] ?? 0.0).toStringAsFixed(0);
+      _autoLoanController.text =
+          (calc.inputs['AutoLoan'] ?? 450.0).toStringAsFixed(0);
+      _studentLoanController.text =
+          (calc.inputs['StudentLoan'] ?? 200.0).toStringAsFixed(0);
+      _creditCardsController.text =
+          (calc.inputs['CreditCards'] ?? 75.0).toStringAsFixed(0);
+      _personalLoanController.text =
+          (calc.inputs['PersonalLoan'] ?? 0.0).toStringAsFixed(0);
+      _otherDebtsController.text =
+          (calc.inputs['OtherDebts'] ?? 0.0).toStringAsFixed(0);
       _showResults = true;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Loaded saved calculation!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+        content: Text('Loaded saved calculation!',
+            style: AppTextStyles.dmSans(
+                color: Colors.white, weight: FontWeight.w700)),
         backgroundColor: widget.theme.primaryColor,
         behavior: SnackBarBehavior.floating,
       ),
@@ -176,21 +191,47 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
     setState(() {
       _errors.clear();
 
-      final primary = double.tryParse(_primaryIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? -1.0;
-      final co = double.tryParse(_coIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-      final other = double.tryParse(_otherIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final primary = double.tryParse(_primaryIncomeController.text
+              .replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          -1.0;
+      final co = double.tryParse(
+              _coIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      final other = double.tryParse(
+              _otherIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
 
-      final pi = double.tryParse(_piPaymentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-      final tax = double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-      final ins = double.tryParse(_hoInsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-      final pmi = double.tryParse(_pmiController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-      final hoa = double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final pi = double.tryParse(
+              _piPaymentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      final tax = double.tryParse(
+              _propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      final ins = double.tryParse(
+              _hoInsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      final pmi = double.tryParse(
+              _pmiController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      final hoa = double.tryParse(
+              _hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
 
-      final auto = double.tryParse(_autoLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-      final student = double.tryParse(_studentLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-      final cc = double.tryParse(_creditCardsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-      final personal = double.tryParse(_personalLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-      final otherD = double.tryParse(_otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final auto = double.tryParse(
+              _autoLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      final student = double.tryParse(
+              _studentLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      final cc = double.tryParse(
+              _creditCardsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      final personal = double.tryParse(_personalLoanController.text
+              .replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      final otherD = double.tryParse(
+              _otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
 
       // Validation
       if (primary < 0) {
@@ -201,7 +242,7 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
 
       if (co < 0) _errors['coIncome'] = 'Enter valid amount';
       if (other < 0) _errors['otherIncome'] = 'Enter valid amount';
-      
+
       if (pi < 0) _errors['piPayment'] = 'Enter valid amount';
       if (tax < 0) _errors['propTax'] = 'Enter valid amount';
       if (ins < 0) _errors['hoIns'] = 'Enter valid amount';
@@ -273,7 +314,8 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
     final otherDebts = auto + student + cc + personal + otherD;
 
     final totalObligations = housing + otherDebts;
-    final backDTI = grossIncome > 0 ? (totalObligations / grossIncome * 100) : 0.0;
+    final backDTI =
+        grossIncome > 0 ? (totalObligations / grossIncome * 100) : 0.0;
 
     final labelCtrl = TextEditingController(text: 'DTI Calculator');
     final confirmed = await showDialog<bool>(
@@ -410,7 +452,8 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
 
     final totalObligations = housing + otherDebts;
     final frontDTI = grossIncome > 0 ? (housing / grossIncome * 100) : 0.0;
-    final backDTI = grossIncome > 0 ? (totalObligations / grossIncome * 100) : 0.0;
+    final backDTI =
+        grossIncome > 0 ? (totalObligations / grossIncome * 100) : 0.0;
 
     // Color and status determinations
     String dtiStatusText;
@@ -438,23 +481,39 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
       dtiStatusTextColor = const Color(0xFFB91C1C);
     }
 
-    final isDirty = _showResults && (
-      (double.tryParse(_primaryIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_primaryIncomeController] ?? 0.0) ||
-      (double.tryParse(_coIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_coIncomeController] ?? 0.0) ||
-      (double.tryParse(_otherIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_otherIncomeController] ?? 0.0) ||
-      (double.tryParse(_piPaymentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_piPaymentController] ?? 0.0) ||
-      (double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_propTaxController] ?? 0.0) ||
-      (double.tryParse(_hoInsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_hoInsController] ?? 0.0) ||
-      (double.tryParse(_pmiController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_pmiController] ?? 0.0) ||
-      (double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_hoaController] ?? 0.0) ||
-      (double.tryParse(_autoLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_autoLoanController] ?? 0.0) ||
-      (double.tryParse(_studentLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_studentLoanController] ?? 0.0) ||
-      (double.tryParse(_creditCardsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_creditCardsController] ?? 0.0) ||
-      (double.tryParse(_personalLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_personalLoanController] ?? 0.0) ||
-      (double.tryParse(_otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) != (_calcSnapshot[_otherDebtsController] ?? 0.0)
-    );
+    final isDirty = _showResults &&
+        ((double.tryParse(_primaryIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_primaryIncomeController] ?? 0.0) ||
+            (double.tryParse(_coIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_coIncomeController] ?? 0.0) ||
+            (double.tryParse(_otherIncomeController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_otherIncomeController] ?? 0.0) ||
+            (double.tryParse(_piPaymentController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_piPaymentController] ?? 0.0) ||
+            (double.tryParse(_propTaxController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_propTaxController] ?? 0.0) ||
+            (double.tryParse(_hoInsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_hoInsController] ?? 0.0) ||
+            (double.tryParse(_pmiController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_pmiController] ?? 0.0) ||
+            (double.tryParse(_hoaController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_hoaController] ?? 0.0) ||
+            (double.tryParse(_autoLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_autoLoanController] ?? 0.0) ||
+            (double.tryParse(_studentLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_studentLoanController] ?? 0.0) ||
+            (double.tryParse(_creditCardsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_creditCardsController] ?? 0.0) ||
+            (double.tryParse(_personalLoanController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0) !=
+                (_calcSnapshot[_personalLoanController] ?? 0.0) ||
+            (double.tryParse(_otherDebtsController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+                    0.0) !=
+                (_calcSnapshot[_otherDebtsController] ?? 0.0));
 
-    final savedCalcs = ref.watch(savedProvider).where((c) => c.country == 'USA' && c.calcType == 'DTI Calculator').toList();
+    final savedCalcs = ref
+        .watch(savedProvider)
+        .where((c) => c.country == 'USA' && c.calcType == 'DTI Calculator')
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,15 +523,31 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
           padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0F4FF),
-            border: Border.all(color: isDark ? Colors.white10 : const Color(0x1B1B3F72)),
+            border: Border.all(
+                color: isDark ? Colors.white10 : const Color(0x1B1B3F72)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: const Row(
             children: [
-              Expanded(child: _RateStripItem(label: '30-Yr Fixed', value: '6.82%', note: 'Freddie Mac')),
-              Expanded(child: _RateStripItem(label: 'FHA Max DTI', value: '43%', note: 'Standard')),
-              Expanded(child: _RateStripItem(label: 'Conv. Max DTI', value: '45%', note: 'Fannie Mae')),
-              Expanded(child: _RateStripItem(label: 'VA Max DTI', value: '41%', note: 'Guideline', isGold: true)),
+              Expanded(
+                  child: _RateStripItem(
+                      label: '30-Yr Fixed',
+                      value: '6.82%',
+                      note: 'Freddie Mac')),
+              Expanded(
+                  child: _RateStripItem(
+                      label: 'FHA Max DTI', value: '43%', note: 'Standard')),
+              Expanded(
+                  child: _RateStripItem(
+                      label: 'Conv. Max DTI',
+                      value: '45%',
+                      note: 'Fannie Mae')),
+              Expanded(
+                  child: _RateStripItem(
+                      label: 'VA Max DTI',
+                      value: '41%',
+                      note: 'Guideline',
+                      isGold: true)),
             ],
           ),
         ),
@@ -495,16 +570,27 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Primary Income', _primaryIncomeController, prefix: '\$', hint: 'Before taxes', errorText: _errors['primaryIncome']),
+                    child: _buildInputField(
+                        'Primary Income', _primaryIncomeController,
+                        prefix: '\$',
+                        hint: 'Before taxes',
+                        errorText: _errors['primaryIncome']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Co-Borrower', _coIncomeController, prefix: '\$', hint: 'Spouse / co-signer', errorText: _errors['coIncome']),
+                    child: _buildInputField('Co-Borrower', _coIncomeController,
+                        prefix: '\$',
+                        hint: 'Spouse / co-signer',
+                        errorText: _errors['coIncome']),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              _buildInputField('Other Income (Rental / Side / Alimony)', _otherIncomeController, prefix: '\$', hint: '75% rental counted · Must document 2-yr', errorText: _errors['otherIncome']),
+              _buildInputField('Other Income (Rental / Side / Alimony)',
+                  _otherIncomeController,
+                  prefix: '\$',
+                  hint: '75% rental counted · Must document 2-yr',
+                  errorText: _errors['otherIncome']),
             ],
           ),
         ),
@@ -527,11 +613,15 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('P&I Payment', _piPaymentController, prefix: '\$', errorText: _errors['piPayment']),
+                    child: _buildInputField('P&I Payment', _piPaymentController,
+                        prefix: '\$', errorText: _errors['piPayment']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Property Tax', _propTaxController, prefix: '\$', suffix: '/mo', errorText: _errors['propTax']),
+                    child: _buildInputField('Property Tax', _propTaxController,
+                        prefix: '\$',
+                        suffix: '/mo',
+                        errorText: _errors['propTax']),
                   ),
                 ],
               ),
@@ -539,16 +629,21 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Homeowners Ins.', _hoInsController, prefix: '\$', suffix: '/mo', errorText: _errors['hoIns']),
+                    child: _buildInputField('Homeowners Ins.', _hoInsController,
+                        prefix: '\$',
+                        suffix: '/mo',
+                        errorText: _errors['hoIns']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('PMI / MIP', _pmiController, prefix: '\$', suffix: '/mo', errorText: _errors['pmi']),
+                    child: _buildInputField('PMI / MIP', _pmiController,
+                        prefix: '\$', suffix: '/mo', errorText: _errors['pmi']),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              _buildInputField('HOA Fee', _hoaController, prefix: '\$', suffix: '/mo', errorText: _errors['hoa']),
+              _buildInputField('HOA Fee', _hoaController,
+                  prefix: '\$', suffix: '/mo', errorText: _errors['hoa']),
             ],
           ),
         ),
@@ -571,11 +666,18 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Auto Loan(s)', _autoLoanController, prefix: '\$', suffix: '/mo', errorText: _errors['autoLoan']),
+                    child: _buildInputField('Auto Loan(s)', _autoLoanController,
+                        prefix: '\$',
+                        suffix: '/mo',
+                        errorText: _errors['autoLoan']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Student Loans', _studentLoanController, prefix: '\$', suffix: '/mo', errorText: _errors['studentLoan']),
+                    child: _buildInputField(
+                        'Student Loans', _studentLoanController,
+                        prefix: '\$',
+                        suffix: '/mo',
+                        errorText: _errors['studentLoan']),
                   ),
                 ],
               ),
@@ -583,16 +685,27 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildInputField('Credit Cards', _creditCardsController, prefix: '\$', suffix: '/mo', errorText: _errors['creditCards']),
+                    child: _buildInputField(
+                        'Credit Cards', _creditCardsController,
+                        prefix: '\$',
+                        suffix: '/mo',
+                        errorText: _errors['creditCards']),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputField('Personal Loan', _personalLoanController, prefix: '\$', suffix: '/mo', errorText: _errors['personalLoan']),
+                    child: _buildInputField(
+                        'Personal Loan', _personalLoanController,
+                        prefix: '\$',
+                        suffix: '/mo',
+                        errorText: _errors['personalLoan']),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              _buildInputField('Other Obligations', _otherDebtsController, prefix: '\$', suffix: '/mo', errorText: _errors['otherDebts']),
+              _buildInputField('Other Obligations', _otherDebtsController,
+                  prefix: '\$',
+                  suffix: '/mo',
+                  errorText: _errors['otherDebts']),
             ],
           ),
         ),
@@ -614,7 +727,8 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFB91C1C).withValues(alpha: isDirty ? 0.40 : 0.20),
+                        color: const Color(0xFFB91C1C)
+                            .withValues(alpha: isDirty ? 0.40 : 0.20),
                         blurRadius: isDirty ? 16 : 8,
                         offset: const Offset(0, 4),
                       ),
@@ -623,7 +737,11 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                   alignment: Alignment.center,
                   child: Text(
                     '📊 Calculate My DTI Ratio',
-                    style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: Colors.white).copyWith(fontFamily: 'Georgia'),
+                    style: AppTextStyles.dmSans(
+                            size: 14,
+                            weight: FontWeight.w800,
+                            color: Colors.white)
+                        .copyWith(fontFamily: 'Georgia'),
                   ),
                 ),
               ),
@@ -638,7 +756,10 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                     if (!_showResults) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Please calculate before saving.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                          content: Text('Please calculate before saving.',
+                              style: AppTextStyles.dmSans(
+                                  color: Colors.white,
+                                  weight: FontWeight.w700)),
                           backgroundColor: Colors.red,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -651,13 +772,17 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     decoration: BoxDecoration(
                       color: theme.getCardColor(context),
-                      border: Border.all(color: theme.getBorderColor(context), width: 1.5),
+                      border: Border.all(
+                          color: theme.getBorderColor(context), width: 1.5),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       '💾 Save',
-                      style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                      style: AppTextStyles.dmSans(
+                          size: 13,
+                          weight: FontWeight.w800,
+                          color: theme.getTextColor(context)),
                     ),
                   ),
                 ),
@@ -679,7 +804,9 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               if (mounted) {
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text('All saved calculations cleared!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                    content: Text('All saved calculations cleared!',
+                        style: AppTextStyles.dmSans(
+                            color: Colors.white, weight: FontWeight.w700)),
                     backgroundColor: Colors.red,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -697,13 +824,18 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               final calc = savedCalcs[index];
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: theme.getCardColor(context),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: theme.getBorderColor(context)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
+                    BoxShadow(
+                        color:
+                            Colors.black.withValues(alpha: isDark ? 0.2 : 0.07),
+                        blurRadius: 14,
+                        offset: const Offset(0, 3)),
                   ],
                 ),
                 child: Row(
@@ -716,12 +848,18 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                           children: [
                             Text(
                               calc.label,
-                              style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context)).copyWith(fontFamily: 'Georgia'),
+                              style: AppTextStyles.dmSans(
+                                      size: 12,
+                                      weight: FontWeight.w800,
+                                      color: theme.getTextColor(context))
+                                  .copyWith(fontFamily: 'Georgia'),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               'Income ${CurrencyFormatter.compact(calc.inputs['PrimaryIncome'] ?? 0.0, symbol: '\$')}/mo · Housing ${CurrencyFormatter.compact(calc.results['HousingCost'] ?? 0.0, symbol: '\$')}/mo',
-                              style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context)),
+                              style: AppTextStyles.dmSans(
+                                  size: 9.5,
+                                  color: theme.getMutedColor(context)),
                             ),
                           ],
                         ),
@@ -739,7 +877,8 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                     const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(Icons.close, size: 16),
-                      color: theme.getMutedColor(context).withValues(alpha: 0.5),
+                      color:
+                          theme.getMutedColor(context).withValues(alpha: 0.5),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () async {
@@ -748,7 +887,10 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                         if (mounted) {
                           messenger.showSnackBar(
                             SnackBar(
-                              content: Text('Removed saved calculation!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                              content: Text('Removed saved calculation!',
+                                  style: AppTextStyles.dmSans(
+                                      color: Colors.white,
+                                      weight: FontWeight.w700)),
                               backgroundColor: Colors.red,
                               behavior: SnackBarBehavior.floating,
                             ),
@@ -775,13 +917,17 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                 const SizedBox(height: 10),
                 Text(
                   'Calculate Your DTI Ratio',
-                  style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                  style: AppTextStyles.dmSans(
+                      size: 13,
+                      weight: FontWeight.w800,
+                      color: theme.getTextColor(context)),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Enter your gross income, housing payments, and debts above.\nWe will calculate your front-end and back-end debt-to-income ratios.',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context)),
+                  style: AppTextStyles.dmSans(
+                      size: 10.5, color: theme.getMutedColor(context)),
                 ),
               ],
             ),
@@ -795,7 +941,8 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                 if (isDirty) ...[
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.amber.withValues(alpha: 0.15),
                       border: Border.all(color: Colors.amber),
@@ -803,19 +950,24 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 16),
+                        const Icon(Icons.warning_amber_rounded,
+                            color: Colors.amber, size: 16),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Inputs have changed. Tap "Calculate My DTI Ratio" to update results.',
-                            style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.white70 : const Color(0xFF0B1D3A), weight: FontWeight.w600),
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: isDark
+                                    ? Colors.white70
+                                    : const Color(0xFF0B1D3A),
+                                weight: FontWeight.w600),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ],
-
                 _buildSectionHeader('Your DTI Result', onReset: null),
                 const SizedBox(height: 8),
                 Container(
@@ -872,10 +1024,13 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                           ),
                           const SizedBox(width: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 11, vertical: 4),
                             decoration: BoxDecoration(
                               color: dtiStatusBg.withValues(alpha: 0.22),
-                              border: Border.all(color: dtiStatusTextColor.withValues(alpha: 0.35)),
+                              border: Border.all(
+                                  color: dtiStatusTextColor.withValues(
+                                      alpha: 0.35)),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -914,7 +1069,10 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                                   flex: (frontDTI * 10).round(),
                                   child: Container(
                                     decoration: const BoxDecoration(
-                                      gradient: LinearGradient(colors: [Color(0xFF1D4ED8), Color(0xFF1D4ED8)]),
+                                      gradient: LinearGradient(colors: [
+                                        Color(0xFF1D4ED8),
+                                        Color(0xFF1D4ED8)
+                                      ]),
                                     ),
                                   ),
                                 ),
@@ -923,14 +1081,19 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                                   flex: ((backDTI - frontDTI) * 10).round(),
                                   child: Container(
                                     decoration: const BoxDecoration(
-                                      gradient: LinearGradient(colors: [Color(0xFFD97706), Color(0xFFB45309)]),
+                                      gradient: LinearGradient(colors: [
+                                        Color(0xFFD97706),
+                                        Color(0xFFB45309)
+                                      ]),
                                     ),
                                   ),
                                 ),
                               if (100 - backDTI > 0)
                                 Expanded(
                                   flex: ((100 - backDTI) * 10).round(),
-                                  child: Container(color: Colors.white.withValues(alpha: 0.1)),
+                                  child: Container(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.1)),
                                 ),
                             ],
                           ),
@@ -941,16 +1104,22 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                         spacing: 12,
                         runSpacing: 6,
                         children: [
-                          _buildAllocLegendItem('Housing', const Color(0xFF1B3F72), '${frontDTI.toStringAsFixed(1)}%'),
-                          _buildAllocLegendItem('Other Debts', const Color(0xFFD97706), '${(backDTI - frontDTI).toStringAsFixed(1)}%'),
-                          _buildAllocLegendItem('Remaining', Colors.white30, '${max(0.0, 100 - backDTI).toStringAsFixed(1)}%'),
+                          _buildAllocLegendItem(
+                              'Housing',
+                              const Color(0xFF1B3F72),
+                              '${frontDTI.toStringAsFixed(1)}%'),
+                          _buildAllocLegendItem(
+                              'Other Debts',
+                              const Color(0xFFD97706),
+                              '${(backDTI - frontDTI).toStringAsFixed(1)}%'),
+                          _buildAllocLegendItem('Remaining', Colors.white30,
+                              '${max(0.0, 100 - backDTI).toStringAsFixed(1)}%'),
                         ],
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 _buildSectionHeader('Payment Breakdown', onReset: null),
                 const SizedBox(height: 8),
                 Container(
@@ -960,7 +1129,11 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                     border: Border.all(color: theme.getBorderColor(context)),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.07), blurRadius: 14, offset: const Offset(0, 3)),
+                      BoxShadow(
+                          color: Colors.black
+                              .withValues(alpha: isDark ? 0.2 : 0.07),
+                          blurRadius: 14,
+                          offset: const Offset(0, 3)),
                     ],
                   ),
                   child: Column(
@@ -968,12 +1141,15 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                       _buildBreakdownRow('Gross Monthly Income', grossIncome),
                       _buildBreakdownRow('Total Housing (PITI + HOA)', housing),
                       _buildBreakdownRow('Other Monthly Debts', otherDebts),
-                      _buildBreakdownRow('Total Monthly Obligations', totalObligations, isHighlighted: true),
+                      _buildBreakdownRow(
+                          'Total Monthly Obligations', totalObligations,
+                          isHighlighted: true),
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)]),
+                          gradient: const LinearGradient(
+                              colors: [Color(0xFF0B1D3A), Color(0xFF1B3F72)]),
                           borderRadius: BorderRadius.circular(11),
                         ),
                         child: Row(
@@ -981,11 +1157,18 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                           children: [
                             Text(
                               'Back-End DTI Ratio',
-                              style: AppTextStyles.dmSans(size: 11, color: Colors.white70, weight: FontWeight.w600),
+                              style: AppTextStyles.dmSans(
+                                  size: 11,
+                                  color: Colors.white70,
+                                  weight: FontWeight.w600),
                             ),
                             Text(
                               '${backDTI.toStringAsFixed(1)}%',
-                              style: AppTextStyles.dmSans(size: 16, color: Colors.white, weight: FontWeight.w800).copyWith(fontFamily: 'Georgia'),
+                              style: AppTextStyles.dmSans(
+                                      size: 16,
+                                      color: Colors.white,
+                                      weight: FontWeight.w800)
+                                  .copyWith(fontFamily: 'Georgia'),
                             ),
                           ],
                         ),
@@ -994,13 +1177,17 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                _buildSectionHeader('The 28/36 Rule — Lender Guidelines', onReset: null),
+                _buildSectionHeader('The 28/36 Rule — Lender Guidelines',
+                    onReset: null),
                 const SizedBox(height: 8),
                 const GridViewRules(),
                 const SizedBox(height: 20),
-
-                _buildSectionHeader('Lender DTI Limits (2025)', onReset: null),
+                const NativeAdWidget(
+                  screenName: 'usa_dti_calc',
+                  adType: 'mediumCard',
+                ),
+                const SizedBox(height: 20),
+                _buildSectionHeader('Lender DTI Limits (2026)', onReset: null),
                 const SizedBox(height: 8),
                 _buildLimitsList(),
               ],
@@ -1011,7 +1198,8 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
     );
   }
 
-  Widget _buildSectionHeader(String title, {VoidCallback? onReset, String resetLabel = 'Reset'}) {
+  Widget _buildSectionHeader(String title,
+      {VoidCallback? onReset, String resetLabel = 'Reset'}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1127,14 +1315,17 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                       style: AppTextStyles.dmSans(
                         size: 14,
                         weight: FontWeight.w800,
-                        color: hasError ? Colors.red : theme.getMutedColor(context),
+                        color: hasError
+                            ? Colors.red
+                            : theme.getMutedColor(context),
                       ),
                     ),
                   ),
                 Expanded(
                   child: TextField(
                     controller: controller,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     style: AppTextStyles.dmSans(
                       size: 15,
                       weight: FontWeight.w700,
@@ -1142,7 +1333,8 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                     ),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                     ),
                   ),
                 ),
@@ -1154,7 +1346,9 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
                       style: AppTextStyles.dmSans(
                         size: 12,
                         weight: FontWeight.w700,
-                        color: hasError ? Colors.red : theme.getMutedColor(context),
+                        color: hasError
+                            ? Colors.red
+                            : theme.getMutedColor(context),
                       ),
                     ),
                   ),
@@ -1177,8 +1371,6 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
     );
   }
 
-
-
   Widget _buildAllocLegendItem(String label, Color color, String val) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1191,22 +1383,26 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
         const SizedBox(width: 5),
         Text(
           '$label ',
-          style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.w700, color: Colors.white70),
+          style: AppTextStyles.dmSans(
+              size: 9.5, weight: FontWeight.w700, color: Colors.white70),
         ),
         Text(
           val,
-          style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.w800, color: Colors.white),
+          style: AppTextStyles.dmSans(
+              size: 9.5, weight: FontWeight.w800, color: Colors.white),
         ),
       ],
     );
   }
 
-  Widget _buildBreakdownRow(String label, double amount, {bool isHighlighted = false}) {
+  Widget _buildBreakdownRow(String label, double amount,
+      {bool isHighlighted = false}) {
     final theme = widget.theme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 9),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: theme.getBorderColor(context))),
+        border:
+            Border(bottom: BorderSide(color: theme.getBorderColor(context))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1215,7 +1411,9 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
             label,
             style: AppTextStyles.dmSans(
               size: 12,
-              color: isHighlighted ? theme.primaryColor : theme.getMutedColor(context),
+              color: isHighlighted
+                  ? theme.primaryColor
+                  : theme.getMutedColor(context),
               weight: isHighlighted ? FontWeight.w800 : FontWeight.w500,
             ),
           ),
@@ -1223,7 +1421,9 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
             CurrencyFormatter.format(amount),
             style: AppTextStyles.dmSans(
               size: isHighlighted ? 14 : 13,
-              color: isHighlighted ? const Color(0xFFB91C1C) : theme.getTextColor(context),
+              color: isHighlighted
+                  ? const Color(0xFFB91C1C)
+                  : theme.getTextColor(context),
               weight: FontWeight.w800,
             ).copyWith(fontFamily: 'Georgia'),
           ),
@@ -1235,10 +1435,26 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
   Widget _buildLimitsList() {
     final theme = widget.theme;
     final items = [
-      ('FHA Loan', 'Max 43% standard · Up to 57% with AUS · 31% front-end', '🏦'),
-      ('VA Loan', '41% guideline · No hard max · Residual income key qualifier', '🎖️'),
-      ('USDA Rural', '29% front · 41% back · GUS approval may allow more', '🌾'),
-      ('Jumbo Loan', 'Max 43% · Stricter reserves required · 720+ FICO typical', '🏢'),
+      (
+        'FHA Loan',
+        'Max 43% standard · Up to 57% with AUS · 31% front-end',
+        '🏦'
+      ),
+      (
+        'VA Loan',
+        '41% guideline · No hard max · Residual income key qualifier',
+        '🎖️'
+      ),
+      (
+        'USDA Rural',
+        '29% front · 41% back · GUS approval may allow more',
+        '🌾'
+      ),
+      (
+        'Jumbo Loan',
+        'Max 43% · Stricter reserves required · 720+ FICO typical',
+        '🏢'
+      ),
     ];
     return Column(
       children: items.map((item) {
@@ -1263,39 +1479,44 @@ class _USADtiCalcState extends ConsumerState<USADtiCalc> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: theme.getBgColor(context),
-                  borderRadius: BorderRadius.circular(11),
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: theme.getBgColor(context),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(item.$3, style: const TextStyle(fontSize: 17)),
                 ),
-                alignment: Alignment.center,
-                child: Text(item.$3, style: const TextStyle(fontSize: 17)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.$1,
-                      style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: theme.getTextColor(context)).copyWith(fontFamily: 'Georgia'),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.$2,
-                      style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context)),
-                    ),
-                  ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.$1,
+                        style: AppTextStyles.dmSans(
+                                size: 12.5,
+                                weight: FontWeight.w800,
+                                color: theme.getTextColor(context))
+                            .copyWith(fontFamily: 'Georgia'),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.$2,
+                        style: AppTextStyles.dmSans(
+                            size: 9.5, color: theme.getMutedColor(context)),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
-    }).toList(),
+        );
+      }).toList(),
     );
   }
 }
@@ -1319,7 +1540,11 @@ class _RateStripItem extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: AppTextStyles.dmSans(size: 8.5, color: Colors.grey[500]!, weight: FontWeight.w600, letterSpacing: 0.4),
+          style: AppTextStyles.dmSans(
+              size: 8.5,
+              color: Colors.grey[500]!,
+              weight: FontWeight.w600,
+              letterSpacing: 0.4),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 2),
@@ -1328,7 +1553,11 @@ class _RateStripItem extends StatelessWidget {
           style: AppTextStyles.dmSans(
             size: 15,
             weight: FontWeight.w800,
-            color: isGold ? const Color(0xFFD97706) : Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF061528),
+            color: isGold
+                ? const Color(0xFFD97706)
+                : Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : const Color(0xFF061528),
           ).copyWith(fontFamily: 'Georgia'),
           textAlign: TextAlign.center,
         ),
@@ -1349,10 +1578,38 @@ class GridViewRules extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rules = [
-      ('Excellent', '≤ 28%', 'Front-end ideal · All loan types', '✅ Best rates available', const Color(0xFFF0FDF4), const Color(0xFF16A34A)),
-      ('Good', '29–36%', 'Back-end conventional limit', '✅ Easily approved', const Color(0xFFF0FDF4), const Color(0xFF16A34A)),
-      ('Acceptable', '37–43%', 'FHA standard · Conv. w/ DU', '⚠️ Compensating factors', const Color(0xFFFFFBEB), const Color(0xFFD97706)),
-      ('High Risk', '44–50%', 'Conv. max w/ strong FICO', '🔴 Limited lenders', const Color(0xFFFEF2F2), const Color(0xFFB91C1C)),
+      (
+        'Excellent',
+        '≤ 28%',
+        'Front-end ideal · All loan types',
+        '✅ Best rates available',
+        const Color(0xFFF0FDF4),
+        const Color(0xFF16A34A)
+      ),
+      (
+        'Good',
+        '29–36%',
+        'Back-end conventional limit',
+        '✅ Easily approved',
+        const Color(0xFFF0FDF4),
+        const Color(0xFF16A34A)
+      ),
+      (
+        'Acceptable',
+        '37–43%',
+        'FHA standard · Conv. w/ DU',
+        '⚠️ Compensating factors',
+        const Color(0xFFFFFBEB),
+        const Color(0xFFD97706)
+      ),
+      (
+        'High Risk',
+        '44–50%',
+        'Conv. max w/ strong FICO',
+        '🔴 Limited lenders',
+        const Color(0xFFFEF2F2),
+        const Color(0xFFB91C1C)
+      ),
     ];
 
     return GridView.count(
@@ -1375,12 +1632,20 @@ class GridViewRules extends StatelessWidget {
             children: [
               Text(
                 r.$1.toUpperCase(),
-                style: AppTextStyles.dmSans(size: 9, weight: FontWeight.w800, color: Colors.grey[600]!, letterSpacing: 0.5),
+                style: AppTextStyles.dmSans(
+                    size: 9,
+                    weight: FontWeight.w800,
+                    color: Colors.grey[600]!,
+                    letterSpacing: 0.5),
               ),
               const SizedBox(height: 2),
               Text(
                 r.$2,
-                style: AppTextStyles.dmSans(size: 17, weight: FontWeight.w800, color: const Color(0xFF0B1D3A)).copyWith(fontFamily: 'Georgia'),
+                style: AppTextStyles.dmSans(
+                        size: 17,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFF0B1D3A))
+                    .copyWith(fontFamily: 'Georgia'),
               ),
               const SizedBox(height: 1),
               Text(
@@ -1390,7 +1655,8 @@ class GridViewRules extends StatelessWidget {
               const Spacer(),
               Text(
                 r.$4,
-                style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: r.$6),
+                style: AppTextStyles.dmSans(
+                    size: 8.5, weight: FontWeight.w800, color: r.$6),
               ),
             ],
           ),
@@ -1399,4 +1665,3 @@ class GridViewRules extends StatelessWidget {
     );
   }
 }
-

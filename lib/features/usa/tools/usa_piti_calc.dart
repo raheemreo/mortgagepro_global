@@ -12,6 +12,7 @@ import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
 import '../../../shared/widgets/live_rate_banner.dart';
 import '../../../providers/usa_rates_provider.dart';
+import '../../../../widgets/ads/native_ad_widget.dart';
 
 class USAPitiCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -944,6 +945,11 @@ class _USAPitiCalcState extends ConsumerState<USAPitiCalc> {
               _buildEquityStrip(loan, rate, term, isDark),
             ],
           ),
+        ),
+        const SizedBox(height: 20),
+        const NativeAdWidget(
+          screenName: 'usa_piti_calc',
+          adType: 'mediumCard',
         ),
         const SizedBox(height: 20),
 

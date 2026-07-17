@@ -25,6 +25,19 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
 
   String _goal = 'tenure'; // 'tenure', 'emi'
 
+  bool _hasCalculated = false;
+  double _calcLoan = 4500000;
+  double _calcRate = 8.50;
+  int _calcTenure = 18;
+  double _calcPrepay = 500000;
+  String _calcGoal = 'tenure';
+  final GlobalKey _resultsKey = GlobalKey();
+
+  bool _loanError = false;
+  bool _rateError = false;
+  bool _tenureError = false;
+  bool _prepayError = false;
+
   @override
   void initState() {
     super.initState();
@@ -33,7 +46,7 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
     _tenureController = TextEditingController(text: '18');
     _prepayController = TextEditingController(text: '500000');
 
-    // Add listeners to trigger state updates for calculations
+    // Add listeners to trigger state updates for inputs
     _loanController.addListener(_onInputChanged);
     _rateController.addListener(_onInputChanged);
     _tenureController.addListener(_onInputChanged);
@@ -58,6 +71,18 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
     setState(() {});
   }
 
+  bool _areInputsChanged() {
+    final loan = double.tryParse(_loanController.text.replaceAll(',', '')) ?? 0.0;
+    final rate = double.tryParse(_rateController.text) ?? 0.0;
+    final tenure = int.tryParse(_tenureController.text) ?? 0;
+    final prepay = double.tryParse(_prepayController.text.replaceAll(',', '')) ?? 0.0;
+    return loan != _calcLoan ||
+        rate != _calcRate ||
+        tenure != _calcTenure ||
+        prepay != _calcPrepay ||
+        _goal != _calcGoal;
+  }
+
   void _reset() {
     setState(() {
       _loanController.text = '4500000';
@@ -65,6 +90,16 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
       _tenureController.text = '18';
       _prepayController.text = '500000';
       _goal = 'tenure';
+      _hasCalculated = false;
+      _calcLoan = 4500000;
+      _calcRate = 8.50;
+      _calcTenure = 18;
+      _calcPrepay = 500000;
+      _calcGoal = 'tenure';
+      _loanError = false;
+      _rateError = false;
+      _tenureError = false;
+      _prepayError = false;
     });
   }
 
@@ -88,10 +123,10 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
   }
 
   void _saveCalculation() async {
-    final loan = double.tryParse(_loanController.text) ?? 4500000;
-    final rate = double.tryParse(_rateController.text) ?? 8.50;
-    final tenure = int.tryParse(_tenureController.text) ?? 18;
-    final prepay = double.tryParse(_prepayController.text) ?? 500000;
+    final loan = _calcLoan;
+    final rate = _calcRate;
+    final tenure = _calcTenure;
+    final prepay = _calcPrepay;
 
     final r = rate / 12 / 100;
     final n = tenure * 12;
@@ -101,7 +136,7 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
     final newLoan = loan - prepay;
     double newEmi, newN, intAfter;
 
-    if (_goal == 'tenure') {
+    if (_calcGoal == 'tenure') {
       newEmi = emi;
       final double fraction = newEmi - newLoan * r;
       if (fraction > 0 && newEmi > 0) {
@@ -173,7 +208,7 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
           'rate': rate,
           'tenure': tenure.toDouble(),
           'prepay': prepay,
-          'goal': _goal == 'tenure' ? 0.0 : 1.0,
+          'goal': _calcGoal == 'tenure' ? 0.0 : 1.0,
         },
         results: {
           'interestSaved': intSaved,
@@ -208,15 +243,20 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
     final tenure = int.tryParse(_tenureController.text) ?? 1;
     final prepay = double.tryParse(_prepayController.text) ?? 0.0;
 
-    final r = rate / 12 / 100;
-    final n = tenure * 12;
-    final emi = _calcEMI(loan, r, n);
+    final calcLoan = _calcLoan;
+    final calcRate = _calcRate;
+    final calcTenure = _calcTenure;
+    final calcPrepay = _calcPrepay;
+
+    final r = calcRate / 12 / 100;
+    final n = calcTenure * 12;
+    final emi = _calcEMI(calcLoan, r, n);
     final totalBefore = emi * n;
-    final intBefore = totalBefore - loan;
-    final newLoan = (loan - prepay).clamp(0.0, loan);
+    final intBefore = totalBefore - calcLoan;
+    final newLoan = (calcLoan - calcPrepay).clamp(0.0, calcLoan);
     double newEmi, newN, intAfter, totalAfter;
 
-    if (_goal == 'tenure') {
+    if (_calcGoal == 'tenure') {
       newEmi = emi;
       final double fraction = newEmi - newLoan * r;
       if (fraction > 0 && newEmi > 0) {
@@ -225,17 +265,17 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
         newN = n.toDouble();
       }
       intAfter = newEmi * newN - newLoan;
-      totalAfter = newLoan + intAfter + prepay;
+      totalAfter = newLoan + intAfter + calcPrepay;
     } else {
       newN = n.toDouble();
       newEmi = _calcEMI(newLoan, r, n);
       intAfter = newEmi * newN - newLoan;
-      totalAfter = newLoan + intAfter + prepay;
+      totalAfter = newLoan + intAfter + calcPrepay;
     }
 
     final intSaved = (intBefore - intAfter).clamp(0.0, intBefore);
-    final yearsSaved = ((n - newN) / 12).clamp(0.0, tenure.toDouble());
-    final roiMultiplier = prepay > 0 && (totalBefore - totalAfter) > 0 ? (totalBefore - totalAfter) / prepay : 0.0;
+    final yearsSaved = ((n - newN) / 12).clamp(0.0, calcTenure.toDouble());
+    final roiMultiplier = calcPrepay > 0 && (totalBefore - totalAfter) > 0 ? (totalBefore - totalAfter) / calcPrepay : 0.0;
 
     final now = DateTime.now();
     final formatMonthYear = DateFormat('MMM yyyy');
@@ -316,6 +356,7 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
                 max: 10000000,
                 divisions: 95,
                 displayValue: _fmtShort(loan),
+                hasError: _loanError,
               ),
               const SizedBox(height: 16),
 
@@ -327,6 +368,7 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
                 max: 15.00,
                 divisions: 170,
                 displayValue: '${rate.toStringAsFixed(2)}%',
+                hasError: _rateError,
               ),
               const SizedBox(height: 16),
 
@@ -338,6 +380,7 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
                 max: 30,
                 divisions: 29,
                 displayValue: '$tenure yr',
+                hasError: _tenureError,
               ),
               const SizedBox(height: 16),
 
@@ -349,6 +392,7 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
                 max: 5000000,
                 divisions: 98,
                 displayValue: _fmtShort(prepay),
+                hasError: _prepayError,
               ),
               const SizedBox(height: 16),
 
@@ -379,7 +423,56 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
               // Calculate Button
               ElevatedButton(
                 onPressed: () {
-                  setState(() {});
+                  setState(() {
+                    _loanError = false;
+                    _rateError = false;
+                    _tenureError = false;
+                    _prepayError = false;
+                  });
+
+                  final loanVal = double.tryParse(_loanController.text.replaceAll(',', ''));
+                  final rateVal = double.tryParse(_rateController.text);
+                  final tenureVal = int.tryParse(_tenureController.text);
+                  final prepayVal = double.tryParse(_prepayController.text.replaceAll(',', ''));
+
+                  bool hasErr = false;
+                  if (loanVal == null || loanVal <= 0) {
+                    setState(() => _loanError = true);
+                    hasErr = true;
+                  }
+                  if (rateVal == null || rateVal <= 0 || rateVal > 100) {
+                    setState(() => _rateError = true);
+                    hasErr = true;
+                  }
+                  if (tenureVal == null || tenureVal <= 0 || tenureVal > 40) {
+                    setState(() => _tenureError = true);
+                    hasErr = true;
+                  }
+                  if (prepayVal == null || prepayVal <= 0 || (loanVal != null && prepayVal > loanVal)) {
+                    setState(() => _prepayError = true);
+                    hasErr = true;
+                  }
+
+                  if (hasErr) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('⚠️ Please correct the invalid fields in red.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                        backgroundColor: Colors.red[800],
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    _hasCalculated = true;
+                    _calcLoan = loanVal!;
+                    _calcRate = rateVal!;
+                    _calcTenure = tenureVal!;
+                    _calcPrepay = prepayVal!;
+                    _calcGoal = _goal;
+                  });
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('⚡ Prepayment computed!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
@@ -388,6 +481,16 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_resultsKey.currentContext != null) {
+                      Scrollable.ensureVisible(
+                        _resultsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
@@ -407,183 +510,211 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        if (_hasCalculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        // Savings Hero
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF046A38), Color(0xFF07543A)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+          // Savings Hero
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF046A38), Color(0xFF07543A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
             ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'TOTAL INTEREST SAVED BY PREPAYMENT',
-                style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.5),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _fmt(intSaved),
-                style: AppTextStyles.dmSans(size: 34, weight: FontWeight.w800, color: const Color(0xFF86EFAC)),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildFoirBox('Years Saved', yearsSaved > 0 ? '${yearsSaved.toStringAsFixed(1)} Yrs' : '0 Yrs'),
-                  const SizedBox(width: 8),
-                  _buildFoirBox('New EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(newEmi)}"),
-                  const SizedBox(width: 8),
-                  _buildFoirBox('ROI on Prepay', '${roiMultiplier.toStringAsFixed(1)}x'),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Before vs After Card
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📋 Before vs After Prepayment', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  // Without Prepay
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        border: Border.all(color: const Color(0xFFFCA5A5), width: 1.5),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(4)),
-                            child: Text('WITHOUT PREPAY', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: const Color(0xFFEF4444))),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildCompareItem('Monthly EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(emi)}"),
-                          _buildCompareItem('Remaining Int', _fmtShort(intBefore)),
-                          _buildCompareItem('Total Outgo', _fmtShort(totalBefore)),
-                          _buildCompareItem('Close Date', befDateStr),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // With Prepay
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF5),
-                        border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(4)),
-                            child: Text('WITH PREPAYMENT', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: const Color(0xFF046A38))),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildCompareItem('Monthly EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(newEmi)}", isDarker: true),
-                          _buildCompareItem('Remaining Int', _fmtShort(intAfter), isDarker: true),
-                          _buildCompareItem('Total Outgo', _fmtShort(totalAfter), isDarker: true),
-                          _buildCompareItem('Close Date', aftDateStr, isDarker: true),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Prepayment Strategy Tips
-        Text('Prepayment Strategy Tips', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.4,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          children: [
-            _buildTipBox('📅', 'Prepay Early', 'Prepaying in yr 1–5 saves 3× more interest than yr 15–20'),
-            _buildTipBox('💵', 'Annual Bonus', 'Use annual bonus/increment for partial prepayment every year'),
-            _buildTipBox('🔄', 'Step-up EMI', 'Increase EMI by 5% each year matching income growth'),
-            _buildTipBox('🏦', 'No Penalty', 'RBI mandates zero prepayment penalty on floating rate loans'),
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        // Save Bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'TOTAL INTEREST SAVED BY PREPAYMENT',
+                  style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.5),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _fmt(intSaved),
+                  style: AppTextStyles.dmSans(size: 34, weight: FontWeight.w800, color: const Color(0xFF86EFAC)),
+                ),
+                const SizedBox(height: 16),
+                Row(
                   children: [
-                    Text('Save Prepayment Plan', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
-                    Text('Save interest savings analysis', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    _buildFoirBox('Years Saved', yearsSaved > 0 ? '${yearsSaved.toStringAsFixed(1)} Yrs' : '0 Yrs'),
+                    const SizedBox(width: 8),
+                    _buildFoirBox('New EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(newEmi)}"),
+                    const SizedBox(width: 8),
+                    _buildFoirBox('ROI on Prepay', '${roiMultiplier.toStringAsFixed(1)}x'),
                   ],
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Before vs After Card
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📋 Before vs After Prepayment', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    // Without Prepay
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          border: Border.all(color: const Color(0xFFFCA5A5), width: 1.5),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(4)),
+                              child: Text('WITHOUT PREPAY', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: const Color(0xFFEF4444))),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildCompareItem('Monthly EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(emi)}"),
+                            _buildCompareItem('Remaining Int', _fmtShort(intBefore)),
+                            _buildCompareItem('Total Outgo', _fmtShort(totalBefore)),
+                            _buildCompareItem('Close Date', befDateStr),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // With Prepay
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(4)),
+                              child: Text('WITH PREPAYMENT', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.w800, color: const Color(0xFF046A38))),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildCompareItem('Monthly EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(newEmi)}", isDarker: true),
+                            _buildCompareItem('Remaining Int', _fmtShort(intAfter), isDarker: true),
+                            _buildCompareItem('Total Outgo', _fmtShort(totalAfter), isDarker: true),
+                            _buildCompareItem('Close Date', aftDateStr, isDarker: true),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
-              ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Prepayment Strategy Tips
+          Text('Prepayment Strategy Tips', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1.4,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            children: [
+              _buildTipBox('📅', 'Prepay Early', 'Prepaying in yr 1–5 saves 3× more interest than yr 15–20'),
+              _buildTipBox('💵', 'Annual Bonus', 'Use annual bonus/increment for partial prepayment every year'),
+              _buildTipBox('🔄', 'Step-up EMI', 'Increase EMI by 5% each year matching income growth'),
+              _buildTipBox('🏦', 'No Penalty', 'RBI mandates zero prepayment penalty on floating rate loans'),
             ],
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Save Bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save Prepayment Plan', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
+                      Text('Save interest savings analysis', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -597,6 +728,7 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
     required double max,
     required int divisions,
     required String displayValue,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     final currentVal = double.tryParse(controller.text) ?? min;
@@ -659,11 +791,17 @@ class _INPrepaymentCalcState extends ConsumerState<INPrepaymentCalc> {
                   fillColor: theme.getBgColor(context),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.getBorderColor(context)),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : theme.getBorderColor(context),
+                      width: hasError ? 1.5 : 1.0,
+                    ),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                    borderSide: BorderSide(color: Color(0xFFFF6B00)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : const Color(0xFFFF6B00),
+                      width: hasError ? 2.0 : 1.5,
+                    ),
                   ),
                 ),
                 onSubmitted: (val) {

@@ -16,6 +16,7 @@ import '../../../providers/calculator_draft_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../models/calculator_draft.dart';
 import '../../../shared/widgets/workflow_continuation_card.dart';
+import '../../../../widgets/ads/native_ad_widget.dart';
 
 class USAMortgageCalcSheet extends ConsumerStatefulWidget {
   final double homePrice;
@@ -1066,6 +1067,11 @@ class _USAMortgageCalcState extends ConsumerState<USAMortgageCalc> {
               monthlyEst: MortgageMath.monthlyPayment(principal: loanAmt, annualRatePercent: 6.82, termYears: 30),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        const NativeAdWidget(
+          screenName: 'usa_mortgage_calc',
+          adType: 'mediumCard',
         ),
         const SizedBox(height: 16),
 

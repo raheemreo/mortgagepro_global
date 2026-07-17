@@ -24,6 +24,13 @@ class _IN80C24BGuideState extends ConsumerState<IN80C24BGuide> {
   double _other80C = 0.5; // In lakhs
   bool _isFirstHome = false;
 
+  bool _calculated = false;
+  double _calcGrossIncome = 15.0;
+  double _calcPrincipalPaid = 1.5;
+  double _calcInterestPaid = 2.5;
+  double _calcOther80C = 0.5;
+  bool _calcIsFirstHome = false;
+
   double _calcOldRegimeTax(double income, double deductions) {
     double taxable = max(income - deductions - 0.5, 0.0); // 50,000 standard deduction
     double tax = 0.0;
@@ -66,18 +73,54 @@ class _IN80C24BGuideState extends ConsumerState<IN80C24BGuide> {
     return tax * 1.04; // 4% cess
   }
 
+  void _calculate() {
+    setState(() {
+      _calculated = true;
+      _calcGrossIncome = _grossIncome;
+      _calcPrincipalPaid = _principalPaid;
+      _calcInterestPaid = _interestPaid;
+      _calcOther80C = _other80C;
+      _calcIsFirstHome = _isFirstHome;
+    });
+  }
+
+  bool _areInputsChanged() {
+    return _grossIncome != _calcGrossIncome ||
+        _principalPaid != _calcPrincipalPaid ||
+        _interestPaid != _calcInterestPaid ||
+        _other80C != _calcOther80C ||
+        _isFirstHome != _calcIsFirstHome;
+  }
+
+  void _reset() {
+    setState(() {
+      _grossIncome = 15.0;
+      _principalPaid = 1.5;
+      _interestPaid = 2.5;
+      _other80C = 0.5;
+      _isFirstHome = false;
+
+      _calculated = false;
+      _calcGrossIncome = 15.0;
+      _calcPrincipalPaid = 1.5;
+      _calcInterestPaid = 2.5;
+      _calcOther80C = 0.5;
+      _calcIsFirstHome = false;
+    });
+  }
+
   void _saveTaxCalc() async {
     final labelCtrl = TextEditingController(text: 'Home Loan Tax Benefits');
 
     // Math outputs
     const limit80C = 1.5;
-    final allowed80C = min(_principalPaid + _other80C, limit80C);
-    final allowed24b = min(_interestPaid, 2.0);
-    final allowed80EEA = _isFirstHome ? min(max(_interestPaid - 2.0, 0.0), 1.5) : 0.0;
+    final allowed80C = min(_calcPrincipalPaid + _calcOther80C, limit80C);
+    final allowed24b = min(_calcInterestPaid, 2.0);
+    final allowed80EEA = _calcIsFirstHome ? min(max(_calcInterestPaid - 2.0, 0.0), 1.5) : 0.0;
     final totalDeductions = allowed80C + allowed24b + allowed80EEA;
 
-    final taxOld = _calcOldRegimeTax(_grossIncome, totalDeductions);
-    final taxNew = _calcNewRegimeTax(_grossIncome);
+    final taxOld = _calcOldRegimeTax(_calcGrossIncome, totalDeductions);
+    final taxNew = _calcNewRegimeTax(_calcGrossIncome);
     final taxSavings = max(taxNew - taxOld, 0.0);
 
     final confirmed = await showDialog<bool>(
@@ -131,11 +174,11 @@ class _IN80C24BGuideState extends ConsumerState<IN80C24BGuide> {
         country: 'India',
         calcType: 'Section 80C & 24(b) Guide',
         inputs: {
-          'grossIncome': _grossIncome * 100000,
-          'principalPaid': _principalPaid * 100000,
-          'interestPaid': _interestPaid * 100000,
-          'other80C': _other80C * 100000,
-          'isFirstHome': _isFirstHome ? 1.0 : 0.0,
+          'grossIncome': _calcGrossIncome * 100000,
+          'principalPaid': _calcPrincipalPaid * 100000,
+          'interestPaid': _calcInterestPaid * 100000,
+          'other80C': _calcOther80C * 100000,
+          'isFirstHome': _calcIsFirstHome ? 1.0 : 0.0,
         },
         results: {
           'totalDeductions': totalDeductions * 100000,
@@ -164,17 +207,18 @@ class _IN80C24BGuideState extends ConsumerState<IN80C24BGuide> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Tax calculation math
+    // Tax calculation math based on frozen values
     const limit80C = 1.5;
-    final total80CPaid = _principalPaid + _other80C;
+    final total80CPaid = _calcPrincipalPaid + _calcOther80C;
     final allowed80C = min(total80CPaid, limit80C);
-    final allowed24b = min(_interestPaid, 2.0);
-    final allowed80EEA = _isFirstHome ? min(max(_interestPaid - 2.0, 0.0), 1.5) : 0.0;
+    final allowed24b = min(_calcInterestPaid, 2.0);
+    final allowed80EEA = _calcIsFirstHome ? min(max(_calcInterestPaid - 2.0, 0.0), 1.5) : 0.0;
     final totalDeductions = allowed80C + allowed24b + allowed80EEA;
 
-    final taxOld = _calcOldRegimeTax(_grossIncome, totalDeductions);
-    final taxNew = _calcNewRegimeTax(_grossIncome);
+    final taxOld = _calcOldRegimeTax(_calcGrossIncome, totalDeductions);
+    final taxNew = _calcNewRegimeTax(_calcGrossIncome);
     final taxSavings = max(taxNew - taxOld, 0.0);
 
     // Percentage for Donut visual
@@ -249,37 +293,6 @@ class _IN80C24BGuideState extends ConsumerState<IN80C24BGuide> {
           ),
         ),
 
-        // Tax Savings Banner
-        Container(
-          padding: const EdgeInsets.all(16),
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFECFDF5),
-            border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('YOUR HOME LOAN TAX ANNUAL SAVINGS',
-                  style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF07543A), weight: FontWeight.w800, letterSpacing: 0.5)),
-              const SizedBox(height: 4),
-              Text('₹${(taxSavings * 100000).toStringAsFixed(0)} /yr',
-                  style: AppTextStyles.playfair(size: 30, color: const Color(0xFF07543A), weight: FontWeight.w800)),
-              Text('Saved under Old Regime with total deductions of ${numFormat.format(totalDeductions * 100000)}',
-                  style: AppTextStyles.dmSans(size: 10, color: const Color(0xFF046A38))),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _resBox('Tax (Old Regime)', numFormat.format(taxOld * 100000)),
-                  const SizedBox(width: 8),
-                  _resBox('Tax (New Regime)', numFormat.format(taxNew * 100000)),
-                ],
-              ),
-            ],
-          ),
-        ),
-
         // Inputs Card
         Container(
           padding: const EdgeInsets.all(16),
@@ -322,65 +335,159 @@ class _IN80C24BGuideState extends ConsumerState<IN80C24BGuide> {
                   ),
                 ],
               ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _calculate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF046A38),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.flash_on, size: 16),
+                      label: Text('Calculate Tax Savings', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 50,
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: _reset,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: theme.getTextColor(context),
+                        side: BorderSide(color: theme.getBorderColor(context)),
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Icon(Icons.refresh, size: 20),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
 
-        // Deduction donut visual
-        Container(
-          padding: const EdgeInsets.all(16),
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Deductions Breakdown (Old Regime)',
-                  style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-              Row(
+        if (_calculated) ...[
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
                 children: [
-                  SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: CustomPaint(
-                      painter: _DeductionDonutPainter(pct: pctDeduction),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(const Color(0xFF046A38), 'Sec 24(b) Allowed', numFormat.format(allowed24b * 100000)),
-                        const SizedBox(height: 4),
-                        _legendRow(const Color(0xFFFF6B00), 'Sec 80C Allowed', numFormat.format(allowed80C * 100000)),
-                        const SizedBox(height: 4),
-                        _legendRow(const Color(0xFF1A3A8F), 'Sec 80EEA Allowed', numFormat.format(allowed80EEA * 100000)),
-                      ],
-                    ),
-                  )
                 ],
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton.icon(
-                  onPressed: _saveTaxCalc,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF046A38),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  icon: const Icon(Icons.save, color: Colors.white, size: 16),
-                  label: Text('Save Tax Calculation', style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w800)),
+            ),
+
+          // Tax Savings Banner
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('YOUR HOME LOAN TAX ANNUAL SAVINGS',
+                    style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF07543A), weight: FontWeight.w800, letterSpacing: 0.5)),
+                const SizedBox(height: 4),
+                Text('₹${(taxSavings * 100000).toStringAsFixed(0)} /yr',
+                    style: AppTextStyles.playfair(size: 30, color: const Color(0xFF07543A), weight: FontWeight.w800)),
+                Text('Saved under Old Regime with total deductions of ${numFormat.format(totalDeductions * 100000)}',
+                    style: AppTextStyles.dmSans(size: 10, color: const Color(0xFF046A38))),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _resBox('Tax (Old Regime)', numFormat.format(taxOld * 100000)),
+                    const SizedBox(width: 8),
+                    _resBox('Tax (New Regime)', numFormat.format(taxNew * 100000)),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+
+          // Deduction donut visual
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Deductions Breakdown (Old Regime)',
+                    style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: CustomPaint(
+                        painter: _DeductionDonutPainter(pct: pctDeduction),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _legendRow(const Color(0xFF046A38), 'Sec 24(b) Allowed', numFormat.format(allowed24b * 100000)),
+                          const SizedBox(height: 4),
+                          _legendRow(const Color(0xFFFF6B00), 'Sec 80C Allowed', numFormat.format(allowed80C * 100000)),
+                          const SizedBox(height: 4),
+                          _legendRow(const Color(0xFF1A3A8F), 'Sec 80EEA Allowed', numFormat.format(allowed80EEA * 100000)),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    onPressed: _saveTaxCalc,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF046A38),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.save, color: Colors.white, size: 16),
+                    label: Text('Save Tax Calculation', style: AppTextStyles.dmSans(size: 12, color: Colors.white, weight: FontWeight.w800)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         // Quick Slabs Table
         Text('Tax Slab Breakdown (New Regime vs Old)', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),

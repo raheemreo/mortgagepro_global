@@ -10,6 +10,7 @@ import '../../../core/utils/mortgage_math.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
+import '../../../../widgets/ads/native_ad_widget.dart';
 
 class USAAmortizationCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -624,6 +625,11 @@ class _USAAmortizationCalcState extends ConsumerState<USAAmortizationCalc> {
                   ),
                 ),
 
+                const SizedBox(height: 20),
+                const NativeAdWidget(
+                  screenName: 'usa_amortization_calc',
+                  adType: 'mediumCard',
+                ),
                 const SizedBox(height: 20),
                 _buildSectionHeader('Yearly Summary', onReset: null),
                 const SizedBox(height: 8),

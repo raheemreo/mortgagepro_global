@@ -36,6 +36,20 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
 
   bool _calculated = false;
 
+  // Validation error flags
+  bool _propValueError = false;
+  bool _sdRateError = false;
+  bool _regFeePctError = false;
+  bool _carpetAreaError = false;
+
+  // Frozen calculation inputs
+  double _calcPropValue = 4500000;
+  double _calcSdRate = 5.0;
+  double _calcRegFeePct = 1.0;
+  String _calcCityType = 'metro';
+  double _calcCarpetArea = 55.0;
+  String _calcSelectedType = 'uc';
+
   final Map<String, _GstPropTypeData> _typeData = {
     'uc': _GstPropTypeData(
       icon: '🏗️',
@@ -75,10 +89,20 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
     _regFeePctCtrl = TextEditingController(text: _regFeePct.toStringAsFixed(1));
     _carpetAreaCtrl =
         TextEditingController(text: _carpetArea.toStringAsFixed(0));
+
+    _propValueCtrl.addListener(_onInputChanged);
+    _sdRateCtrl.addListener(_onInputChanged);
+    _regFeePctCtrl.addListener(_onInputChanged);
+    _carpetAreaCtrl.addListener(_onInputChanged);
   }
 
   @override
   void dispose() {
+    _propValueCtrl.removeListener(_onInputChanged);
+    _sdRateCtrl.removeListener(_onInputChanged);
+    _regFeePctCtrl.removeListener(_onInputChanged);
+    _carpetAreaCtrl.removeListener(_onInputChanged);
+
     _propValueCtrl.dispose();
     _sdRateCtrl.dispose();
     _regFeePctCtrl.dispose();
@@ -87,15 +111,62 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
     super.dispose();
   }
 
+  void _onInputChanged() {
+    setState(() {});
+  }
+
+  bool _areInputsChanged() {
+    final propVal = double.tryParse(_propValueCtrl.text) ?? 0.0;
+    final sdVal = double.tryParse(_sdRateCtrl.text) ?? 0.0;
+    final regVal = double.tryParse(_regFeePctCtrl.text) ?? 0.0;
+    final carpetVal = double.tryParse(_carpetAreaCtrl.text) ?? 0.0;
+
+    return propVal != _calcPropValue ||
+        sdVal != _calcSdRate ||
+        regVal != _calcRegFeePct ||
+        carpetVal != _calcCarpetArea ||
+        _cityType != _calcCityType ||
+        _selectedType != _calcSelectedType;
+  }
+
+  void _reset() {
+    setState(() {
+      _propValue = 4500000;
+      _sdRate = 5.0;
+      _regFeePct = 1.0;
+      _cityType = 'metro';
+      _carpetArea = 55.0;
+      _selectedType = 'uc';
+
+      _propValueCtrl.text = '4500000';
+      _sdRateCtrl.text = '5.0';
+      _regFeePctCtrl.text = '1.0';
+      _carpetAreaCtrl.text = '55';
+
+      _calculated = false;
+      _propValueError = false;
+      _sdRateError = false;
+      _regFeePctError = false;
+      _carpetAreaError = false;
+
+      _calcPropValue = 4500000;
+      _calcSdRate = 5.0;
+      _calcRegFeePct = 1.0;
+      _calcCityType = 'metro';
+      _calcCarpetArea = 55.0;
+      _calcSelectedType = 'uc';
+    });
+  }
+
   void _saveGstCalculation() async {
-    final double gstRate = _typeData[_selectedType]!.rate / 100;
-    final gstAmt = _propValue * gstRate;
-    final sdAmt = _propValue * (_sdRate / 100);
-    final regAmt = _propValue * (_regFeePct / 100);
-    final totalAmt = _propValue + gstAmt + sdAmt + regAmt;
+    final double gstRate = _typeData[_calcSelectedType]!.rate / 100;
+    final gstAmt = _calcPropValue * gstRate;
+    final sdAmt = _calcPropValue * (_calcSdRate / 100);
+    final regAmt = _calcPropValue * (_calcRegFeePct / 100);
+    final totalAmt = _calcPropValue + gstAmt + sdAmt + regAmt;
     final extraAmt = gstAmt + sdAmt + regAmt;
 
-    final typeName = _typeData[_selectedType]!.name;
+    final typeName = _typeData[_calcSelectedType]!.name;
 
     final labelCtrl = TextEditingController(text: 'GST Outflow - $typeName');
 
@@ -163,12 +234,12 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
         country: 'India',
         calcType: 'Property GST Outflow',
         inputs: {
-          'propertyValue': _propValue,
-          'gstRate': _typeData[_selectedType]!.rate,
-          'stampDutyRate': _sdRate,
-          'registrationRate': _regFeePct,
-          'carpetArea': _carpetArea,
-          'isMetro': _cityType == 'metro' ? 1.0 : 0.0,
+          'propertyValue': _calcPropValue,
+          'gstRate': _typeData[_calcSelectedType]!.rate,
+          'stampDutyRate': _calcSdRate,
+          'registrationRate': _calcRegFeePct,
+          'carpetArea': _calcCarpetArea,
+          'isMetro': _calcCityType == 'metro' ? 1.0 : 0.0,
         },
         results: {
           'gstAmount': gstAmt,
@@ -213,8 +284,56 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
 
   void _calculateAndScroll() {
     setState(() {
-      _calculated = true;
+      _propValueError = false;
+      _sdRateError = false;
+      _regFeePctError = false;
+      _carpetAreaError = false;
     });
+
+    final propVal = double.tryParse(_propValueCtrl.text) ?? 0.0;
+    final sdVal = double.tryParse(_sdRateCtrl.text) ?? 0.0;
+    final regVal = double.tryParse(_regFeePctCtrl.text) ?? 0.0;
+    final carpetVal = double.tryParse(_carpetAreaCtrl.text) ?? 0.0;
+
+    bool hasErr = false;
+    if (propVal <= 0) {
+      setState(() => _propValueError = true);
+      hasErr = true;
+    }
+    if (sdVal < 0 || sdVal > 50) {
+      setState(() => _sdRateError = true);
+      hasErr = true;
+    }
+    if (regVal < 0 || regVal > 50) {
+      setState(() => _regFeePctError = true);
+      hasErr = true;
+    }
+    if (carpetVal <= 0) {
+      setState(() => _carpetAreaError = true);
+      hasErr = true;
+    }
+
+    if (hasErr) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('⚠️ Please correct the invalid fields in red.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+          backgroundColor: Colors.red[800],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcPropValue = propVal;
+      _calcSdRate = sdVal;
+      _calcRegFeePct = regVal;
+      _calcCarpetArea = carpetVal;
+      _calcCityType = _cityType;
+      _calcSelectedType = _selectedType;
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = _resultPanelKey.currentContext;
       if (context != null) {
@@ -230,11 +349,11 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final double gstRate = _typeData[_selectedType]!.rate / 100;
-    final gstAmt = _propValue * gstRate;
-    final sdAmt = _propValue * (_sdRate / 100);
-    final regAmt = _propValue * (_regFeePct / 100);
-    final totalAmt = _propValue + gstAmt + sdAmt + regAmt;
+    final double gstRate = _typeData[_calcSelectedType]!.rate / 100;
+    final gstAmt = _calcPropValue * gstRate;
+    final sdAmt = _calcPropValue * (_calcSdRate / 100);
+    final regAmt = _calcPropValue * (_calcRegFeePct / 100);
+    final totalAmt = _calcPropValue + gstAmt + sdAmt + regAmt;
     final extraAmt = gstAmt + sdAmt + regAmt;
 
     return Column(
@@ -373,11 +492,24 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('📊 GST CALCULATION',
-                  style: AppTextStyles.dmSans(
-                      size: 8.5,
-                      color: Colors.white70,
-                      weight: FontWeight.w700)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('📊 GST CALCULATION',
+                      style: AppTextStyles.dmSans(
+                          size: 8.5,
+                          color: Colors.white70,
+                          weight: FontWeight.w700)),
+                  GestureDetector(
+                    onTap: _reset,
+                    child: Text('Reset ↺',
+                        style: AppTextStyles.dmSans(
+                            size: 11,
+                            color: const Color(0xFFFFDEA0),
+                            weight: FontWeight.w700)),
+                  ),
+                ],
+              ),
               const SizedBox(height: 14),
 
               // Property Value synced text-slider
@@ -388,6 +520,7 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
                 min: 500000,
                 max: 50000000, // 5 Cr max
                 prefix: '₹ ',
+                hasError: _propValueError,
                 onChangedText: (v) {
                   setState(() {
                     _propValue = v;
@@ -413,6 +546,7 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
                       min: 0.0,
                       max: 15.0,
                       suffix: '%',
+                      hasError: _sdRateError,
                       onChangedText: (v) {
                         setState(() {
                           _sdRate = v;
@@ -435,6 +569,7 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
                       min: 0.0,
                       max: 5.0,
                       suffix: '%',
+                      hasError: _regFeePctError,
                       onChangedText: (v) {
                         setState(() {
                           _regFeePct = v;
@@ -511,6 +646,7 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
                       min: 10.0,
                       max: 300.0,
                       suffix: ' sqm',
+                      hasError: _carpetAreaError,
                       onChangedText: (v) {
                         setState(() {
                           _carpetArea = v;
@@ -551,10 +687,37 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
         ),
         const SizedBox(height: 20),
 
-        // Calculated Results Card
-        if (_calculated)
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultPanelKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate GST & Total Cost to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultPanelKey, height: 0),
+
+          // Calculated Results Card
           Container(
-            key: _resultPanelKey,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: theme.getCardColor(context),
@@ -575,7 +738,7 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
                   children: [
                     Expanded(
                       child: Text(
-                        '📊 ${_typeData[_selectedType]!.name}',
+                        '📊 ${_typeData[_calcSelectedType]!.name}',
                         style: AppTextStyles.dmSans(
                             size: 12,
                             weight: FontWeight.w800,
@@ -618,26 +781,26 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
                     _resBoxSummary(
                         'GST Amount',
                         _fmt(gstAmt),
-                        '${_typeData[_selectedType]!.rate.toStringAsFixed(0)}% GST rate',
+                        '${_typeData[_calcSelectedType]!.rate.toStringAsFixed(0)}% GST rate',
                         const Color(0xFFFF6B00),
                         context,
                         highlight: true),
                     _resBoxSummary(
                         'Property Value',
-                        _fmt(_propValue),
+                        _fmt(_calcPropValue),
                         'Agreement Value',
                         theme.getTextColor(context),
                         context),
                     _resBoxSummary(
                         'Stamp Duty',
                         _fmt(sdAmt),
-                        '${_sdRate.toStringAsFixed(1)}% state rate',
+                        '${_calcSdRate.toStringAsFixed(1)}% state rate',
                         const Color(0xFF0B1F48),
                         context),
                     _resBoxSummary(
                         'Registration',
                         _fmt(regAmt),
-                        '${_regFeePct.toStringAsFixed(1)}% SRO rate',
+                        '${_calcRegFeePct.toStringAsFixed(1)}% SRO rate',
                         const Color(0xFF046A38),
                         context),
                     _resBoxSummary('Total Outflow', _fmt(totalAmt),
@@ -662,7 +825,7 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
                 const SizedBox(height: 12),
                 _costBreakdownBar(
                     'Property Value',
-                    _propValue,
+                    _calcPropValue,
                     totalAmt,
                     const LinearGradient(
                         colors: [Color(0xFF1A3A8F), Color(0xFF0D9488)])),
@@ -687,102 +850,103 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
               ],
             ),
           ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-        // GST Rates Table
-        Text('GST Rates — All Property Types',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 8),
+          // GST Rates Table
+          Text('GST Rates — All Property Types',
+              style: AppTextStyles.playfair(
+                  size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 8),
 
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            border: Border.all(color: theme.getBorderColor(context)),
-            borderRadius: BorderRadius.circular(18),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              border: Border.all(color: theme.getBorderColor(context)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📋 India GST on Real Estate (2025)',
+                    style: AppTextStyles.dmSans(
+                        size: 11,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context))),
+                const SizedBox(height: 12),
+                _gstRateTableRow(
+                    '🏗️',
+                    'Under-Construction (Standard)',
+                    'New flat/apartment before receiving OC',
+                    '5%',
+                    const Color(0xFFFF6B00)),
+                _gstRateTableRow(
+                    '🏘️',
+                    'Affordable Housing',
+                    'Metro ≤60 sqm, Non-metro ≤90 sqm, Value ≤₹45L',
+                    '1%',
+                    const Color(0xFF1D4ED8)),
+                _gstRateTableRow(
+                    '🏠',
+                    'Ready Possession / Resale',
+                    'OC received or resale — GST exempt',
+                    'NIL',
+                    const Color(0xFF046A38)),
+                _gstRateTableRow(
+                    '🗺️',
+                    'Plot / Land Purchase',
+                    'Bare land purchase — GST exempt',
+                    'NIL',
+                    const Color(0xFF046A38)),
+                _gstRateTableRow(
+                    '🏢',
+                    'Commercial Property (UC)',
+                    'Under-construction commercial spaces (offices/shops)',
+                    '12%',
+                    const Color(0xFFC2410C)),
+                _gstRateTableRow(
+                    '🏬',
+                    'Long-term Lease (>30 yrs)',
+                    'Long-term lease treated as sale of rights',
+                    '18%',
+                    const Color(0xFF9A3412)),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📋 India GST on Real Estate (2025)',
-                  style: AppTextStyles.dmSans(
-                      size: 11,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 12),
-              _gstRateTableRow(
-                  '🏗️',
-                  'Under-Construction (Standard)',
-                  'New flat/apartment before receiving OC',
-                  '5%',
-                  const Color(0xFFFF6B00)),
-              _gstRateTableRow(
-                  '🏘️',
-                  'Affordable Housing',
-                  'Metro ≤60 sqm, Non-metro ≤90 sqm, Value ≤₹45L',
-                  '1%',
-                  const Color(0xFF1D4ED8)),
-              _gstRateTableRow(
-                  '🏠',
-                  'Ready Possession / Resale',
-                  'OC received or resale — GST exempt',
-                  'NIL',
-                  const Color(0xFF046A38)),
-              _gstRateTableRow(
-                  '🗺️',
-                  'Plot / Land Purchase',
-                  'Bare land purchase — GST exempt',
-                  'NIL',
-                  const Color(0xFF046A38)),
-              _gstRateTableRow(
-                  '🏢',
-                  'Commercial Property (UC)',
-                  'Under-construction commercial spaces (offices/shops)',
-                  '12%',
-                  const Color(0xFFC2410C)),
-              _gstRateTableRow(
-                  '🏬',
-                  'Long-term Lease (>30 yrs)',
-                  'Long-term lease treated as sale of rights',
-                  '18%',
-                  const Color(0xFF9A3412)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-        // Tips Card
-        Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFDEA0).withValues(alpha: 0.12),
-            border: Border.all(
-                color: const Color(0xFFFFDEA0).withValues(alpha: 0.3)),
-            borderRadius: BorderRadius.circular(17),
+          // Tips Card
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFDEA0).withValues(alpha: 0.12),
+              border: Border.all(
+                  color: const Color(0xFFFFDEA0).withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(17),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📌 Key GST on Property Facts (India 2025)',
+                    style: AppTextStyles.dmSans(
+                        size: 11.5,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFF9A3412))),
+                const SizedBox(height: 8),
+                _tipRow(
+                    'GST is applicable only on under-construction properties. Ready-to-move properties (with OC) are exempt.'),
+                _tipRow(
+                    'ITC (Input Tax Credit) is NOT available to home buyers — only builders can claim ITC.'),
+                _tipRow(
+                    'GST is charged on the total agreement value including parking, club fees, etc.'),
+                _tipRow(
+                    'Affordable housing: carpet area ≤60 sqm in metro (Delhi NCR, Mumbai, Bengaluru, Chennai, Hyderabad, Kolkata) and ≤90 sqm in non-metro AND value ≤₹45 Lakh.'),
+                _tipRow(
+                    'Stamp duty and registration are calculated on the circle rate or agreement value, whichever is higher — separate from GST.'),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📌 Key GST on Property Facts (India 2025)',
-                  style: AppTextStyles.dmSans(
-                      size: 11.5,
-                      weight: FontWeight.w800,
-                      color: const Color(0xFF9A3412))),
-              const SizedBox(height: 8),
-              _tipRow(
-                  'GST is applicable only on under-construction properties. Ready-to-move properties (with OC) are exempt.'),
-              _tipRow(
-                  'ITC (Input Tax Credit) is NOT available to home buyers — only builders can claim ITC.'),
-              _tipRow(
-                  'GST is charged on the total agreement value including parking, club fees, etc.'),
-              _tipRow(
-                  'Affordable housing: carpet area ≤60 sqm in metro (Delhi NCR, Mumbai, Bengaluru, Chennai, Hyderabad, Kolkata) and ≤90 sqm in non-metro AND value ≤₹45 Lakh.'),
-              _tipRow(
-                  'Stamp duty and registration are calculated on the circle rate or agreement value, whichever is higher — separate from GST.'),
-            ],
-          ),
-        ),
+        ],
       ],
     );
   }
@@ -824,6 +988,7 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
     String suffix = '',
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
+    bool hasError = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -851,7 +1016,10 @@ class _INGSTPropertyState extends ConsumerState<INGSTProperty> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.06),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            border: Border.all(
+              color: hasError ? Colors.red : Colors.white.withValues(alpha: 0.18),
+              width: hasError ? 1.5 : 1.0,
+            ),
             borderRadius: BorderRadius.circular(10),
           ),
           child: TextFormField(

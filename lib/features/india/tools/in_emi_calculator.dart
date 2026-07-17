@@ -22,6 +22,12 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
   double _ratePercent = 8.50;
   int _termYears = 20;
 
+  bool _hasCalculated = false;
+  double _calcLoanAmount = 5000000;
+  double _calcRatePercent = 8.50;
+  int _calcTermYears = 20;
+  final GlobalKey _resultsKey = GlobalKey();
+
   final List<Map<String, dynamic>> _banks = const [
     {'icon': '🏦', 'name': 'SBI Home Loan', 'rate': 8.50, 'type': 'PSU Bank · Floating'},
     {'icon': '🏛️', 'name': 'HDFC Bank', 'rate': 8.70, 'type': 'Private · Floating'},
@@ -31,11 +37,21 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
     {'icon': '🔶', 'name': 'Bajaj HFL', 'rate': 8.55, 'type': 'NBFC · Floating'},
   ];
 
+  bool _areInputsChanged() {
+    return _loanAmount != _calcLoanAmount ||
+        _ratePercent != _calcRatePercent ||
+        _termYears != _calcTermYears;
+  }
+
   void _reset() {
     setState(() {
       _loanAmount = 5000000;
       _ratePercent = 8.50;
       _termYears = 20;
+      _hasCalculated = false;
+      _calcLoanAmount = 5000000;
+      _calcRatePercent = 8.50;
+      _calcTermYears = 20;
     });
   }
 
@@ -51,9 +67,9 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
   }
 
   void _saveCalculation() async {
-    final emi = _calcEMI(_loanAmount, _ratePercent, _termYears * 12);
-    final totalPay = emi * _termYears * 12;
-    final totalInt = totalPay - _loanAmount;
+    final emi = _calcEMI(_calcLoanAmount, _calcRatePercent, _calcTermYears * 12);
+    final totalPay = emi * _calcTermYears * 12;
+    final totalInt = totalPay - _calcLoanAmount;
 
     final labelCtrl = TextEditingController(text: 'India Home Loan EMI');
     final confirmed = await showDialog<bool>(
@@ -67,7 +83,7 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saving: EMI ${_fmt(emi)}/mo · Amount ${_fmt(_loanAmount)}',
+            Text('Saving: EMI ${_fmt(emi)}/mo · Amount ${_fmt(_calcLoanAmount)}',
                 style: AppTextStyles.dmSans(size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
             TextField(
@@ -107,9 +123,9 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
         country: 'India',
         calcType: 'EMI Calculator',
         inputs: {
-          'loanAmount': _loanAmount,
-          'rate': _ratePercent,
-          'termYears': _termYears.toDouble(),
+          'loanAmount': _calcLoanAmount,
+          'rate': _calcRatePercent,
+          'termYears': _calcTermYears.toDouble(),
         },
         results: {
           'emi': emi,
@@ -139,9 +155,9 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final emi = _calcEMI(_loanAmount, _ratePercent, _termYears * 12);
-    final totalPay = emi * _termYears * 12;
-    final totalInt = totalPay - _loanAmount;
+    final emi = _calcEMI(_calcLoanAmount, _calcRatePercent, _calcTermYears * 12);
+    final totalPay = emi * _calcTermYears * 12;
+    final totalInt = totalPay - _calcLoanAmount;
     final intRatio = totalPay > 0 ? (totalInt / totalPay) : 0.0;
 
     return Column(
@@ -294,6 +310,13 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
               // Calculate EMI Button
               ElevatedButton(
                 onPressed: () {
+                  setState(() {
+                    _hasCalculated = true;
+                    _calcLoanAmount = _loanAmount;
+                    _calcRatePercent = _ratePercent;
+                    _calcTermYears = _termYears;
+                  });
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('⚡ EMI calculation updated!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
@@ -302,6 +325,16 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_resultsKey.currentContext != null) {
+                      Scrollable.ensureVisible(
+                        _resultsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
@@ -327,190 +360,218 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
           ),
         ),
 
-        const SizedBox(height: 16),
-
-        // Result Hero Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('YOUR MONTHLY EMI', style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.8)),
-              const SizedBox(height: 4),
-              Text(
-                NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(emi),
-                style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _resultBox('Principal', _fmt(_loanAmount)),
-                  const SizedBox(width: 8),
-                  _resultBox('Total Interest', _fmt(totalInt)),
-                  const SizedBox(width: 8),
-                  _resultBox('Total Amount', _fmt(totalPay)),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Pie (Donut) Chart Breakdown
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 Payment Breakdown', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        const CircularProgressIndicator(
-                          value: 1.0,
-                          strokeWidth: 16,
-                          color: Color(0xFFE05F00),
-                        ),
-                        CircularProgressIndicator(
-                          value: intRatio,
-                          strokeWidth: 16,
-                          color: const Color(0xFF1A3A8F),
-                        ),
-                        Text('${(intRatio * 100).round()}%', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(const Color(0xFFE05F00), 'Principal Amount', _fmt(_loanAmount)),
-                        const SizedBox(height: 8),
-                        _legendRow(const Color(0xFF1A3A8F), 'Total Interest', _fmt(totalInt)),
-                        const SizedBox(height: 8),
-                        _legendRow(Colors.grey, 'Interest Ratio', '${(intRatio * 100).round()}% of outgo'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Bank Rate Comparison
-        Text('Bank Rate Comparison', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Column(
-          children: _banks.map((b) {
-            final bRate = b['rate'] as double;
-            final bEmi = _calcEMI(_loanAmount, bRate, _termYears * 12);
-            final bTotal = bEmi * _termYears * 12;
-            final barW = ((bRate - 8.0) / (10.0 - 8.0)).clamp(0.1, 1.0);
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
+        if (_hasCalculated) ...[
+          const SizedBox(height: 16),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: theme.getBorderColor(context)),
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
               child: Row(
                 children: [
-                  Text(b['icon'] as String, style: const TextStyle(fontSize: 22)),
-                  const SizedBox(width: 10),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(b['name'] as String, style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
-                        Text('EMI ${NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(bEmi)} · Total ${_fmt(bTotal)}',
-                            style: AppTextStyles.dmSans(size: 10, color: theme.getMutedColor(context))),
-                        const SizedBox(height: 4),
-                        Container(
-                          height: 4,
-                          decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(2)),
-                          alignment: Alignment.centerLeft,
-                          child: FractionallySizedBox(
-                            widthFactor: barW,
-                            child: Container(decoration: BoxDecoration(color: const Color(0xFFE05F00), borderRadius: BorderRadius.circular(2))),
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Text('${bRate.toStringAsFixed(2)}%', style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: const Color(0xFFE05F00))),
                 ],
               ),
-            );
-          }).toList(),
-        ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        const SizedBox(height: 16),
-
-        // Save bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Result Hero Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('YOUR MONTHLY EMI', style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.8)),
+                const SizedBox(height: 4),
+                Text(
+                  NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(emi),
+                  style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                Row(
                   children: [
-                    Text('Save This Calculation', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
-                    Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    _resultBox('Principal', _fmt(_calcLoanAmount)),
+                    const SizedBox(width: 8),
+                    _resultBox('Total Interest', _fmt(totalInt)),
+                    const SizedBox(width: 8),
+                    _resultBox('Total Amount', _fmt(totalPay)),
                   ],
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+
+          const SizedBox(height: 16),
+
+          // Pie (Donut) Chart Breakdown
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📊 Payment Breakdown', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const CircularProgressIndicator(
+                            value: 1.0,
+                            strokeWidth: 16,
+                            color: Color(0xFFE05F00),
+                          ),
+                          CircularProgressIndicator(
+                            value: intRatio,
+                            strokeWidth: 16,
+                            color: const Color(0xFF1A3A8F),
+                          ),
+                          Text('${(intRatio * 100).round()}%', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _buildLegendRow(const Color(0xFFE05F00), 'Principal Amount', _fmt(_calcLoanAmount)),
+                          const SizedBox(height: 8),
+                          _buildLegendRow(const Color(0xFF1A3A8F), 'Total Interest', _fmt(totalInt)),
+                          const SizedBox(height: 8),
+                          _buildLegendRow(Colors.grey, 'Interest Ratio', '${(intRatio * 100).round()}% of outgo'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Bank Rate Comparison
+          Text('Bank Rate Comparison', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          Column(
+            children: _banks.map((b) {
+              final bRate = b['rate'] as double;
+              final bEmi = _calcEMI(_calcLoanAmount, bRate, _calcTermYears * 12);
+              final bTotal = bEmi * _calcTermYears * 12;
+              final barW = ((bRate - 8.0) / (10.0 - 8.0)).clamp(0.1, 1.0);
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.getCardColor(context),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.getBorderColor(context)),
+                ),
+                child: Row(
+                  children: [
+                    Text(b['icon'] as String, style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(b['name'] as String, style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                          Text('EMI ${NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(bEmi)} · Total ${_fmt(bTotal)}',
+                              style: AppTextStyles.dmSans(size: 10, color: theme.getMutedColor(context))),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 4,
+                            decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(2)),
+                            alignment: Alignment.centerLeft,
+                            child: FractionallySizedBox(
+                              widthFactor: barW,
+                              child: Container(decoration: BoxDecoration(color: const Color(0xFFE05F00), borderRadius: BorderRadius.circular(2))),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text('${bRate.toStringAsFixed(2)}%', style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: const Color(0xFFE05F00))),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Save bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save This Calculation', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
+                      Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -561,7 +622,7 @@ class _INEmiCalculatorState extends ConsumerState<INEmiCalculator> {
     );
   }
 
-  Widget _legendRow(Color color, String label, String value) {
+  Widget _buildLegendRow(Color color, String label, String value) {
     return Row(
       children: [
         Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),

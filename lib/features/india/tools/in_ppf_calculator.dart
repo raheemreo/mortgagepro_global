@@ -24,6 +24,16 @@ class _INPPFCalculatorState extends ConsumerState<INPPFCalculator> {
   int _periodYears = 15;
   double _roi = 7.10;
 
+  bool _calculated = false;
+  bool _calcIsMonthly = false;
+  double _calcContribution = 150000;
+  int _calcPeriodYears = 15;
+  double _calcRoi = 7.10;
+
+  bool _contributionHasError = false;
+  bool _periodHasError = false;
+  bool _roiHasError = false;
+
   // Controllers
   late TextEditingController _contributionCtrl;
   late TextEditingController _periodCtrl;
@@ -93,7 +103,50 @@ class _INPPFCalculatorState extends ConsumerState<INPPFCalculator> {
       _contributionCtrl.text = '150000';
       _periodCtrl.text = '15';
       _roiCtrl.text = '7.10';
+
+      _calculated = false;
+      _calcIsMonthly = false;
+      _calcContribution = 150000;
+      _calcPeriodYears = 15;
+      _calcRoi = 7.10;
+
+      _contributionHasError = false;
+      _periodHasError = false;
+      _roiHasError = false;
     });
+  }
+
+  void _calculate() {
+    final contributionVal = double.tryParse(_contributionCtrl.text) ?? 0.0;
+    final periodVal = int.tryParse(_periodCtrl.text) ?? 0;
+    final roiVal = double.tryParse(_roiCtrl.text) ?? 0.0;
+
+    setState(() {
+      _contributionHasError = contributionVal <= 0;
+      _periodHasError = periodVal <= 0;
+      _roiHasError = roiVal <= 0;
+    });
+
+    if (_contributionHasError || _periodHasError || _roiHasError) {
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcIsMonthly = _isMonthly;
+      _calcContribution = _contribution;
+      _calcPeriodYears = _periodYears;
+      _calcRoi = _roi;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _isMonthly != _calcIsMonthly ||
+        _contribution != _calcContribution ||
+        _periodYears != _calcPeriodYears ||
+        _roi != _calcRoi;
   }
 
   void _toggleMode(bool monthly) {
@@ -141,7 +194,7 @@ class _INPPFCalculatorState extends ConsumerState<INPPFCalculator> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving: Maturity ${_fmt(corpus)} · Mode: ${_isMonthly ? "Monthly" : "Yearly"}',
+                'Saving: Maturity ${_fmt(corpus)} · Mode: ${_calcIsMonthly ? "Monthly" : "Yearly"}',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -192,11 +245,11 @@ class _INPPFCalculatorState extends ConsumerState<INPPFCalculator> {
         country: 'India',
         calcType: 'PPF Calculator',
         inputs: {
-          'yearlyInvestment': _isMonthly ? _contribution * 12 : _contribution,
-          'period': _periodYears.toDouble(),
-          'rate': _roi,
-          'isMonthly': _isMonthly ? 1.0 : 0.0,
-          'contribution': _contribution,
+          'yearlyInvestment': _calcIsMonthly ? _calcContribution * 12 : _calcContribution,
+          'period': _calcPeriodYears.toDouble(),
+          'rate': _calcRoi,
+          'isMonthly': _calcIsMonthly ? 1.0 : 0.0,
+          'contribution': _calcContribution,
         },
         results: {
           'corpus': corpus,
@@ -239,19 +292,19 @@ class _INPPFCalculatorState extends ConsumerState<INPPFCalculator> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Reactively run PPF Calculations
-    final r = _roi / 100;
+    // Calculations
+    final r = _calcRoi / 100;
     double balance = 0;
     double totalInv = 0;
     final List<Map<String, dynamic>> yearData = [];
 
-    if (_isMonthly) {
-      for (int y = 1; y <= _periodYears; y++) {
+    if (_calcIsMonthly) {
+      for (int y = 1; y <= _calcPeriodYears; y++) {
         double yearInterest = 0;
         double yearInvested = 0;
         for (int m = 0; m < 12; m++) {
-          balance += _contribution;
-          yearInvested += _contribution;
+          balance += _calcContribution;
+          yearInvested += _calcContribution;
           // Calculate interest monthly on the lowest balance of the month.
           // In practice, interest is credited at end of year, so we accumulate it.
           yearInterest += balance * (r / 12);
@@ -266,9 +319,9 @@ class _INPPFCalculatorState extends ConsumerState<INPPFCalculator> {
         });
       }
     } else {
-      for (int y = 1; y <= _periodYears; y++) {
-        balance = (balance + _contribution) * (1 + r);
-        totalInv += _contribution;
+      for (int y = 1; y <= _calcPeriodYears; y++) {
+        balance = (balance + _calcContribution) * (1 + r);
+        totalInv += _calcContribution;
         yearData.add({
           'y': y,
           'balance': balance,
@@ -282,19 +335,19 @@ class _INPPFCalculatorState extends ConsumerState<INPPFCalculator> {
     final totalInt = corpus - totalInv;
     final wealthGain = totalInv > 0 ? (corpus / totalInv) : 0.0;
     final cagr = totalInv > 0
-        ? (pow(corpus / totalInv, 1.0 / _periodYears) - 1) * 100
+        ? (pow(corpus / totalInv, 1.0 / _calcPeriodYears) - 1) * 100
         : 0.0;
 
-    final yearlyEquivalent = _isMonthly ? _contribution * 12 : _contribution;
+    final yearlyEquivalent = _calcIsMonthly ? _calcContribution * 12 : _calcContribution;
     final annualTaxSaved =
         min(yearlyEquivalent, 150000) * 0.30 * 1.04; // 30% slab + 4% cess
-    final totalTaxSaved = annualTaxSaved * _periodYears;
+    final totalTaxSaved = annualTaxSaved * _calcPeriodYears;
 
     // Filter growth chart years: Year 1, every 5th year, and the last year
     final List<Map<String, dynamic>> chartYears = [];
     for (int i = 0; i < yearData.length; i++) {
       final y = i + 1;
-      if (y == 1 || y % 5 == 0 || y == _periodYears) {
+      if (y == 1 || y % 5 == 0 || y == _calcPeriodYears) {
         chartYears.add(yearData[i]);
       }
     }
@@ -578,7 +631,7 @@ class _INPPFCalculatorState extends ConsumerState<INPPFCalculator> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _scrollToResults,
+                      onPressed: _calculate,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF046A38),
                         foregroundColor: Colors.white,
@@ -594,261 +647,295 @@ class _INPPFCalculatorState extends ConsumerState<INPPFCalculator> {
                               weight: FontWeight.w800)),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 50,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () =>
-                          _saveCalculation(corpus, totalInv, totalInt),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0B1F48),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                  if (_calculated) ...[
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 50,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () =>
+                            _saveCalculation(corpus, totalInv, totalInt),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0B1F48),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Icon(Icons.bookmark_border, size: 20),
                       ),
-                      child: const Icon(Icons.bookmark_border, size: 20),
                     ),
-                  )
+                  ],
                 ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
-
-        // Maturity Summary Card (Green Gradient)
-        Container(
-          key: _resultsKey,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF07543A), Color(0xFF046A38)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('PPF CORPUS AT MATURITY (TAX-FREE)',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: Colors.white70,
-                      weight: FontWeight.w700,
-                      letterSpacing: 0.8)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(corpus),
-                style: AppTextStyles.playfair(
-                    size: 32,
-                    color: const Color(0xFFDCFCE7),
-                    weight: FontWeight.w800),
+        if (_calculated) ...[
+          const SizedBox(height: 16),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
-              const SizedBox(height: 14),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 2.2,
+              child: Row(
                 children: [
-                  _resultBox('Total Invested', _fmt(totalInv)),
-                  _resultBox('Interest Earned', _fmt(totalInt), isYellow: true),
-                  _resultBox(
-                      'Wealth Gained', '${wealthGain.toStringAsFixed(2)}x',
-                      isYellow: true),
-                  _resultBox('CAGR (Effective)', '${cagr.toStringAsFixed(2)}%'),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Visual Analysis Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 Composition & Year-wise Growth',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-
-              // Donut Chart Row
-              Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CustomPaint(
-                      painter: _DonutChartPainter(
-                        invested: totalInv,
-                        interest: totalInt,
-                        investedColor: const Color(0xFF046A38),
-                        interestColor: const Color(0xFFF5A623),
-                        textColor: theme.getTextColor(context),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
                   Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(const Color(0xFF046A38), 'Total Invested',
-                            _fmt(totalInv)),
-                        const SizedBox(height: 12),
-                        _legendRow(const Color(0xFFF5A623), 'Wealth Gained',
-                            _fmt(totalInt)),
-                      ],
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 16),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-              // Growth Chart
-              Text('PPF CORPUS ACCUMULATION (Y1 to Y$_periodYears)',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: theme.getMutedColor(context),
-                      weight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 100,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: uniqueChartYears.map((d) {
-                    final balanceVal = d['balance'] as double;
-                    final interestVal = d['interest'] as double;
+          // Maturity Summary Card (Green Gradient)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF07543A), Color(0xFF046A38)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('PPF CORPUS AT MATURITY (TAX-FREE)',
+                    style: AppTextStyles.dmSans(
+                        size: 9,
+                        color: Colors.white70,
+                        weight: FontWeight.w700,
+                        letterSpacing: 0.8)),
+                const SizedBox(height: 4),
+                Text(
+                  _fmt(corpus),
+                  style: AppTextStyles.playfair(
+                      size: 32,
+                      color: const Color(0xFFDCFCE7),
+                      weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 2.2,
+                  children: [
+                    _resultBox('Total Invested', _fmt(totalInv)),
+                    _resultBox('Interest Earned', _fmt(totalInt), isYellow: true),
+                    _resultBox(
+                        'Wealth Gained', '${wealthGain.toStringAsFixed(2)}x',
+                        isYellow: true),
+                    _resultBox('CAGR (Effective)', '${cagr.toStringAsFixed(2)}%'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
 
-                    final double totalH =
-                        max(6.0, (balanceVal / maxChartVal) * 80.0);
-                    final double intH =
-                        max(2.0, (interestVal / balanceVal) * totalH);
-                    final double prinH = max(0.0, totalH - intH);
+          // Visual Analysis Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📊 Composition & Year-wise Growth',
+                    style: AppTextStyles.dmSans(
+                        size: 13,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
 
-                    return Expanded(
+                // Donut Chart Row
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: CustomPaint(
+                        painter: _DonutChartPainter(
+                          invested: totalInv,
+                          interest: totalInt,
+                          investedColor: const Color(0xFF046A38),
+                          interestColor: const Color(0xFFF5A623),
+                          textColor: theme.getTextColor(context),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Container(
-                            width: 16,
-                            height: totalH,
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Column(
-                              children: [
-                                Container(
-                                  height: intH,
-                                  width: 16,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF5A623),
-                                    borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(4)),
-                                  ),
-                                ),
-                                Container(
-                                  height: prinH,
-                                  width: 16,
-                                  color: const Color(0xFF046A38),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text('Y${d['y']}',
-                              style: AppTextStyles.dmSans(
-                                  size: 8,
-                                  color: theme.getMutedColor(context))),
+                          _legendRow(const Color(0xFF046A38), 'Total Invested',
+                              _fmt(totalInv)),
+                          const SizedBox(height: 12),
+                          _legendRow(const Color(0xFFF5A623), 'Wealth Gained',
+                              _fmt(totalInt)),
                         ],
                       ),
-                    );
-                  }).toList(),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _chartIndicatorDot(const Color(0xFF046A38), 'Principal'),
-                  const SizedBox(width: 16),
-                  _chartIndicatorDot(const Color(0xFFF5A623), 'Interest'),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 16),
 
-        // Tax Benefit Banner (Orange Gradient)
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            border: Border.all(color: const Color(0xFFFDBA74)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('🧾 EEE Benefit — Zero Tax at All 3 Stages',
-                  style: AppTextStyles.dmSans(
-                      size: 12,
-                      weight: FontWeight.w800,
-                      color: const Color(0xFF9A3412))),
-              const SizedBox(height: 10),
-              _taxRow('Annual Section 80C Deduction',
-                  _fmt(min(yearlyEquivalent, 150000))),
-              _taxRow('Tax Saved Per Year (30% slab)', _fmt(annualTaxSaved)),
-              _taxRow('Total Tax Saved Over Period', _fmt(totalTaxSaved)),
-              _taxRow('Interest Earned at Maturity', '100% Tax-Free'),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
+                // Growth Chart
+                Text('PPF CORPUS ACCUMULATION (Y1 to Y$_calcPeriodYears)',
+                    style: AppTextStyles.dmSans(
+                        size: 9,
+                        color: theme.getMutedColor(context),
+                        weight: FontWeight.w800)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 100,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: uniqueChartYears.map((d) {
+                      final balanceVal = d['balance'] as double;
+                      final interestVal = d['interest'] as double;
 
-        // PPF Rules Card
-        Text('PPF Rules & Features',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
+                      final double totalH =
+                          max(6.0, (balanceVal / maxChartVal) * 80.0);
+                      final double intH =
+                          max(2.0, (interestVal / balanceVal) * totalH);
+                      final double prinH = max(0.0, totalH - intH);
+
+                      return Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              width: 16,
+                              height: totalH,
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: intH,
+                                    width: 16,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFF5A623),
+                                      borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(4)),
+                                    ),
+                                  ),
+                                  Container(
+                                    height: prinH,
+                                    width: 16,
+                                    color: const Color(0xFF046A38),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text('Y${d['y']}',
+                                style: AppTextStyles.dmSans(
+                                    size: 8,
+                                    color: theme.getMutedColor(context))),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _chartIndicatorDot(const Color(0xFF046A38), 'Principal'),
+                    const SizedBox(width: 16),
+                    _chartIndicatorDot(const Color(0xFFF5A623), 'Interest'),
+                  ],
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            children: _rules
-                .map((r) => _ruleRow(r['icon'], r['title'], r['desc']))
-                .toList(),
+          const SizedBox(height: 16),
+
+          // Tax Benefit Banner (Orange Gradient)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3E0),
+              border: Border.all(color: const Color(0xFFFDBA74)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('🧾 EEE Benefit — Zero Tax at All 3 Stages',
+                    style: AppTextStyles.dmSans(
+                        size: 12,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFF9A3412))),
+                const SizedBox(height: 10),
+                _taxRow('Annual Section 80C Deduction',
+                    _fmt(min(yearlyEquivalent, 150000))),
+                _taxRow('Tax Saved Per Year (30% slab)', _fmt(annualTaxSaved)),
+                _taxRow('Total Tax Saved Over Period', _fmt(totalTaxSaved)),
+                _taxRow('Interest Earned at Maturity', '100% Tax-Free'),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 16),
+
+          // PPF Rules Card
+          Text('PPF Rules & Features',
+              style: AppTextStyles.playfair(
+                  size: 15,
+                  color: theme.getTextColor(context),
+                  weight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              children: _rules
+                  .map((r) => _ruleRow(r['icon'], r['title'], r['desc']))
+                  .toList(),
+            ),
+          ),
+        ],
         const SizedBox(height: 20),
 
         // Saved Calculations Section

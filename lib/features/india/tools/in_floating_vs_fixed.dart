@@ -24,6 +24,20 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
   late TextEditingController _tenureController;
   late TextEditingController _rateChangeController;
 
+  bool _loanError = false;
+  bool _floatRError = false;
+  bool _fixedRError = false;
+  bool _tenureError = false;
+  bool _rateChangeError = false;
+
+  bool _hasCalculated = false;
+  double _calcLoan = 6000000;
+  double _calcFloatR = 8.50;
+  double _calcFixedR = 9.50;
+  int _calcTenure = 20;
+  double _calcRateChange = -0.50;
+  final GlobalKey _resultsKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -32,16 +46,46 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
     _fixedRController = TextEditingController(text: '9.50');
     _tenureController = TextEditingController(text: '20');
     _rateChangeController = TextEditingController(text: '-0.50');
+
+    _loanController.addListener(_onInputChanged);
+    _floatRController.addListener(_onInputChanged);
+    _fixedRController.addListener(_onInputChanged);
+    _tenureController.addListener(_onInputChanged);
+    _rateChangeController.addListener(_onInputChanged);
   }
 
   @override
   void dispose() {
+    _loanController.removeListener(_onInputChanged);
+    _floatRController.removeListener(_onInputChanged);
+    _fixedRController.removeListener(_onInputChanged);
+    _tenureController.removeListener(_onInputChanged);
+    _rateChangeController.removeListener(_onInputChanged);
+
     _loanController.dispose();
     _floatRController.dispose();
     _fixedRController.dispose();
     _tenureController.dispose();
     _rateChangeController.dispose();
     super.dispose();
+  }
+
+  void _onInputChanged() {
+    setState(() {});
+  }
+
+  bool _areInputsChanged() {
+    final loan = double.tryParse(_loanController.text.replaceAll(',', '')) ?? 0.0;
+    final fr = double.tryParse(_floatRController.text) ?? 0.0;
+    final xr = double.tryParse(_fixedRController.text) ?? 0.0;
+    final tenure = int.tryParse(_tenureController.text) ?? 1;
+    final rc = double.tryParse(_rateChangeController.text) ?? 0.0;
+
+    return loan != _calcLoan ||
+        fr != _calcFloatR ||
+        xr != _calcFixedR ||
+        tenure != _calcTenure ||
+        rc != _calcRateChange;
   }
 
   void _reset() {
@@ -51,14 +95,21 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
       _fixedRController.text = '9.50';
       _tenureController.text = '20';
       _rateChangeController.text = '-0.50';
+
+      _hasCalculated = false;
+      _loanError = false;
+      _floatRError = false;
+      _fixedRError = false;
+      _tenureError = false;
+      _rateChangeError = false;
+
+      _calcLoan = 6000000;
+      _calcFloatR = 8.50;
+      _calcFixedR = 9.50;
+      _calcTenure = 20;
+      _calcRateChange = -0.50;
     });
   }
-
-  double get _loan => double.tryParse(_loanController.text) ?? 6000000.0;
-  double get _floatR => double.tryParse(_floatRController.text) ?? 8.50;
-  double get _fixedR => double.tryParse(_fixedRController.text) ?? 9.50;
-  int get _tenure => int.tryParse(_tenureController.text) ?? 20;
-  double get _rateChange => double.tryParse(_rateChangeController.text) ?? 0.0;
 
   double _emi(double p, double r, int n) {
     final mr = r / 12 / 100;
@@ -79,11 +130,11 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
   }
 
   void _saveCalculation() async {
-    final loanVal = _loan;
-    final fr = _floatR;
-    final xr = _fixedR;
-    final t = _tenure;
-    final rc = _rateChange;
+    final loanVal = _calcLoan;
+    final fr = _calcFloatR;
+    final xr = _calcFixedR;
+    final t = _calcTenure;
+    final rc = _calcRateChange;
     final n = t * 12;
 
     final fEmi = _emi(loanVal, fr, n);
@@ -179,20 +230,26 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final loanVal = _loan;
-    final fr = _floatR;
-    final xr = _fixedR;
-    final t = _tenure;
-    final rc = _rateChange;
-    final n = t * 12;
+    final loanVal = double.tryParse(_loanController.text.replaceAll(',', '')) ?? 0.0;
+    final fr = double.tryParse(_floatRController.text) ?? 0.0;
+    final xr = double.tryParse(_fixedRController.text) ?? 0.0;
+    final t = int.tryParse(_tenureController.text) ?? 1;
+    final rc = double.tryParse(_rateChangeController.text) ?? 0.0;
 
-    final fEmi = _emi(loanVal, fr, n);
-    final xEmi = _emi(loanVal, xr, n);
-    final fAdj = _emi(loanVal, fr + rc, n);
+    final calcLoan = _calcLoan;
+    final calcFloatR = _calcFloatR;
+    final calcFixedR = _calcFixedR;
+    final calcTenure = _calcTenure;
+    final calcRateChange = _calcRateChange;
+    final n = calcTenure * 12;
+
+    final fEmi = _emi(calcLoan, calcFloatR, n);
+    final xEmi = _emi(calcLoan, calcFixedR, n);
+    final fAdj = _emi(calcLoan, calcFloatR + calcRateChange, n);
     final fTotal = fAdj * n;
     final xTotal = xEmi * n;
-    final fInt = fTotal - loanVal;
-    final xInt = xTotal - loanVal;
+    final fInt = fTotal - calcLoan;
+    final xInt = xTotal - calcLoan;
     final diff = xTotal - fTotal;
 
     return Column(
@@ -269,6 +326,7 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
                 max: 30000000,
                 divisions: 295,
                 displayValue: _fmt(loanVal),
+                hasError: _loanError,
               ),
               const SizedBox(height: 16),
 
@@ -280,6 +338,7 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
                 max: 14,
                 divisions: 160,
                 displayValue: '${fr.toStringAsFixed(2)}%',
+                hasError: _floatRError,
               ),
               const SizedBox(height: 16),
 
@@ -291,6 +350,7 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
                 max: 16,
                 divisions: 200,
                 displayValue: '${xr.toStringAsFixed(2)}%',
+                hasError: _fixedRError,
               ),
               const SizedBox(height: 16),
 
@@ -302,6 +362,7 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
                 max: 30,
                 divisions: 25,
                 displayValue: '$t yr',
+                hasError: _tenureError,
               ),
               const SizedBox(height: 16),
 
@@ -313,13 +374,69 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
                 max: 3,
                 divisions: 20,
                 displayValue: '${rc > 0 ? '+' : ''}${rc.toStringAsFixed(2)}%',
+                hasError: _rateChangeError,
               ),
               const SizedBox(height: 20),
 
               // Compare button
               ElevatedButton(
                 onPressed: () {
-                  setState(() {});
+                  setState(() {
+                    _loanError = false;
+                    _floatRError = false;
+                    _fixedRError = false;
+                    _tenureError = false;
+                    _rateChangeError = false;
+                  });
+
+                  final loanValVal = double.tryParse(_loanController.text.replaceAll(',', ''));
+                  final frVal = double.tryParse(_floatRController.text);
+                  final xrVal = double.tryParse(_fixedRController.text);
+                  final tVal = int.tryParse(_tenureController.text);
+                  final rcVal = double.tryParse(_rateChangeController.text);
+
+                  bool hasErr = false;
+                  if (loanValVal == null || loanValVal <= 0) {
+                    setState(() => _loanError = true);
+                    hasErr = true;
+                  }
+                  if (frVal == null || frVal <= 0 || frVal > 100) {
+                    setState(() => _floatRError = true);
+                    hasErr = true;
+                  }
+                  if (xrVal == null || xrVal <= 0 || xrVal > 100) {
+                    setState(() => _fixedRError = true);
+                    hasErr = true;
+                  }
+                  if (tVal == null || tVal <= 0 || tVal > 40) {
+                    setState(() => _tenureError = true);
+                    hasErr = true;
+                  }
+                  if (rcVal == null || rcVal < -20 || rcVal > 20) {
+                    setState(() => _rateChangeError = true);
+                    hasErr = true;
+                  }
+
+                  if (hasErr) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('⚠️ Please correct the invalid fields in red.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                        backgroundColor: Colors.red[800],
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    _hasCalculated = true;
+                    _calcLoan = loanValVal!;
+                    _calcFloatR = frVal!;
+                    _calcFixedR = xrVal!;
+                    _calcTenure = tVal!;
+                    _calcRateChange = rcVal!;
+                  });
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('⚡ Comparison updated!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
@@ -328,6 +445,16 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_resultsKey.currentContext != null) {
+                      Scrollable.ensureVisible(
+                        _resultsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
@@ -347,254 +474,325 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
           ),
         ),
 
-        const SizedBox(height: 20),
-
-        // VS Comparison Cards (Side-by-side)
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(8)),
-                      child: Text('EBLR LINKED', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.bold, color: Colors.white)),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('📈', style: TextStyle(fontSize: 22)),
-                    const SizedBox(height: 4),
-                    Text('Floating EMI', style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: Colors.white70)),
-                    const SizedBox(height: 2),
-                    Text('${fr.toStringAsFixed(2)}%', style: AppTextStyles.dmSans(size: 18, weight: FontWeight.w800, color: const Color(0xFFFFDEA0))),
-                    const SizedBox(height: 4),
-                    Text("EMI: ₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(fEmi)}",
-                        style: AppTextStyles.dmSans(size: 10.5, color: Colors.white, weight: FontWeight.w700)),
-                  ],
-                ),
+        if (_hasCalculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF6B00), Color(0xFFE05A00)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(8)),
-                      child: Text('LOCK-IN', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.bold, color: Colors.white)),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('🔒', style: TextStyle(fontSize: 22)),
-                    const SizedBox(height: 4),
-                    Text('Fixed EMI', style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: Colors.white70)),
-                    const SizedBox(height: 2),
-                    Text('${xr.toStringAsFixed(2)}%', style: AppTextStyles.dmSans(size: 18, weight: FontWeight.w800, color: const Color(0xFFFFDEA0))),
-                    const SizedBox(height: 4),
-                    Text("EMI: ₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(xEmi)}",
-                        style: AppTextStyles.dmSans(size: 10.5, color: Colors.white, weight: FontWeight.w700)),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        // Savings highlight card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💰', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Total Savings (Float wins by)', style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: const Color(0xFF07543A))),
-                    Text('Over full loan tenure · post expected rate change', style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF046A38))),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              child: Row(
                 children: [
-                  Text(_fmt(diff.abs()), style: AppTextStyles.dmSans(size: 16, weight: FontWeight.w900, color: const Color(0xFF07543A))),
-                  Text(diff > 0 ? 'Floating cheaper' : 'Fixed cheaper', style: AppTextStyles.dmSans(size: 8.5, color: const Color(0xFF046A38), weight: FontWeight.w700)),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Compare to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        const SizedBox(height: 20),
-
-        // Lifetime cost analysis horizontal group
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // VS Comparison Cards (Side-by-side)
+          Row(
             children: [
-              Text('Cost Analysis Lifetime', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-              _buildCostBarGroup('Total EMI Paid', fTotal, xTotal),
-              const Divider(height: 20),
-              _buildCostBarGroup('Total Interest', fInt, xInt),
-              const Divider(height: 20),
-              _buildCostBarGroup('Monthly EMI', fEmi, xEmi, isMonthly: true),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Repo Rate History scroll
-        _buildRepoRateHistory(),
-
-        const SizedBox(height: 20),
-
-        // Verdict lists: when to choose
-        Text('When to Choose', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        
-        // Floating conditions card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📈 Choose Floating When...', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: Colors.white)),
-              const SizedBox(height: 8),
-              _buildBulletPoint('RBI rate cuts expected (current cycle — Jun 2025)', Colors.white70),
-              _buildBulletPoint('Loan tenure > 10 years (rate averages out)', Colors.white70),
-              _buildBulletPoint('You can absorb minor EMI fluctuations', Colors.white70),
-              _buildBulletPoint('Switching bank (balance transfer) possible', Colors.white70),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Fixed conditions card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            border: Border.all(color: const Color(0xFFFDBA74), width: 1.5),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('🔒 Choose Fixed When...', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: const Color(0xFF9A3412))),
-              const SizedBox(height: 8),
-              _buildBulletPoint('You need EMI certainty (fixed income households)', const Color(0xFF7C2D12)),
-              _buildBulletPoint('RBI rate hike cycle expected', const Color(0xFF7C2D12)),
-              _buildBulletPoint('Short tenure (< 5 years) — rate risk minimal', const Color(0xFF7C2D12)),
-              _buildBulletPoint('Penalty-free part-prepayment not required', const Color(0xFF7C2D12)),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Tip Card
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: const Color(0xFF93C5FD), width: 1.5),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('💡', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  'RBI EBLR Rule (2019): All floating-rate loans from banks must be linked to an External Benchmark Lending Rate (repo rate). HFCs like HDFC still use PLBR. Foreclosure charges banned on floating-rate home loans for individuals per RBI circular.',
-                  style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFF1E3A8A), weight: FontWeight.w500),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(8)),
+                        child: Text('EBLR LINKED', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.bold, color: Colors.white)),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('📈', style: TextStyle(fontSize: 22)),
+                      const SizedBox(height: 4),
+                      Text('Floating EMI', style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: Colors.white70)),
+                      const SizedBox(height: 2),
+                      Text('${_calcFloatR.toStringAsFixed(2)}%', style: AppTextStyles.dmSans(size: 18, weight: FontWeight.w800, color: const Color(0xFFFFDEA0))),
+                      const SizedBox(height: 4),
+                      Text("EMI: ₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(fEmi)}",
+                          style: AppTextStyles.dmSans(size: 10.5, color: Colors.white, weight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF6B00), Color(0xFFE05A00)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(8)),
+                        child: Text('LOCK-IN', style: AppTextStyles.dmSans(size: 8, weight: FontWeight.bold, color: Colors.white)),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('🔒', style: TextStyle(fontSize: 22)),
+                      const SizedBox(height: 4),
+                      Text('Fixed EMI', style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: Colors.white70)),
+                      const SizedBox(height: 2),
+                      Text('${_calcFixedR.toStringAsFixed(2)}%', style: AppTextStyles.dmSans(size: 18, weight: FontWeight.w800, color: const Color(0xFFFFDEA0))),
+                      const SizedBox(height: 4),
+                      Text("EMI: ₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(xEmi)}",
+                          style: AppTextStyles.dmSans(size: 10.5, color: Colors.white, weight: FontWeight.w700)),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        ),
 
-        const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-        // Save Button
-        ElevatedButton.icon(
-          onPressed: _saveCalculation,
-          icon: const Icon(Icons.save, size: 16, color: Colors.white),
-          label: Text('Save This Comparison', style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.w800)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF046A38),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          // Savings highlight card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💰', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Total Savings (Float wins by)', style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.w800, color: const Color(0xFF07543A))),
+                      Text('Over full loan tenure · post expected rate change', style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(_fmt(diff.abs()), style: AppTextStyles.dmSans(size: 16, weight: FontWeight.w900, color: const Color(0xFF07543A))),
+                    Text(diff > 0 ? 'Floating cheaper' : 'Fixed cheaper', style: AppTextStyles.dmSans(size: 8.5, color: const Color(0xFF046A38), weight: FontWeight.w700)),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Lifetime cost analysis horizontal group
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Cost Analysis Lifetime', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+                _buildCostBarGroup('Total EMI Paid', fTotal, xTotal),
+                const Divider(height: 20),
+                _buildCostBarGroup('Total Interest', fInt, xInt),
+                const Divider(height: 20),
+                _buildCostBarGroup('Monthly EMI', fEmi, xEmi, isMonthly: true),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // RBI Rule Tip
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: const Color(0xFF93C5FD), width: 1.5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('💡', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'RBI EBLR Rule (2019): All floating-rate loans from banks must be linked to an External Benchmark Lending Rate (repo rate). HFCs like HDFC still use PLBR. Foreclosure charges banned on floating-rate home loans for individuals per RBI circular.',
+                    style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFF1E3A8A), weight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Save Button
+          ElevatedButton.icon(
+            onPressed: _saveCalculation,
+            icon: const Icon(Icons.save, size: 16, color: Colors.white),
+            label: Text('Save This Comparison', style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.w800)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF046A38),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Repo Rate History scroll
+          _buildRepoRateHistory(),
+
+          const SizedBox(height: 20),
+
+          // Verdict lists: when to choose
+          Text('When to Choose', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          
+          // Floating conditions card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📈 Choose Floating When...', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: Colors.white)),
+                const SizedBox(height: 8),
+                _buildBulletPoint('RBI rate cuts expected (current cycle — Jun 2025)', Colors.white70),
+                _buildBulletPoint('Loan tenure > 10 years (rate averages out)', Colors.white70),
+                _buildBulletPoint('You can absorb minor EMI fluctuations', Colors.white70),
+                _buildBulletPoint('Switching bank (balance transfer) possible', Colors.white70),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Fixed conditions card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3E0),
+              border: Border.all(color: const Color(0xFFFDBA74), width: 1.5),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('🔒 Choose Fixed When...', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: const Color(0xFF9A3412))),
+                const SizedBox(height: 8),
+                _buildBulletPoint('You need EMI certainty (fixed income households)', const Color(0xFF7C2D12)),
+                _buildBulletPoint('RBI rate hike cycle expected', const Color(0xFF7C2D12)),
+                _buildBulletPoint('Short tenure (< 5 years) — rate risk minimal', const Color(0xFF7C2D12)),
+                _buildBulletPoint('Penalty-free part-prepayment not required', const Color(0xFF7C2D12)),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Tip Card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: const Color(0xFF93C5FD), width: 1.5),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('💡', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'RBI EBLR Rule (2019): All floating-rate loans from banks must be linked to an External Benchmark Lending Rate (repo rate). HFCs like HDFC still use PLBR. Foreclosure charges banned on floating-rate home loans for individuals per RBI circular.',
+                    style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFF1E3A8A), weight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Save Button
+          ElevatedButton.icon(
+            onPressed: _saveCalculation,
+            icon: const Icon(Icons.save, size: 16, color: Colors.white),
+            label: Text('Save This Comparison', style: AppTextStyles.dmSans(size: 13, color: Colors.white, weight: FontWeight.w800)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF046A38),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -608,6 +806,7 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
     required double max,
     required int divisions,
     required String displayValue,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     final currentVal = double.tryParse(controller.text) ?? min;
@@ -670,11 +869,17 @@ class _INFloatingVsFixedState extends ConsumerState<INFloatingVsFixed> {
                   fillColor: theme.getBgColor(context),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.getBorderColor(context)),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : theme.getBorderColor(context),
+                      width: hasError ? 1.5 : 1.0,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.primaryColor),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : theme.primaryColor,
+                      width: hasError ? 2.0 : 1.5,
+                    ),
                   ),
                 ),
                 onSubmitted: (val) {

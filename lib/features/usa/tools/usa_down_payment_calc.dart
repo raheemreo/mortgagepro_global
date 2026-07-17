@@ -11,6 +11,7 @@ import '../../../core/utils/mortgage_math.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
+import '../../../../widgets/ads/native_ad_widget.dart';
 
 class USADownPaymentCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -1019,6 +1020,11 @@ class _USADownPaymentCalcState extends ConsumerState<USADownPaymentCalc> {
                   ),
                 ),
 
+                const SizedBox(height: 20),
+                const NativeAdWidget(
+                  screenName: 'usa_down_payment_calc',
+                  adType: 'mediumCard',
+                ),
                 const SizedBox(height: 20),
                 _buildSectionHeader('Zero Down Programs', onReset: null),
                 const SizedBox(height: 8),

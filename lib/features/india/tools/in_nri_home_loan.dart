@@ -19,15 +19,30 @@ class INNRIHomeLoan extends ConsumerStatefulWidget {
 }
 
 class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
+  bool _calculated = false;
+  double _calcIncome = 5000;
+  double _calcPropValue = 75;
+  double _calcRate = 8.75;
+  double _calcDownPmtPct = 25.0;
+  int _calcTenureYears = 20;
+  String _calcSelCountry = 'US';
+  String _calcActiveCategory = 'NRI';
+
+  bool _incomeHasError = false;
+  bool _propValueHasError = false;
+  bool _rateHasError = false;
+
   String _activeCategory = 'NRI'; // 'NRI', 'PIO', 'OCI'
   String _selCountry = 'US'; // US, AE, GB, CA, AU, SG, SA, DE
 
   late TextEditingController _incomeController;
   late TextEditingController _propValueController;
   late TextEditingController _rateController;
-  
+
   double _downPmtPct = 25.0; // 20, 25, 30, 40
   int _tenureYears = 20;
+
+  final GlobalKey _resultsKey = GlobalKey();
 
   final Map<String, double> _fxRates = {
     'US': 83.52,
@@ -89,20 +104,97 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
     return NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(n);
   }
 
+  void _calculate() {
+    final incomeVal = double.tryParse(_incomeController.text) ?? 0.0;
+    final propValueVal = double.tryParse(_propValueController.text) ?? 0.0;
+    final rateVal = double.tryParse(_rateController.text) ?? 0.0;
+
+    setState(() {
+      _incomeHasError = incomeVal <= 0;
+      _propValueHasError = propValueVal <= 0;
+      _rateHasError = rateVal <= 0;
+    });
+
+    if (_incomeHasError || _propValueHasError || _rateHasError) return;
+
+    setState(() {
+      _calculated = true;
+      _calcIncome = incomeVal;
+      _calcPropValue = propValueVal;
+      _calcRate = rateVal;
+      _calcDownPmtPct = _downPmtPct;
+      _calcTenureYears = _tenureYears;
+      _calcSelCountry = _selCountry;
+      _calcActiveCategory = _activeCategory;
+    });
+
+    _scrollToResults();
+  }
+
+  void _scrollToResults() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _resultsKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut);
+      }
+    });
+  }
+
+  bool _areInputsChanged() {
+    final incomeVal = double.tryParse(_incomeController.text) ?? 0.0;
+    final propValueVal = double.tryParse(_propValueController.text) ?? 0.0;
+    final rateVal = double.tryParse(_rateController.text) ?? 0.0;
+
+    return incomeVal != _calcIncome ||
+        propValueVal != _calcPropValue ||
+        rateVal != _calcRate ||
+        _downPmtPct != _calcDownPmtPct ||
+        _tenureYears != _calcTenureYears ||
+        _selCountry != _calcSelCountry ||
+        _activeCategory != _calcActiveCategory;
+  }
+
+  void _reset() {
+    setState(() {
+      _incomeController.text = '8000';
+      _propValueController.text = '100';
+      _rateController.text = '8.75';
+      _downPmtPct = 25.0;
+      _tenureYears = 20;
+      _selCountry = 'US';
+      _activeCategory = 'NRI';
+
+      _calculated = false;
+      _calcIncome = 8000;
+      _calcPropValue = 100;
+      _calcRate = 8.75;
+      _calcDownPmtPct = 25.0;
+      _calcTenureYears = 20;
+      _calcSelCountry = 'US';
+      _calcActiveCategory = 'NRI';
+
+      _incomeHasError = false;
+      _propValueHasError = false;
+      _rateHasError = false;
+    });
+  }
+
   void _saveNriCalculation() async {
-    final double inrRate = _fxRates[_selCountry] ?? 83.52;
-    final double inrIncome = _income * inrRate;
-    final double loanAmt = _propValue * 100000 * (1 - _downPmtPct / 100);
-    final double downAmt = _propValue * 100000 * (_downPmtPct / 100);
-    final double mr = _rate / 12 / 100;
-    final int nMonths = _tenureYears * 12;
+    final double inrRate = _fxRates[_calcSelCountry] ?? 83.52;
+    final double inrIncome = _calcIncome * inrRate;
+    final double loanAmt = _calcPropValue * 100000 * (1 - _calcDownPmtPct / 100);
+    final double downAmt = _calcPropValue * 100000 * (_calcDownPmtPct / 100);
+    final double mr = _calcRate / 12 / 100;
+    final int nMonths = _calcTenureYears * 12;
     final double emi = mr > 0
         ? (loanAmt * mr * pow(1 + mr, nMonths)) / (pow(1 + mr, nMonths) - 1)
         : loanAmt / nMonths;
     final double totalPaid = emi * nMonths;
     final double totalInt = totalPaid - loanAmt;
 
-    final labelCtrl = TextEditingController(text: 'NRI Home Loan - $_activeCategory');
+    final labelCtrl = TextEditingController(text: 'NRI Home Loan - $_calcActiveCategory');
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -155,12 +247,12 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
         country: 'India',
         calcType: 'NRI Home Loan',
         inputs: {
-          'category': _activeCategory == 'NRI' ? 0.0 : (_activeCategory == 'PIO' ? 1.0 : 2.0),
-          'foreignIncome': _income,
-          'propertyValueLakhs': _propValue,
-          'downPaymentPct': _downPmtPct,
-          'interestRate': _rate,
-          'tenureYears': _tenureYears.toDouble(),
+          'category': _calcActiveCategory == 'NRI' ? 0.0 : (_calcActiveCategory == 'PIO' ? 1.0 : 2.0),
+          'foreignIncome': _calcIncome,
+          'propertyValueLakhs': _calcPropValue,
+          'downPaymentPct': _calcDownPmtPct,
+          'interestRate': _calcRate,
+          'tenureYears': _calcTenureYears.toDouble(),
           'exchangeRate': inrRate,
         },
         results: {
@@ -180,7 +272,7 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ NRI Home Loan calculation saved!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+            content: Text('✅ NRI calculation saved successfully!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
             backgroundColor: const Color(0xFF046A38),
             behavior: SnackBarBehavior.floating,
           ),
@@ -195,12 +287,12 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Financial Calculation Math
-    final double inrRate = _fxRates[_selCountry] ?? 83.52;
-    final double inrIncome = _income * inrRate;
-    final double loanAmt = _propValue * 100000 * (1 - _downPmtPct / 100);
-    final double downAmt = _propValue * 100000 * (_downPmtPct / 100);
-    final double mr = _rate / 12 / 100;
-    final int nMonths = _tenureYears * 12;
+    final double inrRate = _fxRates[_calcSelCountry] ?? 83.52;
+    final double inrIncome = _calcIncome * inrRate;
+    final double loanAmt = _calcPropValue * 100000 * (1 - _calcDownPmtPct / 100);
+    final double downAmt = _calcPropValue * 100000 * (_calcDownPmtPct / 100);
+    final double mr = _calcRate / 12 / 100;
+    final int nMonths = _calcTenureYears * 12;
     
     final double emi = mr > 0
         ? (loanAmt * mr * pow(1 + mr, nMonths)) / (pow(1 + mr, nMonths) - 1)
@@ -210,7 +302,7 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
     
     final double foir = inrIncome > 0 ? (emi / inrIncome * 100) : 0.0;
     final double emiInForeign = emi / inrRate;
-    final String symbol = _fxSymbols[_selCountry] ?? '\$';
+    final String symbol = _fxSymbols[_calcSelCountry] ?? '\$';
 
     final double pctPrincipal = totalPaid > 0 ? (loanAmt / totalPaid) : 0.5;
     final double pctInterest = totalPaid > 0 ? (totalInt / totalPaid) : 0.5;
@@ -360,6 +452,7 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
                 displayValue: '$symbol${Compat.round(_income).toLocaleString()}',
                 isCurrency: true,
                 hint: 'In foreign currency',
+                hasError: _incomeHasError,
               ),
               const SizedBox(height: 16),
 
@@ -372,6 +465,7 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
                 divisions: 99,
                 displayValue: '₹${_propValue.toStringAsFixed(0)} Lakhs',
                 hint: '1 Lakh = ₹100,000',
+                hasError: _propValueHasError,
               ),
               const SizedBox(height: 16),
 
@@ -465,35 +559,46 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
                 divisions: 160,
                 displayValue: '${_rate.toStringAsFixed(2)}%',
                 hint: 'NRI rate typically 0.25% above resident',
+                hasError: _rateHasError,
               ),
               const SizedBox(height: 20),
 
-              // Calculate Button
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {});
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('⚡ Calculations updated!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
-                      backgroundColor: const Color(0xFF046A38),
-                      duration: const Duration(milliseconds: 600),
-                      behavior: SnackBarBehavior.floating,
+              // Calculate / Reset buttons side-by-side
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _calculate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6B00),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+                        elevation: 4,
+                        shadowColor: const Color(0xFFFF6B00).withValues(alpha: 0.4),
+                      ),
+                      icon: const Icon(Icons.flight_takeoff, size: 16),
+                      label: Text('✈️ Calculate NRI Home Loan', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800)),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF6B00),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                  elevation: 4,
-                  shadowColor: const Color(0xFFFF6B00).withValues(alpha: 0.4),
-                ),
-                child: Center(
-                  child: Text(
-                    '✈️ Calculate NRI Home Loan',
-                    style: AppTextStyles.dmSans(size: 14, weight: FontWeight.w800, color: Colors.white),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 50,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: _reset,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? Colors.white12 : const Color(0xFFFFF8F0),
+                        foregroundColor: theme.getTextColor(context),
+                        side: BorderSide(color: theme.getBorderColor(context)),
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(13)),
+                      ),
+                      child: const Icon(Icons.refresh, size: 20),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -501,8 +606,39 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
 
         const SizedBox(height: 16),
 
-        // 5. Result Card Analyser
-        Container(
+        if (_calculated) ...[
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
+
+          // 5. Result Card Analyser
+          Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -632,8 +768,8 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
             ],
           ),
         ),
-
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
+        ],
 
         // 6. Top Banks Card
         Padding(
@@ -757,6 +893,7 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
     required String displayValue,
     bool isCurrency = false,
     String? hint,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     final currentVal = double.tryParse(controller.text) ?? min;
@@ -819,11 +956,15 @@ class _INNRIHomeLoanState extends ConsumerState<INNRIHomeLoan> {
                   fillColor: theme.getBgColor(context),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.getBorderColor(context)),
+                    borderSide: BorderSide(
+                        color: hasError ? Colors.red : theme.getBorderColor(context),
+                        width: hasError ? 1.5 : 1.0),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.primaryColor),
+                    borderSide: BorderSide(
+                        color: hasError ? Colors.red : theme.primaryColor,
+                        width: hasError ? 1.5 : 1.0),
                   ),
                 ),
                 onSubmitted: (val) {

@@ -76,6 +76,20 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
   int _cibilScore = 750; // 650, 700, 750, 800
   String _empType = 'salaried'; // 'salaried', 'self_employed'
 
+  bool _hasCalculated = false;
+  double _calcMonthlyIncome = 100000;
+  double _calcExistingEmi = 10000;
+  double _calcRate = 8.50;
+  int _calcTenure = 20;
+  int _calcCibilScore = 750;
+  String _calcEmpType = 'salaried';
+  final GlobalKey _resultsKey = GlobalKey();
+
+  bool _incomeError = false;
+  bool _existingEmiError = false;
+  bool _rateError = false;
+  bool _tenureError = false;
+
   @override
   void initState() {
     super.initState();
@@ -108,6 +122,19 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
     setState(() {});
   }
 
+  bool _areInputsChanged() {
+    final income = double.tryParse(_monthlyIncomeController.text.replaceAll(',', '')) ?? 0.0;
+    final existEmi = double.tryParse(_existingEmiController.text.replaceAll(',', '')) ?? 0.0;
+    final rate = double.tryParse(_rateController.text) ?? 0.0;
+    final tenure = int.tryParse(_tenureController.text) ?? 0;
+    return income != _calcMonthlyIncome ||
+        existEmi != _calcExistingEmi ||
+        rate != _calcRate ||
+        tenure != _calcTenure ||
+        _cibilScore != _calcCibilScore ||
+        _empType != _calcEmpType;
+  }
+
   void _reset() {
     setState(() {
       _monthlyIncomeController.text = '100000';
@@ -116,6 +143,17 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
       _tenureController.text = '20';
       _cibilScore = 750;
       _empType = 'salaried';
+      _hasCalculated = false;
+      _calcMonthlyIncome = 100000;
+      _calcExistingEmi = 10000;
+      _calcRate = 8.50;
+      _calcTenure = 20;
+      _calcCibilScore = 750;
+      _calcEmpType = 'salaried';
+      _incomeError = false;
+      _existingEmiError = false;
+      _rateError = false;
+      _tenureError = false;
     });
   }
 
@@ -132,12 +170,12 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
   }
 
   void _saveCalculation() async {
-    final income = double.tryParse(_monthlyIncomeController.text) ?? 100000;
-    final existEmi = double.tryParse(_existingEmiController.text) ?? 10000;
-    final rate = double.tryParse(_rateController.text) ?? 8.50;
-    final tenure = int.tryParse(_tenureController.text) ?? 20;
+    final income = _calcMonthlyIncome;
+    final existEmi = _calcExistingEmi;
+    final rate = _calcRate;
+    final tenure = _calcTenure;
 
-    final foirLimit = _empType == 'salaried' ? 0.50 : 0.45;
+    final foirLimit = _calcEmpType == 'salaried' ? 0.50 : 0.45;
     final maxEmi = income * foirLimit;
     final availEmi = maxEmi - existEmi;
     final r = rate / 12 / 100;
@@ -201,11 +239,11 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
           'existingEmi': existEmi,
           'rate': rate,
           'tenureYears': tenure.toDouble(),
-          'empType': _empType == 'salaried' ? 0.0 : 1.0,
-          'cibil': _cibilScore.toDouble(),
+          'empType': _calcEmpType == 'salaried' ? 0.0 : 1.0,
+          'cibil': _calcCibilScore.toDouble(),
         },
         results: {
-          'eligibleLoan': eligLoan,
+          'eligLoan': eligLoan,
           'foir': actualFoir,
           'maxEmi': maxEmi,
         },
@@ -237,13 +275,18 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
     final rate = double.tryParse(_rateController.text) ?? 0.0;
     final tenure = int.tryParse(_tenureController.text) ?? 1;
 
-    final foirLimit = _empType == 'salaried' ? 0.50 : 0.45;
-    final maxEmi = income * foirLimit;
-    final availEmi = maxEmi - existEmi;
-    final r = rate / 12 / 100;
-    final n = tenure * 12;
+    final calcIncome = _calcMonthlyIncome;
+    final calcExistEmi = _calcExistingEmi;
+    final calcRate = _calcRate;
+    final calcTenure = _calcTenure;
+
+    final foirLimit = _calcEmpType == 'salaried' ? 0.50 : 0.45;
+    final maxEmi = calcIncome * foirLimit;
+    final availEmi = maxEmi - calcExistEmi;
+    final r = calcRate / 12 / 100;
+    final n = calcTenure * 12;
     final eligLoan = availEmi > 0 && r > 0 ? availEmi * (pow(1 + r, n) - 1) / (r * pow(1 + r, n)) : 0.0;
-    final actualFoir = income > 0 ? (existEmi / income) * 100 : 0.0;
+    final actualFoir = calcIncome > 0 ? (calcExistEmi / calcIncome) * 100 : 0.0;
 
     String statusText;
     Color statusColor;
@@ -361,6 +404,7 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
                 max: 500000,
                 divisions: 96,
                 displayValue: _fmtShort(income),
+                hasError: _incomeError,
               ),
               const SizedBox(height: 16),
 
@@ -372,6 +416,7 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
                 max: 100000,
                 divisions: 100,
                 displayValue: _fmtShort(existEmi),
+                hasError: _existingEmiError,
               ),
               const SizedBox(height: 16),
 
@@ -383,6 +428,7 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
                 max: 15.00,
                 divisions: 170,
                 displayValue: '${rate.toStringAsFixed(2)}%',
+                hasError: _rateError,
               ),
               const SizedBox(height: 16),
 
@@ -394,6 +440,7 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
                 max: 30,
                 divisions: 25,
                 displayValue: '$tenure yr',
+                hasError: _tenureError,
               ),
               const SizedBox(height: 16),
 
@@ -428,7 +475,57 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
               // Calculate Button
               ElevatedButton(
                 onPressed: () {
-                  setState(() {});
+                  setState(() {
+                    _incomeError = false;
+                    _existingEmiError = false;
+                    _rateError = false;
+                    _tenureError = false;
+                  });
+
+                  final incomeVal = double.tryParse(_monthlyIncomeController.text.replaceAll(',', ''));
+                  final existEmiVal = double.tryParse(_existingEmiController.text.replaceAll(',', ''));
+                  final rateVal = double.tryParse(_rateController.text);
+                  final tenureVal = int.tryParse(_tenureController.text);
+
+                  bool hasErr = false;
+                  if (incomeVal == null || incomeVal <= 0) {
+                    setState(() => _incomeError = true);
+                    hasErr = true;
+                  }
+                  if (existEmiVal == null || existEmiVal < 0) {
+                    setState(() => _existingEmiError = true);
+                    hasErr = true;
+                  }
+                  if (rateVal == null || rateVal <= 0 || rateVal > 100) {
+                    setState(() => _rateError = true);
+                    hasErr = true;
+                  }
+                  if (tenureVal == null || tenureVal <= 0 || tenureVal > 40) {
+                    setState(() => _tenureError = true);
+                    hasErr = true;
+                  }
+
+                  if (hasErr) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('⚠️ Please correct the invalid fields in red.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                        backgroundColor: Colors.red[800],
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    _hasCalculated = true;
+                    _calcMonthlyIncome = incomeVal!;
+                    _calcExistingEmi = existEmiVal!;
+                    _calcRate = rateVal!;
+                    _calcTenure = tenureVal!;
+                    _calcCibilScore = _cibilScore;
+                    _calcEmpType = _empType;
+                  });
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('⚡ Eligibility verified!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
@@ -437,6 +534,16 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_resultsKey.currentContext != null) {
+                      Scrollable.ensureVisible(
+                        _resultsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
@@ -456,219 +563,247 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
           ),
         ),
 
-        const SizedBox(height: 20),
-
-        // Eligibility Result Hero Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        if (_hasCalculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
                 children: [
-                  Text(
-                    'MAXIMUM ELIGIBLE HOME LOAN',
-                    style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: eligTagBg,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
                     child: Text(
-                      eligTag,
-                      style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: eligTagFg),
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                _fmt(eligLoan),
-                style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
+
+          // Eligibility Result Hero Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 2),
-              Text(
-                'Based on ${(foirLimit * 100).toInt()}% FOIR · $tenure yr tenure · ${rate.toStringAsFixed(2)}% rate',
-                style: AppTextStyles.dmSans(size: 9.5, color: Colors.white60),
-              ),
-              const SizedBox(height: 14),
-              // Linear eligibility progress bar
-              ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: Container(
-                  height: 10,
-                  color: Colors.white24,
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: (fillPct / 100).clamp(0.01, 1.0),
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(colors: [Color(0xFF86EFAC), Color(0xFF22C55E)]),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'MAXIMUM ELIGIBLE HOME LOAN',
+                      style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: eligTagBg,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        eligTag,
+                        style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: eligTagFg),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 6),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  '${fillPct.toStringAsFixed(0)}% of ₹1Cr potential',
-                  style: AppTextStyles.dmSans(size: 9, color: Colors.white54),
+                const SizedBox(height: 8),
+                Text(
+                  _fmt(eligLoan),
+                  style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
                 ),
-              ),
-              const SizedBox(height: 14),
-              // 4-Grid box results
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 2.0,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                children: [
-                  _buildResultBox('Max Monthly EMI', _fmtShort(maxEmi)),
-                  _buildResultBox('Available for EMI', availEmi > 0 ? _fmtShort(availEmi) : '₹0'),
-                  _buildResultBox('FOIR Used', '${actualFoir.toStringAsFixed(1)}%'),
-                  _buildResultBox('Eligibility Status', eligStatusStr),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // FOIR Gauge custom painter card
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📐 FOIR Analysis', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 70,
-                    child: CustomPaint(
-                      painter: SemiCircleGaugePainter(
-                        percentage: actualFoir / 100,
-                        activeColor: statusColor,
-                      ),
+                const SizedBox(height: 2),
+                Text(
+                  'Based on ${(foirLimit * 100).toInt()}% FOIR · $calcTenure yr tenure · ${calcRate.toStringAsFixed(2)}% rate',
+                  style: AppTextStyles.dmSans(size: 9.5, color: Colors.white60),
+                ),
+                const SizedBox(height: 14),
+                // Linear eligibility progress bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: Container(
+                    height: 10,
+                    color: Colors.white24,
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: (fillPct / 100).clamp(0.01, 1.0),
                       child: Container(
-                        alignment: const Alignment(0, 0.4),
-                        child: Text(
-                          '${actualFoir.toStringAsFixed(0)}%',
-                          style: AppTextStyles.dmSans(
-                            size: 14,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(colors: [Color(0xFF86EFAC), Color(0xFF22C55E)]),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${fillPct.toStringAsFixed(0)}% of ₹1Cr potential',
+                    style: AppTextStyles.dmSans(size: 9, color: Colors.white54),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                // 4-Grid box results
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  childAspectRatio: 2.0,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  children: [
+                    _buildResultBox('Max Monthly EMI', _fmtShort(maxEmi)),
+                    _buildResultBox('Available for EMI', availEmi > 0 ? _fmtShort(availEmi) : '₹0'),
+                    _buildResultBox('FOIR Used', '${actualFoir.toStringAsFixed(1)}%'),
+                    _buildResultBox('Eligibility Status', eligStatusStr),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // FOIR Gauge custom painter card
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📐 FOIR Analysis', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      height: 70,
+                      child: CustomPaint(
+                        painter: SemiCircleGaugePainter(
+                          percentage: actualFoir / 100,
+                          activeColor: statusColor,
+                        ),
+                        child: Container(
+                          alignment: const Alignment(0, 0.4),
+                          child: Text(
+                            '${actualFoir.toStringAsFixed(0)}%',
+                            style: AppTextStyles.dmSans(
+                              size: 14,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Fixed Obligation to Income Ratio',
-                          style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context)),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${actualFoir.toStringAsFixed(1)}%',
-                          style: AppTextStyles.dmSans(size: 18, weight: FontWeight.w800, color: theme.getTextColor(context)),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          statusText,
-                          style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w700, color: statusColor),
-                        ),
-                      ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Fixed Obligation to Income Ratio',
+                            style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context)),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${actualFoir.toStringAsFixed(1)}%',
+                            style: AppTextStyles.dmSans(size: 18, weight: FontWeight.w800, color: theme.getTextColor(context)),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            statusText,
+                            style: AppTextStyles.dmSans(size: 10, weight: FontWeight.w700, color: statusColor),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Tips to Boost Eligibility
-        Text('Tips to Boost Eligibility', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Column(
-          children: [
-            _buildTipRow('💳', 'Improve CIBIL Score to 750+', 'A score above 750 unlocks lower rates (up to 0.25% reduction) and higher loan amounts from SBI, HDFC, ICICI.'),
-            _buildTipRow('📉', 'Close Existing Loans First', 'Reducing existing EMIs improves FOIR significantly — clearing a ₹10,000 EMI can add ₹8–12L to eligibility.'),
-            _buildTipRow('👫', 'Add Co-applicant (Joint Loan)', 'Adding spouse/parent as co-applicant can increase eligibility by 40–60% and also provides additional 80C/24(b) tax benefits.'),
-            _buildTipRow('📅', 'Opt for Longer Tenure', 'Extending tenure to 30 years reduces EMI burden and improves eligibility — useful if you\'re under 35 years old.'),
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        // Save Bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Save Eligibility Report', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
-                    Text('Save for bank application reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
                   ],
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
-              ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Tips to Boost Eligibility
+          Text('Tips to Boost Eligibility', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 10),
+          Column(
+            children: [
+              _buildTipRow('💳', 'Improve CIBIL Score to 750+', 'A score above 750 unlocks lower rates (up to 0.25% reduction) and higher loan amounts from SBI, HDFC, ICICI.'),
+              _buildTipRow('📉', 'Close Existing Loans First', 'Reducing existing EMIs improves FOIR significantly — clearing a ₹10,000 EMI can add ₹8–12L to eligibility.'),
+              _buildTipRow('👫', 'Add Co-applicant (Joint Loan)', 'Adding spouse/parent as co-applicant can increase eligibility by 40–60% and also provides additional 80C/24(b) tax benefits.'),
+              _buildTipRow('📅', 'Opt for Longer Tenure', 'Extending tenure to 30 years reduces EMI burden and improves eligibility — useful if you\'re under 35 years old.'),
             ],
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Save Bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save Eligibility Report', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
+                      Text('Save for bank application reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -682,6 +817,7 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
     required double max,
     required int divisions,
     required String displayValue,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     final currentVal = double.tryParse(controller.text) ?? min;
@@ -744,11 +880,17 @@ class _INLoanEligibilityState extends ConsumerState<INLoanEligibility> {
                   fillColor: theme.getBgColor(context),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.getBorderColor(context)),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : theme.getBorderColor(context),
+                      width: hasError ? 1.5 : 1.0,
+                    ),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                    borderSide: BorderSide(color: Color(0xFFFF6B00)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : const Color(0xFFFF6B00),
+                      width: hasError ? 2.0 : 1.5,
+                    ),
                   ),
                 ),
                 onSubmitted: (val) {

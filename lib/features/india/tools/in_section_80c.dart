@@ -28,6 +28,20 @@ class _INSection80CState extends ConsumerState<INSection80C> {
   int _taxSlab = 30; // 5, 20, 30
   String _regime = 'old'; // 'old', 'new'
 
+  bool _calculated = false;
+  double _calcGrossIncome = 1200000;
+  double _calcHlPrincipal = 50000;
+  double _calcPpf = 30000;
+  double _calcElss = 20000;
+  double _calcLic = 15000;
+  double _calcNsc = 0;
+  double _calcEpf = 25000;
+  double _calcFd = 0;
+  int _calcTaxSlab = 30;
+  String _calcRegime = 'old';
+
+  final GlobalKey _resultPanelKey = GlobalKey();
+
   void _reset() {
     setState(() {
       _grossIncome = 1200000;
@@ -40,7 +54,55 @@ class _INSection80CState extends ConsumerState<INSection80C> {
       _fd = 0;
       _taxSlab = 30;
       _regime = 'old';
+      _calculated = false;
+
+      _calcGrossIncome = 1200000;
+      _calcHlPrincipal = 50000;
+      _calcPpf = 30000;
+      _calcElss = 20000;
+      _calcLic = 15000;
+      _calcNsc = 0;
+      _calcEpf = 25000;
+      _calcFd = 0;
+      _calcTaxSlab = 30;
+      _calcRegime = 'old';
     });
+  }
+
+  void _calculate() {
+    setState(() {
+      _calculated = true;
+      _calcGrossIncome = _grossIncome;
+      _calcHlPrincipal = _hlPrincipal;
+      _calcPpf = _ppf;
+      _calcElss = _elss;
+      _calcLic = _lic;
+      _calcNsc = _nsc;
+      _calcEpf = _epf;
+      _calcFd = _fd;
+      _calcTaxSlab = _taxSlab;
+      _calcRegime = _regime;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _resultPanelKey.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(context, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+      }
+    });
+  }
+
+  bool _areInputsChanged() {
+    return _grossIncome != _calcGrossIncome ||
+        _hlPrincipal != _calcHlPrincipal ||
+        _ppf != _calcPpf ||
+        _elss != _calcElss ||
+        _lic != _calcLic ||
+        _nsc != _calcNsc ||
+        _epf != _calcEpf ||
+        _fd != _calcFd ||
+        _taxSlab != _calcTaxSlab ||
+        _regime != _calcRegime;
   }
 
   String _fmt(double n) {
@@ -49,10 +111,10 @@ class _INSection80CState extends ConsumerState<INSection80C> {
   }
 
   void _saveCalculation() async {
-    double total = _hlPrincipal + _ppf + _elss + _lic + _nsc + _epf + _fd;
-    if (_regime == 'new') total = 0.0;
-    final eligible = _regime == 'old' ? (total > 150000 ? 150000.0 : total) : 0.0;
-    final taxSaved = eligible * (_taxSlab / 100);
+    double total = _calcHlPrincipal + _calcPpf + _calcElss + _calcLic + _calcNsc + _calcEpf + _calcFd;
+    if (_calcRegime == 'new') total = 0.0;
+    final eligible = _calcRegime == 'old' ? (total > 150000 ? 150000.0 : total) : 0.0;
+    final taxSaved = eligible * (_calcTaxSlab / 100);
 
     final labelCtrl = TextEditingController(text: 'Section 80C Deductions');
     final confirmed = await showDialog<bool>(
@@ -106,16 +168,16 @@ class _INSection80CState extends ConsumerState<INSection80C> {
         country: 'India',
         calcType: 'Section 80C',
         inputs: {
-          'grossIncome': _grossIncome,
-          'hlPrincipal': _hlPrincipal,
-          'ppf': _ppf,
-          'elss': _elss,
-          'lic': _lic,
-          'nsc': _nsc,
-          'epf': _epf,
-          'fd': _fd,
-          'taxSlab': _taxSlab.toDouble(),
-          'regime': _regime == 'old' ? 0.0 : 1.0,
+          'grossIncome': _calcGrossIncome,
+          'hlPrincipal': _calcHlPrincipal,
+          'ppf': _calcPpf,
+          'elss': _calcElss,
+          'lic': _calcLic,
+          'nsc': _calcNsc,
+          'epf': _calcEpf,
+          'fd': _calcFd,
+          'taxSlab': _calcTaxSlab.toDouble(),
+          'regime': _calcRegime == 'old' ? 0.0 : 1.0,
         },
         results: {
           'eligibleDeductions': eligible,
@@ -144,11 +206,11 @@ class _INSection80CState extends ConsumerState<INSection80C> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    double total = _hlPrincipal + _ppf + _elss + _lic + _nsc + _epf + _fd;
-    if (_regime == 'new') total = 0.0;
-    final eligible = _regime == 'old' ? (total > 150000 ? 150000.0 : total) : 0.0;
-    final taxSaved = eligible * (_taxSlab / 100);
-    final taxable = _grossIncome - eligible;
+    double total = _calcHlPrincipal + _calcPpf + _calcElss + _calcLic + _calcNsc + _calcEpf + _calcFd;
+    if (_calcRegime == 'new') total = 0.0;
+    final eligible = _calcRegime == 'old' ? (total > 150000 ? 150000.0 : total) : 0.0;
+    final taxSaved = eligible * (_calcTaxSlab / 100);
+    final taxable = _calcGrossIncome - eligible;
     final remaining = 150000 - total;
     final pct = (total / 150000).clamp(0.0, 1.0);
 
@@ -230,126 +292,168 @@ class _INSection80CState extends ConsumerState<INSection80C> {
               _buildSliderRow('LIC PREMIUM', _lic, 0, 100000, 20, (v) => setState(() => _lic = v)),
               _buildSliderRow('EPF CONTRIBUTIONS', _epf, 0, 150000, 30, (v) => setState(() => _epf = v)),
               _buildSliderRow('TAX SAVER FD', _fd, 0, 150000, 30, (v) => setState(() => _fd = v)),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: _calculate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE05F00),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('⚙️ Calculate Section 80C Deductions', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800)),
+                ),
+              ),
             ],
           ),
         ),
 
-        const SizedBox(height: 20),
-
-        // Results Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ESTIMATED 80C TAX SAVINGS', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(
-                _regime == 'new' ? 'NIL (New Regime)' : _fmt(taxSaved),
-                style: AppTextStyles.playfair(size: 30, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultPanelKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
-              const SizedBox(height: 14),
-              Row(
+              child: Row(
                 children: [
-                  _resultBox('Total 80C Invested', _fmt(total)),
-                  const SizedBox(width: 8),
-                  _resultBox('Eligible Deduction', _fmt(eligible)),
-                  const SizedBox(width: 8),
-                  _resultBox('New Taxable Inc', _fmt(taxable)),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate Section 80C Deductions to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
+            )
+          else
+            SizedBox(key: _resultPanelKey, height: 0),
 
-        const SizedBox(height: 20),
-
-        // Limit progress bar
-        if (_regime == 'old') ...[
+          // Results Card
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: theme.getCardColor(context),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: theme.getBorderColor(context)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Sec 80C Deductions Utilized', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
-                    Text('${(pct * 100).round()}%', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: const Color(0xFFE05F00))),
-                  ],
+                Text('ESTIMATED 80C TAX SAVINGS', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text(
+                  _calcRegime == 'new' ? 'NIL (New Regime)' : _fmt(taxSaved),
+                  style: AppTextStyles.playfair(size: 30, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
                 ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: Container(
-                    height: 8,
-                    color: Colors.grey[200],
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: pct,
-                      child: Container(color: const Color(0xFFE05F00)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Utilized: ${_fmt(eligible)}', style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context))),
-                    Text(remaining > 0 ? 'Remaining: ${_fmt(remaining)}' : 'Limit Exhausted! ✅', style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context))),
+                    _resultBox('Total 80C Invested', _fmt(total)),
+                    const SizedBox(width: 8),
+                    _resultBox('Eligible Deduction', _fmt(eligible)),
+                    const SizedBox(width: 8),
+                    _resultBox('New Taxable Inc', _fmt(taxable)),
                   ],
                 ),
               ],
             ),
           ),
-        ],
 
-        const SizedBox(height: 16),
-        // Save bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Save Deduction Report', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
-                    Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
-                  ],
-                ),
+          const SizedBox(height: 20),
+
+          // Limit progress bar
+          if (_calcRegime == 'old') ...[
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.getCardColor(context),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: theme.getBorderColor(context)),
               ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Sec 80C Deductions Utilized', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                      Text('${(pct * 100).round()}%', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: const Color(0xFFE05F00))),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: Container(
+                      height: 8,
+                      color: Colors.grey[200],
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: pct,
+                        child: Container(color: const Color(0xFFE05F00)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Utilized: ${_fmt(eligible)}', style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context))),
+                      Text(remaining > 0 ? 'Remaining: ${_fmt(remaining)}' : 'Limit Exhausted! ✅', style: AppTextStyles.dmSans(size: 10.5, color: theme.getMutedColor(context))),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
+          ],
+
+          const SizedBox(height: 16),
+          // Save bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save Deduction Report', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
+                      Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

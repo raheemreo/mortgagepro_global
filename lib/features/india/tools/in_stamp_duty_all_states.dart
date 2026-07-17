@@ -33,6 +33,15 @@ class _INStampDutyAllStatesState extends ConsumerState<INStampDutyAllStates> {
   // Controllers
   late TextEditingController _propValueCtrl;
 
+  bool _calculated = false;
+  String _calcSelectedStateCode = 'MH';
+  String _calcGender = 'male';
+  double _calcPropValue = 7500000;
+  String _calcPropType = 'residential';
+  String _calcConstrStatus = 'ready';
+
+  bool _propValueHasError = false;
+
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _resultPanelKey = GlobalKey();
 
@@ -567,17 +576,65 @@ class _INStampDutyAllStatesState extends ConsumerState<INStampDutyAllStates> {
     super.dispose();
   }
 
+  void _calculate() {
+    final val = double.tryParse(_propValueCtrl.text) ?? 0.0;
+    setState(() {
+      _propValueHasError = val <= 0;
+    });
+
+    if (_propValueHasError) return;
+
+    setState(() {
+      _calculated = true;
+      _calcSelectedStateCode = _selectedStateCode;
+      _calcGender = _gender;
+      _calcPropValue = _propValue;
+      _calcPropType = _propType;
+      _calcConstrStatus = _constrStatus;
+    });
+
+    _scrollToResultsPanel();
+  }
+
+  bool _areInputsChanged() {
+    return _selectedStateCode != _calcSelectedStateCode ||
+        _gender != _calcGender ||
+        _propValue != _calcPropValue ||
+        _propType != _calcPropType ||
+        _constrStatus != _calcConstrStatus;
+  }
+
+  void _reset() {
+    setState(() {
+      _selectedStateCode = 'MH';
+      _gender = 'male';
+      _propValue = 7500000;
+      _propType = 'residential';
+      _constrStatus = 'ready';
+      _propValueCtrl.text = '7500000';
+
+      _calculated = false;
+      _calcSelectedStateCode = 'MH';
+      _calcGender = 'male';
+      _calcPropValue = 7500000;
+      _calcPropType = 'residential';
+      _calcConstrStatus = 'ready';
+
+      _propValueHasError = false;
+    });
+  }
+
   void _saveStampDutyReport() async {
-    final state = _states.firstWhere((s) => s['code'] == _selectedStateCode);
-    final double dutyPct = _gender == 'male'
+    final state = _states.firstWhere((s) => s['code'] == _calcSelectedStateCode);
+    final double dutyPct = _calcGender == 'male'
         ? state['male']
-        : (_gender == 'female' ? state['female'] : state['joint']);
+        : (_calcGender == 'female' ? state['female'] : state['joint']);
     final double regPct = state['reg'];
     final double metroAdd = state['metroSurcharge'] ? state['metro'] : 0.0;
 
-    final stampAmt = _propValue * (dutyPct / 100);
-    final regAmt = _propValue * (regPct / 100);
-    final metroAmt = _propValue * (metroAdd / 100);
+    final stampAmt = _calcPropValue * (dutyPct / 100);
+    final regAmt = _calcPropValue * (regPct / 100);
+    final metroAmt = _calcPropValue * (metroAdd / 100);
     final totalAmt = stampAmt + regAmt + metroAmt;
 
     final labelCtrl =
@@ -646,9 +703,9 @@ class _INStampDutyAllStatesState extends ConsumerState<INStampDutyAllStates> {
         country: 'India',
         calcType: 'State Stamp Duty',
         inputs: {
-          'propertyValue': _propValue,
+          'propertyValue': _calcPropValue,
           'stateIndex': _states.indexOf(state).toDouble(),
-          'gender': _gender == 'male' ? 0.0 : (_gender == 'female' ? 1.0 : 2.0),
+          'gender': _calcGender == 'male' ? 0.0 : (_calcGender == 'female' ? 1.0 : 2.0),
         },
         results: {
           'stampDuty': stampAmt,
@@ -700,19 +757,19 @@ class _INStampDutyAllStatesState extends ConsumerState<INStampDutyAllStates> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final selectedState =
-        _states.firstWhere((s) => s['code'] == _selectedStateCode);
-    final double dutyPct = _gender == 'male'
+        _states.firstWhere((s) => s['code'] == _calcSelectedStateCode);
+    final double dutyPct = _calcGender == 'male'
         ? selectedState['male']
-        : (_gender == 'female'
+        : (_calcGender == 'female'
             ? selectedState['female']
             : selectedState['joint']);
     final double regPct = selectedState['reg'];
     final double metroAdd =
         selectedState['metroSurcharge'] ? selectedState['metro'] : 0.0;
 
-    final stampAmt = _propValue * (dutyPct / 100);
-    final regAmt = _propValue * (regPct / 100);
-    final metroAmt = _propValue * (metroAdd / 100);
+    final stampAmt = _calcPropValue * (dutyPct / 100);
+    final regAmt = _calcPropValue * (regPct / 100);
+    final metroAmt = _calcPropValue * (metroAdd / 100);
     final totalAmt = stampAmt + regAmt + metroAmt;
 
     // Filter states list based on active filter bar chip and search query
@@ -863,6 +920,7 @@ class _INStampDutyAllStatesState extends ConsumerState<INStampDutyAllStates> {
                 min: 100000,
                 max: 100000000, // 10 Cr max
                 prefix: '₹ ',
+                hasError: _propValueHasError,
                 onChangedText: (val) => setState(() => _propValue = val),
                 onChangedSlider: (val) => setState(() {
                   _propValue = val;
@@ -972,211 +1030,262 @@ class _INStampDutyAllStatesState extends ConsumerState<INStampDutyAllStates> {
               ),
 
               const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _scrollToResultsPanel,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6B00),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text('🏛️ Calculate Stamp Duty & Charges',
-                      style: AppTextStyles.dmSans(
-                          size: 13,
-                          color: Colors.white,
-                          weight: FontWeight.w800)),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Calculated Results Card
-        Container(
-          key: _resultPanelKey,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-                blurRadius: 16,
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${selectedState['name']} — Stamp Duty Result',
-                      style: AppTextStyles.dmSans(
-                          size: 12.5,
-                          weight: FontWeight.w800,
-                          color: theme.getTextColor(context))),
-                  GestureDetector(
-                    onTap: _saveStampDutyReport,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                            colors: [Color(0xFF046A38), Color(0xFF07543A)]),
-                        borderRadius: BorderRadius.circular(6),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _calculate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6B00),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 4,
                       ),
-                      child: Text('Save',
+                      child: Text('🏛️ Calculate Stamp Duty & Charges',
                           style: AppTextStyles.dmSans(
-                              size: 9,
+                              size: 13,
                               color: Colors.white,
                               weight: FontWeight.w800)),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Summary stats grid
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 9,
-                crossAxisSpacing: 9,
-                childAspectRatio: 1.6,
-                children: [
-                  _resBoxSummary(
-                      'STAMP DUTY',
-                      _fmt(stampAmt),
-                      '${dutyPct.toStringAsFixed(2)}% of value',
-                      const Color(0xFFFF6B00),
-                      context),
-                  _resBoxSummary(
-                      'REGISTRATION FEE',
-                      _fmt(regAmt),
-                      '${regPct.toStringAsFixed(2)}% registration',
-                      const Color(0xFF0B1F48),
-                      context),
-                  _resBoxSummary(
-                      'OTHER CHARGES',
-                      metroAmt > 0
-                          ? _fmt(metroAmt)
-                          : (selectedState['other'] != '—'
-                              ? 'See Notes'
-                              : '₹0'),
-                      metroAmt > 0
-                          ? 'Metro / local cess'
-                          : selectedState['other'],
-                      const Color(0xFF046A38),
-                      context),
-                  _resBoxSummary('TOTAL COST', _fmt(totalAmt), 'All-in charges',
-                      const Color(0xFF0B1F48), context,
-                      isTotal: true),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Donut split breakdown chart
-              Row(
-                children: [
+                  const SizedBox(width: 10),
                   SizedBox(
-                    width: 110,
-                    height: 110,
-                    child: CustomPaint(
-                      painter: _ThreeSegmentDonutPainter(
-                        v1: stampAmt,
-                        v2: regAmt,
-                        v3: metroAmt,
-                        c1: const Color(0xFFFF6B00),
-                        c2: const Color(0xFF0B1F48),
-                        c3: const Color(0xFF046A38),
-                        centerText: _fmtShort(totalAmt),
-                        textColor: theme.getTextColor(context),
-                        mutedColor: theme.getMutedColor(context),
+                    width: 50,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: _reset,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0B1F48),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(
-                            const Color(0xFFFF6B00), 'Stamp Duty', context),
-                        const SizedBox(height: 6),
-                        _legendRow(
-                            const Color(0xFF0B1F48), 'Registration', context),
-                        const SizedBox(height: 6),
-                        _legendRow(
-                            const Color(0xFF046A38), 'Other Charges', context),
-                      ],
+                      child: const Icon(Icons.refresh, size: 20),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 16),
-
-              // Cost breakdown progress bars
-              _bdProgressBar(
-                  'Stamp Duty', stampAmt, totalAmt, const Color(0xFFFF6B00)),
-              _bdProgressBar('Registration Fee', regAmt, totalAmt,
-                  const Color(0xFF0B1F48)),
-              _bdProgressBar(
-                  'Other Charges', metroAmt, totalAmt, const Color(0xFF046A38)),
-              const Divider(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total Cost',
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          weight: FontWeight.w800,
-                          color: const Color(0xFFFF6B00))),
-                  Text(_fmt(totalAmt),
-                      style: AppTextStyles.dmSans(
-                          size: 11,
-                          weight: FontWeight.w800,
-                          color: const Color(0xFFFF6B00))),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // State Specific Notes
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
-                  border: Border.all(
-                      color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('📋 State-Specific Notes',
-                        style: AppTextStyles.dmSans(
-                            size: 11,
-                            weight: FontWeight.w800,
-                            color: theme.getTextColor(context))),
-                    const SizedBox(height: 4),
-                    Text(selectedState['notes'] as String,
-                        style: AppTextStyles.dmSans(
-                            size: 9.5,
-                            color: theme.getMutedColor(context),
-                            height: 1.55)),
-                  ],
-                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 20),
+
+        if (_calculated) ...[
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultPanelKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultPanelKey, height: 0),
+
+          // Calculated Results Card
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+                  blurRadius: 16,
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('${selectedState['name']} — Stamp Duty Result',
+                        style: AppTextStyles.dmSans(
+                            size: 12.5,
+                            weight: FontWeight.w800,
+                            color: theme.getTextColor(context))),
+                    GestureDetector(
+                      onTap: _saveStampDutyReport,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                              colors: [Color(0xFF046A38), Color(0xFF07543A)]),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text('Save',
+                            style: AppTextStyles.dmSans(
+                                size: 9,
+                                color: Colors.white,
+                                weight: FontWeight.w800)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Summary stats grid
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 9,
+                  crossAxisSpacing: 9,
+                  childAspectRatio: 1.6,
+                  children: [
+                    _resBoxSummary(
+                        'STAMP DUTY',
+                        _fmt(stampAmt),
+                        '${dutyPct.toStringAsFixed(2)}% of value',
+                        const Color(0xFFFF6B00),
+                        context),
+                    _resBoxSummary(
+                        'REGISTRATION FEE',
+                        _fmt(regAmt),
+                        '${regPct.toStringAsFixed(2)}% registration',
+                        const Color(0xFF0B1F48),
+                        context),
+                    _resBoxSummary(
+                        'OTHER CHARGES',
+                        metroAmt > 0
+                            ? _fmt(metroAmt)
+                            : (selectedState['other'] != '—'
+                                ? 'See Notes'
+                                : '₹0'),
+                        metroAmt > 0
+                            ? 'Metro / local cess'
+                            : selectedState['other'],
+                        const Color(0xFF046A38),
+                        context),
+                    _resBoxSummary('TOTAL COST', _fmt(totalAmt), 'All-in charges',
+                        const Color(0xFF0B1F48), context,
+                        isTotal: true),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Donut split breakdown chart
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      height: 110,
+                      child: CustomPaint(
+                        painter: _ThreeSegmentDonutPainter(
+                          v1: stampAmt,
+                          v2: regAmt,
+                          v3: metroAmt,
+                          c1: const Color(0xFFFF6B00),
+                          c2: const Color(0xFF0B1F48),
+                          c3: const Color(0xFF046A38),
+                          centerText: _fmtShort(totalAmt),
+                          textColor: theme.getTextColor(context),
+                          mutedColor: theme.getMutedColor(context),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _legendRow(
+                              const Color(0xFFFF6B00), 'Stamp Duty', context),
+                          const SizedBox(height: 6),
+                          _legendRow(
+                              const Color(0xFF0B1F48), 'Registration', context),
+                          const SizedBox(height: 6),
+                          _legendRow(
+                              const Color(0xFF046A38), 'Other Charges', context),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Cost breakdown progress bars
+                _bdProgressBar(
+                    'Stamp Duty', stampAmt, totalAmt, const Color(0xFFFF6B00)),
+                _bdProgressBar('Registration Fee', regAmt, totalAmt,
+                    const Color(0xFF0B1F48)),
+                _bdProgressBar(
+                    'Other Charges', metroAmt, totalAmt, const Color(0xFF046A38)),
+                const Divider(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Cost',
+                        style: AppTextStyles.dmSans(
+                            size: 11,
+                            weight: FontWeight.w800,
+                            color: const Color(0xFFFF6B00))),
+                    Text(_fmt(totalAmt),
+                        style: AppTextStyles.dmSans(
+                            size: 11,
+                            weight: FontWeight.w800,
+                            color: const Color(0xFFFF6B00))),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // State Specific Notes
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
+                    border: Border.all(
+                        color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('📋 State-Specific Notes',
+                          style: AppTextStyles.dmSans(
+                              size: 11,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 4),
+                      Text(selectedState['notes'] as String,
+                          style: AppTextStyles.dmSans(
+                              size: 9.5,
+                              color: theme.getMutedColor(context),
+                              height: 1.55)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
 
         // India Stamp Duty Overview summary banner
         Text('India Stamp Duty Overview',
@@ -1495,6 +1604,7 @@ class _INStampDutyAllStatesState extends ConsumerState<INStampDutyAllStates> {
     required double max,
     String prefix = '',
     String suffix = '',
+    bool hasError = false,
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
   }) {
@@ -1519,7 +1629,9 @@ class _INStampDutyAllStatesState extends ConsumerState<INStampDutyAllStates> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.06),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            border: Border.all(
+                color: hasError ? Colors.red : Colors.white.withValues(alpha: 0.18),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(10),
           ),
           child: TextFormField(

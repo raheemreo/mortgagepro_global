@@ -24,6 +24,17 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
   DateTime _startMonth = DateTime(2025, 7);
   String _viewMode = 'yearly'; // 'monthly', 'yearly'
 
+  bool _hasCalculated = false;
+  double _calcAmt = 5000000;
+  double _calcRate = 8.50;
+  int _calcTenure = 20;
+  DateTime _calcStartMonth = DateTime(2025, 7);
+  final GlobalKey _resultsKey = GlobalKey();
+
+  String? _amtError;
+  String? _rateError;
+  String? _tenureError;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +51,16 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
     super.dispose();
   }
 
+  bool _areInputsChanged() {
+    final currentAmt = double.tryParse(_amtController.text.replaceAll(',', '')) ?? 0.0;
+    final currentRate = double.tryParse(_rateController.text) ?? 0.0;
+    final currentTenure = int.tryParse(_tenureController.text) ?? 0;
+    return currentAmt != _calcAmt ||
+        currentRate != _calcRate ||
+        currentTenure != _calcTenure ||
+        _startMonth != _calcStartMonth;
+  }
+
   void _reset() {
     setState(() {
       _amtController.text = '5000000';
@@ -47,12 +68,16 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
       _tenureController.text = '20';
       _startMonth = DateTime(2025, 7);
       _viewMode = 'yearly';
+      _hasCalculated = false;
+      _calcAmt = 5000000;
+      _calcRate = 8.50;
+      _calcTenure = 20;
+      _calcStartMonth = DateTime(2025, 7);
+      _amtError = null;
+      _rateError = null;
+      _tenureError = null;
     });
   }
-
-  double _getAmt() => double.tryParse(_amtController.text) ?? 0.0;
-  double _getRate() => double.tryParse(_rateController.text) ?? 0.0;
-  int _getTenure() => int.tryParse(_tenureController.text) ?? 0;
 
   String _fmt(double n) {
     if (n >= 10000000) return '₹${(n / 10000000).toStringAsFixed(2)} Cr';
@@ -81,9 +106,9 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
   }
 
   void _saveCalculation() async {
-    final p = _getAmt();
-    final rateVal = _getRate();
-    final tenureVal = _getTenure();
+    final p = _calcAmt;
+    final rateVal = _calcRate;
+    final tenureVal = _calcTenure;
     final r = rateVal / 1200;
     final n = tenureVal * 12;
 
@@ -148,8 +173,8 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
           'loanAmt': p,
           'rate': rateVal,
           'termYears': tenureVal.toDouble(),
-          'startYear': _startMonth.year.toDouble(),
-          'startMonth': _startMonth.month.toDouble(),
+          'startYear': _calcStartMonth.year.toDouble(),
+          'startMonth': _calcStartMonth.month.toDouble(),
         },
         results: {
           'emi': emi,
@@ -179,9 +204,9 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final p = _getAmt();
-    final rateVal = _getRate();
-    final tenureVal = _getTenure();
+    final p = _calcAmt;
+    final rateVal = _calcRate;
+    final tenureVal = _calcTenure;
 
     final r = rateVal / 1200;
     final totalPeriods = tenureVal * 12;
@@ -242,36 +267,6 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Top Info Strip
-        Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.09),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildRateStripItem('EMI', _fmtSh(emi), 'Monthly', isFirst: true),
-              _buildRateStripItem('Principal', _fmt(p), 'Loan Amt'),
-              _buildRateStripItem('Interest', _fmt(totalInterest), 'Total Int'),
-              _buildRateStripItem('Tenure', '$tenureVal Yr', '$totalPeriods EMIs'),
-            ],
-          ),
-        ),
-
         // Section label
         Padding(
           padding: const EdgeInsets.only(bottom: 11),
@@ -307,12 +302,14 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
             children: [
               // Amount & Rate
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _buildTextField(
                       label: 'Loan Amount (₹)',
                       controller: _amtController,
                       hint: '50,00,000',
+                      errorText: _amtError,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -321,6 +318,7 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
                       label: 'Interest Rate (%)',
                       controller: _rateController,
                       hint: '8.50',
+                      errorText: _rateError,
                     ),
                   ),
                 ],
@@ -329,12 +327,14 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
 
               // Tenure & Month
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _buildTextField(
                       label: 'Tenure (Years)',
                       controller: _tenureController,
                       hint: '20',
+                      errorText: _tenureError,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -377,7 +377,40 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
               // Generate Button
               ElevatedButton(
                 onPressed: () {
-                  setState(() {});
+                  setState(() {
+                    _amtError = null;
+                    _rateError = null;
+                    _tenureError = null;
+                  });
+
+                  final amt = double.tryParse(_amtController.text.replaceAll(',', ''));
+                  final rate = double.tryParse(_rateController.text);
+                  final tenure = int.tryParse(_tenureController.text);
+
+                  bool hasErr = false;
+                  if (amt == null || amt <= 0) {
+                    setState(() => _amtError = 'Enter a valid amount');
+                    hasErr = true;
+                  }
+                  if (rate == null || rate <= 0 || rate > 100) {
+                    setState(() => _rateError = 'Enter rate (0-100%)');
+                    hasErr = true;
+                  }
+                  if (tenure == null || tenure <= 0 || tenure > 40) {
+                    setState(() => _tenureError = 'Enter tenure (1-40 yrs)');
+                    hasErr = true;
+                  }
+
+                  if (hasErr) return;
+
+                  setState(() {
+                    _hasCalculated = true;
+                    _calcAmt = amt!;
+                    _calcRate = rate!;
+                    _calcTenure = tenure!;
+                    _calcStartMonth = _startMonth;
+                  });
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('⚡ Schedule generated!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
@@ -386,6 +419,16 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_resultsKey.currentContext != null) {
+                      Scrollable.ensureVisible(
+                        _resultsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
@@ -405,321 +448,379 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
           ),
         ),
 
-        const SizedBox(height: 20),
-
-        // Summary Boxes Grid
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          childAspectRatio: 1.4,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          children: [
-            _buildSummaryBox('Monthly EMI', _fmtSh(emi), sub: 'Per Month', highlight: true),
-            _buildSummaryBox('Total Payment', _fmt(totalRepayable), sub: 'Principal + Interest'),
-            _buildSummaryBox('Total Interest', _fmt(totalInterest), sub: 'Over Tenure'),
-            _buildSummaryBox('Interest %', '$intPercent%', sub: 'Of Total Outgo'),
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        // Custom Horizontal Stacked Bar Chart
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📈 Annual Principal vs Interest', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 2),
-              Text('Stacked view — how your payment shifts over years', style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context))),
-              const SizedBox(height: 16),
-              
-              if (yearlyData.isEmpty)
-                const Center(child: Text('No data available'))
-              else
-                Column(
-                  children: yearlyData.take(20).map((yearRow) {
-                    final double totalYearPayment = yearRow.principal + yearRow.interest;
-                    final double pWidth = totalYearPayment > 0 ? (yearRow.principal / totalYearPayment) : 0.0;
-                    final double iWidth = 1.0 - pWidth;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 28,
-                            child: Text(
-                              'Y${yearRow.year}',
-                              style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.w800, color: theme.getMutedColor(context)),
-                            ),
-                          ),
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                height: 16,
-                                color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF5E6D4),
-                                child: Row(
-                                  children: [
-                                    if (pWidth > 0)
-                                      Expanded(
-                                        flex: (pWidth * 100).round(),
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [Color(0xFFFF6B00), Color(0xFFF5A623)],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    if (iWidth > 0)
-                                      Expanded(
-                                        flex: (iWidth * 100).round(),
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [Color(0xFF1A3A8F), Color(0xFF4F6FBF)],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-
-              const SizedBox(height: 12),
-              Row(
+        if (_hasCalculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
                 children: [
-                  _buildLegendDot('Principal', const Color(0xFFFF6B00)),
-                  const SizedBox(width: 14),
-                  _buildLegendDot('Interest', const Color(0xFF1A3A8F)),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
                 ],
               ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
+
+          // Top Info Strip
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.09),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildRateStripItem('EMI', _fmtSh(emi), 'Monthly', isFirst: true),
+                _buildRateStripItem('Principal', _fmt(p), 'Loan Amt'),
+                _buildRateStripItem('Interest', _fmt(totalInterest), 'Total Int'),
+                _buildRateStripItem('Tenure', '$tenureVal Yr', '$totalPeriods EMIs'),
+              ],
+            ),
+          ),
+
+          // Summary Boxes Grid
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            childAspectRatio: 1.4,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            children: [
+              _buildSummaryBox('Monthly EMI', _fmtSh(emi), sub: 'Per Month', highlight: true),
+              _buildSummaryBox('Total Payment', _fmt(totalRepayable), sub: 'Principal + Interest'),
+              _buildSummaryBox('Total Interest', _fmt(totalInterest), sub: 'Over Tenure'),
+              _buildSummaryBox('Interest %', '$intPercent%', sub: 'Of Total Outgo'),
             ],
           ),
-        ),
 
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-        // Timeline Milestones
-        if (half50Year > 0) ...[
+          // Custom Horizontal Stacked Bar Chart
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: theme.getCardColor(context),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(22),
               border: Border.all(color: theme.getBorderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Key Milestones', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w700, color: theme.getTextColor(context))),
-                const SizedBox(height: 8),
-                _buildMilestoneRow('🏁', '50% Balance Cleared', 'When you owe half of original loan', 'Yr $half50Year'),
-                _buildMilestoneRow('🎉', 'Loan Free', 'Final EMI payment', 'Yr $tenureVal'),
+                Text('📈 Annual Principal vs Interest', style: AppTextStyles.dmSans(size: 12.5, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 2),
+                Text('Stacked view — how your payment shifts over years', style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context))),
+                const SizedBox(height: 16),
+                
+                if (yearlyData.isEmpty)
+                  const Center(child: Text('No data available'))
+                else
+                  Column(
+                    children: yearlyData.take(20).map((yearRow) {
+                      final double totalYearPayment = yearRow.principal + yearRow.interest;
+                      final double pWidth = totalYearPayment > 0 ? (yearRow.principal / totalYearPayment) : 0.0;
+                      final double iWidth = 1.0 - pWidth;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 28,
+                              child: Text(
+                                'Y${yearRow.year}',
+                                style: AppTextStyles.dmSans(size: 9.5, weight: FontWeight.w800, color: theme.getMutedColor(context)),
+                              ),
+                            ),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  height: 16,
+                                  color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF5E6D4),
+                                  child: Row(
+                                    children: [
+                                      if (pWidth > 0)
+                                        Expanded(
+                                          flex: (pWidth * 100).round(),
+                                          child: Container(
+                                            decoration: const BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [Color(0xFFFF6B00), Color(0xFFF5A623)],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      if (iWidth > 0)
+                                        Expanded(
+                                          flex: (iWidth * 100).round(),
+                                          child: Container(
+                                            decoration: const BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [Color(0xFF1A3A8F), Color(0xFF4F6FBF)],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _buildLegendDot('Principal', const Color(0xFFFF6B00)),
+                    const SizedBox(width: 14),
+                    _buildLegendDot('Interest', const Color(0xFF1A3A8F)),
+                  ],
+                ),
               ],
             ),
           ),
+
           const SizedBox(height: 20),
-        ],
 
-        // Monthly / Yearly Schedule
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Schedule Table', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
-            Row(
-              children: [
-                _buildTab('Yearly', _viewMode == 'yearly', () => setState(() => _viewMode = 'yearly')),
-                const SizedBox(width: 6),
-                _buildTab('Monthly', _viewMode == 'monthly', () => setState(() => _viewMode = 'monthly')),
-              ],
+          // Timeline Milestones
+          if (half50Year > 0) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.getCardColor(context),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: theme.getBorderColor(context)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Key Milestones', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w700, color: theme.getTextColor(context))),
+                  const SizedBox(height: 8),
+                  _buildMilestoneRow('🏁', '50% Balance Cleared', 'When you owe half of original loan', 'Yr $half50Year'),
+                  _buildMilestoneRow('🎉', 'Loan Free', 'Final EMI payment', 'Yr $tenureVal'),
+                ],
+              ),
             ),
+            const SizedBox(height: 20),
           ],
-        ),
-        const SizedBox(height: 10),
 
-        // Table Wrapper
-        Container(
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.getBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
+          // Monthly / Yearly Schedule
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Schedule Table', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
+              Row(
+                children: [
+                  _buildTab('Yearly', _viewMode == 'yearly', () => setState(() => _viewMode = 'yearly')),
+                  const SizedBox(width: 6),
+                  _buildTab('Monthly', _viewMode == 'monthly', () => setState(() => _viewMode = 'monthly')),
+                ],
+              ),
             ],
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              // Table Header
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+          const SizedBox(height: 10),
+
+          // Table Wrapper
+          Container(
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: theme.getBorderColor(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                // Table Header
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          _viewMode == 'monthly' ? 'EMI#' : 'Year',
+                          style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: Colors.white70),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          'Principal',
+                          style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: Colors.white70),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          'Interest',
+                          style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: Colors.white70),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          'Balance',
+                          style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: Colors.white70),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        _viewMode == 'monthly' ? 'EMI#' : 'Year',
-                        style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: Colors.white70),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        'Principal',
-                        style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: Colors.white70),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        'Interest',
-                        style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: Colors.white70),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        'Balance',
-                        style: AppTextStyles.dmSans(size: 8.5, weight: FontWeight.w800, color: Colors.white70),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                  ],
+
+                // Table Body
+                SizedBox(
+                  height: 320,
+                  child: _viewMode == 'monthly'
+                      ? ListView.builder(
+                          itemCount: monthlyRows.length,
+                          itemBuilder: (context, index) {
+                            final row = monthlyRows[index];
+                            final isYearEnd = row.period % 12 == 0;
+                            final dateStr = _getMonthStr(row.period);
+
+                            return _buildTableRow(
+                              label: '$dateStr (${row.period})',
+                              principal: _fmtSh(row.principal),
+                              interest: _fmtSh(row.interest),
+                              balance: _fmtSh(row.balance),
+                              highlight: isYearEnd,
+                            );
+                          },
+                        )
+                      : ListView.builder(
+                          itemCount: yearlyData.length,
+                          itemBuilder: (context, index) {
+                            final row = yearlyData[index];
+                            return _buildTableRow(
+                              label: 'Yr ${row.year}',
+                              principal: _fmtSh(row.principal),
+                              interest: _fmtSh(row.interest),
+                              balance: _fmtSh(row.balance),
+                              highlight: true,
+                            );
+                          },
+                        ),
                 ),
-              ),
-
-              // Table Body
-              SizedBox(
-                height: 320,
-                child: _viewMode == 'monthly'
-                    ? ListView.builder(
-                        itemCount: monthlyRows.length,
-                        itemBuilder: (context, index) {
-                          final row = monthlyRows[index];
-                          final isYearEnd = row.period % 12 == 0;
-                          final dateStr = _getMonthStr(row.period);
-
-                          return _buildTableRow(
-                            label: '$dateStr (${row.period})',
-                            principal: _fmtSh(row.principal),
-                            interest: _fmtSh(row.interest),
-                            balance: _fmtSh(row.balance),
-                            highlight: isYearEnd,
-                          );
-                        },
-                      )
-                    : ListView.builder(
-                        itemCount: yearlyData.length,
-                        itemBuilder: (context, index) {
-                          final row = yearlyData[index];
-                          return _buildTableRow(
-                            label: 'Yr ${row.year}',
-                            principal: _fmtSh(row.principal),
-                            interest: _fmtSh(row.interest),
-                            balance: _fmtSh(row.balance),
-                            highlight: true,
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Save bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [const Color(0xFF064E3B), const Color(0xFF047857)]
-                  : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              ],
             ),
-            border: Border.all(
-              color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7),
-              width: 1.5,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Save bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF064E3B), const Color(0xFF047857)]
+                    : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(
+                color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7),
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(17),
             ),
-            borderRadius: BorderRadius.circular(17),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Save Amortization Schedule',
-                      style: AppTextStyles.dmSans(
-                        size: 12,
-                        weight: FontWeight.w800,
-                        color: isDark ? Colors.white : const Color(0xFF07543A),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Save Amortization Schedule',
+                        style: AppTextStyles.dmSans(
+                          size: 12,
+                          weight: FontWeight.w800,
+                          color: isDark ? Colors.white : const Color(0xFF07543A),
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Save full schedule details for reference',
-                      style: AppTextStyles.dmSans(
-                        size: 9.5,
-                        color: isDark ? Colors.white70 : const Color(0xFF046A38),
+                      Text(
+                        'Save full schedule details for reference',
+                        style: AppTextStyles.dmSans(
+                          size: 9.5,
+                          color: isDark ? Colors.white70 : const Color(0xFF046A38),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 0,
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                  child: Text('Save', style: AppTextStyles.dmSans(size: 10, color: Colors.white, weight: FontWeight.w800)),
                 ),
-                child: Text('Save', style: AppTextStyles.dmSans(size: 10, color: Colors.white, weight: FontWeight.w800)),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -730,6 +831,7 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
     required String label,
     required TextEditingController controller,
     required String hint,
+    String? errorText,
   }) {
     final theme = widget.theme;
     return Column(
@@ -741,7 +843,7 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
         ),
         const SizedBox(height: 5),
         SizedBox(
-          height: 44,
+          height: errorText != null ? 64 : 44,
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -752,6 +854,8 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
               filled: true,
               fillColor: theme.getBgColor(context),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              errorText: errorText,
+              errorStyle: AppTextStyles.dmSans(size: 9, color: Colors.red),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: theme.getBorderColor(context)),
@@ -759,6 +863,14 @@ class _INAmortizationState extends ConsumerState<INAmortization> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: theme.primaryColor),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
               ),
             ),
           ),

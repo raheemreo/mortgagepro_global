@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/ad_config.dart';
 import '../../services/ad_manager.dart';
 import '../../services/ad_free_manager.dart';
+import '../../services/remote_config_service.dart';
 
 /// NativeAdWidget — Displays a native ad for the given [screenName].
 ///
@@ -38,6 +39,7 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
   NativeAd? _ad;
   bool _isLoaded = false;
   bool _loadFailed = false;
+  bool _isLoading = false; // in-flight request guard
   double _opacity = 0.0; // animates to 1.0 when ad is ready
 
   String get _adUnitId => Platform.isIOS ? AdConfig.nativeAdUnitIos : AdConfig.nativeAdUnitAndroid;
@@ -60,8 +62,13 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
   }
 
   Future<void> _loadNativeAd() async {
+    final nativeEnabled = RemoteConfigService.instance.nativeEnabled;
+    final disableAds = RemoteConfigService.instance.disableAds;
+    if (!nativeEnabled || disableAds || _isLoading || _isLoaded) return;
+
     if (mounted) {
       setState(() {
+        _isLoading = true;
         _loadFailed = false;
       });
     }
@@ -74,38 +81,58 @@ class _NativeAdWidgetState extends ConsumerState<NativeAdWidget> {
           _ad = cachedAd;
           _isLoaded = true;
           _loadFailed = false;
+          _isLoading = false;
         });
       }
       return;
     }
 
     // ── Load dynamically ──
-    final loadedAd = await AdManager.instance.loadNative(
-      _adUnitId,
-      screen: widget.screenName,
-      factoryId: widget.adType,
-      isDark: Theme.of(context).brightness == Brightness.dark,
-    );
+    try {
+      final loadedAd = await AdManager.instance.loadNative(
+        _adUnitId,
+        screen: widget.screenName,
+        factoryId: widget.adType,
+        isDark: Theme.of(context).brightness == Brightness.dark,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (loadedAd != null) {
-      setState(() {
-        _ad = loadedAd;
-        _isLoaded = true;
-        _loadFailed = false;
-        _opacity = 1.0; // trigger fade-in
-      });
-    } else {
-      setState(() {
-        _isLoaded = false;
-        _loadFailed = true;
-      });
+      if (loadedAd != null) {
+        setState(() {
+          _ad = loadedAd;
+          _isLoaded = true;
+          _loadFailed = false;
+          _opacity = 1.0; // trigger fade-in
+        });
+      } else {
+        setState(() {
+          _isLoaded = false;
+          _loadFailed = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoaded = false;
+          _loadFailed = true;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final nativeEnabled = RemoteConfigService.instance.nativeEnabled;
+    final disableAds = RemoteConfigService.instance.disableAds;
+    if (!nativeEnabled || disableAds) return const SizedBox.shrink();
+
     final adFreeActive = ref.watch(adFreeActiveProvider);
     ref.listen<bool>(adFreeActiveProvider, (previous, next) {
       if (next) {

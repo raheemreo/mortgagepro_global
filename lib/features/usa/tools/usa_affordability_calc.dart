@@ -13,6 +13,7 @@ import '../../../shared/models/saved_calc.dart';
 import '../../../shared/widgets/live_rate_banner.dart';
 import '../../../providers/usa_rates_provider.dart';
 import '../../../providers/calculator_draft_provider.dart';
+import '../../../../widgets/ads/native_ad_widget.dart';
 
 class USAAffordabilityCalc extends ConsumerStatefulWidget {
   final CountryTheme theme;
@@ -991,6 +992,11 @@ class _USAAffordabilityCalcState extends ConsumerState<USAAffordabilityCalc> {
             ),
           ),
 
+          const SizedBox(height: 20),
+          const NativeAdWidget(
+            screenName: 'usa_affordability_calc',
+            adType: 'mediumCard',
+          ),
           const SizedBox(height: 20),
           _buildSectionHeader('Budget Scenarios', onReset: null),
           const SizedBox(height: 8),

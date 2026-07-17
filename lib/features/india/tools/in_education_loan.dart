@@ -25,6 +25,18 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
   double _courseDurationYears = 4;
   double _repayTenureYears = 10;
 
+  bool _calculated = false;
+  String _calcCourseType = 'domestic';
+  double _calcLoanAmount = 1500000;
+  double _calcRoi = 11.15;
+  double _calcCourseDurationYears = 4;
+  double _calcRepayTenureYears = 10;
+
+  bool _loanAmountHasError = false;
+  bool _roiHasError = false;
+  bool _courseDurationHasError = false;
+  bool _repayTenureHasError = false;
+
   // Controllers
   late TextEditingController _loanAmountCtrl;
   late TextEditingController _roiCtrl;
@@ -112,7 +124,56 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
       _roiCtrl.text = '11.15';
       _courseDurCtrl.text = '4';
       _repayTenureCtrl.text = '10';
+
+      _calculated = false;
+      _calcCourseType = 'domestic';
+      _calcLoanAmount = 1500000;
+      _calcRoi = 11.15;
+      _calcCourseDurationYears = 4;
+      _calcRepayTenureYears = 10;
+
+      _loanAmountHasError = false;
+      _roiHasError = false;
+      _courseDurationHasError = false;
+      _repayTenureHasError = false;
     });
+  }
+
+  void _calculate() {
+    final loanAmountVal = double.tryParse(_loanAmountCtrl.text) ?? 0.0;
+    final roiVal = double.tryParse(_roiCtrl.text) ?? 0.0;
+    final courseDurVal = double.tryParse(_courseDurCtrl.text) ?? 0.0;
+    final repayTenureVal = double.tryParse(_repayTenureCtrl.text) ?? 0.0;
+
+    setState(() {
+      _loanAmountHasError = loanAmountVal <= 0;
+      _roiHasError = roiVal <= 0;
+      _courseDurationHasError = courseDurVal <= 0;
+      _repayTenureHasError = repayTenureVal <= 0;
+    });
+
+    if (_loanAmountHasError || _roiHasError || _courseDurationHasError || _repayTenureHasError) {
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcCourseType = _courseType;
+      _calcLoanAmount = _loanAmount;
+      _calcRoi = _roi;
+      _calcCourseDurationYears = _courseDurationYears;
+      _calcRepayTenureYears = _repayTenureYears;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _courseType != _calcCourseType ||
+        _loanAmount != _calcLoanAmount ||
+        _roi != _calcRoi ||
+        _courseDurationYears != _calcCourseDurationYears ||
+        _repayTenureYears != _calcRepayTenureYears;
   }
 
   void _setCourseType(String type) {
@@ -144,14 +205,14 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
   }
 
   void _saveCalculation() async {
-    final cd = _courseDurationYears;
-    final annR = _roi / 100;
+    final cd = _calcCourseDurationYears;
+    final annR = _calcRoi / 100;
     final moraYrs = cd + 1.0;
-    final moraInt = _loanAmount * annR * moraYrs;
-    final capAmt = _loanAmount + moraInt;
-    final emi = _calcEMI(capAmt, _roi, (_repayTenureYears * 12).toInt());
-    final totalPay = capAmt + (emi * _repayTenureYears * 12 - capAmt);
-    final totalInt = totalPay - _loanAmount;
+    final moraInt = _calcLoanAmount * annR * moraYrs;
+    final capAmt = _calcLoanAmount + moraInt;
+    final emi = _calcEMI(capAmt, _calcRoi, (_calcRepayTenureYears * 12).toInt());
+    final totalPay = capAmt + (emi * _calcRepayTenureYears * 12 - capAmt);
+    final totalInt = totalPay - _calcLoanAmount;
 
     final labelCtrl = TextEditingController(text: 'Education Loan');
     final confirmed = await showDialog<bool>(
@@ -167,7 +228,7 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saving: EMI ${_fmt(emi)}/mo · Amount ${_fmt(_loanAmount)}',
+            Text('Saving: EMI ${_fmt(emi)}/mo · Amount ${_fmt(_calcLoanAmount)}',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -218,13 +279,13 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
         country: 'India',
         calcType: 'Education Loan',
         inputs: {
-          'loanAmount': _loanAmount,
-          'rate': _roi,
+          'loanAmount': _calcLoanAmount,
+          'rate': _calcRoi,
           'courseDuration': cd,
-          'termYears': _repayTenureYears,
-          'courseType': _courseType == 'domestic'
+          'termYears': _calcRepayTenureYears,
+          'courseType': _calcCourseType == 'domestic'
               ? 1.0
-              : (_courseType == 'abroad' ? 2.0 : 3.0),
+              : (_calcCourseType == 'abroad' ? 2.0 : 3.0),
         },
         results: {
           'emi': emi,
@@ -269,19 +330,19 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Calculations
-    final cd = _courseDurationYears;
-    final annR = _roi / 100;
+    final cd = _calcCourseDurationYears;
+    final annR = _calcRoi / 100;
     final moraYrs = cd + 1.0;
-    final moraInt = _loanAmount * annR * moraYrs;
-    final capAmt = _loanAmount + moraInt;
-    final emi = _calcEMI(capAmt, _roi, (_repayTenureYears * 12).toInt());
-    final repayInt = emi * _repayTenureYears * 12 - capAmt;
+    final moraInt = _calcLoanAmount * annR * moraYrs;
+    final capAmt = _calcLoanAmount + moraInt;
+    final emi = _calcEMI(capAmt, _calcRoi, (_calcRepayTenureYears * 12).toInt());
+    final repayInt = emi * _calcRepayTenureYears * 12 - capAmt;
     final totalInt = moraInt + repayInt;
-    final totalPay = _loanAmount + totalInt;
+    final totalPay = _calcLoanAmount + totalInt;
     final currentYear = DateTime.now().year;
     final startRepayYear = currentYear + cd.ceil() + 1;
 
-    final maxHBarVal = max(_loanAmount, max(moraInt, repayInt));
+    final maxHBarVal = max(_calcLoanAmount, max(moraInt, repayInt));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,6 +435,7 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
                 min: 50000,
                 max: 15000000,
                 prefix: '₹ ',
+                hasError: _loanAmountHasError,
                 onChangedText: (val) {
                   setState(() {
                     _loanAmount = val;
@@ -396,6 +458,7 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
                 min: 7.0,
                 max: 16.0,
                 suffix: '%',
+                hasError: _roiHasError,
                 onChangedText: (val) {
                   setState(() {
                     _roi = val;
@@ -418,6 +481,7 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
                 min: 1,
                 max: 6,
                 suffix: ' Years',
+                hasError: _courseDurationHasError,
                 onChangedText: (val) {
                   setState(() {
                     _courseDurationYears = val;
@@ -446,6 +510,7 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
                 min: 5,
                 max: 15,
                 suffix: ' Years',
+                hasError: _repayTenureHasError,
                 onChangedText: (val) {
                   setState(() {
                     _repayTenureYears = val;
@@ -461,7 +526,7 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
               const SizedBox(height: 16),
 
               ElevatedButton(
-                onPressed: _scrollToResults,
+                onPressed: _calculate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
                   foregroundColor: Colors.white,
@@ -478,291 +543,323 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-
-        // Results Card (Always visible with real-time updates)
-        Container(
-          key: _resultsKey,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('EMI AFTER MORATORIUM',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: Colors.white60,
-                      weight: FontWeight.w700,
-                      letterSpacing: 0.8)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(emi),
-                style: AppTextStyles.playfair(
-                    size: 34,
-                    color: const Color(0xFFFFDEA0),
-                    weight: FontWeight.w800),
-              ),
-              const SizedBox(height: 14),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 3,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 1.5,
-                children: [
-                  _resultBox('Loan Amount', _fmt(_loanAmount)),
-                  _resultBox('Interest In Moratorium', _fmt(moraInt),
-                      isRed: true),
-                  _resultBox('Capitalised Amount', _fmt(capAmt),
-                      isYellow: true),
-                  _resultBox('Total Interest', _fmt(totalInt), isRed: true),
-                  _resultBox('Total Payable', _fmt(totalPay)),
-                  _resultBox('Repayment Starts', '$startRepayYear',
-                      isGreen: true),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Loan Lifecycle Timeline & H-Bar Charts
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 Loan Lifecycle & Timeline',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-
-              // Horizontal Moratorium Timeline
-              Row(
-                children: [
-                  Expanded(
-                      child: _timelineBlock('Study', '${cd.ceil()} Yrs',
-                          const Color(0xFFFFF3E0), const Color(0xFFFED7AA))),
-                  const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4),
-                      child: Text('→', style: TextStyle(color: Colors.grey))),
-                  Expanded(
-                      child: _timelineBlock('Moratorium', '+1 Yr',
-                          const Color(0xFFECFDF5), const Color(0xFFA7F3D0))),
-                  const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4),
-                      child: Text('→', style: TextStyle(color: Colors.grey))),
-                  Expanded(
-                      child: _timelineBlock(
-                          'Repayment',
-                          '${_repayTenureYears.ceil()} Yrs',
-                          const Color(0xFFEFF6FF),
-                          const Color(0xFFBFDBFE))),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 16),
-
-              // Lifecycle horizontal bars
-              _lifecycleHBar('Principal', _loanAmount, maxHBarVal,
-                  const Color(0xFF046A38)),
-              const SizedBox(height: 10),
-              _lifecycleHBar('Interest (Moratorium)', moraInt, maxHBarVal,
-                  const Color(0xFFF59E0B)),
-              const SizedBox(height: 10),
-              _lifecycleHBar('Interest (Repayment)', repayInt, maxHBarVal,
-                  const Color(0xFFFCA5A5)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Central Subsidy Schemes
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFECFDF5),
-            border: Border.all(color: const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('🏛️ Govt. Interest Subsidy Schemes',
-                  style: AppTextStyles.dmSans(
-                      size: 12,
-                      weight: FontWeight.w800,
-                      color: const Color(0xFF07543A))),
-              const SizedBox(height: 10),
-              _subsidyRow('Central Scheme (CSIS)',
-                  'EWS/LIG · Annual income ≤ ₹4.5L', 'Full moratorium subsidy'),
-              _subsidyRow(
-                  'Padho Pardesh',
-                  'Minority communities · Abroad studies',
-                  'Moratorium interest'),
-              _subsidyRow('Dr. Ambedkar Central Scheme',
-                  'OBC/EBC · Abroad only', 'Full moratorium'),
-              const Divider(color: Color(0x33046A38)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Moratorium Subsidy (Your Loan)',
-                          style: AppTextStyles.dmSans(
-                              size: 10.5,
-                              weight: FontWeight.w700,
-                              color: const Color(0xFF046A38))),
-                      Text('If eligible, government pays this.',
-                          style: AppTextStyles.dmSans(
-                              size: 8.5, color: const Color(0xFF046A38))),
-                    ],
-                  ),
-                  Text(_fmt(moraInt),
-                      style: AppTextStyles.dmSans(
-                          size: 12.5,
-                          weight: FontWeight.w800,
-                          color: const Color(0xFF07543A))),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Top Lenders list
-        Text('Top Lenders — Education Loans 2025',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 10),
-        Column(
-          children: _lenders.map((l) {
-            final lRate = l['rate'] as double;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
+        if (_calculated) ...[
+          const SizedBox(height: 16),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
-                color: theme.getCardColor(context),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: theme.getBorderColor(context)),
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
               child: Row(
                 children: [
-                  Text(l['icon'] as String,
-                      style: const TextStyle(fontSize: 22)),
-                  const SizedBox(width: 10),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(l['name'] as String,
-                            style: AppTextStyles.dmSans(
-                                size: 12,
-                                weight: FontWeight.w800,
-                                color: theme.getTextColor(context))),
-                        Text(l['desc'] as String,
-                            style: AppTextStyles.dmSans(
-                                size: 9.5,
-                                color: theme.getMutedColor(context))),
-                      ],
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('${lRate.toStringAsFixed(2)}%',
-                          style: AppTextStyles.dmSans(
-                              size: 13,
-                              weight: FontWeight.w800,
-                              color: const Color(0xFFFF6B00))),
-                      Text(l['concession'] as String,
-                          style: AppTextStyles.dmSans(
-                              size: 8.5, color: theme.getMutedColor(context))),
-                    ],
                   ),
                 ],
               ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 16),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        // Save Calculation Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(
-                color:
-                    isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Results Card (Always visible with real-time updates)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('EMI AFTER MORATORIUM',
+                    style: AppTextStyles.dmSans(
+                        size: 9,
+                        color: Colors.white60,
+                        weight: FontWeight.w700,
+                        letterSpacing: 0.8)),
+                const SizedBox(height: 4),
+                Text(
+                  _fmt(emi),
+                  style: AppTextStyles.playfair(
+                      size: 34,
+                      color: const Color(0xFFFFDEA0),
+                      weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1.5,
                   children: [
-                    Text('Save This Calculation',
-                        style: AppTextStyles.dmSans(
-                            size: 12,
-                            weight: FontWeight.w800,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF07543A))),
-                    Text('Save details for future reference',
-                        style: AppTextStyles.dmSans(
-                            size: 10,
-                            color: isDark
-                                ? Colors.white70
-                                : const Color(0xFF046A38))),
+                    _resultBox('Loan Amount', _fmt(_calcLoanAmount)),
+                    _resultBox('Interest In Moratorium', _fmt(moraInt),
+                        isRed: true),
+                    _resultBox('Capitalised Amount', _fmt(capAmt),
+                        isYellow: true),
+                    _resultBox('Total Interest', _fmt(totalInt), isRed: true),
+                    _resultBox('Total Payable', _fmt(totalPay)),
+                    _resultBox('Repayment Starts', '$startRepayYear',
+                        isGreen: true),
                   ],
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text('Save',
-                    style: AppTextStyles.dmSans(
-                        size: 11,
-                        color: Colors.white,
-                        weight: FontWeight.w700)),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 16),
+
+          // Loan Lifecycle Timeline & H-Bar Charts
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📊 Loan Lifecycle & Timeline',
+                    style: AppTextStyles.dmSans(
+                        size: 13,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+
+                // Horizontal Moratorium Timeline
+                Row(
+                  children: [
+                    Expanded(
+                        child: _timelineBlock('Study', '${cd.ceil()} Yrs',
+                            const Color(0xFFFFF3E0), const Color(0xFFFED7AA))),
+                    const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        child: Text('→', style: TextStyle(color: Colors.grey))),
+                    Expanded(
+                        child: _timelineBlock('Moratorium', '+1 Yr',
+                            const Color(0xFFECFDF5), const Color(0xFFA7F3D0))),
+                    const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        child: Text('→', style: TextStyle(color: Colors.grey))),
+                    Expanded(
+                        child: _timelineBlock(
+                            'Repayment',
+                            '${_calcRepayTenureYears.ceil()} Yrs',
+                            const Color(0xFFEFF6FF),
+                            const Color(0xFFBFDBFE))),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 16),
+
+                // Lifecycle horizontal bars
+                _lifecycleHBar('Principal', _calcLoanAmount, maxHBarVal,
+                    const Color(0xFF046A38)),
+                const SizedBox(height: 10),
+                _lifecycleHBar('Interest (Moratorium)', moraInt, maxHBarVal,
+                    const Color(0xFFF59E0B)),
+                const SizedBox(height: 10),
+                _lifecycleHBar('Interest (Repayment)', repayInt, maxHBarVal,
+                    const Color(0xFFFCA5A5)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Central Subsidy Schemes
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              border: Border.all(color: const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('🏛️ Govt. Interest Subsidy Schemes',
+                    style: AppTextStyles.dmSans(
+                        size: 12,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFF07543A))),
+                const SizedBox(height: 10),
+                _subsidyRow('Central Scheme (CSIS)',
+                    'EWS/LIG · Annual income ≤ ₹4.5L', 'Full moratorium subsidy'),
+                _subsidyRow(
+                    'Padho Pardesh',
+                    'Minority communities · Abroad studies',
+                    'Moratorium interest'),
+                _subsidyRow('Dr. Ambedkar Central Scheme',
+                    'OBC/EBC · Abroad only', 'Full moratorium'),
+                const Divider(color: Color(0x33046A38)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Moratorium Subsidy (Your Loan)',
+                            style: AppTextStyles.dmSans(
+                                size: 10.5,
+                                weight: FontWeight.w700,
+                                color: const Color(0xFF046A38))),
+                        Text('If eligible, government pays this.',
+                            style: AppTextStyles.dmSans(
+                                size: 8.5, color: const Color(0xFF046A38))),
+                      ],
+                    ),
+                    Text(_fmt(moraInt),
+                        style: AppTextStyles.dmSans(
+                            size: 12.5,
+                            weight: FontWeight.w800,
+                            color: const Color(0xFF07543A))),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Top Lenders list
+          Text('Top Lenders — Education Loans 2025',
+              style: AppTextStyles.playfair(
+                  size: 15,
+                  color: theme.getTextColor(context),
+                  weight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          Column(
+            children: _lenders.map((l) {
+              final lRate = l['rate'] as double;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.getCardColor(context),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.getBorderColor(context)),
+                ),
+                child: Row(
+                  children: [
+                    Text(l['icon'] as String,
+                        style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l['name'] as String,
+                              style: AppTextStyles.dmSans(
+                                  size: 12,
+                                  weight: FontWeight.w800,
+                                  color: theme.getTextColor(context))),
+                          Text(l['desc'] as String,
+                              style: AppTextStyles.dmSans(
+                                  size: 9.5,
+                                  color: theme.getMutedColor(context))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('${lRate.toStringAsFixed(2)}%',
+                            style: AppTextStyles.dmSans(
+                                size: 13,
+                                weight: FontWeight.w800,
+                                color: const Color(0xFFFF6B00))),
+                        Text(l['concession'] as String,
+                            style: AppTextStyles.dmSans(
+                                size: 8.5, color: theme.getMutedColor(context))),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+
+          // Save Calculation Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(
+                  color:
+                      isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save This Calculation',
+                          style: AppTextStyles.dmSans(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF07543A))),
+                      Text('Save details for future reference',
+                          style: AppTextStyles.dmSans(
+                              size: 10,
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: Colors.white,
+                          weight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -848,6 +945,7 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
     required double max,
     String prefix = '',
     String suffix = '',
+    bool hasError = false,
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
   }) {
@@ -876,7 +974,10 @@ class _INEducationLoanState extends ConsumerState<INEducationLoan> {
           decoration: BoxDecoration(
             color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
             border: Border.all(
-                color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                color: hasError
+                    ? Colors.red
+                    : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextFormField(

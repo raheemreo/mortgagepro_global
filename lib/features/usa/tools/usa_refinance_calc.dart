@@ -9,6 +9,7 @@ import '../../../app/theme/text_styles.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../providers/saved_provider.dart';
 import '../../../shared/models/saved_calc.dart';
+import '../../../../widgets/ads/native_ad_widget.dart';
 import '../../../shared/widgets/live_rate_banner.dart';
 import '../../../providers/usa_rates_provider.dart';
 
@@ -795,6 +796,11 @@ class _USARefinanceCalcState extends ConsumerState<USARefinanceCalc> {
                   ),
                 ),
                 const SizedBox(height: 12),
+                const NativeAdWidget(
+                  screenName: 'usa_refinance_calc',
+                  adType: 'mediumCard',
+                ),
+                const SizedBox(height: 20),
 
                 // Amortization Snap
                 Container(

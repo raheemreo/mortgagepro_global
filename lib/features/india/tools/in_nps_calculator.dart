@@ -26,6 +26,21 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
   double _annuityPurchasePercent = 40.0; // min 40%, max 100%
   double _annuityRate = 6.0;
 
+  bool _calculated = false;
+  double _calcAge = 30;
+  double _calcMonthly = 5000;
+  double _calcEmployer = 0;
+  double _calcRoi = 10.0;
+  double _calcAnnuityPurchasePercent = 40.0;
+  double _calcAnnuityRate = 6.0;
+
+  bool _ageHasError = false;
+  bool _monthlyHasError = false;
+  bool _employerHasError = false;
+  bool _roiHasError = false;
+  bool _annuityPurchaseHasError = false;
+  bool _annuityRateHasError = false;
+
   // Controllers
   late TextEditingController _ageCtrl;
   late TextEditingController _monthlyCtrl;
@@ -77,7 +92,70 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
       _annuityPurchaseCtrl.text = '40';
       _roiCtrl.text = '10.0';
       _annuityRateCtrl.text = '6.0';
+
+      _calculated = false;
+      _calcAge = 30;
+      _calcMonthly = 5000;
+      _calcEmployer = 0;
+      _calcRoi = 10.0;
+      _calcAnnuityPurchasePercent = 40.0;
+      _calcAnnuityRate = 6.0;
+
+      _ageHasError = false;
+      _monthlyHasError = false;
+      _employerHasError = false;
+      _roiHasError = false;
+      _annuityPurchaseHasError = false;
+      _annuityRateHasError = false;
     });
+  }
+
+  void _calculate() {
+    final ageVal = double.tryParse(_ageCtrl.text) ?? 0.0;
+    final monthlyVal = double.tryParse(_monthlyCtrl.text) ?? 0.0;
+    final employerVal = double.tryParse(_employerCtrl.text) ?? 0.0;
+    final roiVal = double.tryParse(_roiCtrl.text) ?? 0.0;
+    final annuityPVal = double.tryParse(_annuityPurchaseCtrl.text) ?? 0.0;
+    final annuityRVal = double.tryParse(_annuityRateCtrl.text) ?? 0.0;
+
+    setState(() {
+      _ageHasError = ageVal < 18 || ageVal > 60;
+      _monthlyHasError = monthlyVal <= 0;
+      _employerHasError = employerVal < 0;
+      _roiHasError = roiVal <= 0 || roiVal > 30;
+      _annuityPurchaseHasError = annuityPVal < 40 || annuityPVal > 100;
+      _annuityRateHasError = annuityRVal <= 0 || annuityRVal > 30;
+    });
+
+    if (_ageHasError ||
+        _monthlyHasError ||
+        _employerHasError ||
+        _roiHasError ||
+        _annuityPurchaseHasError ||
+        _annuityRateHasError) {
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcAge = _age;
+      _calcMonthly = _monthly;
+      _calcEmployer = _employer;
+      _calcRoi = _roi;
+      _calcAnnuityPurchasePercent = _annuityPurchasePercent;
+      _calcAnnuityRate = _annuityRate;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _age != _calcAge ||
+        _monthly != _calcMonthly ||
+        _employer != _calcEmployer ||
+        _roi != _calcRoi ||
+        _annuityPurchasePercent != _calcAnnuityPurchasePercent ||
+        _annuityRate != _calcAnnuityRate;
   }
 
   String _fmt(double n) {
@@ -166,12 +244,12 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
         country: 'India',
         calcType: 'NPS Calculator',
         inputs: {
-          'age': _age,
-          'monthly': _monthly,
-          'employer': _employer,
-          'roi': _roi,
-          'annuityPurchase': _annuityPurchasePercent,
-          'annuityRate': _annuityRate,
+          'age': _calcAge,
+          'monthly': _calcMonthly,
+          'employer': _calcEmployer,
+          'roi': _calcRoi,
+          'annuityPurchase': _calcAnnuityPurchasePercent,
+          'annuityRate': _calcAnnuityRate,
         },
         results: {
           'corpus': corpus,
@@ -215,9 +293,9 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final yrs = max(1, 60 - _age.toInt());
-    final mRate = _roi / 100 / 12;
-    final totalContribution = _monthly + _employer;
+    final yrs = max(1, 60 - _calcAge.toInt());
+    final mRate = _calcRoi / 100 / 12;
+    final totalContribution = _calcMonthly + _calcEmployer;
 
     double corpus = 0;
     double invested = 0;
@@ -230,13 +308,13 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
       }
     }
 
-    final annuityRatio = _annuityPurchasePercent / 100.0;
+    final annuityRatio = _calcAnnuityPurchasePercent / 100.0;
     final lumpRatio = 1.0 - annuityRatio;
 
     final lump = corpus * lumpRatio;
     final annuity = corpus * annuityRatio;
-    final monthlyPension = annuity * (_annuityRate / 100) / 12;
-    final taxSaved = min(yrs * 12 * _monthly, 200000.0 * yrs) * 0.30;
+    final monthlyPension = annuity * (_calcAnnuityRate / 100) / 12;
+    final taxSaved = min(yrs * 12 * _calcMonthly, 200000.0 * yrs) * 0.30;
 
     // Retrieve saved calculations matching NPS
     final savedList = ref
@@ -317,6 +395,7 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
                 min: 18,
                 max: 65,
                 suffix: ' Years',
+                hasError: _ageHasError,
                 onChangedText: (val) {
                   setState(() {
                     _age = val;
@@ -339,6 +418,7 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
                 min: 500,
                 max: 100000,
                 prefix: '₹ ',
+                hasError: _monthlyHasError,
                 onChangedText: (val) {
                   setState(() {
                     _monthly = val;
@@ -369,8 +449,10 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
                       border: Border.all(
-                          color:
-                              const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                          color: _employerHasError
+                              ? Colors.red
+                              : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                          width: _employerHasError ? 1.5 : 1.0),
                       borderRadius: BorderRadius.circular(11),
                     ),
                     child: TextFormField(
@@ -407,6 +489,7 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
                 min: 40,
                 max: 100,
                 suffix: '% of Corpus',
+                hasError: _annuityPurchaseHasError,
                 onChangedText: (val) {
                   setState(() {
                     _annuityPurchasePercent = val;
@@ -435,6 +518,7 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
                 min: 5.0,
                 max: 15.0,
                 suffix: '% p.a.',
+                hasError: _roiHasError,
                 onChangedText: (val) {
                   setState(() {
                     _roi = val;
@@ -467,6 +551,7 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
                 min: 4.0,
                 max: 10.0,
                 suffix: '% p.a.',
+                hasError: _annuityRateHasError,
                 onChangedText: (val) {
                   setState(() {
                     _annuityRate = val;
@@ -495,9 +580,7 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        _scrollToResults();
-                      },
+                      onPressed: _calculate,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0D9488),
                         foregroundColor: Colors.white,
@@ -513,387 +596,419 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
                               weight: FontWeight.w800)),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 50,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () => _saveCalculation(
-                          corpus, lump, monthlyPension, invested),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0B1F48),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                  if (_calculated) ...[
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 50,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () => _saveCalculation(
+                            corpus, lump, monthlyPension, invested),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0B1F48),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Icon(Icons.bookmark_border, size: 20),
                       ),
-                      child: const Icon(Icons.bookmark_border, size: 20),
                     ),
-                  )
+                  ],
                 ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
-
-        // Result Card (Teal/Navy Gradient)
-        Container(
-          key: _resultsKey,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF0D9488)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('TOTAL NPS CORPUS AT AGE 60',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: Colors.white70,
-                      weight: FontWeight.w700,
-                      letterSpacing: 0.8)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(corpus),
-                style: AppTextStyles.playfair(
-                    size: 32,
-                    color: const Color(0xFFFFDEA0),
-                    weight: FontWeight.w800),
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
-              const SizedBox(height: 14),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 2.2,
+              child: Row(
                 children: [
-                  _resultBox(
-                      'Lump Sum (${(lumpRatio * 100).toStringAsFixed(0)}%)',
-                      _fmt(lump),
-                      isYellow: true),
-                  _resultBox('Monthly Pension', '${_fmt(monthlyPension)}/mo',
-                      isGreen: true),
-                  _resultBox('Total Invested', _fmt(invested)),
-                  _resultBox('Tax Saved (Est.)', _fmt(taxSaved)),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Pension Breakout Cards
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: const Color(0xFF6EE7B7)),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('💰', style: TextStyle(fontSize: 24)),
-                    const SizedBox(height: 6),
-                    Text('Tax-Free Lump Sum',
-                        style: AppTextStyles.dmSans(
-                            size: 11,
-                            weight: FontWeight.w800,
-                            color: const Color(0xFF0B1F48))),
-                    const SizedBox(height: 4),
-                    Text(_fmt(lump),
-                        style: AppTextStyles.dmSans(
-                            size: 15,
-                            weight: FontWeight.w800,
-                            color: const Color(0xFF0D9488))),
-                    const SizedBox(height: 2),
-                    Text(
-                        '${(lumpRatio * 100).toStringAsFixed(0)}% of corpus · Exempt',
-                        style: AppTextStyles.dmSans(
-                            size: 8.5, color: theme.getMutedColor(context))),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: const Color(0xFF93C5FD)),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('📅', style: TextStyle(fontSize: 24)),
-                    const SizedBox(height: 6),
-                    Text('Monthly Pension',
-                        style: AppTextStyles.dmSans(
-                            size: 11,
-                            weight: FontWeight.w800,
-                            color: const Color(0xFF0B1F48))),
-                    const SizedBox(height: 4),
-                    Text('${_fmt(monthlyPension)}/mo',
-                        style: AppTextStyles.dmSans(
-                            size: 15,
-                            weight: FontWeight.w800,
-                            color: const Color(0xFF1E40AF))),
-                    const SizedBox(height: 2),
-                    Text(
-                        '${_annuityPurchasePercent.toStringAsFixed(0)}% annuity · Taxable',
-                        style: AppTextStyles.dmSans(
-                            size: 8.5, color: theme.getMutedColor(context))),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Visual Analysis Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('🥧 Payout Proportions & Accumulation',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-
-              // Donut Chart Row
-              Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CustomPaint(
-                      painter: _NPSDonutPainter(
-                        lumpSum: lump,
-                        annuity: annuity,
-                        lumpColor: const Color(0xFF0D9488),
-                        annuityColor: const Color(0xFFFF6B00),
-                        textColor: theme.getTextColor(context),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
                   Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(const Color(0xFF0D9488), 'Tax-Free Lump Sum',
-                            _fmt(lump)),
-                        const SizedBox(height: 12),
-                        _legendRow(const Color(0xFFFF6B00), 'Annuity Purchase',
-                            _fmt(annuity)),
-                      ],
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 16),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-              // Growth Chart
-              Text('NPS CORPUS BUILD-UP TIMELINE',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: theme.getMutedColor(context),
-                      weight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 140,
-                width: double.infinity,
-                child: CustomPaint(
-                  painter: _NPSAreaPainter(points: pts),
+          // Result Card (Teal/Navy Gradient)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF0D9488)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('TOTAL NPS CORPUS AT AGE 60',
+                    style: AppTextStyles.dmSans(
+                        size: 9,
+                        color: Colors.white70,
+                        weight: FontWeight.w700,
+                        letterSpacing: 0.8)),
+                const SizedBox(height: 4),
+                Text(
+                  _fmt(corpus),
+                  style: AppTextStyles.playfair(
+                      size: 32,
+                      color: const Color(0xFFFFDEA0),
+                      weight: FontWeight.w800),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _chartIndicatorDot(const Color(0xFF0D9488), 'Total Corpus'),
-                  const SizedBox(width: 16),
-                  _chartIndicatorDot(
-                      const Color(0xFFFF6B00).withValues(alpha: 0.4),
-                      'Total Invested'),
-                ],
-              ),
-            ],
+                const SizedBox(height: 14),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 2.2,
+                  children: [
+                    _resultBox(
+                        'Lump Sum (${(lumpRatio * 100).toStringAsFixed(0)}%)',
+                        _fmt(lump),
+                        isYellow: true),
+                    _resultBox('Monthly Pension', '${_fmt(monthlyPension)}/mo',
+                        isGreen: true),
+                    _resultBox('Total Invested', _fmt(invested)),
+                    _resultBox('Tax Saved (Est.)', _fmt(taxSaved)),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Auto Choice Allocation List
-        Text('Auto Choice Asset Allocation (LC-75)',
-            style: AppTextStyles.playfair(
-                size: 15, color: theme.getTextColor(context))),
-        const SizedBox(height: 4),
-        Text('Equity-Debt Mix by Age (Your Age: ${_age.toInt()})',
-            style: AppTextStyles.dmSans(
-                size: 10, color: theme.getMutedColor(context))),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            children: [25, 30, 35, 40, 45, 50, 55, 60].map((a) {
-              final eq = getEquityPct(a.toDouble());
-              final co = getCorpPct(a.toDouble());
-              final go = 100.0 - eq - co;
-              final isCurrent = (a - _age.toInt()).abs() < 5;
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Opacity(
-                  opacity: isCurrent ? 1.0 : 0.55,
-                  child: Row(
+          // Pension Breakout Cards
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(color: const Color(0xFF6EE7B7)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        width: 55,
-                        child: Text(
-                          'Age $a',
+                      const Text('💰', style: TextStyle(fontSize: 24)),
+                      const SizedBox(height: 6),
+                      Text('Tax-Free Lump Sum',
                           style: AppTextStyles.dmSans(
-                            size: 11,
-                            weight:
-                                isCurrent ? FontWeight.w800 : FontWeight.w600,
-                            color: theme.getTextColor(context),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 10,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(5),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: eq.toInt(),
-                                  child:
-                                      Container(color: const Color(0xFFFF6B00)),
-                                ),
-                                Expanded(
-                                  flex: co.toInt(),
-                                  child:
-                                      Container(color: const Color(0xFF1A3A8F)),
-                                ),
-                                Expanded(
-                                  flex: go.toInt(),
-                                  child:
-                                      Container(color: const Color(0xFF046A38)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 42,
-                        child: Text(
-                          '${eq.toStringAsFixed(0)}% E',
+                              size: 11,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFF0B1F48))),
+                      const SizedBox(height: 4),
+                      Text(_fmt(lump),
                           style: AppTextStyles.dmSans(
-                            size: 10,
-                            weight:
-                                isCurrent ? FontWeight.w800 : FontWeight.w600,
-                            color: theme.getTextColor(context),
-                          ),
-                          textAlign: TextAlign.right,
-                        ),
-                      ),
+                              size: 15,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFF0D9488))),
+                      const SizedBox(height: 2),
+                      Text(
+                          '${(lumpRatio * 100).toStringAsFixed(0)}% of corpus · Exempt',
+                          style: AppTextStyles.dmSans(
+                              size: 8.5, color: theme.getMutedColor(context))),
                     ],
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _legendDot(const Color(0xFFFF6B00), 'Equity'),
-            const SizedBox(width: 12),
-            _legendDot(const Color(0xFF1A3A8F), 'Corp Debt'),
-            const SizedBox(width: 12),
-            _legendDot(const Color(0xFF046A38), 'Govt Securities'),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Tax deduction card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFFBEB),
-            border: Border.all(color: const Color(0xFFFCD34D)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('💛 NPS Tax Deduction Summary (FY 2025-26)',
-                  style: AppTextStyles.dmSans(
-                      size: 12,
-                      weight: FontWeight.w800,
-                      color: const Color(0xFF92400E))),
-              const SizedBox(height: 10),
-              _taxRow('Section 80C (Employee Contrib)', 'Up to ₹1.5L/yr'),
-              _taxRow('Section 80CCD(1B) Extra NPS', 'Additional ₹50,000/yr'),
-              _taxRow('Section 80CCD(2) Employer', 'Up to 14% of Basic'),
-              _taxRow('Total Max Deduction Limit', '₹2,00,000 + employer'),
-              _taxRow('Lump Sum at 60 (60%)', '100% Tax-Free'),
-              _taxRow('Annuity Income (40%)', 'Taxable as per slab'),
-              _taxRow('Available in New Regime?', '80CCD(2) only (Employer)'),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(color: const Color(0xFF93C5FD)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('📅', style: TextStyle(fontSize: 24)),
+                      const SizedBox(height: 6),
+                      Text('Monthly Pension',
+                          style: AppTextStyles.dmSans(
+                              size: 11,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFF0B1F48))),
+                      const SizedBox(height: 4),
+                      Text('${_fmt(monthlyPension)}/mo',
+                          style: AppTextStyles.dmSans(
+                              size: 15,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFF1E40AF))),
+                      const SizedBox(height: 2),
+                      Text(
+                          '${_calcAnnuityPurchasePercent.toStringAsFixed(0)}% annuity · Taxable',
+                          style: AppTextStyles.dmSans(
+                              size: 8.5, color: theme.getMutedColor(context))),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Visual Analysis Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('🥧 Payout Proportions & Accumulation',
+                    style: AppTextStyles.dmSans(
+                        size: 13,
+                        weight: FontWeight.w800,
+                        color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+
+                // Donut Chart Row
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: CustomPaint(
+                        painter: _NPSDonutPainter(
+                          lumpSum: lump,
+                          annuity: annuity,
+                          lumpColor: const Color(0xFF0D9488),
+                          annuityColor: const Color(0xFFFF6B00),
+                          textColor: theme.getTextColor(context),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _legendRow(const Color(0xFF0D9488), 'Tax-Free Lump Sum',
+                              _fmt(lump)),
+                          const SizedBox(height: 12),
+                          _legendRow(const Color(0xFFFF6B00), 'Annuity Purchase',
+                              _fmt(annuity)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 16),
+
+                // Growth Chart
+                Text('NPS CORPUS BUILD-UP TIMELINE',
+                    style: AppTextStyles.dmSans(
+                        size: 9,
+                        color: theme.getMutedColor(context),
+                        weight: FontWeight.w800)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 140,
+                  width: double.infinity,
+                  child: CustomPaint(
+                    painter: _NPSAreaPainter(points: pts),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _chartIndicatorDot(const Color(0xFF0D9488), 'Total Corpus'),
+                    const SizedBox(width: 16),
+                    _chartIndicatorDot(
+                        const Color(0xFFFF6B00).withValues(alpha: 0.4),
+                        'Total Invested'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Auto Choice Allocation List
+          Text('Auto Choice Asset Allocation (LC-75)',
+              style: AppTextStyles.playfair(
+                  size: 15, color: theme.getTextColor(context))),
+          const SizedBox(height: 4),
+          Text('Equity-Debt Mix by Age (Your Age: ${_calcAge.toInt()})',
+              style: AppTextStyles.dmSans(
+                  size: 10, color: theme.getMutedColor(context))),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              children: [25, 30, 35, 40, 45, 50, 55, 60].map((a) {
+                final eq = getEquityPct(a.toDouble());
+                final co = getCorpPct(a.toDouble());
+                final go = 100.0 - eq - co;
+                final isCurrent = (a - _calcAge.toInt()).abs() < 5;
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Opacity(
+                    opacity: isCurrent ? 1.0 : 0.55,
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 55,
+                          child: Text(
+                            'Age $a',
+                            style: AppTextStyles.dmSans(
+                              size: 11,
+                              weight:
+                                  isCurrent ? FontWeight.w800 : FontWeight.w600,
+                              color: theme.getTextColor(context),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 10,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(5),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: eq.toInt(),
+                                    child:
+                                        Container(color: const Color(0xFFFF6B00)),
+                                  ),
+                                  Expanded(
+                                    flex: co.toInt(),
+                                    child:
+                                        Container(color: const Color(0xFF1A3A8F)),
+                                  ),
+                                  Expanded(
+                                    flex: go.toInt(),
+                                    child:
+                                        Container(color: const Color(0xFF046A38)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 42,
+                          child: Text(
+                            '${eq.toStringAsFixed(0)}% E',
+                            style: AppTextStyles.dmSans(
+                              size: 10,
+                              weight:
+                                  isCurrent ? FontWeight.w800 : FontWeight.w600,
+                              color: theme.getTextColor(context),
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _legendDot(const Color(0xFFFF6B00), 'Equity'),
+              const SizedBox(width: 12),
+              _legendDot(const Color(0xFF1A3A8F), 'Corp Debt'),
+              const SizedBox(width: 12),
+              _legendDot(const Color(0xFF046A38), 'Govt Securities'),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Tax deduction card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBEB),
+              border: Border.all(color: const Color(0xFFFCD34D)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('💛 NPS Tax Deduction Summary (FY 2025-26)',
+                    style: AppTextStyles.dmSans(
+                        size: 12,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFF92400E))),
+                const SizedBox(height: 10),
+                _taxRow('Section 80C (Employee Contrib)', 'Up to ₹1.5L/yr'),
+                _taxRow('Section 80CCD(1B) Extra NPS', 'Additional ₹50,000/yr'),
+                _taxRow('Section 80CCD(2) Employer', 'Up to 14% of Basic'),
+                _taxRow('Total Max Deduction Limit', '₹2,00,000 + employer'),
+                _taxRow('Lump Sum at 60 (60%)', '100% Tax-Free'),
+                _taxRow('Annuity Income (40%)', 'Taxable as per slab'),
+                _taxRow('Available in New Regime?', '80CCD(2) only (Employer)'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
 
         // Saved Calculations Section
         Row(
@@ -1058,6 +1173,7 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
     required double max,
     String prefix = '',
     String suffix = '',
+    bool hasError = false,
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
   }) {
@@ -1086,7 +1202,10 @@ class _INNPSCalculatorState extends ConsumerState<INNPSCalculator> {
           decoration: BoxDecoration(
             color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
             border: Border.all(
-                color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                color: hasError
+                    ? Colors.red
+                    : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextFormField(

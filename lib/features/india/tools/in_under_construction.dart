@@ -26,6 +26,21 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
 
   String _disburseMode = 'uniform'; // 'uniform', 'milestone', 'tranche'
 
+  bool _propValError = false;
+  bool _downPctError = false;
+  bool _rateError = false;
+  bool _tenureError = false;
+  bool _consPeriodError = false;
+
+  bool _hasCalculated = false;
+  double _calcPropVal = 7500000;
+  double _calcDownPct = 20;
+  double _calcRate = 8.50;
+  int _calcTenure = 20;
+  int _calcConsPeriod = 30;
+  String _calcDisburseMode = 'uniform';
+  final GlobalKey _resultsKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +78,20 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
     setState(() {});
   }
 
+  bool _areInputsChanged() {
+    final pv = double.tryParse(_propValController.text.replaceAll(',', '')) ?? 0.0;
+    final dp = double.tryParse(_downPctController.text) ?? 0.0;
+    final rate = double.tryParse(_rateController.text) ?? 0.0;
+    final tenure = int.tryParse(_tenureController.text) ?? 1;
+    final cons = int.tryParse(_consPeriodController.text) ?? 1;
+    return pv != _calcPropVal ||
+        dp != _calcDownPct ||
+        rate != _calcRate ||
+        tenure != _calcTenure ||
+        cons != _calcConsPeriod ||
+        _disburseMode != _calcDisburseMode;
+  }
+
   void _reset() {
     setState(() {
       _propValController.text = '7500000';
@@ -71,6 +100,18 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
       _tenureController.text = '20';
       _consPeriodController.text = '30';
       _disburseMode = 'uniform';
+      _hasCalculated = false;
+      _propValError = false;
+      _downPctError = false;
+      _rateError = false;
+      _tenureError = false;
+      _consPeriodError = false;
+      _calcPropVal = 7500000;
+      _calcDownPct = 20;
+      _calcRate = 8.50;
+      _calcTenure = 20;
+      _calcConsPeriod = 30;
+      _calcDisburseMode = 'uniform';
     });
   }
 
@@ -94,17 +135,17 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
   }
 
   void _saveCalculation() async {
-    final pv = double.tryParse(_propValController.text) ?? 7500000;
-    final dp = double.tryParse(_downPctController.text) ?? 20.0;
-    final rate = double.tryParse(_rateController.text) ?? 8.50;
-    final tenure = int.tryParse(_tenureController.text) ?? 20;
-    final cons = int.tryParse(_consPeriodController.text) ?? 30;
+    final pv = _calcPropVal;
+    final dp = _calcDownPct;
+    final rate = _calcRate;
+    final tenure = _calcTenure;
+    final cons = _calcConsPeriod;
 
     final loan = pv * (1 - dp / 100);
     final r = rate / 12 / 100;
     final n = tenure * 12;
     final emi = _calcEMI(loan, r, n);
-    final avgDisb = _disburseMode == 'uniform' ? loan * 0.5 : (_disburseMode == 'milestone' ? loan * 0.45 : loan * 0.55);
+    final avgDisb = _calcDisburseMode == 'uniform' ? loan * 0.5 : (_calcDisburseMode == 'milestone' ? loan * 0.45 : loan * 0.55);
     final avgPreEmi = avgDisb * r;
     final preEmiTotal = avgPreEmi * cons;
     final totalInterest = emi * n - loan;
@@ -167,7 +208,7 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
           'rate': rate,
           'tenure': tenure.toDouble(),
           'consPeriod': cons.toDouble(),
-          'disburseMode': _disburseMode == 'uniform' ? 0.0 : _disburseMode == 'milestone' ? 1.0 : 2.0,
+          'disburseMode': _calcDisburseMode == 'uniform' ? 0.0 : _calcDisburseMode == 'milestone' ? 1.0 : 2.0,
         },
         results: {
           'loan': loan,
@@ -194,27 +235,34 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final pv = double.tryParse(_propValController.text) ?? 0.0;
+    final pv = double.tryParse(_propValController.text.replaceAll(',', '')) ?? 0.0;
     final dp = double.tryParse(_downPctController.text) ?? 0.0;
     final rate = double.tryParse(_rateController.text) ?? 0.0;
     final tenure = int.tryParse(_tenureController.text) ?? 1;
     final cons = int.tryParse(_consPeriodController.text) ?? 1;
 
-    final loan = pv * (1 - dp / 100);
-    final r = rate / 12 / 100;
-    final n = tenure * 12;
+    final calcPropVal = _calcPropVal;
+    final calcDownPct = _calcDownPct;
+    final calcRate = _calcRate;
+    final calcTenure = _calcTenure;
+    final calcConsPeriod = _calcConsPeriod;
+
+    final loan = calcPropVal * (1 - calcDownPct / 100);
+    final r = calcRate / 12 / 100;
+    final n = calcTenure * 12;
     final emi = _calcEMI(loan, r, n);
 
-    final avgDisb = _disburseMode == 'uniform' ? loan * 0.5 : (_disburseMode == 'milestone' ? loan * 0.45 : loan * 0.55);
+    final avgDisb = _calcDisburseMode == 'uniform' ? loan * 0.5 : (_calcDisburseMode == 'milestone' ? loan * 0.45 : loan * 0.55);
     final avgPreEmi = avgDisb * r;
-    final preEmiTotal = avgPreEmi * cons;
+    final preEmiTotal = avgPreEmi * calcConsPeriod;
     final totalInterest = emi * n - loan;
-    final gst = pv * 0.05; // 5% GST
+    final gst = calcPropVal * 0.05; // 5% GST
     final totalPayable = preEmiTotal + emi * n;
     final totalOutgoSum = loan + preEmiTotal + totalInterest + gst;
 
@@ -294,6 +342,7 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
                 max: 30000000,
                 divisions: 295,
                 displayValue: _fmt(pv),
+                hasError: _propValError,
               ),
               const SizedBox(height: 16),
               // Down Payment
@@ -304,6 +353,7 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
                 max: 40,
                 divisions: 30,
                 displayValue: '${dp.toStringAsFixed(0)}%',
+                hasError: _downPctError,
               ),
               const SizedBox(height: 16),
               // Interest Rate
@@ -314,6 +364,7 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
                 max: 13.00,
                 divisions: 120,
                 displayValue: '${rate.toStringAsFixed(2)}%',
+                hasError: _rateError,
               ),
               const SizedBox(height: 16),
               // Loan Tenure
@@ -324,6 +375,7 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
                 max: 30,
                 divisions: 25,
                 displayValue: '$tenure yr',
+                hasError: _tenureError,
               ),
               const SizedBox(height: 16),
               // Construction Period
@@ -334,6 +386,7 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
                 max: 60,
                 divisions: 54,
                 displayValue: '$cons mo',
+                hasError: _consPeriodError,
               ),
               const SizedBox(height: 16),
 
@@ -354,7 +407,63 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
               // Calculate Button
               ElevatedButton(
                 onPressed: () {
-                  setState(() {});
+                  setState(() {
+                    _propValError = false;
+                    _downPctError = false;
+                    _rateError = false;
+                    _tenureError = false;
+                    _consPeriodError = false;
+                  });
+
+                  final pvVal = double.tryParse(_propValController.text.replaceAll(',', ''));
+                  final dpVal = double.tryParse(_downPctController.text);
+                  final rateVal = double.tryParse(_rateController.text);
+                  final tenureVal = int.tryParse(_tenureController.text);
+                  final consVal = int.tryParse(_consPeriodController.text);
+
+                  bool hasErr = false;
+                  if (pvVal == null || pvVal <= 0) {
+                    setState(() => _propValError = true);
+                    hasErr = true;
+                  }
+                  if (dpVal == null || dpVal < 0 || dpVal > 100) {
+                    setState(() => _downPctError = true);
+                    hasErr = true;
+                  }
+                  if (rateVal == null || rateVal <= 0 || rateVal > 100) {
+                    setState(() => _rateError = true);
+                    hasErr = true;
+                  }
+                  if (tenureVal == null || tenureVal <= 0 || tenureVal > 40) {
+                    setState(() => _tenureError = true);
+                    hasErr = true;
+                  }
+                  if (consVal == null || consVal <= 0 || consVal > 120) {
+                    setState(() => _consPeriodError = true);
+                    hasErr = true;
+                  }
+
+                  if (hasErr) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('⚠️ Please correct the invalid fields in red.', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
+                        backgroundColor: Colors.red[800],
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    _hasCalculated = true;
+                    _calcPropVal = pvVal!;
+                    _calcDownPct = dpVal!;
+                    _calcRate = rateVal!;
+                    _calcTenure = tenureVal!;
+                    _calcConsPeriod = consVal!;
+                    _calcDisburseMode = _disburseMode;
+                  });
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('⚡ Plan calculated!', style: AppTextStyles.dmSans(color: Colors.white, weight: FontWeight.w700)),
@@ -363,6 +472,16 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_resultsKey.currentContext != null) {
+                      Scrollable.ensureVisible(
+                        _resultsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6B00),
@@ -382,201 +501,229 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
           ),
         ),
 
-        const SizedBox(height: 20),
-
-        // Results Card (6-grid)
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'CALCULATION RESULTS',
-                style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.5),
+        if (_hasCalculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
               ),
-              const SizedBox(height: 14),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1.8,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
+              child: Row(
                 children: [
-                  _buildResultBox('Loan Amount', _fmt(loan), '80% of value', true),
-                  _buildResultBox('Full EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(emi)}", 'Post-possession', false),
-                  _buildResultBox('Avg Pre-EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(avgPreEmi)}", 'During construction', true),
-                  _buildResultBox('Pre-EMI Total', _fmt(preEmiTotal), 'Interest only cost', false),
-                  _buildResultBox('Total Interest', _fmt(totalInterest), 'Full tenure', false),
-                  _buildResultBox('Total Payable', _fmt(totalPayable), 'Principal + Interest', false, isGreen: true),
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
+            )
+          else
+            SizedBox(key: _resultsKey, height: 0),
 
-        const SizedBox(height: 20),
-
-        // Cost Comparison Breakup Bar Chart
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Cost Comparison Breakup', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
-                  Text('UC Property', style: AppTextStyles.dmSans(size: 10, color: const Color(0xFFFF6B00), weight: FontWeight.bold)),
-                ],
+          // Results Card (6-grid)
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 16),
-              _buildChartRow('Principal', loan, totalOutgoSum, const LinearGradient(colors: [Color(0xFF1A3A8F), Color(0xFF0B1F48)])),
-              const Divider(height: 18),
-              _buildChartRow('Pre-EMI Int.', preEmiTotal, totalOutgoSum, const LinearGradient(colors: [Color(0xFFFFEA00), Color(0xFFFF6B00)])),
-              const Divider(height: 18),
-              _buildChartRow('Post-EMI Int.', totalInterest, totalOutgoSum, const LinearGradient(colors: [Color(0xFFFF6B00), Color(0xFFE05F00)])),
-              const Divider(height: 18),
-              _buildChartRow('GST (5%)', gst, totalOutgoSum, const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF0F766E)])),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Disbursement Milestone Timeline
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📋 Disbursement Phases', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-              _buildMilestoneRow(
-                icon: '✓',
-                title: 'Phase 1 – Foundation',
-                subText: '10% disbursed on booking · Month 1',
-                amount: loan * phases[0],
-                percent: '10%',
-                isCompleted: true,
-              ),
-              _buildMilestoneRow(
-                icon: '🏗️',
-                title: 'Phase 2 – Plinth / Slab',
-                subText: '20% disbursed · Month 8–10',
-                amount: loan * phases[1],
-                percent: '20%',
-              ),
-              _buildMilestoneRow(
-                icon: '🧱',
-                title: 'Phase 3 – Structure',
-                subText: '20% disbursed · Month 14–18',
-                amount: loan * phases[2],
-                percent: '20%',
-              ),
-              _buildMilestoneRow(
-                icon: '🏠',
-                title: 'Phase 4 – Roofing / Brick',
-                subText: '25% disbursed · Month 20–24',
-                amount: loan * phases[3],
-                percent: '25%',
-              ),
-              _buildMilestoneRow(
-                icon: '🔑',
-                title: 'Phase 5 – Possession',
-                subText: '25% final disbursement · Month 28–30',
-                amount: loan * phases[4],
-                percent: '25%',
-                isLast: true,
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Info Tip
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
             ),
-            border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
-            borderRadius: BorderRadius.circular(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'CALCULATION RESULTS',
+                  style: AppTextStyles.dmSans(size: 9, color: Colors.white60, weight: FontWeight.w700, letterSpacing: 0.5),
+                ),
+                const SizedBox(height: 14),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  childAspectRatio: 1.8,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  children: [
+                    _buildResultBox('Loan Amount', _fmt(loan), '80% of value', true),
+                    _buildResultBox('Full EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(emi)}", 'Post-possession', false),
+                    _buildResultBox('Avg Pre-EMI', "₹${NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0).format(avgPreEmi)}", 'During construction', true),
+                    _buildResultBox('Pre-EMI Total', _fmt(preEmiTotal), 'Interest only cost', false),
+                    _buildResultBox('Total Interest', _fmt(totalInterest), 'Full tenure', false),
+                    _buildResultBox('Total Payable', _fmt(totalPayable), 'Principal + Interest', false, isGreen: true),
+                  ],
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('💡', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFF07543A)),
-                    children: const [
-                      TextSpan(
-                        text: 'RBI Rule: ',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text: 'Banks disburse in stages linked to construction milestones. Pre-EMI is interest-only on disbursed amount. Full EMI starts after possession. GST @ 5% applies to under-construction properties; nil for ready-to-move. RERA registration is mandatory per Real Estate Act 2016.',
-                      ),
-                    ],
+
+          const SizedBox(height: 20),
+
+          // Cost Comparison Breakup Bar Chart
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Cost Comparison Breakup', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                    Text('UC Property', style: AppTextStyles.dmSans(size: 10, color: const Color(0xFFFF6B00), weight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildChartRow('Principal', loan, totalOutgoSum, const LinearGradient(colors: [Color(0xFF1A3A8F), Color(0xFF0B1F48)])),
+                const Divider(height: 18),
+                _buildChartRow('Pre-EMI Int.', preEmiTotal, totalOutgoSum, const LinearGradient(colors: [Color(0xFFFFEA00), Color(0xFFFF6B00)])),
+                const Divider(height: 18),
+                _buildChartRow('Post-EMI Int.', totalInterest, totalOutgoSum, const LinearGradient(colors: [Color(0xFFFF6B00), Color(0xFFE05F00)])),
+                const Divider(height: 18),
+                _buildChartRow('GST (5%)', gst, totalOutgoSum, const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF0F766E)])),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Disbursement Milestone Timeline
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📋 Disbursement Phases', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+                _buildMilestoneRow(
+                  icon: '✓',
+                  title: 'Phase 1 – Foundation',
+                  subText: '10% disbursed on booking · Month 1',
+                  amount: loan * phases[0],
+                  percent: '10%',
+                  isCompleted: true,
+                ),
+                _buildMilestoneRow(
+                  icon: '🏗️',
+                  title: 'Phase 2 – Plinth / Slab',
+                  subText: '20% disbursed · Month 8–10',
+                  amount: loan * phases[1],
+                  percent: '20%',
+                ),
+                _buildMilestoneRow(
+                  icon: '🧱',
+                  title: 'Phase 3 – Structure',
+                  subText: '20% disbursed · Month 14–18',
+                  amount: loan * phases[2],
+                  percent: '20%',
+                ),
+                _buildMilestoneRow(
+                  icon: '🏠',
+                  title: 'Phase 4 – Roofing / Brick',
+                  subText: '25% disbursed · Month 20–24',
+                  amount: loan * phases[3],
+                  percent: '25%',
+                ),
+                _buildMilestoneRow(
+                  icon: '🔑',
+                  title: 'Phase 5 – Possession',
+                  subText: '25% final disbursement · Month 28–30',
+                  amount: loan * phases[4],
+                  percent: '25%',
+                  isLast: true,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Info Tip
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: const Color(0xFF6EE7B7), width: 1.5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('💡', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      style: AppTextStyles.dmSans(size: 10.5, color: const Color(0xFF07543A)),
+                      children: const [
+                        TextSpan(
+                          text: 'RBI Rule: ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(
+                          text: 'Banks disburse in stages linked to construction milestones. Pre-EMI is interest-only on disbursed amount. Full EMI starts after possession. GST @ 5% applies to under-construction properties; nil for ready-to-move. RERA registration is mandatory per Real Estate Act 2016.',
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Save Button
-        ElevatedButton.icon(
-          onPressed: _saveCalculation,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF046A38),
-            shadowColor: const Color(0xFF046A38).withValues(alpha: 0.3),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            elevation: 4,
-          ),
-          icon: const Text('💾', style: TextStyle(fontSize: 16)),
-          label: Center(
-            child: Text(
-              'Save This Calculation',
-              style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: Colors.white),
+              ],
             ),
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Save Button
+          ElevatedButton.icon(
+            onPressed: _saveCalculation,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF046A38),
+              shadowColor: const Color(0xFF046A38).withValues(alpha: 0.3),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 4,
+            ),
+            icon: const Text('💾', style: TextStyle(fontSize: 16)),
+            label: Center(
+              child: Text(
+                'Save This Calculation',
+                style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -590,6 +737,7 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
     required double max,
     required int divisions,
     required String displayValue,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     final currentVal = double.tryParse(controller.text) ?? min;
@@ -652,11 +800,17 @@ class _INUnderConstructionState extends ConsumerState<INUnderConstruction> {
                   fillColor: theme.getBgColor(context),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: theme.getBorderColor(context)),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : theme.getBorderColor(context),
+                      width: hasError ? 1.5 : 1.0,
+                    ),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                    borderSide: BorderSide(color: Color(0xFFFF6B00)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    borderSide: BorderSide(
+                      color: hasError ? Colors.red : const Color(0xFFFF6B00),
+                      width: hasError ? 2.0 : 1.5,
+                    ),
                   ),
                 ),
                 onSubmitted: (val) {

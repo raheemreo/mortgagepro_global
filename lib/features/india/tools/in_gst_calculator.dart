@@ -21,6 +21,13 @@ class _INGSTCalculatorState extends ConsumerState<INGSTCalculator> {
   String _slabKey = 'affordable';
   String _txnType = 'exclusive'; // 'exclusive', 'inclusive'
 
+  bool _calculated = false;
+  double _calcPropPrice = 4500000;
+  String _calcSlabKey = 'affordable';
+  String _calcTxnType = 'exclusive';
+
+  final GlobalKey _resultPanelKey = GlobalKey();
+
   final Map<String, Map<String, dynamic>> _slabs = const {
     'affordable': {
       'rate': 1.0,
@@ -53,7 +60,34 @@ class _INGSTCalculatorState extends ConsumerState<INGSTCalculator> {
       _propPrice = 4500000;
       _slabKey = 'affordable';
       _txnType = 'exclusive';
+      _calculated = false;
+
+      _calcPropPrice = 4500000;
+      _calcSlabKey = 'affordable';
+      _calcTxnType = 'exclusive';
     });
+  }
+
+  void _calculate() {
+    setState(() {
+      _calculated = true;
+      _calcPropPrice = _propPrice;
+      _calcSlabKey = _slabKey;
+      _calcTxnType = _txnType;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _resultPanelKey.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(context, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+      }
+    });
+  }
+
+  bool _areInputsChanged() {
+    return _propPrice != _calcPropPrice ||
+        _slabKey != _calcSlabKey ||
+        _txnType != _calcTxnType;
   }
 
   String _fmt(double n) {
@@ -68,16 +102,16 @@ class _INGSTCalculatorState extends ConsumerState<INGSTCalculator> {
   }
 
   void _saveCalculation() async {
-    final slab = _slabs[_slabKey]!;
+    final slab = _slabs[_calcSlabKey]!;
     final rate = slab['rate'] as double;
     double base, gst, total;
 
-    if (_txnType == 'exclusive') {
-      base = _propPrice;
+    if (_calcTxnType == 'exclusive') {
+      base = _calcPropPrice;
       gst = base * rate / 100;
       total = base + gst;
     } else {
-      total = _propPrice;
+      total = _calcPropPrice;
       base = total / (1 + rate / 100);
       gst = total - base;
     }
@@ -135,9 +169,9 @@ class _INGSTCalculatorState extends ConsumerState<INGSTCalculator> {
         country: 'India',
         calcType: 'GST Calculator',
         inputs: {
-          'propPrice': _propPrice,
-          'slabIndex': _slabs.keys.toList().indexOf(_slabKey).toDouble(),
-          'txnType': _txnType == 'exclusive' ? 0.0 : 1.0,
+          'propPrice': _calcPropPrice,
+          'slabIndex': _slabs.keys.toList().indexOf(_calcSlabKey).toDouble(),
+          'txnType': _calcTxnType == 'exclusive' ? 0.0 : 1.0,
         },
         results: {
           'basePrice': base,
@@ -168,17 +202,18 @@ class _INGSTCalculatorState extends ConsumerState<INGSTCalculator> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final slab = _slabs[_slabKey]!;
-    final rate = slab['rate'] as double;
-    final itcAvailable = slab['itc'] as bool;
+    final currentSlab = _slabs[_slabKey]!;
+    final calcStateSlab = _slabs[_calcSlabKey]!;
+    final rate = calcStateSlab['rate'] as double;
+    final itcAvailable = calcStateSlab['itc'] as bool;
     double base, gst, total;
 
-    if (_txnType == 'exclusive') {
-      base = _propPrice;
+    if (_calcTxnType == 'exclusive') {
+      base = _calcPropPrice;
       gst = base * rate / 100;
       total = base + gst;
     } else {
-      total = _propPrice;
+      total = _calcPropPrice;
       base = total / (1 + rate / 100);
       gst = total - base;
     }
@@ -262,9 +297,9 @@ class _INGSTCalculatorState extends ConsumerState<INGSTCalculator> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(slab['title'] as String, style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: const Color(0xFFE05F00))),
+                    Text(currentSlab['title'] as String, style: AppTextStyles.dmSans(size: 11, weight: FontWeight.bold, color: const Color(0xFFE05F00))),
                     const SizedBox(height: 2),
-                    Text(slab['desc'] as String, style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context))),
+                    Text(currentSlab['desc'] as String, style: AppTextStyles.dmSans(size: 9.5, color: theme.getMutedColor(context))),
                   ],
                 ),
               ),
@@ -280,151 +315,195 @@ class _INGSTCalculatorState extends ConsumerState<INGSTCalculator> {
                   Expanded(child: _buildToggleBtn('GST Inclusive', _txnType == 'inclusive', () => setState(() => _txnType = 'inclusive'))),
                 ],
               ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Results Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('TOTAL TAX GST AMOUNT', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(gst),
-                style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _resultBox('Base Value', _fmt(base)),
-                  const SizedBox(width: 8),
-                  _resultBox('CGST (50%)', _fmt(cgst)),
-                  const SizedBox(width: 8),
-                  _resultBox('SGST (50%)', _fmt(sgst)),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Donut / Pie Breakdown card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 Cost Share Breakdown', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        const CircularProgressIndicator(
-                          value: 1.0,
-                          strokeWidth: 12,
-                          color: Color(0xFFE05F00), // GST Amount
-                        ),
-                        CircularProgressIndicator(
-                          value: pctBase,
-                          strokeWidth: 12,
-                          color: const Color(0xFF1A3A8F), // Base Amount
-                        ),
-                        Text('${(pctGst * 100).round()}%', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: theme.getTextColor(context))),
-                      ],
-                    ),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: _calculate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE05F00),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(const Color(0xFF1A3A8F), 'Base Property Cost', _fmtShort(base)),
-                        const SizedBox(height: 8),
-                        _legendRow(const Color(0xFFE05F00), 'GST Outgo (${rate.toStringAsFixed(0)}%)', _fmtShort(gst)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Input Tax Credit (ITC) Available:', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context))),
-                  Text(
-                    itcAvailable ? 'YES' : 'NO',
-                    style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: itcAvailable ? const Color(0xFF046A38) : const Color(0xFFDC2626)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total Cost Payable to Builder:', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context))),
-                  Text(_fmt(total), style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: theme.getTextColor(context))),
-                ],
+                  child: Text('⚙️ Calculate GST', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800)),
+                ),
               ),
             ],
           ),
         ),
 
-        const SizedBox(height: 16),
-        // Save bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 20),
+
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultPanelKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate GST to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultPanelKey, height: 0),
+
+          // Results Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('TOTAL TAX GST AMOUNT', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text(
+                  _fmt(gst),
+                  style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                Row(
                   children: [
-                    Text('Save GST Details', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
-                    Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    _resultBox('Base Value', _fmt(base)),
+                    const SizedBox(width: 8),
+                    _resultBox('CGST (50%)', _fmt(cgst)),
+                    const SizedBox(width: 8),
+                    _resultBox('SGST (50%)', _fmt(sgst)),
                   ],
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Donut / Pie Breakdown card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📊 Cost Share Breakdown', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const CircularProgressIndicator(
+                            value: 1.0,
+                            strokeWidth: 12,
+                            color: Color(0xFFE05F00), // GST Amount
+                          ),
+                          CircularProgressIndicator(
+                            value: pctBase,
+                            strokeWidth: 12,
+                            color: const Color(0xFF1A3A8F), // Base Amount
+                          ),
+                          Text('${(pctGst * 100).round()}%', style: AppTextStyles.dmSans(size: 11, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _legendRow(const Color(0xFF1A3A8F), 'Base Property Cost', _fmtShort(base)),
+                          const SizedBox(height: 8),
+                          _legendRow(const Color(0xFFE05F00), 'GST Outgo (${rate.toStringAsFixed(0)}%)', _fmtShort(gst)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Input Tax Credit (ITC) Available:', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context))),
+                    Text(
+                      itcAvailable ? 'YES' : 'NO',
+                      style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: itcAvailable ? const Color(0xFF046A38) : const Color(0xFFDC2626)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Cost Payable to Builder:', style: AppTextStyles.dmSans(size: 11, color: theme.getMutedColor(context))),
+                    Text(_fmt(total), style: AppTextStyles.dmSans(size: 11.5, weight: FontWeight.bold, color: theme.getTextColor(context))),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          // Save bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save GST Details', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
+                      Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

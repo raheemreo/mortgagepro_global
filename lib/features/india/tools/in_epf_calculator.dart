@@ -25,6 +25,18 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
   double _salaryIncrement = 5.0; // 0, 5, 8, 10
   double _roi = 8.25; // default EPFO rate
 
+  bool _calculated = false;
+  double _calcBasicSalary = 35000;
+  double _calcExistingBalance = 250000;
+  int _calcYearsToRetirement = 25;
+  double _calcSalaryIncrement = 5.0;
+  double _calcRoi = 8.25;
+
+  bool _basicSalaryHasError = false;
+  bool _existingBalanceHasError = false;
+  bool _yearsHasError = false;
+  bool _roiHasError = false;
+
   // Controllers
   late TextEditingController _basicSalaryCtrl;
   late TextEditingController _existingBalanceCtrl;
@@ -68,7 +80,57 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
       _existingBalanceCtrl.text = '250000';
       _yearsCtrl.text = '25';
       _roiCtrl.text = '8.25';
+
+      _calculated = false;
+
+      _calcBasicSalary = 35000;
+      _calcExistingBalance = 250000;
+      _calcYearsToRetirement = 25;
+      _calcSalaryIncrement = 5.0;
+      _calcRoi = 8.25;
+
+      _basicSalaryHasError = false;
+      _existingBalanceHasError = false;
+      _yearsHasError = false;
+      _roiHasError = false;
     });
+  }
+
+  void _calculate() {
+    final basicVal = double.tryParse(_basicSalaryCtrl.text) ?? 0.0;
+    final balVal = double.tryParse(_existingBalanceCtrl.text) ?? -1.0;
+    final yearsVal = int.tryParse(_yearsCtrl.text) ?? 0;
+    final roiVal = double.tryParse(_roiCtrl.text) ?? 0.0;
+
+    setState(() {
+      _basicSalaryHasError = basicVal <= 0;
+      _existingBalanceHasError = balVal < 0;
+      _yearsHasError = yearsVal <= 0 || yearsVal > 50;
+      _roiHasError = roiVal <= 0 || roiVal > 25;
+    });
+
+    if (_basicSalaryHasError || _existingBalanceHasError || _yearsHasError || _roiHasError) {
+      return;
+    }
+
+    setState(() {
+      _calculated = true;
+      _calcBasicSalary = _basicSalary;
+      _calcExistingBalance = _existingBalance;
+      _calcYearsToRetirement = _yearsToRetirement;
+      _calcSalaryIncrement = _salaryIncrement;
+      _calcRoi = _roi;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    return _basicSalary != _calcBasicSalary ||
+        _existingBalance != _calcExistingBalance ||
+        _yearsToRetirement != _calcYearsToRetirement ||
+        _salaryIncrement != _calcSalaryIncrement ||
+        _roi != _calcRoi;
   }
 
   String _fmt(double n) {
@@ -82,16 +144,16 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
   }
 
   Map<String, dynamic> _calculateValues() {
-    double corpus = _existingBalance;
+    double corpus = _calcExistingBalance;
     double empTotal = 0;
     double emplrTotal = 0;
     double intTotal = 0;
-    final r = _roi / 100 / 12;
+    final r = _calcRoi / 100 / 12;
 
     final List<Map<String, dynamic>> yearData = [];
-    double curBasic = _basicSalary;
+    double curBasic = _calcBasicSalary;
 
-    for (int y = 1; y <= _yearsToRetirement; y++) {
+    for (int y = 1; y <= _calcYearsToRetirement; y++) {
       double yearEmp = 0;
       double yearEmpr = 0;
       double yearInt = 0;
@@ -116,7 +178,7 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
         'corpus': corpus
       });
 
-      if (_salaryIncrement > 0) curBasic *= (1 + _salaryIncrement / 100);
+      if (_calcSalaryIncrement > 0) curBasic *= (1 + _calcSalaryIncrement / 100);
     }
 
     return {
@@ -145,7 +207,7 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Saving: Maturity ${_fmt(corpus)} · Basic ${_fmt(_basicSalary)}',
+                'Saving: Maturity ${_fmt(corpus)} · Basic ${_fmt(_calcBasicSalary)}',
                 style: AppTextStyles.dmSans(
                     size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
@@ -196,11 +258,11 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
         country: 'India',
         calcType: 'EPF Calculator',
         inputs: {
-          'basicSalary': _basicSalary,
-          'existingBalance': _existingBalance,
-          'years': _yearsToRetirement.toDouble(),
-          'increment': _salaryIncrement,
-          'rate': _roi,
+          'basicSalary': _calcBasicSalary,
+          'existingBalance': _calcExistingBalance,
+          'years': _calcYearsToRetirement.toDouble(),
+          'increment': _calcSalaryIncrement,
+          'rate': _calcRoi,
         },
         results: {
           'corpus': corpus,
@@ -355,6 +417,7 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
                 min: 1000,
                 max: 200000,
                 prefix: '₹ ',
+                hasError: _basicSalaryHasError,
                 onChangedText: (val) {
                   setState(() {
                     _basicSalary = val;
@@ -385,8 +448,10 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
                       border: Border.all(
-                          color:
-                              const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                          color: _existingBalanceHasError
+                              ? Colors.red
+                              : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                          width: _existingBalanceHasError ? 1.5 : 1.0),
                       borderRadius: BorderRadius.circular(11),
                     ),
                     child: TextFormField(
@@ -423,6 +488,7 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
                 min: 1,
                 max: 40,
                 suffix: ' Years',
+                hasError: _yearsHasError,
                 onChangedText: (val) {
                   setState(() {
                     _yearsToRetirement = val.toInt();
@@ -489,6 +555,7 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
                 min: 5.0,
                 max: 15.0,
                 suffix: '% p.a.',
+                hasError: _roiHasError,
                 onChangedText: (val) {
                   setState(() {
                     _roi = val;
@@ -507,7 +574,7 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _scrollToResults,
+                      onPressed: _calculate,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF046A38),
                         foregroundColor: Colors.white,
@@ -523,380 +590,412 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
                               weight: FontWeight.w800)),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 50,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () => _saveCalculation(
-                          corpus, empTotal, emplrTotal, intTotal),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0B1F48),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                  if (_calculated) ...[
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 50,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () => _saveCalculation(
+                            corpus, empTotal, emplrTotal, intTotal),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0B1F48),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Icon(Icons.bookmark_border, size: 20),
                       ),
-                      child: const Icon(Icons.bookmark_border, size: 20),
+                    ),
+                  ],
+                ],
+              ),
+              if (_calculated) ...[
+                const SizedBox(height: 20),
+                // Warning banner if inputs changed
+                if (_areInputsChanged())
+                  Container(
+                    key: _resultsKey,
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                        Expanded(
+                          child: Text(
+                            'Inputs changed. Tap Calculate to update results.',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                                weight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
                     ),
                   )
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+                else
+                  SizedBox(key: _resultsKey, height: 0),
 
-        // Result Hero Card
-        Container(
-          key: _resultsKey,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ESTIMATED EPF MATURITY CORPUS',
-                  style: AppTextStyles.dmSans(
-                      size: 9,
-                      color: Colors.white60,
-                      weight: FontWeight.w700,
-                      letterSpacing: 0.8)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(corpus),
-                style: AppTextStyles.playfair(
-                    size: 32,
-                    color: const Color(0xFFFFDEA0),
-                    weight: FontWeight.w800),
-              ),
-              const SizedBox(height: 14),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 2.2,
-                children: [
-                  _resultBox('Employee Contrib.', _fmt(empTotal)),
-                  _resultBox('Employer Contrib.', _fmt(emplrTotal)),
-                  _resultBox('Total Interest', _fmt(intTotal)),
-                  _resultBox('Monthly Contribution', _fmt(monthlyCont)),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Growth Chart Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📈 EPF Corpus Accumulation',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 140,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: uniqueRows.map((d) {
-                    final balanceVal = d['corpus'] as double;
-                    final yearEmp = d['yearEmp'] as double;
-                    final yearEmpr = d['yearEmpr'] as double;
-
-                    final double totalH =
-                        max(6.0, (balanceVal / maxChartVal) * 120.0);
-                    final double empH = (yearEmp / balanceVal) * totalH;
-                    final double emprH = (yearEmpr / balanceVal) * totalH;
-                    final double intH = max(0.0, totalH - empH - emprH);
-
-                    return Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                // Result Hero Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ESTIMATED EPF MATURITY CORPUS',
+                          style: AppTextStyles.dmSans(
+                              size: 9,
+                              color: Colors.white60,
+                              weight: FontWeight.w700,
+                              letterSpacing: 0.8)),
+                      const SizedBox(height: 4),
+                      Text(
+                        _fmt(corpus),
+                        style: AppTextStyles.playfair(
+                            size: 32,
+                            color: const Color(0xFFFFDEA0),
+                            weight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 14),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        childAspectRatio: 2.2,
                         children: [
-                          Container(
-                            width: 18,
-                            height: totalH,
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(4),
+                          _resultBox('Employee Contrib.', _fmt(empTotal)),
+                          _resultBox('Employer Contrib.', _fmt(emplrTotal)),
+                          _resultBox('Total Interest', _fmt(intTotal)),
+                          _resultBox('Monthly Contribution', _fmt(monthlyCont)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Growth Chart Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('📈 EPF Corpus Accumulation',
+                          style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 140,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: uniqueRows.map((d) {
+                            final balanceVal = d['corpus'] as double;
+                            final yearEmp = d['yearEmp'] as double;
+                            final yearEmpr = d['yearEmpr'] as double;
+
+                            final double totalH =
+                                max(6.0, (balanceVal / maxChartVal) * 120.0);
+                            final double empH = (yearEmp / balanceVal) * totalH;
+                            final double emprH = (yearEmpr / balanceVal) * totalH;
+                            final double intH = max(0.0, totalH - empH - emprH);
+
+                            return Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    width: 18,
+                                    height: totalH,
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          height: intH,
+                                          width: 18,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF046A38),
+                                            borderRadius: BorderRadius.vertical(
+                                                top: Radius.circular(4)),
+                                          ),
+                                        ),
+                                        Container(
+                                          height: emprH,
+                                          width: 18,
+                                          color: const Color(0xFF1A3A8F),
+                                        ),
+                                        Container(
+                                          height: empH,
+                                          width: 18,
+                                          color: const Color(0xFFFF6B00),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text('Y${d['y']}',
+                                      style: AppTextStyles.dmSans(
+                                          size: 8,
+                                          color: theme.getMutedColor(context))),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _chartIndicatorDot(const Color(0xFFFF6B00), 'Employee'),
+                          const SizedBox(width: 10),
+                          _chartIndicatorDot(const Color(0xFF1A3A8F), 'Employer'),
+                          const SizedBox(width: 10),
+                          _chartIndicatorDot(const Color(0xFF046A38), 'Interest'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Pie/Donut Breakdown
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('🥧 Corpus Breakdown Split',
+                          style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 100,
+                            height: 100,
+                            child: CustomPaint(
+                              painter: _EPFDonutPainter(
+                                emp: empTotal,
+                                empr: emplrTotal,
+                                interest: intTotal,
+                                existing: _calcExistingBalance,
+                                empColor: const Color(0xFFFF6B00),
+                                emprColor: const Color(0xFF1A3A8F),
+                                interestColor: const Color(0xFF046A38),
+                                existingColor: const Color(0xFF9333EA),
+                                textColor: theme.getTextColor(context),
+                              ),
                             ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
                             child: Column(
                               children: [
-                                Container(
-                                  height: intH,
-                                  width: 18,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF046A38),
-                                    borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(4)),
-                                  ),
-                                ),
-                                Container(
-                                  height: emprH,
-                                  width: 18,
-                                  color: const Color(0xFF1A3A8F),
-                                ),
-                                Container(
-                                  height: empH,
-                                  width: 18,
-                                  color: const Color(0xFFFF6B00),
-                                ),
+                                _legendRow(const Color(0xFFFF6B00), 'Employee Contrib.',
+                                    _fmt(empTotal)),
+                                const SizedBox(height: 6),
+                                _legendRow(const Color(0xFF1A3A8F), 'Employer Contrib.',
+                                    _fmt(emplrTotal)),
+                                const SizedBox(height: 6),
+                                _legendRow(const Color(0xFF046A38), 'Interest Earned',
+                                    _fmt(intTotal)),
+                                const SizedBox(height: 6),
+                                _legendRow(const Color(0xFF9333EA), 'Existing Balance',
+                                    _fmt(_calcExistingBalance)),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text('Y${d['y']}',
-                              style: AppTextStyles.dmSans(
-                                  size: 8,
-                                  color: theme.getMutedColor(context))),
                         ],
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _chartIndicatorDot(const Color(0xFFFF6B00), 'Employee'),
-                  const SizedBox(width: 10),
-                  _chartIndicatorDot(const Color(0xFF1A3A8F), 'Employer'),
-                  const SizedBox(width: 10),
-                  _chartIndicatorDot(const Color(0xFF046A38), 'Interest'),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Pie/Donut Breakdown
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('🥧 Corpus Breakdown Split',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CustomPaint(
-                      painter: _EPFDonutPainter(
-                        emp: empTotal,
-                        empr: emplrTotal,
-                        interest: intTotal,
-                        existing: _existingBalance,
-                        empColor: const Color(0xFFFF6B00),
-                        emprColor: const Color(0xFF1A3A8F),
-                        interestColor: const Color(0xFF046A38),
-                        existingColor: const Color(0xFF9333EA),
-                        textColor: theme.getTextColor(context),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(const Color(0xFFFF6B00), 'Employee Contrib.',
-                            _fmt(empTotal)),
-                        const SizedBox(height: 6),
-                        _legendRow(const Color(0xFF1A3A8F), 'Employer Contrib.',
-                            _fmt(emplrTotal)),
-                        const SizedBox(height: 6),
-                        _legendRow(const Color(0xFF046A38), 'Interest Earned',
-                            _fmt(intTotal)),
-                        const SizedBox(height: 6),
-                        _legendRow(const Color(0xFF9333EA), 'Existing Balance',
-                            _fmt(_existingBalance)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // EPF Rules Summary Box
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF042F1A) : const Color(0xFFECFDF5),
-            border: Border.all(
-                color:
-                    isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '📋 EPF Rules at a Glance (FY 2025–26)',
-                style: AppTextStyles.dmSans(
-                  size: 11.5,
-                  weight: FontWeight.w800,
-                  color: isDark
-                      ? const Color(0xFF86EFAC)
-                      : const Color(0xFF07543A),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _ruleSummary('EPF Interest Rate (Current)',
-                  '${_roi.toStringAsFixed(2)}% p.a.', isDark),
-              _ruleSummary(
-                  'Employee Contribution', '12% of Basic + DA', isDark),
-              _ruleSummary('Employer — EPF (3.67%)',
-                  '₹15,000 wage ceiling limit', isDark),
-              _ruleSummary(
-                  'Employer — EPS (8.33%)', 'Max ₹1,250/month pension', isDark),
-              _ruleSummary(
-                  'Tax Treatment (EEE)', 'Exempt - Exempt - Exempt', isDark),
-              _ruleSummary('Withdrawal eligibility',
-                  'Fully Tax-Free after 5 years', isDark),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Year-wise Projection Table
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📅 Year-wise Projection Details',
-                  style: AppTextStyles.dmSans(
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: theme.getTextColor(context))),
-              const SizedBox(height: 12),
-              Table(
-                columnWidths: const {
-                  0: FlexColumnWidth(1.2),
-                  1: FlexColumnWidth(1.4),
-                  2: FlexColumnWidth(1.4),
-                  3: FlexColumnWidth(1.6),
-                },
-                children: [
-                  TableRow(
-                    children: [
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Text('Year',
-                              style: AppTextStyles.dmSans(
-                                  size: 9.5,
-                                  weight: FontWeight.w800,
-                                  color: theme.getMutedColor(context)))),
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Text('Emp Cont',
-                              style: AppTextStyles.dmSans(
-                                  size: 9.5,
-                                  weight: FontWeight.w800,
-                                  color: theme.getMutedColor(context)),
-                              textAlign: TextAlign.right)),
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Text('Interest',
-                              style: AppTextStyles.dmSans(
-                                  size: 9.5,
-                                  weight: FontWeight.w800,
-                                  color: theme.getMutedColor(context)),
-                              textAlign: TextAlign.right)),
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Text('Corpus',
-                              style: AppTextStyles.dmSans(
-                                  size: 9.5,
-                                  weight: FontWeight.w800,
-                                  color: theme.getMutedColor(context)),
-                              textAlign: TextAlign.right)),
                     ],
                   ),
-                  ...uniqueRows.map((d) {
-                    return TableRow(
-                      children: [
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text('Year ${d['y']}',
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    weight: FontWeight.w700,
-                                    color: theme.getTextColor(context)))),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(_fmtShort(d['yearEmp']!),
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    color: theme.getTextColor(context)),
-                                textAlign: TextAlign.right)),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(_fmtShort(d['yearInt']!),
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    color: isDark
-                                        ? const Color(0xFF86EFAC)
-                                        : const Color(0xFF046A38)),
-                                textAlign: TextAlign.right)),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(_fmtShort(d['corpus']!),
-                                style: AppTextStyles.dmSans(
-                                    size: 11,
-                                    color: theme.getTextColor(context)),
-                                textAlign: TextAlign.right)),
-                      ],
-                    );
-                  }),
-                ],
-              ),
+                ),
+                const SizedBox(height: 16),
+
+                // EPF Rules Summary Box
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF042F1A) : const Color(0xFFECFDF5),
+                    border: Border.all(
+                        color:
+                            isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📋 EPF Rules at a Glance (FY 2025–26)',
+                        style: AppTextStyles.dmSans(
+                          size: 11.5,
+                          weight: FontWeight.w800,
+                          color: isDark
+                              ? const Color(0xFF86EFAC)
+                              : const Color(0xFF07543A),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _ruleSummary('EPF Interest Rate (Current)',
+                          '${_calcRoi.toStringAsFixed(2)}% p.a.', isDark),
+                      _ruleSummary(
+                          'Employee Contribution', '12% of Basic + DA', isDark),
+                      _ruleSummary('Employer — EPF (3.67%)',
+                          '₹15,000 wage ceiling limit', isDark),
+                      _ruleSummary(
+                          'Employer — EPS (8.33%)', 'Max ₹1,250/month pension', isDark),
+                      _ruleSummary(
+                          'Tax Treatment (EEE)', 'Exempt - Exempt - Exempt', isDark),
+                      _ruleSummary('Withdrawal eligibility',
+                          'Fully Tax-Free after 5 years', isDark),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Year-wise Projection Table
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: theme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: theme.getBorderColor(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('📅 Year-wise Projection Details',
+                          style: AppTextStyles.dmSans(
+                              size: 13,
+                              weight: FontWeight.w800,
+                              color: theme.getTextColor(context))),
+                      const SizedBox(height: 12),
+                      Table(
+                        columnWidths: const {
+                          0: FlexColumnWidth(1.2),
+                          1: FlexColumnWidth(1.4),
+                          2: FlexColumnWidth(1.4),
+                          3: FlexColumnWidth(1.6),
+                        },
+                        children: [
+                          TableRow(
+                            children: [
+                              Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
+                                  child: Text('Year',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9.5,
+                                          weight: FontWeight.w800,
+                                          color: theme.getMutedColor(context)))),
+                              Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
+                                  child: Text('Emp Cont',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9.5,
+                                          weight: FontWeight.w800,
+                                          color: theme.getMutedColor(context)),
+                                      textAlign: TextAlign.right)),
+                              Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
+                                  child: Text('Interest',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9.5,
+                                          weight: FontWeight.w800,
+                                          color: theme.getMutedColor(context)),
+                                      textAlign: TextAlign.right)),
+                              Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
+                                  child: Text('Corpus',
+                                      style: AppTextStyles.dmSans(
+                                          size: 9.5,
+                                          weight: FontWeight.w800,
+                                          color: theme.getMutedColor(context)),
+                                      textAlign: TextAlign.right)),
+                            ],
+                          ),
+                          ...uniqueRows.map((d) {
+                            return TableRow(
+                              children: [
+                                Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    child: Text('Year ${d['y']}',
+                                        style: AppTextStyles.dmSans(
+                                            size: 11,
+                                            weight: FontWeight.w700,
+                                            color: theme.getTextColor(context)))),
+                                Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    child: Text(_fmtShort(d['yearEmp']!),
+                                        style: AppTextStyles.dmSans(
+                                            size: 11,
+                                            color: theme.getTextColor(context)),
+                                        textAlign: TextAlign.right)),
+                                Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    child: Text(_fmtShort(d['yearInt']!),
+                                        style: AppTextStyles.dmSans(
+                                            size: 11,
+                                            color: isDark
+                                                ? const Color(0xFF86EFAC)
+                                                : const Color(0xFF046A38)),
+                                        textAlign: TextAlign.right)),
+                                Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    child: Text(_fmtShort(d['corpus']!),
+                                        style: AppTextStyles.dmSans(
+                                            size: 11,
+                                            color: theme.getTextColor(context)),
+                                        textAlign: TextAlign.right)),
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -1068,6 +1167,7 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
     String suffix = '',
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
+    bool hasError = false,
   }) {
     final theme = widget.theme;
     return Column(
@@ -1094,7 +1194,10 @@ class _INEPFCalculatorState extends ConsumerState<INEPFCalculator> {
           decoration: BoxDecoration(
             color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
             border: Border.all(
-                color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+                color: hasError
+                    ? Colors.red
+                    : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(11),
           ),
           child: TextFormField(

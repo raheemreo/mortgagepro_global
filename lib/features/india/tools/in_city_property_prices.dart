@@ -28,6 +28,11 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
   double _carpetArea = 1000.0; // sqft
   late TextEditingController _carpetAreaCtrl;
 
+  bool _calculated = false;
+  String _calcSelectedCity = 'Mumbai';
+  double _calcCarpetArea = 1000.0;
+  bool _carpetAreaHasError = false;
+
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _localityPanelKey = GlobalKey();
 
@@ -330,6 +335,39 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
     super.dispose();
   }
 
+  void _calculate() {
+    final areaVal = double.tryParse(_carpetAreaCtrl.text) ?? 0.0;
+    setState(() {
+      _carpetAreaHasError = areaVal <= 0;
+    });
+
+    if (_carpetAreaHasError) return;
+
+    setState(() {
+      _calculated = true;
+      _calcSelectedCity = _selectedCity;
+      _calcCarpetArea = _carpetArea;
+    });
+
+    _scrollToLocalityPanel();
+  }
+
+  bool _areInputsChanged() {
+    return _selectedCity != _calcSelectedCity || _carpetArea != _calcCarpetArea;
+  }
+
+  void _reset() {
+    setState(() {
+      _selectedCity = 'Mumbai';
+      _carpetArea = 1000.0;
+      _carpetAreaCtrl.text = '1000';
+      _calculated = false;
+      _calcSelectedCity = 'Mumbai';
+      _calcCarpetArea = 1000.0;
+      _carpetAreaHasError = false;
+    });
+  }
+
   String _fmt(double n) {
     if (n >= 10000000) return '₹${(n / 10000000).toStringAsFixed(2)} Cr';
     if (n >= 100000) return '₹${(n / 100000).toStringAsFixed(2)}L';
@@ -337,11 +375,11 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
   }
 
   void _savePriceEstimate() async {
-    final cityData = _cities.firstWhere((element) => element['name'] == _selectedCity);
+    final cityData = _cities.firstWhere((element) => element['name'] == _calcSelectedCity);
     final double baseRate = (cityData['price'] as int).toDouble();
-    final double totalVal = _carpetArea * baseRate;
+    final double totalVal = _calcCarpetArea * baseRate;
 
-    final labelCtrl = TextEditingController(text: 'Valuation Snapshot - $_selectedCity');
+    final labelCtrl = TextEditingController(text: 'Valuation Snapshot - $_calcSelectedCity');
     final confirmed = await showDialog<bool>(
       context: context,
       routeSettings: const RouteSettings(name: '/dialog/in_city_property_prices'),
@@ -353,7 +391,7 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saving snapshot for $_selectedCity: ${_fmt(totalVal)} (${_carpetArea.toInt()} sqft)',
+            Text('Saving snapshot for $_calcSelectedCity: ${_fmt(totalVal)} (${_calcCarpetArea.toInt()} sqft)',
                 style: AppTextStyles.dmSans(size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
             TextField(
@@ -393,8 +431,8 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
         country: 'India',
         calcType: 'City Property Prices',
         inputs: {
-          'carpetArea': _carpetArea,
-          'cityIndex': _cities.indexWhere((element) => element['name'] == _selectedCity).toDouble(),
+          'carpetArea': _calcCarpetArea,
+          'cityIndex': _cities.indexWhere((element) => element['name'] == _calcSelectedCity).toDouble(),
         },
         results: {
           'avgRate': baseRate,
@@ -456,9 +494,12 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
 
     // Select the currently highlighted city details
     final selectedCityData = _cities.firstWhere((c) => c['name'] == _selectedCity);
-    final double selectedCityPrice = (selectedCityData['price'] as int).toDouble();
-    final double estimateVal = _carpetArea * selectedCityPrice;
     final List localities = selectedCityData['localities'] as List;
+
+    // Estimator calculations using frozen inputs
+    final calcCityData = _cities.firstWhere((c) => c['name'] == _calcSelectedCity);
+    final double calcCityPrice = (calcCityData['price'] as int).toDouble();
+    final double estimateVal = _calcCarpetArea * calcCityPrice;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -752,6 +793,7 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
                 min: 300,
                 max: 4000,
                 suffix: ' sqft',
+                hasError: _carpetAreaHasError,
                 onChangedText: (val) => setState(() => _carpetArea = val),
                 onChangedSlider: (val) => setState(() {
                   _carpetArea = val;
@@ -760,51 +802,120 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
               ),
               const SizedBox(height: 14),
 
-              // Estimated Output Bracket
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-                  border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7), width: 1.5),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('ESTIMATED PROPERTY VALUATION RANGE',
-                        style: AppTextStyles.dmSans(size: 8.5, color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF07543A), weight: FontWeight.w800, letterSpacing: 0.5)),
-                    const SizedBox(height: 4),
-                    Text(_fmt(estimateVal),
-                        style: AppTextStyles.playfair(size: 28, color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF07543A), weight: FontWeight.w800)),
-                    Text('Approximate valuation at ₹${selectedCityData['price']}/sqft (${selectedCityData['tier'].toString().toUpperCase()})',
-                        style: AppTextStyles.dmSans(size: 9.5, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _resBox('Lower Bracket (-5%)', _fmt(estimateVal * 0.95), context),
-                        const SizedBox(width: 8),
-                        _resBox('Upper Bracket (+5%)', _fmt(estimateVal * 1.05), context),
-                      ],
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _calculate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF046A38),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 44),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 2,
+                      ),
+                      child: Text('🏛️ Calculate Valuation',
+                          style: AppTextStyles.dmSans(
+                              size: 13,
+                              color: Colors.white,
+                              weight: FontWeight.w800)),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 50,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: _reset,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0B1F48),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Icon(Icons.refresh, size: 20),
+                    ),
+                  ),
+                ],
               ),
 
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton.icon(
-                  onPressed: _savePriceEstimate,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF046A38),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              if (_calculated) ...[
+                const SizedBox(height: 14),
+                // Warning banner if inputs changed
+                if (_areInputsChanged())
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                        Expanded(
+                          child: Text(
+                            'Inputs changed. Tap Calculate to update results.',
+                            style: AppTextStyles.dmSans(
+                                size: 11,
+                                color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                                weight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  icon: const Icon(Icons.bookmark, size: 14),
-                  label: Text('Save Estimate Snapshot', style: AppTextStyles.dmSans(size: 11.5, color: Colors.white, weight: FontWeight.w800)),
+
+                // Estimated Output Bracket
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+                    border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7), width: 1.5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ESTIMATED PROPERTY VALUATION RANGE',
+                          style: AppTextStyles.dmSans(size: 8.5, color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF07543A), weight: FontWeight.w800, letterSpacing: 0.5)),
+                      const SizedBox(height: 4),
+                      Text(_fmt(estimateVal),
+                          style: AppTextStyles.playfair(size: 28, color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF07543A), weight: FontWeight.w800)),
+                      Text('Approximate valuation at ₹${calcCityData['price']}/sqft (${calcCityData['tier'].toString().toUpperCase()})',
+                          style: AppTextStyles.dmSans(size: 9.5, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _resBox('Lower Bracket (-5%)', _fmt(estimateVal * 0.95), context),
+                          const SizedBox(width: 8),
+                          _resBox('Upper Bracket (+5%)', _fmt(estimateVal * 1.05), context),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    onPressed: _savePriceEstimate,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF046A38),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.bookmark, size: 14),
+                    label: Text('Save Estimate Snapshot', style: AppTextStyles.dmSans(size: 11.5, color: Colors.white, weight: FontWeight.w800)),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -1040,6 +1151,7 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
     required double max,
     String prefix = '',
     String suffix = '',
+    bool hasError = false,
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
   }) {
@@ -1059,7 +1171,11 @@ class _INCityPropertyPricesState extends ConsumerState<INCityPropertyPrices> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
           decoration: BoxDecoration(
             color: const Color(0xFFFF6B00).withValues(alpha: 0.04),
-            border: Border.all(color: const Color(0xFFFF6B00).withValues(alpha: 0.15)),
+            border: Border.all(
+                color: hasError
+                    ? Colors.red
+                    : const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(10),
           ),
           child: TextFormField(

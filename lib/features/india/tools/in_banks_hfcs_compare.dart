@@ -24,6 +24,15 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
   String _loanType = 'salaried'; // salaried, selfemployed, nri
   String _cibilRange = '800'; // 800, 750, 700, 650
 
+  bool _calculated = false;
+  double _calcLoanAmt = 5000000;
+  double _calcTenure = 20;
+  String _calcLoanType = 'salaried';
+  String _calcCibilRange = '800';
+
+  bool _loanAmtHasError = false;
+  bool _tenureHasError = false;
+
   // Directory filter state
   String _activeDirectoryFilter = 'all'; // all, psu, private, hfc, nbfc, low
 
@@ -668,6 +677,58 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
     return '₹${n.toStringAsFixed(0)}';
   }
 
+  void _calculate() {
+    final loanAmtVal = double.tryParse(_loanAmtCtrl.text) ?? 0.0;
+    final tenureVal = double.tryParse(_tenureCtrl.text) ?? 0.0;
+
+    setState(() {
+      _loanAmtHasError = loanAmtVal <= 0;
+      _tenureHasError = tenureVal <= 0;
+    });
+
+    if (_loanAmtHasError || _tenureHasError) return;
+
+    setState(() {
+      _calculated = true;
+      _calcLoanAmt = _loanAmt;
+      _calcTenure = _tenure;
+      _calcLoanType = _loanType;
+      _calcCibilRange = _cibilRange;
+    });
+
+    _scrollToResults();
+  }
+
+  bool _areInputsChanged() {
+    final loanAmtVal = double.tryParse(_loanAmtCtrl.text) ?? 0.0;
+    final tenureVal = double.tryParse(_tenureCtrl.text) ?? 0.0;
+
+    return loanAmtVal != _calcLoanAmt ||
+        tenureVal != _calcTenure ||
+        _loanType != _calcLoanType ||
+        _cibilRange != _calcCibilRange;
+  }
+
+  void _reset() {
+    setState(() {
+      _loanAmt = 5000000;
+      _tenure = 20;
+      _loanType = 'salaried';
+      _cibilRange = '800';
+      _loanAmtCtrl.text = '5000000';
+      _tenureCtrl.text = '20';
+
+      _calculated = false;
+      _calcLoanAmt = 5000000;
+      _calcTenure = 20;
+      _calcLoanType = 'salaried';
+      _calcCibilRange = '800';
+
+      _loanAmtHasError = false;
+      _tenureHasError = false;
+    });
+  }
+
   void _saveComparisonSnapshot() async {
     final labelCtrl = TextEditingController(text: 'Home Loan Comparison Report');
     final results = _getComparisonResults();
@@ -688,7 +749,7 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saving report: ${_fmt(_loanAmt)} loan comparison (${results.length} lenders)',
+            Text('Saving report: ${_fmt(_calcLoanAmt)} loan comparison (${results.length} lenders)',
                 style: AppTextStyles.dmSans(size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
             TextField(
@@ -728,10 +789,10 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
         country: 'India',
         calcType: 'Banks vs HFCs Compare',
         inputs: {
-          'loanAmt': _loanAmt,
-          'tenure': _tenure,
-          'loanType': _loanType == 'salaried' ? 0.0 : (_loanType == 'selfemployed' ? 1.0 : 2.0),
-          'cibilRange': double.parse(_cibilRange),
+          'loanAmt': _calcLoanAmt,
+          'tenure': _calcTenure,
+          'loanType': _calcLoanType == 'salaried' ? 0.0 : (_calcLoanType == 'selfemployed' ? 1.0 : 2.0),
+          'cibilRange': double.parse(_calcCibilRange),
         },
         results: {
           'bestRate': best['effectiveRate'],
@@ -763,20 +824,20 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
     // Filter and compute
     final filtered = _lenders.where((l) {
       final Map<String, dynamic> rates = l['rate'];
-      final double baseRate = rates[_loanType] ?? rates['salaried'] ?? 0.0;
+      final double baseRate = rates[_calcLoanType] ?? rates['salaried'] ?? 0.0;
       return baseRate > 0;
     }).toList();
 
     final results = filtered.map((l) {
       final Map<String, dynamic> rates = l['rate'];
-      final double baseRate = rates[_loanType] ?? rates['salaried'] ?? 0.0;
+      final double baseRate = rates[_calcLoanType] ?? rates['salaried'] ?? 0.0;
       final Map<String, dynamic> cibilAdjs = l['cibilAdj'];
-      final double adj = cibilAdjs[_cibilRange] ?? 0.0;
+      final double adj = cibilAdjs[_calcCibilRange] ?? 0.0;
       final double effectiveRate = baseRate + adj;
 
-      final double emi = _calculateEmi(_loanAmt, effectiveRate, _tenure);
-      final double totalPaid = emi * _tenure * 12;
-      final double totalInterest = totalPaid - _loanAmt;
+      final double emi = _calculateEmi(_calcLoanAmt, effectiveRate, _calcTenure);
+      final double totalPaid = emi * _calcTenure * 12;
+      final double totalInterest = totalPaid - _calcLoanAmt;
 
       return {
         ...l,
@@ -891,6 +952,7 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
                 min: 100000,
                 max: 100000000, // 10 Cr max
                 prefix: '₹ ',
+                hasError: _loanAmtHasError,
                 onChangedText: (val) => setState(() => _loanAmt = val),
                 onChangedSlider: (val) => setState(() {
                   _loanAmt = val;
@@ -907,6 +969,7 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
                 min: 1,
                 max: 35,
                 suffix: ' Yrs',
+                hasError: _tenureHasError,
                 onChangedText: (val) => setState(() => _tenure = val),
                 onChangedSlider: (val) => setState(() {
                   _tenure = val;
@@ -990,33 +1053,80 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
               ),
 
               const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    _scrollToResults();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6B00),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 4,
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _calculate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6B00),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 4,
+                      ),
+                      icon: const Icon(Icons.flash_on, size: 16),
+                      label: Text('⚡ Compare All Banks & HFCs', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800)),
+                    ),
                   ),
-                  icon: const Icon(Icons.flash_on, size: 16),
-                  label: Text('⚡ Compare All Banks & HFCs', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800)),
-                ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 50,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: _reset,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0B1F48),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Icon(Icons.refresh, size: 20),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
-        // Results Section Wrapper
-        Column(
-          key: _comparisonResultsKey,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        if (_calculated) ...[
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _comparisonResultsKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Compare to update results.',
+                      style: AppTextStyles.dmSans(
+                          size: 11,
+                          color: isDark ? Colors.amber[200]! : Colors.amber[900]!,
+                          weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _comparisonResultsKey, height: 0),
+
+          // Results Section Wrapper
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             if (hasResults && best != null && worst != null) ...[
               // Winner Banner
               Container(
@@ -1472,7 +1582,8 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
             ],
           ],
         ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
+        ],
 
         // Filter / Sort All Lenders Directory
         Text('All Lenders Directory', style: AppTextStyles.playfair(size: 15, color: theme.getTextColor(context))),
@@ -1641,6 +1752,7 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
     required double max,
     String prefix = '',
     String suffix = '',
+    bool hasError = false,
     required ValueChanged<double> onChangedText,
     required ValueChanged<double> onChangedSlider,
   }) {
@@ -1660,7 +1772,9 @@ class _INBanksHFCsCompareState extends ConsumerState<INBanksHFCsCompare> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.06),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            border: Border.all(
+                color: hasError ? Colors.red : Colors.white.withValues(alpha: 0.18),
+                width: hasError ? 1.5 : 1.0),
             borderRadius: BorderRadius.circular(10),
           ),
           child: TextFormField(

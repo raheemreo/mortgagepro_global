@@ -21,6 +21,13 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
   String _stateKey = 'MH';
   String _gender = 'male'; // 'male', 'female'
 
+  bool _calculated = false;
+  double _calcPropValue = 5000000;
+  String _calcStateKey = 'MH';
+  String _calcGender = 'male';
+
+  final GlobalKey _resultPanelKey = GlobalKey();
+
   final Map<String, Map<String, dynamic>> _states = const {
     'MH': {'name': 'Maharashtra', 'male': 5.0, 'female': 5.0, 'reg': 1.0, 'extra': 'Metro: +1% surcharge'},
     'DL': {'name': 'Delhi', 'male': 6.0, 'female': 4.0, 'reg': 1.0, 'regMax': 30000.0, 'extra': 'Reg capped at ₹30,000'},
@@ -39,7 +46,34 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
       _propValue = 5000000;
       _stateKey = 'MH';
       _gender = 'male';
+      _calculated = false;
+
+      _calcPropValue = 5000000;
+      _calcStateKey = 'MH';
+      _calcGender = 'male';
     });
+  }
+
+  void _calculate() {
+    setState(() {
+      _calculated = true;
+      _calcPropValue = _propValue;
+      _calcStateKey = _stateKey;
+      _calcGender = _gender;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _resultPanelKey.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(context, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+      }
+    });
+  }
+
+  bool _areInputsChanged() {
+    return _propValue != _calcPropValue ||
+        _stateKey != _calcStateKey ||
+        _gender != _calcGender;
   }
 
   String _fmt(double n) {
@@ -49,11 +83,11 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
   }
 
   void _saveCalculation() async {
-    final state = _states[_stateKey]!;
-    final sdRate = _gender == 'female' ? (state['female'] as double) : (state['male'] as double);
+    final state = _states[_calcStateKey]!;
+    final sdRate = _calcGender == 'female' ? (state['female'] as double) : (state['male'] as double);
     final regRate = state['reg'] as double;
-    final stamp = _propValue * sdRate / 100;
-    double reg = _propValue * regRate / 100;
+    final stamp = _calcPropValue * sdRate / 100;
+    double reg = _calcPropValue * regRate / 100;
     if (state.containsKey('regMax')) {
       final regMax = state['regMax'] as double;
       if (reg > regMax) reg = regMax;
@@ -72,7 +106,7 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saving: Total Fees ${_fmt(total)} · Property ${_fmt(_propValue)}',
+            Text('Saving: Total Fees ${_fmt(total)} · Property ${_fmt(_calcPropValue)}',
                 style: AppTextStyles.dmSans(size: 11, color: widget.theme.getMutedColor(context))),
             const SizedBox(height: 12),
             TextField(
@@ -112,9 +146,9 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
         country: 'India',
         calcType: 'Stamp Duty Calc',
         inputs: {
-          'propValue': _propValue,
-          'stateIndex': _states.keys.toList().indexOf(_stateKey).toDouble(),
-          'gender': _gender == 'male' ? 0.0 : 1.0,
+          'propValue': _calcPropValue,
+          'stateIndex': _states.keys.toList().indexOf(_calcStateKey).toDouble(),
+          'gender': _calcGender == 'male' ? 0.0 : 1.0,
         },
         results: {
           'stampDuty': stamp,
@@ -144,20 +178,20 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
     final theme = widget.theme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final state = _states[_stateKey]!;
-    final sdRate = _gender == 'female' ? (state['female'] as double) : (state['male'] as double);
-    final regRate = state['reg'] as double;
-    final stamp = _propValue * sdRate / 100;
-    double reg = _propValue * regRate / 100;
-    if (state.containsKey('regMax')) {
-      final regMax = state['regMax'] as double;
+    final calcState = _states[_calcStateKey]!;
+    final calcSdRate = _calcGender == 'female' ? (calcState['female'] as double) : (calcState['male'] as double);
+    final calcRegRate = calcState['reg'] as double;
+    final stamp = _calcPropValue * calcSdRate / 100;
+    double reg = _calcPropValue * calcRegRate / 100;
+    if (calcState.containsKey('regMax')) {
+      final regMax = calcState['regMax'] as double;
       if (reg > regMax) reg = regMax;
     }
     final total = stamp + reg;
-    final effPct = _propValue > 0 ? (total / _propValue * 100) : 0.0;
+    final effPct = _calcPropValue > 0 ? (total / _calcPropValue * 100) : 0.0;
 
-    final totalOutgo = _propValue + total;
-    final pctProp = totalOutgo > 0 ? (_propValue / totalOutgo) : 0.0;
+    final totalOutgo = _calcPropValue + total;
+    final pctProp = totalOutgo > 0 ? (_calcPropValue / totalOutgo) : 0.0;
     final pctStamp = totalOutgo > 0 ? (stamp / totalOutgo) : 0.0;
 
     return Column(
@@ -219,10 +253,16 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
                   ),
                 ),
               ),
-              if ((state['extra'] as String).isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(state['extra'] as String, style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFFE05F00), weight: FontWeight.w600)),
-              ],
+              () {
+                final currentState = _states[_stateKey]!;
+                if ((currentState['extra'] as String).isNotEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(currentState['extra'] as String, style: AppTextStyles.dmSans(size: 9.5, color: const Color(0xFFE05F00), weight: FontWeight.w600)),
+                  );
+                }
+                return const SizedBox.shrink();
+              }(),
               const SizedBox(height: 16),
 
               // Gender Selector Toggles
@@ -235,139 +275,183 @@ class _INStampDutyCalcState extends ConsumerState<INStampDutyCalc> {
                   Expanded(child: _buildToggleBtn('Female Owner (Concessions)', _gender == 'female', () => setState(() => _gender = 'female'))),
                 ],
               ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Results Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('TOTAL REGISTRATION & STAMP DUTY FEES', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(
-                _fmt(total),
-                style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _resultBox('Stamp Duty', _fmt(stamp)),
-                  const SizedBox(width: 8),
-                  _resultBox('Registration Fee', _fmt(reg)),
-                  const SizedBox(width: 8),
-                  _resultBox('Effective Rate', '${effPct.toStringAsFixed(2)}%'),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Cost breakdown donut
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.getCardColor(context),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: theme.getBorderColor(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('📊 Total Registry Cost Share', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 90,
-                    height: 90,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        const CircularProgressIndicator(
-                          value: 1.0,
-                          strokeWidth: 14,
-                          color: Color(0xFF046A38), // Reg fee
-                        ),
-                        CircularProgressIndicator(
-                          value: pctProp + pctStamp,
-                          strokeWidth: 14,
-                          color: const Color(0xFF1A3A8F), // Stamp duty
-                        ),
-                        CircularProgressIndicator(
-                          value: pctProp,
-                          strokeWidth: 14,
-                          color: const Color(0xFFE05F00), // Property Value
-                        ),
-                        Text('${effPct.toStringAsFixed(1)}%', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
-                      ],
-                    ),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: _calculate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE05F00),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _legendRow(const Color(0xFFE05F00), 'Property Agreement Value', _fmt(_propValue)),
-                        const SizedBox(height: 8),
-                        _legendRow(const Color(0xFF1A3A8F), 'Stamp Duty (${sdRate.toStringAsFixed(1)}%)', _fmt(stamp)),
-                        const SizedBox(height: 8),
-                        _legendRow(const Color(0xFF046A38), 'Registration Fee (${regRate.toStringAsFixed(1)}%)', _fmt(reg)),
-                      ],
-                    ),
-                  ),
-                ],
+                  child: Text('⚙️ Calculate Stamp Duty', style: AppTextStyles.dmSans(size: 13, weight: FontWeight.w800)),
+                ),
               ),
             ],
           ),
         ),
 
-        const SizedBox(height: 16),
-        // Save bar
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
-            border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Text('💾', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 20),
+
+        if (_calculated) ...[
+          const SizedBox(height: 20),
+          // Warning banner if inputs changed
+          if (_areInputsChanged())
+            Container(
+              key: _resultPanelKey,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 14)),
+                  Expanded(
+                    child: Text(
+                      'Inputs changed. Tap Calculate Stamp Duty to update results.',
+                      style: AppTextStyles.dmSans(size: 11, color: isDark ? Colors.amber[200]! : Colors.amber[900]!, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(key: _resultPanelKey, height: 0),
+
+          // Results Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B1F48), Color(0xFF1A3A8F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('TOTAL REGISTRATION & STAMP DUTY FEES', style: AppTextStyles.dmSans(size: 9, color: Colors.white70, weight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text(
+                  _fmt(total),
+                  style: AppTextStyles.playfair(size: 34, color: const Color(0xFFFFDEA0), weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                Row(
                   children: [
-                    Text('Save Calculation', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
-                    Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    _resultBox('Stamp Duty', _fmt(stamp)),
+                    const SizedBox(width: 8),
+                    _resultBox('Registration Fee', _fmt(reg)),
+                    const SizedBox(width: 8),
+                    _resultBox('Effective Rate', '${effPct.toStringAsFixed(2)}%'),
                   ],
                 ),
-              ),
-              ElevatedButton(
-                onPressed: _saveCalculation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF046A38),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+
+          const SizedBox(height: 20),
+
+          // Cost breakdown donut
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.getCardColor(context),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.getBorderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('📊 Total Registry Cost Share', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 90,
+                      height: 90,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const CircularProgressIndicator(
+                            value: 1.0,
+                            strokeWidth: 14,
+                            color: Color(0xFF046A38), // Reg fee
+                          ),
+                          CircularProgressIndicator(
+                            value: pctProp + pctStamp,
+                            strokeWidth: 14,
+                            color: const Color(0xFF1A3A8F), // Stamp duty
+                          ),
+                          CircularProgressIndicator(
+                            value: pctProp,
+                            strokeWidth: 14,
+                            color: const Color(0xFFE05F00), // Property Value
+                          ),
+                          Text('${effPct.toStringAsFixed(1)}%', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: theme.getTextColor(context))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _legendRow(const Color(0xFFE05F00), 'Property Agreement Value', _fmt(_calcPropValue)),
+                          const SizedBox(height: 8),
+                          _legendRow(const Color(0xFF1A3A8F), 'Stamp Duty (${calcSdRate.toStringAsFixed(1)}%)', _fmt(stamp)),
+                          const SizedBox(height: 8),
+                          _legendRow(const Color(0xFF046A38), 'Registration Fee (${calcRegRate.toStringAsFixed(1)}%)', _fmt(reg)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          // Save bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+              border: Border.all(color: isDark ? const Color(0xFF065F46) : const Color(0xFF6EE7B7)),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Text('💾', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Save Calculation', style: AppTextStyles.dmSans(size: 12, weight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF07543A))),
+                      Text('Save details for future reference', style: AppTextStyles.dmSans(size: 10, color: isDark ? Colors.white70 : const Color(0xFF046A38))),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _saveCalculation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF046A38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Save', style: AppTextStyles.dmSans(size: 11, color: Colors.white, weight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
